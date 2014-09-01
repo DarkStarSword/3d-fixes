@@ -21,6 +21,7 @@
 
     vs_3_0
     def c0, 0, 1, 0, 0
+def c220, 0, 0, 0.0625, 0
     dcl_color v0
     dcl_position v1
     dcl_color o0
@@ -28,7 +29,14 @@
     dcl_texcoord1 o2
     dcl_texcoord2 o3.xy
     dcl_position o4
-    dp4 o4.x, v1, c6
+dcl_2d s0
+dp4 r4.x, v1, c6
+
+texldl r1, c220.z, s0
+mul r1.x, r1.x, c250.x
+add r4.x, r4.x, r1.x
+mov o4.x, r4.x
+
     dp4 o4.y, v1, c7
     dp4 o3.x, v1, c8
     dp4 o3.y, v1, c9
@@ -36,5 +44,3 @@
     mov o1, c10
     mov o2, c11
     mov o4.zw, c0.xyxy
-
-// approximately 8 instruction slots used
