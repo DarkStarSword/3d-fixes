@@ -11,6 +11,7 @@ if [ ! -d "$dir" ]; then
 	exit 1
 fi
 
-rm -fv "${game}.zip" || true
+zip=${PWD}/3Dfix-${game}.zip
 
-cd "$dir" && zip -9 -r "../${game}.zip" .
+rm -fv "$zip" || true
+cd "$dir" && zip -9 -r "$zip" .
