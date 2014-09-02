@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# pre-commit hook to avoid accidentally committing a ShaderOverride that git
+# treats as a binary file. When Helix mod dumps out shaders they end in a NULL
+# byte, which means that git treats them as binary and won't display their
+# contents in git diff, log, etc.
+
+# To use this commit hook, copy it to 3d-fixes/.git/hooks/pre-commit and make
+# sure it is set executable.
+
+# This hook is loosely based on this stack overflow answer:
+# http://stackoverflow.com/questions/20226132/is-there-a-git-hook-which-can-prevent-binary-check-ins
+
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+fi
+
+# Redirect output to stderr.
+exec 1>&2
+
+binary_shaders()
+{
+	git diff --cached --numstat $against | grep -e '^-.*\/ShaderOverride\/'
+}
+
+if binary_shaders >/dev/null; then
+	echo Error: Some of the shader overrides appear to be binary files,
+	echo please remove the NULL byte that Helix mod leaves on the end:
+	binary_shaders
+	exit 1
+fi
