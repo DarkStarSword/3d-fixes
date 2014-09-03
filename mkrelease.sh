@@ -11,7 +11,7 @@ if [ ! -d "$dir" ]; then
 	exit 1
 fi
 
-zip=${PWD}/3Dfix-${game}.zip
+zip=${PWD}/3Dfix-${game}-$(date '+%Y-%m-%d').zip
 
 rm -fv "$zip" || true
 cd "$dir" && zip -9 -r "$zip" .
