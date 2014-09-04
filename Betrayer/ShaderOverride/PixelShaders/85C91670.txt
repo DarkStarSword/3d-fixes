@@ -27,12 +27,24 @@
     def c1, 0, 0.5, 0.015625, 1
     def c2, 0, 2, 1.96875, 4
     def c3, -0.0625, 0, 0, 0
+def c220, 0, 1, 0.0625, 0.5
     defi i0, 32, 0, 0, 0
-    dcl_texcoord v0.xy
+    dcl_texcoord v0.xy				// o0 from vertex shader - screen coords?
     dcl_2d s0
-    mul r0, c9.zwzw, v0.xyxy
-    mov r1.zw, c9
-    mad r1, v0.xyxy, -r1.zwzw, c0.xyxy
+dcl_2d s13
+
+    mul r0, c9.zwzw, v0.xyxy			// r0 = screen coords * inv. aspect
+    mov r1.zw, c9				// r1 = aspect
+
+// Adjust blur origin to fix light shafts:
+//mad r1, v0.xyxy, -r1.zwzw, c0.xyxy		// r1 = screen coords * -aspect + blur origin
+mov r4, c0
+texldl r5, c220.z, s13
+mul r5.x, r5.x, c220.w	// Adjust each eye by half the separation
+add r4.x, r4.x, r5.x
+
+mad r1, v0.xyxy, -r1.zwzw, r4.xyxy
+
     dp2add r2.x, r1.zwzw, r1.zwzw, c1.x
     rsq r2.x, r2.x
     rcp r2.x, r2.x
@@ -71,7 +83,6 @@
     mul oC0, r2, c1.z
 
 // Optionally disable broken lightshafts:
-mov r1.x, c200.y		// r1.x = Const2;
-if_eq r1.x, c1.x		// if (Const2 == 0) {
-    mov oC0.xyzw, c1.xxxx	//   oC0 = (0, 0, 0, 0);
-endif				// }
+// if_eq r13.x, c1.x		// if (Const2 == 0) {
+//     mov oC0.xyzw, c1.xxxx	//   oC0 = (0, 0, 0, 0);
+// endif				// }
