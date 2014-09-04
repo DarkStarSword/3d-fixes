@@ -46,6 +46,8 @@
     def c5, 0.5, 2, -1, 1
     def c6, 0.125, 0.00079999998, -7.99919987, 0.0833333358
     def c7, 0.699999988, 0, 0, 0
+  def c200, 0.5, 0, 0.0625, 0
+  dcl_2d s13
     dcl_texcoord v0.xyw
     dcl_2d s0
     dcl_2d s1
@@ -58,7 +60,12 @@
       mov r0.yz, v0.xyww
     else
       mov r0.xyz, v0.xyww
-    endif
+        endif
+		   mov r16.xyw, v0
+    texldl r11, c200.z, s13
+    add r11.y, r16.w, -r11.y
+    mul r11.x, r11.x, r11.y
+    add r16.x, r16.x, r11.x
     rcp r0.z, r0.z
     mul r0.xy, r0.z, r0
     mad r0.xy, r0, c1, c1.wzzw
@@ -69,17 +76,21 @@
     add r0.x, -r0.x, r0.w
     rcp r0.x, r0.x
     mul r0.x, r0.x, -c2.x
-    rcp r0.y, v0.w
-    mul r1.xy, r0.y, v0
+    rcp r0.y, r16.w
+    mul r1.xy, r0.y, r16
     mul r1.xy, r0.x, r1
     mul r2, r1.y, c15
+  texldl r16, c200.z, s13
+  add r16.y, r0.x, -r16.y
+  mul r16.x, r16.x, r16.y
+  add r1.x, r1.x, -r16.x
     mad r2, c14, r1.x, r2
     mad r2, c16, r0.x, r2
     add r2, r2, c17
     rcp r0.w, r2.w
     mul r1.zw, r0.w, r2.xyxy
     min r3.z, r2.z, c4.w
-    mad r2.zw, v0.xyxy, r0.y, c4.z
+    mad r2.zw, r16.xyxy, r0.y, c4.z
     mul r2.zw, r2, c0.xyxy
     mul r2.zw, r2, c5.x
     texld r4, r2.zwzw, s3
@@ -188,3 +199,5 @@
     mad_pp oC0, r1.x, r2, r0
 
 // approximately 162 instruction slots used (44 texture, 118 arithmetic)
+
+

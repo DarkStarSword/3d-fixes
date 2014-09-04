@@ -33,6 +33,8 @@
 
     ps_3_0
     def c4, 0.0625, 0, 1, 0.999000013
+  def c200, 0.5, 0, 0.0625, 0
+  dcl_2d s13
     dcl_texcoord v0.xyw
     dcl_2d s0
     dcl_2d s1
@@ -45,8 +47,13 @@
       mov r1.yz, v0.xyww
     else
       mov r1.xyz, c4.y
-    endif
-    cmp r0.xyz, -r0.x, v0.xyww, r1
+        endif
+		   mov r16.xyw, v0
+    texldl r11, c200.z, s13
+    add r11.y, r16.w, -r11.y
+    mul r11.x, r11.x, r11.y
+    add r16.x, r16.x, r11.x
+    cmp r0.xyz, -r0.x, r16.xyww, r1
     rcp r0.z, r0.z
     mul r0.xy, r0.z, r0
     mad r0.xy, r0, c1, c1.wzzw
@@ -57,10 +64,14 @@
     add r0.x, -r0.x, r0.w
     rcp r0.x, r0.x
     mul r0.x, r0.x, -c2.x
-    rcp r0.y, v0.w
-    mul r0.yw, r0.y, v0.xxzy
+    rcp r0.y, r16.w
+    mul r0.yw, r0.y, r16.xxzy
     mul r0.yw, r0.x, r0
     mul r1, r0.w, c17
+  texldl r16, c200.z, s13
+  add r16.y, r0.x, -r16.y
+  mul r16.x, r16.x, r16.y
+  add r0.y, r0.y, -r16.x
     mad r1, c16, r0.y, r1
     mad r1, c18, r0.x, r1
     add r1, r1, c19
@@ -191,3 +202,5 @@
     rcp_pp oC0, r0.x
 
 // approximately 155 instruction slots used (19 texture, 136 arithmetic)
+
+

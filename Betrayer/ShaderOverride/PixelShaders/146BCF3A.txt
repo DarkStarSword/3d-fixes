@@ -23,6 +23,8 @@
 
     ps_3_0
     def c3, 0, 1, 0.0500000007, 0
+						def c50, 0.5, 0, 0, 0
+	dcl vPos.xy
     dcl_texcoord4 v0
     dcl_texcoord5 v1.xyw
     dcl_color v2
@@ -33,7 +35,13 @@
     mul r0.xy, r0.x, v1
     mad r0.xy, r0, c1, c1.wzzw
     mov r0.zw, c3.x
-    texldl r0, r0, s0
+							 mov r11.xy, vPos.xy
+	rcp r11.z, c210.x
+	rcp r11.w, c210.y
+	mul r11.xy, r11.xy, r11.zw
+	mul r11.zw, r11.zw, c50.xx
+    add	r12.xy, r11.xy, r11.zw
+    texldl r0, r12, s0
     mov r0.y, c3.y
     add r0.x, r0.y, -c2.y
     add r0.x, -r0.x, r0.w

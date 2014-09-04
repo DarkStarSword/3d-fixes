@@ -34,6 +34,8 @@
     ps_3_0
     def c3, 0.5, 0, 5, 1
     def c4, 0.0329999998, 0, 0, 0
+					def c50, 0.5, 0, 0, 0
+	dcl vPos.xy
     dcl_texcoord v0.xy
     dcl_texcoord1 v1
     dcl_texcoord2 v2.xy
@@ -59,7 +61,13 @@
     texld r1, r1, s1
     mad r2.xy, r0.zwzw, c1, c1.wzzw
     mov r2.zw, c3.y
-    texldl r2, r2, s0
+						 mov r11.xy, vPos.xy
+	rcp r11.z, c210.x
+	rcp r11.w, c210.y
+	mul r11.xy, r11.xy, r11.zw
+	mul r11.zw, r11.zw, c50.xx
+    add	r12.xy, r11.xy, r11.zw
+    texldl r2, r12, s0
     mov r0.w, c3.w
     add r0.y, r0.w, -c2.y
     add r0.y, -r0.y, r2.w
