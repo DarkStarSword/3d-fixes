@@ -4,6 +4,11 @@
     def c10, 0.00392156979, 1, 0.0625, 0
     def c11, 2, -1, 0, 0
     dcl_texcoord v0.xy
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r10, c220.z, s13		// r10.x = separation, r10.y = convergence
+
     texld r3, v0, s1
     mad_pp r3.z, r3.w, c10.x, r3
     mul r0.xy, v0, c0
@@ -105,4 +110,9 @@
     rcp_pp r0.y, r0.y
     mul_pp oC0, r0.x, r0.y
 
-// approximately 100 instruction slots used (10 texture, 90 arithmetic)
+// Optionally disable broken shadows. Need to output (1,1,1,1) as 0 will put
+// the whole scene into darkness.
+mov r13.x, c200.x
+if_eq r13.x, c220.x
+	mov oC0, c220.yyyy
+endif
