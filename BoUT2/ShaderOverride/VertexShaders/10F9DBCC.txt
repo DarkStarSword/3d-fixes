@@ -1,3 +1,4 @@
+// Subtitle vertex shader (plus a bunch of other things)
     vs_3_0
     dcl_color o8
 dcl_texcoord o0.xy
@@ -5,12 +6,22 @@ dcl_position o10
 dcl_position v0
     dcl_color v1
     dcl_texcoord v2
+
+def c220, 0.75, 1, 0.0625, 0
+dcl_2d s0
+
     mov o8, v1
     mov o0.xy, v2
-    dp4 o10.w, v0, c3
-    dp4 o10.z, v0, c2
-    dp4 o10.y, v0, c1
-    dp4 o10.x, v0, c0
+    dp4 r10.w, v0, c3
+    dp4 r10.z, v0, c2
+    dp4 r10.y, v0, c1
+    dp4 r10.x, v0, c0
 
-// approximately 6 instruction slots used
+mov r15.x, c200.z
+if_eq r15.x, c220.y
+texldl r13, c220.z, s0
+mul r13.x, c220.x, r13.x
+add r10.x, r10.x, r13.x
+endif
 
+mov o10, r10
