@@ -7,12 +7,20 @@ dcl_position o10
 dcl_position v0
     dcl_color v1
     dcl_texcoord v2
+
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
+
     mul o8, v1, c5
     mad o0.xy, v2, c4, c4.zwzw
-    dp4 o10.w, v0, c3
-    dp4 o10.z, v0, c2
-    dp4 o10.y, v0, c1
-    dp4 o10.x, v0, c0
 
-// approximately 6 instruction slots used
+    dp4 r10.w, v0, c3
+    dp4 r10.z, v0, c2
+    dp4 r10.y, v0, c1
+    dp4 r10.x, v0, c0
 
+texldl r1, c220.z, s0
+mul r1.x, r1.x, c200.z // r1.x = Separation * Const3
+add r10.x, r10.x, r1.x // Adjust X
+
+mov o10, r10
