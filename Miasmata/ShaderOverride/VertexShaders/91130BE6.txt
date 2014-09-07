@@ -49,6 +49,10 @@
     dcl_texcoord2 o3
     dcl_texcoord3 o4
     dcl_texcoord4 o5.x
+
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
+
     mad o2.xy, v0, c7.x, c7.y
     add r0.z, c5.x, v0.z
     mov r0.xyw, v0
@@ -56,12 +60,18 @@
     dp4 r1.y, r0, c1
     dp4 r1.z, r0, c2
     dp4 r1.w, r0, c3
+    mov o0, r1 // Moved this up - r1 is being manipulated below and need to stereoize it first
+
+texldl r3, c220.z, s0
+add r3.y, r1.w, -r3.y
+mul r3.x, r3.x, r3.y
+add r1.x, r1.x, r3.x
+
     mov o1, r0
     mov r0.zw, c7
     mad o4, r1, c4, r0.zzww
     mul r0, r1.w, c6
     mad o3, r1, c8.xyzz, r0
-    mov o0, r1
     mov o5.x, v1.x
 
 // approximately 14 instruction slots used
