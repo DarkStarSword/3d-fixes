@@ -31,12 +31,12 @@
 //     c2   = { 0, 0, 0, 0 };
 //
 
-    preshader
-    rcp c15.x, c1.x
-    log r0.x, c0.x
-    mul c16.x, r0.x, (0.693147181)
-    neg r0.x, c2.x
-    add c25.x, r0.x, (1)
+//    preshader
+//    rcp c15.x, c1.x
+//    log r0.x, c0.x
+//    mul c16.x, r0.x, (0.693147181)
+//    neg r0.x, c2.x
+//    add c25.x, r0.x, (1)
 
 // approximately 5 instructions used
 //
@@ -225,6 +225,10 @@
     dcl_2d s3
     dcl_2d s4
     dcl_2d s5
+
+def c220, 0, 0.5, 0.0625, 0
+dcl_2d s13
+
     add r0.xyz, -c36, v0
     dp3 r0.w, r0, r0
     rsq r0.w, r0.w
@@ -417,17 +421,27 @@
     mad r1.x, r1.x, c57.z, -r2.x
     mad r0.w, r0.w, r1.x, r2.x
     mov r1.x, c42.x
-    mad r0.w, r0.w, r1.x, c38.x
+    mad r0.w, r0.w, r1.x, c38.x // light ambient
     dp3 r1.x, r1.yzww, r4
     add r1.x, r1.x, r1.x
     mad r1.xyz, r4, -r1.x, r1.yzww
+    // c26-c28 is refract_xform:
     dp3 r2.x, r1, c26
     dp3 r2.y, r1, c27
     dp3 r1.x, r1, c28
     add r1.x, r1.x, r1.x
     rcp r1.x, r1.x
     mad r1.xy, r2, r1.x, c53.z
-    texld r1, r1, s0
+
+// Adjust the reflection location being sampled by 1/2 separation
+// Mostly works, but is not perfect - removing ripples shows reflection appears
+// to hover on the surface. Cranking the convergence up amplifies this affect:
+texldl r13, c220.z, s13
+mul r13.x, r13.x, c220.y
+add r1.x, r1.x, r13.x
+
+    texld r1, r1, s0 // reflection sampler
+
     mad r1.xyz, r0, -r0.w, r1
     mul r0.xyz, r0.w, r0
     mul r0.w, r2.z, r2.z
@@ -455,4 +469,8 @@
     exp r0.w, r0.w
     mad oC0.xyz, r0.w, r0, c40
 
-// approximately 231 instruction slots used (16 texture, 215 arithmetic)
+// mov oC0.xyzw, c55.yyyy // water is black
+// mov oC0.x, c55.y // water is turquoise
+// mov oC0.y, c55.y // water is magenta
+// mov oC0.z, c55.y // water is yellow
+// mov oC0.w, c55.y // distant water became brighter
