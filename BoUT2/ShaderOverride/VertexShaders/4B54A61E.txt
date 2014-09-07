@@ -1,3 +1,5 @@
+// Fog vertex shader
+
     vs_3_0
     def c21, 1, 0.5, 0, 0
     dcl_texcoord1 o1
@@ -8,6 +10,10 @@ dcl_position v0
     dcl_tangent v1
     dcl_normal v2
     dcl_texcoord v3
+
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
+
     mov r1.w, c21.x
     mov r1.xyz, c13
     dp4 r0.z, r1, c10
@@ -34,9 +40,17 @@ dcl_position v0
     mov r0.w, r1
     dp4 r0.x, v0, c4
     dp4 r0.y, v0, c5
-    mul r1.xyz, r0.xyww, c21.y
+    // mul r1.xyz, r0.xyww, c21.y // Using output position, move this down...
     dp4 r0.z, v0, c6
     mov o10, r0
+
+texldl r13, c220.z, s0
+add r13.y, r0.w, -r13.y
+mul r13.x, r13.x, r13.y
+add r0.x, r0.x, r13.x
+
+    mul r1.xyz, r0.xyww, c21.y // ...to here so it gets the adjusted r0
+
     mul r1.y, r1, c14.x
     mov r0.xy, c20
     mad r0.zw, v3.xyxy, c17.xyxy, c17
@@ -48,4 +62,3 @@ dcl_position v0
     mov o2.w, r1
 
 // approximately 38 instruction slots used
-

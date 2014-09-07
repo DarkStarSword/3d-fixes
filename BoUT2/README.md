@@ -6,6 +6,7 @@ Fixed
 - Disables broken shadows (can be toggled on and off with 7)
 - Can push subtitles to 75% depth by pressing 9, though this causes text in the
   menus to move to the right.
+- Ghosting on fog fixed
 
 Known Issues
 ------------
