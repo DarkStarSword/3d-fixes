@@ -41,7 +41,7 @@ up with this directory structure:
 
 Notes
 -----
-This is an early access episodic game and is likley to recieve numerous
+This is an early access episodic game and is likely to receive numerous
 updates which could break these fixes (update 2 already broke one). Be sure to
 check the Helix blog for updates and if you find that one of my fixes no longer
 works please let me know.
