@@ -3,34 +3,56 @@ The Book of Unwritten Tales 2
 
 Fixed
 -----
-- Disables broken shadows (can be toggled on and off with 7)
-- Can push subtitles to 75% depth by pressing 9, though this causes text in the
-  menus to move to the right.
-- Ghosting on fog fixed
+- Disables broken shadows (can be toggled on and off with U)
+- Can adjust depth of in-game text and icons (item descriptions, subtitles,
+  inventory, etc) by pressing keys on the number row. `~ will set screen depth,
+  1-9 will set depth to 10%-90% and 0 sets depth to 100% separation.
+- Halo on fog fixed
 
 Known Issues
 ------------
-- Adjusting separation with Ctrl+F3/F4 causes game to crash
+- Adjusting separation with Ctrl+F3/F4 causes game to crash, so I recommend you
+  have your desired separation set ahead of time.
 - Adjusting convergence with Ctrl+F5/F6 causes further mouse clicks to be
   ignored, requiring the game to be restarted to make any meaningful progress.
-- Mouse cursor is stuck at screen depth and I can find neither a vertex nor
-  pixel shader to adjust it.
-- Reflections are broken
+  I suggest adjusting convergence while looking at the menu until the book just
+  pops out of the screen, then restart the game and hopefully you won't need to
+  adjust it further.
+- Mouse cursor depth cannot be adjusted as the game uses a hardware cursor.
+- The reflections in the mirror in Ivo's bedroom are broken.
+- There's a few scenes in the game where the background is little more than a
+  pre-rendered texture drawn over extremely simplified 3D geometry that doesn't
+  really look very convincing in 3D. Fortunately there are only a few of these
+  (mostly when talking to other characters) and outside of them the 3D looks
+  fantastic!
 
+Installation
+------------
+Extract the contents of 3Dfix-BoUT2.zip to the game directory. You should end
+up with this directory structure:
+
+...\The Book of Unwritten Tales 2\Windows\BouT2_Data\
+...\The Book of Unwritten Tales 2\Windows\BouT2.exe
+...\The Book of Unwritten Tales 2\Windows\steam_api.dll
+...\The Book of Unwritten Tales 2\Windows\d3d9.dll	(new)
+...\The Book of Unwritten Tales 2\Data\
+...\The Book of Unwritten Tales 2\ShaderOverride\	(new)
+...\The Book of Unwritten Tales 2\DX9Settings.ini	(new)
 
 Notes
 -----
-This game changes it's working directory after launch, which complicates
-matters in terms of what goes where.
+This is an early access episodic game and is likley to recieve numerous
+updates which could break these fixes (update 2 already broke one). Be sure to
+check the Helix blog for updates and if you find that one of my fixes no longer
+works please let me know.
 
-DX9settings.ini and ShaderOverrides need to go under here:
+Interested in learning to fix 3D Games?
+---------------------------------------
+Come join us in bo3b's school for shaderhackers:
+https://forums.geforce.com/default/topic/766890/3d-vision/bo3bs-school-for-shaderhackers
 
-    The Book of Unwritten Tales 2
+If you are interested in seeing what changes I made to fix this and other
+games, I'd recommend checking out my 3d-fixes github repository - you can look
+through the commit history to see exactly what I changed and why:
 
-d3d9.dll goes here:
-
-    The Book of Unwritten Tales 2\Windows
-
-The debug dll may dump shaders under Windows\Dumps or just Dumps depending on
-how you launched the game. It might also put the AllShaders in a different
-location to the SingleShaders.
+https://github.com/DarkStarSword/3d-fixes
