@@ -31,13 +31,13 @@ Installation
 Extract the contents of 3Dfix-BoUT2.zip to the game directory. You should end
 up with this directory structure:
 
-...\The Book of Unwritten Tales 2\Windows\BouT2_Data\
-...\The Book of Unwritten Tales 2\Windows\BouT2.exe
-...\The Book of Unwritten Tales 2\Windows\steam_api.dll
-...\The Book of Unwritten Tales 2\Windows\d3d9.dll	(new)
-...\The Book of Unwritten Tales 2\Data\
-...\The Book of Unwritten Tales 2\ShaderOverride\	(new)
-...\The Book of Unwritten Tales 2\DX9Settings.ini	(new)
+    ...\The Book of Unwritten Tales 2\Windows\BouT2_Data\
+    ...\The Book of Unwritten Tales 2\Windows\BouT2.exe
+    ...\The Book of Unwritten Tales 2\Windows\steam_api.dll
+    ...\The Book of Unwritten Tales 2\Windows\d3d9.dll	(new)
+    ...\The Book of Unwritten Tales 2\Data\
+    ...\The Book of Unwritten Tales 2\ShaderOverride\	(new)
+    ...\The Book of Unwritten Tales 2\DX9Settings.ini	(new)
 
 Notes
 -----
@@ -49,6 +49,7 @@ works please let me know.
 Interested in learning to fix 3D Games?
 ---------------------------------------
 Come join us in bo3b's school for shaderhackers:
+
 https://forums.geforce.com/default/topic/766890/3d-vision/bo3bs-school-for-shaderhackers
 
 If you are interested in seeing what changes I made to fix this and other
