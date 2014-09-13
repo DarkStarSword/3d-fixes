@@ -1,4 +1,5 @@
 // Shadow in Wilbur's room (updated 20140912)
+// Looks like this is a tweaked version of D83EF77C
 
     ps_3_0
     dcl_2d s0
@@ -10,6 +11,9 @@
     dcl_texcoord3 v3.xyz
     dcl_texcoord4 v4
     dcl_texcoord5 v5.xy
+
+def c220, 0, 1, 0.0625, 0
+
     texld r1, v5, s0
     add r0.xyz, v4, -c1
     add r2.xyz, v4, -c4
@@ -54,4 +58,9 @@
     mov r0.y, c9
     mov_pp oC0, r0
 
-// approximately 43 instruction slots used (2 texture, 41 arithmetic)
+// Optionally disable broken shadows. Need to output (1,1,1,1) as 0 will put
+// the whole scene into darkness.
+mov r13.x, c200.x
+if_eq r13.x, c220.x
+mov oC0, c220.yyyy
+endif
