@@ -16,6 +16,13 @@
     dcl_texcoord6 o7
     def c25, 0.159154907, 0.5, 6.28318501, -3.14159298
     def c26, 0, 0, 0, 0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0 // Load stereo settings
+mov r30, c200 // r30 = Const1,2,3,4
+
     mov r1.w, c26.x
     mov r1.xyz, v2
     dp4 r0.z, r1, c10
@@ -55,26 +62,47 @@
     mad r1.y, r0.x, c25, v0
     mov r1.xzw, v0
     dp4 r2.w, r1, c7
-    mul o5.xyz, r0.z, r5
+    mul o5.xyz, r0.z, r5 // Reflection of sun (right place, but highlights in each eye look slightly different)
     dp4 r0.x, r1, c4
     mov r0.w, r2
     dp4 r0.y, r1, c5
     dp4 r0.z, r1, c6
     mul r4.xyz, r0.xyww, c25.y
     mul r4.y, r4, c17.x
+
     mov o0, r0
-    mov o9, r0.z
-    mov o6, r0
+// Allow water to be disabled to see through it:
+if_eq r30.y, c220.y
+	mov o0, c220.xxxx
+endif
+
+    mov o9, r0.z // Distant haze
+    mov r6, r0 // near water went wacky - suspect
+
+// Fix refraction:
+add r31.w, r6.w, -r31.y
+mul r31.w, r31.x, r31.w
+add r6.x, r6.x, r31.w
+mov o6, r6
+
     dp4 r0.x, r1, c2
-    mad o7.xy, r4.z, c18.zwzw, r4
-    mov o4.xyz, r3
-    mov o1, v3
+    mad r7.xy, r4.z, c18.zwzw, r4 // mid - distant blue texture
+    mov o4.xyz, r3 // surface shimmer
+    mov o1, v3 // surface
+    // surface highlight:
     dp4 o2.w, r1, c11
     dp4 o2.z, r1, c10
     dp4 o2.y, r1, c9
     dp4 o2.x, r1, c8
-    mov o7.z, -r0.x
-    mov o7.w, r2
-    mov o3.xyz, r2
+    // water turned opaque:
+    mov r7.z, -r0.x
+    mov r7.w, r2
 
-// approximately 67 instruction slots used
+// Fix water edge:
+add r31.w, r7.w, -r31.y
+mul r31.w, r31.x, r31.w
+mul r31.w, r31.w, c220.w
+add r7.x, r7.x, r31.w
+mov o7, r7
+
+    mov o3.xyz, r2 // weird - surface texture I think
