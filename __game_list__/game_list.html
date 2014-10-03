@@ -8,10 +8,11 @@
 <br/>
 <h3>Guides, Tools, etc.</h3>
 <div id="guides_content"><em>Loading...</em></div>
-<small>Posts labelled "guide" or starting with "GUIDE:" or "HOW TO" are automatically added to this list.</small>
+<small>Posts labelled "guide" are automatically added to this list.</small>
 <br/><br/>
 <h3>Misc Posts</h3>
 <div id="misc_posts_content"><em>Loading...</em></div>
+<small>Posts labelled "misc" are automatically added to this list.</small>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script><!--
@@ -23,25 +24,6 @@ var hidden_posts = [
   "2013/07/installation-known-issues.html",
   "2013/07/game-list-full.html",
   "2013/10/game-list-automatically-updated.html",
-];
-
-var guide_posts = [
-  // see also: heuristics in is_guide()
-  "2012/11/dx9-11-custom-convergencedepth-bindings.html",
-  '2013/05/vs11vs20-vs30-converter.html',
-  '2013/09/automatic-situational-depthconvergence.html',
-  '2013/11/non-sli-instructions.html',
-  '2012/03/dlls-update.html',
-  '2013/02/chiris-force-certain-resolutionhertz.html',
-  '2012/08/force-certain-resolutions-refresh-rates.html',
-  '2014/01/learning-how-to-fix-games.html'
-];
-
-var misc_posts = [
-  "2014/07/decline-of-3d-vision.html",
-  "2014/03/petition-nvidia-driver-later-then-33321.html",
-  "2014/09/petition-please-allow-mod-support-for.html",
-  "2014/06/request-3d-vision-support-alien.html",
 ];
 
 var title_overrides = {
@@ -82,12 +64,12 @@ function get_path(url)
 
 function is_guide(post)
 {
-  if (jQuery.inArray("guide", post.labels) != -1)
-    return true;
-  if (jQuery.inArray(post.path, guide_posts) != -1)
-    return true;
-  var t = post.title.slice(0, 6).toUpperCase();
-  return (t == 'GUIDE:' || t == 'HOW TO');
+  return (jQuery.inArray("guide", post.labels) != -1);
+}
+
+function is_misc(post)
+{
+  return (jQuery.inArray("misc", post.labels) != -1);
 }
 
 function post_title(post)
@@ -127,7 +109,7 @@ function handle_response(response)
 
     if (is_guide(post))
       guides.push(post);
-    else if (jQuery.inArray(post.path, misc_posts) != -1)
+    else if (is_misc(post))
       misc.push(post);
     else {
       post.clean_title = post_title(post);
