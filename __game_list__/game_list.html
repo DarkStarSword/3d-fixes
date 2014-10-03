@@ -1,0 +1,185 @@
+<p><i>This is a new version of the game list that updates automatically. Please report any issues to DarkStarSword.</i></p>
+
+<noscript>
+<p><h1>This page requires javascript to display the game list!</h1></p>
+</noscript>
+
+<div id="gamelist_content"><em>Loading...</em></div>
+<br/>
+<h3>Guides, Tools, etc.</h3>
+<div id="guides_content"><em>Loading...</em></div>
+<small>Posts labelled "guide" or starting with "GUIDE:" or "HOW TO" are automatically added to this list.</small>
+<br/><br/>
+<h3>Misc Posts</h3>
+<div id="misc_posts_content"><em>Loading...</em></div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script><!--
+// @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
+// HelixMod blog game list script copyright (C) 2014 Ian Munsie <darkstarsword@gmail.com>
+
+var hidden_posts = [
+  "2010/12/how-to-guides.html",
+  "2013/07/installation-known-issues.html",
+  "2013/07/game-list-full.html",
+  "2013/10/game-list-automatically-updated.html",
+];
+
+var guide_posts = [
+  // see also: heuristics in is_guide()
+  "2012/11/dx9-11-custom-convergencedepth-bindings.html",
+  '2013/05/vs11vs20-vs30-converter.html',
+  '2013/09/automatic-situational-depthconvergence.html',
+  '2013/11/non-sli-instructions.html',
+  '2012/03/dlls-update.html',
+  '2013/02/chiris-force-certain-resolutionhertz.html',
+  '2012/08/force-certain-resolutions-refresh-rates.html',
+  '2014/01/learning-how-to-fix-games.html'
+];
+
+var misc_posts = [
+  "2014/07/decline-of-3d-vision.html",
+  "2014/03/petition-nvidia-driver-later-then-33321.html",
+  "2014/09/petition-please-allow-mod-support-for.html",
+  "2014/06/request-3d-vision-support-alien.html",
+];
+
+var title_overrides = {
+  '2013/05/vs11vs20-vs30-converter.html': 'VS_1_1/VS_2_0 -> VS_3_0 Converter',
+};
+
+var title_translations = [
+  [ /[\(\[]?D(irect)?X ?(9|10|11)( only)?[\)\]]?/gi, "[DX$2]" ],
+  [ /[ \:-]*3D( nVidia)?( Vision)? (Fix|Patch)/gi , "" ],
+  [ /[ \:-]*[\(\[]?(PATCH )?UPD(ATE|\.)D?( \d+\/\d+)?( BETA)?(.*PATCH)?( v\d+\..*)?[\)\]]?$/gi, "" ],
+  [ /[ \:-]*[\(\[]?(NEW|FINAL) (VERSION|PATCH)[\)\]]?/i, "" ],
+  [ /[\(\[]?(patch )?complete[\)\]]?/i, ""],
+  [ /[\[ ]BY .*$/i, "" ],
+  [ / - FIX$/i, "" ],
+  [ /: \*\*\* 64bit/, "" ],
+  [ /\.$/, "" ],
+  [ /=?Helix( Update)?=?$/, "" ],
+];
+
+var equivalent_titles = [
+  [ /Shogun 2 Total War/i, "Total War: Shogun 2" ],
+  [ /T(he )?E(lder )?S(crolls )?V: Skyrim.*/i, "The Elder Scrolls V: Skyrim" ],
+  [ /Darksiders (II|2)( - Alternative)?/i, "Darksiders II" ],
+  [ /Dead Space 1/i, "Dead Space" ],
+  [ /I Am Alive( \(Alternative\))?/i, "I Am Alive" ],
+  [ /Kerpal Space Station/, "Kerbal Space Program" ],
+  [ /Mass Effect (\d+) .*/i, "Mass Effect $1" ],
+  [ /SERIOUS SAM 3: BFE .*/, "Serious Sam 3: BFE" ],
+  [ /Splinter Cell Conviction/, "Splinter Cell: Conviction" ],
+];
+
+function get_path(url)
+{
+  var a = document.createElement('a');
+  a.href = url;
+  return a.pathname.replace(/^\/?/, ""); // Workaround IE bug
+}
+
+function is_guide(post)
+{
+  if (jQuery.inArray("guide", post.labels) != -1)
+    return true;
+  if (jQuery.inArray(post.path, guide_posts) != -1)
+    return true;
+  var t = post.title.slice(0, 6).toUpperCase();
+  return (t == 'GUIDE:' || t == 'HOW TO');
+}
+
+function post_title(post)
+{
+  if (post.path in title_overrides)
+    return title_overrides[post.path];
+  var title = post.title;
+  for (i in title_translations) {
+    var t = title_translations[i];
+    title = title.replace(t[0], t[1]);
+  }
+  return title;
+}
+
+function title_game(title)
+{
+  for (i in equivalent_titles) {
+    var t = equivalent_titles[i];
+    title = title.replace(t[0], t[1]);
+  }
+  return title;
+}
+
+function handle_response(response)
+{
+  var games = {};
+  var games_list = [];
+  var guides = [];
+  var misc = [];
+
+  for (var idx in response.items) {
+    var post = response.items[idx];
+    post.path = get_path(post.url);
+
+    if (jQuery.inArray(post.path, hidden_posts) != -1)
+      continue;
+
+    if (is_guide(post))
+      guides.push(post);
+    else if (jQuery.inArray(post.path, misc_posts) != -1)
+      misc.push(post);
+    else {
+      post.clean_title = post_title(post);
+      var game_title = title_game(post.clean_title).toLowerCase();
+      if (game_title in games) {
+        games[game_title].push(post);
+      } else {
+        games[game_title] = [post];
+        games_list.push(game_title);
+      }
+    }
+  }
+
+  var gamelist_elem = document.getElementById("gamelist_content");
+  gamelist_elem.innerHTML = "";
+  games_list = games_list.sort();
+  for (var idx in games_list) {
+    title = games_list[idx];
+    if (games[title].length == 1) {
+      post = games[title][0];
+      gamelist_elem.innerHTML += "<a href='" + post.url + "'>" + post.clean_title + "</a><br/>";
+    } else {
+      gamelist_elem.innerHTML += "<a href='" + games[title][0].url + "'>" + title_game(games[title][0].clean_title) + "</a>:<br/>";
+      for (j in games[title]) {
+        post = games[title][j];
+        var date = new Date(post.published);
+        gamelist_elem.innerHTML += "&nbsp;&nbsp;" + date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post.title + "</a><br/>";
+      }
+    }
+  }
+
+  var guides_elem = document.getElementById("guides_content");
+  guides_elem.innerHTML = "";
+  for (var idx in guides) {
+    var post = guides[idx];
+    var date = new Date(post.published);
+    guides_elem.innerHTML += date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post_title(post) + "</a><br/>";
+  }
+
+  var misc_elem = document.getElementById("misc_posts_content");
+  misc_elem.innerHTML = "";
+  for (var idx in misc) {
+    var post = misc[idx];
+    var date = new Date(post.published);
+    misc_elem.innerHTML += date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post_title(post) + "</a><br/>";
+  }
+
+  setTimeout(function() {
+    $(".blogger-clickTrap").remove(); /* So links work while previewing page */
+  }, 500);
+}
+// @license end
+//--></script>
+<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)&orderBy=published&maxResults=1000000000&callback=handle_response&key=GET_YOUR_OWN_API_KEY"></script>
+<!-- vi:se et sw=2 ts=2 ai:-->
