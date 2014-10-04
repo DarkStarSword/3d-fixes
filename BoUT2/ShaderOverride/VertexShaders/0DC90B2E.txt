@@ -8,7 +8,7 @@ dcl_position v0
     dcl_color v1
     dcl_texcoord v2
 
-def c220, 0, 0, 0.0625, 0
+def c220, 0, 1, 0.0625, 0
 dcl_2d s0
 
     mul o8, v1, c5
@@ -19,8 +19,13 @@ dcl_2d s0
     dp4 r10.y, v0, c1
     dp4 r10.x, v0, c0
 
+mov r13.x, c251.x	// Load TexCounterReg
+if_eq r13.x, c220.y	// if (TexCounterReg == 1) /* NOT defined */
+
 texldl r1, c220.z, s0
 mul r1.x, r1.x, c200.z // r1.x = Separation * Const3
 add r10.x, r10.x, r1.x // Adjust X
+
+endif
 
 mov o10, r10
