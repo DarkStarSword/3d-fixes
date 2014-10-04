@@ -7,7 +7,7 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
-texldl r10, c220.z, s13		// r10.x = separation, r10.y = convergence
+texldl r31, c220.z, s13		// r31.x = separation, r31.y = convergence
 
     texld r3, v0, s1
     mad_pp r3.z, r3.w, c10.x, r3
@@ -110,9 +110,8 @@ texldl r10, c220.z, s13		// r10.x = separation, r10.y = convergence
     rcp_pp r0.y, r0.y
     mul_pp oC0, r0.x, r0.y
 
-// Optionally disable broken shadows. Need to output (1,1,1,1) as 0 will put
-// the whole scene into darkness.
-mov r13.x, c200.x
-if_eq r13.x, c220.x
+// Disable broken shadows when 3D is on (separation != 0). Need to output
+// (1,1,1,1) as 0 will put the whole scene into darkness.
+if_ne r31.x, c220.x
 	mov oC0, c220.yyyy
 endif
