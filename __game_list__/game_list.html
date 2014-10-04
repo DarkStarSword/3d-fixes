@@ -102,6 +102,21 @@ function post_extra(post)
   return "";
 }
 
+function add_link(parent, prefix, url, title, text, postfix)
+{
+  if (prefix)
+    parent.innerHTML += prefix + " - ";
+  var a = document.createElement('a');
+  a.href = url;
+  if (title)
+    a.title = title;
+  a.appendChild(document.createTextNode(text));
+  parent.appendChild(a);
+  if (postfix)
+    parent.innerHTML += postfix;
+  parent.appendChild(document.createElement('br'));
+}
+
 function handle_response(response)
 {
   var games = {};
@@ -139,13 +154,13 @@ function handle_response(response)
     title = games_list[idx];
     if (games[title].length == 1) {
       post = games[title][0];
-      gamelist_elem.innerHTML += '<a href="' + post.url + '" title="' + post.title + '">' + post.clean_title + '</a>' + post_extra(post) + '<br/>';
+      add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post));
     } else {
-      gamelist_elem.innerHTML += "<a href='" + games[title][0].url + "'>" + title_game(games[title][0].clean_title) + "</a>:<br/>";
+      add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":");
       for (j in games[title]) {
         post = games[title][j];
         var date = new Date(post.published);
-        gamelist_elem.innerHTML += "&nbsp;&nbsp;" + date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post.title + "</a>" + post_extra(post) + "<br/>";
+        add_link(gamelist_elem, "&nbsp;&nbsp;" + date.toLocaleDateString(), post.url, null, post.title, post_extra(post));
       }
     }
   }
@@ -155,7 +170,7 @@ function handle_response(response)
   for (var idx in guides) {
     var post = guides[idx];
     var date = new Date(post.published);
-    guides_elem.innerHTML += date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post_title(post) + "</a><br/>";
+    add_link(guides_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
   }
 
   var misc_elem = document.getElementById("misc_posts_content");
@@ -163,7 +178,7 @@ function handle_response(response)
   for (var idx in misc) {
     var post = misc[idx];
     var date = new Date(post.published);
-    misc_elem.innerHTML += date.toLocaleDateString() + " - <a href='" + post.url + "'>" + post_title(post) + "</a><br/>";
+    add_link(misc_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
   }
 
   setTimeout(function() {
