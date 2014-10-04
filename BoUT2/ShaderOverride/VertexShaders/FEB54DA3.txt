@@ -11,6 +11,11 @@ dcl_position o10
 dcl_texcoord o0
 dcl_texcoord1 o1
 
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+texldl r31, c220.z, s0
+mov r30, c200
+
     mov r1.w, c18.x
     mov r1.xyz, c12
     dp4 r0.z, r1, c10
@@ -42,9 +47,17 @@ dcl_texcoord1 o1
     dp4 r0.z, v0, c6
     mov o10, r0
     dp4 r0.x, v0, c2
-    mad o1.xy, r1.z, c14.zwzw, r1
+    mad r21.xy, r1.z, c14.zwzw, r1
     mov o0.y, v3
-    mov o1.z, -r0.x
-    mov o1.w, r1
+    mov r21.z, -r0.x
+    mov r21.w, r1
 
-// approximately 35 instruction slots used
+// Correct the mask applied to the light beam
+if_eq r30.y, c220.x
+add r31.w, r21.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w // Divide by 2... not sure why, but this seems to work
+add r21.x, r21.x, r31.w
+endif
+
+mov o1, r21
