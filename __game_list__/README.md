@@ -53,6 +53,12 @@ Guide and Misc Posts
 Add a "guide" or "misc" label to your post in Blogger and it will automatically
 show up under the correct section.
 
+Incomplete Fixes, Disabled Effects, etc.
+----------------------------------------
+To indicate that a game has only been partially fixed by disabling effects or
+is otherwise rated less than excellent, add a "disabled" label to the post.
+This will automatically tag the game with [Disabled Effects] in the list.
+
 Web Developers
 --------------
 If you want to adapt and use the script for your own purposes feel free to do
