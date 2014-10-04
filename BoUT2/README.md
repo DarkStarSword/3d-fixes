@@ -15,7 +15,6 @@ Fixed
   punch minigame in chapter 2. Convergence can still be adjusted manually, but
   beware the issue with the F6 key mentioned below.
 
-
 Known Issues
 ------------
 - Adjusting separation with Ctrl+F3/F4 causes game to crash, so I recommend you
@@ -54,12 +53,11 @@ works please let me know.
 
 Interested in learning to fix 3D Games?
 ---------------------------------------
-Come join us in bo3b's school for shaderhackers:
-
-https://forums.geforce.com/default/topic/766890/3d-vision/bo3bs-school-for-shaderhackers
+Come join us in [bo3b's school for shaderhackers][1]!
 
 If you are interested in seeing what changes I made to fix this and other
-games, I'd recommend checking out my 3d-fixes github repository - you can look
-through the commit history to see exactly what I changed and why:
+games, I'd recommend checking out my [3d-fixes github repository][2] - you can
+look through the commit history to see exactly what I changed and why.
 
-https://github.com/DarkStarSword/3d-fixes
+[1]: https://forums.geforce.com/default/topic/766890/3d-vision/bo3bs-school-for-shaderhackers
+[2]: https://github.com/DarkStarSword/3d-fixes
