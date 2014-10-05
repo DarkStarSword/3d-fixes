@@ -24,13 +24,13 @@ mouse over the link for a few seconds.
 "Nice Game _(UPDATED 10/14)_" --> "Nice Game"
 
 The script can cope with some variations and combinations of these - if you
-want to use a title that is not getting translated properly send me a note and
+want to use a title that is not getting transformed properly send me a note and
 I'll adapt the regular expressions or add an override.
 
 In the event that multiple posts exist for the same game (see below), these
-translations will not be performed on the individual posts to allow the
+transformations will not be performed on the individual posts to allow the
 different posts to more easily be distinguished. The group heading will still
-have the translations applied.
+have the transformations applied.
 
 Grouping Posts for the Same Game
 --------------------------------
