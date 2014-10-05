@@ -10,7 +10,8 @@ Post Titles
 -----------
 In general you should just use the name of the game you are fixing in the
 title, but the script can cope with some additional notes after the title, such
-as the examples below.
+as the examples below. The original title can be displayed by hovering the
+mouse over the link for a few seconds.
 
 "Awesome Game _(DirectX 9 only)_" --> "Awesome Game [DX9]"
 
