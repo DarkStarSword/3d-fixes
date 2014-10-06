@@ -6,11 +6,23 @@ dcl_position o10
 dcl_position v0
     dcl_texcoord v1
     dcl_normal v2
+
+def c220, 0, 3, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
     mov o1.xyz, v2
-    mov o0.xy, v1
+    mov r20.xy, v1
     dp4 o10.w, v0, c3
     dp4 o10.z, v0, c2
     dp4 o10.y, v0, c1
     dp4 o10.x, v0, c0
 
-// approximately 6 instruction slots used
+// Breaks the part of the shadow that was working, leaves the bit that was broken alone
+add r31.w, v1.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r20.x, r20.x, r31.w
+
+mov o0.xy, r20.xy
