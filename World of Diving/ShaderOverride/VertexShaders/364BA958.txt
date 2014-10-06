@@ -8,6 +8,10 @@ dcl_position o10
 dcl_position v0
     dcl_color v1
     dcl_texcoord v2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 r0.w, v0, c3
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
@@ -16,8 +20,12 @@ dcl_position v0
     dp4 o1.y, r0, c9
     dp4 o1.x, r0, c8
     mad o0.xy, v2, c12, c12.zwzw
-    dp4 o10.w, v0, c7
-    dp4 o10.z, v0, c6
-    dp4 o10.y, v0, c5
-    dp4 o10.x, v0, c4
+    dp4 r10.w, v0, c7
+    dp4 r10.z, v0, c6
+    dp4 r10.y, v0, c5
+    dp4 r10.x, v0, c4
 
+texldl r31, c220.z, s0
+mul r31.w, r31.x, c200.z
+add r10.x, r10.x, r31.w
+mov o10, r10
