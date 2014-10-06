@@ -9,6 +9,10 @@
     def c12, 128, 0.219970703, 0.70703125, 0.0709838867
     dcl_texcoord v0
     dcl_texcoord1 v1.xyz
+
+def c220, 0, 1, 0.0625, 0
+dcl_2d s13
+
     rcp r0.x, v0.w
     mul r0.xy, v0, r0.x
     texld r1.x, r0, s1
@@ -67,3 +71,12 @@
     exp_pp oC0.y, -r0.y
     exp_pp oC0.z, -r0.z
     exp_pp oC0.w, -r0.w
+
+// Disable halo when 3D is active (separation != 0) unless enabled via Const2
+texldl r31, c220.z, s13
+mov r30, c200
+if_eq r30.y, c220.x // test Const2
+if_ne r31.x, c220.x // if (separation != 0)
+	mov oC0.xyzw, c220.yyyy
+endif
+endif
