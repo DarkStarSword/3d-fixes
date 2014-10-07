@@ -1,22 +1,27 @@
-Game Fixes
-==========
+Stereoscopic 3D Fixes
+=====================
+This repository tracks any fixes I make to games rendered in stereoscopic 3D
+using nVidia 3D Vision. Helix Mod and 3DMigoto are used to enable the fixes,
+see the [Helix Mod blog][1] for details on  mod itself and final releases of
+these fixes.
 
-Complete Fixes
---------------
+[1]: http://helixmod.blogspot.com.au/
+
+### Complete Fixes ###
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
 - The Book of Unwritten Tales 2 (Early Access - expect updates)
 
-Minor Improvements
-------------------
+### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
 - Miasmata (Partial high quality water fix, no longer need Aion profile)
 
-Work in Progress
-----------------
+### Work in Progress ###
 - World of Diving (Partial shadow fix, fixed or disabled halos)
 
 Misc
 ====
+I also keep a small collection of utilities related to 3D fixes.
+
 ### useful_pre-commit_hook ###
 If you are tracking 3D fixes in git, it is recommended to add this commit hook
 to prevent accidentally committing a shader with a NULL byte so that git will
