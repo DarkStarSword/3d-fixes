@@ -28,7 +28,7 @@ to prevent accidentally committing a shader with a NULL byte so that git will
 treat them as text files and show diffs in the history.
 
 ### float_to_hex.py ###
-Small python scrip to convert floating point numbers to hex and vice versa to
+Small python script to convert floating point numbers to hex and vice versa to
 get values for Helix Mod's DX9Settings.ini
 
 ### \__game_list__ ###
