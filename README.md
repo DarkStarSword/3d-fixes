@@ -43,3 +43,7 @@ cygwin, Linux or another Unix environment.
 Python script to format a markdown document to fit in with the formatting on
 the Helix blog. Strips top level headers and downgrades second level headers to
 underlined paragraphs.
+
+### CustomSettingNames_en-EN.xml ###
+Custom setting names XML file for nVidia Inspector that adds friendly names for
+some of the stereo attributes that I've identified in each profile.
