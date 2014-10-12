@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re
+import sys, os, re, argparse
 
 reg_names = {
     'c': 'Referenced Constants',
@@ -34,7 +34,7 @@ class Token(str):
 #     pattern = re.compile(r'-')
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.]*')
+    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.\[\]]*')
 
 class Comma(Token):
     pattern = re.compile(r',')
@@ -177,13 +177,19 @@ class Register(str):
         (?P<type>[a-zA-Z]+)
         (?P<num>\d*)
         (?P<absolute>_abs)?
+        (?P<address_reg>
+            \[a0
+                (?:\.[abcdxyzw]{1,4})?
+            \]
+        )?
         (?:
             \.
             (?P<swizzle>[abcdxyzw]{1,4})
         )?
+        $
     ''', re.VERBOSE)
     def __new__(cls, s):
-        match = cls.pattern.fullmatch(s)
+        match = cls.pattern.match(s)
         if match is None:
             raise SyntaxError('Expected register, found %s' % s)
         ret = str.__new__(cls, s)
@@ -192,13 +198,14 @@ class Register(str):
         ret.type = match.group('type')
         ret.num = match.group('num')
         ret.reg = ret.type + ret.num
+        ret.address_reg = match.group('address_reg')
         if ret.num:
             ret.num = int(ret.num)
         ret.swizzle = match.group('swizzle')
         return ret
 
     def __lt__(self, other):
-        if self.num is not None:
+        if isinstance(self.num, int) and isinstance(other.num, int):
             return self.num < other.num
         return str.__lt__(self, other)
 
@@ -210,7 +217,13 @@ class Register(str):
 
 class Instruction(SyntaxTree):
     def is_declaration(self):
-        return self.opcode == 'def' or self.opcode.startswith('dcl_') or self.opcode in sections
+        return self.opcode.startswith('dcl_') or self.opcode == 'dcl'
+
+    def is_definition(self):
+        return self.opcode == 'def' or self.opcode == 'defi'
+
+    def is_def_or_dcl(self):
+        return self.is_definition() or self.is_declaration() or self.opcode in sections
 
 class NewInstruction(Instruction):
     def __init__(self, opcode, args):
@@ -247,7 +260,7 @@ def parse_instruction(line):
             token = Register(token)
             tree.args.append(token)
             expect = Comma
-            if tree.opcode.startswith('dcl_'):
+            if tree.is_declaration():
                 expect = type(None)
         elif isinstance(token, Number):
             if expect != Number:
@@ -258,7 +271,7 @@ def parse_instruction(line):
             if expect != Comma:
                 raise SyntaxError("Expected %s, found %s" % (expect.__name__, token))
             expect = Register
-            if tree.opcode == 'def':
+            if tree.is_definition():
                 expect = Number
         else:
             raise SyntaxError("Unexpected token: %s" % token)
@@ -287,7 +300,7 @@ class ShaderBlock(SyntaxTree):
                     t.append(line.pop(0))
                     continue
                 inst = parse_instruction(line)
-                if inst.is_declaration():
+                if inst.is_def_or_dcl():
                     if not in_dcl:
                         raise SyntaxError("Bad shader: Mixed declarations with code: %s" % inst)
                 elif in_dcl:
@@ -310,31 +323,35 @@ class ShaderBlock(SyntaxTree):
                 debug(*args, **kwargs)
 
         self.local_consts = RegSet()
+        self.addressed_regs = RegSet()
         self.declared = RegSet()
         self.reg_types = {}
         for (inst, parent, idx) in self.iter_all():
             if not isinstance(inst, Instruction):
                 continue
-            if inst.opcode == 'def':
+            if inst.is_definition():
                 self.local_consts.add(inst.args[0])
                 continue
-            if inst.opcode.startswith('dcl_'):
+            if inst.is_declaration():
                 self.declared.add(inst.args[0])
                 continue
             for arg in inst.args:
                 if arg.type not in self.reg_types:
                     self.reg_types[arg.type] = RegSet()
                 self.reg_types[arg.type].add(arg)
+                if arg.address_reg:
+                    self.addressed_regs.add(arg)
 
-        self.global_consts = self.unref_consts = RegSet()
+        self.global_consts = self.unref_consts = self.consts = RegSet()
         if 'c' in self.reg_types:
-            self.global_consts = self.reg_types['c'].difference(self.local_consts)
-            self.unref_consts = self.local_consts.difference(self.reg_types['c'])
+            self.consts = self.reg_types['c']
+            self.global_consts = self.consts.difference(self.local_consts)
+            self.unref_consts = self.local_consts.difference(self.consts)
 
         pr_verbose('Local constants: %s' % ', '.join(sorted(self.local_consts)))
         pr_verbose('Global constants: %s' % ', '.join(sorted(self.global_consts)))
         pr_verbose('Unused local constants: %s' % ', '.join(sorted(self.unref_consts)))
-        pr_verbose('self.Declared: %s' % ', '.join(sorted(self.declared)))
+        pr_verbose('Declared: %s' % ', '.join(sorted(self.declared)))
         for (k, v) in self.reg_types.items():
             pr_verbose('%s: %s' % (reg_names.get(k, k), ', '.join(sorted(v))))
 
@@ -369,7 +386,7 @@ class ShaderBlock(SyntaxTree):
         if not discard:
             return
         for (node, parent, idx) in self.iter_all():
-            if isinstance(node, Instruction) and node.opcode == 'def' and node.args[0] in discard:
+            if isinstance(node, Instruction) and node.is_definition() and node.args[0] in discard:
                 parent[idx] = CPPStyleComment('// Discarded %s constant %s' % (reason, node.args[0]))
 
 def fixup_sincos(tree, node, parent, idx):
@@ -379,6 +396,7 @@ def fixup_sincos(tree, node, parent, idx):
 class VS3(ShaderBlock):
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172963(v=vs.85).aspx
         'c': 256,
+        'i': 16,
         'o': 12,
         'r': 32,
         's': 4,
@@ -388,6 +406,7 @@ class VS3(ShaderBlock):
 class PS3(ShaderBlock):
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172920(v=vs.85).aspx
         'c': 224,
+        'i': 16,
         'r': 32,
         's': 16,
         'v': 12,
@@ -469,22 +488,93 @@ def process_sections(tree):
                 raise SyntaxError('Unexpected token while searching for shader type: %s' % token)
     raise SyntaxError('Unable to identify shader type')
 
-def parse_shader(shader):
+def parse_shader(shader, args):
     tokens = tokenise(shader)
-    # for token in tokens:
-    #     debug('%s: %s' % (token.__class__.__name__, repr(str(token))))
+    if args.debug_tokeniser:
+        for token in tokens:
+            debug('%s: %s' % (token.__class__.__name__, repr(str(token))))
     tree = SyntaxTree(tokens)
     tree = SyntaxTree.split_newlines(tree)
     tree = process_sections(tree)
-    if hasattr(tree, 'to_shader_model_3'): # TODO: Add optparse
-        tree.to_shader_model_3()
-    # print(repr(tree), end='') # TODO: Add optparse
-    # tree.analyse_regs(True) # TODO: Add optparse
-    print(tree, end='')
+    return tree
+
+def parse_args():
+    parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
+    parser.add_argument('files', nargs='+',
+            help='List of shader assembly files to process')
+    parser.add_argument('--install', '-i', action='store_true',
+            help='Install shaders in ShaderOverride directory')
+    parser.add_argument('--output', '-o', type=argparse.FileType('w'),
+            help='Save the shader to a file')
+
+    parser.add_argument('--show-regs', '-r', action='store_true',
+            help='Show the registers used in the shader')
+    parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
+            help='Search for unused constants')
+
+    parser.add_argument('--debug-tokeniser', action='store_true',
+            help='Dumps the shader broken up into tokens')
+    parser.add_argument('--debug-syntax-tree', action='store_true',
+            help='Dumps the syntax tree')
+    return parser.parse_args()
 
 def main():
-    for file in sys.argv[1:]:
-        parse_shader(open(file, 'r', newline=None).read())
+    args = parse_args()
+
+    if args.find_free_consts:
+        free_ps_consts = RegSet([ Register('c%d' % c) for c in range(PS3.max_regs['c']) ])
+        free_vs_consts = RegSet([ Register('c%d' % c) for c in range(VS3.max_regs['c']) ])
+        local_ps_consts = free_ps_consts.copy()
+        local_vs_consts = free_vs_consts.copy()
+        address_reg_vs = RegSet()
+        address_reg_ps = RegSet()
+        checked_ps = checked_vs = False
+
+    for file in args.files:
+        debug('parsing %s...' % file)
+        tree = parse_shader(open(file, 'r', newline=None).read(), args)
+        if hasattr(tree, 'to_shader_model_3'):
+            debug('Converting to Shader Model 3...')
+            tree.to_shader_model_3()
+        if args.debug_syntax_tree:
+            debug(repr(tree), end='')
+        if args.show_regs or args.find_free_consts:
+            tree.analyse_regs(args.show_regs)
+            if args.find_free_consts:
+                if isinstance(tree, VS3):
+                    checked_vs = True
+                    local_vs_consts = local_vs_consts.difference(tree.global_consts)
+                    free_vs_consts = free_vs_consts.difference(tree.consts)
+                    address_reg_vs.update(tree.addressed_regs)
+                if isinstance(tree, PS3):
+                    checked_ps = True
+                    local_ps_consts = local_ps_consts.difference(tree.global_consts)
+                    free_ps_consts = free_ps_consts.difference(tree.consts)
+                    address_reg_ps.update(tree.addressed_regs)
+        if args.output:
+            print(tree, end='', file=args.output)
+        if args.install:
+            pass
+
+    if args.find_free_consts:
+        if checked_vs:
+            local_vs_consts = local_vs_consts.difference(free_vs_consts)
+            print('\nFree Vertex Shader Constants:')
+            print(', '.join(sorted(free_vs_consts)))
+            print('\nLocal only Vertex Shader Constants:')
+            print(', '.join(sorted(local_vs_consts)))
+            if address_reg_vs:
+                print('\nCAUTION: Address reg was applied offset from these consts:')
+                print(', '.join(sorted(address_reg_vs)))
+        if checked_ps:
+            local_ps_consts = local_ps_consts.difference(free_ps_consts)
+            print('\nFree Pixel Shader Constants:')
+            print(', '.join(sorted(free_ps_consts)))
+            print('\nLocal only Pixel Shader Constants:')
+            print(', '.join(sorted(local_ps_consts)))
+            if address_reg_ps:
+                print('\nCAUTION: Address reg was applied offset from these consts:')
+                print(', '.join(sorted(address_reg_ps)))
 
 if __name__ == '__main__':
     sys.exit(main())
