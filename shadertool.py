@@ -607,13 +607,17 @@ def install_shader(shader, file, args):
     debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
     print(shader, end='', file=open(dest, 'w'))
 
-def insert_stereo_declarations(tree, x=0, y=1, z=0.0625, w=0.5):
-    stereo_const = tree._find_free_reg('c', VS3)
+def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
+    if hasattr(tree, 'stereo_const'):
+        return tree.stereo_const
+    if args.adjust_multiply:
+        w = args.adjust_multiply
+    tree.stereo_const = tree._find_free_reg('c', VS3)
     tree.insert_decl()
-    tree.insert_decl('def', [stereo_const, x, y, z, w])
+    tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
     tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
     tree.insert_decl()
-    return stereo_const
+    return tree.stereo_const
 
 def append_inserted_by_comment(tree, what):
     tree.add_inst()
@@ -634,7 +638,7 @@ def adjust_ui_depth(tree, depth_reg):
     if not isinstance(tree, VS3):
         raise Exception('UI Depth adjustment must be done on a vertex shader')
 
-    stereo_const = insert_stereo_declarations(tree)
+    stereo_const = insert_stereo_declarations(tree, args)
 
     pos_reg = tree._find_free_reg('r', VS3)
     tmp_reg = tree._find_free_reg('r', VS3)
@@ -686,7 +690,7 @@ def adjust_texcoord(tree, args):
     w = 0.5
     if args.adjust_multiply:
         w = args.adjust_multiply
-    stereo_const = insert_stereo_declarations(tree, w=w)
+    stereo_const = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
@@ -715,7 +719,7 @@ def disable_texcoord(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('Texcoord adjustment must be done on a vertex shader (currently)')
 
-    stereo_const = insert_stereo_declarations(tree)
+    stereo_const = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
@@ -733,7 +737,7 @@ def disable_shader(tree, method, condition):
         raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
     # FUTURE: Maybe search for an existing 0 or 1...
-    stereo_const = insert_stereo_declarations(tree)
+    stereo_const = insert_stereo_declarations(tree, args)
     tmp_reg = tree._find_free_reg('r', VS3)
 
     append_inserted_by_comment(tree, 'Shader disabled by')
