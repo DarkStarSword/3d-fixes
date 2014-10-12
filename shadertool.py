@@ -11,6 +11,9 @@ reg_names = {
     'oC': 'Output Colour',
     'oPos': 'Output Position (shader model < 3)',
     'oT': 'Output Texcoord (shader model < 3)',
+    'oD': 'Output Colour (shader model < 3)',
+    'oFog': 'Output Fog (shader model < 3)',
+    'oPts': 'Output Point Size Register (shader model < 3)',
     't': 'Input Texcoord (shader model < 3)',
 }
 
@@ -418,17 +421,38 @@ class VS2(ShaderBlock):
         self.insert_decl()
         replace_regs = {}
 
-        for reg in sorted(self.reg_types['oT']):
-            opcode = 'dcl_texcoord'
-            if reg.num:
-                opcode = 'dcl_texcoord%d' % reg.num
-            out = self._find_free_reg('o', VS3)
-            self.insert_decl(NewInstruction(opcode, [out]))
-            replace_regs[reg.reg] = out
+        if 'oT' in self.reg_types:
+            for reg in sorted(self.reg_types['oT']):
+                opcode = 'dcl_texcoord'
+                if reg.num:
+                    opcode = 'dcl_texcoord%d' % reg.num
+                out = self._find_free_reg('o', VS3)
+                self.insert_decl(NewInstruction(opcode, [out]))
+                replace_regs[reg.reg] = out
 
-        out = self._find_free_reg('o', VS3)
-        self.insert_decl(NewInstruction('dcl_position', [out]))
-        replace_regs['oPos'] = out
+        if 'oPos' in self.reg_types:
+            out = self._find_free_reg('o', VS3)
+            self.insert_decl(NewInstruction('dcl_position', [out]))
+            replace_regs['oPos'] = out
+
+
+        if 'oD' in self.reg_types:
+            for reg in sorted(self.reg_types['oD']):
+                opcode = 'dcl_color'
+                if reg.num:
+                    opcode = 'dcl_color%d' % reg.num
+                out = self._find_free_reg('o', VS3)
+                self.insert_decl(NewInstruction(opcode, [out]))
+                replace_regs[reg.reg] = out
+
+        if 'oFog' in self.reg_types:
+            out = self._find_free_reg('o', VS3)
+            self.insert_decl(NewInstruction('dcl_fog', [out]))
+            replace_regs['oFog'] = out
+        if 'oPts' in self.reg_types:
+            out = self._find_free_reg('o', VS3)
+            self.insert_decl(NewInstruction('dcl_psize', [out]))
+            replace_regs['oPts'] = out
 
         self.insert_decl()
 
