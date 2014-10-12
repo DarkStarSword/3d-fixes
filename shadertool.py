@@ -218,6 +218,7 @@ class Register(str):
             r += '.%s' % self.swizzle
         return r
 
+    # TODO: use __get_attr__ to handle all permutations of this:
     @property
     def x(self): return '%s.x' % (self.reg)
     @property
@@ -226,6 +227,10 @@ class Register(str):
     def z(self): return '%s.z' % (self.reg)
     @property
     def w(self): return '%s.w' % (self.reg)
+    @property
+    def xxxx(self): return '%s.xxxx' % (self.reg)
+    @property
+    def yyyy(self): return '%s.yyyy' % (self.reg)
 
 class Instruction(SyntaxTree):
     def is_declaration(self):
@@ -597,8 +602,10 @@ def install_shader(shader, file, args):
 
 def adjust_ui_depth(tree, depth_reg):
     stereo_const = tree._find_free_reg('c', VS3)
+    tree.insert_decl()
     tree.insert_decl('def', [stereo_const, 0, 1, 0.0625, 0.5]) # 0.0625 is the only important value here
     tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
+    tree.insert_decl()
 
     pos_reg = tree._find_free_reg('r', VS3)
     tmp_reg = tree._find_free_reg('r', VS3)
@@ -616,6 +623,34 @@ def adjust_ui_depth(tree, depth_reg):
     tree.add_inst('mad', [pos_reg.x, separation, depth_reg, pos_reg.x])
     tree.add_inst('mov', [tree.declared['dcl_position'], pos_reg])
 
+def disable_shader(tree, method):
+    if isinstance(tree, VS3):
+        reg = tree.declared['dcl_position']
+        if not reg.swizzle:
+            reg = '%s.xyzw' % reg.reg
+    elif isinstance(tree, PS3):
+        reg = 'oC0.xyzw'
+    else:
+        raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+
+    # FUTURE: Maybe search for an existing 0 or 1...
+    stereo_const = tree._find_free_reg('c', VS3)
+    tree.insert_decl()
+    tree.insert_decl('def', [stereo_const, 0, 1, 0.0625, 0.5])
+    tree.insert_decl()
+
+    tree.add_inst()
+    tree.append(CPPStyleComment("// Shader disabled by DarkStarSword's shadertool.py:"))
+    tree.append(NewLine('\n'))
+    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
+    tree.append(NewLine('\n'))
+    if method == '0':
+        disabled = stereo_const.xxxx
+    if method == '1':
+        disabled = stereo_const.yyyy
+    tree.add_inst('mov', [reg, disabled])
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
     parser.add_argument('files', nargs='+',
@@ -631,6 +666,8 @@ def parse_args():
             help='Show the registers used in the shader')
     parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
             help='Search for unused constants')
+    parser.add_argument('--disable', choices=['0', '1'],
+            help="Disable a shader, by setting it's output to 0 or 1")
 
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
@@ -661,7 +698,7 @@ def main():
             tree.to_shader_model_3()
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
-        if args.show_regs or args.find_free_consts or args.adjust_ui_depth:
+        if args.show_regs or args.find_free_consts or args.adjust_ui_depth or args.disable:
             tree.analyse_regs(args.show_regs)
             if args.find_free_consts:
                 if isinstance(tree, VS3):
@@ -677,6 +714,8 @@ def main():
                 else:
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
+        if args.disable:
+            disable_shader(tree, args.disable)
         if args.adjust_ui_depth:
             adjust_ui_depth(tree, args.adjust_ui_depth)
 
