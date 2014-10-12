@@ -437,21 +437,22 @@ class VS2(ShaderBlock):
 
 class PS2(ShaderBlock):
     def to_shader_model_3(self):
+        def fixup_ps2_dcl(tree, node, parent, idx):
+            node.opcode = 'dcl_texcoord'
+            reg = node.args[0]
+            if reg.type != 't':
+                return
+            if reg.num:
+                node.opcode = 'dcl_texcoord%d' % reg.num
+            node[0] = node.opcode
         self.analyse_regs()
-        self.insert_decl()
         replace_regs = {}
 
         for reg in sorted(self.reg_types['t']):
-            opcode = 'dcl_texcoord'
-            if reg.num:
-                opcode = 'dcl_texcoord%d' % reg.num
-            out = self._find_free_reg('v', PS3)
-            self.insert_decl(NewInstruction(opcode, [out]))
-            replace_regs[reg.reg] = out
+            replace_regs[reg.reg] = Register('v%d' % reg.num)
 
-        self.insert_decl()
-
-        self.do_replacements(replace_regs, {'ps_2_0': 'ps_3_0'}, {'sincos': fixup_sincos})
+        self.do_replacements(replace_regs, {'ps_2_0': 'ps_3_0'},
+                {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
         self.__class__ = PS3
 
 sections = {
