@@ -525,28 +525,6 @@ def parse_shader(shader, args):
     tree = process_sections(tree)
     return tree
 
-def parse_args():
-    parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
-    parser.add_argument('files', nargs='+',
-            help='List of shader assembly files to process')
-    parser.add_argument('--install', '-i', action='store_true',
-            help='Install shaders in ShaderOverride directory')
-    parser.add_argument('--force', '-f', action='store_true',
-            help='Forcefully overwrite shaders when installing')
-    parser.add_argument('--output', '-o', type=argparse.FileType('w'),
-            help='Save the shader to a file')
-
-    parser.add_argument('--show-regs', '-r', action='store_true',
-            help='Show the registers used in the shader')
-    parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
-            help='Search for unused constants')
-
-    parser.add_argument('--debug-tokeniser', action='store_true',
-            help='Dumps the shader broken up into tokens')
-    parser.add_argument('--debug-syntax-tree', action='store_true',
-            help='Dumps the syntax tree')
-    return parser.parse_args()
-
 def install_shader(shader, file, args):
     pattern = re.compile('''
       ^
@@ -595,6 +573,28 @@ def install_shader(shader, file, args):
 
     debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
     print(shader, end='', file=open(dest, 'w'))
+
+def parse_args():
+    parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
+    parser.add_argument('files', nargs='+',
+            help='List of shader assembly files to process')
+    parser.add_argument('--install', '-i', action='store_true',
+            help='Install shaders in ShaderOverride directory')
+    parser.add_argument('--force', '-f', action='store_true',
+            help='Forcefully overwrite shaders when installing')
+    parser.add_argument('--output', '-o', type=argparse.FileType('w'),
+            help='Save the shader to a file')
+
+    parser.add_argument('--show-regs', '-r', action='store_true',
+            help='Show the registers used in the shader')
+    parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
+            help='Search for unused constants')
+
+    parser.add_argument('--debug-tokeniser', action='store_true',
+            help='Dumps the shader broken up into tokens')
+    parser.add_argument('--debug-syntax-tree', action='store_true',
+            help='Dumps the syntax tree')
+    return parser.parse_args()
 
 def main():
     args = parse_args()
