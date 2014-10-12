@@ -218,6 +218,15 @@ class Register(str):
             r += '.%s' % self.swizzle
         return r
 
+    @property
+    def x(self): return '%s.x' % (self.reg)
+    @property
+    def y(self): return '%s.y' % (self.reg)
+    @property
+    def z(self): return '%s.z' % (self.reg)
+    @property
+    def w(self): return '%s.w' % (self.reg)
+
 class Instruction(SyntaxTree):
     def is_declaration(self):
         return self.opcode.startswith('dcl_') or self.opcode == 'dcl'
@@ -313,12 +322,17 @@ class ShaderBlock(SyntaxTree):
             newtree.append(t)
         SyntaxTree.__init__(self, newtree)
 
-    def insert_decl(self, inst=None):
-        if inst is not None:
-            self.insert(self.decl_end, SyntaxTree([inst]))
+    def insert_decl(self, *inst):
+        if inst:
+            self.insert(self.decl_end, SyntaxTree([NewInstruction(*inst)]))
             self.decl_end += 1
         self.insert(self.decl_end, NewLine('\n'))
         self.decl_end += 1
+
+    def add_inst(self, *inst):
+        if inst:
+            self.append(SyntaxTree([NewInstruction(*inst)]))
+        self.append(NewLine('\n'))
 
     def analyse_regs(self, verbose=False):
         def pr_verbose(*args, **kwargs):
@@ -327,7 +341,7 @@ class ShaderBlock(SyntaxTree):
 
         self.local_consts = RegSet()
         self.addressed_regs = RegSet()
-        self.declared = RegSet()
+        self.declared = {}
         self.reg_types = {}
         for (inst, parent, idx) in self.iter_all():
             if not isinstance(inst, Instruction):
@@ -336,7 +350,7 @@ class ShaderBlock(SyntaxTree):
                 self.local_consts.add(inst.args[0])
                 continue
             if inst.is_declaration():
-                self.declared.add(inst.args[0])
+                self.declared[inst.opcode] = inst.args[0]
                 continue
             for arg in inst.args:
                 if arg.type not in self.reg_types:
@@ -354,7 +368,8 @@ class ShaderBlock(SyntaxTree):
         pr_verbose('Local constants: %s' % ', '.join(sorted(self.local_consts)))
         pr_verbose('Global constants: %s' % ', '.join(sorted(self.global_consts)))
         pr_verbose('Unused local constants: %s' % ', '.join(sorted(self.unref_consts)))
-        pr_verbose('Declared: %s' % ', '.join(sorted(self.declared)))
+        pr_verbose('Declared: %s' % ', '.join(['%s %s' % (k, self.declared[k]) \
+                for k in sorted(self.declared)]))
         for (k, v) in self.reg_types.items():
             pr_verbose('%s: %s' % (reg_names.get(k, k), ', '.join(sorted(v))))
 
@@ -372,15 +387,17 @@ class ShaderBlock(SyntaxTree):
                 taken.add(r)
                 return r
 
-    def do_replacements(self, regs, insts, callbacks):
+    def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
         for (node, parent, idx) in self.iter_all():
             if isinstance(node, Register):
-                if node.reg in regs:
+                if not replace_dcl and parent.is_declaration():
+                    continue
+                if regs is not None and node.reg in regs:
                     node.reg = regs[node.reg] # FIXME: Update reg.type
             if isinstance(node, Instruction):
-                if node.opcode in insts:
+                if insts is not None and node.opcode in insts:
                     parent[idx] = insts[node.opcode]
-                if node.opcode in callbacks:
+                if callbacks is not None and node.opcode in callbacks:
                     callbacks[node.opcode](self, node, parent, idx)
 
     def discard_if_unused(self, regs, reason = 'unused'):
@@ -405,6 +422,7 @@ class VS3(ShaderBlock):
         's': 4,
         'v': 16,
     }
+    def_stereo_sampler = 's0'
 
 class PS3(ShaderBlock):
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172920(v=vs.85).aspx
@@ -414,6 +432,7 @@ class PS3(ShaderBlock):
         's': 16,
         'v': 12,
     }
+    def_stereo_sampler = 's13'
 
 class VS2(ShaderBlock):
     def to_shader_model_3(self):
@@ -427,12 +446,12 @@ class VS2(ShaderBlock):
                 if reg.num:
                     opcode = 'dcl_texcoord%d' % reg.num
                 out = self._find_free_reg('o', VS3)
-                self.insert_decl(NewInstruction(opcode, [out]))
+                self.insert_decl(opcode, [out])
                 replace_regs[reg.reg] = out
 
         if 'oPos' in self.reg_types:
             out = self._find_free_reg('o', VS3)
-            self.insert_decl(NewInstruction('dcl_position', [out]))
+            self.insert_decl('dcl_position', [out])
             replace_regs['oPos'] = out
 
 
@@ -442,21 +461,22 @@ class VS2(ShaderBlock):
                 if reg.num:
                     opcode = 'dcl_color%d' % reg.num
                 out = self._find_free_reg('o', VS3)
-                self.insert_decl(NewInstruction(opcode, [out]))
+                self.insert_decl(opcode, [out])
                 replace_regs[reg.reg] = out
 
         if 'oFog' in self.reg_types:
             out = self._find_free_reg('o', VS3)
-            self.insert_decl(NewInstruction('dcl_fog', [out]))
+            self.insert_decl('dcl_fog', [out])
             replace_regs['oFog'] = out
         if 'oPts' in self.reg_types:
             out = self._find_free_reg('o', VS3)
-            self.insert_decl(NewInstruction('dcl_psize', [out]))
+            self.insert_decl('dcl_psize', [out])
             replace_regs['oPts'] = out
 
         self.insert_decl()
 
-        self.do_replacements(replace_regs, {'vs_2_0': 'vs_3_0'}, {'sincos': fixup_sincos})
+        self.do_replacements(replace_regs, True, {'vs_2_0': 'vs_3_0'},
+                {'sincos': fixup_sincos})
         self.__class__ = VS3
 
 class PS2(ShaderBlock):
@@ -475,7 +495,7 @@ class PS2(ShaderBlock):
         for reg in sorted(self.reg_types['t']):
             replace_regs[reg.reg] = Register('v%d' % reg.num)
 
-        self.do_replacements(replace_regs, {'ps_2_0': 'ps_3_0'},
+        self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
         self.__class__ = PS3
 
@@ -574,6 +594,27 @@ def install_shader(shader, file, args):
     debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
     print(shader, end='', file=open(dest, 'w'))
 
+def adjust_ui_depth(tree, depth_reg):
+    stereo_const = tree._find_free_reg('c', VS3)
+    tree.insert_decl('def', [stereo_const, 0, 1, 0.0625, 0.5]) # 0.0625 is the only important value here
+    tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
+
+    pos_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3)
+
+    replace_regs = {tree.declared['dcl_position'].reg: pos_reg}
+    tree.do_replacements(replace_regs, False)
+
+    tree.add_inst()
+    tree.append(CPPStyleComment("// UI Depth adjustment inserted with DarkStarSword's shadertool.py:"))
+    tree.append(NewLine('\n'))
+    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
+    tree.append(NewLine('\n'))
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    separation = tmp_reg.x
+    tree.add_inst('mad', [pos_reg.x, separation, depth_reg, pos_reg.x])
+    tree.add_inst('mov', [tree.declared['dcl_position'], pos_reg])
+
 def parse_args():
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
     parser.add_argument('files', nargs='+',
@@ -589,6 +630,9 @@ def parse_args():
             help='Show the registers used in the shader')
     parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
             help='Search for unused constants')
+
+    parser.add_argument('--adjust-ui-depth', '--ui',
+            help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
 
     parser.add_argument('--debug-tokeniser', action='store_true',
             help='Dumps the shader broken up into tokens')
@@ -616,7 +660,7 @@ def main():
             tree.to_shader_model_3()
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
-        if args.show_regs or args.find_free_consts:
+        if args.show_regs or args.find_free_consts or args.adjust_ui_depth:
             tree.analyse_regs(args.show_regs)
             if args.find_free_consts:
                 if isinstance(tree, VS3):
@@ -631,6 +675,10 @@ def main():
                     address_reg_ps.update(tree.addressed_regs)
                 else:
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+
+        if args.adjust_ui_depth:
+            adjust_ui_depth(tree, args.adjust_ui_depth)
+
         if args.output:
             print(tree, end='', file=args.output)
         if args.install:
