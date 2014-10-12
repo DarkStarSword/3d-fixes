@@ -550,6 +550,7 @@ def install_shader(shader, file, args):
       ^
       ((Vertex|Pixel)Shader_\d+_)?
       (CRC32_)?
+      \s*
       (?P<CRC>[0-9a-f]{1,8})
       (_\d+)?
       .txt
