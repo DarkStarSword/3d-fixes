@@ -47,3 +47,11 @@ underlined paragraphs.
 ### CustomSettingNames_en-EN.xml ###
 Custom setting names XML file for nVidia Inspector that adds friendly names for
 some of the stereo attributes that I've identified in each profile.
+
+### shadertool.py ###
+This is a python tool I've started working on to parse shaders and automate
+some of the process of hacking them. It's very early and the code is not very
+pretty. At the moment it can:
+- Install shaders to the ShaderOverride directory
+- Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0
+- Analyse shader register usage and look for free constants.
