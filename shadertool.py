@@ -218,19 +218,26 @@ class Register(str):
             r += '.%s' % self.swizzle
         return r
 
+    def __neg__(self):
+        if self.negate:
+            self.negate = ''
+        else:
+            self.negate = '-'
+        return self
+
     # TODO: use __get_attr__ to handle all permutations of this:
     @property
-    def x(self): return '%s.x' % (self.reg)
+    def x(self): return Register('%s.x' % (self.reg))
     @property
-    def y(self): return '%s.y' % (self.reg)
+    def y(self): return Register('%s.y' % (self.reg))
     @property
-    def z(self): return '%s.z' % (self.reg)
+    def z(self): return Register('%s.z' % (self.reg))
     @property
-    def w(self): return '%s.w' % (self.reg)
+    def w(self): return Register('%s.w' % (self.reg))
     @property
-    def xxxx(self): return '%s.xxxx' % (self.reg)
+    def xxxx(self): return Register('%s.xxxx' % (self.reg))
     @property
-    def yyyy(self): return '%s.yyyy' % (self.reg)
+    def yyyy(self): return Register('%s.yyyy' % (self.reg))
 
 class Instruction(SyntaxTree):
     def is_declaration(self):
@@ -346,7 +353,7 @@ class ShaderBlock(SyntaxTree):
 
         self.local_consts = RegSet()
         self.addressed_regs = RegSet()
-        self.declared = {}
+        self.declared = []
         self.reg_types = {}
         for (inst, parent, idx) in self.iter_all():
             if not isinstance(inst, Instruction):
@@ -355,7 +362,7 @@ class ShaderBlock(SyntaxTree):
                 self.local_consts.add(inst.args[0])
                 continue
             if inst.is_declaration():
-                self.declared[inst.opcode] = inst.args[0]
+                self.declared.append((inst.opcode, inst.args[0]))
                 continue
             for arg in inst.args:
                 if arg.type not in self.reg_types:
@@ -373,8 +380,8 @@ class ShaderBlock(SyntaxTree):
         pr_verbose('Local constants: %s' % ', '.join(sorted(self.local_consts)))
         pr_verbose('Global constants: %s' % ', '.join(sorted(self.global_consts)))
         pr_verbose('Unused local constants: %s' % ', '.join(sorted(self.unref_consts)))
-        pr_verbose('Declared: %s' % ', '.join(['%s %s' % (k, self.declared[k]) \
-                for k in sorted(self.declared)]))
+        pr_verbose('Declared: %s' % ', '.join(['%s %s' % (k, v) \
+                for (k, v) in sorted(self.declared)]))
         for (k, v) in self.reg_types.items():
             pr_verbose('%s: %s' % (reg_names.get(k, k), ', '.join(sorted(v))))
 
@@ -600,32 +607,77 @@ def install_shader(shader, file, args):
     debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
     print(shader, end='', file=open(dest, 'w'))
 
-def adjust_ui_depth(tree, depth_reg):
+def insert_stereo_declarations(tree, x=0, y=1, z=0.0625, w=0.5):
     stereo_const = tree._find_free_reg('c', VS3)
     tree.insert_decl()
-    tree.insert_decl('def', [stereo_const, 0, 1, 0.0625, 0.5]) # 0.0625 is the only important value here
+    tree.insert_decl('def', [stereo_const, x, y, z, w])
     tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
     tree.insert_decl()
+    return stereo_const
+
+def append_inserted_by_comment(tree, what):
+    tree.add_inst()
+    tree.append(CPPStyleComment("// %s DarkStarSword's shadertool.py:" % what))
+    tree.append(NewLine('\n'))
+    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
+    tree.append(NewLine('\n'))
+
+def find_declaration(tree, type, prefix):
+    for (t, r) in tree.declared:
+        if t == type:
+            if prefix and not r.startswith(prefix):
+                continue
+            return r
+    raise IndexError()
+
+def adjust_ui_depth(tree, depth_reg):
+    if not isinstance(tree, VS3):
+        raise Exception('UI Depth adjustment must be done on a vertex shader')
+
+    stereo_const = insert_stereo_declarations(tree)
+
+    pos_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3)
+    dst_reg = find_declaration(tree, 'dcl_position', 'o').reg
+
+    replace_regs = {dst_reg: pos_reg}
+    tree.do_replacements(replace_regs, False)
+
+    append_inserted_by_comment(tree, 'UI depth adjustment inserted with')
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    separation = tmp_reg.x
+    tree.add_inst('mad', [pos_reg.x, separation, depth_reg, pos_reg.x])
+    tree.add_inst('mov', [dst_reg, pos_reg])
+
+def adjust_texcoord(tree, reg):
+    if not isinstance(tree, VS3):
+        raise Exception('Texcoord adjustment must be done on a vertex shader (currently)')
+
+    stereo_const = insert_stereo_declarations(tree)
 
     pos_reg = tree._find_free_reg('r', VS3)
     tmp_reg = tree._find_free_reg('r', VS3)
 
-    replace_regs = {tree.declared['dcl_position'].reg: pos_reg}
+    if reg.startswith('dcl_texcoord'):
+        dst_reg = find_declaration(tree, reg, 'o').reg
+    if reg.startswith('texcoord'):
+        dst_reg = find_declaration(tree, 'dcl_%s' % reg, 'o').reg
+    else:
+        dst_reg = reg
+    replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    tree.add_inst()
-    tree.append(CPPStyleComment("// UI Depth adjustment inserted with DarkStarSword's shadertool.py:"))
-    tree.append(NewLine('\n'))
-    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
-    tree.append(NewLine('\n'))
+    append_inserted_by_comment(tree, 'Texcoord adjustment inserted with')
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
-    separation = tmp_reg.x
-    tree.add_inst('mad', [pos_reg.x, separation, depth_reg, pos_reg.x])
-    tree.add_inst('mov', [tree.declared['dcl_position'], pos_reg])
+    separation = tmp_reg.x; convergence = tmp_reg.y
+    tree.add_inst('add', [tmp_reg.w, pos_reg.w, -convergence])
+    tree.add_inst('mad', [pos_reg.x, tmp_reg.w, separation, pos_reg.x])
+    tree.add_inst('mov', [dst_reg, pos_reg])
+
 
 def disable_shader(tree, method):
     if isinstance(tree, VS3):
-        reg = tree.declared['dcl_position']
+        reg = find_declaration(tree, 'dcl_position', 'o')
         if not reg.swizzle:
             reg = '%s.xyzw' % reg.reg
     elif isinstance(tree, PS3):
@@ -634,16 +686,9 @@ def disable_shader(tree, method):
         raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
     # FUTURE: Maybe search for an existing 0 or 1...
-    stereo_const = tree._find_free_reg('c', VS3)
-    tree.insert_decl()
-    tree.insert_decl('def', [stereo_const, 0, 1, 0.0625, 0.5])
-    tree.insert_decl()
+    stereo_const = insert_stereo_declarations(tree)
 
-    tree.add_inst()
-    tree.append(CPPStyleComment("// Shader disabled by DarkStarSword's shadertool.py:"))
-    tree.append(NewLine('\n'))
-    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
-    tree.append(NewLine('\n'))
+    append_inserted_by_comment(tree, 'Shader disabled by')
     if method == '0':
         disabled = stereo_const.xxxx
     if method == '1':
@@ -668,6 +713,8 @@ def parse_args():
             help='Search for unused constants')
     parser.add_argument('--disable', choices=['0', '1'],
             help="Disable a shader, by setting it's output to 0 or 1")
+    parser.add_argument('--adjust-texcoord',
+            help="Apply the stereo formula to a texcoord")
 
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
@@ -698,7 +745,8 @@ def main():
             tree.to_shader_model_3()
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
-        if args.show_regs or args.find_free_consts or args.adjust_ui_depth or args.disable:
+        if args.show_regs or args.find_free_consts or args.adjust_ui_depth or \
+                args.disable or args.adjust_texcoord:
             tree.analyse_regs(args.show_regs)
             if args.find_free_consts:
                 if isinstance(tree, VS3):
@@ -718,6 +766,8 @@ def main():
             disable_shader(tree, args.disable)
         if args.adjust_ui_depth:
             adjust_ui_depth(tree, args.adjust_ui_depth)
+        if args.adjust_texcoord:
+            adjust_texcoord(tree, args.adjust_texcoord)
 
         if args.output:
             print(tree, end='', file=args.output)
