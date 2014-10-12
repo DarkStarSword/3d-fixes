@@ -433,6 +433,7 @@ class VS2(ShaderBlock):
         self.insert_decl()
 
         self.do_replacements(replace_regs, {'vs_2_0': 'vs_3_0'}, {'sincos': fixup_sincos})
+        self.__class__ = VS3
 
 class PS2(ShaderBlock):
     def to_shader_model_3(self):
@@ -451,6 +452,7 @@ class PS2(ShaderBlock):
         self.insert_decl()
 
         self.do_replacements(replace_regs, {'ps_2_0': 'ps_3_0'}, {'sincos': fixup_sincos})
+        self.__class__ = PS3
 
 sections = {
     'vs_3_0': VS3,
@@ -504,6 +506,8 @@ def parse_args():
             help='List of shader assembly files to process')
     parser.add_argument('--install', '-i', action='store_true',
             help='Install shaders in ShaderOverride directory')
+    parser.add_argument('--force', '-f', action='store_true',
+            help='Forcefully overwrite shaders when installing')
     parser.add_argument('--output', '-o', type=argparse.FileType('w'),
             help='Save the shader to a file')
 
@@ -517,6 +521,55 @@ def parse_args():
     parser.add_argument('--debug-syntax-tree', action='store_true',
             help='Dumps the syntax tree')
     return parser.parse_args()
+
+def install_shader(shader, file, args):
+    pattern = re.compile('''
+      ^
+      ((Vertex|Pixel)Shader_\d+_)?
+      (CRC32_)?
+      (?P<CRC>[0-9a-f]{1,8})
+      (_\d+)?
+      .txt
+      $
+    ''', re.VERBOSE | re.IGNORECASE)
+
+    src_name = os.path.basename(file)
+    match = pattern.match(src_name)
+    if match is None:
+        raise Exception('Unable to determine CRC32 from filename - %s' % file)
+    crc = match.group('CRC')
+    dest_name = '%s%s.txt' % ('0'*(8-len(crc)), crc)
+
+    src_dir = os.path.dirname(os.path.join(os.curdir, file))
+    dumps = os.path.realpath(os.path.join(src_dir, '../..'))
+    if os.path.basename(dumps).lower() != 'dumps':
+        raise Exception("Not installing %s - not in a Dumps directory" % file)
+    gamedir = os.path.realpath(os.path.join(src_dir, '../../..'))
+
+    override_dir = os.path.join(gamedir, 'ShaderOverride')
+    try:
+        os.mkdir(override_dir)
+    except OSError:
+        pass
+
+    if isinstance(shader, VS3):
+        shader_dir = os.path.join(override_dir, 'VertexShaders')
+    elif isinstance(shader, PS3):
+        shader_dir = os.path.join(override_dir, 'PixelShaders')
+    else:
+        raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+    try:
+        os.mkdir(shader_dir)
+    except OSError:
+        pass
+
+    dest = os.path.join(shader_dir, dest_name)
+    if not args.force and os.path.exists(dest):
+        debug('Skipping %s - already installed' % file)
+        return
+
+    debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
+    print(shader, end='', file=open(dest, 'w'))
 
 def main():
     args = parse_args()
@@ -546,35 +599,37 @@ def main():
                     local_vs_consts = local_vs_consts.difference(tree.global_consts)
                     free_vs_consts = free_vs_consts.difference(tree.consts)
                     address_reg_vs.update(tree.addressed_regs)
-                if isinstance(tree, PS3):
+                elif isinstance(tree, PS3):
                     checked_ps = True
                     local_ps_consts = local_ps_consts.difference(tree.global_consts)
                     free_ps_consts = free_ps_consts.difference(tree.consts)
                     address_reg_ps.update(tree.addressed_regs)
+                else:
+                    raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
         if args.output:
             print(tree, end='', file=args.output)
         if args.install:
-            pass
+            install_shader(tree, file, args)
 
     if args.find_free_consts:
         if checked_vs:
             local_vs_consts = local_vs_consts.difference(free_vs_consts)
-            print('\nFree Vertex Shader Constants:')
-            print(', '.join(sorted(free_vs_consts)))
-            print('\nLocal only Vertex Shader Constants:')
-            print(', '.join(sorted(local_vs_consts)))
+            debug('\nFree Vertex Shader Constants:')
+            debug(', '.join(sorted(free_vs_consts)))
+            debug('\nLocal only Vertex Shader Constants:')
+            debug(', '.join(sorted(local_vs_consts)))
             if address_reg_vs:
-                print('\nCAUTION: Address reg was applied offset from these consts:')
-                print(', '.join(sorted(address_reg_vs)))
+                debug('\nCAUTION: Address reg was applied offset from these consts:')
+                debug(', '.join(sorted(address_reg_vs)))
         if checked_ps:
             local_ps_consts = local_ps_consts.difference(free_ps_consts)
-            print('\nFree Pixel Shader Constants:')
-            print(', '.join(sorted(free_ps_consts)))
-            print('\nLocal only Pixel Shader Constants:')
-            print(', '.join(sorted(local_ps_consts)))
+            debug('\nFree Pixel Shader Constants:')
+            debug(', '.join(sorted(free_ps_consts)))
+            debug('\nLocal only Pixel Shader Constants:')
+            debug(', '.join(sorted(local_ps_consts)))
             if address_reg_ps:
-                print('\nCAUTION: Address reg was applied offset from these consts:')
-                print(', '.join(sorted(address_reg_ps)))
+                debug('\nCAUTION: Address reg was applied offset from these consts:')
+                debug(', '.join(sorted(address_reg_ps)))
 
 if __name__ == '__main__':
     sys.exit(main())
