@@ -6,6 +6,12 @@ import urllib.request
 import urllib.parse
 import posixpath
 import sys, os
+import re
+import zipfile
+try:
+    import rarfile
+except ImportError:
+    print('You need to run: pip install rarfile')
 
 blog_id = '5003459283230164005'
 api_key = open('api-key.txt').read().strip()
@@ -13,6 +19,7 @@ url = 'https://www.googleapis.com/blogger/v3/blogs/%s/posts' % blog_id
 fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
 download_dir = 'downloads'
+shader_pattern = re.compile('^[0-9A-F]{8}.txt$', re.IGNORECASE)
 
 params = {
     'orderBy': 'updated',
@@ -99,7 +106,7 @@ def download_file(url):
 
     if os.path.exists(dest):
         # print('Skipping %s - already downloaded' % url)
-        return # TODO: Check if file has changed or was only partially downloaded
+        return dest # TODO: Check if file has changed or was only partially downloaded
     recursive_mkdir(os.path.dirname(dest))
     with open(dest, 'wb') as f:
         try:
@@ -122,6 +129,54 @@ def download_file(url):
             else:
                 print('\nRemoved partially downloaded %s' % dest)
             raise
+    return dest
+
+def list_shaders(filename):
+    (_, ext) = os.path.splitext(filename)
+    if ext == '.zip':
+        Handler = zipfile.ZipFile
+    elif ext == '.rar':
+        Handler = rarfile.RarFile
+    else:
+        raise AssertionError('Unsupported archive format: %s' % ext)
+    with Handler(filename) as archive:
+        for name in archive.namelist():
+            basename = os.path.basename(name)
+            if shader_pattern.match(basename):
+                (crc, ext) = os.path.splitext(basename)
+                yield(crc)
+
+shader_index = {}
+post_index = {}
+def index_shaders(post, filename, link):
+    url = post['url']
+    for crc in list_shaders(filename):
+        if crc not in shader_index:
+            shader_index[crc] = {}
+        if url not in shader_index[crc]:
+            shader_index[crc][url] = set()
+        shader_index[crc][url].add(link)
+        post_index[post['url']] = {
+                'title': post['title'],
+                'author': post['author']['displayName'],
+        }
+
+class JSONSetEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, set):
+            return list(o)
+        return json.JSONEncoder.default(self, o)
+
+def save_shader_index():
+    print('Saving SHADER_IDX.JSON...')
+    encoder = JSONSetEncoder(sort_keys=True, indent=1)
+    data = {
+        'shaders': shader_index,
+        'posts': post_index,
+    }
+    with open('SHADER_IDX.JSON', 'w', encoding='utf-8') as f:
+        for chunk in encoder.iterencode(data):
+            f.write(chunk)
 
 def handle_sigint(f):
     def wrap(*args, **kwargs):
@@ -152,12 +207,15 @@ def main():
             if link in links_done:
                 continue
             try:
-                download_file(link)
+                filename = download_file(link)
             except Exception as e:
                 print('%s occured while downloading %s: %s' % (e.__class__.__name__, link, str(e)))
+            else:
+                index_shaders(post, filename, link)
             links_done.add(link)
         if not found_link:
             print('NO DOWNLOAD LINK? %s' % post['url'])
+    save_shader_index()
 
 if __name__ == '__main__':
     sys.exit(main())
