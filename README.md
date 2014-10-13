@@ -34,6 +34,11 @@ get values for Helix Mod's DX9Settings.ini
 ### \__game_list__ ###
 Source for the auto-updating game list on the Helix Mod blog.
 
+### \__shader_database__ ###
+Python script to crawl the helix blog downloading every fix it can find and
+creating a database of shaders so we can look up if a particular shader has
+been fixed previously, as may happen with games using the same engine.
+
 ### mkrelease.sh ###
 Small script to package up a game's fixes for release, replacing the symlinked
 dll with the real version and renaming README.md to 3DFix-README.txt. Run from
