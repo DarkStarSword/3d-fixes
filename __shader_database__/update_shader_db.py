@@ -12,6 +12,7 @@ api_key = open('api-key.txt').read().strip()
 url = 'https://www.googleapis.com/blogger/v3/blogs/%s/posts' % blog_id
 fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
+download_dir = 'downloads'
 
 params = {
     'orderBy': 'updated',
@@ -79,17 +80,27 @@ def filter_links(content):
             continue
         yield link
 
-def download_file(dir, url):
+def recursive_mkdir(path):
+    tree, leaf = os.path.split(path)
+    if tree:
+        recursive_mkdir(tree)
     try:
-        os.mkdir(dir)
+        os.mkdir(path)
+    except OSError as e:
+        pass
+
+def download_file(url):
+    try:
+        os.mkdir(download_dir)
     except OSError:
         pass
     parts = urllib.parse.urlparse(url)
-    basename = posixpath.basename(parts.path)
-    dest = os.path.join(dir, basename)
+    dest = os.path.join(download_dir, parts.netloc, parts.path.lstrip('/').replace('/', os.path.sep))
+
     if os.path.exists(dest):
-        print('Skipping %s - already downloaded' % url)
+        # print('Skipping %s - already downloaded' % url)
         return # TODO: Check if file has changed or was only partially downloaded
+    recursive_mkdir(os.path.dirname(dest))
     with open(dest, 'wb') as f:
         try:
             print('Downloading %s...' % url, end='')
@@ -141,7 +152,7 @@ def main():
             if link in links_done:
                 continue
             try:
-                download_file('downloads/%s-%s' % (post['id'], post['updated']), link)
+                download_file(link)
             except Exception as e:
                 print('%s occured while downloading %s: %s' % (e.__class__.__name__, link, str(e)))
             links_done.add(link)
