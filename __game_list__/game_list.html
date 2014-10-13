@@ -1,4 +1,13 @@
-<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.</i></p>
+<style>
+.modauthor{
+  visibility:hidden;
+  font-size: small;
+}
+</style>
+<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.</i>
+<br/>
+<input id="show_authors" type="checkbox" onclick="show_authors();">Show Authors</input> <span class="modauthor"><em>(May be innacurate in some cases - check the individual posts for details)</em></span>
+</p>
 
 <noscript>
 <p><h1>This page requires javascript to display the game list!</h1></p>
@@ -54,6 +63,15 @@ var equivalent_titles = [
   [ /FAR ?CRY ?3[^:].*/i, "Far Cry 3" ],
 ];
 
+function show_authors()
+{
+  cbox = document.getElementById('show_authors');
+  if (cbox.checked)
+    $('.modauthor').css('visibility', 'visible');
+  else
+    $('.modauthor').css('visibility', 'hidden');
+}
+
 function get_path(url)
 {
   var a = document.createElement('a');
@@ -100,7 +118,7 @@ function post_extra(post)
   return "";
 }
 
-function add_link(parent, prefix, url, title, text, postfix)
+function add_link(parent, prefix, url, title, text, postfix, author)
 {
   if (prefix)
     parent.innerHTML += prefix + " - ";
@@ -112,6 +130,12 @@ function add_link(parent, prefix, url, title, text, postfix)
   parent.appendChild(a);
   if (postfix)
     parent.innerHTML += postfix;
+  if (author) {
+    var span = document.createElement('span');
+    span.className = 'modauthor';
+    span.appendChild(document.createTextNode('  -  ' + author.displayName));
+    parent.appendChild(span);
+  }
   parent.appendChild(document.createElement('br'));
 }
 
@@ -152,13 +176,13 @@ function handle_response(response)
     title = games_list[idx];
     if (games[title].length == 1) {
       post = games[title][0];
-      add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post));
+      add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post), post.author);
     } else {
-      add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":");
+      add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":", null);
       for (j in games[title]) {
         post = games[title][j];
         var date = new Date(post.published);
-        add_link(gamelist_elem, "&nbsp;&nbsp;" + date.toLocaleDateString(), post.url, null, post.title, post_extra(post));
+        add_link(gamelist_elem, "&nbsp;&nbsp;" + date.toLocaleDateString(), post.url, null, post.title, post_extra(post), post.author);
       }
     }
   }
@@ -168,7 +192,7 @@ function handle_response(response)
   for (var idx in guides) {
     var post = guides[idx];
     var date = new Date(post.published);
-    add_link(guides_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
+    add_link(guides_elem, date.toLocaleDateString(), post.url, null, post_title(post), null, post.author);
   }
 
   var misc_elem = document.getElementById("misc_posts_content");
