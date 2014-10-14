@@ -620,7 +620,7 @@ def find_declaration(tree, type, prefix):
             return r
     raise IndexError()
 
-def adjust_ui_depth(tree, depth_reg):
+def adjust_ui_depth(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('UI Depth adjustment must be done on a vertex shader')
 
@@ -636,7 +636,7 @@ def adjust_ui_depth(tree, depth_reg):
     append_inserted_by_comment(tree, 'UI depth adjustment inserted with')
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
     separation = tmp_reg.x
-    tree.add_inst('mad', [pos_reg.x, separation, depth_reg, pos_reg.x])
+    tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
     tree.add_inst('mov', [dst_reg, pos_reg])
 
 def _adjust_texcoord(tree, reg, args, stereo_const, tmp_reg):
@@ -817,7 +817,7 @@ def main():
         if args.disable:
             disable_shader(tree, args.disable, args.condition)
         if args.adjust_ui_depth:
-            adjust_ui_depth(tree, args.adjust_ui_depth)
+            adjust_ui_depth(tree, args)
         if args.disable_texcoord:
             disable_texcoord(tree, args)
         if args.adjust_texcoord:
