@@ -6,6 +6,10 @@
     def c10, 0.00392156979, 1, 0.0625, 0
     def c11, 2, -1, 0, 0
     dcl_texcoord v0.xy
+
+def c12, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
     texld r3, v0, s1
     mad_pp r3.z, r3.w, c10.x, r3
     mul r0.xy, v0, c0
@@ -108,3 +112,14 @@
     mul_pp oC0, r0.x, r0.y
 
 // approximately 100 instruction slots used (10 texture, 90 arithmetic)
+
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -i -f --disable=1 --condition=c200.x PixelShader_29_CRC32_C24D6005.txt PixelShader_30_CRC32_2CB2FC87.txt -o -
+texldl r4, c12.z, s13
+if_ne r4.x, -r4.x
+mov r4.w, c200.x
+if_eq r4.w, c12.x
+mov oC0.xyzw, c12.yyyy
+endif
+endif
