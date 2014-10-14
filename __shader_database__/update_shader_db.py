@@ -15,28 +15,38 @@ except ImportError:
 
 blog_id = '5003459283230164005'
 api_key = open('api-key.txt').read().strip()
-url = 'https://www.googleapis.com/blogger/v3/blogs/%s/posts' % blog_id
+api_url = 'https://www.googleapis.com/blogger/v3/blogs/%s' % blog_id
 fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
 download_dir = 'downloads'
 shader_pattern = re.compile('^[0-9A-F]{8}.txt$', re.IGNORECASE)
 
-params = {
-    'orderBy': 'updated',
-    'fields': 'items(author/displayName,content,id,title,updated,url,labels),nextPageToken',
-    'key': api_key,
-    'maxResults': 1000000000, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
-    'fetchBodies': str(fetch_all).lower(),
-}
-
-def get_page(pageToken = None):
-    p = params.copy()
-    if pageToken is not None:
-        p['pageToken'] = pageToken
-    with urllib.request.urlopen('%s?%s' % (url, urllib.parse.urlencode(p))) as f:
+def query_blogger_api(url, params):
+    url = '%s?%s' % (url, urllib.parse.urlencode(params))
+    # print('fetching %s' % url)
+    with urllib.request.urlopen(url) as f:
         return json.loads(f.read().decode('utf-8')) # TODO: Read Content-Type header
 
-def get_posts():
+def get_blog_updated():
+    params = {
+        'fields': 'updated',
+        'key': api_key,
+    }
+    return query_blogger_api(api_url, params)['updated']
+
+def get_page(pageToken = None):
+    params = {
+        'orderBy': 'updated',
+        'fields': 'items(author/displayName,content,id,title,updated,url,labels),nextPageToken',
+        'key': api_key,
+        'maxResults': 1000000000, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
+        'fetchBodies': str(fetch_all).lower(),
+    }
+    if pageToken is not None:
+        params['pageToken'] = pageToken
+    return query_blogger_api('%s/posts' % api_url, params)
+
+def get_blog_posts():
     pageToken = None
     posts = []
     for i in range(3):
@@ -194,14 +204,22 @@ def handle_sigint(f):
             print(e.__class__.__name__, file=sys.stderr)
     return wrap
 
+def get_posts():
+    updated = get_blog_updated()
+    if os.path.exists('POSTS.JSON'):
+        j = json.load(open('POSTS.JSON', 'r', encoding='utf-8'))
+        if updated == j['updated']:
+            print('Blog updated timestamp unchanged - using cached POSTS.JSON')
+            return j['posts']
+    print('Fetching blog posts...')
+    posts = get_blog_posts()
+    j = {'updated': updated, 'posts': posts}
+    json.dump(j, open('POSTS.JSON', 'w', encoding='utf-8'), sort_keys=True, indent=4)
+    return posts
+
 @handle_sigint
 def main():
-    if os.path.exists('POSTS.JSON'):
-        print('WARNING: Loading existing POSTS.JSON instead of fetching from Blogger!')
-        posts = json.load(open('POSTS.JSON', 'r', encoding='utf-8'))
-    else:
-        posts = get_posts()
-        json.dump(posts, open('POSTS.JSON', 'w', encoding='utf-8'), sort_keys=True, indent=4)
+    posts = get_posts()
 
     # enumerate_link_types(posts)
     for post in posts:
