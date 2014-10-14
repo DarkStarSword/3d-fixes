@@ -13,6 +13,7 @@ import urllib.parse
 import posixpath
 import time
 import re
+import hashlib
 import zipfile
 try:
     import rarfile
@@ -21,6 +22,7 @@ except ImportError:
     raise
 
 import http_date
+import shaderutil
 
 blog_id = '5003459283230164005'
 api_key = open('api-key.txt').read().strip()
@@ -183,18 +185,22 @@ def list_shaders(filename):
             basename = os.path.basename(name)
             if shader_pattern.match(basename):
                 (crc, ext) = os.path.splitext(basename)
-                yield(crc)
+                shader = archive.read(name)
+                sha = hashlib.sha1(shader).hexdigest()
+                yield(crc.upper(), sha)
 
 shader_index = {}
 post_index = {}
 def index_shaders(post, filename, link):
     url = post['url']
-    for crc in list_shaders(filename):
+    for (crc, sha) in list_shaders(filename):
         if crc not in shader_index:
             shader_index[crc] = {}
-        if url not in shader_index[crc]:
-            shader_index[crc][url] = set()
-        shader_index[crc][url].add(link)
+        if sha not in shader_index[crc]:
+            shader_index[crc][sha] = {}
+        if url not in shader_index[crc][sha]:
+            shader_index[crc][sha][url] = set()
+        shader_index[crc][sha][url].add(link)
         post_index[post['url']] = {
                 'title': post['title'],
                 'author': post['author']['displayName'],
@@ -221,17 +227,10 @@ def save_shader_index():
         'shaders': shader_index,
         'posts': post_index,
     }
-    with open('SHADER_IDX.JSON', 'w', encoding='utf-8') as f:
+    with open('SHADER_IDX.JSON.NEW', 'w', encoding='utf-8') as f:
         for chunk in encoder.iterencode(data):
             f.write(chunk)
-
-def handle_sigint(f):
-    def wrap(*args, **kwargs):
-        try:
-            f(*args, **kwargs)
-        except KeyboardInterrupt as e:
-            print(e.__class__.__name__, file=sys.stderr)
-    return wrap
+    os.rename('SHADER_IDX.JSON.NEW', 'SHADER_IDX.JSON')
 
 def get_posts():
     updated = get_blog_updated()
@@ -246,7 +245,7 @@ def get_posts():
     json.dump(j, open('POSTS.JSON', 'w', encoding='utf-8'), sort_keys=True, indent=4)
     return posts
 
-@handle_sigint
+@shaderutil.handle_sigint
 def main():
     posts = get_posts()
 

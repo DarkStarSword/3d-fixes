@@ -2,6 +2,8 @@
 
 import sys, os, re, argparse
 
+import shaderutil
+
 reg_names = {
     'c': 'Referenced Constants',
     'r': 'Temporary',
@@ -558,23 +560,7 @@ def parse_shader(shader, args):
     return tree
 
 def install_shader(shader, file, args):
-    pattern = re.compile('''
-      ^
-      ((Vertex|Pixel)Shader_\d+_)?
-      (CRC32_)?
-      \s*
-      (?P<CRC>[0-9a-f]{1,8})
-      (_\d+)?
-      .txt
-      $
-    ''', re.VERBOSE | re.IGNORECASE)
-
-    src_name = os.path.basename(file)
-    match = pattern.match(src_name)
-    if match is None:
-        raise Exception('Unable to determine CRC32 from filename - %s' % file)
-    crc = match.group('CRC')
-    dest_name = '%s%s.txt' % ('0'*(8-len(crc)), crc)
+    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
 
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
     dumps = os.path.realpath(os.path.join(src_dir, '../..'))
