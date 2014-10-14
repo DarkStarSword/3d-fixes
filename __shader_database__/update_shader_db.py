@@ -196,12 +196,12 @@ def main():
         json.dump(posts, open('POSTS.JSON', 'w', encoding='utf-8'), sort_keys=True, indent=4)
 
     # enumerate_link_types(posts)
-    links_done = set()
     for post in posts:
         if 'labels' in post:
             if set(post['labels']).intersection(ignorred_labels):
                 continue
         found_link = False
+        links_done = set()
         for link in filter_links(post['content']):
             found_link = True
             if link in links_done:
