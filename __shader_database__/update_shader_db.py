@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
 
+import sys, os
+if not (sys.version_info.major > 3 or (sys.version_info.major == 3 and sys.version_info.minor >= 3)):
+    # urllib.request.Request doesn't support method
+    # Alternatively, we could use the old http module instead
+    raise Exception('Please upgrade Python to 3.3 or higher')
+
 import json
 from bs4 import BeautifulSoup
 import urllib.request
 import urllib.parse
 import posixpath
-import sys, os
+import time
 import re
 import zipfile
 try:
     import rarfile
 except ImportError:
     print('You need to run: pip install rarfile')
+    raise
+
+import http_date
 
 blog_id = '5003459283230164005'
 api_key = open('api-key.txt').read().strip()
@@ -20,6 +29,7 @@ fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
 download_dir = 'downloads'
 shader_pattern = re.compile('^[0-9A-F]{8}.txt$', re.IGNORECASE)
+poll_updates = 14 * 24 * 60 * 60 # atime of a downloaded file must be at least this old to check for updates
 
 def query_blogger_api(url, params):
     url = '%s?%s' % (url, urllib.parse.urlencode(params))
@@ -106,6 +116,11 @@ def recursive_mkdir(path):
     except OSError as e:
         pass
 
+def get_url_last_modified(url):
+    req = urllib.request.Request(url, method='HEAD')
+    with urllib.request.urlopen(req) as f:
+        return http_date.parse_http_date(f.getheader('Last-Modified'))
+
 def download_file(url):
     try:
         os.mkdir(download_dir)
@@ -115,8 +130,21 @@ def download_file(url):
     dest = os.path.join(download_dir, parts.netloc, parts.path.lstrip('/').replace('/', os.path.sep))
 
     if os.path.exists(dest):
-        # print('Skipping %s - already downloaded' % url)
-        return dest # TODO: Check if file has changed or was only partially downloaded
+        st = os.stat(dest)
+        if time.time() - st.st_atime < poll_updates:
+            # FIXME: atime may not be the best thing to use since it can be
+            # updated by other things and then we may never check for updates
+            return dest
+        last_modified = get_url_last_modified(url)
+        if int(st.st_mtime) == last_modified:
+            # FIXME: Also check file size matches Content-Length
+            # print('Skipping %s - up to date' % url)
+            return dest
+        rename_to = '%s~%s' % (time.strftime("%Y%m%d%H%M%S", time.gmtime(st.st_mtime)), os.path.basename(dest))
+        rename_to = os.path.join(os.path.dirname(dest), rename_to)
+        print('%s updated' % url)
+        os.rename(dest, rename_to)
+        print('old file backed up as %s' % rename_to)
     recursive_mkdir(os.path.dirname(dest))
     with open(dest, 'wb') as f:
         try:
@@ -139,6 +167,7 @@ def download_file(url):
             else:
                 print('\nRemoved partially downloaded %s' % dest)
             raise
+    os.utime(dest, (time.time(), last_modified))
     return dest
 
 def list_shaders(filename):
