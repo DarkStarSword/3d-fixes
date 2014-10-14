@@ -161,6 +161,14 @@ def index_shaders(post, filename, link):
                 'author': post['author']['displayName'],
         }
 
+def process_link(post, link):
+    try:
+        filename = download_file(link)
+    except Exception as e:
+        print('%s occured while downloading %s: %s' % (e.__class__.__name__, link, str(e)))
+    else:
+        index_shaders(post, filename, link)
+
 class JSONSetEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, set):
@@ -206,15 +214,17 @@ def main():
             found_link = True
             if link in links_done:
                 continue
-            try:
-                filename = download_file(link)
-            except Exception as e:
-                print('%s occured while downloading %s: %s' % (e.__class__.__name__, link, str(e)))
-            else:
-                index_shaders(post, filename, link)
+            process_link(post, link)
             links_done.add(link)
         if not found_link:
             print('NO DOWNLOAD LINK? %s' % post['url'])
+
+    if os.path.exists('MANUAL_POSTS.JSON'):
+        posts = json.load(open('MANUAL_POSTS.JSON', 'r', encoding='utf-8'))
+        for post in posts:
+            for link in post['links']:
+                process_link(post, link)
+
     save_shader_index()
 
 if __name__ == '__main__':
