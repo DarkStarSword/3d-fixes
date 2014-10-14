@@ -214,18 +214,22 @@ class Register(str):
             return self.num < other.num
         return str.__lt__(self, other)
 
-    def __str__(self):
-        r = '%s%s%s' % (self.negate, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
-        if self.swizzle:
-            r += '.%s' % self.swizzle
+    @staticmethod
+    def _str(negate, reg, absolute, swizzle):
+        r = '%s%s%s' % (negate, reg, absolute) # FIXME: Sync type and num if reg changed
+        if swizzle:
+            r += '.%s' % swizzle
         return r
+
+    def __str__(self):
+        return self._str(self.negate, self.reg, self.absolute, self.swizzle)
 
     def __neg__(self):
         if self.negate:
-            self.negate = ''
+            negate = ''
         else:
-            self.negate = '-'
-        return self
+            negate = '-'
+        return Register(self._str(negate, self.reg, self.absolute, self.swizzle))
 
     # TODO: use __get_attr__ to handle all permutations of this:
     @property
@@ -694,12 +698,16 @@ def _disable_texcoord(tree, reg, args, stereo_const, tmp_reg):
     disabled = stereo_const.xxxx
 
     append_inserted_by_comment(tree, 'Texcoord disabled by')
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    separation = tmp_reg.x
+    tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
     if args.condition:
-        tree.add_inst('mov', [tmp_reg.x, args.condition])
-        tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+        tree.add_inst('mov', [tmp_reg.w, args.condition])
+        tree.add_inst('if_eq', [tmp_reg.w, stereo_const.x])
     tree.add_inst('mov', [reg, disabled])
     if args.condition:
         tree.add_inst('endif', [])
+    tree.add_inst('endif', [])
 
 def disable_texcoord(tree, args):
     if not isinstance(tree, VS3):
@@ -712,7 +720,7 @@ def disable_texcoord(tree, args):
     for reg in args.disable_texcoord:
         _disable_texcoord(tree, reg, args, stereo_const, tmp_reg)
 
-def disable_shader(tree, method, condition):
+def disable_shader(tree, args):
     if isinstance(tree, VS3):
         reg = find_declaration(tree, 'dcl_position', 'o')
         if not reg.swizzle:
@@ -727,17 +735,21 @@ def disable_shader(tree, method, condition):
     tmp_reg = tree._find_free_reg('r', VS3)
 
     append_inserted_by_comment(tree, 'Shader disabled by')
-    if method == '0':
+    if args.disable == '0':
         disabled = stereo_const.xxxx
-    if method == '1':
+    if args.disable == '1':
         disabled = stereo_const.yyyy
 
-    if condition:
-        tree.add_inst('mov', [tmp_reg.x, condition])
-        tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    separation = tmp_reg.x
+    tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
+    if args.condition:
+        tree.add_inst('mov', [tmp_reg.w, args.condition])
+        tree.add_inst('if_eq', [tmp_reg.w, stereo_const.x])
     tree.add_inst('mov', [reg, disabled])
-    if condition:
+    if args.condition:
         tree.add_inst('endif', [])
+    tree.add_inst('endif', [])
 
 
 def parse_args():
@@ -815,7 +827,7 @@ def main():
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
         if args.disable:
-            disable_shader(tree, args.disable, args.condition)
+            disable_shader(tree, args)
         if args.adjust_ui_depth:
             adjust_ui_depth(tree, args)
         if args.disable_texcoord:
