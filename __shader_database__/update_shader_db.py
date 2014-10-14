@@ -181,26 +181,26 @@ def list_shaders(filename):
     else:
         raise AssertionError('Unsupported archive format: %s' % ext)
     with Handler(filename) as archive:
-        for name in archive.namelist():
-            basename = os.path.basename(name)
+        for zip_path in archive.namelist():
+            basename = os.path.basename(zip_path)
             if shader_pattern.match(basename):
                 (crc, ext) = os.path.splitext(basename)
-                shader = archive.read(name)
+                shader = archive.read(zip_path)
                 sha = hashlib.sha1(shader).hexdigest()
-                yield(crc.upper(), sha)
+                yield(crc.upper(), sha, zip_path)
 
 shader_index = {}
 post_index = {}
 def index_shaders(post, filename, link):
     url = post['url']
-    for (crc, sha) in list_shaders(filename):
+    for (crc, sha, zip_path) in list_shaders(filename):
         if crc not in shader_index:
             shader_index[crc] = {}
         if sha not in shader_index[crc]:
             shader_index[crc][sha] = {}
         if url not in shader_index[crc][sha]:
             shader_index[crc][sha][url] = set()
-        shader_index[crc][sha][url].add(link)
+        shader_index[crc][sha][url].add((link, zip_path))
         post_index[post['url']] = {
                 'title': post['title'],
                 'author': post['author']['displayName'],

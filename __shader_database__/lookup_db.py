@@ -14,13 +14,15 @@ def lookup_shader(filename, index):
     posts = index['posts']
     print('%s: %i distinct fixes found' % (crc, len(shader)))
     for i, sha in enumerate(shader, 1):
-        print('          %i. %s' % (i, sha))
+        print('          %i.' % i)
         for post_url in shader[sha]:
             post = posts[post_url]
             print('             "%s" - %s' % (post['title'], post['author']))
             print('               Post URL: %s' % post_url)
-            for url in shader[sha][post_url]:
+            for (url, zip_path) in shader[sha][post_url]:
                 print('                 Download Link: %s' % url)
+                print('                      Location:   %s' % zip_path)
+            print()
     print()
 
 @shaderutil.handle_sigint
