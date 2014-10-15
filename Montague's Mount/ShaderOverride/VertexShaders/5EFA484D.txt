@@ -1,10 +1,20 @@
 // Title Screen Background
 
-    vs_2_0
+    vs_3_0
     def c18, 1, 0, 0, 0
     dcl_position v0
     dcl_normal v1
     dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+
+
+def c7, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mul r1.xyz, v1, c15.w
     dp3 r3.w, r1, c5
     dp3 r2.w, r1, c6
@@ -23,15 +33,22 @@
     mad r0.y, r0.x, r0.x, -r0
     mul r1.xyz, r0.y, c14
     add r2.xyz, r2, r3
-    add oT2.xyz, r2, r1
-    mov oT1.z, r2.w
-    mov oT1.y, r3.w
-    mov oT1.x, r0
-    mad oT0.zw, v2.xyxy, c17.xyxy, c17
-    mad oT0.xy, v2, c16, c16.zwzw
-    dp4 oPos.w, v0, c3
-    dp4 oPos.z, v0, c2
-    dp4 oPos.y, v0, c1
-    dp4 oPos.x, v0, c0
+    add o2.xyz, r2, r1
+    mov o1.z, r2.w
+    mov o1.y, r3.w
+    mov o1.x, r0
+    mad o0.zw, v2.xyxy, c17.xyxy, c17
+    mad o0.xy, v2, c16, c16.zwzw
+    dp4 r4.w, v0, c3
+    dp4 r4.z, v0, c2
+    dp4 r4.y, v0, c1
+    dp4 r4.x, v0, c0
 
 // approximately 28 instruction slots used
+
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --ui c200.z VertexShader_7_CRC32_5EFA484D.txt
+texldl r5, c7.z, s0
+mad r4.x, r5.x, c200.z, r4.x
+mov o3, r4
