@@ -9,16 +9,18 @@ Update v2:
   more stable than the Aion profile (still sometimes see flickering - alt+tab
   out and in until it goes away).
 
-You may need to alt+tab out and in of this game a couple of times if something
-doesn't look right.
-
-The HUD depth can be customised with the keys on the number row, and tilde to
-return to screen depth.
-
 **RECOMMENDED: Use nVidia Inspector to assign this game to the "Harry Potter -
 Deathly Hollows Part1" profile.** The game will try to use this profile
 automatically, but it doesn't always work (and can randomly stop working) -
 much better to manually assign it with nVidia inspector.
+
+**If the shadows are broken or you are seeing severe flickering on some
+surfaces try alt+tabbing out and in of the game (you may need to try several
+times)** - both Helix mod and the driver profile seem to be really inconsistent
+with this game.
+
+The HUD depth can be customised with the keys on the number row, and tilde to
+return to screen depth.
 
 I haven't played very far through the game yet, so there may still be broken
 effects later on.
