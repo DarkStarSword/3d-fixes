@@ -10,6 +10,7 @@ these fixes.
 ### Complete Fixes ###
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
 - The Book of Unwritten Tales 2 (Early Access - expect updates)
+- Montague's Mount
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
