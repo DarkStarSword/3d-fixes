@@ -1,24 +1,31 @@
-// Shadows - whole scene got darker
-
+//lights - fix from 4everAwake
     ps_3_0
+def c220, 1, 1.1325, 0.0625, 0.5 // 1.13 seems to be the magic value to line up shadows with the ground in this game
+dcl_2d s13
     dcl_2d s0
     dcl_2d s1
     def c27, 0, 1, 255, 0.00392156979
+
     dcl_texcoord v0.xy
     dcl_texcoord1 v1.xyz
 
-def c3, 0, 1, 0.0625, 0.5
-dcl_2d s13
-
-    texld r0, v0, s0
+	texld r0, v0, s0
     mad r0.x, r0, c20, c20.y
     rcp r0.x, r0.x
     mul r2.xyz, r0.x, v1
     mov r2.w, c27.y
+
+texldl r24, c220.z, s13
+add r24.y, r2.z, -r24.y
+mul r24.x, r24.x, r24.y
+mul r24.x, r24.x, c220.y
+add r2.x, r2.x, -r24.x
+
     dp4 r3.z, r2, c18
     dp4 r3.x, r2, c16
     dp4 r3.y, r2, c17
     dp4 r3.w, r2, c19
+
     add r1.xyz, r3, -c21
     add r5.xyz, r3, -c24
     dp3 r1.x, r1, r1
@@ -64,14 +71,3 @@ dcl_2d s13
     mov_pp oC0, r0
 
 // approximately 52 instruction slots used (2 texture, 50 arithmetic)
-
-
-// Shader disabled by DarkStarSword's shadertool.py:
-// shadertool.py -i -f --disable=1 --condition=c200.x PixelShader_29_CRC32_C24D6005.txt PixelShader_30_CRC32_2CB2FC87.txt -o -
-texldl r6, c3.z, s13
-if_ne r6.x, -r6.x
-mov r6.w, c200.x
-if_eq r6.w, c3.x
-mov oC0.xyzw, c3.yyyy
-endif
-endif
