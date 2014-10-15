@@ -153,6 +153,7 @@ def download_file(url):
             print('Downloading %s...' % url, end='')
             sys.stdout.flush()
             with urllib.request.urlopen(url) as download:
+                last_modified = http_date.parse_http_date(download.getheader('Last-Modified'))
                 while True:
                     buf = download.read(64*1024)
                     if not buf:
