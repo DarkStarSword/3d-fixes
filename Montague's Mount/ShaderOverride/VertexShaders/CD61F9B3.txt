@@ -1,4 +1,4 @@
-// UI
+// UI *and* lens flare
 
     vs_3_0
     dcl_position v0
@@ -10,20 +10,33 @@ dcl_position o1
 dcl_color o2
 
 
-def c5, 0, 1, 0.0625, 0.5
+def c220, 0, 0.1, 0.0625, 0.5
 dcl_2d s0
+texldl r31, c220.z, s0 // r31.x = separation, r31.y = convergence
 
     mov o2, v1
     mad o0.xy, v2, c4, c4.zwzw
-    dp4 r0.w, v0, c3
-    dp4 r0.z, v0, c2
-    dp4 r0.y, v0, c1
-    dp4 r0.x, v0, c0
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp4 r1.y, v0, c1
+    dp4 r1.x, v0, c0
 
-// approximately 6 instruction slots used
+mov r25, c251
+if_eq r25.x, c220.x
+	// Matched the lens flare texture - this requires a completely
+	// different fix to the UI. The depth varies wildly with convergence,
+	// so first, undo the stereo correction:
+	add r31.w, r1.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r1.x, r1.x, -r31.w
+	// Now adjust it by a fixed percentage of separation. This is an approximation
+	// only due the flare geometry, so there might be a better way to achieve this:
+	mul r31.w, r31.x, c220.y
+	add r1.x, r1.x, r31.w
+else
+	// Didn't match the lens flare texture, so this must be the UI - adjust
+	// depth to c200.z * separation:
+	mad r1.x, c200.z, r31.x, r1.x
+endif
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui c200.z VertexShader_106_CRC32_ DC90B2E.txt VertexShader_102_CRC32_CD61F9B3.txt
-texldl r1, c5.z, s0
-mad r0.x, r1.x, c200.z, r0.x
-mov o1, r0
+mov o1, r1
