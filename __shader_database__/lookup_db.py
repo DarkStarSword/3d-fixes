@@ -27,7 +27,11 @@ def lookup_shader(filename, index):
 
 @shaderutil.handle_sigint
 def main():
-    index = json.load(open('SHADER_IDX.JSON', 'r', encoding='utf-8'))
+    filename = 'SHADER_IDX.JSON'
+    if not os.path.isfile(filename):
+        script_dir = os.path.join(os.curdir, os.path.dirname(sys.argv[0]))
+        filename = os.path.join(script_dir, filename)
+    index = json.load(open(filename, 'r', encoding='utf-8'))
     for filename in sys.argv[1:]:
         lookup_shader(filename, index)
 
