@@ -83,27 +83,37 @@ def colourise_diff(diff):
         else:
             yield d
 
-def print_shader_diff(orig_filename, shader):
+def shader_diff(orig_filename, shader, zip_url):
     with open(orig_filename) as orig:
-        fromlines = list(orig)
-        tolines = shader.replace('\r\n', '\n').splitlines(True)
-        diff = difflib.unified_diff(fromlines, tolines)
-        sys.stdout.writelines(colourise_diff(diff))
+        fromlines = orig.read().replace('\r\n', '\n').replace('\0', '').splitlines(True)
+        tolines = shader.replace('\r\n', '\n').replace('\0', '').splitlines(True)
+        diff = difflib.unified_diff(fromlines, tolines, orig_filename, zip_url)
+        for d in diff:
+            yield d
 
 def pretty_print_shader(filename, crc, shader):
-    print('%s: %i distinct_fix fixes found' % (crc, len(shader)))
+    print('\n/' + '='*79)
     for (i, distinct_fix) in enumerate(shader, 1):
-        print('          %i.' % i)
+        print('|')
+        print('>-+' + '-'*77)
+        print('| | %s: Fix %i/%i' % (crc, i, len(shader)))
+        zip_url = None
         for post in distinct_fix['posts']:
-            print('             "%s" - %s' % (post['title'], post['author']))
-            print('               Post URL: %s' % post['url'])
+            print('| >-+' + '-'*75)
+            print('| | | "%s" - %s' % (post['title'], post['author']))
+            print('| | | Post URL: %s' % post['url'])
+            print('| | \\-+' + '-'*73)
             for download in post['downloads']:
-                print('                 Download Link: %s' % download['url'])
-                print('                      Location:   %s' % download['path'])
-            print()
+                print('| |   | Download: %s' % download['url'])
+                print('| |   |           -> %s' % download['path'])
+                if zip_url is None:
+                    zip_url = '%s/%s' % (download['url'], download['path'])
+            print('| |   \\' + '-'*73)
         # print(distinct_fix['shader'])
-        print_shader_diff(filename, distinct_fix['shader'])
-    print()
+        for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url)):
+            sys.stdout.write('| | %s' % diff)
+        print('| \\' + '-'*77)
+    print('\\' + '='*79)
 
 @shaderutil.handle_sigint
 def main():
