@@ -2,6 +2,7 @@
 
 import sys, os
 import json
+import argparse
 import difflib
 import zipfile
 try:
@@ -69,8 +70,8 @@ def lookup_shaders_json(crcs, index):
             result[crc] = r
     return json.dumps(result, sort_keys=True, indent=1)
 
-def colourise_diff(diff):
-    if not sys.stdout.isatty():
+def colourise_diff(diff, args):
+    if not args.colour and not sys.stdout.isatty():
         for d in diff:
             yield d
     reset = '\x1b[0m'
@@ -91,7 +92,7 @@ def shader_diff(orig_filename, shader, zip_url):
         for d in diff:
             yield d
 
-def pretty_print_shader(filename, crc, shader):
+def pretty_print_shader(filename, crc, shader, args):
     print('\n/' + '='*79)
     for (i, distinct_fix) in enumerate(shader, 1):
         print('|')
@@ -110,17 +111,27 @@ def pretty_print_shader(filename, crc, shader):
                     zip_url = '%s/%s' % (download['url'], download['path'])
             print('| |   \\' + '-'*73)
         if os.path.isfile(filename):
-            for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url)):
+            for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url), args):
                 sys.stdout.write('| | %s' % diff)
         else:
             print(distinct_fix['shader'])
         print('| \\' + '-'*77)
     print('\\' + '='*79)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description = 'Shader database lookup tool')
+    parser.add_argument('files', nargs='+',
+            help='List of shader assembly files or CRCs to look up')
+    parser.add_argument('--colour', '--color', action='store_true',
+            help='Force colour output, even if output is not attached to a tty')
+    return parser.parse_args()
+
 @shaderutil.handle_sigint
 def main():
     global db_filename
     global download_dir
+
+    args = parse_args()
 
     if not os.path.isfile(db_filename):
         script_dir = os.path.join(os.curdir, os.path.dirname(sys.argv[0]))
@@ -129,13 +140,12 @@ def main():
 
     index = json.load(open(db_filename, 'r', encoding='utf-8'))
 
-    filenames = sys.argv[1:]
-    crcs = [shaderutil.get_filename_crc(filename) for filename in filenames]
+    crcs = [shaderutil.get_filename_crc(filename) for filename in args.files]
     shaders_json = lookup_shaders_json(crcs, index)
     shaders = json.loads(shaders_json)
     for crc, shader in shaders.items():
-        filename = filenames[crcs.index(crc)]
-        pretty_print_shader(filename, crc, shader)
+        filename = args.files[crcs.index(crc)]
+        pretty_print_shader(filename, crc, shader, args)
 
 if __name__ == '__main__':
     sys.exit(main())
