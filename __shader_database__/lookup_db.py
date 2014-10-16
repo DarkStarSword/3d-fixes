@@ -110,7 +110,7 @@ def pretty_print_shader(filename, crc, shader, args):
                 if zip_url is None:
                     zip_url = '%s/%s' % (download['url'], download['path'])
             print('| |   \\' + '-'*73)
-        if os.path.isfile(filename):
+        if args.diff and os.path.isfile(filename):
             for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url), args):
                 sys.stdout.write('| | %s' % diff)
         else:
@@ -124,6 +124,8 @@ def parse_args():
             help='List of shader assembly files or CRCs to look up')
     parser.add_argument('--colour', '--color', action='store_true',
             help='Force colour output, even if output is not attached to a tty')
+    parser.add_argument('--no-diff', dest='diff', action='store_false',
+            help='Disable diff output and suppress ascii lines around shaders')
     return parser.parse_args()
 
 @shaderutil.handle_sigint
