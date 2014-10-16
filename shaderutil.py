@@ -18,7 +18,7 @@ shader_pattern = re.compile('''
   \s*
   (?P<CRC>[0-9a-f]{1,8})
   (_\d+)?
-  .txt
+  (.txt)?
   $
 ''', re.VERBOSE | re.IGNORECASE)
 def get_filename_crc(filename):

@@ -109,9 +109,11 @@ def pretty_print_shader(filename, crc, shader):
                 if zip_url is None:
                     zip_url = '%s/%s' % (download['url'], download['path'])
             print('| |   \\' + '-'*73)
-        # print(distinct_fix['shader'])
-        for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url)):
-            sys.stdout.write('| | %s' % diff)
+        if os.path.isfile(filename):
+            for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url)):
+                sys.stdout.write('| | %s' % diff)
+        else:
+            print(distinct_fix['shader'])
         print('| \\' + '-'*77)
     print('\\' + '='*79)
 
