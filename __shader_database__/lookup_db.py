@@ -25,9 +25,7 @@ def extract_shader(archive, path):
     with Handler(archive) as archive:
         return archive.read(path).decode('utf-8')
 
-# This returns JSON because I want to stick it up on the web somewhere to allow
-# clients to query it without needing a local copy of the database:
-def lookup_shader_json(crc, index):
+def lookup_shader_crc(crc, index):
     shaders = index['shaders']
     if crc not in shaders:
         return []
@@ -60,27 +58,28 @@ def lookup_shader_json(crc, index):
             result.append(result_distinct)
     return result
 
-# TODO: Return result in JSON and stick it on a web API
-def lookup_shader(filename, index):
-    crc = shaderutil.get_filename_crc(filename)
-    print('%s: %s' % (filename, json.dumps(lookup_shader_json(crc, index), sort_keys=True, indent=2)))
-    # shaders = index['shaders']
-    # if crc not in shaders:
-    #     return
-    # shader = shaders[crc]
-    # posts = index['posts']
-    # print('%s: %i distinct fixes found' % (crc, len(shader)))
-    # for i, sha in enumerate(shader, 1):
-    #     print('          %i.' % i)
-    #     for post_url in shader[sha]:
-    #         post = posts[post_url]
-    #         print('             "%s" - %s' % (post['title'], post['author']))
-    #         print('               Post URL: %s' % post_url)
-    #         for (url, zip_path) in shader[sha][post_url]:
-    #             print('                 Download Link: %s' % url)
-    #             print('                      Location:   %s' % zip_path)
-    #         print()
-    # print()
+# This returns JSON because I want to stick it up on the web somewhere to allow
+# clients to query it without needing a local copy of the database:
+def lookup_shaders_json(crcs, index):
+    result = {}
+    for crc in crcs:
+        r = lookup_shader_crc(crc, index)
+        if r:
+            result[crc] = r
+    return json.dumps(result, sort_keys=True, indent=1)
+
+def pretty_print_shader(crc, shader):
+    print('%s: %i distinct_fix fixes found' % (crc, len(shader)))
+    for (i, distinct_fix) in enumerate(shader, 1):
+        print('          %i.' % i)
+        for post in distinct_fix['posts']:
+            print('             "%s" - %s' % (post['title'], post['author']))
+            print('               Post URL: %s' % post['url'])
+            for download in post['downloads']:
+                print('                 Download Link: %s' % download['url'])
+                print('                      Location:   %s' % download['path'])
+            print()
+    print()
 
 @shaderutil.handle_sigint
 def main():
@@ -93,8 +92,12 @@ def main():
         download_dir = os.path.join(script_dir, download_dir)
 
     index = json.load(open(db_filename, 'r', encoding='utf-8'))
-    for filename in sys.argv[1:]:
-        lookup_shader(filename, index)
+
+    crcs = [shaderutil.get_filename_crc(filename) for filename in sys.argv[1:]]
+    shaders_json = lookup_shaders_json(crcs, index)
+    shaders = json.loads(shaders_json)
+    for crc, shader in shaders.items():
+        pretty_print_shader(crc, shader)
 
 if __name__ == '__main__':
     sys.exit(main())
