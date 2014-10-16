@@ -29,4 +29,9 @@ def get_filename_crc(filename):
     crc = match.group('CRC').upper()
     return '%s%s' % ('0'*(8-len(crc)), crc)
 
+def url_to_download_path(url, download_dir):
+    import urllib.parse
+    parts = urllib.parse.urlparse(url)
+    return os.path.join(download_dir, parts.netloc, parts.path.lstrip('/').replace('/', os.path.sep))
+
 # vi: et sw=4 ts=4

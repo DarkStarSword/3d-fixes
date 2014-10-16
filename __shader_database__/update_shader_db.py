@@ -128,8 +128,7 @@ def download_file(url):
         os.mkdir(download_dir)
     except OSError:
         pass
-    parts = urllib.parse.urlparse(url)
-    dest = os.path.join(download_dir, parts.netloc, parts.path.lstrip('/').replace('/', os.path.sep))
+    dest = shaderutil.url_to_download_path(url, download_dir)
 
     if os.path.exists(dest):
         st = os.stat(dest)
