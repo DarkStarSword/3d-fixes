@@ -2,6 +2,7 @@
 
 import sys, os
 import json
+import difflib
 import zipfile
 try:
     import rarfile
@@ -68,7 +69,28 @@ def lookup_shaders_json(crcs, index):
             result[crc] = r
     return json.dumps(result, sort_keys=True, indent=1)
 
-def pretty_print_shader(crc, shader):
+def colourise_diff(diff):
+    if not sys.stdout.isatty():
+        for d in diff:
+            yield d
+    reset = '\x1b[0m'
+    for d in diff:
+        colour = None
+        if d[0] == '+':
+            yield '\x1b[32m%s%s' % (d, reset) # 32 = foreground green
+        elif d[0] == '-':
+            yield '\x1b[31m%s%s' % (d, reset) # 31 = foreground red
+        else:
+            yield d
+
+def print_shader_diff(orig_filename, shader):
+    with open(orig_filename) as orig:
+        fromlines = list(orig)
+        tolines = shader.replace('\r\n', '\n').splitlines(True)
+        diff = difflib.unified_diff(fromlines, tolines)
+        sys.stdout.writelines(colourise_diff(diff))
+
+def pretty_print_shader(filename, crc, shader):
     print('%s: %i distinct_fix fixes found' % (crc, len(shader)))
     for (i, distinct_fix) in enumerate(shader, 1):
         print('          %i.' % i)
@@ -79,6 +101,8 @@ def pretty_print_shader(crc, shader):
                 print('                 Download Link: %s' % download['url'])
                 print('                      Location:   %s' % download['path'])
             print()
+        # print(distinct_fix['shader'])
+        print_shader_diff(filename, distinct_fix['shader'])
     print()
 
 @shaderutil.handle_sigint
@@ -93,11 +117,13 @@ def main():
 
     index = json.load(open(db_filename, 'r', encoding='utf-8'))
 
-    crcs = [shaderutil.get_filename_crc(filename) for filename in sys.argv[1:]]
+    filenames = sys.argv[1:]
+    crcs = [shaderutil.get_filename_crc(filename) for filename in filenames]
     shaders_json = lookup_shaders_json(crcs, index)
     shaders = json.loads(shaders_json)
     for crc, shader in shaders.items():
-        pretty_print_shader(crc, shader)
+        filename = filenames[crcs.index(crc)]
+        pretty_print_shader(filename, crc, shader)
 
 if __name__ == '__main__':
     sys.exit(main())
