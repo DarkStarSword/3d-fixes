@@ -10,7 +10,7 @@ dcl_position o1
 dcl_color o2
 
 
-def c6, 0, 1, 0.0625, 0.5
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
     mul o2, v1, c5
@@ -20,11 +20,11 @@ dcl_2d s0
     dp4 r0.y, v0, c1
     dp4 r0.x, v0, c0
 
-// approximately 6 instruction slots used
-
-
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui c200.z VertexShader_106_CRC32_ DC90B2E.txt VertexShader_102_CRC32_CD61F9B3.txt
-texldl r1, c6.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+// Adjust depth only if original depth was 1 (which the menu is drawn at) since
+// this also affects some in-game text (inventory and the text pointing out the
+// letter at the start) that we don't want to adjust.
+if_eq r0.w, c220.y
+	texldl r1, c220.z, s0
+	mad r0.x, r1.x, c200.z, r0.x
+endif
 mov o1, r0
