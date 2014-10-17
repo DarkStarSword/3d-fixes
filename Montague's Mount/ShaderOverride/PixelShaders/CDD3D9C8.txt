@@ -10,17 +10,57 @@
     def c16, 0.25, 0.219970703, 0.70703125, 0.0709838867
     dcl_texcoord v0
     dcl_texcoord1 v1.xyz
-    rcp r0.x, v0.w
-    mul r0.xy, v0, r0.x
-    texld r1.x, r0, s1
-    rcp r0.z, v1.z
+
+def c220, 1, 1.05, 0.0625, 0.5
+dcl_2d s13
+
+dcl vPos.xy
+
+    // Replaced with below
+    // rcp r0.x, v0.w
+    // mul r0.xy, v0, r0.x
+
+// This only seems to make a small difference - maybe because I'm using a
+// profile switch?
+mov r11.xy, vPos.xy		// r11.xy = x,y on screen
+rcp r11.z, c210.x		// r11.z = 1 / screen width
+rcp r11.w, c210.y		// r11.w = 1 / screen height
+mul r11.xy, r11.xy, r11.zw	// r11.xy = x,y coords on screen scaled to range 0.0-1.0
+mul r11.zw, r11.zw, c220.ww	// r11.zw = 1 / (2 * screen dimensions)
+add r0.xy, r11.xy, r11.zw
+
+// This is a bit oddball. The shader resembles other Unity lighting shaders,
+// but I can't get it to line up with the ground everywhere following the same
+// pattern to fix the others... If I align it so the shadows beneath the player
+// looks right than the shadows off to the side are misaligned and vice-versa.
+// It reminds me of the weird misalignment I see on the sand in the game if not
+// using a profile hack. No idea why I don't see this on the ambient shadows.
+// With some experimentation I found pre-adjusting v1 made the misalignment
+// significantly less pronounced, though it did not entirely eliminate it.
+mov r29.xyz, v1.xyz
+texldl r24, c220.z, s13
+add r24.w, r29.z, -r24.y
+mul r24.w, r24.w, r24.x
+//mul r24.w, r24.w, c220.w
+add r29.x, r29.x, r24.w
+
+    texld r1.x, r0, s1		// Mike labelled this as depth
+    rcp r0.z, r29.z
     mov r4.z, c13.x
     mad r0.w, r1.x, c6.x, c6.y
     mul r0.z, r0, c5
-    mul r1.xyz, v1, r0.z
+    mul r1.xyz, r29, r0.z
     rcp r0.z, r0.w
     mul r4.xyw, r1.xyzz, r0.z
     texld r0, r0, s0
+
+// Align the shadows:
+texldl r24, c220.z, s13
+add r24.w, r4.w, -r24.y
+mul r24.w, r24.w, r24.x
+mul r24.w, r24.w, c220.y // Magic value dependent on FOV
+add r4.x, r4.x, -r24.w
+
     dp4 r2.z, r4.xywz, c2
     dp4 r2.x, r4.xywz, c0
     dp4 r2.y, r4.xywz, c1
