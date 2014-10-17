@@ -1,4 +1,4 @@
-// UI *and* lens flare
+// UI *and* lens flare *and* bloom
 
     vs_3_0
     dcl_position v0
@@ -11,6 +11,7 @@ dcl_color o2
 
 
 def c220, 0, 0.1, 0.0625, 0.5
+def c221, 0.05, 0.1, 0, 0
 dcl_2d s0
 texldl r31, c220.z, s0 // r31.x = separation, r31.y = convergence
 
@@ -23,9 +24,16 @@ texldl r31, c220.z, s0 // r31.x = separation, r31.y = convergence
 
 mov r25, c251
 if_eq r25.x, c220.x
-	// Matched the lens flare texture - this requires a completely
-	// different fix to the UI. The depth varies wildly with convergence,
-	// so first, undo the stereo correction:
+	// We matched the texture used for both the bloom (which doesn't need
+	// to be fixed) and the lens flare (which does need to be fixed).
+
+	// The bloom effects are drawn at the correct distance into the scene,
+	// while the lens flare is drawn very close to 0, depending on the
+	// angle, so we try to match the lens flare based on it's depth:
+if_gt r1.w, c221.x // > 0.05
+if_lt r1.w, c221.y // < 0.1
+	// The lens flare depth varies wildly with convergence, so first, undo
+	// the stereo correction:
 	add r31.w, r1.w, -r31.y
 	mul r31.w, r31.w, r31.x
 	add r1.x, r1.x, -r31.w
@@ -33,9 +41,11 @@ if_eq r25.x, c220.x
 	// only due the flare geometry, so there might be a better way to achieve this:
 	mul r31.w, r31.x, c220.y
 	add r1.x, r1.x, r31.w
+endif
+endif
 else
-	// Didn't match the lens flare texture, so this must be the UI - adjust
-	// depth to c200.z * separation:
+	// Didn't match the lens flare/bloom texture, so this must be the UI -
+	// adjust depth to c200.z * separation:
 	mad r1.x, c200.z, r31.x, r1.x
 endif
 
