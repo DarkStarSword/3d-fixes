@@ -61,3 +61,8 @@ pretty. At the moment it can:
 - Install shaders to the ShaderOverride directory
 - Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0
 - Analyse shader register usage and look for free constants.
+
+### extract_stereo_settings.py ###
+Short python script to extract the table of Stereo settings from the nVidia
+driver and write them to a CustomSettingNames_en-EN.xml which can be used with
+nVidia Inspector.
