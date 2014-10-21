@@ -22,7 +22,8 @@ rm -fv "$zip" || true
 if [ -f "$dir/$readme_src" ]; then
 	rm -frv "$tmp_dir"
 	cp -as "$dir" "$tmp_dir"
-	mv "$tmp_dir/$readme_src" "$tmp_dir/$readme_dst"
+	unix2dos -n "$tmp_dir/$readme_src" "$tmp_dir/$readme_dst"
+	rm -f "$tmp_dir/$readme_src"
 	dir="$tmp_dir"
 	rm_tmp_dir=1
 
