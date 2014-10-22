@@ -510,8 +510,9 @@ class PS2(ShaderBlock):
         self.analyse_regs()
         replace_regs = {}
 
-        for reg in sorted(self.reg_types['t']):
-            replace_regs[reg.reg] = Register('v%d' % reg.num)
+        if 't' in self.reg_types:
+            for reg in sorted(self.reg_types['t']):
+                replace_regs[reg.reg] = Register('v%d' % reg.num)
 
         self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
