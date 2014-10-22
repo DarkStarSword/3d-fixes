@@ -45,7 +45,7 @@ class Comma(Token):
     pattern = re.compile(r',')
 
 class Float(Token, Number):
-    pattern = re.compile(r'-?[0-9]*\.[0-9]*(e-?[0-9]+)?')
+    pattern = re.compile(r'-?[0-9]*\.[0-9]*(e[-+]?[0-9]+)?')
 
 class Int(Token, Number):
     pattern = re.compile(r'-?[0-9]+')
