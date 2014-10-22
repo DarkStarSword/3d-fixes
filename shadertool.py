@@ -787,6 +787,8 @@ def parse_args():
             help='Dumps the shader broken up into tokens')
     parser.add_argument('--debug-syntax-tree', action='store_true',
             help='Dumps the syntax tree')
+    parser.add_argument('--ignore-parse-errors', action='store_true',
+            help='Continue with the next file in the event of a parse error')
     return parser.parse_args()
 
 def main():
@@ -803,7 +805,15 @@ def main():
 
     for file in args.files:
         debug('parsing %s...' % file)
-        tree = parse_shader(open(file, 'r', newline=None).read(), args)
+        try:
+            tree = parse_shader(open(file, 'r', newline=None).read(), args)
+        except Exception as e:
+            if args.ignore_parse_errors:
+                import traceback, time
+                traceback.print_exc()
+                time.sleep(1)
+                continue
+            raise
         if hasattr(tree, 'to_shader_model_3'):
             debug('Converting to Shader Model 3...')
             tree.to_shader_model_3()
