@@ -601,7 +601,7 @@ def install_shader(shader, file, args):
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const
-    if args.adjust_multiply:
+    if args.adjust_multiply and args.adjust_multiply != -1:
         w = args.adjust_multiply
     tree.stereo_const = tree._find_free_reg('c', VS3)
     tree.insert_decl()
@@ -644,19 +644,19 @@ def adjust_ui_depth(tree, args):
     tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
     tree.add_inst('mov', [dst_reg, pos_reg])
 
-def _adjust_texcoord(tree, reg, args, stereo_const, tmp_reg):
+def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
 
     if reg.startswith('dcl_texcoord'):
         dst_reg = find_declaration(tree, reg, 'o').reg
-    if reg.startswith('texcoord'):
+    if reg.startswith('texcoord') or reg == 'position':
         dst_reg = find_declaration(tree, 'dcl_%s' % reg, 'o').reg
     else:
         dst_reg = reg
     replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_inserted_by_comment(tree, 'Texcoord adjustment inserted with')
+    append_inserted_by_comment(tree, 'Output adjustment inserted with')
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
@@ -667,28 +667,28 @@ def _adjust_texcoord(tree, reg, args, stereo_const, tmp_reg):
         tree.add_inst('mad', [pos_reg.x, tmp_reg.w, separation, pos_reg.x])
     else:
         tree.add_inst('mul', [tmp_reg.w, tmp_reg.w, separation])
-        if args.adjust_multiply:
+        if args.adjust_multiply and args.adjust_multiply != -1:
             tree.add_inst('mul', [tmp_reg.w, tmp_reg.w, stereo_const.w])
-        tree.add_inst('add', [pos_reg.x, pos_reg.x, tmp_reg.w])
+        if args.adjust_multiply and args.adjust_multiply == -1:
+            tree.add_inst('add', [pos_reg.x, pos_reg.x, -tmp_reg.w])
+        else:
+            tree.add_inst('add', [pos_reg.x, pos_reg.x, tmp_reg.w])
     if args.condition:
         tree.add_inst('endif', [])
     tree.add_inst('mov', [dst_reg, pos_reg])
 
-def adjust_texcoord(tree, args):
+def adjust_output(tree, args):
     if not isinstance(tree, VS3):
-        raise Exception('Texcoord adjustment must be done on a vertex shader (currently)')
+        raise Exception('Output adjustment must be done on a vertex shader (currently)')
 
-    w = 0.5
-    if args.adjust_multiply:
-        w = args.adjust_multiply
     stereo_const = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
-    for reg in args.adjust_texcoord:
-        _adjust_texcoord(tree, reg, args, stereo_const, tmp_reg)
+    for reg in args.adjust:
+        _adjust_output(tree, reg, args, stereo_const, tmp_reg)
 
-def _disable_texcoord(tree, reg, args, stereo_const, tmp_reg):
+def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
 
     if reg.startswith('dcl_texcoord'):
@@ -710,7 +710,7 @@ def _disable_texcoord(tree, reg, args, stereo_const, tmp_reg):
         tree.add_inst('endif', [])
     tree.add_inst('endif', [])
 
-def disable_texcoord(tree, args):
+def disable_output(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('Texcoord adjustment must be done on a vertex shader (currently)')
 
@@ -718,8 +718,8 @@ def disable_texcoord(tree, args):
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
-    for reg in args.disable_texcoord:
-        _disable_texcoord(tree, reg, args, stereo_const, tmp_reg)
+    for reg in args.disable_output:
+        _disable_output(tree, reg, args, stereo_const, tmp_reg)
 
 def disable_shader(tree, args):
     if isinstance(tree, VS3):
@@ -770,12 +770,14 @@ def parse_args():
             help='Search for unused constants')
     parser.add_argument('--disable', choices=['0', '1'],
             help="Disable a shader, by setting it's output to 0 or 1")
-    parser.add_argument('--disable-texcoord', action='append',
+    parser.add_argument('--disable-output', '--disable-texcoord', action='append',
             help="Disable a given texcoord in the shader")
-    parser.add_argument('--adjust-texcoord', action='append',
-            help="Apply the stereo formula to a texcoord")
-    parser.add_argument('--adjust-multiply', type=float,
+    parser.add_argument('--adjust', '--adjust-output', '--adjust-texcoord', action='append',
+            help="Apply the stereo formula to an output (texcoord or position)")
+    parser.add_argument('--adjust-multiply', '--adjust-multiplier', '--multiply', type=float,
             help="Multiplier for the stereo adjustment. If you notice the broken effect switches eyes try 0.5")
+    parser.add_argument('--unadjust', action='append',
+            help="Unadjust the output. Equivalent to --adjust=<output> --adjust-multiply=-1")
     parser.add_argument('--condition',
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
     parser.add_argument('--no-mad', action='store_false', dest='use_mad',
@@ -821,7 +823,7 @@ def main():
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
         if args.show_regs or args.find_free_consts or args.adjust_ui_depth or \
-                args.disable or args.disable_texcoord or args.adjust_texcoord:
+                args.disable or args.disable_output or args.adjust or args.unadjust:
             tree.analyse_regs(args.show_regs)
             if args.find_free_consts:
                 if isinstance(tree, VS3):
@@ -841,10 +843,14 @@ def main():
             disable_shader(tree, args)
         if args.adjust_ui_depth:
             adjust_ui_depth(tree, args)
-        if args.disable_texcoord:
-            disable_texcoord(tree, args)
-        if args.adjust_texcoord:
-            adjust_texcoord(tree, args)
+        if args.disable_output:
+            disable_output(tree, args)
+        if args.adjust:
+            adjust_output(tree, args)
+        if args.unadjust:
+            args.adjust = args.unadjust
+            args.adjust_multiply = -1
+            adjust_output(tree, args)
 
         if args.output:
             print(tree, end='', file=args.output)
