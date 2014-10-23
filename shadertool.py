@@ -768,7 +768,7 @@ def parse_args():
             help='Show the registers used in the shader')
     parser.add_argument('--find-free-consts', '--consts', '-c', action='store_true',
             help='Search for unused constants')
-    parser.add_argument('--disable', choices=['0', '1'],
+    parser.add_argument('--disable', choices=['0', '1'], nargs='?', default=None, const='0',
             help="Disable a shader, by setting it's output to 0 or 1")
     parser.add_argument('--disable-output', '--disable-texcoord', action='append',
             help="Disable a given texcoord in the shader")
