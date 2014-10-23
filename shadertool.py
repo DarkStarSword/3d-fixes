@@ -776,7 +776,7 @@ def parse_args():
             help="Apply the stereo formula to an output (texcoord or position)")
     parser.add_argument('--adjust-multiply', '--adjust-multiplier', '--multiply', type=float,
             help="Multiplier for the stereo adjustment. If you notice the broken effect switches eyes try 0.5")
-    parser.add_argument('--unadjust', action='append',
+    parser.add_argument('--unadjust', action='append', nargs='?', default=None, const='position',
             help="Unadjust the output. Equivalent to --adjust=<output> --adjust-multiply=-1")
     parser.add_argument('--condition',
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
