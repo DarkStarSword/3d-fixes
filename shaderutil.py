@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 
+from __future__ import print_function # Used by shaderdb.py, which is run with a python2 interpreter on Debian
+
 import sys, os
 import re
+
+try:
+    # Try Python 3
+    import urllib.parse
+    urlparse = urllib.parse.urlparse
+except ImportError:
+    # Try Python 2
+    import urllib2
+    urlparse = urllib2.urlparse.urlparse
 
 def handle_sigint(f):
     def wrap(*args, **kwargs):
@@ -30,8 +41,7 @@ def get_filename_crc(filename):
     return '%s%s' % ('0'*(8-len(crc)), crc)
 
 def url_to_download_path(url, download_dir):
-    import urllib.parse
-    parts = urllib.parse.urlparse(url)
+    parts = urlparse(url)
     return os.path.join(download_dir, parts.netloc, parts.path.lstrip('/').replace('/', os.path.sep))
 
 # vi: et sw=4 ts=4

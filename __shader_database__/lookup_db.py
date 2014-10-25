@@ -4,71 +4,26 @@ import sys, os
 import json
 import argparse
 import difflib
-import zipfile
-try:
-    import rarfile
-except ImportError:
-    print('You need to run: pip3 install rarfile')
-    raise
+import urllib.request
+import urllib.parse
 
 import shaderutil
 
-db_filename = 'SHADER_IDX.JSON'
-download_dir = 'downloads'
+api_url_base = 'http://valen.darkstarsword.net/apis/shaderdb/dev'
+api_url_get_crcs = '%s/get_crcs' % api_url_base
 
-def extract_shader(archive, path):
-    (_, ext) = os.path.splitext(archive)
-    if ext == '.zip':
-        Handler = zipfile.ZipFile
-    elif ext == '.rar':
-        Handler = rarfile.RarFile
-    else:
-        raise AssertionError('Unsupported archive format: %s' % ext)
-    with Handler(archive) as archive:
-        return archive.read(path).decode('utf-8')
-
-def lookup_shader_crc(crc, index):
-    shaders = index['shaders']
-    if crc not in shaders:
-        return []
-    shader = shaders[crc]
-    posts = index['posts']
-    result = []
-    for i, sha in enumerate(shader, 1):
-        result_distinct = {
-            'posts': [],
-            'shader': None
-        }
-        for post_url in shader[sha]:
-            post = posts[post_url]
-            downloads = []
-            for (url, zip_path) in shader[sha][post_url]:
-                downloads.append({
-                    'url': url,
-                    'path': zip_path,
-                })
-                if result_distinct['shader'] is None:
-                    filename = shaderutil.url_to_download_path(url, download_dir)
-                    result_distinct['shader'] = extract_shader(filename, zip_path)
-            result_distinct['posts'].append({
-                    'title': post['title'],
-                    'author': post['author'],
-                    'url': post_url,
-                    'downloads': downloads,
-            })
-        if result_distinct['shader'] is not None:
-            result.append(result_distinct)
-    return result
-
-# This returns JSON because I want to stick it up on the web somewhere to allow
-# clients to query it without needing a local copy of the database:
-def lookup_shaders_json(crcs, index):
-    result = {}
-    for crc in crcs:
-        r = lookup_shader_crc(crc, index)
-        if r:
-            result[crc] = r
-    return json.dumps(result, sort_keys=True, indent=1)
+def lookup_shader_crcs(crcs):
+    data = '\n'.join(crcs).encode('ascii')
+    try:
+        print('Sending request to shader database server...', file=sys.stdout)
+        with urllib.request.urlopen(api_url_get_crcs, data=data) as f:
+            print('Retrieving result...', file=sys.stdout)
+            ret = json.loads(f.read().decode('utf-8'))
+            print('Done', file=sys.stdout)
+            return ret
+    except urllib.error.HTTPError as e:
+        print(e.read().decode('utf-8'), file=sys.stderr)
+        raise
 
 def colourise_diff(diff, args):
     if not args.colour and not sys.stdout.isatty():
@@ -130,21 +85,10 @@ def parse_args():
 
 @shaderutil.handle_sigint
 def main():
-    global db_filename
-    global download_dir
-
     args = parse_args()
 
-    if not os.path.isfile(db_filename):
-        script_dir = os.path.join(os.curdir, os.path.dirname(sys.argv[0]))
-        db_filename = os.path.join(script_dir, db_filename)
-        download_dir = os.path.join(script_dir, download_dir)
-
-    index = json.load(open(db_filename, 'r', encoding='utf-8'))
-
     crcs = [shaderutil.get_filename_crc(filename) for filename in args.files]
-    shaders_json = lookup_shaders_json(crcs, index)
-    shaders = json.loads(shaders_json)
+    shaders = lookup_shader_crcs(crcs)
     for crc, shader in shaders.items():
         filename = args.files[crcs.index(crc)]
         pretty_print_shader(filename, crc, shader, args)
