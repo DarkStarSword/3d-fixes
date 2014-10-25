@@ -49,25 +49,29 @@ def shader_diff(orig_filename, shader, zip_url):
 
 def pretty_print_shader(filename, crc, shader, args):
     print('\n/' + '='*79)
-    for (i, distinct_fix) in enumerate(shader, 1):
+    for (i, distinct_fix) in enumerate(shader, 1): # TODO: Maybe sort this for consistency?
         print('|')
         print('>-+' + '-'*77)
         print('| | %s: Fix %i/%i' % (crc, i, len(shader)))
         zip_url = None
-        for post in distinct_fix['posts']:
+        for post in distinct_fix['posts']: # TODO: Maybe sort this for consistency?
             print('| >-+' + '-'*75)
             print('| | | "%s" - %s' % (post['title'], post['author']))
             print('| | | Post URL: %s' % post['url'])
             print('| | \\-+' + '-'*73)
-            for download in post['downloads']:
+            for download in post['downloads']: # TODO: Maybe sort this for consistency?
                 print('| |   | Download: %s' % download['url'])
                 print('| |   |           -> %s' % download['path'])
                 if zip_url is None:
                     zip_url = '%s/%s' % (download['url'], download['path'])
             print('| |   \\' + '-'*73)
         if args.diff and os.path.isfile(filename):
+            d = False
             for diff in colourise_diff(shader_diff(filename, distinct_fix['shader'], zip_url), args):
                 sys.stdout.write('| | %s' % diff)
+                d = True
+            if not d:
+                print('| | [IDENTICAL TO LOCAL FILE]')
         else:
             print(distinct_fix['shader'])
         print('| \\' + '-'*77)
@@ -89,9 +93,9 @@ def main():
 
     crcs = [shaderutil.get_filename_crc(filename) for filename in args.files]
     shaders = lookup_shader_crcs(crcs)
-    for crc, shader in shaders.items():
+    for crc in sorted(shaders):
         filename = args.files[crcs.index(crc)]
-        pretty_print_shader(filename, crc, shader, args)
+        pretty_print_shader(filename, crc, shaders[crc], args)
 
 if __name__ == '__main__':
     sys.exit(main())
