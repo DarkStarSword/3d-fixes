@@ -1,14 +1,12 @@
-#!/usr/bin/env/python
+#!/usr/bin/env/python3
 
-# Python 2 since Debian doesn't have a version of mod_python for apache that is
-# compatible with Python3 yet and I would rather avoid manually installing it
-# and inevitably never updating it.
-
-from mod_python import apache
-import os, re
+import sys, os, re
 import json
 import zipfile
 import rarfile # pip install rarfile
+
+# ARE YOU SERIOUS WSGI?
+sys.path.append(os.path.dirname(__file__))
 
 import shaderutil
 
@@ -72,27 +70,32 @@ is_crc_pattern = re.compile(r'^[0-9a-fA-F]{8}$')
 def is_crc(crc):
 	return is_crc_pattern.match(crc) is not None
 
-def handle_get_crcs(req):
-	req.content_type = 'application/json'
-	crcs = set(map(str.strip, req.read().split()))
+def handle_get_crcs(environ, start_response):
+	try:
+		request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+	except ValueError:
+		request_body_size = 0
+
+	request = environ['wsgi.input'].read(request_body_size).decode('ascii')
+	crcs = set(map(str.strip, request.split()))
 	if not all(map(is_crc, crcs)):
-		return apache.HTTP_BAD_REQUEST
+		start_response('400 Bad Request', [])
+		return []
 
 	index = json.load(open(os.path.join(script_dir, db_filename), 'r'))
-	req.write(lookup_shaders_json(crcs, index))
-
-	return apache.OK
+	ret = lookup_shaders_json(crcs, index).encode('utf-8')
+	start_response('200 OK', [('Content-type', 'application/json'),
+				('Content-Length', str(len(ret)))])
+	return [ret]
 
 handlers = {
-	'get_crcs': handle_get_crcs,
+	'/get_crcs': handle_get_crcs,
 }
 
-def handler(req):
-	req.content_type = 'application/json'
-	filename = os.path.relpath(req.filename, script_dir)
-	# req.write(filename)
+def application(environ, start_response):
+	filename = environ['PATH_INFO']
 	if filename in handlers:
-		return handlers[filename](req)
-	return apache.DECLINED
+		return handlers[filename](environ, start_response)
 
-
+	start_response('404 Not Found', [])
+	return []
