@@ -9,8 +9,21 @@
     def c16, 128, 0.219970703, 0.70703125, 0.0709838867
     dcl_texcoord v0
     dcl_texcoord1 v1.xyz
+
+def c220, 0, 0.85, 0.0625, 0.5
+dcl_2d s13
+dcl vPos.xy
+
     rcp r0.x, v0.w
     mul r0.xy, v0, r0.x
+
+//mov r11.xy, vPos.xy
+//rcp r11.z, c210.x
+//rcp r11.w, c210.y
+//mul r11.xy, r11.xy, r11.zw
+//mul r11.zw, r11.zw, c220.ww
+//add r0.xy, r11.xy, r11.zw
+
     texld r1.x, r0, s1
     rcp r0.z, v1.z
     mov r3.z, c15.x
@@ -19,6 +32,42 @@
     mul r1.xyz, v1, r0.z
     rcp r0.z, r0.w
     mul r3.xyw, r1.xyzz, r0.z
+
+// We need to get the horizontal FOV, which is in the projection matrix at
+// [0,0] (well, actually it's cot(fov_h / 2), but that's what we need).
+//
+// Unfortunately none of the Unity shaders use the projection matrix, so we
+// need to calculate it. We have the MVP matrix in c190 and the inverted MV
+// matrix in c180, which was copied from the VS with Helix mod (refer to the
+// DX9Settings.ini).
+//
+// We can calculate the projection matrix by multiplying the inverted MV matrix
+// by the MVP matrix: P = MV.I * MVP
+//
+// Since we only need one field in the projection matrix, we can avoid doing a
+// full matrix multiplication here. We only need to multiply the first row of
+// the inverted MV matrix with the first column of the MVP matrix. The matrix
+// regs are columns (I think - feels backwards to me), which means we need to
+// transpose the first component of each of the MV regs into a temporary
+// register to get it's first row:
+mov r21.x, c180.x
+mov r21.y, c181.x
+mov r21.z, c182.x
+mov r21.w, c183.x
+// Now calculate the dot product of the first row of MV.I with the first column
+// of MVP and store the result in r20.x - this is Projection[0,0]:
+dp4 r20.x, r21, c190
+
+// We need to divide by the FOV, so invert it:
+rcp r20.x, r20.x
+
+// And now we can adjust the shadow:
+texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
+add r31.w, r3.w, -r31.y // r31.w = depth - convergence
+mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
+mul r31.w, r31.w, r20.x // Adjust by FOV we just calculated
+add r3.x, r3.x, -r31.w  // Finally adjust the X coord
+
     dp4 r2.x, r3.xywz, c0
     dp4 r2.z, r3.xywz, c2
     dp4 r2.y, r3.xywz, c1
