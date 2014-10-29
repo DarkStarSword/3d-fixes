@@ -18,6 +18,7 @@ these fixes.
 
 ### Work in Progress ###
 - World of Diving (Partial shadow fix, fixed or disabled halos)
+- Dreamfall Chapters (First ever Unity FOV correct shadow fix)
 
 Misc
 ====
@@ -66,3 +67,7 @@ pretty. At the moment it can:
 Short python script to extract the table of Stereo settings from the nVidia
 driver and write them to a CustomSettingNames_en-EN.xml which can be used with
 nVidia Inspector.
+
+### matrix.py ###
+Small Python module to create typical matrices for translation, rotation,
+scaling and projection in 3D to help me understand the maths behind them.
