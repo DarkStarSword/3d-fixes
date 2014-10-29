@@ -50,9 +50,14 @@
     dcl_texcoord v0
     dcl_texcoord1 v1.xyz
 
-def c220, 0, 1.555, 0.0625, 0.5
+def c220, 0, 0.85, 0.0625, 0.5
 dcl_2d s13
 dcl vPos.xy
+
+dcl_texcoord4 v4
+dcl_texcoord5 v5
+dcl_texcoord6 v6
+dcl_texcoord7 v7
 
 mov r30, c200
 
@@ -87,8 +92,8 @@ endif
 // [0,0] (well, actually it's cot(fov_h / 2), but that's what we need).
 //
 // Unfortunately none of the Unity shaders use the projection matrix, so we
-// need to calculate it. We have the MVP matrix in c194 and the inverted MV
-// matrix in c190, which was copied from the VS with Helix mod (refer to the
+// need to calculate it. We have the MVP matrix in c190 and the inverted MV
+// matrix in c180, which was copied from the VS with Helix mod (refer to the
 // DX9Settings.ini).
 //
 // We can calculate the projection matrix by multiplying the inverted MV matrix
@@ -97,19 +102,36 @@ endif
 // Since we only need one field in the projection matrix, we can avoid doing a
 // full matrix multiplication here. First, transpose the first column of the
 // MVP matrix into r20:
-mov r20.x, c194.x
-mov r20.y, c195.x
-mov r20.z, c196.x
-mov r20.w, c197.x
+mov r20.x, v4.x
+mov r20.y, v5.x
+mov r20.z, v6.x
+mov r20.w, v7.x
+
+mov r21.x, c180.x
+mov r21.y, c181.x
+mov r21.z, c182.x
+mov r21.w, c183.x
 // Now calculate the dot product of the first row of MV.I with the first column
 // of MVP and store the result in r20.x - this is Projection[0,0]:
-dp4 r20.x, c190, r20
+//dp4 r20.x, c180, r20
+dp4 r20.x, r21, v4
+
+// Try dividing instead:
+rcp r20.x, r20.x
 
 // And now we can adjust the shadow:
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
 add r31.w, r0.w, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
+
 mul r31.w, r31.w, r20.x // Adjust by FOV we just calculated
+
+//mul r31.w, r31.w, c220.y
+
+// if_eq r30.w, c220.x
+// mul r31.w, r31.w, c191.x
+// endif
+
 add r0.x, r0.x, -r31.w  // Finally adjust the X coord
 
     dp4 r10.w, r0.xywz, c5
