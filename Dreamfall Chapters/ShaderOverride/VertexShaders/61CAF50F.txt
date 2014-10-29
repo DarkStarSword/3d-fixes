@@ -1,10 +1,20 @@
 // Starting area - fog with halo
 
-    vs_2_0
+    vs_3_0
     def c11, 0.5, 0, 0, 0
     dcl_position v0
     dcl_color v1
     dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
+
+
+def c0, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 r1.w, v0, c7
     dp4 r0.x, v0, c4
     mov r0.w, r1
@@ -12,12 +22,21 @@
     mul r1.xyz, r0.xyww, c11.x
     mul r1.y, r1, c8.x
     dp4 r0.z, v0, c6
-    mov oPos, r0
+    mov o2, r0
     dp4 r0.x, v0, c2
-    mad oT1.xy, r1.z, c9.zwzw, r1
-    mov oD0, v1
-    mad oT0.xy, v2, c10, c10.zwzw
-    mov oT1.z, -r0.x
-    mov oT1.w, r1
+    mad r3.xy, r1.z, c9.zwzw, r1
+    mov o3, v1
+    mad o0.xy, v2, c10, c10.zwzw
+    mov r3.z, -r0.x
+    mov r3.w, r1
 
 // approximately 14 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f -o - VertexShader_48_CRC32_61CAF50F.txt --adjust=texcoord1 --adjust-multiply=0.5
+texldl r2, c0.z, s0
+add r2.w, r3.w, -r2.y
+mul r2.w, r2.w, r2.x
+mul r2.w, r2.w, c0.w
+add r3.x, r3.x, r2.w
+mov o1, r3
