@@ -16,6 +16,10 @@
     dcl_normal v2
     dcl_texcoord v3
     dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r0.xyz, v1
     mul r1.xyz, v2.zxyw, r0.yzxw
     mov r0.xyz, v1
@@ -34,8 +38,13 @@
     dp4 r0.z, v0, c6
     dp4 r0.x, v0, c4
     dp4 r0.y, v0, c5
-    mul r3.xyz, r0.xyww, c24.y
     mov o0, r0
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r3.xyz, r0.xyww, c24.y
     mov r0.x, c19.w
     add r0.y, c24.x, -r0.x
     dp4 r0.x, v0, c2
@@ -66,3 +75,4 @@
     mul o8.w, -r0.x, r0.y
 
 // approximately 48 instruction slots used
+
