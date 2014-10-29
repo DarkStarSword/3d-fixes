@@ -54,30 +54,11 @@ def c220, 0, 0.85, 0.0625, 0.5
 dcl_2d s13
 dcl vPos.xy
 
-dcl_texcoord4 v4
-dcl_texcoord5 v5
-dcl_texcoord6 v6
-dcl_texcoord7 v7
-
-mov r30, c200
-
+    // NOT doing Mike's correction here as it leaves a 1px halo around the
+    // character. The vertex shader has been uncorrected instead, which is more
+    // accurate.
     rcp r0.x, v0.w
     mul r8.xy, v0, r0.x
-
-if_eq r30.z, c220.x
-	// This follows the patterns in Mike's M&M fix - it overrides the
-	// passed in position and calculates it from the view. Reversing the
-	// stereo correction in the vertex shader has the same result, but also
-	// makes the shadows line up with the ground (something that needs to
-	// be dialled in manually if done in the pixel shader.... I think).
-	mov r11.xy, vPos.xy
-	rcp r11.z, c210.x
-	rcp r11.w, c210.y
-	mul r11.xy, r11.xy, r11.zw
-	mul r11.zw, r11.zw, c220.ww
-	add r8.xy, r11.xy, r11.zw
-endif
-
     rcp r0.y, v1.z
     mul r0.y, r0, c13.z
     texld r0.x, r8, s1
@@ -100,38 +81,27 @@ endif
 // by the MVP matrix: P = MV.I * MVP
 //
 // Since we only need one field in the projection matrix, we can avoid doing a
-// full matrix multiplication here. First, transpose the first column of the
-// MVP matrix into r20:
-mov r20.x, v4.x
-mov r20.y, v5.x
-mov r20.z, v6.x
-mov r20.w, v7.x
-
+// full matrix multiplication here. We only need to multiply the first row of
+// the inverted MV matrix with the first column of the MVP matrix. The matrix
+// regs are columns (I think - feels backwards to me), which means we need to
+// transpose the first component of each of the MV regs into a temporary
+// register to get it's first row:
 mov r21.x, c180.x
 mov r21.y, c181.x
 mov r21.z, c182.x
 mov r21.w, c183.x
 // Now calculate the dot product of the first row of MV.I with the first column
 // of MVP and store the result in r20.x - this is Projection[0,0]:
-//dp4 r20.x, c180, r20
-dp4 r20.x, r21, v4
+dp4 r20.x, r21, c190
 
-// Try dividing instead:
+// We need to divide by the FOV, so invert it:
 rcp r20.x, r20.x
 
 // And now we can adjust the shadow:
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
 add r31.w, r0.w, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
-
 mul r31.w, r31.w, r20.x // Adjust by FOV we just calculated
-
-//mul r31.w, r31.w, c220.y
-
-// if_eq r30.w, c220.x
-// mul r31.w, r31.w, c191.x
-// endif
-
 add r0.x, r0.x, -r31.w  // Finally adjust the X coord
 
     dp4 r10.w, r0.xywz, c5
