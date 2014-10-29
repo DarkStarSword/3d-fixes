@@ -59,9 +59,20 @@ some of the stereo attributes that I've identified in each profile.
 This is a python tool I've started working on to parse shaders and automate
 some of the process of hacking them. It's very early and the code is not very
 pretty. At the moment it can:
-- Install shaders to the ShaderOverride directory
+- Install shaders to the ShaderOverride directory, taking care of naming the
+  file correctly.
 - Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0
 - Analyse shader register usage and look for free constants.
+- Disable an entire shader by setting it's output to 0 or 1.
+- Disable individual texcoord outputs from a vertex shader.
+- Apply the stereo correction formula to an output texcoord of a vertex shader,
+  optionally with a custom multiplier (try 0.5 if a correction switches eyes).
+- Reverse the stereo correction formula on the output position of a vertex
+  shader to unstereoize it.
+- Disabled outputs, adjustments, etc. can be made conditional on a register
+  passed in from Helix mod.
+- Insert a depth adjustment suitable for UI elements to the value of a constant
+  register component (typically passed in from DX9Settings.ini).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
