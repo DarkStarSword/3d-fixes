@@ -832,6 +832,8 @@ def parse_args():
             help="Use mad instruction to make stereo correction more concise")
     parser.add_argument('--auto-adjust-texcoords', action='store_true',
             help="Adjust any texcoord that matches the output position from a vertex shader")
+    parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
+            help="Do not automatically convert shaders to shader model 3")
 
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
@@ -877,7 +879,7 @@ def main():
                 time.sleep(1)
                 continue
             raise
-        if hasattr(tree, 'to_shader_model_3'):
+        if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
             debug('Converting to Shader Model 3...')
             tree.to_shader_model_3()
         if args.debug_syntax_tree:
