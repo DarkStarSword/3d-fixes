@@ -874,7 +874,7 @@ def parse_args():
     args = parser.parse_args()
 
     if args.to_git:
-        args.convert = False
+        args.auto_convert = False
         args.force = True
 
     return args
