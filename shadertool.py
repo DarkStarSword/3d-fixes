@@ -431,7 +431,10 @@ def fixup_sincos(tree, node, parent, idx):
     parent[idx] = NewInstruction('sincos', (node.args[0], node.args[1]))
     tree.discard_if_unused((node.args[2], node.args[3]), 'sincos')
 
-class VS3(ShaderBlock):
+class VertexShader(ShaderBlock): pass
+class PixelShader(ShaderBlock): pass
+
+class VS3(VertexShader):
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172963(v=vs.85).aspx
         'c': 256,
         'i': 16,
@@ -442,7 +445,7 @@ class VS3(ShaderBlock):
     }
     def_stereo_sampler = 's0'
 
-class PS3(ShaderBlock):
+class PS3(PixelShader):
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172920(v=vs.85).aspx
         'c': 224,
         'i': 16,
@@ -452,7 +455,7 @@ class PS3(ShaderBlock):
     }
     def_stereo_sampler = 's13'
 
-class VS2(ShaderBlock):
+class VS2(VertexShader):
     def to_shader_model_3(self):
         self.analyse_regs()
         self.insert_decl()
@@ -497,7 +500,7 @@ class VS2(ShaderBlock):
                 {'sincos': fixup_sincos})
         self.__class__ = VS3
 
-class PS2(ShaderBlock):
+class PS2(PixelShader):
     def to_shader_model_3(self):
         def fixup_ps2_dcl(tree, node, parent, idx):
             node.opcode = 'dcl_texcoord'
@@ -576,12 +579,12 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     except OSError:
         pass
 
-    if isinstance(shader, VS3):
+    if isinstance(shader, VertexShader):
         shader_dir = os.path.join(override_dir, 'VertexShaders')
-    elif isinstance(shader, PS3):
+    elif isinstance(shader, PixelShader):
         shader_dir = os.path.join(override_dir, 'PixelShaders')
     else:
-        raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+        raise Exception("Unrecognised shader type: %s" % shader.__class__.__name__)
     try:
         os.mkdir(shader_dir)
     except OSError:
@@ -600,6 +603,9 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     print(shader, end='', file=open(dest, 'w'))
 
 def install_shader(shader, file, args):
+    if not (isinstance(shader, (VS3, PS3))):
+        raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
     dumps = os.path.realpath(os.path.join(src_dir, '../..'))
     if os.path.basename(dumps).lower() != 'dumps':
