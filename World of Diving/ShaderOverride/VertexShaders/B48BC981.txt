@@ -16,6 +16,8 @@
     dcl_texcoord6 o7
     def c24, 0.159154907, 0.5, 6.28318501, -3.14159298
     def c25, 0, 0, 0, 0
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
     mov r1.xyz, v2
     mov r1.w, c25.x
     dp4 r0.z, r1, c10
@@ -58,9 +60,12 @@
     mov r0.w, r2
     dp4 r0.y, r1, c5
     dp4 r0.z, r1, c6
+    mov o0, r0 // moved up
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
     mul r4.xyz, r0.xyww, c24.y
     mul r4.y, r4, c17.x
-    mov o0, r0
     mov o9, r0.z
     mov o6, r0
     dp4 r0.x, r1, c2
