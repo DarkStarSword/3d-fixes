@@ -564,7 +564,7 @@ def parse_shader(shader, args):
     tree = process_sections(tree)
     return tree
 
-def install_shader_to(shader, file, args, base_dir):
+def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     try:
         os.mkdir(base_dir)
     except OSError:
@@ -593,7 +593,10 @@ def install_shader_to(shader, file, args, base_dir):
         debug('Skipping %s - already installed' % file)
         return
 
-    debug('Installing to %s...' % os.path.relpath(dest, os.path.join(base_dir, '..')))
+    if show_full_path:
+        debug('Installing to %s...' % dest)
+    else:
+        debug('Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
 def install_shader(shader, file, args):
@@ -920,7 +923,7 @@ def main():
         if args.install:
             install_shader(tree, file, args)
         if args.install_to:
-            install_shader_to(tree, file, args, os.path.expanduser(args.install_to))
+            install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
 
     if args.find_free_consts:
         if checked_vs:
