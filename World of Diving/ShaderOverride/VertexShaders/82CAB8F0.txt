@@ -11,6 +11,10 @@
     dcl_position v0
     dcl_normal v1
     dcl_texcoord v2
+
+def c0, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r1.xyz, v1
     mov r1.w, c26.x
     mov r0.w, c26.y
@@ -39,7 +43,7 @@
     mul r0.y, r0, c16.x
     dp4 r1.z, v0, c6
     mul r2.xyz, v1.y, c13
-    mad o4.xy, r0.z, c17.zwzw, r0
+    mad r4.xy, r0.z, c17.zwzw, r0
     mad r0.xyz, v1.x, c12, r2
     mad r0.xyz, v1.z, c14, r0
     add o3.xyz, r0, c26.x
@@ -50,7 +54,16 @@
     dp4 o2.z, v0, c10
     dp4 o2.y, v0, c9
     dp4 o2.x, v0, c8
-    mov o4.z, -r0.x
-    mov o4.w, r0
+    mov r4.z, -r0.x
+    mov r4.w, r0
 
 // approximately 41 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i VertexShader_52_CRC32_82CAB8F0.txt -f -o - --adjust=texcoord3 --adjust-multiply=0.5
+texldl r3, c0.z, s0
+add r3.w, r4.w, -r3.y
+mul r3.w, r3.w, r3.x
+mul r3.w, r3.w, c0.w
+add r4.x, r4.x, r3.w
+mov o4, r4
