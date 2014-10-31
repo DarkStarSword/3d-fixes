@@ -833,7 +833,7 @@ def parse_args():
     parser.add_argument('--install-to', '-I',
             help='Install shaders under ShaderOverride in a custom directory')
     parser.add_argument('--to-git', '--git', action='store_true',
-            help='Copy the file to the location of this script, guessing the name of the game. Implies --no-convert')
+            help='Copy the file to the location of this script, guessing the name of the game. Implies --no-convert and --force')
     parser.add_argument('--force', '-f', action='store_true',
             help='Forcefully overwrite shaders when installing')
     parser.add_argument('--output', '-o', type=argparse.FileType('w'),
@@ -875,6 +875,7 @@ def parse_args():
 
     if args.to_git:
         args.convert = False
+        args.force = True
 
     return args
 
