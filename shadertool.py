@@ -614,6 +614,22 @@ def install_shader(shader, file, args):
 
     return install_shader_to(shader, file, args, gamedir)
 
+def install_shader_to_git(shader, file, args):
+    src_dir = os.path.dirname(os.path.join(os.curdir, file))
+    parent = os.path.realpath(os.path.join(src_dir, '..'))
+    if os.path.basename(parent).lower() == 'shaderoverride':
+        game_dir = os.path.basename(os.path.dirname(os.path.realpath(parent)))
+    else:
+        parent = os.path.realpath(os.path.join(parent, '..'))
+        if os.path.basename(parent).lower() != 'dumps':
+            raise ValueError('Unable to find game directory')
+        game_dir = os.path.basename(os.path.dirname(os.path.realpath(parent)))
+
+    script_dir = os.path.dirname(__file__)
+    dest_dir = os.path.join(script_dir, game_dir)
+
+    install_shader_to(shader, file, args, dest_dir, True)
+
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const
@@ -816,6 +832,8 @@ def parse_args():
             help='Install shaders in ShaderOverride directory')
     parser.add_argument('--install-to', '-I',
             help='Install shaders under ShaderOverride in a custom directory')
+    parser.add_argument('--to-git', '--git', action='store_true',
+            help='Copy the file to the location of this script, guessing the name of the game. Implies --no-convert')
     parser.add_argument('--force', '-f', action='store_true',
             help='Forcefully overwrite shaders when installing')
     parser.add_argument('--output', '-o', type=argparse.FileType('w'),
@@ -853,7 +871,12 @@ def parse_args():
             help='Dumps the syntax tree')
     parser.add_argument('--ignore-parse-errors', action='store_true',
             help='Continue with the next file in the event of a parse error')
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.to_git:
+        args.convert = False
+
+    return args
 
 def args_require_reg_analysis(args):
         return args.show_regs or \
@@ -930,6 +953,8 @@ def main():
             install_shader(tree, file, args)
         if args.install_to:
             install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
+        if args.to_git:
+            install_shader_to_git(tree, file, args)
 
     if args.find_free_consts:
         if checked_vs:
