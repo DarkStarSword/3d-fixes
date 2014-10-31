@@ -564,16 +564,13 @@ def parse_shader(shader, args):
     tree = process_sections(tree)
     return tree
 
-def install_shader(shader, file, args):
-    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
+def install_shader_to(shader, file, args, base_dir):
+    try:
+        os.mkdir(base_dir)
+    except OSError:
+        pass
 
-    src_dir = os.path.dirname(os.path.join(os.curdir, file))
-    dumps = os.path.realpath(os.path.join(src_dir, '../..'))
-    if os.path.basename(dumps).lower() != 'dumps':
-        raise Exception("Not installing %s - not in a Dumps directory" % file)
-    gamedir = os.path.realpath(os.path.join(src_dir, '../../..'))
-
-    override_dir = os.path.join(gamedir, 'ShaderOverride')
+    override_dir = os.path.join(base_dir, 'ShaderOverride')
     try:
         os.mkdir(override_dir)
     except OSError:
@@ -590,13 +587,23 @@ def install_shader(shader, file, args):
     except OSError:
         pass
 
+    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
     dest = os.path.join(shader_dir, dest_name)
     if not args.force and os.path.exists(dest):
         debug('Skipping %s - already installed' % file)
         return
 
-    debug('Installing to %s...' % os.path.relpath(dest, os.path.join(gamedir, '..')))
+    debug('Installing to %s...' % os.path.relpath(dest, os.path.join(base_dir, '..')))
     print(shader, end='', file=open(dest, 'w'))
+
+def install_shader(shader, file, args):
+    src_dir = os.path.dirname(os.path.join(os.curdir, file))
+    dumps = os.path.realpath(os.path.join(src_dir, '../..'))
+    if os.path.basename(dumps).lower() != 'dumps':
+        raise Exception("Not installing %s - not in a Dumps directory" % file)
+    gamedir = os.path.realpath(os.path.join(src_dir, '../../..'))
+
+    return install_shader_to(shader, file, args, gamedir)
 
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
@@ -798,6 +805,8 @@ def parse_args():
             help='List of shader assembly files to process')
     parser.add_argument('--install', '-i', action='store_true',
             help='Install shaders in ShaderOverride directory')
+    parser.add_argument('--install-to', '-I',
+            help='Install shaders under ShaderOverride in a custom directory')
     parser.add_argument('--force', '-f', action='store_true',
             help='Forcefully overwrite shaders when installing')
     parser.add_argument('--output', '-o', type=argparse.FileType('w'),
@@ -908,6 +917,8 @@ def main():
             print(tree, end='', file=args.output)
         if args.install:
             install_shader(tree, file, args)
+        if args.install_to:
+            install_shader_to(tree, file, args, os.path.expanduser(args.install_to))
 
     if args.find_free_consts:
         if checked_vs:
