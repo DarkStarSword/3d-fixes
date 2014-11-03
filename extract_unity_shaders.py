@@ -31,12 +31,6 @@ class CPPStyleComment(Token, Strip):
 class String(Token):
     pattern = re.compile(r'"[^"]*"', re.MULTILINE)
 
-    def __repr__(self):
-        return repr(self.string[1:-1])
-
-    def __str__(self):
-        return self.string[1:-1]
-
 class CurlyLeft(Token):
     pattern = re.compile(r'{')
 
@@ -137,8 +131,7 @@ class Tree(list):
     def __str__(self):
         if len(self) == 0:
             return '{}'
-        raise AssertionError('Expected non-empty list to have been converted to another form')
-        return '{ %s }' % ', '.join(self)
+        return '{%s}' % stringify(self)
 
 class NamedTree(Keyword, Tree):
     def parse(self, tokens, parent):
@@ -146,7 +139,7 @@ class NamedTree(Keyword, Tree):
         Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
 
     def header(self):
-        return '%s "%s" {' % (Keyword.__str__(self), self.name)
+        return '%s %s {' % (Keyword.__str__(self), self.name)
 
     def __str__(self):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
@@ -355,6 +348,46 @@ def collect_headers(tree):
         headers.append('  ' * indent + '}')
     return headers
 
+def _combine_similar_headers(ret, headers):
+    head = [ len(x) > 0 and x[0] or '' for x in headers ] # headers on this line
+    next = [ len(x) > 1 and x[1] or '' for x in headers ] # headers on next line
+
+    # Simple case - lines from all headers match:
+    if all([ x == head[0] for x in head ]):
+        [ len(x) and x.pop(0) for x in headers ]
+        ret.append('    %s' % head[0])
+        return
+
+    # At least one header varies, get the first word of each header:
+    kh = [ x.strip().split(' ', 1)[0] for x in head ] # Keywords on this line
+    kn = [ x.strip().split(' ', 1)[0] for x in next ] # Keywords on next line
+
+    # Find any singular headers and flush them immediately:
+    for i, k in enumerate(kh):
+        if not head[i] or k == '}' or head[i].endswith('{'):
+            continue
+        if kh.count(k) + kn.count(k) == 1:
+            # Only one occurrence of this keyword, flush it out now
+            headers[i].pop(0)
+            ret.append('%2d: %s' % (i, head[i]))
+            return
+
+    # Could do more here, but let's see if it's necessary in practice
+
+    # Dump any ungrouped headers:
+    for i, k in enumerate(kh):
+        if not head[i]:
+            continue
+        [ len(x) and x.pop(0) for x in headers ]
+        ret.append('%2d: %s' % (i, head[i]))
+
+def combine_similar_headers(trees):
+    headers = list(map(collect_headers, trees))
+    ret = []
+    while any(headers):
+        _combine_similar_headers(ret, headers)
+    return ret
+
 def commentify(headers):
     return '\n'.join([ '// %s' % x for x in headers ])
 
@@ -378,11 +411,33 @@ def export_shader(sub_program):
     with open('%s.raw' % dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
         f.write(sub_program.shader_asm)
 
+def shader_name(tree):
+    while tree.parent is not None:
+        tree = tree.parent
+    return tree.name
+
 def dedupe_shaders(shader_list):
-    for sub_program in shader_list:
-        path_components = export_filename(sub_program)
-        dest = os.path.join(os.curdir, *path_components)
-        print(dest)
+    headers = []
+    shaders = sorted(set(map(shader_name, shader_list)))
+    headers.append('Matched %i variants of %i shaders: %s' %
+            (len(shader_list), len(shaders), ', '.join(shaders)))
+    headers.append('')
+    for shader in shaders:
+        similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
+        headers.extend(combine_similar_headers(similar_shaders))
+        headers.append('')
+    print(commentify(headers))
+
+    for shader in shaders:
+        similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
+        # TODO: Create combined path for the variants and write them as one.
+        # Not sure of the best way to handle distinct shaders - thinking
+        # probably just write out one for each, but still have combined headers
+        # so they are easy to identify duplicates
+        #
+        # path_components = export_filename(sub_program)
+        # dest = os.path.join(os.curdir, *path_components)
+        # print(dest)
 
 def main():
     global shader_list
@@ -400,12 +455,12 @@ def main():
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename))
 
-        for sub_program in shader_list:
-            export_shader(sub_program)
-    # for shaders in shader_index.values():
-    #     if len(shaders) > 1:
-    #         print('-'*79)
-    #         dedupe_shaders(shaders)
+        # for sub_program in shader_list:
+        #     export_shader(sub_program)
+    for shaders in shader_index.values():
+        if len(shaders) > 1:
+            print('-'*79)
+            dedupe_shaders(shaders)
 
 if __name__ == '__main__':
     sys.exit(main())
