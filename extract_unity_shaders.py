@@ -90,7 +90,7 @@ def tokenise(input):
     return result
 
 def curly_scope(old_tree):
-    tree = []
+    tree = Tree()
     while old_tree:
         token = old_tree.pop(0)
         if isinstance(token, CurlyRight):
@@ -133,15 +133,25 @@ def stringify(tree):
 def stringify_nl(tree):
     return '\n'.join(map(str, tree))
 
-class NamedTree(Keyword):
+class Tree(list):
+    def __str__(self):
+        if len(self) == 0:
+            return '{}'
+        raise AssertionError('Expected non-empty list to have been converted to another form')
+        return '{ %s }' % ', '.join(self)
+
+class NamedTree(Keyword, Tree):
     def parse(self, tokens, parent):
         self.name = str(next_interesting(tokens))
-        self.child = parse_keywords(next_interesting(tokens), parent=self)
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+
+    def header(self):
+        return '%s "%s" {' % (Keyword.__str__(self), self.name)
 
     def __str__(self):
-        return '%s "%s" {\n%s\n}' % (Keyword.__str__(self), self.name, stringify_nl(self.child))
+        return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
-class UnnamedTree(Keyword):
+class UnnamedTree(Keyword, Tree):
     @property
     def parent_counter_attr(self):
         return '%s_counter' % self.keyword
@@ -158,10 +168,13 @@ class UnnamedTree(Keyword):
         self.parent_counter += 1
         self.counter = self.parent_counter
 
-        self.child = parse_keywords(next_interesting(tokens), parent=self)
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+
+    def header(self):
+        return '%s %i/%i {' % (Keyword.__str__(self), self.counter, self.parent_counter)
 
     def __str__(self):
-        return '%s %i/%i {\n%s\n}' % (Keyword.__str__(self), self.counter, self.parent_counter, stringify_nl(self.child))
+        return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
 class StringifyTree(Keyword):
     def parse(self, tokens, parent):
@@ -169,7 +182,7 @@ class StringifyTree(Keyword):
         self.child = stringify(inner)
 
     def __str__(self):
-        return '%s { %s }' % (Keyword.__str__(self), self.child)
+        return '%s {%s}' % (Keyword.__str__(self), self.child)
 
 class StringifyLine(Keyword):
     def parse(self, tokens, parent):
@@ -182,7 +195,7 @@ class StringifyLine(Keyword):
         self.line = stringify(t)
 
     def __str__(self):
-        return '%s %s' % (Keyword.__str__(self), self.line)
+        return '%s %s' % (Keyword.__str__(self), self.line.strip())
 
 class Keywords(Keyword, set):
     def parse(self, tokens, parent):
@@ -259,9 +272,9 @@ def parse_keywords(tree, parent=None, filename=None):
         if isinstance(token, String):
             parent.shader_asm = str(token)
             # Index shaders by assembly:
-            if token not in shader_index:
-                shader_index[token] = []
-            shader_index[token].append(parent)
+            if str(token) not in shader_index:
+                shader_index[str(token)] = []
+            shader_index[str(token)].append(parent)
             shader_list.append(parent)
             continue
 
@@ -323,6 +336,27 @@ def export_filename(sub_program):
 
         return [x.replace('/', '_') for x in ret]
 
+def _collect_headers(tree):
+    headers = []
+    indent = 0
+    if tree.parent is not None:
+        (headers, indent) = (_collect_headers(tree.parent))
+    headers.append('  ' * indent + tree.header())
+    for item in tree:
+        if isinstance(item, Tree):
+            # Don't get headers for anything else in this file
+            continue
+        items = str(item).split('\n')
+        items = [ '  ' * (indent + 1) + x for x in items ]
+        headers.extend(items)
+    return (headers, indent + 1)
+
+def collect_headers(tree):
+    (headers, nest) = _collect_headers(tree)
+    for indent in reversed(range(nest)):
+        headers.append('  ' * indent + '}')
+    return '\n'.join([ '// %s' % x for x in headers ])
+
 def mkdir_recursive(components):
     path = os.curdir
     while components:
@@ -331,14 +365,21 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
-def export_shaders(shader_list):
+def export_shader(sub_program):
+    path_components = export_filename(sub_program)
+    mkdir_recursive(path_components[:-1])
+    dest = os.path.join(os.curdir, *path_components)
+    print('Extracting %s...' % dest)
+    with open(dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
+        f.write(collect_headers(sub_program))
+        f.write('\n\n')
+        f.write(sub_program.shader_asm)
+
+def dedupe_shaders(shader_list):
     for sub_program in shader_list:
         path_components = export_filename(sub_program)
-        mkdir_recursive(path_components[:-1])
         dest = os.path.join(os.curdir, *path_components)
-        print('Extracting %s...' % dest)
-        with open(dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
-            f.write(sub_program.shader_asm)
+        print(dest)
 
 def main():
     global shader_list
@@ -349,10 +390,15 @@ def main():
         tree = tokenise(open(filename, 'r').read())
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename))
-        # print('\n'.join(map(str, tree)))
 
-        # print(shader_index)
-        export_shaders(shader_list)
+        for sub_program in shader_list:
+            export_shader(sub_program)
+    # for shaders in shader_index.values():
+    #     if len(shaders) > 1:
+    #         print('-'*79)
+    #         dedupe_shaders(shaders)
 
 if __name__ == '__main__':
     sys.exit(main())
+
+# vi: sw=4:ts=4:expandtab
