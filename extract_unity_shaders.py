@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, re
-import json
+import json, hashlib
 
 # See also - an alternative way to write a tokeniser (maybe I'll switch):
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
@@ -312,11 +312,11 @@ def export_filename(sub_program):
         ret = []
 
         ret.append('Shaders')
+        ret.append(sub_program.name.strip())
 
         basename, ext = os.path.splitext(shader.filename)
         ret.append('%s - %s' % (basename, shader.name))
 
-        ret.append(sub_program.name.strip())
         ret.append('SubShader %d' % sub_shader.counter)
 
         if 'Name' in shader_pass.keywords:
@@ -331,8 +331,6 @@ def export_filename(sub_program):
             assert(len(sub_program.keywords['Keywords']) == 1)
             keywords = ' '.join(sorted(sub_program.keywords['Keywords'][0]))
             ret.append(keywords)
-
-        ret[-1] = '%s.txt' % ret[-1]
 
         return [x.replace('/', '_') for x in ret]
 
@@ -355,6 +353,9 @@ def collect_headers(tree):
     (headers, nest) = _collect_headers(tree)
     for indent in reversed(range(nest)):
         headers.append('  ' * indent + '}')
+    return headers
+
+def commentify(headers):
     return '\n'.join([ '// %s' % x for x in headers ])
 
 def mkdir_recursive(components):
@@ -369,10 +370,12 @@ def export_shader(sub_program):
     path_components = export_filename(sub_program)
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
-    print('Extracting %s...' % dest)
-    with open(dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
-        f.write(collect_headers(sub_program))
+    print('Extracting %s.txt...' % dest)
+    with open('%s.txt' % dest, 'w') as f:
+        f.write(commentify(collect_headers(sub_program)))
         f.write('\n\n')
+        f.write(sub_program.shader_asm)
+    with open('%s.raw' % dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
         f.write(sub_program.shader_asm)
 
 def dedupe_shaders(shader_list):
@@ -383,11 +386,17 @@ def dedupe_shaders(shader_list):
 
 def main():
     global shader_list
+    processed = set()
 
     for filename in sys.argv[1:]:
         shader_list = []
         print('Parsing %s...' % filename)
-        tree = tokenise(open(filename, 'r').read())
+        data = open(filename, 'rb').read()
+        digest = hashlib.sha1(data).digest()
+        if digest in processed:
+            continue
+        processed.add(digest)
+        tree = tokenise(data.decode('ascii')) # I don't know what encoding it uses
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename))
 
