@@ -82,3 +82,7 @@ nVidia Inspector.
 ### matrix.py ###
 Small Python module to create typical matrices for translation, rotation,
 scaling and projection in 3D to help me understand the maths behind them.
+
+### extract_unity_shaders.py ###
+Python script to parse the compiled output of Unity shaders and pull out all
+the different variants into separate files, with headers intact.
