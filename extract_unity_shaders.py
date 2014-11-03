@@ -136,7 +136,7 @@ def stringify_nl(tree):
 class NamedTree(Keyword):
     def parse(self, tokens, parent):
         self.name = str(next_interesting(tokens))
-        self.child = parse_keywords(next_interesting(tokens), self)
+        self.child = parse_keywords(next_interesting(tokens), parent=self)
 
     def __str__(self):
         return '%s "%s" {\n%s\n}' % (Keyword.__str__(self), self.name, stringify_nl(self.child))
@@ -158,7 +158,7 @@ class UnnamedTree(Keyword):
         self.parent_counter += 1
         self.counter = self.parent_counter
 
-        self.child = parse_keywords(next_interesting(tokens), self)
+        self.child = parse_keywords(next_interesting(tokens), parent=self)
 
     def __str__(self):
         return '%s %i/%i {\n%s\n}' % (Keyword.__str__(self), self.counter, self.parent_counter, stringify_nl(self.child))
@@ -245,7 +245,7 @@ keywords = {
 shader_index = {}
 shader_list = []
 
-def parse_keywords(tree, parent=None):
+def parse_keywords(tree, parent=None, filename=None):
     ret = []
     tokens = iter(tree)
     if parent is not None and not hasattr(parent, 'keywords'):
@@ -257,7 +257,7 @@ def parse_keywords(tree, parent=None):
             break
 
         if isinstance(token, String):
-            parent.shader_asm = token
+            parent.shader_asm = str(token)
             # Index shaders by assembly:
             if token not in shader_index:
                 shader_index[token] = []
@@ -273,6 +273,8 @@ def parse_keywords(tree, parent=None):
             raise SyntaxError('Unrecognised keyword: %s (maybe just need to add this to list of known keywords?)' % token)
 
         item = keywords[token](token, tokens, parent)
+        if filename is not None:
+            item.filename = filename
         ret.append(item)
 
         if parent is not None:
@@ -282,8 +284,7 @@ def parse_keywords(tree, parent=None):
 
     return ret
 
-def export_shaders(shader_list):
-    for sub_program in shader_list:
+def export_filename(sub_program):
         program = sub_program.parent
         shader_pass = program.parent
         sub_shader = shader_pass.parent
@@ -295,21 +296,59 @@ def export_shaders(shader_list):
         assert(sub_shader.keyword == 'SubShader')
         assert(shader.keyword == 'Shader')
 
-        keywords = ''
+        ret = []
+
+        ret.append('Shaders')
+
+        basename, ext = os.path.splitext(shader.filename)
+        ret.append('%s - %s' % (basename, shader.name))
+
+        ret.append(sub_program.name.strip())
+        ret.append('SubShader %d' % sub_shader.counter)
+
+        if 'Name' in shader_pass.keywords:
+            pass_name = shader_pass.keywords['Name'][0].line.strip()
+            ret.append('Pass %d of %d - %s' % (shader_pass.counter, shader_pass.parent_counter, pass_name))
+        else:
+            ret.append('Pass %d of %d' % (shader_pass.counter, shader_pass.parent_counter))
+
+        ret.append(program.name)
+
         if 'Keywords' in sub_program.keywords:
             assert(len(sub_program.keywords['Keywords']) == 1)
-            keywords = '.(%s)' % ' '.join(sub_program.keywords['Keywords'][0])
+            keywords = ' '.join(sorted(sub_program.keywords['Keywords'][0]))
+            ret.append(keywords)
 
-        print('{}.SubShader[{}].Pass[{}].{}.{}{}'.format(shader.name,
-            sub_shader.counter, shader_pass.counter, program.name,
-            sub_program.name.strip(), keywords))
+        ret[-1] = '%s.txt' % ret[-1]
+
+        return [x.replace('/', '_') for x in ret]
+
+def mkdir_recursive(components):
+    path = os.curdir
+    while components:
+        path = os.path.join(path, components.pop(0))
+        if os.path.isdir(path):
+            continue
+        os.mkdir(path)
+
+def export_shaders(shader_list):
+    for sub_program in shader_list:
+        path_components = export_filename(sub_program)
+        mkdir_recursive(path_components[:-1])
+        dest = os.path.join(os.curdir, *path_components)
+        print('Extracting %s...' % dest)
+        with open(dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
+            f.write(sub_program.shader_asm)
 
 def main():
-    for file in sys.argv[1:]:
-        print('Parsing %s...' % file)
-        tree = tokenise(open(file, 'r').read())
+    global shader_list
+
+    for filename in sys.argv[1:]:
+        shader_list = []
+        print('Parsing %s...' % filename)
+        tree = tokenise(open(filename, 'r').read())
         tree = curly_scope(tree)
-        tree = parse_keywords(tree)
+        tree = parse_keywords(tree, filename=os.path.basename(filename))
         # print('\n'.join(map(str, tree)))
 
         # print(shader_index)
