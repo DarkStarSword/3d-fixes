@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, re
-import json, hashlib
+import json, hashlib, collections
 
 # See also - an alternative way to write a tokeniser (maybe I'll switch):
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
@@ -27,6 +27,11 @@ class Ignore(object): pass # Ignored when looking for identifiers
 
 class CPPStyleComment(Token, Strip):
     pattern = re.compile(r'\/\/.*$', re.MULTILINE)
+
+def strip_quotes(s):
+    if s[0] == s[-1] == '"':
+        return s[1:-1].strip()
+    return s.strip()
 
 class String(Token):
     pattern = re.compile(r'"[^"]*"', re.MULTILINE)
@@ -135,11 +140,12 @@ class Tree(list):
 
 class NamedTree(Keyword, Tree):
     def parse(self, tokens, parent):
-        self.name = str(next_interesting(tokens))
+        self.orig_name = str(next_interesting(tokens))
+        self.name = strip_quotes(self.orig_name)
         Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
 
     def header(self):
-        return '%s %s {' % (Keyword.__str__(self), self.name)
+        return '%s %s {' % (Keyword.__str__(self), str(self.orig_name))
 
     def __str__(self):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
@@ -192,10 +198,11 @@ class StringifyLine(Keyword):
 
 class Keywords(Keyword, set):
     def parse(self, tokens, parent):
-        set.__init__(self, map(str, ignore_whitespace(next_interesting(tokens))))
+        set.__init__(self, map(strip_quotes, map(str, ignore_whitespace(next_interesting(tokens)))))
 
     def __str__(self):
-        return '%s { %s }' % (Keyword.__str__(self), ' '.join(self))
+        kws = ['"%s"' % x for x in self]
+        return '%s { %s }' % (Keyword.__str__(self), ' '.join(kws))
 
 # The syntax in this file format is very inconsistent, making it difficult to
 # write a generic parser that handles everything properly unless it knows what
@@ -263,7 +270,7 @@ def parse_keywords(tree, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            parent.shader_asm = str(token)
+            parent.shader_asm = strip_quotes(str(token))
             # Index shaders by assembly:
             if str(token) not in shader_index:
                 shader_index[str(token)] = []
@@ -290,42 +297,101 @@ def parse_keywords(tree, parent=None, filename=None):
 
     return ret
 
+def get_parents(sub_program):
+    Shader = collections.namedtuple('Shader', ['sub_program', 'program', 'shader_pass', 'sub_shader', 'shader'])
+
+    program = sub_program.parent
+    shader_pass = program.parent
+    sub_shader = shader_pass.parent
+    shader = sub_shader.parent
+
+    assert(sub_program.keyword == 'SubProgram')
+    assert(program.keyword == 'Program')
+    assert(shader_pass.keyword == 'Pass')
+    assert(sub_shader.keyword == 'SubShader')
+    assert(shader.keyword == 'Shader')
+
+    return Shader(sub_program, program, shader_pass, sub_shader, shader)
+
 def export_filename(sub_program):
-        program = sub_program.parent
-        shader_pass = program.parent
-        sub_shader = shader_pass.parent
-        shader = sub_shader.parent
+    (sub_program, program, shader_pass, sub_shader, shader) = get_parents(sub_program)
 
-        assert(sub_program.keyword == 'SubProgram')
-        assert(program.keyword == 'Program')
-        assert(shader_pass.keyword == 'Pass')
-        assert(sub_shader.keyword == 'SubShader')
-        assert(shader.keyword == 'Shader')
+    ret = []
 
-        ret = []
+    ret.append('Shaders')
+    ret.append(sub_program.name.strip())
 
-        ret.append('Shaders')
-        ret.append(sub_program.name.strip())
+    # basename, ext = os.path.splitext(shader.filename)
+    # ret.append('%s - %s' % (basename, shader.name))
+    ret.append(shader.name)
 
-        basename, ext = os.path.splitext(shader.filename)
-        ret.append('%s - %s' % (basename, shader.name))
+    ret.append('SubShader %d' % sub_shader.counter)
 
-        ret.append('SubShader %d' % sub_shader.counter)
+    if 'Name' in shader_pass.keywords:
+        pass_name = strip_quotes(shader_pass.keywords['Name'][0].line.strip())
+        ret.append('Pass %d - %s' % (shader_pass.counter, pass_name))
+    else:
+        ret.append('Pass %d' % shader_pass.counter)
 
-        if 'Name' in shader_pass.keywords:
-            pass_name = shader_pass.keywords['Name'][0].line.strip()
-            ret.append('Pass %d of %d - %s' % (shader_pass.counter, shader_pass.parent_counter, pass_name))
-        else:
-            ret.append('Pass %d of %d' % (shader_pass.counter, shader_pass.parent_counter))
+    ret.append(program.name)
 
-        ret.append(program.name)
+    if 'Keywords' in sub_program.keywords:
+        assert(len(sub_program.keywords['Keywords']) == 1)
+        keywords = ' '.join(sorted(sub_program.keywords['Keywords'][0]))
+        ret.append(keywords)
 
-        if 'Keywords' in sub_program.keywords:
-            assert(len(sub_program.keywords['Keywords']) == 1)
-            keywords = ' '.join(sorted(sub_program.keywords['Keywords'][0]))
-            ret.append(keywords)
+    return [x.replace('/', '_') for x in ret]
 
-        return [x.replace('/', '_') for x in ret]
+def export_filename_combined(sub_programs):
+    shaders = list(map(get_parents, sub_programs))
+
+    # Different sub programs have different assembly languages and should not match:
+    assert(all([ x.sub_program.name == shaders[0].sub_program.name for x in shaders]))
+
+    # Filenames potentially could match:
+    # assert(all([ x.shader.filename == shaders[0].shader.filename for x in shaders]))
+
+    # Should be identical because we explicitly filtered on this:
+    assert(all([ x.shader.name == shaders[0].shader.name for x in shaders]))
+
+    # vertex & pixel shaders embed different identifiers in the assembly, so should not match:
+    assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
+
+    ret = []
+
+    ret.append('Shaders')
+    ret.append(shaders[0].sub_program.name.strip())
+
+    # basename, ext = os.path.splitext(shaders[0].shader.filename)
+    # ret.append('%s - %s' % (basename, shaders[0].shader.name))
+    ret.append(shaders[0].shader.name)
+
+    subshaders = set([ x.sub_shader.counter for x in shaders ])
+    ret.append('SubShader %s' % '+'.join(map(str, sorted(subshaders))))
+
+    def pass_name(shader):
+        if 'Name' in shader.shader_pass.keywords:
+            return strip_quotes(shader.shader_pass.keywords['Name'][0].line.strip())
+    passes = set([ x.shader_pass.counter for x in shaders ])
+    names = set(filter(None, map(pass_name, shaders)))
+    component = 'Pass %s' % '+'.join(map(str, sorted(passes)))
+    if names:
+        component += ' - ' + ' '.join(sorted(names))
+    ret.append(component)
+
+    ret.append(shaders[0].program.name)
+
+    def keywords(shader):
+        if 'Keywords' in shader.sub_program.keywords:
+            assert(len(shader.sub_program.keywords['Keywords']) == 1)
+            return shader.sub_program.keywords['Keywords'][0]
+        return set()
+    kw = set()
+    kw.update(*map(keywords, shaders))
+    if kw:
+        ret.append(' '.join(sorted(kw)))
+
+    return [x.replace('/', '_') for x in ret]
 
 def _collect_headers(tree):
     headers = []
@@ -399,17 +465,21 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
-def export_shader(sub_program):
-    path_components = export_filename(sub_program)
+def _export_shader(shader_asm, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
     print('Extracting %s.txt...' % dest)
     with open('%s.txt' % dest, 'w') as f:
-        f.write(commentify(collect_headers(sub_program)))
+        f.write(commentify(headers))
         f.write('\n\n')
-        f.write(sub_program.shader_asm)
+        f.write(shader_asm)
     with open('%s.raw' % dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
-        f.write(sub_program.shader_asm)
+        f.write(shader_asm)
+
+def export_shader(sub_program):
+    headers = collect_headers(sub_program)
+    path_components = export_filename(sub_program)
+    return _export_shader(sub_program.shader_asm, headers, path_components)
 
 def shader_name(tree):
     while tree.parent is not None:
@@ -417,6 +487,9 @@ def shader_name(tree):
     return tree.name
 
 def dedupe_shaders(shader_list):
+    asm = shader_list[0].shader_asm
+    assert(all([ x.shader_asm == asm for x in shader_list]))
+
     headers = []
     shaders = sorted(set(map(shader_name, shader_list)))
     headers.append('Matched %i variants of %i shaders: %s' %
@@ -426,18 +499,12 @@ def dedupe_shaders(shader_list):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
-    print(commentify(headers))
+    # print(commentify(headers))
 
     for shader in shaders:
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
-        # TODO: Create combined path for the variants and write them as one.
-        # Not sure of the best way to handle distinct shaders - thinking
-        # probably just write out one for each, but still have combined headers
-        # so they are easy to identify duplicates
-        #
-        # path_components = export_filename(sub_program)
-        # dest = os.path.join(os.curdir, *path_components)
-        # print(dest)
+        path_components = export_filename_combined(similar_shaders)
+        _export_shader(asm, headers, path_components)
 
 def main():
     global shader_list
@@ -458,8 +525,10 @@ def main():
         # for sub_program in shader_list:
         #     export_shader(sub_program)
     for shaders in shader_index.values():
-        if len(shaders) > 1:
-            print('-'*79)
+        if len(shaders) == 1:
+            export_shader(shaders[0])
+        else:
+            # print('-'*79)
             dedupe_shaders(shaders)
 
 if __name__ == '__main__':
