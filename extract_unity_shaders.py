@@ -201,7 +201,7 @@ class Keywords(Keyword, set):
         set.__init__(self, map(strip_quotes, map(str, ignore_whitespace(next_interesting(tokens)))))
 
     def __str__(self):
-        kws = ['"%s"' % x for x in self]
+        kws = ['"%s"' % x for x in sorted(self)]
         return '%s { %s }' % (Keyword.__str__(self), ' '.join(kws))
 
 # The syntax in this file format is very inconsistent, making it difficult to
