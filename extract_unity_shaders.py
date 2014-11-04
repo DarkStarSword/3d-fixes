@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re
+import sys, os, re, math
 import json, hashlib, collections
 
 # Tokeniser loosely based on
@@ -391,10 +391,12 @@ def _combine_similar_headers(ret, headers):
     head = [ len(x) > 0 and x[0] or '' for x in headers ] # headers on this line
     next = [ len(x) > 1 and x[1] or '' for x in headers ] # headers on next line
 
+    bmplen = math.ceil(len(headers) / 4)
+
     # Simple case - lines from all headers match:
     if all([ x == head[0] for x in head ]):
         [ len(x) and x.pop(0) for x in headers ]
-        ret.append('    %s' % head[0])
+        ret.append('%s  %s' % (' ' * bmplen, head[0]))
         return
 
     # At least one header varies, get the first word of each header:
@@ -408,17 +410,21 @@ def _combine_similar_headers(ret, headers):
         if kh.count(k) + kn.count(k) == 1:
             # Only one occurrence of this keyword, flush it out now
             headers[i].pop(0)
-            ret.append('%2d: %s' % (i, head[i]))
+            ret.append('%.*x: %s' % (bmplen, 1<<i, head[i]))
             return
 
     # Could do more here, but let's see if it's necessary in practice
 
     # Dump any ungrouped headers:
+    tmp = {}
     for i, k in enumerate(kh):
         if not head[i]:
             continue
         headers[i].pop(0)
-        ret.append('%2d: %s' % (i, head[i]))
+        tmp.setdefault(head[i], 0)
+        tmp[head[i]] |= 1 << i
+    for (h, bmp) in sorted(tmp.items()):
+        ret.append('%.*x: %s' % (bmplen, bmp, h))
 
 def combine_similar_headers(trees):
     headers = list(map(collect_headers, trees))
