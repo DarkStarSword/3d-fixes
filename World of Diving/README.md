@@ -1,29 +1,33 @@
 World of Diving
 ===============
 
-**IMPORTANT: Use nVidia inspector to set game to use profile: Aion**
-
 Fixed
 -----
-- Extreme haloing fixed
+- Many halos fixed in the first level.
+- Shadows disabled (U to toggle).
 - Broken light effect disabled (green underwater lighing, cabin lighting, etc)
-- Shadows (Do not adjust convergence from value chosen automatically when game is launched)
+- Sun depth no longer varies with convergence and is pinned at an appropriate
+  depth.
 
 Keys
 ----
 - Use number row to adjust UI depth (tilde: 0%, 1-9 sets 10% multiples, 0: 100%)
-- Press U to disable shadows (e.g. if custom convergence is more important to you)
+- Press U to toggle shadows
 - Press I to turn on broken lighting shaders
 
 Known Issues
 ------------
-- Convergence must be set to 0 for the shadows to be at the correct depth
-- Convergence must be set to 0 for the sun to appear at the correct depth
-- Some surfaces still have broken shadows
-- Shadows are not rendered properly at edge of screen
-- Some surfaces have flickering issues (possibly due to Aion profile? Check the
-  git history for an partial alternate fix, but there are a LOT of shaders that
-  need fixing without it)
+- Levels other than the first are pretty much unplayable. Mostly a matter of
+  hunting down the surface vertex shaders and applying the same fix to them.
 - Specular highlights on fish are incorrect
+- Refraction through bubbles is incorrect
 - Mouse cursor depth cannot be adjusted (press tilde when in a menu to bring
   the UI to screen depth)
+
+Alternate Fix
+-------------
+Check the git history for an alternate fix that used the Aion profile - using
+this profile fixes many of the halo issues, but introduces flickering on some
+surfaces and breaks the previously working shadows. There is also a partial
+shadow fix using this profile, however it requires convergence = 0, which does
+not result in a very good 3D effect.
