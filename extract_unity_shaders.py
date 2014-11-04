@@ -398,6 +398,8 @@ def _collect_headers(tree):
     indent = 0
     if tree.parent is not None:
         (headers, indent) = (_collect_headers(tree.parent))
+    else:
+        headers.append('Unity headers extracted from %s' % tree.filename)
     headers.append('  ' * indent + tree.header())
     for item in tree:
         if isinstance(item, Tree):
@@ -465,6 +467,12 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
+def add_vanity_tag(headers):
+    if headers[-1] != '':
+        headers.append('')
+    headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
+    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
+
 def _export_shader(shader_asm, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
@@ -478,6 +486,7 @@ def _export_shader(shader_asm, headers, path_components):
 
 def export_shader(sub_program):
     headers = collect_headers(sub_program)
+    add_vanity_tag(headers)
     path_components = export_filename(sub_program)
     return _export_shader(sub_program.shader_asm, headers, path_components)
 
@@ -499,6 +508,7 @@ def dedupe_shaders(shader_list):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
+    add_vanity_tag(headers)
     # print(commentify(headers))
 
     for shader in shaders:
