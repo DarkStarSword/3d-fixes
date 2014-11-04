@@ -446,7 +446,7 @@ def _combine_similar_headers(ret, headers):
     for i, k in enumerate(kh):
         if not head[i]:
             continue
-        [ len(x) and x.pop(0) for x in headers ]
+        headers[i].pop(0)
         ret.append('%2d: %s' % (i, head[i]))
 
 def combine_similar_headers(trees):
