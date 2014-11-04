@@ -57,7 +57,7 @@ def tokenise(input):
     for mo in re.finditer(tok_regex, input, re.MULTILINE):
         kind = token_dict[mo.lastgroup]
         value = kind(mo.group(mo.lastgroup))
-        if not isinstance(kind, Strip):
+        if not isinstance(value, Strip):
             yield value
 
 def curly_scope(old_tree):
