@@ -112,12 +112,12 @@ class Tree(list):
 
 class NamedTree(Keyword, Tree):
     def parse(self, tokens, parent):
-        self.orig_name = str(next_interesting(tokens))
+        self.orig_name = next_interesting(tokens)
         self.name = strip_quotes(self.orig_name)
         Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
 
     def header(self):
-        return '%s %s {' % (Keyword.__str__(self), str(self.orig_name))
+        return '%s %s {' % (Keyword.__str__(self), self.orig_name)
 
     def __str__(self):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
@@ -242,11 +242,11 @@ def parse_keywords(tree, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            parent.shader_asm = strip_quotes(str(token))
+            parent.shader_asm = strip_quotes(token)
             # Index shaders by assembly:
-            if str(token) not in shader_index:
-                shader_index[str(token)] = []
-            shader_index[str(token)].append(parent)
+            if token not in shader_index:
+                shader_index[token] = []
+            shader_index[token].append(parent)
             shader_list.append(parent)
             continue
 
