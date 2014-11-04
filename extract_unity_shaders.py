@@ -445,6 +445,44 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
+def calc_shader_crc(shader_asm):
+    # FUTURE: Use ctypes to call into d3dx.dll directly to remove need for
+    # shaderasm.exe helper (may require native windows python - cygwin python
+    # is missing some function calling conventions). Can always try both
+    # methods.
+    import subprocess, zlib
+    helper = os.path.join(os.path.dirname(__file__), 'shaderasm.exe')
+
+    # Once Python 3.4 gets into cygwin switch to this:
+    # blob = subprocess.check_output([helper], input=shader_asm.encode('ascii'))
+
+    p = subprocess.Popen([helper], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    (blob, _) = p.communicate(shader_asm.encode('ascii'))
+
+    # I'm getting -11 (SEGV) in cygwin python for some reason, which I don't
+    # see when running the command line - thinking it may be bogus.
+    # if p.returncode != 0:
+    #     print("shaderasm.exe helper failed with exit code %i" % p.returncode)
+    #     raise subprocess.CalledProcessError()
+
+    if not blob:
+        return None
+
+    return zlib.crc32(blob)
+
+def add_shader_crc(headers, sub_program):
+    if sub_program.name != 'd3d9':
+        return
+    crc = None
+    try:
+        crc = calc_shader_crc(sub_program.shader_asm)
+    except:
+        pass
+    if crc:
+        headers[0] = 'CRC32: %.8X | %s' % (crc, headers[0])
+    else:
+        print('WARNING: Unable to determine shader CRC32 - is shaderasm.exe installed?')
+
 def add_vanity_tag(headers):
     if headers[-1] != '':
         headers.append('')
@@ -459,11 +497,10 @@ def _export_shader(shader_asm, headers, path_components):
         f.write(commentify(headers))
         f.write('\n\n')
         f.write(shader_asm)
-    with open('%s.raw' % dest, 'w') as f: # XXX: May need to check line endings to get the same CRC as Helix?
-        f.write(shader_asm)
 
 def export_shader(sub_program):
     headers = collect_headers(sub_program)
+    add_shader_crc(headers, sub_program)
     add_vanity_tag(headers)
     path_components = export_filename(sub_program)
     return _export_shader(sub_program.shader_asm, headers, path_components)
@@ -486,6 +523,7 @@ def dedupe_shaders(shader_list):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
+    add_shader_crc(headers, shader_list[0])
     add_vanity_tag(headers)
     # print(commentify(headers))
 
