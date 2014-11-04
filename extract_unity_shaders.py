@@ -244,6 +244,20 @@ def get_parents(sub_program):
 
     return Shader(sub_program, program, shader_pass, sub_shader, shader)
 
+def compress_keywords(keywords):
+    split = [x.rsplit('_', 1) for x in keywords]
+    ret = []
+
+    ret.extend([x[0] for x in split if len(x) == 1])
+    multiword = [x for x in split if len(x) > 1]
+    for word in set([x[0] for x in multiword]):
+        remaining = [x[1] for x in multiword if x[0] == word]
+        if len(remaining) == 1:
+            ret.append('%s_%s' % (word, ''.join(remaining)))
+        else:
+            ret.append('%s_(%s)' % (word, '+'.join(remaining)))
+    return ' '.join(sorted(ret))
+
 def export_filename(sub_program):
     (sub_program, program, shader_pass, sub_shader, shader) = get_parents(sub_program)
 
@@ -268,7 +282,7 @@ def export_filename(sub_program):
 
     if 'Keywords' in sub_program.keywords:
         assert(len(sub_program.keywords['Keywords']) == 1)
-        keywords = ' '.join(sorted(sub_program.keywords['Keywords'][0]))
+        keywords = compress_keywords(sub_program.keywords['Keywords'][0])
         ret.append(keywords)
 
     return [x.replace('/', '_') for x in ret]
@@ -320,7 +334,7 @@ def export_filename_combined(sub_programs):
     kw = set()
     kw.update(*map(keywords, shaders))
     if kw:
-        ret.append(' '.join(sorted(kw)))
+        ret.append(compress_keywords(kw))
 
     return [x.replace('/', '_') for x in ret]
 
