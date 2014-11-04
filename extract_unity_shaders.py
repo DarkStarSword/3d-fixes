@@ -147,14 +147,6 @@ class UnnamedTree(Keyword, Tree):
     def __str__(self):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
-class StringifyTree(Keyword):
-    def parse(self, tokens, parent):
-        inner = next_interesting(tokens)
-        self.child = stringify(inner)
-
-    def __str__(self):
-        return '%s {%s}' % (Keyword.__str__(self), self.child)
-
 class StringifyLine(Keyword):
     def parse(self, tokens, parent):
         t = []
@@ -189,42 +181,7 @@ keywords = {
 
         'Keywords': Keywords,
 
-        # Treat anything we don't care about parsing properly as a string. I
-        # could probably handle this in a better way by treating all unknowns
-        # as something to stringify, but I wanted to make sure I didn't miss
-        # anything.
-
-        # keyword { string }:
-        'Properties': StringifyTree,
-        'Fog': StringifyTree,
-        'Tags': StringifyTree,
-        'Material': StringifyTree,
-        'BindChannels': StringifyTree,
-
-        # or just 'keyword string':
-        'LOD': StringifyLine,
-        'Name': StringifyLine,
-        'Bind': StringifyLine,
-        'Matrix': StringifyLine,
-        'Vector': StringifyLine,
-        'ConstBuffer': StringifyLine,
-        'BindCB': StringifyLine,
-        'SetTexture': StringifyLine,
-        'ZWrite': StringifyLine,
-        'Blend': StringifyLine,
-        'Fallback': StringifyLine,
-        'AlphaTest': StringifyLine,
-        'ColorMask': StringifyLine,
-        'Float': StringifyLine,
-        'Lighting': StringifyLine,
-        'SeparateSpecular': StringifyLine,
-        'Cull': StringifyLine,
-        'AlphaToMask': StringifyLine,
-        'Offset': StringifyLine,
-        'Dependency': StringifyLine,
-        'ZTest': StringifyLine,
-        'ColorMaterial': StringifyLine,
-        'UsePass': StringifyLine,
+        # Anything else will be processed by StringifyLine
 }
 
 shader_index = {}
@@ -253,10 +210,13 @@ def parse_keywords(tree, parent=None, filename=None):
         if not isinstance(token, Identifier):
             raise SyntaxError('Expected Identifier, found: %s' % repr(token))
 
-        if token not in keywords:
-            raise SyntaxError('Unrecognised keyword: %s (maybe just need to add this to list of known keywords?)' % token)
+        if token in keywords:
+            item = keywords[token](token, tokens, parent)
+        else:
+            # I used to be strict and fail on any unrecognised keywords, but I
+            # kept running into more so now I just stringify them:
+            item = StringifyLine(token, tokens, parent)
 
-        item = keywords[token](token, tokens, parent)
         if filename is not None:
             item.filename = filename
         ret.append(item)
