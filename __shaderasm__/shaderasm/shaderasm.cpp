@@ -4,6 +4,8 @@
 #include "stdafx.h"
 
 #include <d3dx9.h>
+#include <io.h>
+#include <fcntl.h>
 
 static int assemble_shader(wchar_t *filename)
 {
@@ -28,9 +30,37 @@ static int assemble_shader(wchar_t *filename)
 	return 0;
 }
 
+static int assemble_stdin()
+{
+	LPD3DXBUFFER shader;
+	char *buf = NULL;
+	const int block = 4096;
+	size_t size = 0;
+
+	_setmode(_fileno(stdin), O_BINARY);
+	while (!feof(stdin)) {
+		buf = (char*)realloc(buf, size + block);
+		if (!buf)
+			return 1;
+		size += fread(buf + size, 1, block, stdin);
+		if (ferror(stdin))
+			return 1;
+	}
+
+	D3DXAssembleShader(buf, size, NULL, NULL, 0, &shader, NULL);
+
+	_setmode(_fileno(stdout), O_BINARY);
+	fwrite(shader->GetBufferPointer(), 1, shader->GetBufferSize(), stdout);
+
+	return 0;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	int i;
+
+	if (argc == 1)
+		return assemble_stdin();
 
 	for (i = 1; i < argc; i++)
 		assemble_shader(argv[i]);
