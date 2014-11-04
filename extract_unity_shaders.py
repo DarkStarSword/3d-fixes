@@ -244,8 +244,35 @@ def get_parents(sub_program):
 
     return Shader(sub_program, program, shader_pass, sub_shader, shader)
 
+abbreviations = (
+    ('DIRECTIONAL', 'DIR'),
+    ('COOKIE', 'CK'),
+    ('POINT', 'PT'),
+    ('SHADOWS', 'SHDW'),
+    ('SOFT', 'SFT'),
+    ('CUBE', 'CBE'),
+    ('SCREEN', 'SCN'),
+    ('NATIVE', 'NTV'),
+    ('DEPTH', 'DEP'),
+    ('OFF', 'OF'),
+    ('SPOT', 'SPT'),
+    ('SUNSHINE', 'SUN'),
+    ('FILTER', 'FLT'),
+    ('HARD', 'HRD'),
+    ('SOFT', 'SFT'),
+    ('DISABLED', 'DIS'),
+)
+
+def abbreviate(word):
+    for a in abbreviations:
+        word = word.replace(*a)
+    return word
+
+
 def compress_keywords(keywords):
+    keywords = map(abbreviate, keywords)
     split = [x.rsplit('_', 1) for x in keywords]
+
     ret = []
 
     ret.extend([x[0] for x in split if len(x) == 1])
