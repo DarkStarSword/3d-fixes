@@ -3,30 +3,16 @@
 import sys, os, re
 import json, hashlib, collections
 
-# See also - an alternative way to write a tokeniser (maybe I'll switch):
+# Tokeniser loosely based on
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
 
-class Token(object):
-    def __init__(self, string):
-        match = self.pattern.match(string)
-        if match is None:
-            raise ValueError()
-        self.string = match.string[:match.end()]
-
-    def __repr__(self):
-        return repr(self.string)
-
-    def __str__(self):
-        return self.string
-
-    def __len__(self):
-        return len(self.string)
+class Token(str): pass
 
 class Strip(object): pass # Removed during tokenisation
 class Ignore(object): pass # Ignored when looking for identifiers
 
 class CPPStyleComment(Token, Strip):
-    pattern = re.compile(r'\/\/.*$', re.MULTILINE)
+    pattern = r'\/\/.*$'
 
 def strip_quotes(s):
     if s[0] == s[-1] == '"':
@@ -34,25 +20,25 @@ def strip_quotes(s):
     return s.strip()
 
 class String(Token):
-    pattern = re.compile(r'"[^"]*"', re.MULTILINE)
+    pattern = r'"[^"]*"'
 
 class CurlyLeft(Token):
-    pattern = re.compile(r'{')
+    pattern = r'{'
 
 class CurlyRight(Token):
-    pattern = re.compile(r'}')
+    pattern = r'}'
 
 class WhiteSpace(Token, Ignore):
-    pattern = re.compile(r'\s')
+    pattern = r'[ \t]+'
 
 class NewLine(WhiteSpace, Token):
-    pattern = re.compile(r'\n')
+    pattern = r'\n'
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z0-9\[\]_]+')
+    pattern = r'[a-zA-Z0-9\[\]_]+'
 
 class Other(Token):
-    pattern = re.compile(r'.')
+    pattern = r'.'
 
 tokens = [
     CPPStyleComment,
@@ -65,28 +51,14 @@ tokens = [
     Other,
 ]
 
-def parse_token(input):
-    for t in tokens:
-        try:
-            token = t(input)
-        except ValueError:
-            continue
-        if token is not None:
-            return (token, input[len(token):])
-    try:
-        msg = input.split('\n')[0]
-    except:
-        msg = input
-    raise SyntaxError(repr(msg))
-
 def tokenise(input):
-    result = []
-    while input:
-        (token, input) = parse_token(input)
-        # print(repr(token))
-        if not isinstance(token, Strip):
-            result.append(token)
-    return result
+    token_dict = {token.__name__: token for token in tokens}
+    tok_regex = r'|'.join('(?P<%s>%s)' % (token.__name__, token.pattern) for token in tokens)
+    for mo in re.finditer(tok_regex, input, re.MULTILINE):
+        kind = token_dict[mo.lastgroup]
+        value = kind(mo.group(mo.lastgroup))
+        if not isinstance(kind, Strip):
+            yield value
 
 def curly_scope(old_tree):
     tree = Tree()
@@ -281,7 +253,6 @@ def parse_keywords(tree, parent=None, filename=None):
         if not isinstance(token, Identifier):
             raise SyntaxError('Expected Identifier, found: %s' % repr(token))
 
-        token = str(token) # FIXME: Got to be a cleaner way, this is necessary because Tokens aren't subclassed from str
         if token not in keywords:
             raise SyntaxError('Unrecognised keyword: %s (maybe just need to add this to list of known keywords?)' % token)
 
@@ -528,12 +499,10 @@ def main():
         if digest in processed:
             continue
         processed.add(digest)
-        tree = tokenise(data.decode('ascii')) # I don't know what encoding it uses
+        tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename))
 
-        # for sub_program in shader_list:
-        #     export_shader(sub_program)
     for shaders in shader_index.values():
         if len(shaders) == 1:
             export_shader(shaders[0])
