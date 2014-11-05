@@ -21,12 +21,62 @@ struct v2f {
 
 float _LightAsQuad;
 
+// We really want the inverse projection matrix, but all we have is the MV and
+// MVP matrices. Helix can invert the MV matrix, which allows us to calculate
+// the projection matrix as P = MV.I * MVP, then we can just invert the one
+// field we actually care about instead of the entire matrix.
+//
+// This is only necessary as we can't get the game to pass in extra parameters
+// when using Helix mod for fixes - game devs should just use the inverse
+// projection matrix directly.
+float4x4 HelixModMV_I : register(c180); // DX9Settings.ini set to pass the inverse MV matrix in c180
+float4x4 HelixModMVP  : register(c190); // DX9Settings.ini set to pass the MVP matrix to c190
+
+sampler2D NVStereoTextureVS : SAMPLER0; // Helix mod default for vertex shaders
+sampler2D NVStereoTexturePS : SAMPLER13; // Helix mod default for pixel shaders
+
 v2f vert (appdata v)
 {
 	v2f o;
+
+	float2 NVStereoParams = LoadNVStereoParams(NVStereoTextureVS);
+
 	o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
-	o.uv = ComputeScreenPos (o.pos);
-	o.ray = mul (UNITY_MATRIX_MV, v.vertex).xyz * float3(-1,-1,1);
+	o.uv = ComputeScreenPos (o.pos, NVStereoParams);
+	o.ray = mul (UNITY_MATRIX_MV, v.vertex).xyz; // * float3(-1,-1,1);
+
+	// We just calculated the view-space coordinates and need to apply the
+	// stereo correction formula. Since this is in view-space coordinates,
+	// the formula is slightly different to the typical stereo correction
+	// formula as we need to multiply the result by the inverse projection
+	// matrix X column.
+
+	// This calculation to get the inverse projection matrix is required
+	// due to the constraint that I cannot add additional inputs while
+	// fixing this with Helix mod (otherwise I could simply use the inverse
+	// projection matrix from Unity directly).  I rely on the fact I only
+	// need a single field from this matrix and that many other fields will
+	// be 0 to skip most of the calculations and avoid inverting the entire
+	// projection matrix.
+
+	// This is MV.I * MVP, but just to confuse me the order is backwards.
+	// Seems to be due to the fact that Unity matrices in Cg are row-major
+	// even though they are column-major in assembly and HLSL?
+	matrix ProjectionMatrix = mul(UNITY_MATRIX_MVP, HelixModMV_I);
+	float InverseProjectionMatrix_m00 = 1 / ProjectionMatrix._m00;
+
+	// This is equivelent to what I do in assembly to save instructions:
+	// float4 r = HelixModMV_I._m00_m10_m20_m30;
+	// float4 c = UNITY_MATRIX_MVP._m00_m01_m02_m03;
+	// float ProjectionMatrix_m00 = dot(r, c);
+	// float InverseProjectionMatrix_m00 = 1 / ProjectionMatrix_m00;
+
+	// Despite my thinking that ViewZ = ProjW (as P[3] = 0 0 1 0), I seem
+	// to have been proved wrong as this only works when using ProjW for
+	// depth:
+	o.ray.x += NVStereoCorrectionViewSpace(o.pos.w, NVStereoParams, InverseProjectionMatrix_m00);
+
+	o.ray = o.ray.xyz * float3(-1,-1,1);
 	
 	// v.normal contains a ray pointing from the camera to one of near plane's
 	// corners in camera space when we are drawing a full screen quad.
@@ -188,6 +238,16 @@ half4 CalculateLight (v2f i)
 	float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv);
 	depth = Linear01Depth (depth);
 	float4 vpos = float4(i.ray * depth,1);
+
+	float2 NVStereoParams = LoadNVStereoParams(NVStereoTexturePS);
+
+	// As above we calculate one field of the inverse projection matrix:
+	matrix ProjectionMatrix = mul(HelixModMVP, HelixModMV_I);
+	float InverseProjectionMatrix_m00 = 1 / ProjectionMatrix._m00;
+
+	// Correct vpos:
+	vpos.x -= NVStereoCorrectionViewSpace(i.ray.z, NVStereoParams, InverseProjectionMatrix_m00);
+
 	float3 wpos = mul (_CameraToWorld, vpos).xyz;
 
 	float fadeDist = ComputeFadeDistance(wpos, vpos.z);

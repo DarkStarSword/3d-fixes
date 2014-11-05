@@ -412,10 +412,41 @@ inline float LinearEyeDepth( float z )
 #define COMPUTE_DEPTH_01 -(mul( UNITY_MATRIX_MV, v.vertex ).z * _ProjectionParams.w)
 #define COMPUTE_VIEW_NORMAL mul((float3x3)UNITY_MATRIX_IT_MV, v.normal)
 
+/* FIXME: Add D3D11 when adding native Unity support or working with 3DMigoto */
+#if defined(SHADER_API_D3D9)
+inline float2 LoadNVStereoParams(sampler2D NVStereoTexture)
+{
+	return tex2D(NVStereoTexture, float2(0.0625f, 0.0625f)).xy;
+}
+
+inline float NVStereoCorrection(float4 depth, float2 NVStereoParams)
+{
+	return NVStereoParams.x * (depth - NVStereoParams.y);
+}
+
+inline float NVStereoCorrectionViewSpace(float depth, float2 NVStereoParams, float InverseProjectionMatrix_m00)
+{
+	return NVStereoParams.x * (depth - NVStereoParams.y) * InverseProjectionMatrix_m00;
+}
+#else
+inline float2 LoadNVStereoParams(sampler2D NVStereoTexture)
+{
+	return float2(0, 0);
+}
+inline float NVStereoCorrection(float4 depth, float2 NVStereoParams)
+{
+	return 0;
+}
+
+inline float NVStereoCorrectionViewSpace(float depth, float2 NVStereoParams, float InverseProjectionMatrix_m00)
+{
+	return 0;
+}
+#endif
 
 // Projected screen position helpers
 #define V2F_SCREEN_TYPE float4
-inline float4 ComputeScreenPos (float4 pos) {
+inline float4 ComputeScreenPos (float4 pos, float2 NVStereoParams) {
 	float4 o = pos * 0.5f;
 	#if defined(UNITY_HALF_TEXEL_OFFSET)
 	o.xy = float2(o.x, o.y*_ProjectionParams.x) + o.w * _ScreenParams.zw;
@@ -426,6 +457,8 @@ inline float4 ComputeScreenPos (float4 pos) {
 	#if defined(SHADER_API_FLASH)
 	o.xy *= unity_NPOTScale.xy;
 	#endif
+
+	o.x += NVStereoCorrection(pos.w, NVStereoParams) * 0.5f;
 	
 	o.zw = pos.zw;
 	return o;
