@@ -201,8 +201,12 @@ def parse_keywords(tree, parent=None, filename=None):
         if isinstance(token, String):
             parent.shader_asm = strip_quotes(token)
             # Index shaders by assembly:
-            if token not in shader_index:
+            if token in shader_index:
+                # Minimise calls to shaderasm.exe
+                parent.crc = shader_index[token][0].crc
+            else:
                 shader_index[token] = []
+                add_shader_crc(parent)
             shader_index[token].append(parent)
             shader_list.append(parent)
             continue
@@ -285,50 +289,7 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
-def export_filename(sub_program):
-    (sub_program, program, shader_pass, sub_shader, shader) = get_parents(sub_program)
-
-    ret = []
-
-    ret.append('Shaders')
-    ret.append(sub_program.name.strip())
-
-    # basename, ext = os.path.splitext(shader.filename)
-    # ret.append('%s - %s' % (basename, shader.name))
-    ret.append(shader.name)
-
-    ret.append('SubShader %d' % sub_shader.counter)
-
-    if 'Name' in shader_pass.keywords:
-        pass_name = strip_quotes(shader_pass.keywords['Name'][0].line.strip())
-        ret.append('Pass %d - %s' % (shader_pass.counter, pass_name))
-    else:
-        ret.append('Pass %d' % shader_pass.counter)
-
-    ret.append(program.name)
-
-    if 'Keywords' in sub_program.keywords:
-        assert(len(sub_program.keywords['Keywords']) == 1)
-        keywords = compress_keywords(sub_program.keywords['Keywords'][0])
-        ret.append(keywords)
-
-    return [x.replace('/', '_') for x in ret]
-
-def export_filename_combined(sub_programs):
-    shaders = list(map(get_parents, sub_programs))
-
-    # Different sub programs have different assembly languages and should not match:
-    assert(all([ x.sub_program.name == shaders[0].sub_program.name for x in shaders]))
-
-    # Filenames potentially could match:
-    # assert(all([ x.shader.filename == shaders[0].shader.filename for x in shaders]))
-
-    # Should be identical because we explicitly filtered on this:
-    assert(all([ x.shader.name == shaders[0].shader.name for x in shaders]))
-
-    # vertex & pixel shaders embed different identifiers in the assembly, so should not match:
-    assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
-
+def export_filename_combined_long(shaders, args):
     ret = []
 
     ret.append('Shaders')
@@ -353,17 +314,53 @@ def export_filename_combined(sub_programs):
 
     ret.append(shaders[0].program.name)
 
-    def keywords(shader):
-        if 'Keywords' in shader.sub_program.keywords:
-            assert(len(shader.sub_program.keywords['Keywords']) == 1)
-            return shader.sub_program.keywords['Keywords'][0]
-        return set()
-    kw = set()
-    kw.update(*map(keywords, shaders))
-    if kw:
-        ret.append(compress_keywords(kw))
+    if args.filename_crc and shaders[0].sub_program.crc:
+        ret.append('%.8X' % shaders[0].sub_program.crc)
+    else:
+        def keywords(shader):
+            if 'Keywords' in shader.sub_program.keywords:
+                assert(len(shader.sub_program.keywords['Keywords']) == 1)
+                return shader.sub_program.keywords['Keywords'][0]
+            return set()
+        kw = set()
+        kw.update(*map(keywords, shaders))
+        if kw:
+            ret.append(compress_keywords(kw))
 
-    return [x.replace('/', '_') for x in ret]
+    return ret
+
+def export_filename_combined_short(shader, args):
+    if not shader.sub_program.crc:
+        return None
+    return (
+        'ShaderCRCs',
+        shader.shader.name,
+        shader.program.name,
+        '%.8X' % shader.sub_program.crc,
+    )
+
+def export_filename_combined(sub_programs, args):
+    shaders = list(map(get_parents, sub_programs))
+
+    # Different sub programs have different assembly languages and should not match:
+    assert(all([ x.sub_program.name == shaders[0].sub_program.name for x in shaders]))
+
+    # Filenames potentially could differ:
+    # assert(all([ x.shader.filename == shaders[0].shader.filename for x in shaders]))
+
+    # Should be identical because we explicitly filtered on this:
+    assert(all([ x.shader.name == shaders[0].shader.name for x in shaders]))
+
+    # vertex & pixel shaders embed different identifiers in the assembly, so should not match:
+    assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
+
+    if args.flatten:
+        ret = export_filename_combined_short(shaders[0], args)
+    else:
+        ret = export_filename_combined_long(shaders, args)
+    if ret is not None:
+        return [x.replace('/', '_') for x in ret]
+    return None
 
 def _collect_headers(tree):
     headers = []
@@ -470,18 +467,20 @@ def calc_shader_crc(shader_asm):
 
     return zlib.crc32(blob)
 
-def add_shader_crc(headers, sub_program):
+def add_shader_crc(sub_program):
+    sub_program.crc = None
     if sub_program.name != 'd3d9':
         return
-    crc = None
     try:
-        crc = calc_shader_crc(sub_program.shader_asm)
+        sub_program.crc = calc_shader_crc(sub_program.shader_asm)
     except:
         pass
-    if crc:
-        headers[0] = 'CRC32: %.8X | %s' % (crc, headers[0])
-    else:
+    if not sub_program.crc:
         print('WARNING: Unable to determine shader CRC32 - is shaderasm.exe installed?')
+
+def add_header_crc(headers, sub_program):
+    if sub_program.crc:
+        headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
 
 def add_vanity_tag(headers):
     if headers[-1] != '':
@@ -498,11 +497,13 @@ def _export_shader(shader_asm, headers, path_components):
         f.write('\n\n')
         f.write(shader_asm)
 
-def export_shader(sub_program):
+def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
-    add_shader_crc(headers, sub_program)
+    add_header_crc(headers, sub_program)
     add_vanity_tag(headers)
-    path_components = export_filename(sub_program)
+    path_components = export_filename_combined([sub_program], args)
+    if path_components is None:
+        return
     return _export_shader(sub_program.shader_asm, headers, path_components)
 
 def shader_name(tree):
@@ -510,7 +511,7 @@ def shader_name(tree):
         tree = tree.parent
     return tree.name
 
-def dedupe_shaders(shader_list):
+def dedupe_shaders(shader_list, args):
     asm = shader_list[0].shader_asm
     assert(all([ x.shader_asm == asm for x in shader_list]))
 
@@ -523,20 +524,38 @@ def dedupe_shaders(shader_list):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
-    add_shader_crc(headers, shader_list[0])
+    add_header_crc(headers, shader_list[0])
     add_vanity_tag(headers)
     # print(commentify(headers))
 
     for shader in shaders:
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
-        path_components = export_filename_combined(similar_shaders)
+        path_components = export_filename_combined(similar_shaders, args)
+        if path_components is None:
+            return
         _export_shader(asm, headers, path_components)
+
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser(description = 'Unity Shader Extractor')
+    parser.add_argument('shaders', nargs='+',
+            help='List of compiled Unity shader files to parse')
+    parser.add_argument('--filename-crc', '--name-crc', action='store_true',
+            help='Name the files by the CRC of the shader, if possible')
+    parser.add_argument('--flatten', action='store_true',
+            help='Use alternate directory structure that only groups shaders by source shader and type (requires --filename-crc)')
+    args = parser.parse_args()
+    if args.flatten and not args.filename_crc:
+        raise ValueError('--flatten must be used with --filename-crc or you risk filename conflicts!')
+    return args
 
 def main():
     global shader_list
+
+    args = parse_args()
     processed = set()
 
-    for filename in sys.argv[1:]:
+    for filename in args.shaders:
         shader_list = []
         print('Parsing %s...' % filename)
         data = open(filename, 'rb').read()
@@ -550,10 +569,10 @@ def main():
 
     for shaders in shader_index.values():
         if len(shaders) == 1:
-            export_shader(shaders[0])
+            export_shader(shaders[0], args)
         else:
             # print('-'*79)
-            dedupe_shaders(shaders)
+            dedupe_shaders(shaders, args)
 
 if __name__ == '__main__':
     sys.exit(main())
