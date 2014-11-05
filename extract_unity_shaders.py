@@ -446,6 +446,9 @@ def combine_similar_headers(trees):
 def commentify(headers):
     return '\n'.join([ '// %s' % x for x in headers ])
 
+def indent_like_helix(assembly):
+    return '\n'.join([ '%s%s' % (' '*4, x) for x in assembly.split('\n') ]) + '\n'
+
 def mkdir_recursive(components):
     path = os.curdir
     while components:
@@ -507,7 +510,7 @@ def _export_shader(shader_asm, headers, path_components):
     with open('%s.txt' % dest, 'w') as f:
         f.write(commentify(headers))
         f.write('\n\n')
-        f.write(shader_asm)
+        f.write(indent_like_helix(shader_asm))
 
 def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
