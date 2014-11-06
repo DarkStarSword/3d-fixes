@@ -618,7 +618,7 @@ def find_game_dir(file):
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
     parent = os.path.realpath(os.path.join(src_dir, '..'))
     if os.path.basename(parent).lower() == 'shaderoverride':
-        return os.path.basename(os.path.dirname(os.path.realpath(parent)))
+        return os.path.realpath(os.path.join(parent, '..'))
     parent = os.path.realpath(os.path.join(parent, '..'))
     if os.path.basename(parent).lower() != 'dumps':
         raise ValueError('Unable to find game directory')
