@@ -57,7 +57,7 @@ class CStyleComment(Token, Ignore): # XXX: Are these valid in shader asm languag
     pattern = re.compile(r'\/\*.*\*\/', re.MULTILINE)
 
 class WhiteSpace(Token, Ignore):
-    pattern = re.compile(r'\s+')
+    pattern = re.compile(r'[ \t]+')
 
 class NewLine(WhiteSpace, InstructionSeparator):
     pattern = re.compile(r'\n')
