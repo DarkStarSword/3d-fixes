@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, argparse, json, itertools
+import sys, os, re, argparse, json, itertools, glob, shutil
 
 import shaderutil
 
@@ -614,21 +614,39 @@ def install_shader(shader, file, args):
 
     return install_shader_to(shader, file, args, gamedir)
 
-def install_shader_to_git(shader, file, args):
+def find_game_dir(file):
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
     parent = os.path.realpath(os.path.join(src_dir, '..'))
     if os.path.basename(parent).lower() == 'shaderoverride':
-        game_dir = os.path.basename(os.path.dirname(os.path.realpath(parent)))
-    else:
-        parent = os.path.realpath(os.path.join(parent, '..'))
-        if os.path.basename(parent).lower() != 'dumps':
-            raise ValueError('Unable to find game directory')
-        game_dir = os.path.basename(os.path.dirname(os.path.realpath(parent)))
+        return os.path.basename(os.path.dirname(os.path.realpath(parent)))
+    parent = os.path.realpath(os.path.join(parent, '..'))
+    if os.path.basename(parent).lower() != 'dumps':
+        raise ValueError('Unable to find game directory')
+    return os.path.realpath(os.path.join(parent, '..'))
 
+def install_shader_to_git(shader, file, args):
+    game_dir = os.path.basename(find_game_dir(file))
     script_dir = os.path.dirname(__file__)
     dest_dir = os.path.join(script_dir, game_dir)
 
     install_shader_to(shader, file, args, dest_dir, True)
+
+def restore_original_shader(file):
+    game_dir = find_game_dir(file)
+    crc = shaderutil.get_filename_crc(file)
+    src_dir = os.path.realpath(os.path.dirname(os.path.join(os.curdir, file)))
+    if os.path.basename(src_dir).lower().startswith('vertex'):
+        pattern = 'Dumps/AllShaders/VertexShader/%s.txt' % crc
+    elif os.path.basename(src_dir).lower().startswith('pixel'):
+        pattern = 'Dumps/AllShaders/PixelShader/CRC32_%s_*.txt' % (crc.lstrip('0'))
+    else:
+        raise ValueError("Couldn't determine type of shader from directory")
+    pattern = os.path.join(game_dir, pattern)
+    files = glob.glob(pattern)
+    if not files:
+        print('Unable to restore %s: %s not found' % (file, pattern))
+        return
+    shutil.copyfile(files[0], file)
 
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
@@ -836,7 +854,7 @@ def lookup_header_json(tree, index, file):
         print('%s not found in header index' % crc)
         return tree
     headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
-    headers = SyntaxTree(itertools.chain(*headers))
+    headers = type(tree)(itertools.chain(*headers))
     headers.append(NewLine('\n'))
     headers.extend(tree)
     return headers
@@ -884,6 +902,9 @@ def parse_args():
     parser.add_argument('--lookup-header-json', type=argparse.FileType('r'), # XXX: When python 3.4 comes to cygwin, add encoding='utf-8'
             help="Look up headers in a JSON index, such as those created with extract_unity_shaders.py and prepend them.\n" +
             "Implies --no-convert --in-place if no other installation options were provided")
+    parser.add_argument('--restore-original', '--restore-original-shader', action='store_true',
+            help="Look for an original copy of the shader in the Dumps/AllShaders directory and copies it over the top of this one\n" +
+            "Game must have been run with DumpAll=true in the past. Implies --in-place --no-convert")
 
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
@@ -904,7 +925,10 @@ def parse_args():
         args.lookup_header_json = json.load(args.lookup_header_json)
         if not args.output and not args.install and not args.install_to and not args.to_git:
             args.in_place = True
-            args.auto_convert = True
+            args.auto_convert = False
+
+    if args.restore_original:
+        args.auto_convert = False
 
     return args
 
@@ -931,6 +955,11 @@ def main():
         checked_ps = checked_vs = False
 
     for file in args.files:
+        if args.restore_original:
+            print('Restoring %s...' % file)
+            restore_original_shader(file)
+            continue
+
         debug('parsing %s...' % file)
         try:
             tree = parse_shader(open(file, 'r', newline=None).read(), args)
