@@ -824,7 +824,11 @@ def disable_shader(tree, args):
     tree.add_inst('endif', [])
 
 def lookup_header_json(tree, index, file):
-    index = json.load(index)
+    if len(tree) and len(tree[0]) and isinstance(tree[0][0], CPPStyleComment) \
+            and tree[0][0].startswith('// CRC32'):
+                print('%s appears to already contain headers' % file)
+                return tree
+
     crc = shaderutil.get_filename_crc(file)
     try:
         headers = index[crc]
@@ -896,9 +900,11 @@ def parse_args():
         args.auto_convert = False
         args.force = True
 
-    if args.lookup_header_json and not args.output and not args.install and not args.install_to and not args.to_git:
-        args.in_place = True
-        args.no_convert = True
+    if args.lookup_header_json:
+        args.lookup_header_json = json.load(args.lookup_header_json)
+        if not args.output and not args.install and not args.install_to and not args.to_git:
+            args.in_place = True
+            args.auto_convert = True
 
     return args
 
