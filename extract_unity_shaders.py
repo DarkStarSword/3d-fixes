@@ -3,6 +3,8 @@
 import sys, os, re, math
 import json, hashlib, collections
 
+shader_idx_filename = 'ShaderHeaders.json'
+
 # Tokeniser loosely based on
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
 
@@ -187,6 +189,7 @@ keywords = {
 shader_index = {}
 shader_list = []
 crc_list = {}
+crc_headers = {}
 
 def parse_keywords(tree, parent=None, filename=None):
     ret = []
@@ -497,29 +500,45 @@ def add_header_crc(headers, sub_program):
     if sub_program.crc:
         headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
 
+def index_headers(headers, sub_program):
+    if sub_program.crc:
+        crc_headers['%.8X' % sub_program.crc] = headers
+
+def save_header_index():
+    try:
+        out = json.load(open(shader_idx_filename, 'r', encoding='utf-8'))
+        out.update(crc_headers)
+    except:
+        out = crc_headers
+    print('Saving header index %s...' % shader_idx_filename)
+    json.dump(out, open(shader_idx_filename, 'w', encoding='utf-8'), sort_keys = True, indent = 0)
+
 def add_vanity_tag(headers):
     if headers[-1] != '':
         headers.append('')
     headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
     headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
 
-def _export_shader(shader_asm, headers, path_components):
+def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
+    headers = commentify(headers)
+    index_headers(headers, sub_program)
     print('Extracting %s.txt...' % dest)
     with open('%s.txt' % dest, 'w') as f:
-        f.write(commentify(headers))
+        f.write(headers)
         f.write('\n\n')
-        f.write(indent_like_helix(shader_asm))
+        f.write(indent_like_helix(sub_program.shader_asm))
 
 def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
     add_header_crc(headers, sub_program)
     add_vanity_tag(headers)
+
     path_components = export_filename_combined([sub_program], args)
     if path_components is None:
         return
-    return _export_shader(sub_program.shader_asm, headers, path_components)
+    return _export_shader(sub_program, headers, path_components)
 
 def shader_name(tree):
     while tree.parent is not None:
@@ -548,7 +567,7 @@ def dedupe_shaders(shader_list, args):
         path_components = export_filename_combined(similar_shaders, args)
         if path_components is None:
             return
-        _export_shader(asm, headers, path_components)
+        _export_shader(shader_list[0], headers, path_components)
 
 def parse_args():
     import argparse
@@ -588,6 +607,8 @@ def main():
         else:
             # print('-'*79)
             dedupe_shaders(shaders, args)
+
+    save_header_index()
 
 if __name__ == '__main__':
     sys.exit(main())
