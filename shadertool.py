@@ -932,7 +932,7 @@ def main():
             if args.ignore_parse_errors:
                 import traceback, time
                 traceback.print_exc()
-                time.sleep(1)
+                time.sleep(0.1)
                 continue
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
