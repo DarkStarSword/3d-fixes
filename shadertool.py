@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, argparse
+import sys, os, re, argparse, json, itertools
 
 import shaderutil
 
@@ -823,6 +823,19 @@ def disable_shader(tree, args):
         tree.add_inst('endif', [])
     tree.add_inst('endif', [])
 
+def lookup_header_json(tree, index, file):
+    index = json.load(index)
+    crc = shaderutil.get_filename_crc(file)
+    try:
+        headers = index[crc]
+    except:
+        print('%s not found in header index' % crc)
+        return tree
+    headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
+    headers = SyntaxTree(itertools.chain(*headers))
+    headers.append(NewLine('\n'))
+    headers.extend(tree)
+    return headers
 
 def parse_args():
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
@@ -838,6 +851,8 @@ def parse_args():
             help='Forcefully overwrite shaders when installing')
     parser.add_argument('--output', '-o', type=argparse.FileType('w'),
             help='Save the shader to a file')
+    parser.add_argument('--in-place', action='store_true',
+            help='Overwrite the file in-place')
 
     parser.add_argument('--show-regs', '-r', action='store_true',
             help='Show the registers used in the shader')
@@ -859,8 +874,12 @@ def parse_args():
             help="Use mad instruction to make stereo correction more concise")
     parser.add_argument('--auto-adjust-texcoords', action='store_true',
             help="Adjust any texcoord that matches the output position from a vertex shader")
+
     parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
             help="Do not automatically convert shaders to shader model 3")
+    parser.add_argument('--lookup-header-json', type=argparse.FileType('r'), # XXX: When python 3.4 comes to cygwin, add encoding='utf-8'
+            help="Look up headers in a JSON index, such as those created with extract_unity_shaders.py and prepend them.\n" +
+            "Implies --no-convert --in-place if no other installation options were provided")
 
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
@@ -876,6 +895,10 @@ def parse_args():
     if args.to_git:
         args.auto_convert = False
         args.force = True
+
+    if args.lookup_header_json and not args.output and not args.install and not args.install_to and not args.to_git:
+        args.in_place = True
+        args.no_convert = True
 
     return args
 
@@ -933,6 +956,9 @@ def main():
                 else:
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
+        if args.lookup_header_json:
+            tree = lookup_header_json(tree, args.lookup_header_json, file)
+
         if args.disable:
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:
@@ -950,6 +976,10 @@ def main():
 
         if args.output:
             print(tree, end='', file=args.output)
+        if args.in_place:
+            tmp = '%s.new' % file
+            print(tree, end='', file=open(tmp, 'w'))
+            os.rename(tmp, file)
         if args.install:
             install_shader(tree, file, args)
         if args.install_to:
