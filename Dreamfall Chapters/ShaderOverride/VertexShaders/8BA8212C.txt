@@ -1,0 +1,142 @@
+// CRC32: 8BA8212C | Matched 3 variants of 3 shaders: Character/Disintegrate Bumped Diffuse Cubemap Lit, Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided, Dreamfall/Reflective/Fresnel/Bumped Specular RefColor Cutout
+// 
+//    Unity headers extracted from disintegrate_nmp_cube_lit.shader
+//    Shader "Character/Disintegrate Bumped Diffuse Cubemap Lit" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (1,1,1,1)
+//       _MainTex ("Texture (RGB)", 2D) = "white" {}
+//       _BumpMap ("Texture (RGB)", 2D) = "bump" {}
+//       _NoiseTex ("Effect Map (RGB)", 2D) = "white" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//       _DisintegrateAmount ("Effect Amount", Range(0,1.01)) = 0
+//       _DissolveColor ("Edge Color", Color) = (1,0.5,0.2,0)
+//       _EdgeEmission ("Edge Emission", Color) = (0,0,0,0)
+//       _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//       _DissolveEdge ("Edge Range", Range(0,0.1)) = 0.01
+//       _TileFactor ("Tile Factor", Range(0,4)) = 1
+//       _EmissionFloat ("Emission Strength", Float) = 1
+//       _BumpStrength ("Bump Strength", Float) = 1
+//       _UVxSpeed ("UV X speed", Float) = 1
+//       _Fresnel ("Fresnel", Float) = 1
+//      }
+//      Fallback "Disintegrate"
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+//        Pass 5/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset 1, 1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [unity_LightShadowBias]
+//              Vector 5 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-BumpDetailCutout2sided.shader
+//    Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _Fresnel ("Fresnel", Float) = 1
+//       _DetailMulti ("Detail Strength", Float) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _DetailBumpMap ("DetailMap", 2D) = "bump" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//        Pass 5/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset 1, 1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [unity_LightShadowBias]
+//              Vector 5 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Bump_SpecFresnelRefCol_cutout.shader
+//    Shader "Dreamfall/Reflective/Fresnel/Bumped Specular RefColor Cutout" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//       _RefColMult ("Reflect Map", Float) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" {}
+//       _RefColMap ("Reflect Color (RGB", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//        Pass 5/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset 1, 1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [unity_LightShadowBias]
+//              Vector 5 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    def c6, 0.00000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dp4 r0.x, v0, c2
+    add r0.x, r0, c4
+    max r0.y, r0.x, c6.x
+    add r0.y, r0, -r0.x
+    mad r0.z, r0.y, c4.y, r0.x
+    dp4 r0.w, v0, c3
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mov o0, r0
+    mov o1, r0
+    mad o2.xy, v1, c5, c5.zwzw

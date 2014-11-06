@@ -1,0 +1,150 @@
+// CRC32: 9E53E5F4 | Matched 4 variants of 2 shaders: Chickenlord/Rim Lighting, Parallax Diffuse
+// 
+//    Unity headers extracted from Rim_Opaque.shader
+//    Shader "Chickenlord/Rim Lighting" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _RimColor ("Rim Color", Color) = (1,1,1,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _RS ("Rim Power", Range(0.2,6)) = 2.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [unity_SHAr]
+//              Vector 16 [unity_SHAg]
+//              Vector 17 [unity_SHAb]
+//              Vector 18 [unity_SHBr]
+//              Vector 19 [unity_SHBg]
+//              Vector 20 [unity_SHBb]
+//              Vector 21 [unity_SHC]
+//              Vector 22 [unity_Scale]
+//              Vector 23 [_MainTex_ST]
+//              Vector 24 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Normal-Parallax.shader
+//    Shader "Parallax Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Parallax ("Height", Range(0.005,0.08)) = 0.02
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _ParallaxMap ("Heightmap (A)", 2D) = "black" {}
+//      }
+//      Fallback "Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [unity_SHAr]
+//              Vector 16 [unity_SHAg]
+//              Vector 17 [unity_SHAb]
+//              Vector 18 [unity_SHBr]
+//              Vector 19 [unity_SHBg]
+//              Vector 20 [unity_SHBb]
+//              Vector 21 [unity_SHC]
+//              Vector 22 [unity_Scale]
+//              Vector 23 [_MainTex_ST]
+//              Vector 24 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_2_0
+    def c25, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    mul r1.xyz, v2, c22.w
+    dp3 r2.w, r1, c5
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r2.w
+    mul r1, r0.xyzz, r0.yzzx
+    mov r0.w, c25.x
+    dp4 r2.z, r0, c17
+    dp4 r2.y, r0, c16
+    dp4 r2.x, r0, c15
+    mul r0.y, r2.w, r2.w
+    mad r0.w, r0.x, r0.x, -r0.y
+    dp4 r3.z, r1, c20
+    dp4 r3.y, r1, c19
+    dp4 r3.x, r1, c18
+    add r2.xyz, r2, r3
+    mul r3.xyz, r0.w, c21
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r0.xyz, r0, v1.w
+    mov r1.xyz, c12
+    add oT3.xyz, r2, r3
+    mov r1.w, c25.x
+    dp4 r0.w, v0, c3
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c22.w, -v0
+    dp3 oT1.y, r2, r0
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mul r1.xyz, r0.xyww, c25.y
+    mul r1.y, r1, c13.x
+    dp3 oT1.z, v2, r2
+    dp3 oT1.x, r2, v1
+    mad oT2.xy, r1.z, c14.zwzw, r1
+    mov oPos, r0
+    mov oT2.zw, r0
+    mad oT0.zw, v3.xyxy, c24.xyxy, c24
+    mad oT0.xy, v3, c23, c23.zwzw

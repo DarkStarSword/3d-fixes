@@ -1,0 +1,451 @@
+// CRC32: A2D065D2 | Matched 6 variants of 6 shaders: Dreamfall/FX/River (Supports Shadows), Dreamfall/VertexBlend/Reflective/Fresnel/Bumped Specular Basic, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum MaskDistort, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum Window, Self-Illumin/Dreamfall/Robot Eyes
+// 
+//    Unity headers extracted from ReflectRiver.shader
+//    Shader "Dreamfall/FX/River (Supports Shadows)" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Maintex (RGB)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _BumpAmt ("BumpAmount", Range(0,1)) = 1
+//       _Fresnel ("Reflection Fresnel Exponent", Float) = 2
+//       _ReflAmount ("Reflection amount", Float) = 2
+//       _ReflPow ("Reflection pow", Float) = 1
+//       _Cube1 ("Reflection Cubemap Red", CUBE) = "" { TexGen CubeReflect }
+//       _Cube2 ("Reflection Cubemap Green", CUBE) = "" { TexGen CubeReflect }
+//       _Cube3 ("Reflection Cubemap Blue", CUBE) = "" { TexGen CubeReflect }
+//       _WaterSpeed ("Water Speed1", Float) = 1
+//       _WaterSpeed2 ("Water Speed1", Float) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-BumpSpec_Fresnel_BlendBasic.shader
+//    Shader "Dreamfall/VertexBlend/Reflective/Fresnel/Bumped Specular Basic" {
+//      Properties {
+//       _Col ("Main Color", Color) = (1,1,1,1)
+//       _Col2 ("2nd Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" {}
+//       _2ndTex ("2nd (RGB) RefStrGloss (A)", 2D) = "white" {}
+//       _NoiseTex ("Noisemap (RGB)", 2D) = "black" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _BumpMap2 ("Normalmap 2", 2D) = "bump" {}
+//       _WetSpots ("WetSpots (Green Vertex Color)", Range(0,1)) = 0
+//       _WetCol ("Wet Color", Color) = (1,1,1,1)
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 100
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_NoiseTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Parallax_Fresnel_Illum.shader
+//    Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _Parallax ("Parallax", Float) = 0
+//       _ParallaxAdjust ("Parallax Adjust(RG - OFFSET), B - Vertex Alpha Multiply", Vector) = (0,0,0,0)
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { TexGen CubeReflect }
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _IllumMap ("IllumMap (RGB)", 2D) = "black" {}
+//       _IllumMask ("IllumMask (RGB)", 2D) = "white" {}
+//       _IllumMapScale ("Illum Map Scale", Float) = 1
+//       _IllumMaskScale ("Illum Mask Scale", Float) = 1
+//       _IllumDepth ("IllumDepth", Float) = 0.4
+//       _IllumColor ("Illum Color", Color) = (0.5,0.5,0.5,0.5)
+//       _IllumColorScale ("IllumColor Scale", Float) = 1
+//       _EmissionLM ("Emission (Lightmapper)", Float) = 0
+//       _ReflAmount ("Reflection amount", Float) = 1
+//       _ReflPow ("Reflection pow", Float) = 1
+//       _InteriorPow ("Interior pow", Float) = 1
+//       _InteriorAspect ("Interior Aspect", Float) = 1
+//       _InteriorDistort ("Interior Distort", Range(0,2)) = 0
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Parallax_Fresnel_Illum_MaskDistort.shader
+//    Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum MaskDistort" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _AddCol ("Addmap Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _Parallax ("Height", Float) = 0
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { TexGen CubeReflect }
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _IllumMap ("IllumMap (RGB)", 2D) = "black" {}
+//       _IllumMapTile ("Tile IllumMap", Float) = 1
+//       _IllumMapOffset ("Tile IllumMap", Vector) = (0,0,0,0)
+//       _IllumMask ("IllumMask (RGB)", 2D) = "white" {}
+//       _IllumDepth ("IllumDepth", Float) = 0.4
+//       _IllumColor ("Illum Color", Color) = (0.5,0.5,0.5,0.5)
+//       _IllumColorScale ("IllumColor Scale", Float) = 1
+//       _DistortMap ("DistortMap(Normalmap)", 2D) = "bump" {}
+//       _DistortMapTile ("Tile DistortMap", Vector) = (1,1,1,1)
+//       _DistortSpeed ("DistortSpeed", Float) = 0
+//       _Distortion ("Distortion Strength", Float) = 0
+//       _EmissionLM ("Emission (Lightmapper)", Float) = 0
+//       _AddMap ("AddMap", 2D) = "black" {}
+//       _AddMapBoost ("AddMapBoost", Float) = 1
+//       _AddMapTile ("Tile AddMap", Float) = 1
+//       _AddMapSpeed ("AddMap Speed", Float) = 0
+//       _AddMapDepth ("Addmap Depth", Float) = 0.4
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Parallax_Fresnel_Illum_Window.shader
+//    Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum Window" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _Parallax ("Height", Range(-10,10)) = 0
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { TexGen CubeReflect }
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _IllumMap ("IllumMap (RGB)", 2D) = "black" {}
+//       _IllumMask ("IllumMask (RGB)", 2D) = "white" {}
+//       _IllumMapScale ("Illum Map Scale", Float) = 1
+//       _IllumMaskScale ("Illum Mask Scale", Float) = 1
+//       _IllumMaskOffset ("Illum Mask Offset", Float) = 1
+//       _IllumDepth ("IllumDepth", Float) = 0.4
+//       _IllumColor ("Illum Color", Color) = (0.5,0.5,0.5,0.5)
+//       _IllumColorScale ("IllumColor Scale", Float) = 1
+//       _EmissionLM ("Emission (Lightmapper)", Float) = 0
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Parallax_RobotEyes.shader
+//    Shader "Self-Illumin/Dreamfall/Robot Eyes" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _Parallax ("Height", Float) = 0
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { TexGen CubeReflect }
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _IllumMap ("IllumMap (RGB)", 2D) = "black" {}
+//       _IllumMask ("IllumMask (RGB)", 2D) = "white" {}
+//       _IllumMapScale ("Illum Map Scale", Float) = 1
+//       _IllumMaskScale ("Illum Mask Scale", Float) = 1
+//       _IllumMaskOffset ("Illum Mask Offset", Float) = 1
+//       _IllumDepth ("IllumDepth", Float) = 0.4
+//       _IllumColor ("Illum Color", Color) = (0.5,0.5,0.5,0.5)
+//       _IllumColorScale ("IllumColor Scale", Float) = 1
+//       _EmissionLM ("Emission (Lightmapper)", Float) = 0
+//       _ReflAmount ("Reflection amount", Float) = 1
+//       _ReflPow ("Reflection pow", Float) = 1
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_SHAr]
+//              Vector 17 [unity_SHAg]
+//              Vector 18 [unity_SHAb]
+//              Vector 19 [unity_SHBr]
+//              Vector 20 [unity_SHBg]
+//              Vector 21 [unity_SHBb]
+//              Vector 22 [unity_SHC]
+//              Vector 23 [unity_Scale]
+//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_color0 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    dcl_texcoord5 o7
+    dcl_texcoord6 o8
+    dcl_texcoord7 o9
+    def c26, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v4
+    mul r1.xyz, v2, c23.w
+    dp3 r2.w, r1, c5
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r2.w
+    mul r1, r0.xyzz, r0.yzzx
+    mov r0.w, c26.x
+    dp4 r2.z, r0, c18
+    dp4 r2.y, r0, c17
+    dp4 r2.x, r0, c16
+    mul r0.y, r2.w, r2.w
+    dp4 r3.z, r1, c21
+    dp4 r3.y, r1, c20
+    dp4 r3.x, r1, c19
+    add r1.xyz, r2, r3
+    mad r0.x, r0, r0, -r0.y
+    mul r2.xyz, r0.x, c22
+    add o8.xyz, r1, r2
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r3.xyz, r0, v1.w
+    mov r0, c10
+    dp4 r4.z, c15, r0
+    mov r0, c9
+    dp4 r4.y, c15, r0
+    mov r1.w, c26.x
+    mov r1.xyz, c12
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c23.w, -v0
+    mov r1, c8
+    dp4 r4.x, c15, r1
+    dp3 r0.y, r3, c4
+    dp3 r0.w, -r2, c4
+    dp3 r0.x, v1, c4
+    dp3 r0.z, v2, c4
+    mul o4, r0, c23.w
+    dp3 r0.y, r3, c5
+    dp3 r0.w, -r2, c5
+    dp3 r0.x, v1, c5
+    dp3 r0.z, v2, c5
+    mul o5, r0, c23.w
+    dp3 r0.y, r3, c6
+    dp3 r0.w, -r2, c6
+    dp3 r0.x, v1, c6
+    dp3 r0.z, v2, c6
+    mul o6, r0, c23.w
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mul r1.xyz, r0.xyww, c26.y
+    mul r1.y, r1, c13.x
+    dp3 o2.y, r2, r3
+    dp3 o7.y, r3, r4
+    dp3 o2.z, v2, r2
+    dp3 o2.x, r2, v1
+    dp3 o7.z, v2, r4
+    dp3 o7.x, v1, r4
+    mad o9.xy, r1.z, c14.zwzw, r1
+    mov o0, r0
+    mov o3, v4
+    mov o9.zw, r0
+    mad o1.zw, v3.xyxy, c25.xyxy, c25
+    mad o1.xy, v3, c24, c24.zwzw
