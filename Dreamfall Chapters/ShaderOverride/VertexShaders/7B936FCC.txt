@@ -101,12 +101,23 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
-    vs_2_0
-    def c27, 1.00000000, 0.50000000, 0, 0
-    dcl_position0 v0
-    dcl_tangent0 v1
-    dcl_normal0 v2
-    dcl_texcoord0 v3
+    vs_3_0
+    def c27, 1, 0.5, 0, 0
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+	
+dcl_position o10 //oPos
+dcl_texcoord o0  //oT0
+dcl_texcoord1 o1  //oT1
+dcl_texcoord2 o2  //oT2	
+dcl_texcoord3 o3  //oT3	
+dcl_texcoord4 o4  //oT4
+dcl_texcoord5 o5  //oT5
+
     mul r1.xyz, v2, c23.w
     dp3 r2.w, r1, c5
     dp3 r0.x, r1, c4
@@ -124,7 +135,7 @@
     dp4 r0.x, r1, c19
     mul r1.xyz, r0.w, c22
     add r0.xyz, r2, r0
-    add oT3.xyz, r0, r1
+    add o3.xyz, r0, r1
     mov r0.w, c27.x
     mov r0.xyz, c12
     dp4 r1.z, r0, c10
@@ -146,17 +157,27 @@
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
+	
+mov r10, r0
+texldl r24, c220.z, s0	
+add r24.y, r0.w, -r24.y
+mul r24.x, r24.x, r24.y
+add r0.x, r0.x, r24.x
+
     mul r1.xyz, r0.xyww, c27.y
     mul r1.y, r1, c13.x
-    dp3 oT2.y, r4, r2
-    dp3 oT4.y, r2, r3
-    dp3 oT2.z, v2, r4
-    dp3 oT2.x, r4, v1
-    dp3 oT4.z, v2, r3
-    dp3 oT4.x, v1, r3
-    mad oT5.xy, r1.z, c14.zwzw, r1
-    mov oPos, r0
-    mov oT5.zw, r0
-    mad oT0.zw, v3.xyxy, c25.xyxy, c25
-    mad oT0.xy, v3, c24, c24.zwzw
-    mad oT1.xy, v3, c26, c26.zwzw
+    dp3 o2.y, r4, r2
+    dp3 o4.y, r2, r3
+    dp3 o2.z, v2, r4
+    dp3 o2.x, r4, v1
+    dp3 o4.z, v2, r3
+    dp3 o4.x, v1, r3
+    mad o5.xy, r1.z, c14.zwzw, r1
+    
+	mov o10, r10 // //r0
+    mov o5.zw, r0
+    mad o0.zw, v3.xyxy, c25.xyxy, c25
+    mad o0.xy, v3, c24, c24.zwzw
+    mad o1.xy, v3, c26, c26.zwzw
+
+// approximately 53 instruction slots used

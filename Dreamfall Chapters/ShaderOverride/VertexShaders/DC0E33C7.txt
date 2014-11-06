@@ -44,12 +44,19 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
-    vs_2_0
-    def c15, 1.00000000, 0.50000000, 0, 0
-    dcl_position0 v0
-    dcl_tangent0 v1
-    dcl_normal0 v2
-    dcl_texcoord0 v3
+    vs_3_0
+    def c15, 1, 0.5, 0, 0
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
+    dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o10
+dcl_texcoord o0
+dcl_texcoord3 o3
+dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
     dcl_texcoord1 v4
     mov r0.xyz, v1
     mul r1.xyz, v2.zxyw, r0.yzxw
@@ -63,17 +70,26 @@
     dp4 r2.x, r1, c4
     dp4 r2.y, r1, c5
     mad r2.xyz, r2, c11.w, -v0
-    dp3 oT1.y, r2, r0
+    dp3 o1.y, r2, r0
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
+mov r10, r0
+texldl r24, c220.z, s0	
+add r24.y, r0.w, -r24.y
+mul r24.x, r24.x, r24.y
+add r0.x, r0.x, r24.x
     mul r1.xyz, r0.xyww, c15.y
     mul r1.y, r1, c9.x
-    dp3 oT1.z, v2, r2
-    dp3 oT1.x, r2, v1
-    mad oT2.xy, r1.z, c10.zwzw, r1
-    mov oPos, r0
-    mov oT2.zw, r0
-    mad oT0.zw, v3.xyxy, c14.xyxy, c14
-    mad oT0.xy, v3, c13, c13.zwzw
-    mad oT3.xy, v4, c12, c12.zwzw
+    dp3 o1.z, v2, r2
+    dp3 o1.x, r2, v1
+    mad o2.xy, r1.z, c10.zwzw, r1
+    mov o10, r10
+    mov o2.zw, r0
+    mad o0.zw, v3.xyxy, c14.xyxy, c14
+    mad o0.xy, v3, c13, c13.zwzw
+    mad o3.xy, v4, c12, c12.zwzw
+
+// approximately 26 instruction slots used
+
+

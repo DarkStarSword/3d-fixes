@@ -123,12 +123,14 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0
+def c220, 0, 0, 0.0625, 0
+dcl_2d s0
     dcl_position o0
-    dcl_texcoord0 o1
+    dcl_texcoord o1
     dcl_texcoord1 o2
-    def c6, 0.00000000, 0, 0, 0
-    dcl_position0 v0
-    dcl_texcoord0 v1
+    def c6, 0, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
     dp4 r0.x, v0, c2
     add r0.x, r0, c4
     max r0.y, r0.x, c6.x
@@ -137,6 +139,15 @@
     dp4 r0.w, v0, c3
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
-    mov o0, r0
+mov r10, r0
+texldl r24, c220.z, s0	
+add r24.y, r0.w, -r24.y
+mul r24.x, r24.x, r24.y
+add r0.x, r0.x, r24.x
+    mov o0, r10
     mov o1, r0
     mad o2.xy, v1, c5, c5.zwzw
+
+// approximately 11 instruction slots used
+
+

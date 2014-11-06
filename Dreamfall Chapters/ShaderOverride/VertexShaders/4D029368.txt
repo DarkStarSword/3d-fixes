@@ -123,18 +123,26 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
-    vs_2_0
-    def c34, 0.00000000, 1.00000000, 2.00000000, -0.50000000
-    def c35, 1.97500002, 0.79299998, 0.37500000, 0.19300000
-    def c36, 2.00000000, -1.00000000, 3.00000000, 0.30000001
-    def c37, 0.10000000, 0.50000000, 0.09997559, 0
-    def c38, 0.60000002, 0.40000001, 0, 0
-    dcl_position0 v0
-    dcl_tangent0 v1
-    dcl_normal0 v2
-    dcl_texcoord0 v3
+    vs_3_0
+ //def c100, 0, 0, 0, 0
+def c247, 0, 0, 0.0625, 0
+dcl_2d s0 
+    def c34, 0, 1, 2, -0.5
+    def c35, 1.97500002, 0.792999983, 0.375, 0.193000004
+    def c36, 2, -1, 3, 0.300000012
+    def c37, 0.100000001, 0.5, 0.0999755934, 0
+    def c38, 0.600000024, 0.400000006, 0, 0
+    dcl_texcoord1 o1
+dcl_position o10
+dcl_color o8
+dcl_color1 o9
+dcl_texcoord o0
+dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
     dcl_texcoord1 v4
-    dcl_color0 v5
+    dcl_color v5
     abs r1.w, v1
     mul r0, v2.y, c5
     mad r0, v2.x, c4, r0
@@ -183,6 +191,11 @@
     dp4 r5.z, r0, c2
     dp4 r5.x, r0, c0
     dp4 r5.y, r0, c1
+mov r10, r5
+texldl r24, c247.z, s0	
+add r24.y, r5.w, -r24.y
+mul r24.x, r24.x, r24.y
+add r5.x, r5.x, r24.x
     mul r3.xyz, r5.xyww, c37.y
     mul r3.y, r3, c14.x
     dp4 r2.z, r0, c10
@@ -197,7 +210,7 @@
     mov r0.w, c34.y
     mul r1.xyz, r1.w, r1
     dp3 r2.w, c16, c16
-    mad oT1.xy, r3.z, c15.zwzw, r3
+    mad o1.xy, r3.z, c15.zwzw, r3
     mul r3.xyz, r1, c24.w
     rsq r1.w, r2.w
     mul r1.xyz, r1.w, c16
@@ -260,10 +273,14 @@
     mul r1.xyz, c29, r0.w
     mul r1.xyz, r1, r1.w
     mul r0.xyz, r0, c37.y
-    mov oPos, r5
-    mul oD0.xyz, r0, r1
-    mul oD1.xyz, r1, r3
-    mov oT1.zw, r5
-    mad oT0.xy, v3, c33, c33.zwzw
-    mov oD0.w, c34.y
-    mov oD1.w, v5
+mov o10, r10 //r5
+    mul o8.xyz, r0, r1
+    mul o9.xyz, r1, r3
+    mov o1.zw, r5
+    mad o0.xy, v3, c33, c33.zwzw
+    mov o8.w, c34.y
+    mov o9.w, v5
+
+// approximately 132 instruction slots used
+
+
