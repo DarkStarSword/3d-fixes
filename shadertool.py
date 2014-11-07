@@ -631,7 +631,7 @@ def install_shader_to_git(shader, file, args):
 
     install_shader_to(shader, file, args, dest_dir, True)
 
-def restore_original_shader(file):
+def find_original_shader(file):
     game_dir = find_game_dir(file)
     crc = shaderutil.get_filename_crc(file)
     src_dir = os.path.realpath(os.path.dirname(os.path.join(os.curdir, file)))
@@ -644,9 +644,14 @@ def restore_original_shader(file):
     pattern = os.path.join(game_dir, pattern)
     files = glob.glob(pattern)
     if not files:
-        print('Unable to restore %s: %s not found' % (file, pattern))
-        return
-    shutil.copyfile(files[0], file)
+        raise OSError('Unable to find original shader for %s: %s not found' % (file, pattern))
+    return files[0]
+
+def restore_original_shader(file):
+    try:
+        shutil.copyfile(find_original_shader(file), file)
+    except OSError as e:
+        print(str(e))
 
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
@@ -902,10 +907,11 @@ def parse_args():
     parser.add_argument('--lookup-header-json', type=argparse.FileType('r'), # XXX: When python 3.4 comes to cygwin, add encoding='utf-8'
             help="Look up headers in a JSON index, such as those created with extract_unity_shaders.py and prepend them.\n" +
             "Implies --no-convert --in-place if no other installation options were provided")
+    parser.add_argument('--original', action='store_true',
+            help="Look for the original shader from Dumps/AllDumps and work as though it had been specified instead")
     parser.add_argument('--restore-original', '--restore-original-shader', action='store_true',
             help="Look for an original copy of the shader in the Dumps/AllShaders directory and copies it over the top of this one\n" +
             "Game must have been run with DumpAll=true in the past. Implies --in-place --no-convert")
-
     parser.add_argument('--adjust-ui-depth', '--ui',
             help='Adjust the output depth of this shader to a percentage of separation passed in from DX9Settings.ini')
 
@@ -959,6 +965,9 @@ def main():
             print('Restoring %s...' % file)
             restore_original_shader(file)
             continue
+
+        if args.original:
+            file = find_original_shader(file)
 
         debug('parsing %s...' % file)
         try:
