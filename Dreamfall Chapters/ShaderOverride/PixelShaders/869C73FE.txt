@@ -1,0 +1,118 @@
+// CRC32: 869C73FE | Unity headers extracted from Coord.shader
+// Shader "Hidden/Coord" {
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_SHAFTS" "LIGHT_ON_SCREEN" }
+//           Matrix 0 [_FrustumRays]
+//           Vector 4 [_ZBufferParams]
+//           Vector 5 [_LightPos]
+//           Vector 6 [_CameraPosLocal]
+//           Vector 7 [_CoordTexDim]
+//           Vector 8 [_ScreenTexDim]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    dcl_2d s0
+    def c9, -1.00000000, 4.00000000, 2.00000000, 1.00000000
+    def c10, 3.00000000, 0.00000000, 1.00000000, 0.50000000
+    def c11, -0.00000000, -1.00000000, -2.00000000, -3.00000000
+    def c12, -0.50000000, 0, 0, 0
+    dcl_texcoord0 v0.xy
+    rcp r0.x, c7.y
+    mad_sat r0.x, -r0, c10.w, v0.y
+    mul r0.y, r0.x, c9
+    frc r0.x, r0.y
+    add r0.y, -r0.x, r0
+    mad r2.y, r0.x, c9.z, c9.x
+    min r0.y, r0, c10.x
+    max r0.y, r0, c10
+    abs r0.z, r0.y
+    frc r0.w, r0.z
+    add r0.z, r0, -r0.w
+    cmp r0.y, r0, r0.z, -r0.z
+    add r1, r0.y, c11
+    abs r1, r1
+    cmp r1, -r1, c10.z, c10.y
+    mov r0.yw, c9.xxzw
+    mov r0.x, -r2.y
+    mov r0.z, r2.y
+    dp4 r2.x, r0, r1
+    mov r0.xz, c9.xyww
+    mov r0.w, -r2.y
+    mov r0.y, r2
+    dp4 r2.y, r1, r0
+    mov r2.z, c7.x
+    add r0.x, c9, r2.z
+    rcp r0.y, r0.x
+    add r0.zw, -r2.xyxy, -c5.xyxy
+    rcp r0.x, c7.x
+    mov r1.xyz, c1
+    mov r2.xyz, c6
+    mul r0.y, r0, c7.x
+    mad r0.x, -r0, c10.w, v0
+    mul_sat r0.x, r0, r0.y
+    mad r0.xy, r0.x, r0.zwzw, c5
+    mad r3.xy, r0, c10.w, c10.w
+    mov r0.xyz, c2
+    add r1.xyz, -c0, r1
+    add r0.xyz, -c3, r0
+    mov r3.zw, c10.y
+    mad r1.xyz, r3.x, r1, c0
+    mad r0.xyz, r3.x, r0, c3
+    add r0.xyz, r0, -r1
+    mad r0.xyz, r3.y, r0, r1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    rcp r1.x, r0.x
+    rcp r1.y, r0.y
+    rcp r1.z, r0.z
+    mov r0.xyz, c6
+    add r2.xyz, c12.x, -r2
+    add r0.xyz, c10.w, -r0
+    mul r2.xyz, r1, r2
+    mul r0.xyz, r1, r0
+    min r1.xyz, r0, r2
+    max r1.xy, r1.x, r1.yzzw
+    max r0.xyz, r0, r2
+    min r0.xy, r0.x, r0.yzzw
+    min r0.z, r0.x, r0.y
+    max r2.w, r1.x, r1.y
+    mul r1.zw, r3.xyxy, c8.xyxy
+    frc r1.xy, r1.zwzw
+    add r1.xy, r1.zwzw, -r1
+    add r1.xy, r1, c10.w
+    mul r0.xy, r1, c8.zwzw
+    add r1.x, r2.w, -r0.z
+    texld r0.x, r0, s0
+    cmp r0.y, r1.x, c10, c10.z
+    mad r1.x, r0, c4, c4.y
+    cmp r0.x, -r0.z, c10.y, c10.z
+    mul_pp r0.x, r0.y, r0
+    rcp r1.x, r1.x
+    mad r0.y, -r2.w, r0.w, r1.x
+    abs_pp r0.x, r0
+    cmp r0.y, r0, c10, c10.z
+    cmp_pp r0.x, -r0, c10.z, c10.y
+    add_pp_sat r0.x, r0, r0.y
+    abs_pp r0.y, r0.x
+    cmp r0.x, -r0, r1, -r1
+    mul r0.z, r0.w, r0
+    min r0.z, r0.x, r0
+    cmp oC1, -r0.y, r0.z, r0.x
+    mov oC0, r3
