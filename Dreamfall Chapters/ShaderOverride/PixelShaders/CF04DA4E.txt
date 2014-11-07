@@ -48,8 +48,23 @@
     def c14, 0.25000000, 0.00000000, 0.50000000, 0.75000000
     def c15, 4.00000000, 0.00100000, 0, 0
     dcl_texcoord0 v0.xy
+
+def c220, 0, 1, 0.0625, -0.5
+dcl_2d s13
+
+mov r30, c200
+
+// _LightPos is the mono screen-space light position, stereoise it:
+mov r20, c5
+if_eq r30.x, c220.x
+texldl r31, c220.z, s13
+add r31.w, r20.z, -r31.y // Z or W? Both seem to work.
+mul r31.w, r31.w, c220.w // Had to multiply correction by -0.5
+mad r20.x, r31.w, r31.x, r20.x
+endif
+
     mad r0.xy, v0, c12.y, c12.z
-    add r5.xy, r0, -c5
+    add r5.xy, r0, -r20
     mul r0.zw, r5.xyxy, r5.xyxy
     add r0.z, r0, r0.w
     rsq r0.z, r0.z
@@ -76,7 +91,7 @@
     add r1.xy, r4, r4.zwzw
     dp3 r3.w, r3, r3
     rsq r3.w, r3.w
-    mov r2.xy, c5
+    mov r2.xy, r20
     mul r3.xyz, r3.w, r3
     add r2, c12.zzww, -r2.xyxy
     rcp r1.xz, r1.x
@@ -119,7 +134,7 @@
     mov r4.xy, r1.zwzw
     add r1.z, r2.x, r2.y
     rsq r2.x, r1.z
-    add r1.xy, r5.zwzw, c5
+    add r1.xy, r5.zwzw, r20
     rcp r2.y, r2.x
     mad r1, r1.yxyx, c13.zwwz, c13.w
     mad r1, r1, c14.x, c14.yxzw
