@@ -86,3 +86,17 @@ scaling and projection in 3D to help me understand the maths behind them.
 ### extract_unity_shaders.py ###
 Python script to parse the compiled output of Unity shaders and pull out all
 the different variants into separate files, with headers intact.
+
+### ddsinfo.py ###
+Decodes the header on a DDS file. Use GetSampler1FromReg, GetSampler2FromReg or
+GetSampler3FromReg in a shader section of DX9Settings.ini to extract a texture
+passed to a shader, press F12 in game to dump it out as Tex1.dds, Tex2.dds or
+Tex3.dds, then use this tool to decode it's header. This doesn't (yet) convert
+it into another image format (but doing so would not be hard to add - I already
+have a version that can decompress S3 textures in my Miasmata-fixes
+repository, or you can always look for other tools to decode or show DDS files).
+
+The idea here is to narrow down the list of render targets in the LOG.txt when
+searching for a surface that needs to be stereoised - e.g. you can match the
+FourCC with a Format and the Width & Height (Possibly Levels - is that mip-maps
+by any chance?).
