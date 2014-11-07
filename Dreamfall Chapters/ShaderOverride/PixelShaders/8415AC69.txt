@@ -1,14 +1,61 @@
+// CRC32: 8415AC69 | Matched 2 variants of 1 shaders: Hidden/Final Interpolation
+// 
+//    Unity headers extracted from FinalInterpolation.shader
+//    Shader "Hidden/Final Interpolation" {
+//      Properties {
+//       _ZTest ("", Float) = 8
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest [_ZTest]
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Blend One SrcAlpha
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_OFF" "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" }
+// 2:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_ON" "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" }
+//              Matrix 0 [_FrustumRays]
+//              Vector 4 [_ZBufferParams]
+//              Vector 5 [_LightPos]
+//              Vector 6 [_CameraPosLocal]
+//              Vector 7 [_CoordTexDim]
+//              Float 8 [_DepthThreshold]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_DepthEpi] 2D 1
+//              SetTexture 2 [_RaymarchedLight] 2D 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     dcl_2d s0
     dcl_2d s1
     dcl_2d s2
-    def c9, 0.5, -0.5, 1, 0
-    def c10, 2, -1, 1, -9.99999997e-007
-    def c11, 9.99999997e-007, 4, 0.00100000005, 0
-    def c12, 0.25, 0, 0.5, 0.75
-    dcl_texcoord v0.xy
+    def c9, 0.50000000, -0.50000000, 1.00000000, 0.00000000
+    def c10, 2.00000000, -1.00000000, 1.00000000, -0.00000100
+    def c11, 0.00000100, 4.00000000, 0.00100000, 0
+    def c12, 0.25000000, 0.00000000, 0.50000000, 0.75000000
+    dcl_texcoord0 v0.xy
+
+def c220, 0, 1, 0.0625, -0.5
+dcl_2d s13
+
+// _LightPos is the mono screen-space light position, stereoise it:
+mov r20, c5
+texldl r31, c220.z, s13
+add r31.w, r20.z, -r31.y // Z or W? Both seem to work.
+mul r31.w, r31.w, c220.w // Had to multiply correction by -0.5
+mad r20.x, r31.w, r31.x, r20.x
+
     mad r0.xy, v0, c10.x, c10.y
-    add r3.xy, r0, -c5
+    add r3.xy, r0, -r20
     mul r0.zw, r3.xyxy, r3.xyxy
     add r0.z, r0, r0.w
     rsq r0.z, r0.z
@@ -24,7 +71,7 @@
     cmp r2.xy, r2, c9.w, c9.z
     add r1.xy, r3.zwzw, r2
     abs r0, r0
-    mov r2.xy, c5
+    mov r2.xy, r20
     cmp r0, -r0, c9.w, c9.z
     add r2, c10.yyzz, -r2.xyxy
     rcp r1.xz, r1.x
@@ -35,7 +82,7 @@
     mul r1.xy, r2, r2
     add r1.x, r1, r1.y
     rsq r2.z, r1.x
-    add r1.xy, r2, c5
+    add r1.xy, r2, r20
     rcp r2.w, r2.z
     mad r1, r1.yxyx, c9.yxxy, c9.x
     mad r1, r1, c12.x, c12.yxzw
@@ -149,4 +196,4 @@
     mul oC0.xyz, r0.x, r1
     mov oC0.w, c9.z
 
-// approximately 149 instruction slots used (7 texture, 142 arithmetic)
+// mov oC0.xyzw, c220.yyyy
