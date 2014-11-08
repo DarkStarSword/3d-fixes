@@ -866,6 +866,7 @@ def lookup_header_json(tree, index, file):
     headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
     headers = type(tree)(itertools.chain(*headers))
     headers.append(NewLine('\n'))
+    headers.decl_end = len(headers) + tree.decl_end
     headers.extend(tree)
     return headers
 
