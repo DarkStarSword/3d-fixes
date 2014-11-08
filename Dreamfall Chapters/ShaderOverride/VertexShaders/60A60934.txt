@@ -1,3 +1,41 @@
+// CRC32: 60A60934 | Unity headers extracted from HeatDistort.shader
+// Shader "FX/Heat Distort" {
+//   Properties {
+//    _BumpAmt ("Distortion", Range(0,128)) = 10
+//    _MainTex ("Tint Color (RGB)", 2D) = "white" {}
+//    _BumpMap ("Normalmap", 2D) = "bump" {}
+//   }
+//   SubShader 1/2 {
+//     Tags { "QUEUE"="Transparent+1" "RenderType"="Transparent" }
+//     GrabPass {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" }
+//      }
+//     Pass 1/1 {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" "QUEUE"="Transparent+1" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Fog { Mode Off }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [_BumpMap_ST]
+//           Vector 5 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Distortion effect in cinematic at conclusion of chapter 1
+
     vs_3_0
     def c6, 0.5, 0, 0, 0
     dcl_position v0
@@ -10,6 +48,9 @@ dcl_texcoord2 o2
 dcl_position o3
 dcl_color o4
 
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 r0.z, v0, c3
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
@@ -17,6 +58,11 @@ dcl_color o4
     mov r1.w, r0.z
     dp4 r1.z, v0, c2
     mov r1.x, r0
+
+texldl r31, c220.z, s0
+add r31.w, r0.z, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mov r0.y, -r0
     add r0.xy, r0.z, r0
     mov o3, r1
