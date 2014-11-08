@@ -59,6 +59,10 @@
     dcl_tangent v1
     dcl_normal v2
     dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mul r1.xyz, v2, c23.w
     dp3 r2.w, r1, c5
     dp3 r0.x, r1, c4
@@ -98,6 +102,12 @@
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
+    mov o0, r0 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r3.xyz, r0.xyww, c25.x
     mul r3.y, r3, c13.x
     dp3 o3.y, r2, r4
@@ -107,7 +117,6 @@
     dp3 o3.x, r2, v1
     dp3 o5.z, v2, r1
     dp3 o5.x, v1, r1
-    mov o0, r0
     mov o2.zw, r0
     mad o1.xy, v3, c24, c24.zwzw
 
