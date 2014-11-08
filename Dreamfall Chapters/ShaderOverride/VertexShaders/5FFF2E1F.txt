@@ -17,6 +17,10 @@
     dcl_normal v2
     dcl_texcoord v3
     dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r0.xyz, v1
     mul r1.xyz, v2.zxyw, r0.yzxw
     mov r0.xyz, v1
@@ -50,8 +54,13 @@
     dp4 r0.z, v0, c6
     dp4 r0.x, v0, c4
     dp4 r0.y, v0, c5
+    mov o0, r0 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r2.xyz, r0.xyww, c24.y
-    mov o0, r0
     mov o9, r0.z
     mov r0.x, c19.w
     add r0.y, c24.x, -r0.x
