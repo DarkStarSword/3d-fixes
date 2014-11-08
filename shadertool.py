@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, argparse, json, itertools, glob, shutil
+import sys, os, re, argparse, json, itertools, glob, shutil, copy
 
 import shaderutil
 
@@ -929,8 +929,8 @@ def parse_args():
     args = parser.parse_args()
 
     if args.to_git:
-        args.auto_convert = False
-        args.force = True
+        if not args.output and not args.install and not args.install_to and not args.to_git:
+            args.auto_convert = False
 
     if args.lookup_header_json:
         args.lookup_header_json = json.load(args.lookup_header_json)
@@ -990,6 +990,10 @@ def main():
             tree.to_shader_model_3()
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
+
+        if args.lookup_header_json:
+            tree = lookup_header_json(tree, args.lookup_header_json, file)
+
         if args_require_reg_analysis(args):
             tree.analyse_regs(args.show_regs)
             if args.find_free_consts:
@@ -1006,9 +1010,6 @@ def main():
                 else:
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
-        if args.lookup_header_json:
-            tree = lookup_header_json(tree, args.lookup_header_json, file)
-
         if args.disable:
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:
@@ -1020,9 +1021,10 @@ def main():
         if args.adjust:
             adjust_output(tree, args)
         if args.unadjust:
-            args.adjust = args.unadjust
-            args.adjust_multiply = -1
-            adjust_output(tree, args)
+            a = copy.copy(args)
+            a.adjust = args.unadjust
+            a.adjust_multiply = -1
+            adjust_output(tree, a)
 
         if args.output:
             print(tree, end='', file=args.output)
@@ -1035,7 +1037,9 @@ def main():
         if args.install_to:
             install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
         if args.to_git:
-            install_shader_to_git(tree, file, args)
+            a = copy.copy(args)
+            a.force = True
+            install_shader_to_git(tree, file, a)
 
     if args.find_free_consts:
         if checked_vs:
