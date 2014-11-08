@@ -699,9 +699,14 @@ def adjust_ui_depth(tree, args):
     tree.do_replacements(replace_regs, False)
 
     append_inserted_by_comment(tree, 'UI depth adjustment inserted with')
+    if args.condition:
+        tree.add_inst('mov', [tmp_reg.x, args.condition])
+        tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
+    if args.condition:
+        tree.add_inst('endif', [])
     tree.add_inst('mov', [dst_reg, pos_reg])
 
 def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
