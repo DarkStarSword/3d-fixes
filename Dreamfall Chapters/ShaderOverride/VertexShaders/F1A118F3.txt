@@ -10,16 +10,25 @@
     dcl_texcoord4 o5
     def c19, 0.5, 1, 0, 0
     dcl_position v0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r1.w, c19.y
     dp4 r0.w, v0, c7
     dp4 r0.z, v0, c6
     dp4 r0.x, v0, c4
     dp4 r0.y, v0, c5
+    mov o0, r0 // Moved up
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r1.xyz, r0.xyww, c19.x
     mul r1.y, r1, c17.x
     mad o2.xy, r1.z, c18.zwzw, r1
     mov r1.xyz, v0
-    mov o0, r0
     mov o9, r0.z
     mov o2.zw, r0
     mov r0.w, c19.y
