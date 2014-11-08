@@ -966,6 +966,7 @@ def main():
             restore_original_shader(file)
             continue
 
+        real_file = file
         if args.original:
             file = find_original_shader(file)
 
@@ -1021,9 +1022,9 @@ def main():
         if args.output:
             print(tree, end='', file=args.output)
         if args.in_place:
-            tmp = '%s.new' % file
+            tmp = '%s.new' % real_file
             print(tree, end='', file=open(tmp, 'w'))
-            os.rename(tmp, file)
+            os.rename(tmp, real_file)
         if args.install:
             install_shader(tree, file, args)
         if args.install_to:
