@@ -1,3 +1,55 @@
+// CRC32: 028183DD | Unity headers extracted from Glass-Wet-Fresnel-Distort.shader
+// Shader "Dreamfall/FX/Wet Fresnel Glass" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _Distortion ("_Distortion", Float) = 0.163212
+//    _DistortSpeed ("DistortSpeed", Float) = 1
+//    _Offset ("_Offset", 2D) = "black" {}
+//    _DistortMap ("DistortMap", 2D) = "bump" {}
+//    _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//    _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//   }
+//   Fallback "Specular"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="false" "RenderType"="Opaque" }
+//     GrabPass {
+//       "_GrabTexture"
+//       Tags { "QUEUE"="Background" }
+//      }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="false" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Fog { Mode Off }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_OFF" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Matrix 8 [_World2Object]
+//           Vector 12 [_WorldSpaceCameraPos]
+//           Vector 13 [_ProjectionParams]
+//           Vector 14 [_ScreenParams]
+//           Vector 15 [unity_Scale]
+//           Vector 16 [unity_LightmapST]
+//           Vector 17 [_Offset_ST]
+//           Vector 18 [_DistortMap_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Stained Glass
+
     vs_3_0
     dcl_position o0
     dcl_texcoord o1
@@ -13,6 +65,10 @@
     dcl_texcoord v2
     dcl_texcoord1 v3
     dcl_color v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r1.xyz, c12
     mov r1.w, c19.x
     dp4 r0.z, r1, c10
@@ -26,8 +82,13 @@
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
+    mov o0, r0 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r1.xyz, r0.xyww, c19.z
-    mov o0, r0
     mul r1.y, r1, c13.x
     mad o3.xy, r1.z, c14.zwzw, r1
     mul r1.xyz, v1, c15.w
