@@ -7,6 +7,7 @@ This is a work in progress fix. Please refer to this thread for updates:
 
 Fixed
 -----
-- Halos in starting area
-- Shadows in starting area (FOV correct!)
+- All halos in first two chapters
+- Lights and shadows in first two chapters (FOV correct!)
 - UI depth (except mouse cursor) adjustable with tilde and number row keys
+- Partial fix for volumetric light shafts
