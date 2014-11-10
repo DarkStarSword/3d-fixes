@@ -5,10 +5,10 @@ from math import *
 
 def translate(x, y, z):
     return np.matrix([
-        [1, 0, 0, x],
-        [0, 1, 1, y],
-        [0, 0, 1, z],
-        [0, 0, 0, 1],
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [x, y, z, 1],
     ])
 
 def scale(x, y, z):
