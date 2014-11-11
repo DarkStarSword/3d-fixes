@@ -63,3 +63,14 @@ def fov_w(matrix):
 
 def fov_h(matrix):
     return degrees(2 * atan(1/matrix[1, 1]))
+
+def adjustment(w, separation, convergence):
+    return separation * (w - convergence)
+
+def correct(coord, separation, convergence):
+    if isinstance(coord, np.matrix):
+        x,y,z,w = coord.tolist()[0]
+    else:
+        x,y,z,w = coord
+    a = adjustment(w, separation, convergence)
+    return ([x-a, y, z, w], [x+a, y, z, w])
