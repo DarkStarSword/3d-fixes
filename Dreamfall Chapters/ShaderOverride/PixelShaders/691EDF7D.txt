@@ -1,4 +1,4 @@
-// CRC32: 691EDF7D | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// CRC32: DF3A8F27 | Unity headers extracted from Internal-PrePassCollectShadows.shader
 // Shader "Hidden/Internal-PrePassCollectShadows" {
 //   Properties {
 //    _ShadowMapTexture ("", any) = "" {}
@@ -13,12 +13,15 @@
 //       Program "fp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "SHADOWS_NATIVE" }
-//           Vector 4 [_ZBufferParams]
-//           Vector 5 [unity_LightShadowBias]
-//           Vector 6 [_LightSplitsNear]
-//           Vector 7 [_LightSplitsFar]
-//           Vector 8 [_LightShadowData]
-//           Vector 9 [_ShadowMapTexture_TexelSize]
+//           Matrix 0 [unity_World2Shadow0]
+//           Matrix 4 [unity_World2Shadow1]
+//           Matrix 8 [unity_World2Shadow2]
+//           Matrix 12 [unity_World2Shadow3]
+//           Matrix 16 [_CameraToWorld]
+//           Vector 20 [_ZBufferParams]
+//           Vector 21 [_LightSplitsNear]
+//           Vector 22 [_LightSplitsFar]
+//           Vector 23 [_LightShadowData]
 //           SetTexture 0 [_CameraDepthTexture] 2D 0
 //           SetTexture 1 [_ShadowMapTexture] 2D 1
 //         }
@@ -30,172 +33,52 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
-    ps_3_0
+    ps_2_0
     dcl_2d s0
     dcl_2d s1
-    def c10, 1.00000000, 255.00000000, 0.00392157, 0.00000000
-    def c11, 0.50000000, 2.00000000, 1.58113885, 2.12132025
-    def c12, 0.70710677, -0.50000000, 0.11108398, 0
-    dcl_texcoord0 v0.xy
-    dcl_texcoord1 v1.xyz
-    dcl_texcoord2 v2
-    dcl_texcoord3 v3
-    dcl_texcoord4 v4
-    dcl_texcoord5 v5
-    dcl_texcoord6 v6
-    dcl_texcoord7 v7
-    texld r0.x, v0, s0
-    mad r0.x, r0, c4, c4.y
-    rcp r1.w, r0.x
-    mad r0, r1.w, v1.z, -c6
-    mad r2, r1.w, v1.z, -c7
-    mul r1.xyz, r1.w, v5
-    mul r3.xyz, r1.w, v3
-    add r3.xyz, v2, r3
-    cmp r2, r2, c10.w, c10.x
-    cmp r0, r0, c10.x, c10.w
-    mul r0, r0, r2
-    add r1.xyz, v4, r1
-    mul r2.xyz, r0.y, r1
-    mad r2.xyz, r0.x, r3, r2
-    mul r1.xyz, r1.w, v7
-    add r1.xyz, v6, r1
-    mad r1.xyz, r0.z, r1, r2
-    mov r2.x, v2.w
-    mov r2.z, v4.w
-    mov r2.y, v3.w
-    mov r0.x, v5.w
-    mov r0.y, v6.w
-    mov r0.z, v7.w
-    mad r0.xyz, r1.w, r0, r2
-    mad r0.xyz, r0, r0.w, r1
-    mul r1.xyz, r0, c10.x
-    mov r2.z, c5.x
-    mad r5.z, c11.w, -r2, r1
-    mov r2.z, c5.x
-    mad r7.z, c12.x, -r2, r1
-    mov r0.xy, c9
-    mad r0.xy, c11.x, -r0, r1
-    mul r1.xy, r0, c9.zwzw
-    frc r0.zw, r1.xyxy
-    mov r0.xy, c9
-    add r1.xy, -r0.zwzw, r1
-    mul r0.xy, c11.x, r0
-    mad r0.xy, r1, c9, r0
-    mov r1.x, c5
-    mad r4.z, c11, -r1.x, r1
-    add r1.xy, r0, -c9
-    mov r2.xy, c9
-    mad r2.xy, c11.y, r2, r0
-    mov r3.y, r2
-    mov r6.x, r1
-    mov r6.z, r5
-    mov r6.y, r2
-    texld r4.x, r6, s1
-    add r6.xy, r0, c9
-    mov r8.x, r0
-    mov r8.z, r7
-    mov r8.y, r6
-    mov r2.z, r5
-    mov r6.z, r7
-    mov r7.y, r0
-    mov r7.x, r6
-    mov r3.x, r0
-    mov r3.z, r4
-    texld r3.x, r3, s1
-    mov r3.z, r4.x
-    texld r4.x, r8, s1
-    mov r8.x, r1
-    mov r8.y, r6
-    mov r3.w, r3.x
-    mov r8.z, r4
-    texld r3.x, r8, s1
-    mov r3.y, r4.x
-    add r3, r3, c12.y
-    mov r8.x, r6
-    mov r8.y, r2
-    mov r8.z, r4
-    texld r4.x, r8, s1
-    mov r8.x, r2
-    mov r8.y, r6
-    mov r8.z, r4
-    texld r5.x, r8, s1
-    mov r8.z, r4.x
-    texld r4.x, r2, s1
-    mov r8.w, r4.x
-    texld r8.x, r6, s1
-    mov r8.y, r5.x
-    add r9, r8, c12.y
-    cmp r8, r3, c10.x, c10.w
-    add_pp r4.xw, -r0.zyzw, c10.x
-    mov r3.w, r0.z
-    mov r3.x, r4
-    mov r3.y, c10.x
-    mul_pp r5.xy, r8, r3
-    mul_pp r4.xy, r8.zwzw, r3
-    mov r3.z, c10.x
-    cmp r9, r9, c10.x, c10.w
-    mul_pp r2.zw, r9, r3
-    add_pp r1.z, r4.x, r4.y
-    add_pp r0.z, r2, r2.w
-    add_pp r2.w, r1.z, r0.z
-    add_pp r1.z, r5.x, r5.y
-    mul_pp r4.xy, r9, r3.zwzw
-    add_pp r0.z, r4.x, r4.y
-    add_pp r2.z, r1, r0
-    texld r5.x, r7, s1
-    mov r6.z, r5.x
-    mov r8.x, r2
-    mov r8.y, r0
-    mov r8.z, r4
-    texld r4.x, r8, s1
-    mov r6.w, r4.x
-    mov r5.y, r1
-    mov r5.x, r2
-    texld r2.x, r5, s1
-    mov r4.y, r1
-    mov r4.x, r6
-    texld r6.x, r4, s1
-    mov r6.y, r2.x
-    mov r8.x, r1
-    mov r8.y, r0
-    mov r8.z, r4
-    texld r2.x, r8, s1
-    mov r1.z, r5
-    add r6, r6, c12.y
-    mov r0.z, r7
-    mov r4.x, r0
-    texld r0.x, r0, s1
-    mov r4.y, r1
-    texld r4.x, r4, s1
-    cmp r5, r6, c10.x, c10.w
-    mov r8.w, r0.x
-    mul_pp r0.xy, r3.zwzw, r5.zwzw
-    add_pp r0.x, r0, r0.y
-    mov r8.z, r2.x
-    texld r8.x, r1, s1
-    mov r8.y, r4.x
-    add r7, r8, c12.y
-    cmp r6, r7, c10.x, c10.w
-    mul_pp r1.xy, r3, r6.zwzw
-    add_pp r0.y, r1.x, r1
-    add_pp r2.y, r0, r0.x
-    mul_pp r0.xy, r3.zwzw, r5
-    add_pp r0.x, r0, r0.y
-    mul_pp r1.xy, r3, r6
-    add_pp r0.y, r1.x, r1
-    add_pp r2.x, r0.y, r0
-    mov_pp r0.x, r4.w
-    mov_pp r0.yz, c10.x
-    mul_pp r0, r0, r2
-    dp4_pp r0.y, r0, c12.z
-    add r0.z, -r1.w, c10.x
-    mov r0.x, c8
-    add r0.x, c10, -r0
-    mul r0.zw, r0.z, c10.xyxy
-    frc r0.zw, r0
-    mad oC0.x, r0.y, r0, c8
-    mov r0.y, r0.w
-    mad r0.x, -r0.w, c10.z, r0.z
-    mov oC0.zw, r0.xyxy
-    mov oC0.y, c10.x
+    def c24, 0.00000000, 1.00000000, 255.00000000, 0.00392157
+    dcl t0.xy
+    dcl t1.xyz
+    texld r0, t0, s0
+    mad r0.x, r0, c20, c20.y
+    rcp r0.x, r0.x
+    mul r1.xyz, r0.x, t1
+    add r2, r1.z, -c21
+    add r3, r1.z, -c22
+    cmp r3, r3, c24.x, c24.y
+    cmp r2, r2, c24.y, c24.x
+    mul r2, r2, r3
+    mov r1.w, c24.y
+    dp4 r3.w, r1, c19
+    dp4 r3.z, r1, c18
+    dp4 r3.x, r1, c16
+    dp4 r3.y, r1, c17
+    dp4 r1.z, r3, c6
+    dp4 r1.x, r3, c4
+    dp4 r1.y, r3, c5
+    mul r4.xyz, r2.y, r1
+    dp4 r1.z, r3, c2
+    dp4 r1.y, r3, c1
+    dp4 r1.x, r3, c0
+    mad r4.xyz, r2.x, r1, r4
+    dp4 r2.y, r3, c13
+    dp4 r2.x, r3, c12
+    dp4 r1.z, r3, c10
+    dp4 r1.y, r3, c9
+    dp4 r1.x, r3, c8
+    mad r1.xyz, r2.z, r1, r4
+    dp4 r2.z, r3, c14
+    mad r1.xyz, r2, r2.w, r1
+    add r2.x, -r0, c24.y
+    mov r0.x, c23
+    mul r2.xy, r2.x, c24.yzxw
+    frc r2.xy, r2
+    add r0.x, c24.y, -r0
+    mov r0.y, c24
+    texld r1, r1, s1
+    mad r0.x, r1, r0, c23
+    mov r1.y, r2
+    mad r1.x, -r2.y, c24.w, r2
+    mov r0.w, r1.y
+    mov r0.z, r1.x
+    mov_pp oC0, r0
