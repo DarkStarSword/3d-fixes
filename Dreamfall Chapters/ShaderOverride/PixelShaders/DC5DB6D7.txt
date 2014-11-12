@@ -50,10 +50,6 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
-dcl vPos.xy
-
-    // rcp r0.x, v0.w
-    // mul r0.xy, v0, r0.x
 
 // This directional light doesn't work with the stereo correction we did in the
 // vertex shader, so get the real screen position:
@@ -61,13 +57,14 @@ dcl vPos.xy
 // This was noticeable as a slight halo in the shadow on the pillars outside
 // Seshadri Tower
 
-mov r11.xy, vPos.xy
-rcp r11.z, c210.x
-rcp r11.w, c210.y
-mul r11.xy, r11.xy, r11.zw
-mul r11.zw, r11.zw, c220.ww
-add r0.xy, r11.xy, r11.zw
+mov r20, v0
+texldl r31, c220.z, s13
+add r31.w, r20.w, -r31.y
+mul r31.w, r31.w, c220.w
+mad r20.x, -r31.w, r31.x, r20.x
 
+    rcp r0.x, r20.w
+    mul r0.xy, r20, r0.x
     texld r1.x, r0, s1
     rcp r0.z, v1.z
     mad r0.w, r1.x, c6.x, c6.y
