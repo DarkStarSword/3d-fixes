@@ -35,19 +35,29 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
+//hud- "the balance has shifted", some video screens
     vs_3_0
-    dcl_position v0
+def c247, 0.25, 1, 0.0625, 0.5
+dcl_2d s0
+    dcl_color o8
+dcl_texcoord o0.xy
+dcl_position o10
+dcl_position v0
     dcl_texcoord v1
-
-dcl_texcoord o0
-dcl_position o1
-dcl_color o2
-
-    mov o2, c5
+    mov o8, c5
     mad o0.xy, v1, c4, c4.zwzw
-    dp4 o1.w, v0, c3
-    dp4 o1.z, v0, c2
-    dp4 o1.y, v0, c1
-    dp4 o1.x, v0, c0
+    dp4 r10.w, v0, c3
+    dp4 r10.z, v0, c2
+    dp4 r10.y, v0, c1
+    dp4 r10.x, v0, c0
+mov r11, r10
+mov r14.x, c254.x
+texldl r1, c247.z, s0
+mad r10.x, r1.x, c200.z, r10.x
+if_eq r14.x, c247.y
+	mov r10, r11
+endif
+mov o10, r10
+
 
 // approximately 6 instruction slots used
