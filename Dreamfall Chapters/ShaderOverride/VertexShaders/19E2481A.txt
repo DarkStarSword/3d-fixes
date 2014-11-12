@@ -1,3 +1,5 @@
+// Green crates just outside tower in City
+
     vs_3_0
     dcl_fog o9
     dcl_position o0
@@ -12,6 +14,10 @@
     dcl_tangent v1
     dcl_normal v2
     dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mul r1.xyz, v2, c22.w
     dp3 r2.w, r1, c5
     dp3 r0.x, r1, c4
@@ -57,6 +63,12 @@
     dp3 r0.w, -r2, c6
     dp4 r1.x, v0, c0
     dp4 r1.y, v0, c1
+    mov o0, r1 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
     mul r2.xyz, r1.xyww, c25.x
     dp3 r0.x, v1, c6
     dp3 r0.z, v2, c6
@@ -64,7 +76,6 @@
     mov r0.x, r2
     mul r0.y, r2, c13.x
     mad o2.xy, r2.z, c14.zwzw, r0
-    mov o0, r1
     mov o9, r1.z
     mov o2.zw, r1
     mad o1.zw, v3.xyxy, c24.xyxy, c24
