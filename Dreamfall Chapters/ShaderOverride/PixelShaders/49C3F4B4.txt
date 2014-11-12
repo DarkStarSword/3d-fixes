@@ -56,8 +56,23 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
-    rcp r0.x, v0.w
-    mul r3.xy, v0, r0.x
+dcl vPos.xy
+
+    // rcp r0.x, v0.w
+    // mul r3.xy, v0, r0.x
+
+// PRE-EMPTIVE SHADOWS_SCREEN FIX - THIS HAS NOT BEEN VERIFIED
+
+// This variant is SHADOWS_SCREEN, meaning it's copying a shadow generated in
+// Hidden/Internal-PrePassCollectShadows to the screen, so we discard the
+// stereo adjustment from the VS and get the screen coordinates directly:
+mov r11.xy, vPos.xy
+rcp r11.z, c210.x
+rcp r11.w, c210.y
+mul r11.xy, r11.xy, r11.zw
+mul r11.zw, r11.zw, c220.ww
+add r3.xy, r11.xy, r11.zw
+
     texld r0.x, r3, s1
     mad r0.w, r0.x, c10.x, c10.y
     rcp r0.y, v1.z
