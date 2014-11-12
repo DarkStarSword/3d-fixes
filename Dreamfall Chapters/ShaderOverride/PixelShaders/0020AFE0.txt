@@ -50,8 +50,20 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
-    rcp r0.x, v0.w
-    mul r0.xy, v0, r0.x
+dcl vPos.xy
+
+    // rcp r0.x, v0.w
+    // mul r0.xy, v0, r0.x
+
+// PRE-EMPTIVE FIX FOR DIRECTIONAL LIGHTING - THIS HAS NOT BEEN VERIFIED
+
+mov r11.xy, vPos.xy
+rcp r11.z, c210.x
+rcp r11.w, c210.y
+mul r11.xy, r11.xy, r11.zw
+mul r11.zw, r11.zw, c220.ww
+add r1.xy, r11.xy, r11.zw
+
     texld r1.x, r0, s1
     rcp r0.z, v1.z
     mad r0.w, r1.x, c6.x, c6.y
