@@ -1,3 +1,5 @@
+// Shader replaced with Unity original Internal-PrePassCollectShadows and inputs remaped
+
 //- CRC32: 8FE84219 | Unity headers extracted from Internal-PrePassCollectShadows.shader
 //+ CRC32: AFC69A8C | Unity headers extracted from Internal-PrePassCollectShadows.shader
 //  Shader "Hidden/Internal-PrePassCollectShadows" {
@@ -24,12 +26,19 @@
 //            Vector 7 [_LightSplitsFar]
 //            Vector 8 [_LightShadowData]
 //            Vector 9 [_ShadowMapTexture_TexelSize]  | Dropped
+// ----- These are the inputs to the ***VERTEX*** shader - we can use them IF they wern't defined above ------
+//       ++++ Matrix 0 [glstate_matrix_mvp]
+//       ---- Matrix 4 [unity_World2Shadow0]
+//       --++ Matrix 8 [unity_World2Shadow1]
+//       ++++ Matrix 12 [unity_World2Shadow2]
+//       ++++ Matrix 16 [unity_World2Shadow3]
+//       ++++ Matrix 20 [_CameraToWorld]              | No other means to pass this available, so use this!
 // ----- These are the inputs to the original shader from Unity -----
 //            Matrix 0 [unity_World2Shadow0]          | Replace c0-c3 with c100-103 (From Helix Mod)
 //            Matrix 4 [unity_World2Shadow1]          | Replace c4 with texcoord8, c5-6 with c105-106 (From Helix Mod), drop c7
 //            Matrix 8 [unity_World2Shadow2]          | Replace c8-10 with texcoord2-4, drop c11
 //            Matrix 12 [unity_World2Shadow3]         | Replace c12-14 with texcoord5-7, drop c15
-// !!!!!!!!!  Matrix 16 [_CameraToWorld]              | ***** Darnit! Not enough outputs or Helix mod features to copy this in! *****
+//            Matrix 16 [_CameraToWorld]              | Replace c16-19 with c20-23
 //            Vector 20 [_ZBufferParams]              | Replace c20 with c4
 //            Vector 21 [_LightSplitsNear]            | Replace c21 with c6
 //            Vector 22 [_LightSplitsFar]             | Replace c22 with c7
@@ -63,11 +72,11 @@ def c220, 0, 0.85, 0.0625, 0.5
 dcl_2d s13
 
     texld r0, v0, s0
-    mad r0.x, r0, c20, c20.y
+    mad r0.x, r0, c4, c4.y // _ZBufferParams
     rcp r0.x, r0.x
     mul r1.xyz, r0.x, v1
-    add r2, r1.z, -c21
-    add r3, r1.z, -c22
+    add r2, r1.z, -c6 // _LightSplitsNear
+    add r3, r1.z, -c7 // _LightSplitsFar
     cmp r3, r3, c24.y, c24.x
     cmp r2, r2, c24.x, c24.y
     mul r2, r2, r3
@@ -81,26 +90,26 @@ add r31.w, r2.z, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
 mad r2.x, -r31.w, v1.w, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
 
-    dp4 r3.w, r1, c19
-    dp4 r3.z, r1, c18
-    dp4 r3.x, r1, c16
-    dp4 r3.y, r1, c17
-    dp4 r1.z, r3, c6
-    dp4 r1.x, r3, c4
-    dp4 r1.y, r3, c5
+    dp4 r3.w, r1, c23 // _CameraToWorld[3]
+    dp4 r3.z, r1, c22 // _CameraToWorld[2]
+    dp4 r3.x, r1, c20 // _CameraToWorld[0]
+    dp4 r3.y, r1, c21 // _CameraToWorld[1]
+    dp4 r1.z, r3, c106 // unity_World2Shadow1[2]
+    dp4 r1.x, r3, v8 // unity_World2Shadow1[0]
+    dp4 r1.y, r3, c105 // unity_World2Shadow1[1]
     mul r4.xyz, r2.y, r1
-    dp4 r1.z, r3, c2
-    dp4 r1.y, r3, c1
-    dp4 r1.x, r3, c0
+    dp4 r1.z, r3, c102 // unity_World2Shadow0[2]
+    dp4 r1.y, r3, c101 // unity_World2Shadow0[1]
+    dp4 r1.x, r3, c100 // unity_World2Shadow0[0]
     mad r4.xyz, r2.x, r1, r4
     add r0.x, -r0, c24
-    dp4 r1.z, r3, c10
-    dp4 r1.y, r3, c9
-    dp4 r1.x, r3, c8
+    dp4 r1.z, r3, v4 // unity_World2Shadow2[2]
+    dp4 r1.y, r3, v3 // unity_World2Shadow2[1]
+    dp4 r1.x, r3, v2 // unity_World2Shadow2[0]
     mad r1.xyz, r2.z, r1, r4
-    dp4 r2.z, r3, c14
-    dp4 r2.y, r3, c13
-    dp4 r2.x, r3, c12
+    dp4 r2.z, r3, v7 // unity_World2Shadow3[2]
+    dp4 r2.y, r3, v6 // unity_World2Shadow3[1]
+    dp4 r2.x, r3, v5 // unity_World2Shadow3[0]
     mad r2.xyz, r2, r2.w, r1
     mov r0.y, c24.x
     texld r1, r2, s1
@@ -109,7 +118,7 @@ mad r2.x, -r31.w, v1.w, r2.x // X -= separation * (depth - convergence) * P.I[0,
     mov r2.x, c24
     mul r2.xy, r0.x, r2
     frc r2.xy, r2
-    mov r0.x, c23
+    mov r0.x, c8 // _LightShadowData
     cmp r0.x, r1, c24, r0
     mov r1.y, r2
     mad r1.x, -r2.y, c24.w, r2
