@@ -46,6 +46,7 @@
 
 def c220, 0, 1, 0.0625, 0.5
 def c221, 0.00025, 0.001, 0.005, 2
+def c222, 0.65, -0.5, 0, 0
 dcl_2d s13
 dcl vPos.xy
 
@@ -144,7 +145,15 @@ if_eq r30.x, c220.x
 	// This is a complete fudge - convergence was making the rays vary too wildly,
 	// but it looked ok at convergence approx 1... so, I used that:
 	//add r31.w, -r21.w, -r31.y
-	add r31.w, -r21.w, -c220.y
+	//add r31.w, -r21.w, -c222.x
+	//
+	// add r31.z, r31.y, -c220.y
+	// mul r31.z, r31.z, c222.y
+	// add r31.y, r31.z, c220.y
+	// add r31.w, -r21.w, -r31.y
+	rcp r31.y, r31.y
+	mul r31.y, r31.y, c220.w
+	add r31.w, -r21.w, -r31.y
 
 	mul r31.w, r31.w, r31.x
 	mul r31.z, r31.w, -r22.y // *= P.I[0,0]
@@ -172,7 +181,17 @@ if_eq r30.x, c220.x
 	mul r19.xyz, r17.xyz, r31.www
 
 	add r16.xyz, r16.xyz, r19.xyz
+
+// else
+// 
+// mov r15, c5
+// texldl r31, c220.z, s13
+// add r31.w, r15.z, -r31.y // Z or W? Both seem to work.
+// mul r31.w, r31.w, c220.w // Had to multiply correction by -0.5
+// mad r15.x, -r31.w, r31.x, r15.x
+
 endif
+
 
     mad r0.xy, v0, c10.x, c10.y
     add r3.xy, r0, -r15
