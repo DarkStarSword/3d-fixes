@@ -99,7 +99,7 @@ dcl_position o1
 dcl_color o2
 
 
-def c4, 0, 1, 0.0625, 0.5
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
     mov o2, v1
@@ -113,6 +113,14 @@ dcl_2d s0
 
 // UI depth adjustment inserted with DarkStarSword's shadertool.py:
 // shadertool.py -i VertexShader_125_CRC32_9F7BB09C.txt VertexShader_124_CRC32_10F9DBCC.txt --ui=c200.z
-texldl r1, c4.z, s0
+texldl r1, c220.z, s0
+
+// Some UI elements are rendered to another texture before being blended onto
+// the screen. Adjusting them here moves them to the right, which can clip
+// them (especially the consequence messages). These seem to use a depth other
+// than 1, so test depth
+if_eq r0.w, c220.y
 mad r0.x, r1.x, c200.z, r0.x
+endif
+
 mov o1, r0
