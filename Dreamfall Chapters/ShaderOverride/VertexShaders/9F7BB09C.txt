@@ -40,7 +40,7 @@ dcl_position o1
 dcl_color o2
 
 
-def c4, 0, 1, 0.0625, 0.5
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
     mov o2, v2
@@ -55,8 +55,10 @@ dcl_2d s0
 // UI depth adjustment inserted with DarkStarSword's shadertool.py:
 // shadertool.py --in-place --original --ui=c200.z --condition=c251.x 9F7BB09C.txt --lookup-header-json /home/dss/3d-fixes/ShaderHeaders.json -o - --git
 mov r1.x, c251.x
-if_eq r1.x, c4.x
-texldl r1, c4.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+if_eq r1.x, c220.x
+	if_eq r0.w, c220.y // Don't adjust the symbol in "the balance has shifted" (text by different shader)
+		texldl r1, c220.z, s0
+		mad r0.x, r1.x, c200.z, r0.x
+	endif
 endif
 mov o1, r0
