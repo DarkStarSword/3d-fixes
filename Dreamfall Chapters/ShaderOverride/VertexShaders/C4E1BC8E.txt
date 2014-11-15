@@ -1,3 +1,52 @@
+// CRC32: C4E1BC8E | Unity headers extracted from Glass-Stained-BumpDistortNoFogFresnel.shader
+// Shader "FX/Glass/Stained BumpDistort NoFog Scroll Fresnel" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _BumpAmt ("Distortion", Range(0,128)) = 10
+//    _MainTex ("Tint Color (RGB)", 2D) = "white" {}
+//    _BumpMap ("Normalmap", 2D) = "bump" {}
+//    _ScrollSpeedX ("ScrollSpeed X", Float) = 0
+//    _ScrollSpeedY ("ScrollSpeed Y", Float) = 0
+//    _Boost ("Boost Color", Float) = 1
+//    _Fresnel ("Fresnel", Float) = 1
+//    _MeshDistortSpeed ("MeshDistortSpeed", Float) = 1
+//    _Amplitude ("MeshAmplitude", Float) = 1
+//   }
+//   SubShader 1/2 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Opaque" }
+//     GrabPass {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" }
+//      }
+//     Pass 1/1 {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" "QUEUE"="Transparent" "RenderType"="Opaque" }
+//       Fog { Mode Off }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_World2Object]
+//           Vector 8 [_Time]
+//           Vector 9 [_WorldSpaceCameraPos]
+//           Vector 10 [unity_Scale]
+//           Vector 11 [_BumpMap_ST]
+//           Vector 12 [_MainTex_ST]
+//           Float 13 [_Amplitude]
+//           Float 14 [_MeshDistortSpeed]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Ghost in book 1 interlude
+
     vs_3_0
     def c15, -0.0208333302, -0.125, 1, 0.5
     // Discarded sincos constant c16
@@ -14,6 +63,10 @@ dcl_texcoord2 o2
 dcl_texcoord3 o3
 dcl_texcoord4 o4
 dcl_position o5
+
+
+def c7, 0, 1, 0.0625, 0.5
+dcl_2d s0
 
     mov r2.w, v0
     mul r0.y, v0.x, c17.w
@@ -63,17 +116,26 @@ dcl_position o5
     mov r1.y, r0.w
     mov r0.y, -r0.w
     add r0.xy, r0.z, r0
-    mul o0.xy, r0, c15.w
+    mul r4.xy, r0, c15.w
     mov r0.w, c15.z
     mov r0.xyz, c9
     dp4 r2.z, r0, c6
     dp4 r2.x, r0, c4
     dp4 r2.y, r0, c5
     mov o5, r1
-    mov o0.zw, r1
+    mov r4.zw, r1
     mad o3.xyz, r2, c10.w, -r1
     mov o4.xyz, v2
     mad o1.xy, v1, c11, c11.zwzw
     mad o2.xy, v1, c12, c12.zwzw
 
 // approximately 88 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i VertexShader_62_CRC32_C4E1BC8E.txt -f --adjust-output=texcoord --adjust-multiply=0.5
+texldl r3, c7.z, s0
+add r3.w, r4.w, -r3.y
+mul r3.w, r3.w, r3.x
+mul r3.w, r3.w, c7.w
+add r4.x, r4.x, r3.w
+mov o0, r4
