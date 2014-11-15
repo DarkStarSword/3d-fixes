@@ -74,3 +74,18 @@ def correct(coord, separation, convergence):
         x,y,z,w = coord
     a = adjustment(w, separation, convergence)
     return ([x-a, y, z, w], [x+a, y, z, w])
+
+def multiply(m1, m2):
+	'''
+	Does a matrix multiplication in a manner than is closer to how it would
+	be done in shader assembly.
+	'''
+	assert(m1.shape == (4,4))
+	assert(m2.shape == (4,4))
+	t = m2.T
+	r = np.matrix([[0.0]*4]*4)
+	for y in range(4):
+		for x in range(4):
+			# r_y = dp4 m1_y t_x
+			r[y,x] = np.dot(m1[y].A1, t[x].A1)
+	return r
