@@ -50,10 +50,9 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
+// Lab floor (need to choose the path that once was in chapter 1 to get to this lab)
+
     vs_3_0
- //def c100, 0, 0, 0, 0
-def c247, 0, 0, 0.0625, 0
-dcl_2d s0 
     dcl_position o0
     dcl_texcoord o1
     dcl_texcoord1 o2
@@ -67,6 +66,10 @@ dcl_2d s0
     dcl_normal v2
     dcl_texcoord v3
     dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r0.xyz, v1
     mul r1.xyz, v2.zxyw, r0.yzxw
     mov r0.xyz, v1
@@ -81,19 +84,25 @@ dcl_2d s0
     dp4 r1.w, v0, c7
     dp4 r1.x, v0, c4
     dp4 r1.y, v0, c5
-mov r10, r1
-texldl r24, c247.z, s0	
-add r24.y, r1.w, -r24.y
-mul r24.x, r24.x, r24.y
-add r1.x, r1.x, r24.x
+    dp4 r1.z, v0, c6 // moved up
+    mov o0, r1 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
     mul r0.xyz, r1.xyww, c24.x
-    dp4 r1.z, v0, c6
-mov r10.z, r1.z
     mul r0.y, r0, c17.x
     mad r0.xy, r0.z, c18.zwzw, r0
     mov r0.zw, r1
+    mov o4, r0 // moved up
+
+// Undo the correction to the reflection coordinates.
+add r31.w, r0.w, -r31.y
+mul r31.w, r31.w, c220.w
+mad r0.x, -r31.w, r31.x, r0.x
+
     mov o2, r0
-    mov o4, r0
     dp4 r0.z, v0, c10
     dp4 r0.x, v0, c8
     dp4 r0.y, v0, c9
@@ -105,12 +114,9 @@ mov r10.z, r1.z
     dp3 o3.y, r2, r3
     dp3 o3.z, v2, r2
     dp3 o3.x, r2, v1
-    mov o0, r10 //-----------------r1
     mad o1.zw, v3.xyxy, c23.xyxy, c23
     mad o1.xy, v3, c22, c22.zwzw
     mad o5.xy, v4, c21, c21.zwzw
     mul o6.w, -r0.x, r0.y
 
 // approximately 37 instruction slots used
-
-
