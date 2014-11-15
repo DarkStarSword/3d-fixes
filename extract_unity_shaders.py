@@ -402,7 +402,11 @@ def collect_headers(tree):
 
 def _combine_similar_headers(ret, headers):
     head = [ len(x) > 0 and x[0] or '' for x in headers ] # headers on this line
-    next = [ len(x) > 1 and x[1] or '' for x in headers ] # headers on next line
+
+    # Find all future headers:
+    future = set()
+    for h in headers:
+        future.update(h[1:])
 
     bmplen = math.ceil(len(headers) / 4)
 
@@ -412,30 +416,30 @@ def _combine_similar_headers(ret, headers):
         ret.append('%s  %s' % (' ' * bmplen, head[0]))
         return
 
-    # At least one header varies, get the first word of each header:
-    kh = [ x.strip().split(' ', 1)[0] for x in head ] # Keywords on this line
-    kn = [ x.strip().split(' ', 1)[0] for x in next ] # Keywords on next line
+    # Don't dump out any headers that are also found on a future line:
+    for i,h in enumerate(head):
+        if h in future:
+            head[i] = None
 
-    # Find any singular headers and flush them immediately:
-    for i, k in enumerate(kh):
-        if not head[i] or k == '}' or head[i].endswith('{'):
-            continue
-        if kh.count(k) + kn.count(k) == 1:
-            # Only one occurrence of this keyword, flush it out now
-            headers[i].pop(0)
-            ret.append('%.*x: %s' % (bmplen, 1<<i, head[i]))
-            return
+    # Could also delay lines with keywords appearing on a future line in the
+    # same scope - be careful of 'Tags' keyword appearing in multiple scopes!
+    # For now let's see if this is sufficient.
 
-    # Could do more here, but let's see if it's necessary in practice
+    if not any(head):
+        # Avoid potential live lock - certain patterns of headers could
+        # potentially cause each header stream to block waiting on the other
+        # streams to flush to a matching line.
+        # If all streams are blocked, force flushing out the current lines:
+        head = [ len(x) > 0 and x[0] or '' for x in headers ]
 
     # Dump any ungrouped headers:
     tmp = {}
-    for i, k in enumerate(kh):
-        if not head[i]:
+    for i,h in enumerate(head):
+        if not h:
             continue
         headers[i].pop(0)
-        tmp.setdefault(head[i], 0)
-        tmp[head[i]] |= 1 << i
+        tmp.setdefault(h, 0)
+        tmp[h] |= 1 << i
     for (h, bmp) in sorted(tmp.items()):
         ret.append('%.*x: %s' % (bmplen, bmp, h))
 
