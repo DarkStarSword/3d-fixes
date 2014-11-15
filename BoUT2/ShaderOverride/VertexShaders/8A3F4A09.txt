@@ -1,3 +1,51 @@
+// CRC32: 8A3F4A09 | Matched 7 variants of 1 shaders: KA Scene/Bilit Cutout SoftEdge Shadow
+// 
+//     Unity headers extracted from BilitCutoutSoftEdgeShadow.shader
+//     Shader "KA Scene/Bilit Cutout SoftEdge Shadow" {
+//       Properties {
+//       [HideInInspector]  _Color ("DO NOT TOUCH", Color) = (1,1,1,1)
+//        _MainTex ("Dark (RGB)", 2D) = "black" {}
+//        _LightTex ("Light (RGB)", 2D) = "black" {}
+//        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       }
+//       Fallback "KA Scene/Prelit Cutout Soft Edge"
+//       SubShader 1/1 {
+//         LOD 500
+//         Tags { "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+// 0f:     Pass 1/5 {
+// 10:     Pass 2/5 {
+// 20:     Pass 3/5 {
+// 40:     Pass 4/5 {
+// 50:       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+// 2f:       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+// 10:       Lighting On
+// 60:       ZWrite Off
+//           Fog { Mode Off }
+// 50:       Blend One One
+// 20:       Blend SrcAlpha OneMinusSrcAlpha
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 08:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 01:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 02:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 04:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 70:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+//               Bind "vertex" Vertex
+//               Bind "texcoord" TexCoord0
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 4 [_ProjectionParams]
+//               Vector 5 [_ScreenParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Table surface shader on main menu - adjusted to fix shadow
+
     vs_3_0
     def c6, 0.5, 0, 0, 0
     dcl_position v0
@@ -7,14 +55,22 @@ dcl_texcoord o0
 dcl_texcoord1 o1
 dcl_position o2
 
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 r0.w, v0, c3
     dp4 r0.z, v0, c2
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
+    mov o2, r0 // moved up
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r1.xyz, r0.xyww, c6.x
     mul r1.y, r1, c4.x
     mad o1.xy, r1.z, c5.zwzw, r1
-    mov o2, r0
     mov o1.zw, r0
     mov o0.xy, v1
 
