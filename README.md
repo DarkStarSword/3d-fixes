@@ -11,6 +11,7 @@ these fixes.
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
 - The Book of Unwritten Tales 2 (Early Access - expect updates)
 - Montague's Mount
+- Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
@@ -18,7 +19,6 @@ these fixes.
 
 ### Work in Progress ###
 - World of Diving (Partial shadow fix, fixed or disabled halos)
-- Dreamfall Chapters (First ever Unity FOV correct shadow fix)
 
 Misc
 ====

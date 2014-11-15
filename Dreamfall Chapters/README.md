@@ -3,7 +3,6 @@ Dreamfall Chapters
 
 Installation
 ------------
-
 Extract the contents of the zip file to the game directory.
 
 If the graphics are broken after launching the game or after alt+tabbing out
