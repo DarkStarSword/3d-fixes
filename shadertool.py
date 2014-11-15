@@ -624,10 +624,19 @@ def find_game_dir(file):
         raise ValueError('Unable to find game directory')
     return os.path.realpath(os.path.join(parent, '..'))
 
+def get_alias(game):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), '.aliases.json'), 'r', encoding='utf-8') as f:
+            aliases = json.load(f)
+            return aliases.get(game, game)
+    except IOError:
+        return game
+
 def install_shader_to_git(shader, file, args):
     game_dir = os.path.basename(find_game_dir(file))
     script_dir = os.path.dirname(__file__)
-    dest_dir = os.path.join(script_dir, game_dir)
+    alias = get_alias(game_dir)
+    dest_dir = os.path.join(script_dir, alias)
 
     install_shader_to(shader, file, args, dest_dir, True)
 
