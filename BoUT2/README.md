@@ -1,7 +1,11 @@
 The Book of Unwritten Tales 2 (Chapters 1 - 3)
 ==============================================
 
-The fix has been updated for Chapters 2 & 3. Shadows are now fixed.
+The fix has been updated for Chapters 2 & 3.
+
+Shadows are now fixed. If you have installed a previous version of this fix, be
+sure to delete the ShaderOverride folder before installing the new version,
+otherwise shadows will still be disabled.
 
 Fixed
 -----
