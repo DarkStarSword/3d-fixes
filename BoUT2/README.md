@@ -1,28 +1,23 @@
-The Book of Unwritten Tales 2 (Chapters 1 & 2)
+The Book of Unwritten Tales 2 (Chapters 1 - 3)
 ==============================================
+
+The fix has been updated for Chapters 2 & 3. Shadows are now fixed.
 
 Fixed
 -----
-- Disables broken shadows (automatically re-enabled when switching to 2D). Some
-  shadows work in 3D and these have been left enabled.
+- Shadows
 - Can adjust depth of in-game text and icons (item descriptions, subtitles,
   inventory, etc) by pressing keys on the number row. `~ will set screen depth,
   1-9 will set depth to 10%-90% and 0 sets depth to 100% separation.
 - Halo on fog fixed
 - Halo on magnifying glass' light beam fixed
-- Two convergence presets are provided: L sets a reasonable convergence for
+- Four convergence presets are provided: L sets a reasonable convergence for
   most of the game and K sets a lower convergence suitable for the drunken
-  punch minigame in chapter 2. Convergence can still be adjusted manually, but
-  beware the issue with the F6 key mentioned below.
+  punch minigame in chapter 2. ; and ' will set higher convergence for more
+  pop, but can be too high for some scenes.
 
 Known Issues
 ------------
-- Adjusting separation with Ctrl+F3/F4 causes game to crash, so I recommend you
-  have your desired separation set ahead of time.
-- Pressing F6 will cause the game to stop responding to further mouse clicks,
-  which makes adjusting convergence with the default keybindings challenging.
-  You can use the L and K keys to select different convergence presets, or be
-  prepared to restart the game after manually adjusting the convergence.
 - Mouse cursor depth cannot be adjusted as the game uses a hardware cursor.
 - The reflections in the mirror in Ivo's bedroom are broken.
 - There's a few scenes in the game where the background is little more than a
