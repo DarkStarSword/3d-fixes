@@ -214,22 +214,22 @@ class Register(str):
             return self.num < other.num
         return str.__lt__(self, other)
 
-    @staticmethod
-    def _str(negate, reg, absolute, swizzle):
-        r = '%s%s%s' % (negate, reg, absolute) # FIXME: Sync type and num if reg changed
-        if swizzle:
-            r += '.%s' % swizzle
+    def __str__(self, negate=None):
+        if negate is None:
+            negate = self.negate
+        r = '%s%s%s' % (negate, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
+        if self.address_reg:
+            r += self.address_reg
+        if self.swizzle:
+            r += '.%s' % self.swizzle
         return r
-
-    def __str__(self):
-        return self._str(self.negate, self.reg, self.absolute, self.swizzle)
 
     def __neg__(self):
         if self.negate:
             negate = ''
         else:
             negate = '-'
-        return Register(self._str(negate, self.reg, self.absolute, self.swizzle))
+        return Register(self.__str__(negate))
 
     # TODO: use __get_attr__ to handle all permutations of this:
     @property
@@ -431,6 +431,10 @@ def fixup_sincos(tree, node, parent, idx):
     parent[idx] = NewInstruction('sincos', (node.args[0], node.args[1]))
     tree.discard_if_unused((node.args[2], node.args[3]), 'sincos')
 
+def fixup_mova(tree, node, parent, idx):
+    if node.args[0].reg == 'a0':
+        parent[idx] = NewInstruction('mova', (node.args[0], node.args[1]))
+
 class VertexShader(ShaderBlock): pass
 class PixelShader(ShaderBlock): pass
 
@@ -455,50 +459,61 @@ class PS3(PixelShader):
     }
     def_stereo_sampler = 's13'
 
+def vs_to_shader_model_3_common(shader, shader_model, extra_fixups = {}):
+    shader.analyse_regs()
+    shader.insert_decl()
+    replace_regs = {}
+
+    if 'oT' in shader.reg_types:
+        for reg in sorted(shader.reg_types['oT']):
+            opcode = 'dcl_texcoord'
+            if reg.num:
+                opcode = 'dcl_texcoord%d' % reg.num
+            out = shader._find_free_reg('o', VS3)
+            shader.insert_decl(opcode, [out])
+            replace_regs[reg.reg] = out
+
+    if 'oPos' in shader.reg_types:
+        out = shader._find_free_reg('o', VS3)
+        shader.insert_decl('dcl_position', [out])
+        replace_regs['oPos'] = out
+
+
+    if 'oD' in shader.reg_types:
+        for reg in sorted(shader.reg_types['oD']):
+            opcode = 'dcl_color'
+            if reg.num:
+                opcode = 'dcl_color%d' % reg.num
+            out = shader._find_free_reg('o', VS3)
+            shader.insert_decl(opcode, [out])
+            replace_regs[reg.reg] = out
+
+    if 'oFog' in shader.reg_types:
+        out = shader._find_free_reg('o', VS3)
+        shader.insert_decl('dcl_fog', [out])
+        replace_regs['oFog'] = out
+    if 'oPts' in shader.reg_types:
+        out = shader._find_free_reg('o', VS3)
+        shader.insert_decl('dcl_psize', [out])
+        replace_regs['oPts'] = out
+
+    shader.insert_decl()
+
+    fixups = {'sincos': fixup_sincos}
+    fixups.update(extra_fixups)
+
+    shader.do_replacements(replace_regs, True, {shader_model: 'vs_3_0'}, fixups)
+
+    shader.__class__ = VS3
+
+class VS11(VertexShader):
+    def to_shader_model_3(self):
+        # NOTE: Only very lightly tested!
+        vs_to_shader_model_3_common(self, 'vs_1_1', {'mov': fixup_mova})
+
 class VS2(VertexShader):
     def to_shader_model_3(self):
-        self.analyse_regs()
-        self.insert_decl()
-        replace_regs = {}
-
-        if 'oT' in self.reg_types:
-            for reg in sorted(self.reg_types['oT']):
-                opcode = 'dcl_texcoord'
-                if reg.num:
-                    opcode = 'dcl_texcoord%d' % reg.num
-                out = self._find_free_reg('o', VS3)
-                self.insert_decl(opcode, [out])
-                replace_regs[reg.reg] = out
-
-        if 'oPos' in self.reg_types:
-            out = self._find_free_reg('o', VS3)
-            self.insert_decl('dcl_position', [out])
-            replace_regs['oPos'] = out
-
-
-        if 'oD' in self.reg_types:
-            for reg in sorted(self.reg_types['oD']):
-                opcode = 'dcl_color'
-                if reg.num:
-                    opcode = 'dcl_color%d' % reg.num
-                out = self._find_free_reg('o', VS3)
-                self.insert_decl(opcode, [out])
-                replace_regs[reg.reg] = out
-
-        if 'oFog' in self.reg_types:
-            out = self._find_free_reg('o', VS3)
-            self.insert_decl('dcl_fog', [out])
-            replace_regs['oFog'] = out
-        if 'oPts' in self.reg_types:
-            out = self._find_free_reg('o', VS3)
-            self.insert_decl('dcl_psize', [out])
-            replace_regs['oPts'] = out
-
-        self.insert_decl()
-
-        self.do_replacements(replace_regs, True, {'vs_2_0': 'vs_3_0'},
-                {'sincos': fixup_sincos})
-        self.__class__ = VS3
+        vs_to_shader_model_3_common(self, 'vs_2_0')
 
 class PS2(PixelShader):
     def to_shader_model_3(self):
@@ -526,6 +541,7 @@ sections = {
     'ps_3_0': PS3,
     'vs_2_0': VS2,
     'ps_2_0': PS2,
+    'vs_1_1': VS11,
 }
 
 def process_sections(tree):
