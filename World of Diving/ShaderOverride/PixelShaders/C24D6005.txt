@@ -1,0 +1,96 @@
+// CRC32: C24D6005 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" {}
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+//           Matrix 0 [unity_World2Shadow0]
+//           Matrix 4 [unity_World2Shadow1]
+//           Matrix 8 [unity_World2Shadow2]
+//           Matrix 12 [unity_World2Shadow3]
+//           Matrix 16 [_CameraToWorld]
+//           Vector 20 [_ZBufferParams]
+//           Vector 21 [unity_ShadowSplitSpheres0]
+//           Vector 22 [unity_ShadowSplitSpheres1]
+//           Vector 23 [unity_ShadowSplitSpheres2]
+//           Vector 24 [unity_ShadowSplitSpheres3]
+//           Vector 25 [unity_ShadowSplitSqRadii]
+//           Vector 26 [_LightShadowData]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    dcl_2d s0
+    dcl_2d s1
+    def c27, 0.00000000, 1.00000000, 255.00000000, 0.00392157
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    texld r0, v0, s0
+    mad r0.x, r0, c20, c20.y
+    rcp r0.x, r0.x
+    mul r2.xyz, r0.x, v1
+    mov r2.w, c27.y
+    dp4 r3.z, r2, c18
+    dp4 r3.x, r2, c16
+    dp4 r3.y, r2, c17
+    dp4 r3.w, r2, c19
+    add r1.xyz, r3, -c21
+    add r5.xyz, r3, -c24
+    dp3 r1.x, r1, r1
+    add r4.xyz, r3, -c22
+    dp3 r1.y, r4, r4
+    add r4.xyz, r3, -c23
+    dp3 r1.z, r4, r4
+    dp3 r1.w, r5, r5
+    add r1, r1, -c25
+    cmp r1, r1, c27.x, c27.y
+    mov r4.x, r1.y
+    mov r4.y, r1.z
+    mov r4.z, r1.w
+    add_sat r5.xyz, r4, -r1
+    dp4 r2.z, r3, c6
+    dp4 r2.x, r3, c4
+    dp4 r2.y, r3, c5
+    mul r4.xyz, r5.x, r2
+    dp4 r2.z, r3, c2
+    dp4 r2.y, r3, c1
+    dp4 r2.x, r3, c0
+    mad r2.xyz, r1.x, r2, r4
+    dp4 r1.z, r3, c10
+    dp4 r1.y, r3, c9
+    dp4 r1.x, r3, c8
+    mad r1.xyz, r5.y, r1, r2
+    dp4 r2.y, r3, c13
+    dp4 r2.x, r3, c12
+    dp4 r2.z, r3, c14
+    mad r1.xyz, r2, r5.z, r1
+    add r2.x, -r0, c27.y
+    mov r0.x, c26
+    mul r2.xy, r2.x, c27.yzxw
+    frc r2.xy, r2
+    add r0.x, c27.y, -r0
+    mov r0.y, c27
+    texld r1, r1, s1
+    mad r0.x, r1, r0, c26
+    mov r1.y, r2
+    mad r1.x, -r2.y, c27.w, r2
+    mov r0.w, r1.y
+    mov r0.z, r1.x
+    mov_pp oC0, r0
