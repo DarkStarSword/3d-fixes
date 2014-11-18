@@ -18,7 +18,7 @@ these fixes.
 - Miasmata (Partial high quality water fix, no longer need Aion profile)
 
 ### Work in Progress ###
-- World of Diving (Partial shadow fix, fixed or disabled halos)
+- World of Diving (Fixed shadows, WIP tracking down remaining broken surface shaders)
 
 Misc
 ====
