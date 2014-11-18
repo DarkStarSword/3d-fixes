@@ -1,0 +1,87 @@
+// CRC32: 9A61A6C8 | Matched 6 variants of 1 shaders: Custom/FX/Distortion
+// 
+//     Unity headers extracted from Distortion.shader
+//     Shader "Custom/FX/Distortion" {
+//       Properties {
+//        _Alpha ("Alpha", Float) = 0
+//        _Mask ("Mask", 2D) = "white" {}
+//        _Normal ("Normal", 2D) = "white" {}
+//        _RefractionStrenght ("Refraction_Strenght", Float) = 0
+//       }
+//       Fallback "Diffuse"
+//       SubShader 1/1 {
+//         Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         GrabPass {
+//          }
+//         Pass 1/1 {
+//           Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZWrite Off
+//           Fog { Mode Off }
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           Program "fp" {
+//             SubProgram "d3d9 " {
+// 01:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 08:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 02:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 10:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 04:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 20:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//               Vector 0 [glstate_lightmodel_ambient]
+//               Vector 1 [_ProjectionParams]
+//               Float 2 [_Alpha]
+//               Float 3 [_RefractionStrenght]
+//               SetTexture 0 [_Mask] 2D 0
+//               SetTexture 1 [_Normal] 2D 1
+//               SetTexture 2 [_GrabTexture] 2D 2
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Distortion effect when using Scuba-Scooter
+
+    ps_3_0
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    def c4, 0.200000003, 1, 2, -1
+    def c5, 0.5, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xy
+    dcl_color v2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+// This variant is SHADOWS_SCREEN, meaning it's copying a shadow generated in
+// Hidden/Internal-PrePassCollectShadows to the screen, so we discard the
+// stereo adjustment from the VS and get the screen coordinates directly:
+mov r20, v0
+texldl r31, c220.z, s13
+add r31.w, r20.w, -r31.y
+mul r31.w, r31.w, c220.w
+mad r20.x, -r31.w, r31.x, r20.x
+
+    mul r0.xy, r20, c4.x
+    texld r0.yw, r0, s1
+    mad_pp r0.xy, r0.wyzw, c4.z, c4.w
+    texld r0.w, r20, s0
+    mul r0.xy, r0, c3.x
+    mul r0.xy, r0.w, r0
+    mul r0.w, r0, c2.x
+    mov r1.y, -c1.x
+    mov r1.x, c4.y
+    mul r1.xy, r1, v1
+    mad r0.xy, r1, c5.x, r0
+    add r0.xy, r0, c5.x
+    texld r0.xyz, r0, s2
+    add r1.xyz, -r0, c0
+    mul r0.w, v2, r0
+    mad oC0.xyz, r0.w, r1, r0
+    mov_pp oC0.w, c4.y
+
+// approximately 17 instruction slots used (3 texture, 14 arithmetic)
