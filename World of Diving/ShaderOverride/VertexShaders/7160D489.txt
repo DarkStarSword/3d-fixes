@@ -1,3 +1,5 @@
+// Diving base - one palm tree using a different shader to the rest
+
     vs_3_0
     def c36, 6.40884876, -3.14159274, -0.000198409994, 0.00833330024
     def c37, -0.161616161, 0.25, 2, -0.5
@@ -17,6 +19,9 @@ dcl_texcoord3 o3
 dcl_texcoord4 o4
 dcl_position o5
 dcl_color o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
 
     dp4 r0.y, v0, c6
     dp4 r0.x, v0, c4
@@ -114,6 +119,12 @@ dcl_color o6
     dp4 r2.w, r1, c3
     dp4 r2.x, r1, c0
     dp4 r2.y, r1, c1
+
+mov r10, r2
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
     mul r4.xyz, r2.xyww, c40.w
     dp4 r7.z, r0, c30
     dp4 r7.y, r0, c29
@@ -132,7 +143,8 @@ dcl_color o6
     mul r0.xyz, r0.x, v1
     mul r3.xyz, r6.zxyw, r0.yzxw
     mad r3.xyz, r6.yzxw, r0.zxyw, -r3
-    mov o5, r2
+mov o5, r10
+mov o5.z, r2.z
     mov o4.zw, r2
     mov r2.w, c40.y
     mov r2.xyz, c13
