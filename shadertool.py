@@ -1228,6 +1228,13 @@ def main():
         address_reg_ps = RegSet()
         checked_ps = checked_vs = False
 
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    f = []
+    for file in args.files:
+        if '*' in file:
+            f.extend(glob.glob(file))
+    args.files = f
+
     for file in args.files:
         if args.restore_original:
             print('Restoring %s...' % file)
