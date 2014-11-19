@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, argparse, json, itertools, glob, shutil, copy
+import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
@@ -341,11 +341,28 @@ class ShaderBlock(SyntaxTree):
         SyntaxTree.__init__(self, newtree)
 
     def insert_decl(self, *inst):
+        off = 1
         if inst:
             self.insert(self.decl_end, SyntaxTree([NewInstruction(*inst)]))
             self.decl_end += 1
+            off += 1
         self.insert(self.decl_end, NewLine('\n'))
         self.decl_end += 1
+        return off
+
+    def insert_instr(self, pos, inst=None, comment=None):
+        self.insert(pos, NewLine('\n'))
+        line = SyntaxTree()
+        if inst:
+            line.append(inst)
+        if inst and comment:
+            line.append(WhiteSpace(' '))
+        if comment:
+            line.append(CPPStyleComment('// %s' % comment))
+        if line:
+            self.insert(pos, line)
+            return 2
+        return 1
 
     def add_inst(self, *inst):
         if inst:
@@ -680,22 +697,35 @@ def restore_original_shader(file):
 
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
-        return tree.stereo_const
+        return tree.stereo_const, 0
     if args.adjust_multiply and args.adjust_multiply != -1:
         w = args.adjust_multiply
     tree.stereo_const = tree._find_free_reg('c', VS3)
-    tree.insert_decl()
-    tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
-    tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
-    tree.insert_decl()
-    return tree.stereo_const
+    offset = 0
+    offset += tree.insert_decl()
+    offset += tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
+    offset += tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
+    offset += tree.insert_decl()
+    return tree.stereo_const, offset
 
-def append_inserted_by_comment(tree, what):
+def vanity_comment(what):
+    return [
+        "%s DarkStarSword's shadertool.py:" % what,
+        '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])),
+    ]
+
+def insert_vanity_comment(tree, where, what):
+    off = 0
+    off += tree.insert_instr(where + off)
+    for comment in vanity_comment(what):
+        off += tree.insert_instr(where + off, comment = comment)
+    return off
+
+def append_vanity_comment(tree, what):
     tree.add_inst()
-    tree.append(CPPStyleComment("// %s DarkStarSword's shadertool.py:" % what))
-    tree.append(NewLine('\n'))
-    tree.append(CPPStyleComment('// %s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))))
-    tree.append(NewLine('\n'))
+    for comment in vanity_comment(what):
+        tree.append(CPPStyleComment('// %s' % comment))
+        tree.append(NewLine('\n'))
 
 def output_texcoords(tree):
     for (t, r) in tree.declared:
@@ -714,7 +744,7 @@ def adjust_ui_depth(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('UI Depth adjustment must be done on a vertex shader')
 
-    stereo_const = insert_stereo_declarations(tree, args)
+    stereo_const, _ = insert_stereo_declarations(tree, args)
 
     pos_reg = tree._find_free_reg('r', VS3)
     tmp_reg = tree._find_free_reg('r', VS3)
@@ -723,7 +753,7 @@ def adjust_ui_depth(tree, args):
     replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_inserted_by_comment(tree, 'UI depth adjustment inserted with')
+    append_vanity_comment(tree, 'UI depth adjustment inserted with')
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
@@ -746,7 +776,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_inserted_by_comment(tree, 'Output adjustment inserted with')
+    append_vanity_comment(tree, 'Output adjustment inserted with')
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
@@ -771,7 +801,7 @@ def adjust_output(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('Output adjustment must be done on a vertex shader (currently)')
 
-    stereo_const = insert_stereo_declarations(tree, args)
+    stereo_const, _ = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
@@ -782,7 +812,7 @@ def auto_adjust_texcoords(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('Auto texcoord adjustmost is only applicable to vertex shaders')
 
-    stereo_const = insert_stereo_declarations(tree, args)
+    stereo_const, _ = insert_stereo_declarations(tree, args)
     pos_out = find_declaration(tree, 'dcl_position', 'o')
     pos_reg = tree._find_free_reg('r', VS3)
     pos_adj = tree._find_free_reg('r', VS3)
@@ -793,7 +823,7 @@ def auto_adjust_texcoords(tree, args):
         replace_regs[r] = tree._find_free_reg('r', VS3)
     tree.do_replacements(replace_regs, False)
 
-    append_inserted_by_comment(tree, 'Automatically adjust texcoords that match the output position. Inserted with')
+    append_vanity_comment(tree, 'Automatically adjust texcoords that match the output position. Inserted with')
     tree.add_inst('mov', [pos_out, pos_reg])
     for (t, r) in output_texcoords(tree):
         tree.add_inst('mov', [r, replace_regs[r]])
@@ -812,6 +842,194 @@ def auto_adjust_texcoords(tree, args):
     if args.condition:
         tree.add_inst('endif', [])
 
+def pos_to_line(tree, position):
+    return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
+
+def prev_line_pos(tree, position):
+    for p in range(position, -1, -1):
+        if isinstance(tree[p], NewLine):
+            return p + 1
+    return len(tree)
+
+def next_line_pos(tree, position):
+    for p in range(position, len(tree)):
+        if isinstance(tree[p], NewLine):
+            return p + 1
+    return len(tree)
+
+def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
+    assert(direction == 1 or direction == -1)
+    assert(write is not None)
+
+    Match = collections.namedtuple('Match', ['line', 'token', 'instruction'])
+
+    if direction == 1:
+        if start is None:
+            start = 0
+        if end is None:
+            end = len(tree)
+        def direction_iter(input):
+            return input
+    else:
+        if start is None:
+            start = len(tree) - 1
+        if end is None:
+            end = -1
+        def direction_iter(input):
+            return reversed(list(input))
+
+    tmp = reg
+    if components:
+        tmp += '.%s' % components
+    print("Scanning shader %s from line %i to %i for %s %s..." % (
+            {1: 'downwards', -1: 'upwards'}[direction],
+            pos_to_line(tree, start), pos_to_line(tree, end - direction),
+            {True: 'write to', False: 'read from'}[write],
+            tmp,
+    ))
+
+    if isinstance(components, str):
+        components = set(components)
+
+    def is_match(other):
+        return other.reg == reg and \
+                (not components or not other.swizzle or \
+                components.intersection(set(list(other.swizzle))))
+        # FIXME: Also handle implied destination mask from
+        # instructions that only write to one component
+
+    ret = []
+    for i in range(start, end, direction):
+        line = tree[i]
+        if not isinstance(line, SyntaxTree):
+            continue
+        for (j, instr) in direction_iter(enumerate(line)):
+            if not isinstance(instr, Instruction):
+                continue
+            if instr.is_def_or_dcl():
+                continue
+            if not instr.args:
+                continue
+            # print('scanning %s' % instr)
+            if write:
+                dest = instr.args[0]
+                if is_match(dest):
+                    print('Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
+                    ret.append(Match(i, j, instr))
+                    if stop:
+                        return ret
+            else:
+                for arg in instr.args[1:]:
+                    if is_match(arg):
+                        print('Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
+                        ret.append(Match(i, j, instr))
+                        if stop:
+                            return ret
+
+    return ret
+
+def auto_fix_vertex_halo(tree, args):
+    # This attempts to automatically fix vertex shaders that are broken in a
+    # very common way, where the output position has been copied to a texcoord.
+    # This is not a magic bullet - it can only fix fairly simple cases of this
+    # type of broken shader, but may be useful for fixing halos, Unity surface
+    # shaders, etc.
+
+    if not isinstance(tree, VS3):
+        raise Exception('Auto texcoord adjustmost is only applicable to vertex shaders')
+
+    # 1. Find output position variable from declarations
+    pos_out = find_declaration(tree, 'dcl_position', 'o')
+
+    # 2. Locate where in the shader the output position is set and note which
+    #    temporary register was copied to it.
+    results = scan_shader(tree, pos_out, write=True)
+    if not results:
+        print("Couldn't find write to output position register")
+        return
+    if len(results) > 1:
+        # FUTURE: We may be able to handle certain cases of this
+        print("Can't autofix a vertex shader writing to output position from multiple instructions")
+        return
+    (output_line, output_linepos, output_instr) = results[0]
+    if output_instr.opcode != 'mov':
+        print('Output not using mov instruction: %s' % output_instr)
+        return
+    temp_reg = output_instr.args[1]
+    if not temp_reg.startswith('r'):
+        print('Output not moved from a temporary register: %s' % output_instr)
+        return
+
+    # 3. Scan upwards to find where the X or W components of the temporary
+    #    register was last set.
+    results = scan_shader(tree, temp_reg.reg, components='xw', write=True, start=output_line - 1, direction=-1, stop=True)
+    if not results:
+        print('WARNING: Output set from undefined register!!!?!')
+        return
+    (temp_reg_line, temp_reg_linepos, temp_reg_instr) = results[0]
+
+    # 4. Scan between the two lines identified in 2 and 3 for any reads of the
+    #    temporary register:
+    results = scan_shader(tree, temp_reg.reg, write=False, start=temp_reg_line, end=output_line)
+    if results:
+        # 5. If temporary register was read between temporary register being set
+        #    and moved to output, relocate the output to just before the first
+        #    line that read from the temporary register
+        relocate_to = results[0][0]
+
+        # 6. Scan for any writes to other components of the temporary register
+        #    that we may have just moved the output register past, and copy
+        #    these to the output position at the original output location.
+        results = scan_shader(tree, temp_reg.reg, components='yzw', write=True, start=relocate_to + 1, end=output_line)
+        components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
+        components = ''.join(set(itertools.chain(*components)))
+        tree.insert_instr(next_line_pos(tree, output_line))
+        instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
+        print("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
+        tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
+
+        # Actually do the relocation from 5 (FIXME: Move this up, being careful
+        # of position offsets):
+        line = tree[output_line]
+        line.insert(0, CPPStyleComment('// '))
+        line.append(WhiteSpace(' '))
+        line.append(CPPStyleComment('// Relocated to line %i with shadertool.py' % pos_to_line(tree, relocate_to)))
+        print("Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
+        tree.insert_instr(prev_line_pos(tree, output_line))
+        print("Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
+        relocate_to += tree.insert_instr(prev_line_pos(tree, relocate_to))
+        tree.insert_instr(prev_line_pos(tree, relocate_to), output_instr, 'Relocated from line %i with shadertool.py' % pos_to_line(tree, output_line))
+        output_line = relocate_to
+    else:
+        # 7. No reads above, scan downwards until temporary register X
+        #    component is next set:
+        results = scan_shader(tree, temp_reg.reg, components='x', write=True, start=output_line, stop=True)
+        scan_until = len(tree)
+        if results:
+            scan_until = results[0].line
+
+        # 8. Scan between the two lines identified by 2 and 7 for any reads of
+        #    the temporary register:
+        results = scan_shader(tree, temp_reg.reg, write=False, start=output_line + 1, end=scan_until, stop=True)
+        if not results:
+            print('No other reads of temporary variable found, nothing to fix')
+            return
+
+    # 9. Insert stereo conversion after new location of move to output position.
+    # FIXME: Refactor common code with the adjust_output, etc
+    stereo_const, offset = insert_stereo_declarations(tree, args)
+    pos = next_line_pos(tree, output_line + offset)
+    t = tree._find_free_reg('r', VS3)
+
+    print('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
+    pos += insert_vanity_comment(tree, pos, "Automatic vertex shader halo fix inserted with")
+
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.def_stereo_sampler]))
+    separation = t.x; convergence = t.y
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
+    pos += tree.insert_instr(pos)
+
 def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
 
@@ -822,7 +1040,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
 
     disabled = stereo_const.xxxx
 
-    append_inserted_by_comment(tree, 'Texcoord disabled by')
+    append_vanity_comment(tree, 'Texcoord disabled by')
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -838,7 +1056,7 @@ def disable_output(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('Texcoord adjustment must be done on a vertex shader (currently)')
 
-    stereo_const = insert_stereo_declarations(tree, args)
+    stereo_const, _ = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3)
 
@@ -856,10 +1074,10 @@ def disable_shader(tree, args):
         raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
 
     # FUTURE: Maybe search for an existing 0 or 1...
-    stereo_const = insert_stereo_declarations(tree, args)
+    stereo_const, _ = insert_stereo_declarations(tree, args)
     tmp_reg = tree._find_free_reg('r', VS3)
 
-    append_inserted_by_comment(tree, 'Shader disabled by')
+    append_vanity_comment(tree, 'Shader disabled by')
     if args.disable == '0':
         disabled = stereo_const.xxxx
     if args.disable == '1':
@@ -932,6 +1150,8 @@ def parse_args():
             help="Use mad instruction to make stereo correction more concise")
     parser.add_argument('--auto-adjust-texcoords', action='store_true',
             help="Adjust any texcoord that matches the output position from a vertex shader")
+    parser.add_argument('--auto-fix-vertex-halo', action='store_true',
+            help="Attempt to automatically fix a vertex shader for common halo type issues")
 
     parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
             help="Do not automatically convert shaders to shader model 3")
@@ -977,7 +1197,8 @@ def args_require_reg_analysis(args):
                 args.disable_output or \
                 args.adjust or \
                 args.unadjust or \
-                args.auto_adjust_texcoords
+                args.auto_adjust_texcoords or \
+                args.auto_fix_vertex_halo
 
 def main():
     args = parse_args()
@@ -1040,6 +1261,8 @@ def main():
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:
             auto_adjust_texcoords(tree, args)
+        if args.auto_fix_vertex_halo:
+            auto_fix_vertex_halo(tree, args)
         if args.adjust_ui_depth:
             adjust_ui_depth(tree, args)
         if args.disable_output:
