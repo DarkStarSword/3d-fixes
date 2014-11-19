@@ -25,7 +25,7 @@ import http_date
 import shaderutil
 
 blog_id = '5003459283230164005'
-api_key = open('api-key.txt').read().strip()
+api_key = None
 api_url = 'https://www.googleapis.com/blogger/v3/blogs/%s' % blog_id
 fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
@@ -245,8 +245,17 @@ def get_posts():
     json.dump(j, open('POSTS.JSON', 'w', encoding='utf-8'), sort_keys=True, indent=4)
     return posts
 
+def get_api_key():
+    global api_key
+    api_key = open('api-key.txt').read().strip()
+
 @shaderutil.handle_sigint
 def main():
+    # Change the working to where the script is so we always use the same
+    # database no matter where we are run from.
+    os.chdir(os.path.dirname(__file__))
+
+    get_api_key()
     posts = get_posts()
 
     # enumerate_link_types(posts)
