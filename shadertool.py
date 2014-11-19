@@ -713,22 +713,28 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     offset += tree.insert_decl()
     return tree.stereo_const, offset
 
-def vanity_comment(what):
+def vanity_comment(args, tree, what):
+    a = []
+    for arg in sys.argv[1:]:
+        if arg not in args.files:
+            a.append(arg)
+    a.append(tree.filename)
+
     return [
         "%s DarkStarSword's shadertool.py:" % what,
-        '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])),
+        '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(a)),
     ]
 
-def insert_vanity_comment(tree, where, what):
+def insert_vanity_comment(args, tree, where, what):
     off = 0
     off += tree.insert_instr(where + off)
-    for comment in vanity_comment(what):
+    for comment in vanity_comment(args, tree, what):
         off += tree.insert_instr(where + off, comment = comment)
     return off
 
-def append_vanity_comment(tree, what):
+def append_vanity_comment(args, tree, what):
     tree.add_inst()
-    for comment in vanity_comment(what):
+    for comment in vanity_comment(args, tree, what):
         tree.append(CPPStyleComment('// %s' % comment))
         tree.append(NewLine('\n'))
 
@@ -758,7 +764,7 @@ def adjust_ui_depth(tree, args):
     replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_vanity_comment(tree, 'UI depth adjustment inserted with')
+    append_vanity_comment(args, tree, 'UI depth adjustment inserted with')
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
@@ -781,7 +787,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     replace_regs = {dst_reg: pos_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_vanity_comment(tree, 'Output adjustment inserted with')
+    append_vanity_comment(args, tree, 'Output adjustment inserted with')
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
@@ -828,7 +834,7 @@ def auto_adjust_texcoords(tree, args):
         replace_regs[r] = tree._find_free_reg('r', VS3)
     tree.do_replacements(replace_regs, False)
 
-    append_vanity_comment(tree, 'Automatically adjust texcoords that match the output position. Inserted with')
+    append_vanity_comment(args, tree, 'Automatically adjust texcoords that match the output position. Inserted with')
     tree.add_inst('mov', [pos_out, pos_reg])
     for (t, r) in output_texcoords(tree):
         tree.add_inst('mov', [r, replace_regs[r]])
@@ -1027,7 +1033,7 @@ def auto_fix_vertex_halo(tree, args):
     t = tree._find_free_reg('r', VS3)
 
     print('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
-    pos += insert_vanity_comment(tree, pos, "Automatic vertex shader halo fix inserted with")
+    pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.def_stereo_sampler]))
     separation = t.x; convergence = t.y
@@ -1047,7 +1053,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
 
     disabled = stereo_const.xxxx
 
-    append_vanity_comment(tree, 'Texcoord disabled by')
+    append_vanity_comment(args, tree, 'Texcoord disabled by')
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -1084,7 +1090,7 @@ def disable_shader(tree, args):
     stereo_const, _ = insert_stereo_declarations(tree, args)
     tmp_reg = tree._find_free_reg('r', VS3)
 
-    append_vanity_comment(tree, 'Shader disabled by')
+    append_vanity_comment(args, tree, 'Shader disabled by')
     if args.disable == '0':
         disabled = stereo_const.xxxx
     if args.disable == '1':
@@ -1265,6 +1271,8 @@ def main():
                     address_reg_ps.update(tree.addressed_regs)
                 else:
                     raise Exception("Shader must be a vs_3_0 or a ps_3_0, but it's a %s" % shader.__class__.__name__)
+
+        tree.filename = file
 
         if args.disable:
             disable_shader(tree, args)
