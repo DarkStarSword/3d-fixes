@@ -992,12 +992,13 @@ def auto_fix_vertex_halo(tree, args):
         #    that we may have just moved the output register past, and copy
         #    these to the output position at the original output location.
         results = scan_shader(tree, temp_reg.reg, components='yzw', write=True, start=relocate_to + 1, end=output_line)
-        components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
-        components = ''.join(set(itertools.chain(*components)))
-        tree.insert_instr(next_line_pos(tree, output_line))
-        instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
-        print("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
-        tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
+        if results:
+            components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
+            components = ''.join(set(itertools.chain(*components)))
+            tree.insert_instr(next_line_pos(tree, output_line))
+            instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
+            print("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
+            tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
 
         # Actually do the relocation from 5 (FIXME: Move this up, being careful
         # of position offsets):
