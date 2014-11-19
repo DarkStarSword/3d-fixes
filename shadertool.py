@@ -1035,6 +1035,8 @@ def auto_fix_vertex_halo(tree, args):
     pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
     pos += tree.insert_instr(pos)
 
+    tree.autofixed = True
+
 def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
 
@@ -1157,6 +1159,8 @@ def parse_args():
             help="Adjust any texcoord that matches the output position from a vertex shader")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--only-autofixed', action='store_true',
+            help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
     parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
             help="Do not automatically convert shaders to shader model 3")
@@ -1266,6 +1270,7 @@ def main():
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:
             auto_adjust_texcoords(tree, args)
+        tree.autofixed = False
         if args.auto_fix_vertex_halo:
             auto_fix_vertex_halo(tree, args)
         if args.adjust_ui_depth:
@@ -1280,20 +1285,21 @@ def main():
             a.adjust_multiply = -1
             adjust_output(tree, a)
 
-        if args.output:
-            print(tree, end='', file=args.output)
-        if args.in_place:
-            tmp = '%s.new' % real_file
-            print(tree, end='', file=open(tmp, 'w'))
-            os.rename(tmp, real_file)
-        if args.install:
-            install_shader(tree, file, args)
-        if args.install_to:
-            install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
-        if args.to_git:
-            a = copy.copy(args)
-            a.force = True
-            install_shader_to_git(tree, file, a)
+        if not args.only_autofixed or tree.autofixed:
+            if args.output:
+                print(tree, end='', file=args.output)
+            if args.in_place:
+                tmp = '%s.new' % real_file
+                print(tree, end='', file=open(tmp, 'w'))
+                os.rename(tmp, real_file)
+            if args.install:
+                install_shader(tree, file, args)
+            if args.install_to:
+                install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
+            if args.to_git:
+                a = copy.copy(args)
+                a.force = True
+                install_shader_to_git(tree, file, a)
 
     if args.find_free_consts:
         if checked_vs:
