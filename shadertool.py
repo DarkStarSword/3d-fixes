@@ -1233,6 +1233,8 @@ def main():
     for file in args.files:
         if '*' in file:
             f.extend(glob.glob(file))
+        else:
+            f.append(file)
     args.files = f
 
     for file in args.files:
