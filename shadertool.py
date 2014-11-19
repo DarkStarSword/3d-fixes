@@ -416,7 +416,10 @@ class ShaderBlock(SyntaxTree):
             self.reg_types[type] = RegSet([r])
             return r
 
-        taken = self.reg_types[type]
+        # Treat all defined constants as taken, even if they aren't used (if we
+        # were ever really tight on space we could discard unused local
+        # constants):
+        taken = self.reg_types[type].union(self.local_consts)
         for num in [desired] + list(range(model.max_regs[type])):
             reg = type + str(num)
             if reg not in taken:
