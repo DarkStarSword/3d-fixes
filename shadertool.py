@@ -4,6 +4,8 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
+preferred_stereo_const = 220
+
 reg_names = {
     'c': 'Referenced Constants',
     'r': 'Temporary',
@@ -408,14 +410,14 @@ class ShaderBlock(SyntaxTree):
         for (k, v) in self.reg_types.items():
             pr_verbose('%s: %s' % (reg_names.get(k, k), ', '.join(sorted(v))))
 
-    def _find_free_reg(self, type, model):
+    def _find_free_reg(self, type, model, desired=0):
         if type not in self.reg_types:
-            r = Register(type + '0')
+            r = Register(type + str(desired))
             self.reg_types[type] = RegSet([r])
             return r
 
         taken = self.reg_types[type]
-        for num in range(model.max_regs[type]):
+        for num in [desired] + list(range(model.max_regs[type])):
             reg = type + str(num)
             if reg not in taken:
                 r = Register(reg)
@@ -700,7 +702,7 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
         return tree.stereo_const, 0
     if args.adjust_multiply and args.adjust_multiply != -1:
         w = args.adjust_multiply
-    tree.stereo_const = tree._find_free_reg('c', VS3)
+    tree.stereo_const = tree._find_free_reg('c', VS3, desired = preferred_stereo_const)
     offset = 0
     offset += tree.insert_decl()
     offset += tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
