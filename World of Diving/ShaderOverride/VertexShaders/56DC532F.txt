@@ -1,0 +1,67 @@
+    vs_3_0
+    def c14, 0.0240000002, 0.0799999982, 0.200000003, -0.161616161
+    def c15, 0.0480000004, 0.0599999987, 0.239999995, 0.0960000008
+    def c16, 1.20000005, 2, 1.60000002, 4.80000019
+    def c17, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c18, 0.215387449, 0.358979076, 0.287183255, 0.861549795
+    def c19, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c20, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c21, 8, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r3.y, v0, c6
+    mul r0.x, r3.y, c13.y
+    dp4 r3.x, v0, c4
+    mul r1.xyz, r0.x, c14
+    mul r0.x, r3, c13.y
+    mad r1, r0.x, c15, r1.xyyz
+    mov r0.x, c13
+    mad r0, c16, r0.x, r1
+    frc r0, r0
+    mad r0, r0, c17.x, c17.y
+    mul r1, r0, r0
+    mul r2, r1, r0
+    mad r0, r2, c14.w, r0
+    mul r2, r2, r1
+    mul r1, r2, r1
+    mad r0, r2, c17.z, r0
+    mad r0, r1, c17.w, r0
+    mul r0, r0, c18
+    mul r1.x, v5.w, c13.z
+    mul r0, r0, r0
+    mul r0, r0, r1.x
+    dp4 r1.y, r0, c19
+    dp4 r1.x, r0, c20
+    mad r0.xz, -r1.xyyw, c21.x, r3.xyyw
+    dp4 r0.y, v0, c5
+    dp4 r0.w, v0, c7
+    dp4 r1.y, r0, c10
+    dp4 r1.x, r0, c8
+    mul r0.xz, r1.xyyw, c12.w
+    mov r0.yw, v0
+    dp4 r1.w, r0, c3
+    dp4 r1.z, r0, c2
+    dp4 r1.x, r0, c0
+    dp4 r1.y, r0, c1
+    mov o2, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --ignore-parse-errors 56DC532F.txt
+texldl r4, c220.z, s0
+add r4.w, r1.w, -r4.y
+mad r1.x, r4.w, r4.x, r1.x
+
+    mov o1.xy, r1.zwzw
+    mov o0.xy, v3
+
+// approximately 37 instruction slots used

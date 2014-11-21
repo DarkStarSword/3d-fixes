@@ -1,0 +1,110 @@
+    vs_3_0
+    def c24, 0, 1, 6.40884876, -3.14159274
+    def c25, 0.00600000005, 0.0199999996, 0.0500000007, -0.161616161
+    def c26, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
+    def c27, 1.20000005, 2, 1.60000002, 4.80000019
+    def c28, 0.00833330024, -0.000198409994, -0.5, 0.5
+    def c29, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c30, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c31, 0.471939921, 0.188775957, 0.0943879783, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+dcl_color o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    add r0.xyz, v0, -c20
+    dp3 r0.x, r0, r0
+    slt r0.x, c19.w, r0
+    max r0.x, -r0, r0
+    slt r0.x, c24, r0
+    add r0.x, -r0, c24.y
+    mul r0.xy, r0.x, v1
+    mad r1.xyz, r0.x, c21, v0
+    mad r3.xyz, r0.y, c22, r1
+    mul r0.x, r3.z, c19.y
+    mul r1.xyz, r0.x, c25
+    mul r0.x, r3, c19.y
+    mad r1, r0.x, c26, r1.xyyz
+    mov r0.x, c19
+    mad r0, c27, r0.x, r1
+    frc r0, r0
+    mad r1, r0, c24.z, c24.w
+    mul r0, r1, r1
+    mul r2, r0, r1
+    mad r1, r2, c25.w, r1
+    mul r2, r2, r0
+    mad r1, r2, c28.x, r1
+    mul r0, r2, r0
+    mad r0, r0, c28.y, r1
+    mul r0, r0, r0
+    mul r0, r0, r0
+    mul r1, r0, v1.y
+    dp4 r0.x, r0, c31.xxyz
+    dp4 r2.x, r1, c30
+    dp4 r2.y, r1, c29
+    mad r1.xz, -r2.xyyw, c19.z, r3
+    mov r1.y, r3
+    mov r1.w, v0
+    add r3.xyz, r1, -c20
+    dp4 r2.w, r1, c3
+    dp4 r2.z, r1, c2
+    dp4 r2.x, r1, c0
+    dp4 r2.y, r1, c1
+
+mov o3, r2 // Relocated from line 71 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --ignore-parse-errors C9033572.txt
+texldl r5, c220.z, s0
+add r5.w, r2.w, -r5.y
+mad r2.x, r5.w, r5.x, r2.x
+
+    mul r4.xyz, r2.xyww, c28.w
+    mul r4.y, r4, c8.x
+    dp3 r3.x, r3, r3
+    add r1.x, -r3, c19.w
+    mul r1.x, r1, c20.w
+    mul r1.w, r1.x, c27.y
+    min r1.w, r1, c24.y
+    mov r1.xyz, c18
+    add r1.xyz, c28.z, r1
+    mad r0.xyz, r0.x, r1, c28.w
+    mul r0.xyz, r0, v5
+
+//     mov o3, r2 // Relocated to line 60 with shadertool.py
+    mul r1.xyz, v2, c17.w
+    mul o4.xyz, r0, c27.y
+    mov o1.zw, r2
+    dp3 r2.w, r1, c5
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r2.w
+    mov r0.w, c24.y
+    max o4.w, r1, c24.x
+    mul r1, r0.xyzz, r0.yzzx
+    dp4 r2.z, r0, c12
+    dp4 r2.y, r0, c11
+    dp4 r2.x, r0, c10
+    mul r0.w, r2, r2
+    mad r0.w, r0.x, r0.x, -r0
+    dp4 r0.z, r1, c15
+    dp4 r0.y, r1, c14
+    dp4 r0.x, r1, c13
+    mul r1.xyz, r0.w, c16
+    add r0.xyz, r2, r0
+    mad o1.xy, r4.z, c9.zwzw, r4
+    add o2.xyz, r0, r1
+    mad o0.xy, v3, c23, c23.zwzw
+
+// approximately 73 instruction slots used
