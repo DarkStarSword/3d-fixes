@@ -1162,7 +1162,8 @@ def lookup_header_json(tree, index, file):
         print('%s not found in header index' % crc)
         return tree
     headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
-    headers = type(tree)(itertools.chain(*headers))
+    headers = type(tree)(itertools.chain(*headers), None)
+    headers.shader_start = len(headers) + tree.shader_start
     headers.append(NewLine('\n'))
     headers.decl_end = len(headers) + tree.decl_end
     headers.extend(tree)
