@@ -318,8 +318,9 @@ class RegSet(set):
         set.add(self, Register(reg.reg))
 
 class ShaderBlock(SyntaxTree):
-    def __init__(self, tree):
+    def __init__(self, tree, shader_start):
         newtree = []
+        self.shader_start = shader_start
         self.decl_end = 0
         in_dcl = True
         for (lineno, line) in enumerate(tree):
@@ -590,7 +591,7 @@ def process_sections(tree):
                 if preshader_start is not None:
                     head = SyntaxTree(tree[:preshader_start])
                     preshader = Preshader(tree[preshader_start:lineno])
-                return sections[token](head + preshader + tree[lineno:])
+                return sections[token](head + preshader + tree[lineno:], lineno)
             elif preshader_start is None:
                 raise SyntaxError('Unexpected token while searching for shader type: %s' % token)
     raise SyntaxError('Unable to identify shader type')
@@ -743,7 +744,7 @@ def output_texcoords(tree):
         if t.startswith('dcl_texcoord') and r.startswith('o'):
             yield (t, r)
 
-def find_declaration(tree, type, prefix):
+def find_declaration(tree, type, prefix = None):
     for (t, r) in tree.declared:
         if t == type:
             if prefix and not r.startswith(prefix):
@@ -1044,6 +1045,46 @@ def auto_fix_vertex_halo(tree, args):
 
     tree.autofixed = True
 
+def add_unity_autofog_VS3(tree):
+    try:
+        d = find_declaration(tree, 'dcl_fog')
+        print('Shader already has a fog output: %s' % d)
+        return
+    except:
+        pass
+
+    if 'o' in tree.reg_types and 'o9' in tree.reg_types['o']:
+        print('Shader already uses output o9')
+        return
+
+    pos_out = find_declaration(tree, 'dcl_position', 'o')
+
+    results = scan_shader(tree, pos_out, write=True)
+    if len(results) != 1:
+        print('Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
+        return
+    (output_line, output_linepos, output_instr) = results[0]
+    if output_instr.opcode != 'mov':
+        print('Output not using mov instruction: %s' % output_instr)
+        return
+    temp_reg = output_instr.args[1]
+    if not temp_reg.startswith('r'):
+        print('Output not moved from a temporary register: %s' % output_instr)
+        return
+
+    fog_output = NewInstruction('mov', ['o9', temp_reg.z])
+    tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py to match Unity autofog')
+    decl = NewInstruction('dcl_fog', ['o9'])
+    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py to match Unity autofog')
+
+def add_unity_autofog(tree):
+    '''
+    Adds instructions to a shader to match those Unity automatically adds for
+    fog. Used by extract_unity_shaders.py to construct fog variants of shaders.
+    '''
+    if isinstance(tree, VS3):
+        return add_unity_autofog_VS3(tree)
+
 def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
 
@@ -1169,6 +1210,9 @@ def parse_args():
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
+    parser.add_argument('--add-unity-autofog', action='store_true',
+            help="Add instructions to the shader to support fog, like Unity does (used by extract_unity_shaders.py)")
+
     parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
             help="Do not automatically convert shaders to shader model 3")
     parser.add_argument('--lookup-header-json', type=argparse.FileType('r'), # XXX: When python 3.4 comes to cygwin, add encoding='utf-8'
@@ -1203,6 +1247,9 @@ def parse_args():
     if args.restore_original:
         args.auto_convert = False
 
+    if args.add_unity_autofog:
+        args.auto_convert = False
+
     return args
 
 def args_require_reg_analysis(args):
@@ -1214,7 +1261,8 @@ def args_require_reg_analysis(args):
                 args.adjust or \
                 args.unadjust or \
                 args.auto_adjust_texcoords or \
-                args.auto_fix_vertex_halo
+                args.auto_fix_vertex_halo or \
+                args.add_unity_autofog
 
 def main():
     args = parse_args()
@@ -1284,6 +1332,8 @@ def main():
 
         tree.filename = file
 
+        if args.add_unity_autofog:
+            add_unity_autofog(tree)
         if args.disable:
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:
