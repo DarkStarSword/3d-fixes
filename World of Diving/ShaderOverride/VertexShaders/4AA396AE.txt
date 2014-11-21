@@ -1,0 +1,174 @@
+// CRC32: 4AA396AE | Unity headers extracted from TreeSoftOcclusionLeaves.shader
+// Shader "Nature/Tree Soft Occlusion Leaves" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Main Texture", 2D) = "white" {}
+//    _Cutoff ("Alpha cutoff", Range(0.25,0.9)) = 0.5
+//    _BaseLight ("Base Light", Range(0,1)) = 0.35
+//    _AO ("Amb. Occlusion", Range(0,10)) = 2.4
+//    _Occlusion ("Dir Occlusion", Range(0,20)) = 7.5
+//    _Scale ("Scale", Vector) = (1,1,1,1)
+//    _SquashAmount ("Squash", Float) = 1
+//   }
+//   Dependency "BillboardShader" = "Hidden/Nature/Tree Soft Occlusion Leaves Rendertex"
+//   Fallback Off
+//   SubShader 1/2 {
+//     Tags { "QUEUE"="Transparent-99" "IGNOREPROJECTOR"="true" "RenderType"="TreeTransparentCutout" }
+//     Pass 1/2 {
+//       Tags { "QUEUE"="Transparent-99" "IGNOREPROJECTOR"="true" "RenderType"="TreeTransparentCutout" }
+//       Lighting On
+//       Cull Off
+//       ColorMask RGB
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord2
+//           Matrix 0 [glstate_matrix_modelview0]
+//           Matrix 4 [glstate_matrix_mvp]
+//           Matrix 8 [_TerrainEngineBendTree]
+//           Matrix 12 [_CameraToWorld]
+//           Vector 16 [glstate_lightmodel_ambient]
+//           Vector 17 [unity_LightColor0]
+//           Vector 18 [unity_LightColor1]
+//           Vector 19 [unity_LightColor2]
+//           Vector 20 [unity_LightColor3]
+//           Vector 21 [unity_LightPosition0]
+//           Vector 22 [unity_LightPosition1]
+//           Vector 23 [unity_LightPosition2]
+//           Vector 24 [unity_LightPosition3]
+//           Vector 25 [unity_LightAtten0]
+//           Vector 26 [unity_LightAtten1]
+//           Vector 27 [unity_LightAtten2]
+//           Vector 28 [unity_LightAtten3]
+//           Vector 29 [_Scale]
+//           Vector 30 [_SquashPlaneNormal]
+//           Float 31 [_SquashAmount]
+//           Float 32 [_Occlusion]
+//           Float 33 [_AO]
+//           Float 34 [_BaseLight]
+//           Vector 35 [_Color]
+//           Float 36 [_HalfOverCutoff]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// INCLUDED ONLY TO GET MV AND MVP MATRICES FOR SHADOW FIX
+
+    vs_3_0
+    def c37, 0, 1, 0.5, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_color v2
+    dcl_texcoord v3
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+    mul r0.xyz, v0, c29
+    mov r0.w, c37.x
+    mov r1.w, c37.y
+    dp4 r1.z, r0, c10
+    dp4 r1.x, r0, c8
+    dp4 r1.y, r0, c9
+    add r1.xyz, r1, -r0
+    mad r1.xyz, v2.w, r1, r0
+    dp3 r0.x, r1, c30
+    add r0.x, r0, c30.w
+    mul r0.xyz, r0.x, c30
+    add r1.xyz, -r0, r1
+    mad r1.xyz, r0, c31.x, r1
+    dp4 r3.z, r1, c2
+    dp4 r3.x, r1, c0
+    dp4 r3.y, r1, c1
+    mad r0.xyz, -r3, c23.w, c23
+    mad r2.xyz, -r3, c21.w, c21
+    mov r0.z, -r0
+    dp3 r2.w, r0, r0
+    rsq r0.w, r2.w
+    mul r4.xyz, r0.w, r0
+    dp3 r0.z, r4, c14
+    dp3 r0.y, r4, c13
+    dp3 r0.x, r4, c12
+    mov r2.z, -r2
+    dp3 r4.x, r2, r2
+    rsq r3.w, r4.x
+    mul r2.xyz, r3.w, r2
+    mul r0.xyz, r0, c32.x
+    mov r0.w, c33.x
+    dp4 r3.w, v1, r0
+    max r3.w, r3, c37.x
+    dp3 r0.z, r2, c14
+    dp3 r0.y, r2, c13
+    dp3 r0.x, r2, c12
+    mul r0.xyz, r0, c32.x
+    mov r0.w, c33.x
+    dp4 r0.x, v1, r0
+    mul r0.y, r4.x, c25.z
+    add r2.x, r0.y, c37.y
+    max r0.x, r0, c37
+    add r0.w, r0.x, c34.x
+    mad r0.xyz, -r3, c22.w, c22
+    rcp r4.x, r2.x
+    mov r2.xy, r0
+    mov r2.z, -r0
+    mul r0.x, r0.w, r4
+    dp3 r4.w, r2, r2
+    rsq r0.w, r4.w
+    mul r4.xyz, r0.w, r2
+    mul r0.xyz, r0.x, c17
+    add r2.xyz, r0, c16
+    dp3 r0.z, r4, c14
+    dp3 r0.x, r4, c12
+    dp3 r0.y, r4, c13
+    mul r0.xyz, r0, c32.x
+    mov r0.w, c33.x
+    dp4 r0.x, v1, r0
+    mul r0.w, r2, c27.z
+    mul r4.x, r4.w, c26.z
+    add r0.y, r4.x, c37
+    max r0.x, r0, c37
+    add r2.w, r0, c37.y
+    rcp r0.y, r0.y
+    add r0.x, r0, c34
+    mul r0.x, r0, r0.y
+    mad r0.xyz, r0.x, c18, r2
+    mad r2.xyz, -r3, c24.w, c24
+    mov r2.z, -r2
+    dp3 r0.w, r2, r2
+    rcp r3.x, r2.w
+    rsq r2.w, r0.w
+    mul r2.xyz, r2.w, r2
+    add r3.w, r3, c34.x
+    mul r3.x, r3.w, r3
+    mad r0.xyz, r3.x, c19, r0
+    dp3 r3.x, r2, c12
+    dp3 r3.z, r2, c14
+    dp3 r3.y, r2, c13
+    mul r2.xyz, r3, c32.x
+    mul r3.x, r0.w, c28.z
+    mov r2.w, c33.x
+    dp4 r0.w, v1, r2
+    add r2.x, r3, c37.y
+    max r0.w, r0, c37.x
+    rcp r2.x, r2.x
+    add r0.w, r0, c34.x
+    mul r0.w, r0, r2.x
+    mad r0.xyz, r0.w, c20, r0
+    mul o2.xyz, r0, c35
+    mov r0.x, c36
+    dp4 o1.w, r1, c7
+    dp4 o1.z, r1, c6
+    dp4 o1.y, r1, c5
+    dp4 o1.x, r1, c4
+    mov o0, v3
+    mul o2.w, c37.z, r0.x
+
+// approximately 98 instruction slots used
