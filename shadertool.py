@@ -425,7 +425,7 @@ class ShaderBlock(SyntaxTree):
             reg = type + str(num)
             if reg not in taken:
                 r = Register(reg)
-                taken.add(r)
+                self.reg_types[type].add(r)
                 return r
 
     def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
