@@ -88,7 +88,11 @@ dcl_2d s0
     dp4 r10.y, v0, c5
     dp4 r10.x, v0, c4
 
-texldl r31, c220.z, s0
-mul r31.w, r31.x, c200.z
-add r10.x, r10.x, r31.w
+// Adjust UI depth, except textured on dive computer (which shifts to the right)
+mov r30.x, c251
+if_eq r30.x, c220.x
+	texldl r31, c220.z, s0
+	mul r31.w, r31.x, c200.z
+	add r10.x, r10.x, r31.w
+endif
 mov o10, r10
