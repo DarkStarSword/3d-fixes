@@ -1,0 +1,95 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c31, 1, -1, 0.600000024, 0.360000014
+    def c32, 2, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0, c26
+    min r0, c31.x, r0
+    max r0, r0, c31.y
+    mov r1, c27
+    min r1, c31.x, r1
+    max r1, r1, c31.y
+    dp4 r2.z, r0, c18
+    dp4 r2.y, r0, c17
+    dp4 r2.x, r0, c16
+    mov r0.w, c31.x
+    dp4 r0.z, r1, c6
+    dp4 r0.y, r1, c5
+    dp4 r0.x, r1, c4
+    add r0.xyz, r2, r0
+    mul r1.xyz, v2, c25.x
+    mul r1.xyz, r1, c28.x
+    mov r1.w, v0
+    mul r0.xyz, r0, c25.x
+    mad r1.xyz, r1, c31.z, v0
+    mad r1.xyz, r0, c31.w, r1
+    mov r0.xyz, c20
+    dp4 r2.w, r1, c11
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+
+mov o0, r2 // Relocated from line 62 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --ignore-parse-errors BBD78290.txt
+texldl r5, c220.z, s0
+add r5.w, r2.w, -r5.y
+mad r2.x, r5.w, r5.x, r2.x
+
+    mul r3.xyz, r2.xyww, c32.y
+    mul r3.y, r3, c21.x
+    dp4 r4.z, r0, c18
+    dp4 r4.x, r0, c16
+    dp4 r4.y, r0, c17
+    mad r0.xyz, r4, c24.w, -r1
+    dp3 r0.w, v2, -r0
+    mad o4.xy, r3.z, c22.zwzw, r3
+    mul r3.xyz, v2, r0.w
+    mad r3.xyz, -r3, c32.x, -r0
+    mov o3.z, -r0.w
+    dp3 o2.z, r3, c14
+    dp3 o2.y, r3, c13
+    dp3 o2.x, r3, c12
+    dp4 r3.z, r1, c14
+    dp4 r3.y, r1, c13
+    dp4 r3.x, r1, c12
+    add r4.xyz, r3, -c23
+    dp3 o3.x, r0, v1
+    dp4 r0.w, r1, c2
+
+//     mov o0, r2 // Relocated to line 42 with shadertool.py
+    mov o4.zw, r2
+    mov r2.xyz, v1
+    mul r3.xyz, v2.zxyw, r2.yzxw
+    mov r2.xyz, v1
+    mad r2.xyz, v2.yzxw, r2.zxyw, -r3
+    mul r2.xyz, r2, v1.w
+    dp3 o3.y, r0, r2
+    mov r0.x, c23.w
+    add r1.x, c31, -r0
+    mul r0.xyz, v2, c24.w
+    mul o7.xyz, r4, c23.w
+    mul o7.w, -r0, r1.x
+    dp3 o5.y, r2, r0
+    dp3 o5.z, v2, r0
+    dp3 o5.x, v1, r0
+    mad o1.xy, v3, c30, c30.zwzw
+    mad o6.xy, v4, c29, c29.zwzw
+
+// approximately 63 instruction slots used

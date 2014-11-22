@@ -1,0 +1,80 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    def c26, 1, -1, 0.699999988, 0.48999998
+    def c27, 2, 0.5, 0, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0, c21
+    min r0, c26.x, r0
+    max r0, r0, c26.y
+    mov r1, c22
+    min r1, c26.x, r1
+    max r1, r1, c26.y
+    dp4 r2.z, r0, c14
+    dp4 r2.y, r0, c13
+    dp4 r2.x, r0, c12
+    mov r0.w, c26.x
+    dp4 r0.z, r1, c2
+    dp4 r0.y, r1, c1
+    dp4 r0.x, r1, c0
+    add r0.xyz, r2, r0
+    mul r1.xyz, v2, c20.x
+    mul r1.xyz, r1, c23.x
+    mov r1.w, v0
+    mul r0.xyz, r0, c20.x
+    mad r1.xyz, r1, c26.z, v0
+    mad r1.xyz, r0, c26.w, r1
+    mov r0.xyz, c16
+    dp4 r2.w, r1, c7
+    dp4 r2.z, r1, c6
+    dp4 r3.z, r0, c14
+    dp4 r3.x, r0, c12
+    dp4 r3.y, r0, c13
+    mad r0.xyz, r3, c19.w, -r1
+    dp3 r0.w, v2, -r0
+    mul r3.xyz, v2, r0.w
+    mad r0.xyz, -r3, c27.x, -r0
+    dp4 r2.x, r1, c4
+    dp4 r2.y, r1, c5
+
+mov o0, r2 // Relocated from line 57 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --ignore-parse-errors EB5D6CA0.txt
+texldl r5, c220.z, s0
+add r5.w, r2.w, -r5.y
+mad r2.x, r5.w, r5.x, r2.x
+
+    mul r4.xyz, r2.xyww, c27.y
+    mul r4.y, r4, c17.x
+    dp3 o2.z, r0, c10
+    dp3 o2.y, r0, c9
+    dp3 o2.x, r0, c8
+    dp4 r0.z, r1, c10
+    dp4 r0.y, r1, c9
+    dp4 r0.x, r1, c8
+    mul r1.xyz, v2, c19.w
+    mad o6.xy, r4.z, c18.zwzw, r4
+
+//     mov o0, r2 // Relocated to line 47 with shadertool.py
+    mov o6.zw, r2
+    add o3.xyz, -r0, c16
+    dp3 o4.z, r1, c10
+    dp3 o4.y, r1, c9
+    dp3 o4.x, r1, c8
+    mad o1.xy, v3, c25, c25.zwzw
+    mad o5.xy, v4, c24, c24.zwzw
+
+// approximately 50 instruction slots used

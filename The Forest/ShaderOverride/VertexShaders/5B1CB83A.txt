@@ -1,0 +1,85 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_color o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    def c20, 1, 2, 0.159154907, 0.5
+    def c21, 6.28318501, -3.14159298, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_color v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r1.w, c20.x
+    mov r1.xyz, c13
+    dp4 r0.z, r1, c10
+    dp4 r0.x, r1, c8
+    dp4 r0.y, r1, c9
+    mad r1.xyz, r0, c16.w, -v0
+    dp3 r0.zw, v2, r1
+    mul r0.xyz, -r0.z, v2
+    mad r2.xyz, -r0, c20.y, -r1
+    mov r1.w, c12.x
+    mul r0.x, c17, r1.w
+    mad r0.x, r0, c20.z, c20.w
+    frc r1.w, r0.x
+    mov o2.z, r0.w
+    dp3 r0.z, r2, c6
+    dp3 r0.x, r2, c4
+    dp3 r0.y, r2, c5
+    dp3 r0.y, r0, r0
+    rsq r0.y, r0.y
+    mad r1.w, r1, c21.x, c21.y
+    sincos r2.xy, r1.w
+    mul r3.xy, r0.y, r0.xzzw
+    mul r0.xy, r3, r2.yxzw
+    add r2.w, r0.x, r0.y
+    mov r2.y, -r2
+    dp3 o2.x, r1, v1
+    dp4 r0.w, v0, c3
+    mov r0.xyz, v1
+    mul r3.xy, r3, r2
+    mul r2.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r2
+    mul r0.xyz, r0, v1.w
+    dp3 o2.y, r1, r0
+    add r2.z, r3.x, r3.y
+    mov r1.z, c10.y
+    mov r1.x, c8.y
+    mov r1.y, c9
+    dp3 r2.y, r0, r1
+    dp3 r2.x, v1, r1
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 65 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --ignore-parse-errors 5B1CB83A.txt
+texldl r4, c220.z, s0
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
+    mul r1.xyz, r0.xyww, c20.w
+    mul r1.y, r1, c14.x
+    mad o4.xy, r2.zwzw, c20.w, c20.w
+    mov o4.zw, r2.xyxy
+    mad o6.xy, r1.z, c15.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 60 with shadertool.py
+    mov o3, v5
+    mov o6.zw, r0
+    mad o1.xy, v3, c19, c19.zwzw
+    mad o5.xy, v4, c18, c18.zwzw
+
+// approximately 60 instruction slots used
