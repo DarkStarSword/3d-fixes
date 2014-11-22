@@ -637,13 +637,15 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     dest = os.path.join(shader_dir, dest_name)
     if not args.force and os.path.exists(dest):
         debug('Skipping %s - already installed' % file)
-        return
+        return False
 
     if show_full_path:
         debug('Installing to %s...' % dest)
     else:
         debug('Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
+
+    return True # Returning success will allow ini updates
 
 def install_shader(shader, file, args):
     if not (isinstance(shader, (VS3, PS3))):
@@ -681,7 +683,7 @@ def install_shader_to_git(shader, file, args):
     alias = get_alias(game_dir)
     dest_dir = os.path.join(script_dir, alias)
 
-    install_shader_to(shader, file, args, dest_dir, True)
+    return install_shader_to(shader, file, args, dest_dir, True)
 
 def find_original_shader(file):
     game_dir = find_game_dir(file)
@@ -713,9 +715,11 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
         # FIXME: There could be a few reasons for this. For now I assume the
         # shader was already using the sampler, but it's also possible we have
         # simply already added the stereo texture.
+
         tree.stereo_sampler = tree._find_free_reg('s', None)
         print('WARNING: SHADER ALREADY USES %s! USING %s FOR STEREO SAMPLER INSTEAD!' % \
                 (tree.def_stereo_sampler, tree.stereo_sampler))
+
         if isinstance(tree, VertexShader):
             acronym = 'VS'
             quirk = 257
@@ -724,15 +728,14 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
             quirk = 0
         else:
             raise AssertionError()
-        crc = shaderutil.get_filename_crc(tree.filename)
-        section = '%s%s' % (acronym, crc)
-        # TODO: Actually modify the ini file directly when installing or
-        # modifying an already installed shader. For now we just print out
-        # these at the end:
-        dx9settings_ini.setdefault(section, [])
-        dx9settings_ini[section].append('; Shader already uses %s, so use %s instead:' % \
-                (tree.def_stereo_sampler, tree.stereo_sampler))
-        dx9settings_ini[section].append(('Def%sSampler' % acronym, str(quirk + tree.stereo_sampler.num)))
+
+        if not hasattr(tree, 'ini'):
+            tree.ini = []
+        tree.ini.append(('Def%sSampler' % acronym,
+            str(quirk + tree.stereo_sampler.num),
+            'Shader already uses %s, so use %s instead:' % \
+                (tree.def_stereo_sampler, tree.stereo_sampler)
+            ))
     else:
         tree.stereo_sampler = tree.def_stereo_sampler
 
@@ -1201,6 +1204,51 @@ def lookup_header_json(tree, index, file):
     headers.extend(tree)
     return headers
 
+def update_ini(tree):
+    '''
+    Right now this just updates our internal data structures to note any
+    changes we need to make to the ini file and we print these out before
+    exiting. TODO: Actually update the ini file for real (still should notify
+    the user).
+    '''
+    if not hasattr(tree, 'ini'):
+        return
+
+    if isinstance(tree, VertexShader):
+        acronym = 'VS'
+    elif isinstance(tree, PixelShader):
+        acronym = 'PS'
+    else:
+        raise AssertionError()
+
+    crc = shaderutil.get_filename_crc(tree.filename)
+    section = '%s%s' % (acronym, crc)
+    dx9settings_ini.setdefault(section, [])
+    for (k, v, comment) in tree.ini:
+        dx9settings_ini[section].append('; %s' % comment)
+        dx9settings_ini[section].append((k, v))
+
+def do_ini_updates():
+    if not dx9settings_ini:
+        return
+
+    # TODO: Merge these into the ini file directly. Still print a message
+    # for the user so they know what we've done.
+    print()
+    print()
+    print('!' * 79)
+    print('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
+    print('!' * 79)
+    print()
+    for section in dx9settings_ini:
+        print('[%s]' % section)
+        for line in dx9settings_ini[section]:
+            if isinstance(line, tuple):
+                print('%s = %s' % line)
+            else:
+                print(line)
+        print()
+
 def parse_args():
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
     parser.add_argument('files', nargs='+',
@@ -1337,6 +1385,7 @@ def main():
                 traceback.print_exc()
                 time.sleep(0.1)
                 continue
+            do_ini_updates()
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
             debug('Converting to Shader Model 3...')
@@ -1389,18 +1438,23 @@ def main():
         if not args.only_autofixed or tree.autofixed:
             if args.output:
                 print(tree, end='', file=args.output)
+                update_ini(tree)
             if args.in_place:
                 tmp = '%s.new' % real_file
                 print(tree, end='', file=open(tmp, 'w'))
                 os.rename(tmp, real_file)
+                update_ini(tree)
             if args.install:
-                install_shader(tree, file, args)
+                if install_shader(tree, file, args):
+                    update_ini(tree)
             if args.install_to:
-                install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True)
+                if install_shader_to(tree, file, args, os.path.expanduser(args.install_to), True):
+                    update_ini(tree)
             if args.to_git:
                 a = copy.copy(args)
                 a.force = True
-                install_shader_to_git(tree, file, a)
+                if install_shader_to_git(tree, file, a):
+                    update_ini(tree)
 
     if args.find_free_consts:
         if checked_vs:
@@ -1422,23 +1476,7 @@ def main():
                 debug('\nCAUTION: Address reg was applied offset from these consts:')
                 debug(', '.join(sorted(address_reg_ps)))
 
-    if dx9settings_ini:
-        # TODO: Merge these into the ini file directly. Still print a message
-        # for the user so they know what we've done.
-        print()
-        print()
-        print('!' * 79)
-        print('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
-        print('!' * 79)
-        print()
-        for section in dx9settings_ini:
-            print('[%s]' % section)
-            for line in dx9settings_ini[section]:
-                if isinstance(line, tuple):
-                    print('%s = %s' % line)
-                else:
-                    print(line)
-            print()
+    do_ini_updates()
 
 if __name__ == '__main__':
     sys.exit(main())
