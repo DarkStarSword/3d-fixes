@@ -5,6 +5,7 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 import shaderutil
 
 preferred_stereo_const = 220
+dx9settings_ini = {}
 
 reg_names = {
     'c': 'Referenced Constants',
@@ -715,6 +716,23 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
         tree.stereo_sampler = tree._find_free_reg('s', None)
         print('WARNING: SHADER ALREADY USES %s! USING %s FOR STEREO SAMPLER INSTEAD!' % \
                 (tree.def_stereo_sampler, tree.stereo_sampler))
+        if isinstance(tree, VertexShader):
+            acronym = 'VS'
+            quirk = 257
+        elif isinstance(tree, PixelShader):
+            acronym = 'PS'
+            quirk = 0
+        else:
+            raise AssertionError()
+        crc = shaderutil.get_filename_crc(tree.filename)
+        section = '%s%s' % (acronym, crc)
+        # TODO: Actually modify the ini file directly when installing or
+        # modifying an already installed shader. For now we just print out
+        # these at the end:
+        dx9settings_ini.setdefault(section, [])
+        dx9settings_ini[section].append('; Shader already uses %s, so use %s instead:' % \
+                (tree.def_stereo_sampler, tree.stereo_sampler))
+        dx9settings_ini[section].append(('Def%sSampler' % acronym, str(quirk + tree.stereo_sampler.num)))
     else:
         tree.stereo_sampler = tree.def_stereo_sampler
 
@@ -1403,6 +1421,24 @@ def main():
             if address_reg_ps:
                 debug('\nCAUTION: Address reg was applied offset from these consts:')
                 debug(', '.join(sorted(address_reg_ps)))
+
+    if dx9settings_ini:
+        # TODO: Merge these into the ini file directly. Still print a message
+        # for the user so they know what we've done.
+        print()
+        print()
+        print('!' * 79)
+        print('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
+        print('!' * 79)
+        print()
+        for section in dx9settings_ini:
+            print('[%s]' % section)
+            for line in dx9settings_ini[section]:
+                if isinstance(line, tuple):
+                    print('%s = %s' % line)
+                else:
+                    print(line)
+            print()
 
 if __name__ == '__main__':
     sys.exit(main())
