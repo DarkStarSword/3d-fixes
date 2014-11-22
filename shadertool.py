@@ -411,21 +411,24 @@ class ShaderBlock(SyntaxTree):
         for (k, v) in self.reg_types.items():
             pr_verbose('%s: %s' % (reg_names.get(k, k), ', '.join(sorted(v))))
 
-    def _find_free_reg(self, type, model, desired=0):
-        if type not in self.reg_types:
-            r = Register(type + str(desired))
-            self.reg_types[type] = RegSet([r])
+    def _find_free_reg(self, reg_type, model, desired=0):
+        if reg_type not in self.reg_types:
+            r = Register(reg_type + str(desired))
+            self.reg_types[reg_type] = RegSet([r])
             return r
+
+        if model is None:
+            model = type(self)
 
         # Treat all defined constants as taken, even if they aren't used (if we
         # were ever really tight on space we could discard unused local
         # constants):
-        taken = self.reg_types[type].union(self.local_consts)
-        for num in [desired] + list(range(model.max_regs[type])):
-            reg = type + str(num)
+        taken = self.reg_types[reg_type].union(self.local_consts)
+        for num in [desired] + list(range(model.max_regs[reg_type])):
+            reg = reg_type + str(num)
             if reg not in taken:
                 r = Register(reg)
-                self.reg_types[type].add(r)
+                self.reg_types[reg_type].add(r)
                 return r
 
     def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
@@ -704,13 +707,24 @@ def restore_original_shader(file):
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
+
+    if 's' in tree.reg_types and tree.def_stereo_sampler in tree.reg_types['s']:
+        # FIXME: There could be a few reasons for this. For now I assume the
+        # shader was already using the sampler, but it's also possible we have
+        # simply already added the stereo texture.
+        tree.stereo_sampler = tree._find_free_reg('s', None)
+        print('WARNING: SHADER ALREADY USES %s! USING %s FOR STEREO SAMPLER INSTEAD!' % \
+                (tree.def_stereo_sampler, tree.stereo_sampler))
+    else:
+        tree.stereo_sampler = tree.def_stereo_sampler
+
     if args.adjust_multiply and args.adjust_multiply != -1:
         w = args.adjust_multiply
-    tree.stereo_const = tree._find_free_reg('c', VS3, desired = preferred_stereo_const)
+    tree.stereo_const = tree._find_free_reg('c', None, desired = preferred_stereo_const)
     offset = 0
     offset += tree.insert_decl()
     offset += tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
-    offset += tree.insert_decl('dcl_2d', [tree.def_stereo_sampler])
+    offset += tree.insert_decl('dcl_2d', [tree.stereo_sampler])
     offset += tree.insert_decl()
     return tree.stereo_const, offset
 
@@ -769,7 +783,7 @@ def adjust_ui_depth(tree, args):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
     if args.condition:
@@ -792,7 +806,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x; convergence = tmp_reg.y
     tree.add_inst('add', [tmp_reg.w, pos_reg.w, -convergence])
     if args.use_mad and not args.adjust_multiply:
@@ -842,7 +856,7 @@ def auto_adjust_texcoords(tree, args):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x; convergence = tmp_reg.y
     tree.add_inst('mov', [pos_adj, pos_reg])
     tree.add_inst('add', [tmp_reg.w, pos_adj.w, -convergence])
@@ -1037,7 +1051,7 @@ def auto_fix_vertex_halo(tree, args):
     print('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.def_stereo_sampler]))
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
     separation = t.x; convergence = t.y
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
     pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
@@ -1096,7 +1110,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     disabled = stereo_const.xxxx
 
     append_vanity_comment(args, tree, 'Texcoord disabled by')
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
     if args.condition:
@@ -1138,7 +1152,7 @@ def disable_shader(tree, args):
     if args.disable == '1':
         disabled = stereo_const.yyyy
 
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.def_stereo_sampler])
+    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
     if args.condition:
