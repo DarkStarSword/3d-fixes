@@ -84,13 +84,6 @@ mad r20.x, -r31.w, r31.x, r20.x
     mul_pp r3.xyz, r0.w, r1
     mul r0.xyz, r0.y, r2
     dp3_pp r0.x, r3, r0
-    dp4 r0.z, r2, c2
-    cmp_pp r0.y, r0.x, c22.x, c22
-    cmp_pp r0.x, -r0, c22, c22.y
-    add_pp r5.z, r0.x, -r0.y
-    dp4 r0.y, r2, c1
-    rcp_pp r0.x, r0.w
-    add_pp r0.w, r0.x, c21.z
 
 // This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
 // For a detailed explanation of what we are doing here, see this thread:
@@ -108,6 +101,13 @@ add r31.w, r2.z, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
 mad r2.x, -r31.w, r30.x, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
 
+    dp4 r0.z, r2, c2
+    cmp_pp r0.y, r0.x, c22.x, c22
+    cmp_pp r0.x, -r0, c22, c22.y
+    add_pp r5.z, r0.x, -r0.y
+    dp4 r0.y, r2, c1
+    rcp_pp r0.x, r0.w
+    add_pp r0.w, r0.x, c21.z
     dp4 r0.x, r2, c0
     cmp r3.w, r0, c22.x, c22.y
     add r5.w, r3, c21

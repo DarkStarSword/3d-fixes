@@ -66,6 +66,26 @@
     mul r0.xyz, v1, r0.y
     rcp r0.w, r0.w
     mul r1.xyz, r0, r0.w
+
+// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+// Assumes the game is storing matrix columns in registers (highly likely)
+// c180 is the inverse of the MV matrix (From DX9Settings.ini)
+// c190 is the MVP matrix (From DX9Settings.ini)
+
+// Transpose first component of the MV.I matrix regs into r30:
+mov r30.x, c180.x
+mov r30.y, c181.x
+mov r30.z, c182.x
+mov r30.w, c183.x
+dp4 r30.x, r30, c190 // Calculate P[0,0]
+rcp r30.x, r30.x // Calculate P.I[0,0]
+
+// This is a variation of the stereo-correction formula for view-space coords:
+texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
+add r31.w, r1.z, -r31.y // r31.w = depth - convergence
+mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
+mad r1.x, r31.w, r30.x, r1.x // X += separation * (depth - convergence) * P.I[0,0]
+
     dp4 r4.w, r1, c0
     dp4 r3.w, r1, c2
     dp4 r6.z, r1, c1

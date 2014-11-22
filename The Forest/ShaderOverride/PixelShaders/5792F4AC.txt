@@ -40,6 +40,7 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
+
     ps_3_0
     dcl_2d s0
     dcl_2d s1
@@ -77,23 +78,6 @@ mad r20.x, -r31.w, r31.x, r20.x
     mul r1.xyz, r0, r0.w
     mov r1.w, c22.y
     dp4 r0.y, r1, r1
-    dp4 r3.w, r1, c2
-    mad_pp r2.xyz, r2, c21.x, c21.y
-    dp3_pp r0.x, r2, r2
-    rsq_pp r0.w, r0.x
-    rsq r0.y, r0.y
-    mul_pp r4.xyz, r0.w, r2
-    mul r0.xyz, r0.y, r1
-    dp3_pp r0.x, r4, r0
-    cmp_pp r0.y, -r0.x, c22.x, c22
-    cmp_pp r0.z, r0.x, c22.x, c22.y
-    rcp_pp r0.x, r0.w
-    add_pp r0.w, r0.x, c21.z
-    add_pp r5.w, r0.y, -r0.z
-    cmp r6.z, r0.w, c22.x, c22.y
-    mul_pp r0.xyz, r4, r5.w
-    add r4.w, r6.z, c21
-    cmp_pp r2.xyz, -r4.w, r4, r0
 
 // This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
 // For a detailed explanation of what we are doing here, see this thread:
@@ -111,6 +95,23 @@ add r31.w, r1.z, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
 mad r1.x, -r31.w, r30.x, r1.x // X -= separation * (depth - convergence) * P.I[0,0]
 
+    dp4 r3.w, r1, c2
+    mad_pp r2.xyz, r2, c21.x, c21.y
+    dp3_pp r0.x, r2, r2
+    rsq_pp r0.w, r0.x
+    rsq r0.y, r0.y
+    mul_pp r4.xyz, r0.w, r2
+    mul r0.xyz, r0.y, r1
+    dp3_pp r0.x, r4, r0
+    cmp_pp r0.y, -r0.x, c22.x, c22
+    cmp_pp r0.z, r0.x, c22.x, c22.y
+    rcp_pp r0.x, r0.w
+    add_pp r0.w, r0.x, c21.z
+    add_pp r5.w, r0.y, -r0.z
+    cmp r6.z, r0.w, c22.x, c22.y
+    mul_pp r0.xyz, r4, r5.w
+    add r4.w, r6.z, c21
+    cmp_pp r2.xyz, -r4.w, r4, r0
     dp4 r0.x, r1, c0
     dp4 r0.y, r1, c1
     mad_pp r1.w, r2.y, c22, c22
