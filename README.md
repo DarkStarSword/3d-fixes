@@ -12,13 +12,11 @@ these fixes.
 - The Book of Unwritten Tales 2 (Early Access - expect updates)
 - Montague's Mount
 - Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
+- World of Diving (Fixed halos, shadows, etc.)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
 - Miasmata (Partial high quality water fix, no longer need Aion profile)
-
-### Work in Progress ###
-- World of Diving (Fixed shadows, WIP tracking down remaining broken surface shaders)
 
 Misc
 ====
