@@ -13,6 +13,7 @@ these fixes.
 - Montague's Mount
 - Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
 - World of Diving (Fixed halos, shadows, etc.)
+- The Forest (Fixed halos, shadows)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
