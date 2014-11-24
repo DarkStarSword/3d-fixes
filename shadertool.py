@@ -322,7 +322,7 @@ class ShaderBlock(SyntaxTree):
     def __init__(self, tree, shader_start):
         newtree = []
         self.shader_start = shader_start
-        self.decl_end = 0
+        self.decl_end = next_line_pos(self, shader_start)
         in_dcl = True
         for (lineno, line) in enumerate(tree):
             if isinstance(line, Ignore):
@@ -533,14 +533,21 @@ def vs_to_shader_model_3_common(shader, shader_model, extra_fixups = {}):
 
     shader.__class__ = VS3
 
+def insert_converted_by(tree, orig_model):
+    pos = prev_line_pos(tree, tree.shader_start)
+    tree[tree.shader_start].append(WhiteSpace(' '))
+    tree[tree.shader_start].append(CPPStyleComment("// Converted from %s with DarkStarSword's shadertool.py" % orig_model))
+
 class VS11(VertexShader):
     def to_shader_model_3(self):
         # NOTE: Only very lightly tested!
         vs_to_shader_model_3_common(self, 'vs_1_1', {'mov': fixup_mova})
+        insert_converted_by(self, 'vs_1_1')
 
 class VS2(VertexShader):
     def to_shader_model_3(self):
         vs_to_shader_model_3_common(self, 'vs_2_0')
+        insert_converted_by(self, 'vs_2_0')
 
 class PS2(PixelShader):
     def to_shader_model_3(self):
@@ -562,6 +569,7 @@ class PS2(PixelShader):
         self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
         self.__class__ = PS3
+        insert_converted_by(self, 'ps_2_0')
 
 sections = {
     'vs_3_0': VS3,
@@ -896,13 +904,13 @@ def prev_line_pos(tree, position):
     for p in range(position, -1, -1):
         if isinstance(tree[p], NewLine):
             return p + 1
-    return len(tree)
+    return 0
 
 def next_line_pos(tree, position):
     for p in range(position, len(tree)):
         if isinstance(tree[p], NewLine):
             return p + 1
-    return len(tree)
+    return len(tree) + 1
 
 def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
     assert(direction == 1 or direction == -1)
