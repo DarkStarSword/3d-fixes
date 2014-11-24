@@ -705,7 +705,7 @@ def restore_original_shader(file):
     try:
         shutil.copyfile(find_original_shader(file), file)
     except OSError as e:
-        print(str(e))
+        debug(str(e))
 
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
@@ -717,7 +717,7 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
         # simply already added the stereo texture.
 
         tree.stereo_sampler = tree._find_free_reg('s', None)
-        print('WARNING: SHADER ALREADY USES %s! USING %s FOR STEREO SAMPLER INSTEAD!' % \
+        debug('WARNING: SHADER ALREADY USES %s! USING %s FOR STEREO SAMPLER INSTEAD!' % \
                 (tree.def_stereo_sampler, tree.stereo_sampler))
 
         if isinstance(tree, VertexShader):
@@ -928,7 +928,7 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
     tmp = reg
     if components:
         tmp += '.%s' % components
-    print("Scanning shader %s from line %i to %i for %s %s..." % (
+    debug("Scanning shader %s from line %i to %i for %s %s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             pos_to_line(tree, start), pos_to_line(tree, end - direction),
             {True: 'write to', False: 'read from'}[write],
@@ -957,18 +957,18 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
                 continue
             if not instr.args:
                 continue
-            # print('scanning %s' % instr)
+            # debug('scanning %s' % instr)
             if write:
                 dest = instr.args[0]
                 if is_match(dest):
-                    print('Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
+                    debug('Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
                     ret.append(Match(i, j, instr))
                     if stop:
                         return ret
             else:
                 for arg in instr.args[1:]:
                     if is_match(arg):
-                        print('Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
+                        debug('Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
                         ret.append(Match(i, j, instr))
                         if stop:
                             return ret
@@ -992,26 +992,26 @@ def auto_fix_vertex_halo(tree, args):
     #    temporary register was copied to it.
     results = scan_shader(tree, pos_out, write=True)
     if not results:
-        print("Couldn't find write to output position register")
+        debug("Couldn't find write to output position register")
         return
     if len(results) > 1:
         # FUTURE: We may be able to handle certain cases of this
-        print("Can't autofix a vertex shader writing to output position from multiple instructions")
+        debug("Can't autofix a vertex shader writing to output position from multiple instructions")
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
-        print('Output not using mov instruction: %s' % output_instr)
+        debug('Output not using mov instruction: %s' % output_instr)
         return
     temp_reg = output_instr.args[1]
     if not temp_reg.startswith('r'):
-        print('Output not moved from a temporary register: %s' % output_instr)
+        debug('Output not moved from a temporary register: %s' % output_instr)
         return
 
     # 3. Scan upwards to find where the X or W components of the temporary
     #    register was last set.
     results = scan_shader(tree, temp_reg.reg, components='xw', write=True, start=output_line - 1, direction=-1, stop=True)
     if not results:
-        print('WARNING: Output set from undefined register!!!?!')
+        debug('WARNING: Output set from undefined register!!!?!')
         return
     (temp_reg_line, temp_reg_linepos, temp_reg_instr) = results[0]
 
@@ -1033,7 +1033,7 @@ def auto_fix_vertex_halo(tree, args):
             components = ''.join(set(itertools.chain(*components)))
             tree.insert_instr(next_line_pos(tree, output_line))
             instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
-            print("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
+            debug("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
             tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
 
         # Actually do the relocation from 5 (FIXME: Move this up, being careful
@@ -1042,9 +1042,9 @@ def auto_fix_vertex_halo(tree, args):
         line.insert(0, CPPStyleComment('// '))
         line.append(WhiteSpace(' '))
         line.append(CPPStyleComment('// Relocated to line %i with shadertool.py' % pos_to_line(tree, relocate_to)))
-        print("Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
+        debug("Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
         tree.insert_instr(prev_line_pos(tree, output_line))
-        print("Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
+        debug("Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
         relocate_to += tree.insert_instr(prev_line_pos(tree, relocate_to))
         tree.insert_instr(prev_line_pos(tree, relocate_to), output_instr, 'Relocated from line %i with shadertool.py' % pos_to_line(tree, output_line))
         output_line = relocate_to
@@ -1060,7 +1060,7 @@ def auto_fix_vertex_halo(tree, args):
         #    the temporary register:
         results = scan_shader(tree, temp_reg.reg, write=False, start=output_line + 1, end=scan_until, stop=True)
         if not results:
-            print('No other reads of temporary variable found, nothing to fix')
+            debug('No other reads of temporary variable found, nothing to fix')
             return
 
     # 9. Insert stereo conversion after new location of move to output position.
@@ -1069,7 +1069,7 @@ def auto_fix_vertex_halo(tree, args):
     pos = next_line_pos(tree, output_line + offset)
     t = tree._find_free_reg('r', VS3)
 
-    print('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
+    debug('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
@@ -1083,28 +1083,28 @@ def auto_fix_vertex_halo(tree, args):
 def add_unity_autofog_VS3(tree):
     try:
         d = find_declaration(tree, 'dcl_fog')
-        print('Shader already has a fog output: %s' % d)
+        debug('Shader already has a fog output: %s' % d)
         return
     except:
         pass
 
     if 'o' in tree.reg_types and 'o9' in tree.reg_types['o']:
-        print('Shader already uses output o9')
+        debug('Shader already uses output o9')
         return
 
     pos_out = find_declaration(tree, 'dcl_position', 'o')
 
     results = scan_shader(tree, pos_out, write=True)
     if len(results) != 1:
-        print('Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
+        debug('Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
-        print('Output not using mov instruction: %s' % output_instr)
+        debug('Output not using mov instruction: %s' % output_instr)
         return
     temp_reg = output_instr.args[1]
     if not temp_reg.startswith('r'):
-        print('Output not moved from a temporary register: %s' % output_instr)
+        debug('Output not moved from a temporary register: %s' % output_instr)
         return
 
     fog_output = NewInstruction('mov', ['o9', temp_reg.z])
@@ -1187,14 +1187,14 @@ def disable_shader(tree, args):
 def lookup_header_json(tree, index, file):
     if len(tree) and len(tree[0]) and isinstance(tree[0][0], CPPStyleComment) \
             and tree[0][0].startswith('// CRC32'):
-                print('%s appears to already contain headers' % file)
+                debug('%s appears to already contain headers' % file)
                 return tree
 
     crc = shaderutil.get_filename_crc(file)
     try:
         headers = index[crc]
     except:
-        print('%s not found in header index' % crc)
+        debug('%s not found in header index' % crc)
         return tree
     headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
     headers = type(tree)(itertools.chain(*headers), None)
@@ -1234,20 +1234,20 @@ def do_ini_updates():
 
     # TODO: Merge these into the ini file directly. Still print a message
     # for the user so they know what we've done.
-    print()
-    print()
-    print('!' * 79)
-    print('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
-    print('!' * 79)
-    print()
+    debug()
+    debug()
+    debug('!' * 79)
+    debug('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
+    debug('!' * 79)
+    debug()
     for section in dx9settings_ini:
-        print('[%s]' % section)
+        debug('[%s]' % section)
         for line in dx9settings_ini[section]:
             if isinstance(line, tuple):
-                print('%s = %s' % line)
+                debug('%s = %s' % line)
             else:
-                print(line)
-        print()
+                debug(line)
+        debug()
 
 def parse_args():
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
@@ -1368,7 +1368,7 @@ def main():
 
     for file in args.files:
         if args.restore_original:
-            print('Restoring %s...' % file)
+            debug('Restoring %s...' % file)
             restore_original_shader(file)
             continue
 
@@ -1378,7 +1378,10 @@ def main():
 
         debug('parsing %s...' % file)
         try:
-            tree = parse_shader(open(file, 'r', newline=None).read(), args)
+            if file == '-':
+                tree = parse_shader(sys.stdin.read(), args)
+            else:
+                tree = parse_shader(open(file, 'r', newline=None).read(), args)
         except Exception as e:
             if args.ignore_parse_errors:
                 import traceback, time
