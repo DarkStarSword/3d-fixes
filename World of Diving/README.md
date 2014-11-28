@@ -10,6 +10,12 @@ Fixed
 - Sun depth no longer varies with convergence and is pinned at an appropriate
   depth.
 
+Update 2014-11-28
+-----------------
+- Fixed a few more surface shaders (watch faces)
+- Fixed screen on scuba-scooter moving to the right with UI depth
+- Fixed distortion effect on scuba-scooter in multiplayer
+
 Keys
 ----
 UI Depth adjustment (except mouse cursor):
