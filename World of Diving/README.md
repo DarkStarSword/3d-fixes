@@ -15,6 +15,7 @@ Update 2014-11-28
 - Fixed a few more surface shaders (watch faces)
 - Fixed screen on scuba-scooter moving to the right with UI depth
 - Fixed distortion effect on scuba-scooter in multiplayer
+- Made the shadow fix more reliable in a few situations.
 
 Keys
 ----
