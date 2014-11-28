@@ -321,8 +321,9 @@ class RegSet(set):
 class ShaderBlock(SyntaxTree):
     def __init__(self, tree, shader_start):
         newtree = []
-        self.shader_start = shader_start
-        self.decl_end = next_line_pos(self, shader_start)
+        if shader_start is not None:
+            self.shader_start = shader_start
+            self.decl_end = next_line_pos(self, shader_start)
         in_dcl = True
         for (lineno, line) in enumerate(tree):
             if isinstance(line, Ignore):
@@ -1206,8 +1207,8 @@ def lookup_header_json(tree, index, file):
         return tree
     headers = [ (CPPStyleComment(x), NewLine('\n')) for x in headers.split('\n') ]
     headers = type(tree)(itertools.chain(*headers), None)
-    headers.shader_start = len(headers) + tree.shader_start
     headers.append(NewLine('\n'))
+    headers.shader_start = len(headers) + tree.shader_start
     headers.decl_end = len(headers) + tree.decl_end
     headers.extend(tree)
     return headers
