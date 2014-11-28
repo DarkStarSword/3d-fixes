@@ -10,7 +10,7 @@ Fixed
 - Sun depth no longer varies with convergence and is pinned at an appropriate
   depth.
 
-Update 2014-11-28
+Update 2014-11-29
 -----------------
 - Fixed a few more surface shaders (watch faces)
 - Fixed screen on scuba-scooter moving to the right with UI depth
@@ -46,6 +46,10 @@ Known Issues
 ------------
 - Like many Unity games, the mouse cursor depth cannot be adjusted as it uses a
   hardware cursor. Press 5 when in a menu to bring the UI back to screen depth.
+- Shadows may occasionally break after using the scuba-scooter or camera. If
+  this happens just look around or pull out the scuba-scooter momentarily to
+  fix them. This occurs when the FOV changes while none of the shaders I pull
+  the FOV from are active in the scene.
 
 Notes
 -----
