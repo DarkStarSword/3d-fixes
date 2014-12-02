@@ -11,6 +11,7 @@ Fixed
 -----
 - Halos on all surfaces
 - Light, shadows and specular highlights
+- Pedometer screen alignment
 
 Convergence Presets
 -------------------
@@ -31,7 +32,6 @@ later after I've played that game.
 - Ambient occlusion makes some surfaces appear to shadowed slightly differently
   in each eye. I'd still suggest leaving it on, because it adds a lot of visual
   fidelity to the game.
-- Screen on pedometer is misaligned and varies with convergence.
 - Mouse cursor is at screen depth
 
 Notes
