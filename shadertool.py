@@ -205,7 +205,7 @@ class Register(str):
         ret.absolute = match.group('absolute') or ''
         ret.type = match.group('type')
         ret.num = match.group('num')
-        ret.reg = ret.type + ret.num
+        ret.reg = ret.type + ret.num # FIXME: Turn into property
         ret.address_reg = match.group('address_reg')
         if ret.num:
             ret.num = int(ret.num)
@@ -553,19 +553,22 @@ class VS2(VertexShader):
 class PS2(PixelShader):
     def to_shader_model_3(self):
         def fixup_ps2_dcl(tree, node, parent, idx):
-            node.opcode = 'dcl_texcoord'
             reg = node.args[0]
-            if reg.type != 't':
-                return
-            if reg.num:
-                node.opcode = 'dcl_texcoord%d' % reg.num
+            if reg.type == 'v':
+                node.opcode = 'dcl_color'
+                if reg.num:
+                    node.opcode = 'dcl_color%d' % reg.num
+            elif reg.type == 't':
+                node.opcode = 'dcl_texcoord'
+                if reg.num:
+                    node.opcode = 'dcl_texcoord%d' % reg.num
             node[0] = node.opcode
         self.analyse_regs()
         replace_regs = {}
 
         if 't' in self.reg_types:
             for reg in sorted(self.reg_types['t']):
-                replace_regs[reg.reg] = Register('v%d' % reg.num)
+                replace_regs[reg.reg] = new_reg = self._find_free_reg('v', PS3)
 
         self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
