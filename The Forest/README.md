@@ -1,6 +1,8 @@
 The Forest
 ==========
 
+**Updated 2014-12-03**
+
 Installation Instructions
 -------------------------
 1. Extract the zip file to the game directory
@@ -12,14 +14,18 @@ Fixed
 - Halos on all surfaces
 - Light, shadows and specular highlights
 - Pedometer screen alignment
+- Certain UI elements that were drawn at screen depth pushed back (e.g. camp &
+  build HUD icons). The number row will adjust the depth of these icons, but
+  note that most of the UI was already at a good depth in this game out of the
+  box and is not adjustable.
 
 Convergence Presets
 -------------------
-Two convergence presets are provided on [ and ] for convenience. The preset on
-] will be selected automatically when the game is started. To save your own
-presets, first, press the button you want to edit, then adjust the convergence
-and separation with the standard nVidia keys (Ctrl+F5/F6 is advanced keys are
-enabled in the control panel) and finally press F7 to save.
+Two convergence presets are provided on [ and ] keys for convenience. The
+preset on ] will be selected automatically when the game is started. To save
+your own presets, first, press the button you want to edit, then adjust the
+convergence and separation with the standard nVidia keys (Ctrl+F5/F6 is
+advanced keys are enabled in the control panel) and finally press F7 to save.
 
 Known Issues
 ------------
@@ -28,13 +34,14 @@ files finally repaired my Far Cry 4 installation, so I'll come back to these
 later after I've played that game.
 
 - Glow & sun shafts around the sun & moon is at wrong depth
-- Some HUD icons are at screen depth
 - Ambient occlusion makes some surfaces appear to shadowed slightly differently
   in each eye. I'd still suggest leaving it on, because it adds a lot of visual
-  fidelity to the game.
+  fidelity to the game. Increasing it to high helps a little.
 - Mouse cursor is at screen depth
+- The first time the crafting book is opened the tutorial messages are at the
+  wrong depth.
 
 Notes
 -----
 This is an early access game with regular updates, and as such the fix may get
-broken by an update. Please let me know if you see any issues after an update.
+Broken by an update. Please let me know if you see any issues after an update.
