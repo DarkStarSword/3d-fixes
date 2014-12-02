@@ -12,6 +12,14 @@ Fixed
 - Halos on all surfaces
 - Light, shadows and specular highlights
 
+Convergence Presets
+-------------------
+Two convergence presets are provided on [ and ] for convenience. The preset on
+] will be selected automatically when the game is started. To save your own
+presets, first, press the button you want to edit, then adjust the convergence
+and separation with the standard nVidia keys (Ctrl+F5/F6 is advanced keys are
+enabled in the control panel) and finally press F7 to save.
+
 Known Issues
 ------------
 There's only a few minor issues I haven't tracked down yet, but uplay's verify
