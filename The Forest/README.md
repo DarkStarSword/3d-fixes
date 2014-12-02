@@ -21,11 +21,15 @@ Fixed
 
 Convergence Presets
 -------------------
-Two convergence presets are provided on [ and ] keys for convenience. The
-preset on ] will be selected automatically when the game is started. To save
-your own presets, first, press the button you want to edit, then adjust the
-convergence and separation with the standard nVidia keys (Ctrl+F5/F6 is
-advanced keys are enabled in the control panel) and finally press F7 to save.
+- [: (Default) Sets a good convergence for most of the game (0.4) with the
+  crafting book pretty close to the mouse cursor.
+- ]: Sets a higher convergence (2.5) that will bring the inventory closer to
+  the mouse cursor.
+
+You can save your own custom convergence & separation preset to these buttons.
+First, press the button you want to edit, then adjust the convergence and
+separation with the standard nVidia keys (Ctrl+F5/F6 if advanced keys are
+enabled in the control panel) and finally press F7 to save.
 
 Known Issues
 ------------
