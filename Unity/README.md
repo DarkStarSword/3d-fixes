@@ -33,6 +33,16 @@ disabled. If you aren't able to find the correct one, try disabling pixel
 shaders until the broken surface changes to a solid colour, then use the number
 next to PixelPair to identify the corresponding vertex shader.
 
+builtin\_shaders
+----------------
+This contains an __experimental and incomplete__ fix to the Unity lighting
+shader source code to work with Helix mod. This is only suitable for use for
+games using the vanilla Unity lighting shader and the variantes of the compiled
+result will need to be matched up with the original CRCs for replacement.
+
+This is currently missing the fix to the Internal-PrePassCollectShadows shader
+and the screen/directional variants of Internal-PrePassLighting.
+
 Information for Developers
 --------------------------
 The files here are designed for use with Helix Mod to fix a game after the
