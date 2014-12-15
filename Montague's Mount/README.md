@@ -1,46 +1,54 @@
 Montague's Mount
 ================
 
-Update v3:
-----------
-- Fixed bloom around lights once electricity has been turned on
+Update v4 (2014-12-16):
+-----------------------
+This is a major update that removes the need for the profile change, fixes
+shadows correctly and can work with any FOV. If you have previously assigned
+this game to the Aion or Harry Potter profiles with nVidia inspector, you
+should remove it from any profiles it is in.
+
+- Fixed all Unity surface shaders, removing the need for the profile change.
+  This drastically improves the stability of the fix and should eliminate
+  the flickering issues (except those present in 2D).
+- Added my Unity lighting shader fix, which correctly fixes shadow alignment
+  issues and will work with any FOV. This also fixes some lighting related
+  rendering issues noticable in the water.
+- Forced shadow maps to mono, which fixes some shadow alignment issues on the
+  spot lights on the dock.
+- Fixed minor halo in water near rocks
+- Added two convergence presets on [ and ] keys for convienience.
+
+I have checked most areas, but haven't replayed the entire game with this
+update, so please let me know if you see any surfaces rendering incorrectly.
+
+Update v3 (2014-10-18):
+-----------------------
+- Fixed halo around lights once electricity has been turned on
 - Approximate fix for interior and spot light shadows
 - Inventory text depth fixed
 
-Update v2:
-----------
+Update v2 (2014-10-16):
+-----------------------
 - Shadows fixed thanks to 4everAwake
 - Lens flare fixed
 - Switched to use the Harry Potter profile by default, which seems a little
   more stable than the Aion profile (still sometimes see flickering - alt+tab
   out and in until it goes away).
 
-**RECOMMENDED: Use nVidia Inspector to assign this game to the "Harry Potter -
-Deathly Hollows Part1" profile.** The game will try to use this profile
-automatically, but it doesn't always work (and can randomly stop working) -
-much better to manually assign it with nVidia inspector.
+v1 (2014-10-14):
+----------------
+- Surfaces fixed by profile (unstable)
+- Disabled shadows
 
-**If the shadows are broken or you are seeing severe flickering or haloing on
-some surfaces try alt+tabbing out and in of the game (you may need to try
-several times)** - both Helix mod and the driver profile seem to be really
-inconsistent with this game.
-
-Do not change the FOV from the default value of 65 - I realise that is lower
-than some people would like, but the shadow fix would have to be recalibrated
-for different FOV settings. I wasn't able to get shadows from interior lights
-to line up perfectly at all distances from the camera, so I chose the best
-value I could for each. Exterior shadows don't have this issue.
-
-The HUD depth can be customised with the keys on the number row, and tilde to
-return to screen depth.
-
-Troubleshooting
----------------
-For some reason Helix mod doesn't always engage when launching the game, (easy
-to tell as the shadows will be broken and the HUD depth customisation won't
-work) - try disabling and enabling 3D or alt+tabbing out and in until it works.
-
-If you get flickering on some surfaces like the grass, try alt+tabbing out and
-in a few times until it stops *and* the shadows look right (may take a few
-attempts). Make sure the game is assigned to the Harry Potter profile and not
-Aion, since the Harry Potter profile seems to be a bit more reliable.
+Notes
+-----
+- The HUD depth can be customised with the keys on the number row, and tilde to
+  return to screen depth.
+- Two convergence presets are provided on the [ and ] keys for convienience.
+- If the FOV is set very high the lens flare may look a bit off when it is near
+  the side of the screen.
+- If you see rendering issues in the game, try pressing [, or adjusting the
+  separation or convergence or alt+tabbing out and in of the game. This doesn't
+  seem to happen for me anymore, so it may have been related to the profile
+  used in previous versions of the fix.

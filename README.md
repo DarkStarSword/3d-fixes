@@ -10,7 +10,7 @@ these fixes.
 ### Complete Fixes ###
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
 - The Book of Unwritten Tales 2 (Early Access - expect updates)
-- Montague's Mount
+- Montague's Mount (Fixes halos, shadows, etc.)
 - Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
 - World of Diving (Fixed halos, shadows, etc.)
 - The Forest (Fixed halos, shadows)
