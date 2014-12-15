@@ -125,7 +125,7 @@ dcl_2d s0
 mov o0, r2 // Relocated from line 121 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 1DF3400A.txt
+// shadertool.py -i -f --auto-fix-vertex-halo --adjust-multiply=0.5 --adjust=texcoord4 VertexShader_14_CRC32_1DF3400A.txt
 texldl r10, c220.z, s0
 add r10.w, r2.w, -r10.y
 mad r2.x, r10.w, r10.x, r2.x
@@ -144,11 +144,20 @@ mad r2.x, r10.w, r10.x, r2.x
     mov r0.z, c8.x
     mad r1, c15, r0.z, r2.xyxy
     mov o4.zw, r2
-    mov o5.zw, r2
-    mul o5.xy, r0, c22.y
+    mov r12.zw, r2
+    mul r12.xy, r0, c22.y
     mul o3, r1, c14
     mov_sat o2.w, r0
     add o2.xyz, r7, -c9
     mov o1.w, c23.y
 
 // approximately 183 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f --auto-fix-vertex-halo --adjust-multiply=0.5 --adjust=texcoord4 VertexShader_14_CRC32_1DF3400A.txt
+texldl r11, c220.z, s0
+add r11.w, r12.w, -r11.y
+mul r11.w, r11.w, r11.x
+mul r11.w, r11.w, c220.w
+add r12.x, r12.x, r11.w
+mov o5, r12
