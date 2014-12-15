@@ -447,14 +447,9 @@ texldl r31, c220.z, s0 // r31.x = separation, r31.y = convergence
     dp4 r1.y, v0, c1
     dp4 r1.x, v0, c0
 
-mov r25, c251
-if_eq r25.x, c220.x
-	// We matched the texture used for both the bloom (which doesn't need
-	// to be fixed) and the lens flare (which does need to be fixed).
-
-	// The bloom effects are drawn at the correct distance into the scene,
-	// while the lens flare is drawn very close to 0, depending on the
-	// angle, so we try to match the lens flare based on it's depth:
+// The bloom effects are drawn at the correct distance into the scene,
+// while the lens flare is drawn very close to 0, depending on the
+// angle, so we try to match the lens flare based on it's depth:
 if_gt r1.w, c221.x // > 0.05
 if_lt r1.w, c221.y // < 0.1
 	// The lens flare depth varies wildly with convergence, so first, undo
@@ -467,11 +462,6 @@ if_lt r1.w, c221.y // < 0.1
 	mul r31.w, r31.x, c220.y
 	add r1.x, r1.x, r31.w
 endif
-endif
-else
-	// Didn't match the lens flare/bloom texture, so this must be the UI -
-	// adjust depth to c200.z * separation:
-	mad r1.x, c200.z, r31.x, r1.x
 endif
 
 mov o1, r1
