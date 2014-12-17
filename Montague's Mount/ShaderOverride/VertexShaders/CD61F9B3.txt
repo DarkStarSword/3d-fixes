@@ -434,10 +434,12 @@ dcl_texcoord o0
 dcl_position o1
 dcl_color o2
 
-
 def c220, 0, 0.1, 0.0625, 0.5
 def c221, 0.05, 0.1, 0, 0
 dcl_2d s0
+dcl_2d s1 // _CameraDepthTexture copied from lighting shaders
+dcl_2d s2 // DepthWReg
+
 texldl r31, c220.z, s0 // r31.x = separation, r31.y = convergence
 
     mov o2, v1
@@ -471,7 +473,17 @@ endif
 else
 	// Didn't match the lens flare/bloom texture, so this must be the UI -
 	// adjust depth to c200.z * separation:
-	mad r1.x, c200.z, r31.x, r1.x
+	//mad r1.x, c200.z, r31.x, r1.x
+	mov r29.xy, c220.ww
+	texldl r30.x, r29, s1 // Load _CameraDepthTexture(0.5, 0.5)
+	//texldl r30.x, r29, s2 // Load Depth buffer(0.5, 0.5)
+
+	mad r30.y, r30.x, c230.x, c230.y
+	rcp r30.z, r30.y
+
+	add r31.w, r30.z, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r1.x, r1.x, r31.w
 endif
 
 mov o1, r1
