@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, re, time
 
@@ -22,7 +22,7 @@ def archive():
 
 		game = match.group('game')
 		if not os.path.exists(game):
-			os.mkdir(game, 0700)
+			os.mkdir(game, 0o0700)
 		elif not os.path.isdir(game):
 			raise TypeError("%s is not a directory" % game)
 
@@ -35,7 +35,7 @@ def archive():
 
 		print('%s -> %s' % (filename, new_filename))
 		os.rename(filename, new_filename)
-		os.chmod(new_filename, 0600)
+		os.chmod(new_filename, 0o0600)
 
 def main():
 	while True:
