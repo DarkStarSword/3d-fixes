@@ -102,3 +102,10 @@ by any chance?).
 
 ### interlaced2jps.py ###
 Converts an interlaced image into a jps file
+
+### screenshot_archive.py ###
+This script periodically sorts all 3D screenshots into directories for the
+games they are from and renames them to include the date and time they were
+taken.
+
+Place it in the Documents\NVStereoscopic3D.IMG directory and run it.
