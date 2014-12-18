@@ -99,3 +99,6 @@ The idea here is to narrow down the list of render targets in the LOG.txt when
 searching for a surface that needs to be stereoised - e.g. you can match the
 FourCC with a Format and the Width & Height (Possibly Levels - is that mip-maps
 by any chance?).
+
+### interlaced2jps.py ###
+Converts an interlaced image into a jps file
