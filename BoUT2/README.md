@@ -1,7 +1,7 @@
-The Book of Unwritten Tales 2 (Chapters 1 - 3)
+The Book of Unwritten Tales 2 (Chapters 1 - 4)
 ==============================================
 
-The fix has been updated for Chapters 2 & 3.
+The fix has been updated for Chapters 1 - 4.
 
 Shadows are now fixed. If you have installed a previous version of this fix, be
 sure to delete the ShaderOverride folder before installing the new version,
@@ -9,16 +9,16 @@ otherwise shadows will still be disabled.
 
 Fixed
 -----
-- Shadows
+- Shadows, halos, etc.
 - Can adjust depth of in-game text and icons (item descriptions, subtitles,
   inventory, etc) by pressing keys on the number row. `~ will set screen depth,
   1-9 will set depth to 10%-90% and 0 sets depth to 100% separation.
-- Halo on fog fixed
-- Halo on magnifying glass' light beam fixed
 - Four convergence presets are provided: L sets a reasonable convergence for
   most of the game and K sets a lower convergence suitable for the drunken
   punch minigame in chapter 2. ; and ' will set higher convergence for more
   pop, but can be too high for some scenes.
+- Automatic depth presets used in various scenes (menu, books, maps) to put
+  them at a reasonable depth.
 
 Known Issues
 ------------
@@ -27,8 +27,11 @@ Known Issues
 - There's a few scenes in the game where the background is little more than a
   pre-rendered texture drawn over extremely simplified 3D geometry that doesn't
   really look very convincing in 3D. Fortunately there are only a few of these
-  (mostly when talking to other characters) and outside of them the 3D looks
-  fantastic!
+  (mostly when talking to other characters, and mostly in chapter 1) and
+  outside of them the 3D looks fantastic!
+- A recent update changed the fullscreen mode and prevents the recommended
+  convergence preset from being activated automatically when the game is
+  launched. Press L to manually activate the preset after launching the game.
 
 Installation
 ------------
