@@ -1,0 +1,83 @@
+    vs_3_0
+    dcl_fog o9
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c24, 0.0996093825, 0.5, 1, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord1 v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r0.xyz, r0, v1.w
+    mov r1.xyz, c16
+    mov r1.w, c24.z
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c19.w, -v0
+    dp3 o7.y, r2, r0
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    mov r0.w, c24.z
+    dp4 r0.z, v0, c6
+    dp4 r3.z, r0, c14
+    dp4 r3.x, r0, c12
+    dp4 r3.y, r0, c13
+    mul r0.xy, r3.xzzw, c21
+    mul r0.zw, r0.xyxy, c24.x
+    mul r0.xy, r3.zyzw, c22
+    mul r0.xy, r0, c24.x
+    add o3.zw, r0, c21
+    mul r0.zw, r3.xyxz, c20.xyxy
+    mov o2.xyz, r3
+    mul r3.zw, r0, c24.x
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp3 o7.z, v2, r2
+    dp3 o7.x, r2, v1
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+    add o3.xy, r0, c22.zwzw
+
+mov o0, r1 // Relocated from line 64 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git 8C8BF919.txt
+texldl r4, c220.z, s0
+add r4.w, r1.w, -r4.y
+mad r1.x, r4.w, r4.x, r1.x
+
+    mul r0.xyz, r1.xyww, c24.y
+    mul r0.y, r0, c17.x
+    mad o5.xy, r0.z, c18.zwzw, r0
+    mul r0.xyz, v2, c19.w
+    dp3 r2.z, r0, c6
+    dp3 r2.x, r0, c4
+    dp3 r2.y, r0, c5
+    mul r0.xy, r3, c22
+    mul r0.xy, r0, c24.x
+    add o4.zw, r3, c20
+    dp3 o1.z, r2, c14
+    dp3 o1.y, r2, c13
+    dp3 o1.x, r2, c12
+    add o4.xy, r0, c22.zwzw
+
+//     mov o0, r1 // Relocated to line 50 with shadertool.py
+    mov o9, r1.z
+    mov o5.zw, r1
+    mad o6.xy, v3, c23, c23.zwzw
+
+// approximately 52 instruction slots used

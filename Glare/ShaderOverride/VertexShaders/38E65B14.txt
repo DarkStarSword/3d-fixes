@@ -1,0 +1,124 @@
+// CRC32: 38E65B14 | Unity headers extracted from PhosticPoolShader.shader
+// Shader "Custom/PhosticPoolShader" {
+//   Properties {
+//    _EmitColor ("Emit Color", Color) = (0.5,0.5,0.5,1)
+//    _CorruptionColor ("Corruption Color", Color) = (1,0,0,1)
+//    _CorruptedPercent ("Corrupted percent", Range(0,1)) = 0
+//    _MainTex ("Base (RGB)", 2D) = "white" {}
+//    _Corruption ("Corruption (RGB)", 2D) = "white" {}
+//    _Bump ("Normal Map", 2D) = "bump" {}
+//    _Distort ("Distortion Map", 2D) = "bump" {}
+//    _PoolPucker ("PoolPucker", 2D) = "bump" {}
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord2
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Matrix 8 [_World2Object]
+//           Vector 12 [_ProjectionParams]
+//           Vector 13 [_ScreenParams]
+//           Vector 14 [_WorldSpaceLightPos0]
+//           Vector 15 [unity_SHAr]
+//           Vector 16 [unity_SHAg]
+//           Vector 17 [unity_SHAb]
+//           Vector 18 [unity_SHBr]
+//           Vector 19 [unity_SHBg]
+//           Vector 20 [unity_SHBb]
+//           Vector 21 [unity_SHC]
+//           Vector 22 [unity_Scale]
+//           Vector 23 [_MainTex_ST]
+//           Vector 24 [_Distort_ST]
+//           Vector 25 [_PoolPucker_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c26, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r1.xyz, v2, c22.w
+    dp3 r2.w, r1, c5
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r2.w
+    mul r1, r0.xyzz, r0.yzzx
+    mov r0.w, c26.x
+    dp4 r2.z, r0, c17
+    dp4 r2.y, r0, c16
+    dp4 r2.x, r0, c15
+    mul r0.y, r2.w, r2.w
+    dp4 r3.z, r1, c20
+    dp4 r3.y, r1, c19
+    dp4 r3.x, r1, c18
+    mad r0.x, r0, r0, -r0.y
+    mul r1.xyz, r0.x, c21
+    add r2.xyz, r2, r3
+    mov r0.xyz, v1
+    add o4.xyz, r2, r1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r1.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r0, c10
+    dp4 r3.z, c14, r0
+    mov r0, c9
+    dp4 r3.y, c14, r0
+    mul r2.xyz, r1, v1.w
+    mov r1, c8
+    dp4 r3.x, c14, r1
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 104 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git 38E65B14.txt
+texldl r4, c220.z, s0
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
+    mul r1.xyz, r0.xyww, c26.y
+    mul r1.y, r1, c12.x
+    dp3 o3.y, r3, r2
+    dp3 o3.z, v2, r3
+    dp3 o3.x, r3, v1
+    mad o5.xy, r1.z, c13.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 98 with shadertool.py
+    mov o5.zw, r0
+    mad o1.zw, v3.xyxy, c24.xyxy, c24
+    mad o1.xy, v3, c23, c23.zwzw
+    mad o2.xy, v3, c25, c25.zwzw
+
+// approximately 44 instruction slots used

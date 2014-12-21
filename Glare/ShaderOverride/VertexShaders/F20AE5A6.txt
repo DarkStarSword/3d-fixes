@@ -1,0 +1,188 @@
+// CRC32: F20AE5A6 | Matched 4 variants of 2 shaders: Swaying Bumped Diffuse, Transparent/Cutout/Swaying Bumped Diffuse
+// 
+//    Unity headers extracted from SwayingNormal-Bumped.shader
+//    Shader "Swaying Bumped Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_Time]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_SHAr]
+//              Vector 12 [unity_SHAg]
+//              Vector 13 [unity_SHAb]
+//              Vector 14 [unity_SHBr]
+//              Vector 15 [unity_SHBg]
+//              Vector 16 [unity_SHBb]
+//              Vector 17 [unity_SHC]
+//              Vector 18 [unity_Scale]
+//              Float 19 [_Wave]
+//              Float 20 [_Speed]
+//              Float 21 [_Min]
+//              Float 22 [_Max]
+//              Vector 23 [_MainTex_ST]
+//              Vector 24 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from SwayingAlphaTest-Bumped.shader
+//    Shader "Transparent/Cutout/Swaying Bumped Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Transparent/Cutout/Diffuse"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_Time]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_SHAr]
+//              Vector 12 [unity_SHAg]
+//              Vector 13 [unity_SHAb]
+//              Vector 14 [unity_SHBr]
+//              Vector 15 [unity_SHBg]
+//              Vector 16 [unity_SHBb]
+//              Vector 17 [unity_SHC]
+//              Vector 18 [unity_Scale]
+//              Float 19 [_Wave]
+//              Float 20 [_Speed]
+//              Float 21 [_Min]
+//              Float 22 [_Max]
+//              Vector 23 [_MainTex_ST]
+//              Vector 24 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c25, -0.0208333302, -0.125, 1, 0.5
+    // Discarded sincos constant c26
+    def c27, 2, 0, 0.159154907, 0.5
+    def c28, 6.28318501, -3.14159298, 0, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r1.xyz, v2, c18.w
+    dp3 r1.w, r1, c5
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r1.w
+    mov r0.w, c25.z
+    mul r2, r0.xyzz, r0.yzzx
+    dp4 r1.z, r0, c13
+    dp4 r1.y, r0, c12
+    dp4 r1.x, r0, c11
+    mov r0.w, c4
+    add r0.z, c5.w, r0.w
+    add r0.y, r0.z, c6.w
+    mul r0.w, r0.y, c27.x
+    slt r0.z, r0, -c6.w
+    max r0.z, -r0, r0
+    slt r0.z, c27.y, r0
+    abs r0.w, r0
+    frc r0.w, r0
+    dp4 r3.z, r2, c16
+    add r3.x, -r0.z, c25.z
+    mul r0.w, r0, c25
+    mul r3.x, r0.w, r3
+    mad r0.w, r0.z, -r0, r3.x
+    mov r0.z, c8.y
+    dp4 r3.y, r2, c15
+    dp4 r3.x, r2, c14
+    add r3.xyz, r1, r3
+    add r0.w, r0, c25
+    mul r0.z, c20.x, r0
+    mad r0.y, r0.z, r0.w, r0
+    mul r0.z, r1.w, r1.w
+    mad r1.y, r0.x, r0.x, -r0.z
+    mul r4.xyz, r1.y, c17
+    mad r0.y, r0, c27.z, c27.w
+    frc r0.y, r0
+    mad r1.x, r0.y, c28, c28.y
+    sincos r0.xy, r1.x
+    mov r0.x, c22
+    mov r1.yzw, v0
+    add r0.x, -c21, r0
+    add r0.z, v0.y, -c21.x
+    min r0.z, r0.x, r0
+    mul r0.x, r0.y, c19
+    max r0.y, r0.z, c27
+    mad r1.x, r0, r0.y, v0
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+
+mov o3, r0 // Relocated from line 169 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git F20AE5A6.txt
+texldl r5, c220.z, s0
+add r5.w, r0.w, -r5.y
+mad r0.x, r5.w, r5.x, r0.x
+
+    mul r2.xyz, r0.xyww, c25.w
+    mul r2.y, r2, c9.x
+    add o2.xyz, r3, r4
+    mad o1.xy, r2.z, c10.zwzw, r2
+
+//     mov o3, r0 // Relocated to line 165 with shadertool.py
+    mov o1.zw, r0
+    mad o0.zw, v3.xyxy, c24.xyxy, c24
+    mad o0.xy, v3, c23, c23.zwzw
+
+// approximately 65 instruction slots used

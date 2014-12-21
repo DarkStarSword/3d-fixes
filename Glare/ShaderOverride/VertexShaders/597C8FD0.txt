@@ -1,0 +1,92 @@
+// CRC32: 597C8FD0 | Unity headers extracted from Tp_Building_VertexBlend.shader
+// Shader "Triplanar Textures/Triplanar Building VertexBlend (Bumped)" {
+//   Properties {
+//    _Tiling ("Tiling", Float) = 1
+//    _Power ("Projection Power", Float) = 5
+//    _UseNormalMaps ("Use Normal Maps", Range(0,1)) = 1
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _RedColor ("Red Color", Color) = (1,1,1,1)
+//    _RedDiffuseSpecular ("Red Diffuse Specular", 2D) = "black" {}
+//    _RedNormal ("Red Normal", 2D) = "normal" {}
+//    _GreenColor ("Green Color", Color) = (1,1,1,1)
+//    _GreenDiffuseSpecular ("Green Diffuse Specular", 2D) = "black" {}
+//    _GreenNormal ("Green Normal", 2D) = "normal" {}
+//    _BlueColor ("Blue Color", Color) = (1,1,1,1)
+//    _BlueDiffuseSpecular ("Blue Diffuse Specular", 2D) = "black" {}
+//    _BlueNormal ("Blue Normal", 2D) = "normal" {}
+//   }
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 12 [_ProjectionParams]
+//           Vector 13 [_ScreenParams]
+//           Vector 14 [unity_Scale]
+//           Vector 15 [unity_LightmapST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    def c16, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord1 v3
+    dcl_color v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 66 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git 597C8FD0.txt
+texldl r4, c220.z, s0
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
+    mul r1.xyz, r0.xyww, c16.x
+    mul r1.y, r1, c12.x
+
+//     mov o0, r0 // Relocated to line 64 with shadertool.py
+    rcp r0.x, c14.w
+    slt r3.xyz, v2, -v2
+    slt r2.xyz, -v2, v2
+    add o2.xyz, r2, -r3
+    mad o6.xy, r1.z, c13.zwzw, r1
+    mov o1, v4
+    mov o6.zw, r0
+    mul o3.xyz, v0, r0.x
+    mov o4.xyz, v2
+    mad o5.xy, v3, c15, c15.zwzw
+
+// approximately 17 instruction slots used

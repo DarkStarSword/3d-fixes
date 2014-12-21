@@ -1,0 +1,156 @@
+// CRC32: 94274248 | Matched 4 variants of 2 shaders: Swaying Bumped Diffuse, Transparent/Cutout/Swaying Bumped Diffuse
+// 
+//    Unity headers extracted from SwayingNormal-Bumped.shader
+//    Shader "Swaying Bumped Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_Time]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Float 15 [_Wave]
+//              Float 16 [_Speed]
+//              Float 17 [_Min]
+//              Float 18 [_Max]
+//              Vector 19 [unity_LightmapST]
+//              Vector 20 [_MainTex_ST]
+//              Vector 21 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from SwayingAlphaTest-Bumped.shader
+//    Shader "Transparent/Cutout/Swaying Bumped Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Transparent/Cutout/Diffuse"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_Time]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Float 15 [_Wave]
+//              Float 16 [_Speed]
+//              Float 17 [_Min]
+//              Float 18 [_Max]
+//              Vector 19 [unity_LightmapST]
+//              Vector 20 [_MainTex_ST]
+//              Vector 21 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c22, -0.0208333302, -0.125, 1, 0.5
+    // Discarded sincos constant c23
+    def c24, 2, 0, 0.159154907, 0.5
+    def c25, 6.28318501, -3.14159298, 0, 0
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.x, c4.w
+    add r0.y, c5.w, r0.x
+    add r0.x, r0.y, c6.w
+    mul r0.z, r0.x, c24.x
+    slt r0.y, r0, -c6.w
+    max r0.y, -r0, r0
+    slt r0.y, c24, r0
+    abs r0.z, r0
+    frc r0.z, r0
+    mov r1.yzw, v0
+    add r0.w, -r0.y, c22.z
+    mul r0.z, r0, c22.w
+    mul r0.w, r0.z, r0
+    mad r0.z, r0.y, -r0, r0.w
+    mov r0.y, c12
+    add r0.z, r0, c22.w
+    mul r0.y, c16.x, r0
+    mad r0.x, r0.y, r0.z, r0
+    mad r0.x, r0, c24.z, c24.w
+    frc r0.x, r0
+    mad r1.x, r0, c25, c25.y
+    sincos r0.xy, r1.x
+    mov r0.x, c18
+    add r0.x, -c17, r0
+    add r0.z, v0.y, -c17.x
+    min r0.z, r0.x, r0
+    mul r0.x, r0.y, c15
+    max r0.y, r0.z, c24
+    mad r1.x, r0, r0.y, v0
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+
+mov o3, r0 // Relocated from line 136 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git 94274248.txt
+texldl r3, c220.z, s0
+add r3.w, r0.w, -r3.y
+mad r0.x, r3.w, r3.x, r0.x
+
+    mul r2.xyz, r0.xyww, c22.w
+    mul r2.y, r2, c13.x
+    mad o2.xy, r2.z, c14.zwzw, r2
+
+//     mov o3, r0 // Relocated to line 133 with shadertool.py
+    mov o2.zw, r0
+    mad o0.zw, v3.xyxy, c21.xyxy, c21
+    mad o0.xy, v3, c20, c20.zwzw
+    mad o1.xy, v4, c19, c19.zwzw
+
+// approximately 48 instruction slots used

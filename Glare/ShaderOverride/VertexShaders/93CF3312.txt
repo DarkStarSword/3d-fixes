@@ -1,0 +1,121 @@
+// CRC32: 93CF3312 | Matched 3 variants of 2 shaders: Custom/PhosticPoolShader, Custom/Shiner Switch
+// 
+//    Unity headers extracted from PhosticPoolShader.shader
+//    Shader "Custom/PhosticPoolShader" {
+//      Properties {
+//       _EmitColor ("Emit Color", Color) = (0.5,0.5,0.5,1)
+//       _CorruptionColor ("Corruption Color", Color) = (1,0,0,1)
+//       _CorruptedPercent ("Corrupted percent", Range(0,1)) = 0
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _Corruption ("Corruption (RGB)", 2D) = "white" {}
+//       _Bump ("Normal Map", 2D) = "bump" {}
+//       _Distort ("Distortion Map", 2D) = "bump" {}
+//       _PoolPucker ("PoolPucker", 2D) = "bump" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_LightmapST]
+//              Vector 15 [_MainTex_ST]
+//              Vector 16 [_Distort_ST]
+//              Vector 17 [_PoolPucker_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ShinerSwitch.shader
+//    Shader "Custom/Shiner Switch" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _Illum ("Illumin (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Enabled ("Enabled (Switch on)", Float) = 0
+//       _Powered ("Powered (Switch on)", Float) = 0
+//      }
+//      Fallback "Self-Illumin/Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_LightmapST]
+//              Vector 15 [_MainTex_ST]
+//              Vector 16 [_Illum_ST]
+//              Vector 17 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c18, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 100 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git 93CF3312.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c18.x
+    mul r1.y, r1, c12.x
+    mad o4.xy, r1.z, c13.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 97 with shadertool.py
+    mov o4.zw, r0
+    mad o1.zw, v3.xyxy, c16.xyxy, c16
+    mad o1.xy, v3, c15, c15.zwzw
+    mad o2.xy, v3, c17, c17.zwzw
+    mad o3.xy, v4, c14, c14.zwzw
+
+// approximately 13 instruction slots used

@@ -1,0 +1,172 @@
+// CRC32: BDC28711 | Matched 2 variants of 1 shaders: Custom/PhosticPipe
+// 
+//    Unity headers extracted from PhosticPipe.shader
+//    Shader "Custom/PhosticPipe" {
+//      Properties {
+//       _Shininess ("Gloss", Range(0,1)) = 0.5
+//       _Illum ("Illumination(Should not be white)", Color) = (0.5,0.5,0.5,1)
+//       _CorruptionColor ("Corruption Color", Color) = (1,0,0,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _Corruption ("Corruption (RGB)", 2D) = "white" {}
+//       _PhosticBumpMap ("Vein Fluid Normal Map(RGB)", 2D) = "bump" {}
+//       _PuckerBumpMap ("Vein Pucker Normal Map(RGB)", 2D) = "bump" {}
+//       _RockTex ("Rock tex (RGB)Gaps (A)", 2D) = "white" {}
+//       _RockBumpMap ("Rock Normal Map(RGB)", 2D) = "bump" {}
+//       _flowSpeed ("Flow Speed in meters/second", Float) = 3
+//       _FillLength ("Fill length", Float) = 10
+//       _PulseBuldge ("Buldge of Pulses", Float) = 3
+//       _PulseRepeat ("Pulse Repeat", Float) = 10
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_Time]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_SHAr]
+//              Vector 12 [unity_SHAg]
+//              Vector 13 [unity_SHAb]
+//              Vector 14 [unity_SHBr]
+//              Vector 15 [unity_SHBg]
+//              Vector 16 [unity_SHBb]
+//              Vector 17 [unity_SHC]
+//              Vector 18 [unity_Scale]
+//              Float 19 [_flowSpeed]
+//              Float 20 [_FillLength]
+//              Float 21 [_PulseRepeat]
+//              Float 22 [_PulseBuldge]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c23, 0.5, 255, -2, 2
+    def c24, 2, 3, 1, -0.5
+    def c25, -0.25, -4, 0, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad r0.y, v5.z, c23, c23.x
+    frc r0.x, r0.y
+    add r0.x, r0.y, -r0
+    add r0.z, v5.x, c23.x
+    frc r0.y, r0.z
+    mov r1.w, v0
+    mul r2.xyz, v2, c18.w
+    mov r3.w, c24.z
+    add r0.y, r0.z, -r0
+    add r0.x, v5.w, r0
+    mad r5.x, r0.y, c23.y, r0
+    mov r0.y, c19.x
+    mad r0.y, c8, -r0, r5.x
+    rcp r0.x, c21.x
+    mul r0.x, r0.y, r0
+    mov r0.y, c20.x
+    add r0.w, c23.z, r0.y
+    add r0.y, -r0.w, c20.x
+    frc r0.x, r0
+    add r0.x, r0, c24.w
+    abs r0.x, r0
+    add r0.z, r0.y, c23.w
+    add r0.x, r0, c25
+    mul_sat r0.y, r0.x, c25
+    rcp r0.x, r0.z
+    add r0.z, r5.x, -r0.w
+    mul_sat r0.z, r0, r0.x
+    mad r0.x, -r0.y, c24, c24.y
+    mul r0.y, r0, r0
+    mul r0.x, r0.y, r0
+    mad r0.y, -r0.z, c24.x, c24
+    mul r0.z, r0, r0
+    mad r4.w, -r0.z, r0.y, c24.z
+    mul r5.y, r4.w, r0.x
+    mul r0.x, r5.y, c22
+    mul r0.xyz, v2, r0.x
+    add r1.xyz, r0, v0
+    dp4 r0.w, r1, c3
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+
+mov o0, r0 // Relocated from line 146 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git BDC28711.txt
+texldl r6, c220.z, s0
+add r6.w, r0.w, -r6.y
+mad r0.x, r6.w, r6.x, r0.x
+
+    mul r3.xyz, r0.xyww, c23.x
+    mul r3.y, r3, c9.x
+    mad o3.xy, r3.z, c10.zwzw, r3
+    dp3 r0.z, r2, c5
+    mov r3.y, r0.z
+    dp3 r3.x, r2, c4
+    dp3 r3.z, r2, c6
+    mul r0.z, r0, r0
+    mul r2, r3.xyzz, r3.yzzx
+    dp4 r4.z, r3, c13
+    dp4 r4.y, r3, c12
+    dp4 r4.x, r3, c11
+    dp4 r3.w, r2, c16
+    dp4 r3.z, r2, c15
+    dp4 r3.y, r2, c14
+    slt r2.w, v5.x, c25.z
+    add r2.xyz, r4, r3.yzww
+    mad r0.z, r3.x, r3.x, -r0
+    mul r3.xyz, r0.z, c17
+    max r2.w, -r2, r2
+    mul r0.z, v5.x, c23.w
+    slt r3.w, c25.z, r2
+    abs r0.z, r0
+    frc r2.w, r0.z
+    mul r2.w, r2, c23.x
+    add r0.z, -r3.w, c24
+    mul r0.z, r2.w, r0
+    add o4.xyz, r2, r3
+    mad r2.x, r3.w, -r2.w, r0.z
+    dp4 r0.z, r1, c2
+    mad r1.x, r2, c23.y, c23
+
+//     mov o0, r0 // Relocated to line 115 with shadertool.py
+mov o0.z, r0.z // Inserted by shadertool.py
+
+    frc r0.x, r1
+    mov r5.w, r5.y
+    add r0.x, r1, -r0
+    add r5.y, v5, r0.x
+    mov r5.z, r4.w
+    mov o3.zw, r0
+    mov o1, r5
+    mov o2, v3.xyxy
+
+// approximately 80 instruction slots used

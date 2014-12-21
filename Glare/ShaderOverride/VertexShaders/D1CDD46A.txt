@@ -1,0 +1,120 @@
+// CRC32: D1CDD46A | Matched 2 variants of 1 shaders: Remora/Remora_GasolineShader
+// 
+//    Unity headers extracted from Remora_GasolineShader.shader
+//    Shader "Remora/Remora_GasolineShader" {
+//      Properties {
+//       _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//       _Shininess ("Glossiness", Range(0,1.5)) = 0.5
+//       _Color ("Color Tint", Color) = (1,1,1,1)
+//       _MainTex ("Color (RGB) Specular (A)", 2D) = "white" {}
+//       _BumpMap ("Normal Map(RGB)", 2D) = "bump" {}
+//       _EmitColor ("Emit Color", Color) = (1,1,1,1)
+//       _EmitMap ("EmitMap(a)", 2D) = "black" {}
+//       _RimColor ("RimColor", Color) = (1,1,1,1)
+//       _RimPower ("RimPower", Range(0.1,5)) = 3
+//       _ColorAberration ("ColorAbboration", 2D) = "white" {}
+//       _AberrationPower ("Aboration Power", Range(0,1)) = 1
+//       _SliceGuide ("Slice Guide (RGB)", 2D) = "white" {}
+//       _SliceAmount ("Slice Amount", Range(0,1)) = 0.5
+//       _BurnOffGrad ("Burn Off Color Gradient", 2D) = "white" {}
+//       _BurnOffColor ("Burn Off Color", Color) = (0.8,0.2,0.2,1)
+//       _BurnAmount ("Burn Amount", Range(0,1)) = 0
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//          Cull Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [unity_Scale]
+//              Vector 16 [unity_LightmapST]
+//              Vector 17 [_MainTex_ST]
+//              Vector 18 [_BumpMap_ST]
+//              Vector 19 [_EmitMap_ST]
+//              Vector 20 [_SliceGuide_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    def c21, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r1.xyz, c12
+    mov r1.w, c21.y
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c15.w, -v0
+    mul r3.xyz, r0, v1.w
+    dp4 r1.w, v0, c3
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+
+mov o0, r1 // Relocated from line 97 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed --lookup-header-json /home/dss/3d-fixes/__unity__/Glare/ShaderHeaders.json --git D1CDD46A.txt
+texldl r4, c220.z, s0
+add r4.w, r1.w, -r4.y
+mad r1.x, r4.w, r4.x, r1.x
+
+    mul r0.xyz, r1.xyww, c21.x
+    dp4 r1.z, v0, c2
+    mul r0.y, r0, c13.x
+    mad r0.xy, r0.z, c14.zwzw, r0
+    mov r0.zw, r1
+    dp3 o4.y, r2, r3
+    mov o3, r0
+    dp3 o4.z, v2, r2
+    dp3 o4.x, r2, v1
+    mov o6, r0
+
+//     mov o0, r1 // Relocated to line 87 with shadertool.py
+mov o0.z, r1.z // Inserted by shadertool.py
+
+    mad o1.zw, v3.xyxy, c18.xyxy, c18
+    mad o1.xy, v3, c17, c17.zwzw
+    mad o2.zw, v3.xyxy, c20.xyxy, c20
+    mad o2.xy, v3, c19, c19.zwzw
+    mad o5.xy, v4, c16, c16.zwzw
+
+// approximately 30 instruction slots used
