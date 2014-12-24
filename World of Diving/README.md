@@ -16,6 +16,14 @@ Update 2014-11-29
 - Fixed screen on scuba-scooter moving to the right with UI depth
 - Fixed distortion effect on scuba-scooter in multiplayer
 
+Update 2014-12-25
+-----------------
+- New FOV source to improve reliability of the shadow fix while underwater -
+  should fix a few spots in the Diving Base where the shadows could get
+  misaligned after pulling out the camera.
+- Mission HUD markers will remain pushed into screen while the diving computer
+  is activated via the tab key.
+
 Keys
 ----
 UI Depth adjustment (except mouse cursor):
@@ -45,10 +53,8 @@ Known Issues
 ------------
 - Like many Unity games, the mouse cursor depth cannot be adjusted as it uses a
   hardware cursor. Press 5 when in a menu to bring the UI back to screen depth.
-- Shadows may occasionally break after using the scuba-scooter or camera. If
-  this happens just look around or pull out the scuba-scooter momentarily to
-  fix them. This occurs when the FOV changes while none of the shaders I pull
-  the FOV from are active in the scene.
+- The text on the diving computer will be moved to the right with the UI depth
+  if using a controller since the tab key isn't used.
 
 Notes
 -----
