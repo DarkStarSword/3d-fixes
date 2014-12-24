@@ -1,0 +1,89 @@
+// CRC32: BEB9687B | Unity headers extracted from Plankton.shader
+// Shader "Custom/FX/Plankton" {
+//   Properties {
+//    _MainTex ("MainTex", 2D) = "white" {}
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _NearFadeEnd ("NearFadeEnd", Float) = 0.1
+//    _NearFadeStart ("NearFadeStart", Float) = 0.3
+//    _FarFadeStart ("FarFadeStart", Float) = 0.6
+//    _FarFadeEnd ("FarFadeEnd", Float) = 0.9
+//    _Scale ("Scale", Float) = 0.01
+//    _AnimationAmplitude ("AnimationAmplitude", Float) = 1
+//    _AnimationFrequency ("AnimationFrequency", Float) = 10
+//    _AttenuationFactor ("AttenuationFactor", Float) = 1
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Overlay+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "FORWARDADD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Overlay+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha One
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" }
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_modelview0]
+//           Matrix 4 [glstate_matrix_projection]
+//           Matrix 12 [_Object2World]
+//           Vector 16 [_Time]
+//           Vector 17 [_WorldSpaceCameraPos]
+//           Float 18 [_Scale]
+//           Float 19 [_AnimationAmplitude]
+//           Float 20 [_AnimationFrequency]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    def c21, 100.00000000, 0.15915491, 0.50000000, 0.80000001
+    def c22, 6.28318501, -3.14159298, 0.00000000, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    mov r0.x, c12.w
+    mul r0.y, c21.x, r0.x
+    mov r0.x, c16
+    mad r0.y, c20.x, r0.x, r0
+    mov r0.z, c13.w
+    mov r0.x, c16
+    mul r0.x, c20, r0
+    mul r0.z, c21.x, r0
+    mad r0.z, r0.x, c21.w, r0
+    mad r0.x, r0.y, c21.y, c21.z
+    mad r0.y, r0.z, c21, c21.z
+    frc r0.y, r0
+    frc r0.x, r0
+    mad r0.x, r0, c22, c22.y
+    sincos r1.xy, r0.x
+    mad r2.x, r0.y, c22, c22.y
+    sincos r0.xy, r2.x
+    mad r1.x, r1.y, c19, v0
+    mad r1.y, r0, c19.x, v0.z
+    mov r0.z, c2.w
+    mov r0.x, c0.w
+    mov r0.y, c1.w
+    mov r1.zw, c22.z
+    mov r0.w, c3
+    mad r1, -r1, c18.x, r0
+    mov r0.z, c14.w
+    mov r0.x, c12.w
+    mov r0.y, c13.w
+    add r0.xyz, -r0, c17
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    dp4 o0.w, r1, c7
+    dp4 o0.z, r1, c6
+    dp4 o0.y, r1, c5
+    dp4 o0.x, r1, c4
+    rcp o2.x, r0.x
+    mov o1.xy, v1
