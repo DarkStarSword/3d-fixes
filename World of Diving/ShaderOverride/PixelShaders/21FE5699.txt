@@ -68,16 +68,23 @@ mad r20.x, -r31.w, r31.x, r20.x
     rcp r0.w, r0.w
     mul r2.xyw, r0.xyzz, r0.w // Depth in r2.w
 
-// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-// For a detailed explanation of what we are doing here, see this thread:
-// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
 
-// Transpose first component of the MV.I matrix regs into r30:
-mov r30.x, c180.x
-mov r30.y, c181.x
-mov r30.z, c182.x
-mov r30.w, c183.x
-dp4 r30.x, r30, c190 // Calculate P[0,0]
+mov r30.y, c200.y // Load Const2
+if_eq r30.y, c220.y // if Const2 == 1 (Plankton shader is active)
+	// Use the projection matrix from the Plankton shader:
+	mov r30.x, c195.x
+else
+	// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+	// For a detailed explanation of what we are doing here, see this thread:
+	// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
+
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	dp4 r30.x, r30, c190 // Calculate P[0,0]
+endif
 rcp r30.x, r30.x // Calculate P.I[0,0]
 
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
