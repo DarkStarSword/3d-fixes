@@ -1029,7 +1029,7 @@ def auto_fix_vertex_halo(tree, args):
 
     # 4. Scan between the two lines identified in 2 and 3 for any reads of the
     #    temporary register:
-    results = scan_shader(tree, temp_reg.reg, write=False, start=temp_reg_line, end=output_line)
+    results = scan_shader(tree, temp_reg.reg, write=False, start=temp_reg_line + 1, end=output_line)
     if results:
         # 5. If temporary register was read between temporary register being set
         #    and moved to output, relocate the output to just before the first
