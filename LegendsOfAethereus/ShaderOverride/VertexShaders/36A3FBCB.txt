@@ -58,6 +58,7 @@
     dcl_normal0 v1
 
 def c220, 0, 1, 0.0625, 0.5
+def c221, 0.999, 1.001, 0, 0
 dcl_2d s0
 
     dp4 r0.w, v0, c7
@@ -65,11 +66,52 @@ dcl_2d s0
     dp4 r0.y, v0, c5
     mov o0.xyw, r0 // Moved up before the stereo correction
 
-// Apply stereo correction to screen coords stored in texcoord:
-texldl r31, c220.z, s0
-add r31.w, r0.w, -r31.y
-mul r31.w, r31.w, r31.x
-add r0.x, r0.x, r31.w
+// Determine if we are drawing a full-screen quad
+// Causes flickering:
+// if_lt r0.w, c221.x
+// 	// Apply stereo correction to screen coords stored in texcoord:
+// 	texldl r31, c220.z, s0
+// 	add r31.w, r0.w, -r31.y
+// 	mul r31.w, r31.w, r31.x
+// 	add r0.x, r0.x, r31.w
+// else
+// if_gt r0.w, c221.y
+// 	// Apply stereo correction to screen coords stored in texcoord:
+// 	texldl r31, c220.z, s0
+// 	add r31.w, r0.w, -r31.y
+// 	mul r31.w, r31.w, r31.x
+// 	add r0.x, r0.x, r31.w
+// endif
+// endif
+
+mov r20.x, c220.x
+if_eq v0.x, c220.x
+	if_eq v0.y, c220.x
+		mov r20.x, c220.y
+	else
+		if_eq v0.y, c220.y
+			mov r20.x, c220.y
+		endif
+	endif
+else
+	if_eq v0.x, c220.y
+		if_eq v0.y, c220.x
+			mov r20.x, c220.y
+		else
+			if_eq v0.y, c220.y
+				mov r20.x, c220.y
+			endif
+		endif
+	endif
+endif
+
+if_eq r20.x, c220.x
+	// Apply stereo correction to screen coords stored in texcoord:
+	texldl r31, c220.z, s0
+	add r31.w, r0.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r0.x, r0.x, r31.w
+endif
 
     mul r1.xyz, r0.xyww, c10.x
     mul r1.y, r1, c8.x
