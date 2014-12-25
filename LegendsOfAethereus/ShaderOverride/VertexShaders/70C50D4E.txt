@@ -1,0 +1,60 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c18, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r1.xyz, c12
+    mov r1.w, c18.x
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c15.w, -v0
+    mul r0.xyz, r0, v1.w
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp3 o4.y, r2, r0
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+
+mov o0, r1 // Relocated from line 40 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 70C50D4E.txt
+texldl r3, c220.z, s0
+add r3.w, r1.w, -r3.y
+mad r1.x, r3.w, r3.x, r1.x
+
+    mul r0.xyz, r1.xyww, c18.y
+    mul r0.y, r0, c13.x
+    mad o5.xy, r0.z, c14.zwzw, r0
+    dp3 o4.z, v2, r2
+    dp3 o4.x, r2, v1
+    mul r2.xyz, v2, c15.w
+    dp3 r0.z, r2, c6
+    dp3 r0.y, r2, c5
+    dp3 r0.x, r2, c4
+    mov o2.xyz, r0
+
+//     mov o0, r1 // Relocated to line 30 with shadertool.py
+    mov o5.zw, r1
+    mad o1.xy, v3, c17, c17.zwzw
+    mad o3.xy, v4, c16, c16.zwzw
+    dp4 o2.w, v0, c5
+
+// approximately 31 instruction slots used
