@@ -58,7 +58,6 @@
     dcl_normal0 v1
 
 def c220, 0, 1, 0.0625, 0.5
-def c221, 0.999, 1.001, 0, 0
 dcl_2d s0
 
     dp4 r0.w, v0, c7
@@ -66,43 +65,35 @@ dcl_2d s0
     dp4 r0.y, v0, c5
     mov o0.xyw, r0 // Moved up before the stereo correction
 
-// Determine if we are drawing a full-screen quad
-// Causes flickering:
-// if_lt r0.w, c221.x
-// 	// Apply stereo correction to screen coords stored in texcoord:
-// 	texldl r31, c220.z, s0
-// 	add r31.w, r0.w, -r31.y
-// 	mul r31.w, r31.w, r31.x
-// 	add r0.x, r0.x, r31.w
-// else
-// if_gt r0.w, c221.y
-// 	// Apply stereo correction to screen coords stored in texcoord:
-// 	texldl r31, c220.z, s0
-// 	add r31.w, r0.w, -r31.y
-// 	mul r31.w, r31.w, r31.x
-// 	add r0.x, r0.x, r31.w
-// endif
-// endif
-
 mov r20.x, c220.x
-if_eq v0.x, c220.x
-	if_eq v0.y, c220.x
-		mov r20.x, c220.y
-	else
-		if_eq v0.y, c220.y
-			mov r20.x, c220.y
-		endif
-	endif
-else
-	if_eq v0.x, c220.y
-		if_eq v0.y, c220.x
-			mov r20.x, c220.y
-		else
-			if_eq v0.y, c220.y
-				mov r20.x, c220.y
-			endif
-		endif
-	endif
+
+// Determine if drawing a full screen quad by testing if the input coord is one
+// of screen the corners. Seems to be unreliable, e.g. on glow around torch at
+// Angmar's shop from certain angles.
+//if_eq v0.x, c220.x
+//	if_eq v0.y, c220.x
+//		mov r20.x, c220.y
+//	else
+//		if_eq v0.y, c220.y
+//			mov r20.x, c220.y
+//		endif
+//	endif
+//else
+//	if_eq v0.x, c220.y
+//		if_eq v0.y, c220.x
+//			mov r20.x, c220.y
+//		else
+//			if_eq v0.y, c220.y
+//				mov r20.x, c220.y
+//			endif
+//		endif
+//	endif
+//endif
+
+// Determine if drawing a full screen quad by testing if output position w == 1.
+// Seems to be more reliable than above input position test:
+if_eq r0.w, c220.y
+	mov r20.x, c220.y
 endif
 
 if_eq r20.x, c220.x
@@ -119,19 +110,21 @@ endif
     dp4 r2.x, v0, c0
     dp4 r2.y, v0, c1
 
-// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-// For a detailed explanation of what we are doing here, see this thread:
-// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
+if_eq r20.x, c220.x
+	// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+	// For a detailed explanation of what we are doing here, see this thread:
+	// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
 
-// Transpose first component of the MV.I matrix regs into r30:
-mov r30.x, c180.x
-mov r30.y, c181.x
-mov r30.z, c182.x
-mov r30.w, c183.x
-dp4 r30.x, r30, c190 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	dp4 r30.x, r30, c190 // Calculate P[0,0]
+	rcp r30.x, r30.x // Calculate P.I[0,0]
 
-mad r2.x, r31.w, r30.x, r2.x
+	mad r2.x, r31.w, r30.x, r2.x
+endif
 
     mad r3.xyz, -r2, c10.yyzw, v1
     mul r2.xyz, r2, c10.yyzw
