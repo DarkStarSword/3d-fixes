@@ -231,17 +231,8 @@ def parse_keywords(tree, args, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            asm = strip_quotes(token)
-            handle_shader_asm(token, parent, asm)
+            handle_shader_asm(token, parent, strip_quotes(token))
             parent.fog = False
-            if args.fog and parent.name == 'd3d9':
-                fog_asm = create_fog_asm(asm)
-                if fog_asm == asm:
-                    continue
-                new_node = copy.copy(parent) # Not a deep copy - parent's parent should still link to original, etc
-                new_node.fog = True
-                new_node.fog_orig_crc = parent.crc
-                handle_shader_asm(fog_asm, new_node, fog_asm)
             continue
 
         if not isinstance(token, Identifier):
@@ -636,6 +627,21 @@ def main():
         tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
         tree = curly_scope(tree)
         tree = parse_keywords(tree, args, filename=os.path.basename(filename))
+
+    if args.fog:
+        for shaders in list(shader_index.values()):
+            for shader in shaders:
+                if shader.name != 'd3d9':
+                    continue
+                assert(not shader.fog)
+                fog_asm = create_fog_asm(shader.shader_asm)
+                if fog_asm == shader.shader_asm:
+                    continue
+                fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
+                del fog_shader.crc
+                fog_shader.fog = True
+                fog_shader.fog_orig_crc = shader.crc
+                handle_shader_asm(fog_asm, fog_shader, fog_asm)
 
     for shaders in shader_index.values():
         if len(shaders) == 1:
