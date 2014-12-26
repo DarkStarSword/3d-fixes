@@ -329,7 +329,7 @@ def export_filename_combined_long(shaders, args):
 
     ret.append(shaders[0].program.name)
 
-    if args and args.filename_crc and shaders[0].sub_program.crc:
+    if args and not args.filename_keywords and shaders[0].sub_program.crc:
         ret.append('%.8X' % shaders[0].sub_program.crc)
     else:
         def keywords(shader):
@@ -369,7 +369,7 @@ def export_filename_combined(sub_programs, args):
     # vertex & pixel shaders embed different identifiers in the assembly, so should not match:
     assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
 
-    if args.flatten:
+    if not args.deep_dir:
         ret = export_filename_combined_short(shaders[0], args)
     else:
         ret = export_filename_combined_long(shaders, args)
@@ -578,13 +578,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Unity Shader Extractor')
     parser.add_argument('shaders', nargs='+',
             help='List of compiled Unity shader files to parse')
-    parser.add_argument('--filename-crc', '--name-crc', action='store_true',
-            help='Name the files by the CRC of the shader, if possible')
-    parser.add_argument('--flatten', action='store_true',
-            help='Use alternate directory structure that only groups shaders by source shader and type (requires --filename-crc)')
+    parser.add_argument('--filename-keywords', action='store_true',
+            help='Name the files by the keywords of the shader (WARNING: May exceed Windows filename limit)')
+    parser.add_argument('--deep-dir', action='store_true',
+            help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
     args = parser.parse_args()
-    if args.flatten and not args.filename_crc:
-        raise ValueError('--flatten must be used with --filename-crc or you risk filename conflicts!')
+    if args.filename_keywords and not args.deep_dir:
+        raise ValueError('--filename-keywords requires --deep-dir')
     return args
 
 def main():
