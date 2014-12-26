@@ -1119,20 +1119,82 @@ def add_unity_autofog_VS3(tree):
         debug('Output not moved from a temporary register: %s' % output_instr)
         return
 
+    tree.fog_type = 'FOG'
     fog_output = NewInstruction('mov', ['o9', temp_reg.z])
     tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py to match Unity autofog')
     decl = NewInstruction('dcl_fog', ['o9'])
     tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py to match Unity autofog')
 
+def add_unity_autofog_PS3(tree, mad_fog):
+    try:
+        d = find_declaration(tree, 'dcl_fog')
+        debug('Shader already has a fog input: %s' % d)
+        return
+    except:
+        pass
+
+    if 'v' in tree.reg_types and 'v9' in tree.reg_types['v']:
+        debug('Shader already uses input v9')
+        return
+
+    if 'r' in tree.reg_types and 'r30' in tree.reg_types['r']:
+        debug('Shader already uses temporary register r30')
+        return
+
+    if 'r' in tree.reg_types and 'r31' in tree.reg_types['r']:
+        debug('Shader already uses temporary register r31')
+        return
+
+    fog_c1 = tree._find_free_reg('c', None)
+    fog_c2 = tree._find_free_reg('c', None)
+
+    if fog_c2.num != fog_c1.num + 1:
+        debug('Discontiguous free constants, not sure how Unity handles this edge case so aborting')
+        return
+
+    decl = NewInstruction('dcl_fog', ['v9.x'])
+    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py to match Unity autofog')
+
+    replace_regs = {'oC0': Register('r30')}
+    tree.do_replacements(replace_regs, False)
+
+    pos = len(tree) + 1
+
+    def add_instr(opcode, args):
+        return tree.insert_instr(pos, NewInstruction(opcode, args))
+
+    pos += tree.insert_instr(pos, None, 'Inserted by shadertool.py to match Unity autofog:')
+
+    if mad_fog:
+        tree.fog_type = 'MAD_FOG'
+        pos += add_instr('mad_sat', ['r31.x', fog_c2.z, 'v9.x', fog_c2.w])
+    else:
+        tree.fog_type = 'EXP_FOG'
+        pos += add_instr('mul', ['r31.x', fog_c2.x, 'v9.x'])
+        pos += add_instr('mul', ['r31.x', 'r31.x', 'r31.x'])
+        pos += add_instr('exp_sat', ['r31.x', '-r31.x'])
+
+    pos += add_instr('lrp', ['r30.xyz', 'r31.x', 'r30', fog_c1])
+    pos += add_instr('mov', ['oC0', 'r30'])
+
 def add_unity_autofog(tree):
     '''
     Adds instructions to a shader to match those Unity automatically adds for
     fog. Used by extract_unity_shaders.py to construct fog variants of shaders.
+    Returns a tuple of trees with each type of fog added.
     '''
     if not hasattr(tree, 'reg_types'):
         tree.analyse_regs()
     if isinstance(tree, VS3):
-        return add_unity_autofog_VS3(tree)
+        add_unity_autofog_VS3(tree)
+        return (tree,)
+    if isinstance(tree, PS3):
+        tree1 = copy.deepcopy(tree)
+        tree2 = copy.deepcopy(tree)
+        add_unity_autofog_PS3(tree1, True)
+        add_unity_autofog_PS3(tree2, False)
+        return (tree1, tree2)
+    return (tree,)
 
 def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     pos_reg = tree._find_free_reg('r', VS3)
@@ -1432,7 +1494,8 @@ def main():
         tree.filename = file
 
         if args.add_unity_autofog:
-            add_unity_autofog(tree)
+            # FIXME: Output both types on pixel shader fog or make selectable
+            tree = add_unity_autofog(tree)[0]
         if args.disable:
             disable_shader(tree, args)
         if args.auto_adjust_texcoords:

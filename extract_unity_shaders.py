@@ -216,8 +216,7 @@ def handle_shader_asm(token, parent, asm):
 
 def create_fog_asm(asm):
     tree = shadertool.parse_shader(asm)
-    shadertool.add_unity_autofog(tree)
-    return str(tree)
+    return shadertool.add_unity_autofog(tree)
 
 def parse_keywords(tree, parent=None, filename=None):
     ret = []
@@ -232,7 +231,7 @@ def parse_keywords(tree, parent=None, filename=None):
 
         if isinstance(token, String):
             handle_shader_asm(token, parent, strip_quotes(token))
-            parent.fog = False
+            parent.fog = None
             continue
 
         if not isinstance(token, Identifier):
@@ -352,7 +351,7 @@ def export_filename_combined_long(shaders, args):
             ret.append(compress_keywords(kw))
 
     if shaders[0].sub_program.fog:
-        ret[-1] += ' FOG'
+        ret[-1] = '%s %s' % (ret[-1], shaders[0].sub_program.fog)
 
     return ret
 
@@ -515,7 +514,7 @@ def add_shader_crc(sub_program):
 def add_header_crc(headers, sub_program):
     if sub_program.crc:
         if sub_program.fog:
-            headers[0] = 'CRC32: %.8X (Fog + %.8X) | %s' % (sub_program.crc, sub_program.fog_orig_crc, headers[0])
+            headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.crc, sub_program.fog, sub_program.fog_orig_crc, headers[0])
         else:
             headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
 
@@ -634,14 +633,15 @@ def main():
                 if shader.name != 'd3d9':
                     continue
                 assert(not shader.fog)
-                fog_asm = create_fog_asm(shader.shader_asm)
-                if fog_asm == shader.shader_asm:
-                    continue
-                fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
-                del fog_shader.crc
-                fog_shader.fog = True
-                fog_shader.fog_orig_crc = shader.crc
-                handle_shader_asm(fog_asm, fog_shader, fog_asm)
+                for fog_tree in create_fog_asm(shader.shader_asm):
+                    fog_asm = str(fog_tree)
+                    if fog_asm == shader.shader_asm:
+                        continue
+                    fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
+                    del fog_shader.crc
+                    fog_shader.fog = fog_tree.fog_type
+                    fog_shader.fog_orig_crc = shader.crc
+                    handle_shader_asm(fog_asm, fog_shader, fog_asm)
 
     for shaders in shader_index.values():
         if len(shaders) == 1:
