@@ -109,3 +109,11 @@ games they are from and renames them to include the date and time they were
 taken.
 
 Place it in the Documents\NVStereoscopic3D.IMG directory and run it.
+
+### \__shaderasm__ & shaderasm.exe ###
+Small C++ project to assemble a shader .txt file. Used by
+extract_unity_shaders.py to calculate the CRC32 of shaders extracted from Unity
+games.
+
+### calc_shader_crc.py ###
+Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
