@@ -88,10 +88,10 @@ def next_interesting(tree):
         return r
 
 class Keyword(object):
-    def __init__(self, keyword, tokens, parent, args):
+    def __init__(self, keyword, tokens, parent):
         self.keyword = keyword
         self.parent = parent
-        return self.parse(tokens, parent, args)
+        return self.parse(tokens, parent)
 
     def __str__(self):
         return self.keyword
@@ -113,10 +113,10 @@ class Tree(list):
         return '{%s}' % stringify(self)
 
 class NamedTree(Keyword, Tree):
-    def parse(self, tokens, parent, args):
+    def parse(self, tokens, parent):
         self.orig_name = next_interesting(tokens)
         self.name = strip_quotes(self.orig_name)
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), args, parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
 
     def header(self):
         return '%s %s {' % (Keyword.__str__(self), self.orig_name)
@@ -137,11 +137,11 @@ class UnnamedTree(Keyword, Tree):
     def parent_counter(self, val):
         return setattr(self.parent, self.parent_counter_attr, val)
 
-    def parse(self, tokens, parent, args):
+    def parse(self, tokens, parent):
         self.parent_counter += 1
         self.counter = self.parent_counter
 
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), args, parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
 
     def header(self):
         return '%s %i/%i {' % (Keyword.__str__(self), self.counter, self.parent_counter)
@@ -150,7 +150,7 @@ class UnnamedTree(Keyword, Tree):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
 class StringifyLine(Keyword):
-    def parse(self, tokens, parent, args):
+    def parse(self, tokens, parent):
         t = []
         while True:
             token = next(tokens)
@@ -163,7 +163,7 @@ class StringifyLine(Keyword):
         return '%s %s' % (Keyword.__str__(self), self.line.strip())
 
 class Keywords(Keyword, set):
-    def parse(self, tokens, parent, args):
+    def parse(self, tokens, parent):
         set.__init__(self, map(strip_quotes, map(str, ignore_whitespace(next_interesting(tokens)))))
 
     def __str__(self):
@@ -219,7 +219,7 @@ def create_fog_asm(asm):
     shadertool.add_unity_autofog(tree)
     return str(tree)
 
-def parse_keywords(tree, args, parent=None, filename=None):
+def parse_keywords(tree, parent=None, filename=None):
     ret = []
     tokens = iter(tree)
     if parent is not None and not hasattr(parent, 'keywords'):
@@ -239,11 +239,11 @@ def parse_keywords(tree, args, parent=None, filename=None):
             raise SyntaxError('Expected Identifier, found: %s' % repr(token))
 
         if token in keywords:
-            item = keywords[token](token, tokens, parent, args)
+            item = keywords[token](token, tokens, parent)
         else:
             # I used to be strict and fail on any unrecognised keywords, but I
             # kept running into more so now I just stringify them:
-            item = StringifyLine(token, tokens, parent, args)
+            item = StringifyLine(token, tokens, parent)
 
         if filename is not None:
             item.filename = filename
@@ -626,7 +626,7 @@ def main():
         processed.add(digest)
         tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
         tree = curly_scope(tree)
-        tree = parse_keywords(tree, args, filename=os.path.basename(filename))
+        tree = parse_keywords(tree, filename=os.path.basename(filename))
 
     if args.fog:
         for shaders in list(shader_index.values()):
