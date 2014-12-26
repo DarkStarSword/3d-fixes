@@ -1,0 +1,83 @@
+// CRC32: 6F8A7BBA | Unity headers extracted from TerrainAmbientGenerate.shader
+// Shader "Custom/TerrainAmbientGenerate" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "white" {}
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Fog {
+//          Color (0,0,0,0)
+//         }
+//       Blend SrcAlpha One
+//       AlphaTest Greater 0
+//       ColorMask RGB
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_ProjectionParams]
+//           Vector 9 [_ScreenParams]
+//           Vector 10 [_WorldSpaceLightPos0]
+//           Vector 11 [unity_Scale]
+//           Vector 12 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    ; 15 ALU
+    def c13, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+    dcl_texcoord0 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o4, r0 // Relocated from line 63 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/3d-fixes/LegendsOfAethereus/ --auto-fix-vertex-halo --only-autofixed Custom_TerrainAmbientGenerate/vp/6F8A7BBA.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c13.x
+    mul r1.y, r1, c8.x
+    mad o1.xy, r1.z, c9.zwzw, r1
+    mul r1.xyz, v1, c11.w
+
+//     mov o4, r0 // Relocated to line 59 with shadertool.py
+    mov o1.zw, r0
+    dp3 o2.z, r1, c6
+    dp3 o2.y, r1, c5
+    dp3 o2.x, r1, c4
+    mov o3.xyz, c10
+    mad o0.xy, v2, c12, c12.zwzw
