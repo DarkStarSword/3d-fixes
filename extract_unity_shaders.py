@@ -191,6 +191,29 @@ shader_list = []
 crc_list = {}
 crc_headers = {}
 
+def handle_shader_asm(token, parent, asm):
+    parent.shader_asm = asm
+    # Index shaders by assembly:
+    if token in shader_index:
+        # Minimise calls to shaderasm.exe
+        parent.crc = shader_index[token][0].crc
+    else:
+        shader_index[token] = []
+        add_shader_crc(parent)
+        if parent.crc:
+            if parent.crc in crc_list:
+                print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.crc, '-'*17))
+                crc_list[parent.crc].append(parent)
+                print('\n'.join([ \
+                        os.path.sep.join(export_filename_combined_long([get_parents(x)], None)) \
+                        for x in crc_list[parent.crc] ]))
+                print('%s OVERRIDING THESE SHADERS MAY BE DANGEROUS %s' % ('-'*18, '-'*18))
+                print()
+            else:
+                crc_list[parent.crc] = [parent]
+    shader_index[token].append(parent)
+    shader_list.append(parent)
+
 def parse_keywords(tree, parent=None, filename=None):
     ret = []
     tokens = iter(tree)
@@ -203,27 +226,7 @@ def parse_keywords(tree, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            parent.shader_asm = strip_quotes(token)
-            # Index shaders by assembly:
-            if token in shader_index:
-                # Minimise calls to shaderasm.exe
-                parent.crc = shader_index[token][0].crc
-            else:
-                shader_index[token] = []
-                add_shader_crc(parent)
-                if parent.crc:
-                    if parent.crc in crc_list:
-                        print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.crc, '-'*17))
-                        crc_list[parent.crc].append(parent)
-                        print('\n'.join([ \
-                                os.path.sep.join(export_filename_combined_long([get_parents(x)], None)) \
-                                for x in crc_list[parent.crc] ]))
-                        print('%s OVERRIDING THESE SHADERS MAY BE DANGEROUS %s' % ('-'*18, '-'*18))
-                        print()
-                    else:
-                        crc_list[parent.crc] = [parent]
-            shader_index[token].append(parent)
-            shader_list.append(parent)
+            handle_shader_asm(token, parent, strip_quotes(token))
             continue
 
         if not isinstance(token, Identifier):
