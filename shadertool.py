@@ -56,6 +56,9 @@ class Int(Token, Number):
 class CPPStyleComment(Token, Ignore):
     pattern = re.compile(r'\/\/.*$', re.MULTILINE)
 
+class SemiColonComment(Token, Ignore):
+    pattern = re.compile(r';.*$', re.MULTILINE)
+
 class CStyleComment(Token, Ignore): # XXX: Are these valid in shader asm language?
     pattern = re.compile(r'\/\*.*\*\/', re.MULTILINE)
 
@@ -64,9 +67,6 @@ class WhiteSpace(Token, Ignore):
 
 class NewLine(WhiteSpace, InstructionSeparator):
     pattern = re.compile(r'\n')
-
-class SemiColon(Token, InstructionSeparator): # XXX: Is this a valid separator in shader asm?
-    pattern = re.compile(r';')
 
 class NullByte(Token, Strip):
     pattern = re.compile(r'\0')
@@ -82,11 +82,11 @@ class Anything(Token):
 
 tokens = (
     CPPStyleComment,
+    SemiColonComment, # Seen in declaration section of shaders extracted from Unity like '; 52 ALU, 5 TEX'
     CStyleComment, # XXX: Are these valid in shader asm?
     NewLine,
     WhiteSpace,
     Comma,
-    SemiColon, # XXX: Is this a valid separator in shader asm?
     Float,
     Int,
     # Minus,
