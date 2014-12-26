@@ -233,11 +233,14 @@ def parse_keywords(tree, args, parent=None, filename=None):
         if isinstance(token, String):
             asm = strip_quotes(token)
             handle_shader_asm(token, parent, asm)
+            parent.fog = False
             if args.fog and parent.name == 'd3d9':
                 fog_asm = create_fog_asm(asm)
                 if fog_asm == asm:
                     continue
                 new_node = copy.copy(parent) # Not a deep copy - parent's parent should still link to original, etc
+                new_node.fog = True
+                new_node.fog_orig_crc = parent.crc
                 handle_shader_asm(fog_asm, new_node, fog_asm)
             continue
 
@@ -356,6 +359,9 @@ def export_filename_combined_long(shaders, args):
         kw.update(*map(keywords, shaders))
         if kw:
             ret.append(compress_keywords(kw))
+
+    if shaders[0].sub_program.fog:
+        ret[-1] += ' FOG'
 
     return ret
 
@@ -517,7 +523,10 @@ def add_shader_crc(sub_program):
 
 def add_header_crc(headers, sub_program):
     if sub_program.crc:
-        headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
+        if sub_program.fog:
+            headers[0] = 'CRC32: %.8X (Fog + %.8X) | %s' % (sub_program.crc, sub_program.fog_orig_crc, headers[0])
+        else:
+            headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
 
 def index_headers(headers, sub_program):
     if sub_program.crc:
