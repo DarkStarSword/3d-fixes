@@ -612,9 +612,9 @@ def process_sections(tree):
                 raise SyntaxError('Unexpected token while searching for shader type: %s' % token)
     raise SyntaxError('Unable to identify shader type')
 
-def parse_shader(shader, args):
+def parse_shader(shader, args = None):
     tokens = tokenise(shader)
-    if args.debug_tokeniser:
+    if args and args.debug_tokeniser:
         for token in tokens:
             debug('%s: %s' % (token.__class__.__name__, repr(str(token))))
     tree = SyntaxTree(tokens)
@@ -1129,6 +1129,8 @@ def add_unity_autofog(tree):
     Adds instructions to a shader to match those Unity automatically adds for
     fog. Used by extract_unity_shaders.py to construct fog variants of shaders.
     '''
+    if not hasattr(tree, 'reg_types'):
+        tree.analyse_regs()
     if isinstance(tree, VS3):
         return add_unity_autofog_VS3(tree)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, math
+import sys, os, re, math, copy
 import json, hashlib, collections
 
 shader_idx_filename = 'ShaderHeaders.json'
@@ -214,6 +214,11 @@ def handle_shader_asm(token, parent, asm):
     shader_index[token].append(parent)
     shader_list.append(parent)
 
+def create_fog_asm(asm):
+    tree = shadertool.parse_shader(asm)
+    shadertool.add_unity_autofog(tree)
+    return str(tree)
+
 def parse_keywords(tree, args, parent=None, filename=None):
     ret = []
     tokens = iter(tree)
@@ -226,7 +231,14 @@ def parse_keywords(tree, args, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            handle_shader_asm(token, parent, strip_quotes(token))
+            asm = strip_quotes(token)
+            handle_shader_asm(token, parent, asm)
+            if args.fog and parent.name == 'd3d9':
+                fog_asm = create_fog_asm(asm)
+                if fog_asm == asm:
+                    continue
+                new_node = copy.copy(parent) # Not a deep copy - parent's parent should still link to original, etc
+                handle_shader_asm(fog_asm, new_node, fog_asm)
             continue
 
         if not isinstance(token, Identifier):
@@ -577,6 +589,7 @@ def dedupe_shaders(shader_list, args):
         _export_shader(shader_list[0], headers, path_components)
 
 def parse_args():
+    global shadertool
     import argparse
     parser = argparse.ArgumentParser(description = 'Unity Shader Extractor')
     parser.add_argument('shaders', nargs='+',
@@ -585,9 +598,16 @@ def parse_args():
             help='Name the files by the keywords of the shader (WARNING: May exceed Windows filename limit)')
     parser.add_argument('--deep-dir', action='store_true',
             help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
+    parser.add_argument('--fog', action='store_true',
+            help='Generate additional shader variants with fog instructions added to match those from Unity')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')
+    if args.fog:
+        try:
+            shadertool = __import__('shadertool')
+        except ImportError:
+            raise ImportError('--fog requires shadertool.py')
     return args
 
 def main():
