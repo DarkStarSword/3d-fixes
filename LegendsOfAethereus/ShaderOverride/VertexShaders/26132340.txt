@@ -1,3 +1,812 @@
+// CRC32: 26132340 | Matched 33 variants of 23 shaders: Final/Enemy/EnemyAliveMaterial, Final/Enemy/EnemyAliveMaterialAlpha, Final/Enemy/EnemyAliveMaterialCutoff, Final/Enemy/EnemyDeadMaterial, Final/Game/Game_Crafting, Final/Game/Game_Cube, Final/Game/Game_Cutoff, Final/Game/Game_Regular, Final/Game/Game_Regular_UV2, Final/Ghalia/Ghalia_NormalVertexBlend_UV2, Final/Ghalia/Ghalia_Regular, Final/Ghalia/Ghalia_Regular_UV2, Final/Hair/Hair_Low, Final/Interior/Interior_Regular, Final/Interior/Interior_Regular_UV2, Final/Interior/Shops_pixel-lit_From-Ats_ambientTex, Final/Nexus/Nexus_Lightmap_Game-Material, Final/Nexus/Nexus_Regular, Final/Special/BackdropNear, Final/Special/BannerMakerShader, Final/Special/Game_Hair_Statue, Final/Special/Game_Statue, MG/Skin/Game-Material_Opaque_Edit_Skin
+// 
+//    Unity headers extracted from S_EnemyAliveMaterial_Shader.shader
+//    Shader "Final/Enemy/EnemyAliveMaterial" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 3/3 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_EnemyAliveMaterialAlpha_Shader.shader
+//    Shader "Final/Enemy/EnemyAliveMaterialAlpha" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _Alpha ("Alpha Amount", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 2/2 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_EnemyAliveMaterialCutoff_Shader .shader
+//    Shader "Final/Enemy/EnemyAliveMaterialCutoff" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 3/3 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_EnemyDeadMaterial_Shader.shader
+//    Shader "Final/Enemy/EnemyDeadMaterial" {
+//      Properties {
+//       _bloodTiling ("Blood Tiling", Float) = 2
+//       _ElementalColor ("Blood Color", Color) = (0.1,0,0.02,1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 2/2 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Crafting_Shader.shader
+//    Shader "Final/Game/Game_Crafting" {
+//      Properties {
+//       _TopColor ("Top Color", Color) = (0.8,0.8,1,1)
+//       _BottomColor ("Bottom Color", Color) = (0.2,0.4,0.4,1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _ExtrasTex ("_ExtrasTex", 2D) = "black" {}
+//       _MainTex2 ("_MainTex2", 2D) = "white" {}
+//       _BumpMap2 ("_BumpMap2", 2D) = "black" {}
+//       _ExtrasTex2 ("_ExtrasTex2", 2D) = "black" {}
+//       _AmbientTex2 ("_AmbientTex2", 2D) = "black" {}
+//       _tiling2 ("Tiling 2", Float) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 5/5 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Cube_Shader.shader
+//    Shader "Final/Game/Game_Cube" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _ExtrasTex ("R|Mag G|Blur B|Fres A|Sat", 2D) = "black" {}
+//       _reflectionAmount ("Reflection Amount", Float) = 1
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 4/5 {
+// 2:   SubShader 5/5 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Cutoff_Shader.shader
+//    Shader "Final/Game/Game_Cutoff" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 2/3 {
+// 2:   SubShader 3/3 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Regular_Shader.shader
+//    Shader "Final/Game/Game_Regular" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 2/3 {
+// 2:   SubShader 3/3 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Regular_UV2_Shader.shader
+//    Shader "Final/Game/Game_Regular_UV2" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 3/3 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Ghalia_NormalVertexBlend_UV2_Shader.shader
+//    Shader "Final/Ghalia/Ghalia_NormalVertexBlend_UV2" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _MainTex2 ("_MainTex2", 2D) = "white" {}
+//       _BumpMap2 ("_BumpMap2", 2D) = "black" {}
+//       _AmbientTex2 ("_AmbientTex2", 2D) = "black" {}
+//       _DirtTex ("_DirtTex", 2D) = "white" {}
+//       _AmbientTexD ("_AmbientTexD", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 4/4 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Ghalia_Regular_Shader.shader
+//    Shader "Final/Ghalia/Ghalia_Regular" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 4/5 {
+// 2:   SubShader 5/5 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Ghalia_Regular_UV2_Shader.shader
+//    Shader "Final/Ghalia/Ghalia_Regular_UV2" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 6/6 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_HairLow_Shader.shader
+//    Shader "Final/Hair/Hair_Low" {
+//      Properties {
+//       _HairColor ("Hair Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//      }
+//      SubShader 2/2 {
+//        LOD 100
+//        Tags { "RenderType"="Transparent" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Transparent" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Interior_Regular_Shader.shader
+//    Shader "Final/Interior/Interior_Regular" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 3/4 {
+// 2:   SubShader 4/4 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Interior_Regular_UV2_Shader.shader
+//    Shader "Final/Interior/Interior_Regular_UV2" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 4/4 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Interior_Cutoff_Shader.shader
+//    Shader "Final/Interior/Shops_pixel-lit_From-Ats_ambientTex" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 5/5 {
+//        LOD 100
+//        Tags { "IGNOREPROJECTOR"="True" "RenderType"="TreeLeaf" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "IGNOREPROJECTOR"="True" "RenderType"="TreeLeaf" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Nexus_Cube_Shader.shader
+//    Shader "Final/Nexus/Nexus_Lightmap_Game-Material" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _ExtrasTex ("R|Mag G|Blur B|Fres A|Sat", 2D) = "black" {}
+//       _reflectionAmount ("Reflection Amount", Float) = 1
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 4/5 {
+// 2:   SubShader 5/5 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Nexus_Regular_Shader.shader
+//    Shader "Final/Nexus/Nexus_Regular" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 2/3 {
+// 2:   SubShader 3/3 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Backdrop_Shader.shader
+//    Shader "Final/Special/BackdropNear" {
+//      Properties {
+//       _Color ("Color Tint", Color) = (1,1,1,1)
+//       _MainTex ("Diffuse", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.2
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 100
+//        Tags { "ForceNoShadowCasting"="True" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "ForceNoShadowCasting"="True" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="True" "RenderType"="TransparentCutout" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Banner_Shader.shader
+//    Shader "Final/Special/BannerMakerShader" {
+//      Properties {
+//       _WindMagnitude ("Wind Magnitude", Float) = 1
+//       _Dec1Color ("Decal 1 Color", Color) = (1,0,0,1)
+//       _Dec2Color ("Decal 2 Color", Color) = (0,1,0,1)
+//       _Dec3Color ("Decal 2 Color", Color) = (0,0,1,1)
+//       _BGColor ("BG Color", Color) = (1,0,1,1)
+//       _Dec1Tex ("Decal Inner Texture", 2D) = "black" {}
+//       _Dec2Tex ("Decal Outer Texture", 2D) = "black" {}
+//       _Dec3Tex ("Border Texture", 2D) = "black" {}
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//      }
+// 1:   SubShader 2/3 {
+// 2:   SubShader 3/3 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "IGNOREPROJECTOR"="True" "RenderType"="TreeLeaf" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "IGNOREPROJECTOR"="True" "RenderType"="TreeLeaf" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Statue_Hair_Shader.shader
+//    Shader "Final/Special/Game_Hair_Statue" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _reflectionAmount ("Reflection Blur", Float) = 1
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       _MainTex2 ("_MainTex2", 2D) = "white" {}
+//       _BumpMap2 ("_BumpMap2", 2D) = "black" {}
+//       _ExtrasTex2 ("_ExtrasTex2", 2D) = "black" {}
+//       _AmbientTex2 ("_AmbientTex2", 2D) = "black" {}
+//       _tiling2 ("Tiling 2", Float) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 3/3 {
+//        LOD 100
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Statue_Shader.shader
+//    Shader "Final/Special/Game_Statue" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _reflectionAmount ("Reflection Blur", Float) = 1
+//       _MainTex2 ("_MainTex2", 2D) = "white" {}
+//       _BumpMap2 ("_BumpMap2", 2D) = "black" {}
+//       _ExtrasTex2 ("_ExtrasTex2", 2D) = "black" {}
+//       _AmbientTex2 ("_AmbientTex2", 2D) = "black" {}
+//       _tiling2 ("Tiling 2", Float) = 1
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 4/5 {
+// 2:   SubShader 5/5 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Game_Skin_Shader.shader
+//    Shader "MG/Skin/Game-Material_Opaque_Edit_Skin" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _Cube ("_Cube", CUBE) = "black" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _ExtrasTex ("_ExtrasTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+// 1:   SubShader 3/4 {
+// 2:   SubShader 4/4 {
+// 2:     LOD 100
+// 1:     LOD 200
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Geometry" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Geometry" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0
     dcl_position o0
     dcl_texcoord o1
