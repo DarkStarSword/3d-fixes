@@ -1,0 +1,105 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c25, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, -v2.yzxw, c25.xxyw
+    mad r0.xyz, v2.zxyw, c25.yxxw, r0
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mad r1.xyz, v2.yzxw, r0.zxyw, -r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, v2.zxyw, r1.yzxw
+    mad r2.xyz, v2.yzxw, r1.zxyw, -r2
+    dp3 r0.y, r0, r2
+    mov r3, c9
+    dp3 r0.x, r1, r1
+    rsq r0.x, r0.x
+    mul r4.xyz, r0.x, r1
+    mov r1, c10
+    dp4 r2.z, c15, r1
+    mov r1, c8
+    dp4 r2.x, c15, r1
+    dp4 r2.y, c15, r3
+    slt r0.y, r0, c25
+    max r0.y, -r0, r0
+    slt r0.w, c25.y, r0.y
+    mul r0.xyz, v2.zxyw, r4.yzxw
+    add r0.w, -r0, -r0
+    mov r1.w, c25.x
+    mov r1.xyz, c12
+    dp4 r3.z, r1, c10
+    dp4 r3.x, r1, c8
+    dp4 r3.y, r1, c9
+    mad r3.xyz, r3, c23.w, -v0
+    mul r1.xyz, v2, c23.w
+    dp3 r2.w, r1, c5
+    add r0.w, r0, c25.x
+    mad r0.xyz, v2.yzxw, r4.zxyw, -r0
+    mul r0.xyz, r0, r0.w
+    mov r0.w, c25.x
+    dp3 o4.y, r2, r0
+    dp3 o6.y, r3, r0
+    dp3 r0.x, r1, c4
+    dp3 r0.z, r1, c6
+    mov r0.y, r2.w
+    mul r1, r0.xyzz, r0.yzzx
+    dp4 r5.z, r0, c18
+    dp4 r5.y, r0, c17
+    dp4 r5.x, r0, c16
+    dp4 r0.w, r1, c21
+    dp4 r0.z, r1, c20
+    dp4 r0.y, r1, c19
+    add r1.xyz, r5, r0.yzww
+    mul r1.w, r2, r2
+    mad r0.w, r0.x, r0.x, -r1
+    mul r5.xyz, r0.w, c22
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    add r0.xyz, r0, -c12
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    rcp r3.w, r0.x
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    add o5.xyz, r1, r5
+
+mov o0, r0 // Relocated from line 86 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed F72978C9.txt
+texldl r6, c220.z, s0
+add r6.w, r0.w, -r6.y
+mad r0.x, r6.w, r6.x, r0.x
+
+    mul r1.xyz, r0.xyww, c25.z
+    mul r1.y, r1, c13.x
+    dp3 o4.x, r2, r4
+    dp3 o6.x, r3, r4
+    mov o2, r3
+    dp3 o4.z, v2, r2
+    dp3 o6.z, r3, v2
+    mad o7.xy, r1.z, c14.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 78 with shadertool.py
+    mov o7.zw, r0
+    mov o3.xyz, v2
+    mad o1.xy, v3, c24, c24.zwzw
+
+// approximately 76 instruction slots used
