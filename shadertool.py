@@ -42,7 +42,7 @@ class Token(str):
 #     pattern = re.compile(r'-')
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\])?')
+    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
 
 class Comma(Token):
     pattern = re.compile(r',')
