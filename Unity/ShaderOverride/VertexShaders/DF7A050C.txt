@@ -67,11 +67,22 @@ dcl_2d s0
     dp4 r0.y, v0, c5
     mov o0, r0 // moved up before the stereo correction
 
-// Apply stereo correction to screen coords stored in texcoord:
-texldl r31, c220.z, s0
-add r31.w, r0.w, -r31.y
-mul r31.w, r31.w, r31.x
-add r0.x, r0.x, r31.w
+
+// Determine if drawing a full screen quad by testing if output position w == 1.
+// Seems to be more reliable than above input position test:
+if_eq r0.w, c220.y
+	mov r20.x, c220.y
+else
+	mov r20.x, c220.x
+endif
+
+if_eq r20.x, c220.x
+	// Apply stereo correction to screen coords stored in texcoord:
+	texldl r31, c220.z, s0
+	add r31.w, r0.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r0.x, r0.x, r31.w
+endif
 
     mul r1.xyz, r0.xyww, c11.x
     mul r1.y, r1, c8.x
@@ -79,19 +90,21 @@ add r0.x, r0.x, r31.w
     dp4 r2.x, v0, c0
     dp4 r2.y, v0, c1
 
-// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-// For a detailed explanation of what we are doing here, see this thread:
-// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
+if_eq r20.x, c220.x
+	// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+	// For a detailed explanation of what we are doing here, see this thread:
+	// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
 
-// Transpose first component of the MV.I matrix regs into r30:
-mov r30.x, c180.x
-mov r30.y, c181.x
-mov r30.z, c182.x
-mov r30.w, c183.x
-dp4 r30.x, r30, c190 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	dp4 r30.x, r30, c190 // Calculate P[0,0]
+	rcp r30.x, r30.x // Calculate P.I[0,0]
 
-mad r2.x, r31.w, r30.x, r2.x
+	mad r2.x, r31.w, r30.x, r2.x
+endif
 
     mad o1.xy, r1.z, c9.zwzw, r1
     mad r1.xyz, -r2, c11.yyzw, v1
