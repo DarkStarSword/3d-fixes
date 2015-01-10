@@ -70,14 +70,38 @@ dcl_2d s0
     dp4 r0.y, v0, c5
     mov o0, r0 // moved up before the stereo correction
 
+// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+// For a detailed explanation of what we are doing here, see this thread:
+// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
 
 // Determine if drawing a full screen quad by testing if output position w == 1.
-// Seems to be more reliable than above input position test:
+// Seems to be more reliable than an input position test:
 if_eq r0.w, c220.y
-	mov r20.x, c220.y
+	mov r20.x, c220.y // Set flag to indicate we are drawing a full-screen quad
+
+	// We are drawing a full-screen quad, so we can't use the matrices from
+	// this shader and have to use an alternate source copied from elsewhere:
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	dp4 r30.x, r30, c190 // Calculate P[0,0]
 else
-	mov r20.x, c220.x
+	mov r20.x, c220.x // Clear flag to indicate we are drawing a light in the scene
+
+	// Our projection matrix will be valid, so we can use the matrices
+	// passed into this shader:
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c0.x
+	mov r30.y, c1.x
+	mov r30.z, c2.x
+	mov r30.w, c3.x
+	dp4 r30.x, r30, c4 // Calculate P[0,0]
 endif
+
+rcp r30.x, r30.x // Calculate P.I[0,0]
+mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 
 if_eq r20.x, c220.x
 	// Apply stereo correction to screen coords stored in texcoord:
@@ -92,21 +116,6 @@ endif
     dp4 r2.z, v0, c2
     dp4 r2.x, v0, c0
     dp4 r2.y, v0, c1
-
-// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-// For a detailed explanation of what we are doing here, see this thread:
-// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
-
-// Transpose first component of the MV.I matrix regs into r30:
-mov r30.x, c180.x
-mov r30.y, c181.x
-mov r30.z, c182.x
-mov r30.w, c183.x
-dp4 r30.x, r30, c190 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
-
-// Copy calculated FOV to pixel shaders:
-mov o5.x, r30.x
 
 if_eq r20.x, c220.x
 	mad r2.x, r31.w, r30.x, r2.x
