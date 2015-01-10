@@ -1125,9 +1125,9 @@ def add_unity_autofog_VS3(tree, reason):
         return
 
     tree.fog_type = 'FOG'
-    fog_output = NewInstruction('mov', ['o9', temp_reg.z])
+    fog_output = NewInstruction('mov', [Register('o9'), temp_reg.z])
     tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py %s' % reason)
-    decl = NewInstruction('dcl_fog', ['o9'])
+    decl = NewInstruction('dcl_fog', [Register('o9')])
     tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py %s' % reason)
 
 def add_unity_autofog_PS3(tree, mad_fog, reason):
