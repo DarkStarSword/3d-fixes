@@ -34,6 +34,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c13, 1, 2, -0.5, -1
     def c14, 1.97500002, 0.792999983, 0.375, 0.193000004
     def c15, 2, 3, 0.300000012, 0.100000001
@@ -88,11 +89,12 @@ dcl_2d s0
     mov o1, r0
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 155759A9.txt
+// shadertool.py -i -f --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update 155759A9.txt
 texldl r4, c220.z, s0
 add r4.w, r0.w, -r4.y
 mad r0.x, r4.w, r4.x, r0.x
 
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o0.xy, r0.zwzw
 
 // approximately 38 instruction slots used

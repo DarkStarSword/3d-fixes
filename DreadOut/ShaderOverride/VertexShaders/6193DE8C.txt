@@ -114,6 +114,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c30, 1, 2, -0.5, -1
     def c31, 1.97500002, 0.792999983, 0.375, 0.193000004
     def c32, 2, 3, 0.300000012, 0.100000001
@@ -174,17 +175,18 @@ dcl_2d s0
     dp4 r0.x, r4, c0
     dp4 r0.y, r4, c1
 
-mov o5, r0 // Relocated from line 58 with shadertool.py
+mov o5, r0 // Relocated from line 59 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 6193DE8C.txt
+// shadertool.py -i -f --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update 6193DE8C.txt
 texldl r6, c220.z, s0
 add r6.w, r0.w, -r6.y
 mad r0.x, r6.w, r6.x, r0.x
 
     mul r1.xyz, r0.xyww, c33.x
 
-//     mov o5, r0 // Relocated to line 57 with shadertool.py
+//     mov o5, r0 // Relocated to line 58 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mul r1.y, r1, c14.x
     mov o4.zw, r0
     dp3 r0.y, v1, v1

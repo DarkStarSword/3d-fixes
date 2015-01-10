@@ -1,4 +1,5 @@
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c26, 1, 0.5, 0, 0
     dcl_position v0
     dcl_tangent v1
@@ -56,10 +57,10 @@ dcl_2d s0
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
 
-mov o5, r0 // Relocated from line 63 with shadertool.py
+mov o5, r0 // Relocated from line 64 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 52021A3C.txt
+// shadertool.py -i -f --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update 52021A3C.txt
 texldl r5, c220.z, s0
 add r5.w, r0.w, -r5.y
 mad r0.x, r5.w, r5.x, r0.x
@@ -74,7 +75,8 @@ mad r0.x, r5.w, r5.x, r0.x
     dp3 o3.x, v1, r3
     mad o4.xy, r1.z, c14.zwzw, r1
 
-//     mov o5, r0 // Relocated to line 54 with shadertool.py
+//     mov o5, r0 // Relocated to line 55 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o4.zw, r0
     mad o0.zw, v3.xyxy, c25.xyxy, c25
     mad o0.xy, v3, c24, c24.zwzw
