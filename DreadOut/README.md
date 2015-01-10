@@ -31,3 +31,10 @@ Installation (32bit)
 --------------------
 1. Extract the zip file to the game directory
 2. Replace the d3d9.dll with the one in the 32bit directory
+
+Notes
+-----
+I played the game on the highest available quality setting ("Fantastic") at
+1920x1080. If you see any rendering issues or the camera is in 2D, switch to
+these settings (I don't know if there are any issues on other settings - I
+haven't checked).
