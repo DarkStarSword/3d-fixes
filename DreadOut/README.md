@@ -8,8 +8,6 @@ Fixed
 - Image on camera is now 3D (necessary to avoid rendering artefacts, hold Q
   with camera out if you prefer 2D).
 - Convergence preset provided in-game to place the camera at a usable depth
-- Automatic convergence preset used in menus to bring them close to screen
-  depth (the main menu takes a moment to adjust after starting the game).
 - Slight depth adjustment to the book in the pause menu
 
 Known Issues
