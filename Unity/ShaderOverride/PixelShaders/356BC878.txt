@@ -45,6 +45,9 @@
     dcl_texcoord0 v0.xyzw
     dcl_texcoord1 v1.xyz
 
+// Extra input from VS with P.I[0,0]:
+dcl_texcoord5 v5.x
+
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
@@ -59,22 +62,10 @@ dcl_2d s13
     rcp r0.w, r0.w
     mul r2.xyw, r0.xyzz, r0.w // r2.w has depth
 
-// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-// For a detailed explanation of what we are doing here, see this thread:
-// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
-
-// Transpose first component of the MV.I matrix regs into r30:
-mov r30.x, c180.x
-mov r30.y, c181.x
-mov r30.z, c182.x
-mov r30.w, c183.x
-dp4 r30.x, r30, c190 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
-
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
 add r31.w, r2.w, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
-mad r2.x, -r31.w, r30.x, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
+mad r2.x, -r31.w, v5.x, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
 
     dp4 r1.z, r2.xywz, c2
     dp4 r1.x, r2.xywz, c0
