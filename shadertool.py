@@ -488,7 +488,7 @@ class PS3(PixelShader):
     }
     def_stereo_sampler = 's13'
 
-def vs_to_shader_model_3_common(shader, shader_model, extra_fixups = {}):
+def vs_to_shader_model_3_common(shader, shader_model, args, extra_fixups = {}):
     shader.analyse_regs()
     shader.insert_decl()
     replace_regs = {}
@@ -535,24 +535,28 @@ def vs_to_shader_model_3_common(shader, shader_model, extra_fixups = {}):
 
     shader.__class__ = VS3
 
+    if (args.add_fog_on_sm3_update):
+        shader.analyse_regs()
+        add_unity_autofog_VS3(shader, reason="for fog compatibility on upgrade from %s to vs_3_0" % shader_model)
+
 def insert_converted_by(tree, orig_model):
     pos = prev_line_pos(tree, tree.shader_start)
     tree[tree.shader_start].append(WhiteSpace(' '))
     tree[tree.shader_start].append(CPPStyleComment("// Converted from %s with DarkStarSword's shadertool.py" % orig_model))
 
 class VS11(VertexShader):
-    def to_shader_model_3(self):
+    def to_shader_model_3(self, args):
         # NOTE: Only very lightly tested!
-        vs_to_shader_model_3_common(self, 'vs_1_1', {'mov': fixup_mova})
+        vs_to_shader_model_3_common(self, 'vs_1_1', args, {'mov': fixup_mova})
         insert_converted_by(self, 'vs_1_1')
 
 class VS2(VertexShader):
-    def to_shader_model_3(self):
-        vs_to_shader_model_3_common(self, 'vs_2_0')
+    def to_shader_model_3(self, args):
+        vs_to_shader_model_3_common(self, 'vs_2_0', args)
         insert_converted_by(self, 'vs_2_0')
 
 class PS2(PixelShader):
-    def to_shader_model_3(self):
+    def to_shader_model_3(self, args):
         def fixup_ps2_dcl(tree, node, parent, idx):
             reg = node.args[0]
             if reg.type == 'v':
@@ -1093,7 +1097,7 @@ def auto_fix_vertex_halo(tree, args):
 
     tree.autofixed = True
 
-def add_unity_autofog_VS3(tree):
+def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
         debug('Shader already has a fog output: %s' % d)
@@ -1122,11 +1126,11 @@ def add_unity_autofog_VS3(tree):
 
     tree.fog_type = 'FOG'
     fog_output = NewInstruction('mov', ['o9', temp_reg.z])
-    tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py to match Unity autofog')
+    tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py %s' % reason)
     decl = NewInstruction('dcl_fog', ['o9'])
-    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py to match Unity autofog')
+    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py %s' % reason)
 
-def add_unity_autofog_PS3(tree, mad_fog):
+def add_unity_autofog_PS3(tree, mad_fog, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
         debug('Shader already has a fog input: %s' % d)
@@ -1154,7 +1158,7 @@ def add_unity_autofog_PS3(tree, mad_fog):
         return
 
     decl = NewInstruction('dcl_fog', ['v9.x'])
-    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py to match Unity autofog')
+    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py %s' % reason)
 
     replace_regs = {'oC0': Register('r30')}
     tree.do_replacements(replace_regs, False)
@@ -1164,7 +1168,7 @@ def add_unity_autofog_PS3(tree, mad_fog):
     def add_instr(opcode, args):
         return tree.insert_instr(pos, NewInstruction(opcode, args))
 
-    pos += tree.insert_instr(pos, None, 'Inserted by shadertool.py to match Unity autofog:')
+    pos += tree.insert_instr(pos, None, 'Inserted by shadertool.py %s:' % reason)
 
     if mad_fog:
         tree.fog_type = 'MAD_FOG'
@@ -1178,7 +1182,7 @@ def add_unity_autofog_PS3(tree, mad_fog):
     pos += add_instr('lrp', ['r30.xyz', 'r31.x', 'r30', fog_c1])
     pos += add_instr('mov', ['oC0', 'r30'])
 
-def add_unity_autofog(tree):
+def add_unity_autofog(tree, reason = 'to match Unity autofog'):
     '''
     Adds instructions to a shader to match those Unity automatically adds for
     fog. Used by extract_unity_shaders.py to construct fog variants of shaders.
@@ -1187,13 +1191,13 @@ def add_unity_autofog(tree):
     if not hasattr(tree, 'reg_types'):
         tree.analyse_regs()
     if isinstance(tree, VS3):
-        add_unity_autofog_VS3(tree)
+        add_unity_autofog_VS3(tree, reason)
         return (tree,)
     if isinstance(tree, PS3):
         tree1 = copy.deepcopy(tree)
         tree2 = copy.deepcopy(tree)
-        add_unity_autofog_PS3(tree1, True)
-        add_unity_autofog_PS3(tree2, False)
+        add_unity_autofog_PS3(tree1, True, reason)
+        add_unity_autofog_PS3(tree2, False, reason)
         return (tree1, tree2)
     return (tree,)
 
@@ -1370,6 +1374,8 @@ def parse_args():
 
     parser.add_argument('--add-unity-autofog', action='store_true',
             help="Add instructions to the shader to support fog, like Unity does (used by extract_unity_shaders.py)")
+    parser.add_argument('--add-fog-on-sm3-update', action='store_true',
+            help="Add fog instructions to any vertex shader being upgraded from vs_2_0 to vs_3_0 - use if fog disappears on a shader after running through this tool")
 
     parser.add_argument('--no-convert', '--noconv', action='store_false', dest='auto_convert',
             help="Do not automatically convert shaders to shader model 3")
@@ -1422,6 +1428,9 @@ def args_require_reg_analysis(args):
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog
 
+        # Also needs register analysis, but earlier than this test:
+        # args.add_fog_on_sm3_update
+
 def main():
     args = parse_args()
 
@@ -1469,7 +1478,7 @@ def main():
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
             debug('Converting to Shader Model 3...')
-            tree.to_shader_model_3()
+            tree.to_shader_model_3(args)
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
 
