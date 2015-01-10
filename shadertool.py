@@ -1128,7 +1128,9 @@ def add_unity_autofog_VS3(tree, reason):
     fog_output = NewInstruction('mov', [Register('o9'), temp_reg.z])
     tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py %s' % reason)
     decl = NewInstruction('dcl_fog', [Register('o9')])
-    tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py %s' % reason)
+    # Inserting this in a specific spot to match Unity rather than using
+    # insert_decl(), so manually increment decl_end as well:
+    tree.decl_end += tree.insert_instr(next_line_pos(tree, tree.shader_start), decl, 'Inserted by shadertool.py %s' % reason)
 
 def add_unity_autofog_PS3(tree, mad_fog, reason):
     try:
