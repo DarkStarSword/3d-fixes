@@ -12,18 +12,22 @@ Fixed
 
 Known Issues
 ------------
-If you find the image on the phone camera looks wrong (2D, doubled or tripled
-image, flickering or broken shadows), alt+tab out of the game and back in. This
-happens inconsistently - sometimes the image will look fine, then it will be
-broken the next time you pull out the camera, so it's a good idea to check the
-camera half a dozen times or so while you are in a safe area before moving on.
+- Mouse cursor depth cannot be adjusted as the game uses a hardware cursor.
+  Hold Q to reduce 3D in the menus to allow for easier selection.
 
-The rendering seems to be stable after a single alt+tab, so you might just want
-to do one after launching the game for good measure.
+- If you find the image on the phone camera looks wrong (2D, doubled or tripled
+  image, flickering or broken shadows), alt+tab out of the game and back in.
+  This happens inconsistently - sometimes the image will look fine, then it
+  will be broken the next time you pull out the camera, so it's a good idea to
+  check the camera half a dozen times or so while you are in a safe area before
+  moving on.
 
-If you are in a tight spot and don't have time to alt+tab, holding Q will
-temporarily set the separation to 1% which will make the image on the camera
-usable.
+  The rendering seems to be stable after a single alt+tab, so you might just
+  want to do one after launching the game for good measure.
+
+  If you are in a tight spot and don't have time to alt+tab, holding Q will
+  temporarily set the separation to 1% which will make the image on the camera
+  usable.
 
 Installation (64bit)
 --------------------
