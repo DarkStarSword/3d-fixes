@@ -33,8 +33,24 @@ dcl_2d s3
 
 // approximately 6 instruction slots used
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i -f --stereo-sampler-vs=s3 --ui=c200.z --git VertexShader_63_CRC32_7CA24CCE.txt
-texldl r2, c220.z, s3
-mad r1.x, r2.x, c200.z, r1.x
-mov o2, r1
+texldl r31, c220.z, s3
+
+// The normal UI depth adjustment below misaligns the drop shadow
+//mad r1.x, r31.x, c200.z, r1.x
+
+// Instead, we multiply the entire output coordinate to achieve the same depth,
+// but without the misalignment.
+
+// In order to calculate how much we need to multiply the coordinate by, we
+// need to take the stereo adjustment formula (including the perspective divide
+// by W) and the UI depth adjustment formula (where we assume W=1 for the
+// perspective divide), set them equal and solve for W:
+// S * (W - C) / W = S * UI / 1
+// W = -C / (UI - 1)
+
+mov r31.w, c200.z		// UI
+add r31.w, r31.w, -c220.y	// UI - 1
+rcp r31.w, r31.w		// 1 / (UI - 1)
+mul r31.w, -r31.y, r31.w	// -C / (UI - 1)
+
+mul o2, r1, r31.w
