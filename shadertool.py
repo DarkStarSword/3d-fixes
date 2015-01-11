@@ -728,7 +728,11 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
 
-    if 's' in tree.reg_types and tree.def_stereo_sampler in tree.reg_types['s']:
+    if isinstance(tree, VertexShader) and args.stereo_sampler_vs:
+        tree.stereo_sampler = args.stereo_sampler_vs
+    elif isinstance(tree, PixelShader) and args.stereo_sampler_ps:
+        tree.stereo_sampler = args.stereo_sampler_ps
+    elif 's' in tree.reg_types and tree.def_stereo_sampler in tree.reg_types['s']:
         # FIXME: There could be a few reasons for this. For now I assume the
         # shader was already using the sampler, but it's also possible we have
         # simply already added the stereo texture.
@@ -1348,6 +1352,11 @@ def parse_args():
             help='Save the shader to a file')
     parser.add_argument('--in-place', action='store_true',
             help='Overwrite the file in-place')
+
+    parser.add_argument('--stereo-sampler-vs',
+            help='Specify the sampler to read the stereo parameters from in vertex shaders')
+    parser.add_argument('--stereo-sampler-ps',
+            help='Specify the sampler to read the stereo parameters from in pixel shaders')
 
     parser.add_argument('--show-regs', '-r', action='store_true',
             help='Show the registers used in the shader')
