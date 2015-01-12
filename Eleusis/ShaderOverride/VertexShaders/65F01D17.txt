@@ -24,7 +24,7 @@
     dcl_texcoord o2.xy
     dcl_position o3
 
-def c220, 0, 1, 0.0625, 0.5
+def c220, 0, 1, 0.0625, 2
 dcl_2d s3
 
     mul r0, c7, v0.y
@@ -42,9 +42,17 @@ dcl_2d s3
 
 // UI depth adjustment inserted with DarkStarSword's shadertool.py:
 // shadertool.py -i -f --stereo-sampler-vs=s3 --ui=c200.z --condition=c251.x --git VertexShader_64_CRC32_65F01D17.txt
-mov r2.x, c251.x
-if_eq r2.x, c220.x
-texldl r2, c220.z, s3
-mad r1.x, r2.x, c200.z, r1.x
+mov r30.x, c251.x
+if_ne r30.x, c220.y // 1 is ValForDefined, so this matches anything undefined or that has an overridden index
+	texldl r31, c220.z, s3
+	mad r1.x, r31.x, c200.z, r1.x
 endif
 mov o3, r1
+
+if_eq r30.x, c220.w
+	// Matched crosshair texture (Index = 2), kill it if Const1 = 0
+	mov r30.y, c200.x
+	if_eq r30.y, c220.x
+		mov o3, c220.xxxx
+	endif
+endif
