@@ -59,6 +59,9 @@ class CPPStyleComment(Token, Ignore):
 class SemiColonComment(Token, Ignore):
     pattern = re.compile(r';.*$', re.MULTILINE)
 
+class HashComment(Token, Ignore):
+    pattern = re.compile(r'#.*$', re.MULTILINE)
+
 class CStyleComment(Token, Ignore): # XXX: Are these valid in shader asm language?
     pattern = re.compile(r'\/\*.*\*\/', re.MULTILINE)
 
@@ -83,6 +86,7 @@ class Anything(Token):
 tokens = (
     CPPStyleComment,
     SemiColonComment, # Seen in declaration section of shaders extracted from Unity like '; 52 ALU, 5 TEX'
+    HashComment, # Seen in Stacking with installation path & line numbers
     CStyleComment, # XXX: Are these valid in shader asm?
     NewLine,
     WhiteSpace,
