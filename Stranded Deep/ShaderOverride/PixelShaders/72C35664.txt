@@ -1,3 +1,5 @@
+// Water surface pixel shader
+
     ps_3_0
     dcl_2d s0
     dcl_2d s1
@@ -27,6 +29,28 @@
     dcl_texcoord5 v5.xyz
     dcl_texcoord6 v6
     dcl_texcoord7 v7.xyz
+
+dcl_2d s13
+def c220, 0, 1, 0.0625, 0.5
+
+// Normally I'd do this fix in the vertex shader (--auto-fix-vertex-halo), but
+// in this case it is using all four sampler registers and hasn't left any for
+// the stereo params, so I have to do it here.
+
+texldl r31, c220.z, s13
+
+// Fixes halo around rocks:
+mov r20, v0
+add r31.w, r20.z, -r31.y
+mul r31.w, r31.w, c220.w // Halve for Unity style screen coords
+mad r20.x, r31.w, r31.x, r20.x
+
+// Fixes main depth issue (approximate - nearer camera is a tad too deep):
+mov r21, v1
+add r31.w, r21.z, -r31.y
+mul r31.w, r31.w, c220.w // Halve for Unity style screen coords
+mad r21.x, r31.w, r31.x, r21.x
+
     add r0.xyz, v7, -c11
     mul r0.xyz, r0, c12
     dp3 r4.x, r0, r0
@@ -91,10 +115,10 @@
     max_pp r1.w, r1.x, r1.y
     rsq_pp r0.w, r0.w
     mul_pp r1.xyz, r0.w, r0
-    texldp r0.x, v0, s2
+    texldp r0.x, r20, s2
     mad r0.w, r0.x, c6.z, c6
     rcp r2.x, r0.w
-    add r0.w, r2.x, -v0
+    add r0.w, r2.x, -r20
     mul_sat r0.w, r0, c17.x
     add r3.w, -r0, c31.z
     add_sat r4.w, r1, r3
@@ -111,7 +135,7 @@
     mad_pp r4.xy, r2.wyzw, c31.x, c31.y
     mul_pp r2.zw, r4.xyxy, r4.xyxy
     mul_pp r0.x, r0, r0.y
-    add r1.z, r2.x, -v0
+    add r1.z, r2.x, -r20
     abs r1.z, r1
     add_sat_pp r3.z, r2, r2.w
     mul r2.x, -r1.z, c36.w
@@ -168,13 +192,13 @@
     dp3_pp r0.y, r4, r4
     mov_pp r1.zw, c31.w
     mul_pp r1.xy, r1, c24.x
-    mad r1, r0.w, r1, v1
+    mad r1, r0.w, r1, r21
     texldp r0.x, r1, s6
     mad r0.z, r0.x, c6, c6.w
     rcp r0.z, r0.z
     rsq_pp r0.x, r0.y
     mul_pp r0.xy, r0.x, r4
-    add r3.z, r0, -v1
+    add r3.z, r0, -r21
     mov_pp r0.z, -r0.y
     mov_pp r0.x, -r0
     mov_pp r0.y, c31.z
@@ -182,7 +206,7 @@
     texldp r1.xyz, r1, s7
     rsq_pp r1.w, r4.x
     mul_pp r0.xyz, r1.w, r0
-    texldp r4.xyz, v1, s7
+    texldp r4.xyz, r21, s7
     cmp_pp r1.xyz, r3.z, r1, r4
     dp3 r1.w, v4.xzyw, r0
     mul r4.xyz, r0, r1.w
