@@ -1,0 +1,118 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c39, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r4.xyz, v2, c37.w
+    dp4 r0.x, v0, c9
+    add r2, -r0.x, c23
+    dp3 r4.w, r4, c9
+    dp3 r5.x, r4, c8
+    dp3 r4.x, r4, c10
+    mul r3, r4.w, r2
+    dp4 r0.x, v0, c8
+    add r0, -r0.x, c22
+    mul r2, r2, r2
+    mov r5.z, r4.x
+    mad r3, r5.x, r0, r3
+    mov r5.w, c39.x
+    dp4 r5.y, v0, c10
+    mad r2, r0, r0, r2
+    add r0, -r5.y, c24
+    mad r2, r0, r0, r2
+    mad r0, r4.x, r0, r3
+    mul r3, r2, c25
+    mov r5.y, r4.w
+    rsq r2.x, r2.x
+    rsq r2.y, r2.y
+    rsq r2.w, r2.w
+    rsq r2.z, r2.z
+    mul r0, r0, r2
+    add r2, r3, c39.x
+    dp4 r3.z, r5, c32
+    dp4 r3.y, r5, c31
+    dp4 r3.x, r5, c30
+    rcp r2.x, r2.x
+    rcp r2.y, r2.y
+    rcp r2.w, r2.w
+    rcp r2.z, r2.z
+    max r0, r0, c39.z
+    mul r0, r0, r2
+    mul r2.xyz, r0.y, c27
+    mad r2.xyz, r0.x, c26, r2
+    mad r0.xyz, r0.z, c28, r2
+    mad r2.xyz, r0.w, c29, r0
+    mul r0, r5.xyzz, r5.yzzx
+    mul r2.w, r4, r4
+    dp4 r4.z, r0, c35
+    dp4 r4.y, r0, c34
+    dp4 r4.x, r0, c33
+    mad r2.w, r5.x, r5.x, -r2
+    mul r0.xyz, r2.w, c36
+    add r3.xyz, r3, r4
+    add r3.xyz, r3, r0
+    add o7.xyz, r3, r2
+    mov r0.xyz, v1
+    mul r2.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r2
+    mul r4.xyz, r0, v1.w
+    mov r0, c14
+    dp4 r5.z, c21, r0
+    mov r0, c13
+    dp4 r5.y, c21, r0
+    mov r2.w, c39.x
+    mov r2.xyz, c20
+    dp4 r0.w, v0, c7
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors DACF9E73.txt
+texldl r6, c220.z, s0
+add r6.w, r0.w, -r6.y
+mad r0.x, r6.w, r6.x, r0.x
+
+    mov o4.zw, r0
+    dp4 r0.z, v0, c2
+    dp4 r3.z, r2, c14
+    dp4 r3.x, r2, c12
+    dp4 r3.y, r2, c13
+    mad r3.xyz, r3, c37.w, -v0
+    mov r2, c12
+    dp4 r5.x, c21, r2
+    mul r2.xyz, r0.xyww, c39.y
+    mov r2.y, -r2
+    dp4 r0.w, v0, c3
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    dp3 o2.y, r3, r4
+    dp3 o6.y, r4, r5
+    dp3 o2.z, v2, r3
+    dp3 o2.x, r3, v1
+    add o4.xy, r2, r2.z
+    dp3 o6.z, v2, r5
+    dp3 o6.x, v1, r5
+    mov o3, r1
+    dp4 o5.w, r0, c19
+    dp4 o5.z, r0, c18
+    dp4 o5.y, r0, c17
+    dp4 o5.x, r0, c16
+    mad o1.xy, v3, c38, c38.zwzw
+
+// approximately 91 instruction slots used

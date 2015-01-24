@@ -1,0 +1,90 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c33, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov o2, r0
+    mul r2.xyz, v2, c31.w
+    dp3 r3.w, r2, c9
+    dp3 r1.x, r2, c8
+    dp3 r1.z, r2, c10
+    mov r1.y, r3.w
+    mov r1.w, c33.x
+    mul r2, r1.xyzz, r1.yzzx
+    dp4 r3.z, r1, c26
+    dp4 r3.y, r1, c25
+    dp4 r3.x, r1, c24
+    mul r1.w, r3, r3
+    mad r1.w, r1.x, r1.x, -r1
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    dp4 r1.z, r2, c29
+    dp4 r1.y, r2, c28
+    dp4 r1.x, r2, c27
+    mul r2.xyz, r1.w, c30
+    add r1.xyz, r3, r1
+    add o5.xyz, r1, r2
+    mov r1.w, c33.x
+    mov r1.xyz, c20
+    dp4 r2.z, r1, c14
+    dp4 r2.y, r1, c13
+    dp4 r2.x, r1, c12
+    mad r4.xyz, r2, c31.w, -v0
+    mov r1.xyz, v1
+    mul r2.xyz, v2.zxyw, r1.yzxw
+    mov r1.xyz, v1
+    mad r2.xyz, v2.yzxw, r1.zxyw, -r2
+    mul r3.xyz, r2, v1.w
+    mov r1, c14
+    dp4 r5.z, c23, r1
+    mov r1, c13
+    dp4 r5.y, c23, r1
+    mov r2, c12
+    dp4 r5.x, c23, r2
+    dp4 r1.w, v0, c7
+    dp4 r1.z, v0, c6
+    dp4 r1.x, v0, c4
+    dp4 r1.y, v0, c5
+
+mov o0, r1 // Relocated from line 68 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed 0CE2BABD.txt
+texldl r6, c220.z, s0
+add r6.w, r1.w, -r6.y
+mad r1.x, r6.w, r6.x, r1.x
+
+    mul r2.xyz, r1.xyww, c33.y
+    mul r2.y, r2, c21.x
+    dp3 o4.y, r5, r3
+    dp3 o6.y, r3, r4
+    dp3 o4.z, v2, r5
+    dp3 o4.x, r5, v1
+    dp3 o6.z, v2, r4
+    dp3 o6.x, v1, r4
+    mad o7.xy, r2.z, c22.zwzw, r2
+
+//     mov o0, r1 // Relocated to line 59 with shadertool.py
+    dp4 o3.w, r0, c19
+    dp4 o3.z, r0, c18
+    dp4 o3.y, r0, c17
+    dp4 o3.x, r0, c16
+    mov o7.zw, r1
+    mad o1.xy, v3, c32, c32.zwzw
+
+// approximately 60 instruction slots used

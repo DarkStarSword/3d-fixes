@@ -1,0 +1,131 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    dcl_texcoord7 o8
+    dcl_texcoord8 o9
+    def c44, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r4.yzw, v2.xxyz, c39.w
+    dp4 r0.w, v0, c9
+    dp4 r0.y, v0, c8
+    add r2, -r0.y, c24
+    dp3 r4.x, r4.yzww, c8
+    dp3 r0.x, r4.yzww, c9
+    add r1, -r0.w, c25
+    mul r3, r0.x, r1
+    mad r3, r4.x, r2, r3
+    mul r1, r1, r1
+    mad r2, r2, r2, r1
+    dp4 r0.y, v0, c10
+    add r1, -r0.y, c26
+    dp3 r0.y, r4.yzww, c10
+    mov r4.y, r0.x
+    mad r2, r1, r1, r2
+    mad r3, r0.y, r1, r3
+    mul r1, r2, c27
+    add r1, r1, c44.x
+    mov r4.z, r0.y
+    mov r4.w, c44.x
+    mul r0.x, r0, r0
+    rsq r2.x, r2.x
+    rsq r2.y, r2.y
+    rsq r2.w, r2.w
+    rsq r2.z, r2.z
+    mul r2, r3, r2
+    max r2, r2, c44.y
+    dp4 r3.z, r4, c34
+    dp4 r3.y, r4, c33
+    dp4 r3.x, r4, c32
+    rcp r1.x, r1.x
+    rcp r1.y, r1.y
+    rcp r1.w, r1.w
+    rcp r1.z, r1.z
+    mul r1, r2, r1
+    mul r2.xyz, r1.y, c29
+    mad r2.xyz, r1.x, c28, r2
+    mad r1.xyz, r1.z, c30, r2
+    mul r2, r4.xyzz, r4.yzzx
+    mad r1.xyz, r1.w, c31, r1
+    mad r1.w, r4.x, r4.x, -r0.x
+    dp4 r0.z, r2, c37
+    dp4 r0.y, r2, c36
+    dp4 r0.x, r2, c35
+    mul r2.xyz, r1.w, c38
+    add r0.xyz, r3, r0
+    add r0.xyz, r0, r2
+    add o7.xyz, r0, r1
+    mov r1.w, c44.x
+    mov r1.xyz, c20
+    dp4 r2.w, v0, c3
+    dp4 r0.z, r1, c14
+    dp4 r0.y, r1, c13
+    dp4 r0.x, r1, c12
+    mad r0.xyz, r0, c39.w, -v0
+    mov r1.xyz, v1
+    mul r2.xyz, v2.zxyw, r1.yzxw
+    mov r1.xyz, v1
+    mad r2.xyz, v2.yzxw, r1.zxyw, -r2
+    mul r2.xyz, r2, v1.w
+    mov r1, c14
+    dp4 r1.z, c23, r1
+    mov r4, c12
+    mov r3, c13
+    dp4 r1.x, c23, r4
+    dp4 r1.y, c23, r3
+    dp3 o6.y, r2, r1
+    dp3 o8.y, r2, r0
+    dp3 o6.z, v2, r1
+    dp3 o6.x, v1, r1
+    dp3 o8.z, v2, r0
+    dp4 r1.w, v0, c7
+    dp4 r1.z, v0, c6
+    dp3 o8.x, v1, r0
+    dp4 r1.x, v0, c4
+    dp4 r1.y, v0, c5
+    dp3 o3.y, v2, r2
+
+mov o0, r1 // Relocated from line 103 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors DF8EB48B.txt
+texldl r5, c220.z, s0
+add r5.w, r1.w, -r5.y
+mad r1.x, r5.w, r5.x, r1.x
+
+    mul r2.xyz, r1.xyww, c44.z
+    mov r0.x, r2
+    mul r0.y, r2, c21.x
+    mad o9.xy, r2.z, c22.zwzw, r0
+    mov r0.xyz, v2
+    dp4 r2.z, v0, c2
+    dp4 r2.x, v0, c0
+    dp4 r2.y, v0, c1
+
+//     mov o0, r1 // Relocated to line 95 with shadertool.py
+    dp4 o5.w, r2, c19
+    dp4 o5.z, r2, c18
+    dp4 o5.y, r2, c17
+    dp4 o5.x, r2, c16
+    mov o9.zw, r1
+    dp3 o3.x, v1, r0
+    mad o1.zw, v3.xyxy, c41.xyxy, c41
+    mad o1.xy, v3, c40, c40.zwzw
+    mad o2.zw, v3.xyxy, c43.xyxy, c43
+    mad o2.xy, v3, c42, c42.zwzw
+    dp3 o3.z, v2, v2
+    mov o4.x, r0.w
+
+// approximately 99 instruction slots used

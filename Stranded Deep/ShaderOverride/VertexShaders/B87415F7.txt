@@ -1,0 +1,41 @@
+    vs_3_0
+    dcl_position v0
+    dcl_position o0
+    dcl_texcoord o1
+    def c10, 0, 3.29999995, 0, 0
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mov r1.z, c10.x
+    mov r1.w, v0
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c6
+    mul r1.xy, r0, c8.x
+    texldl r0, r1.xyzz, s0
+    mul r0, r0, c10.y
+    add r2.xy, r0, r0.zwzw
+    texldl r0, r1.xyzz, s1
+    mad r0.xy, r0, c10.y, r2
+    mad r0.xz, r0.zyww, c10.y, r0.xyyw
+    texldl r1.x, r1.xyzz, s2
+    add r0.y, r1.x, c9.x
+    add r1.xyz, v0, r0
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors B87415F7.txt
+texldl r3, c220.z, s3
+add r3.w, r0.w, -r3.y
+mad r0.x, r3.w, r3.x, r0.x
+
+    mov o1.xy, r0.zwzw
+
+// approximately 23 instruction slots used (6 texture, 17 arithmetic)
