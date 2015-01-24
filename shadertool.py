@@ -22,6 +22,8 @@ reg_names = {
     't': 'Input Texcoord (shader model < 3)',
 }
 
+class NoFreeRegisters(Exception): pass
+
 def debug(*args, **kwargs):
     print(file=sys.stderr, *args, **kwargs)
 
@@ -437,6 +439,8 @@ class ShaderBlock(SyntaxTree):
                 r = Register(reg)
                 self.reg_types[reg_type].add(r)
                 return r
+
+        raise NoFreeRegisters(self.filename, reg_type)
 
     def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
         for (node, parent, idx) in self.iter_all():
@@ -1411,6 +1415,8 @@ def parse_args():
             help='Dumps the syntax tree')
     parser.add_argument('--ignore-parse-errors', action='store_true',
             help='Continue with the next file in the event of a parse error')
+    parser.add_argument('--ignore-register-errors', action='store_true',
+            help='Continue with the next file in the event that a fix cannot be applied due to running out of registers')
     args = parser.parse_args()
 
     if args.to_git:
@@ -1518,27 +1524,35 @@ def main():
 
         tree.filename = file
 
-        if args.add_unity_autofog:
-            # FIXME: Output both types on pixel shader fog or make selectable
-            tree = add_unity_autofog(tree)[0]
-        if args.disable:
-            disable_shader(tree, args)
-        if args.auto_adjust_texcoords:
-            auto_adjust_texcoords(tree, args)
-        tree.autofixed = False
-        if args.auto_fix_vertex_halo:
-            auto_fix_vertex_halo(tree, args)
-        if args.adjust_ui_depth:
-            adjust_ui_depth(tree, args)
-        if args.disable_output:
-            disable_output(tree, args)
-        if args.adjust:
-            adjust_output(tree, args)
-        if args.unadjust:
-            a = copy.copy(args)
-            a.adjust = args.unadjust
-            a.adjust_multiply = -1
-            adjust_output(tree, a)
+        try:
+            if args.add_unity_autofog:
+                # FIXME: Output both types on pixel shader fog or make selectable
+                tree = add_unity_autofog(tree)[0]
+            if args.disable:
+                disable_shader(tree, args)
+            if args.auto_adjust_texcoords:
+                auto_adjust_texcoords(tree, args)
+            tree.autofixed = False
+            if args.auto_fix_vertex_halo:
+                auto_fix_vertex_halo(tree, args)
+            if args.adjust_ui_depth:
+                adjust_ui_depth(tree, args)
+            if args.disable_output:
+                disable_output(tree, args)
+            if args.adjust:
+                adjust_output(tree, args)
+            if args.unadjust:
+                a = copy.copy(args)
+                a.adjust = args.unadjust
+                a.adjust_multiply = -1
+                adjust_output(tree, a)
+        except NoFreeRegisters as e:
+            if args.ignore_register_errors:
+                import traceback, time
+                traceback.print_exc()
+                time.sleep(0.1)
+                continue
+            raise
 
         if not args.only_autofixed or tree.autofixed:
             if args.output:
