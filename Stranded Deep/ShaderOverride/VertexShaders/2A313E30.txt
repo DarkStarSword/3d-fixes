@@ -90,16 +90,22 @@
 dcl_texcoord o0
 dcl_texcoord1 o1
 dcl_position o2
+dcl_texcoord2 o5 // Extra output for stereoised version of texcoord1
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 texldl r31, c220.z, s0
 
-// Stereoise _SunPosition:
+// Stereoise _SunPosition - this fix is necessary for the underwater
+// Crepuscular Rays, but breaks the sun shafts, so use an extra output for the
+// corrected version
+
 mov r30, c5
 mad r30.x, r31.x, c220.w, r30.x
+add r0.xy, -v1, r30
+mul o5.xy, r0, c4
 
-    add r0.xy, -v1, r30
+    add r0.xy, -v1, c5
     mov o0.xy, v1
     mul o1.xy, r0, c4
     dp4 o2.w, v0, c3
