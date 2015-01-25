@@ -23,12 +23,19 @@ Installation
 
 3. (Oprional) Disable the crosshair in the settings if you find it distracting.
 
-4. After starting a new game or loading an existing game the convergence will
-   reset. Press L to set a good preset (a custom convergence can be saved on
-   this button by pressing L, adjusting the convergence, then pressing F7).
+4. After starting a new game, loading an existing game, or alt+tabbing the
+   convergence will reset. Press L to set a good preset (a custom convergence
+   can be saved on this button by pressing L, adjusting the convergence, then
+   pressing F7).
 
 5. Press X to cycle between four HUD depth presets (75% is the default, other
    presets are screen depth, 50% and 99.5%)
+
+Troubleshooting
+---------------
+- If the water looks broken, try alt+tabbing out of the game and back in.
+- The convergence gets reset after starting or loading a game - press L to load
+  the recommended convergence preset.
 
 Known Issues
 ------------
