@@ -9,11 +9,9 @@ Fixed
 - Moved highlights on ocean floor to correct depth
 - Sun shafts
 - Underwater crepuscular rays
-- UI depth adjustment (cycle four depth presets with the X key)
 
 Installation
 ------------
-
 1. Extract the zip file to the game directory
 
     ...\Steam\SteamApps\common\Stranded Deep
@@ -23,23 +21,29 @@ Installation
 
 3. (Oprional) Disable the crosshair in the settings if you find it distracting.
 
-4. After starting a new game, loading an existing game, or alt+tabbing the
-   convergence will reset. Press L to set a good preset (a custom convergence
-   can be saved on this button by pressing L, adjusting the convergence, then
-   pressing F7).
+Keys
+----
+- L: Activate recommended convergence preset - use after starting a new game,
+  loading an existing game or alt+tabbing. A custom convergence can be saved
+  on this key by pressing L, adjusting the convergence, then pressing F7.
 
-5. Press X to cycle between four HUD depth presets (75% is the default, other
-   presets are screen depth, 50% and 99.5%)
+- F: Holding sets a convergence suitable for use with the watch, and will
+  return to the L preset on release.
+
+- X: Cycles between four four HUD depth presets - 75% (default), 99.5%, screen
+  depth and 50%.
 
 Troubleshooting
 ---------------
 - If the water looks broken, try alt+tabbing out of the game and back in.
+
 - The convergence gets reset after starting or loading a game - press L to load
   the recommended convergence preset.
 
 Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
+
 - From above, the waves right on the edge of the shore only move the water in
   one eye.
 
