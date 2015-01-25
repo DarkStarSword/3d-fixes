@@ -89,16 +89,19 @@ texldl r31, c220.z, s13
     rsq_pp r0.y, r0.y
     mad r0.x, r0, c14, c14.y // _ZBufferParams
     rcp r0.x, r0.x
+    mul r1.xyz, r0.x, v2 // depth * world space coords on view frustrum
+    mul_pp r3.xyz, r0.y, v1 // Sun direction
+    add r2.xyz, r1, c13 // _WorldSpaceCameraPos
 
-// Correct world space coordinates to fix depth of water caustics and shadows.
-// The shadows still aren't quite aligned properly after this, so I'm still
-// missing something, but they're close enough. We can only correct view-space
-// or projection-space coordinates, but these are in world-space. This shader
-// has the inverse view matrix already, so we can use that and it's inverse (in
-// c170 thanks to Helix mod) to change between world-space and view-space, but
-// we still need part of the inverse projection matrix to be able to correct
-// view-space coords, so we use the same technique that we used to fix Unity
-// shadows to calculate it.
+// In order to fix the depth of the highlights on the sand of the water
+// caustics and the underwater shadows, we need to apply a stereo correction to
+// r2, which is in world-coordinates, but we need either view-space or
+// projection-space coordinates to apply a stereo correction.
+// This shader has the inverse view matrix already, so we can use that and it's
+// inverse (in c170 thanks to Helix mod) to change between world-space and
+// view-space, but we still need part of the inverse projection matrix to be
+// able to correct view-space coords, so we use the same technique that we used
+// to fix Unity shadows to calculate it.
 
 // Calculate P.I[0,0] required for stereo corrections in view-space:
 // Transpose first component of MV.I matrix into r30:
@@ -109,9 +112,8 @@ mov r30.w, c183.x
 dp4 r30.x, r30, c190 // Calculate P[0,0]
 rcp r30.x, r30.x // Calculate P.I[0,0]
 
-// v2 holds the uncorrected world space coords of the view frustrum.
-// Convert it to view-space coords:
-mov r29.xyz, v2
+// Convert r2 to view-space coords:
+mov r29.xyz, r2
 mov r29.w, c220.y
 dp4 r28.x, r29, c170
 dp4 r28.y, r29, c171
@@ -119,42 +121,14 @@ dp4 r28.z, r29, c172
 dp4 r28.w, r29, c173
 
 // Apply view-space stereo correction formula:
-add r31.w, r28.z, -r31.y
+add r31.w, r28.z, r31.y // I'm not sure why I'm adding and not subtracting, but it lines it up perfectly!
 mul r31.w, r31.w, r31.x
 mad r28.x, r31.w, r30.x, r28.x
 
 // Convert back to world-space coords:
-dp4 r22.x, r28, c8
-dp4 r22.y, r28, c9
-dp4 r22.z, r28, c10
-dp4 r22.w, r28, c11
-
-
-// c13 holds the uncorrected world space camera position.
-// Convert it to view-space coords:
-mov r29.xyz, c13
-mov r29.w, c220.y
-dp4 r28.x, r29, c170
-dp4 r28.y, r29, c171
-dp4 r28.z, r29, c172
-dp4 r28.w, r29, c173
-
-// Apply view-space stereo correction formula:
-add r31.w, r28.z, -r31.y
-mul r31.w, r31.w, r31.x
-mad r28.x, r31.w, r30.x, r28.x
-
-// Convert back to world-space coords:
-dp4 r13.x, r28, c8
-dp4 r13.y, r28, c9
-dp4 r13.z, r28, c10
-dp4 r13.w, r28, c11
-
-
-
-    mul r1.xyz, r0.x, r22 // depth * world space coords on view frustrum = r1 has world coords of the pixel we are looking at
-    mul_pp r3.xyz, r0.y, v1 // Sun direction
-    add r2.xyz, r1, r13 // _WorldSpaceCameraPos
+dp4 r2.x, r28, c8
+dp4 r2.y, r28, c9
+dp4 r2.z, r28, c10
 
     rcp_pp r0.x, -r3.y
     mul_pp r0.x, -r2.y, r0
@@ -425,11 +399,11 @@ dp4 r13.w, r28, c11
     mov r1.w, c25.x
     mad r2.w, -r2, r0, c29
     mul r0.w, c29.z, r1
-    min_pp r0.w, r0, r13.y
+    min_pp r0.w, r0, c13.y
     mul r1.w, -r2, c15.x
     add r1.w, r1, c29
     max_pp r4.y, r0.w, c29.x
-    mov_pp r4.xz, r13
+    mov_pp r4.xz, c13
     add r5.xyz, -r2, r4
     texld r4, v0, s2
     rcp_pp r0.w, r5.y

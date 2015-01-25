@@ -1,3 +1,52 @@
+// CRC32: 45A27098 | Unity headers extracted from BEAMTeamVolumetricFog.shader
+// Shader "BEAM Team/Post Effects/Volumetric Fog" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "black" {}
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "CAUSTICS_ON" "INGAME" "WATER_BELOW" }
+//           Matrix 0 [sunshine_WorldToSunVP]
+//           Matrix 4 [sunshine_CascadeRanges]
+//           Matrix 8 [_InverseViewMatrix]
+//           Vector 12 [_Time]
+//           Vector 13 [_WorldSpaceCameraPos]
+//           Vector 14 [_ZBufferParams]
+//           Vector 15 [sunshine_ShadowParamsAndHalfTexel]
+//           Vector 16 [sunshine_OvercastCoord]
+//           Vector 17 [sunshine_OvercastVectorsUV]
+//           Vector 18 [sunshine_ShadowCoordDepthStart]
+//           Vector 19 [sunshine_ShadowToWorldScale]
+//           Vector 20 [sunshine_CascadeNearRatiosSq]
+//           Vector 21 [sunshine_CascadeFarRatiosSq]
+//           Vector 22 [sunshine_ShadowFadeParams]
+//           Vector 23 [_SunColor]
+//           Float 24 [_SunFade]
+//           Float 25 [_BelowVisibility]
+//           Vector 26 [_WaterSunColor]
+//           Vector 27 [_UnderwaterColor]
+//           SetTexture 0 [_CameraDepthNormalsTexture] 2D 0
+//           SetTexture 1 [_CameraDepthTexture] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_CausticsBump] 2D 3
+//           SetTexture 4 [sunshine_Lightmap] 2D 4
+//           SetTexture 5 [sunshine_OvercastMap] 2D 5
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     dcl_2d s0
     dcl_2d s1
@@ -23,6 +72,11 @@
     dcl_texcoord v0.xy
     dcl_texcoord2 v1.xyz
     dcl_texcoord3 v2.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+texldl r31, c220.z, s13
+
     mov r0.w, c25.x
     mul r1.w, c29, r0
     texld r0.x, v0, s1
@@ -32,7 +86,45 @@
     rcp r0.x, r0.x
     mul r1.xyz, r0.x, v2
     mul_pp r3.xyz, r0.y, v1
-    add r2.xyz, r1, c13
+    add r2.xyz, r1, c13 // r2 now has the world coordinates
+
+// In order to fix the depth of the highlights on the sand of the water
+// caustics and the underwater shadows, we need to apply a stereo correction to
+// r2, which is in world-coordinates, but we need either view-space or
+// projection-space coordinates to apply a stereo correction.
+// This shader has the inverse view matrix already, so we can use that and it's
+// inverse (in c170 thanks to Helix mod) to change between world-space and
+// view-space, but we still need part of the inverse projection matrix to be
+// able to correct view-space coords, so we use the same technique that we used
+// to fix Unity shadows to calculate it.
+
+// Calculate P.I[0,0] required for stereo corrections in view-space:
+// Transpose first component of MV.I matrix into r30:
+mov r30.x, c180.x
+mov r30.y, c181.x
+mov r30.z, c182.x
+mov r30.w, c183.x
+dp4 r30.x, r30, c190 // Calculate P[0,0]
+rcp r30.x, r30.x // Calculate P.I[0,0]
+
+// Convert r2 to view-space coords:
+mov r29.xyz, r2
+mov r29.w, c220.y
+dp4 r28.x, r29, c170
+dp4 r28.y, r29, c171
+dp4 r28.z, r29, c172
+dp4 r28.w, r29, c173
+
+// Apply view-space stereo correction formula:
+add r31.w, r28.z, r31.y // I'm not sure why I'm adding and not subtracting, but it lines it up perfectly!
+mul r31.w, r31.w, r31.x
+mad r28.x, r31.w, r30.x, r28.x
+
+// Convert back to world-space coords:
+dp4 r2.x, r28, c8
+dp4 r2.y, r28, c9
+dp4 r2.z, r28, c10
+
     rcp_pp r0.x, -r3.y
     mul_pp r0.x, -r2.y, r0
     mad r4.xyz, -r3, r0.x, r2
