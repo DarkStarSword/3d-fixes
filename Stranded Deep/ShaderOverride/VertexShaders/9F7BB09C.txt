@@ -1,0 +1,36 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_color v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 2
+dcl_2d s0
+
+    mov o2, v2
+    mov o0.xy, v1
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.y, v0, c1
+    dp4 r0.x, v0, c0
+
+// approximately 6 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --ui=c200.z -f VertexShader_63_CRC32_9F7BB09C.txt
+texldl r1, c220.z, s0
+mad r0.x, r1.x, c200.z, r0.x
+mov o1, r0
+
+mov r30.x, c251.x
+if_eq r30.x, c220.w
+	// Matched crosshair texture (Index = 2), kill it if Const1 = 0
+	mov r30.y, c200.x
+	if_eq r30.y, c220.x
+		mov o1, c220.xxxx
+	endif
+endif
