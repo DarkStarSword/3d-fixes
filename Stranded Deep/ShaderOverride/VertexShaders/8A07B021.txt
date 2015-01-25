@@ -1,3 +1,120 @@
+// CRC32: 8A07B021 | Matched 5 variants of 4 shaders: BEAM Team/Skylight/Particles/Alpha Blended - Plankton, BEAM Team/Skylight/Particles/Alpha Blended - Rain, Hidden/Internal-CombineDepthNormals, Unlit/Transparent Cutout
+// 
+//    Unity headers extracted from Particles - Alpha Blended - Plankton.shader
+//    Shader "BEAM Team/Skylight/Particles/Alpha Blended - Plankton" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.3)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          BindChannels {
+//             Bind "vertex", Vertex
+//             Bind "color", Color
+//             Bind "texcoord", TexCoord
+//            }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "SOFTPARTICLES_OFF" }
+// 2:           Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particles - Alpha Blended - Rain.shader
+//    Shader "BEAM Team/Skylight/Particles/Alpha Blended - Rain" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          BindChannels {
+//             Bind "vertex", Vertex
+//             Bind "color", Color
+//             Bind "texcoord", TexCoord
+//            }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Internal-CombineDepthNormals.shader
+//    Shader "Hidden/Internal-CombineDepthNormals" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_CameraNormalsTexture_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit-AlphaTest.shader
+//    Shader "Unlit/Transparent Cutout" {
+//      Properties {
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      SubShader 1/1 {
+//        LOD 100
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
     dcl_position v0
     dcl_texcoord v1
@@ -17,8 +134,9 @@ dcl_2d s0
 
 // approximately 5 instruction slots used
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui=c200.z --git VertexShader_59_CRC32_8A07B021.txt
-texldl r1, c220.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+// UI depth adjustment - only adjust if W == 1 to avoid moving plankton
+if_eq r0.w, c220.y
+	texldl r1, c220.z, s0
+	mad r0.x, r1.x, c200.z, r0.x
+endif
 mov o1, r0
