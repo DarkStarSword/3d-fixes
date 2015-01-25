@@ -1,1 +1,120 @@
-../../../Unity/ShaderOverride/PixelShaders/30543CCC.txt
+// CRC32: 30543CCC | Unity headers extracted from Internal-PrePassLighting.shader
+// Shader "Hidden/Internal-PrePassLighting" {
+//   Properties {
+//    _LightTexture0 ("", any) = "" {}
+//    _LightTextureB0 ("", 2D) = "" {}
+//    _ShadowMapTexture ("", any) = "" {}
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/3 {
+//       Tags { "ShadowSupport"="True" }
+//       ZWrite Off
+//       Fog { Mode Off }
+//       Blend DstColor Zero
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+//           Matrix 0 [_CameraToWorld]
+//           Matrix 4 [_LightMatrix0]
+//           Vector 8 [_WorldSpaceCameraPos]
+//           Vector 9 [_ProjectionParams]
+//           Vector 10 [_ZBufferParams]
+//           Vector 11 [unity_ShadowFadeCenterAndType]
+//           Vector 12 [_LightDir]
+//           Vector 13 [_LightColor]
+//           Vector 14 [unity_LightmapFade]
+//           SetTexture 0 [_CameraNormalsTexture] 2D 0
+//           SetTexture 1 [_CameraDepthTexture] 2D 1
+//           SetTexture 2 [_LightTexture0] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    def c15, 1.00000000, 2.00000000, -1.00000000, 0.00000000
+    def c16, 128.00000000, 0.21997070, 0.70703125, 0.07098389
+    dcl_texcoord0 v0.xyzw
+    dcl_texcoord1 v1.xyz
+
+// Extra input from VS with P.I[0,0]:
+dcl_texcoord5 v5.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+    rcp r0.x, v0.w
+    mul r0.xy, v0, r0.x
+    texld r1.x, r0, s1
+    rcp r0.z, v1.z
+    mov r2.z, c15.x
+    mad r0.w, r1.x, c10.x, c10.y
+    mul r0.z, r0, c9
+    mul r1.xyz, v1, r0.z
+    rcp r0.z, r0.w
+    mul r2.xyw, r1.xyzz, r0.z // r2.w has depth
+
+texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
+add r31.w, r2.w, -r31.y // r31.w = depth - convergence
+mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
+mad r2.x, -r31.w, v5.x, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
+
+    dp4 r3.x, r2.xywz, c0
+    dp4 r1.w, r2.xywz, c2
+    dp4 r4.x, r2.xywz, c1
+    texld r0, r0, s0
+    mov r1.z, r1.w
+    mov r1.x, r3
+    mov r1.y, r4.x
+    add r2.xyz, r1, -c8
+    dp3 r3.y, r2, r2
+    rsq r4.y, r3.y
+    mad_pp r3.yzw, r0.xxyz, c15.y, c15.z
+    mad r0.xyz, -r4.y, r2, -c12
+    dp3_pp r2.x, r3.yzww, r3.yzww
+    dp3 r2.y, r0, r0
+    rsq r4.y, r2.y
+    rsq_pp r2.x, r2.x
+    mul_pp r2.xyz, r2.x, r3.yzww
+    mul r0.xyz, r4.y, r0
+    dp3_pp r0.x, r0, r2
+    mul_pp r3.y, r0.w, c16.x
+    max_pp r3.z, r0.x, c15.w
+    pow_pp r0, r3.z, r3.y
+    mov_pp r3.y, r4.x
+    mov_pp r3.z, r1.w
+    mov_pp r3.w, c15.x
+    dp4 r4.x, r3, c4
+    dp4 r4.y, r3, c5
+    texld r0.w, r4, s2
+    mov_pp r3.x, r0
+    add r0.xyz, -r1, c11
+    dp3 r1.y, r0, r0
+    mov_sat r1.w, r0
+    mov_pp r0.xyz, c13
+    dp3_pp r0.x, c16.yzww, r0
+    mul r1.x, r3, r1.w
+    mul r1.w, r1.x, r0.x
+    rsq r1.y, r1.y
+    rcp r0.y, r1.y
+    add r0.y, -r2.w, r0
+    dp3_pp r0.x, r2, -c12
+    mad r0.y, r0, c11.w, r2.w
+    max_pp r0.x, r0, c15.w
+    mul r0.x, r0.w, r0
+    mad r0.y, r0, c14.z, c14.w
+    add_sat r0.y, -r0, c15.x
+    mul r1.xyz, r0.x, c13
+    mul_pp r0, r1, r0.y
+    exp_pp oC0.x, -r0.x
+    exp_pp oC0.y, -r0.y
+    exp_pp oC0.z, -r0.z
+    exp_pp oC0.w, -r0.w
