@@ -23,6 +23,7 @@ Improvements
   not quite right - they appear to hover slightly above the surface of the
   water rather than being below the object being reflected.
 - Update to latest Helix Mod.
+- Move sky depth to infinity, such that it no longer varies with convergence.
 
 Known Issues
 ------------
