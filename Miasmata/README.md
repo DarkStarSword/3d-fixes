@@ -19,9 +19,7 @@ Improvements
 ------------
 - Fixes water such that it is no longer necessary to switch to the Aion
   profile.
-- Partial fix for medium/high quality water - real time reflections still are
-  not quite right - they appear to hover slightly above the surface of the
-  water rather than being below the object being reflected.
+- Medium/high quality water fixed with accurate real-time reflections.
 - Update to latest Helix Mod.
 - Move sky depth to infinity, such that it no longer varies with convergence.
 
