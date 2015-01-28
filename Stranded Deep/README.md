@@ -16,10 +16,14 @@ Installation
 
     ...\Steam\SteamApps\common\Stranded Deep
 
-2. Launch the game and set quality to Ultra (other settings may work as well,
+2. If your Stranded Deep executable is named Stranded_Deep_x86.exe (as opposed
+   to Stranded_Deep_x64.exe), replace the d3d9.dll from the fix with the one in
+   the 32bit directory.
+
+3. Launch the game and set quality to Ultra (other settings may work as well,
    but I haven't tested them)
 
-3. (Oprional) Disable the crosshair in the settings if you find it distracting.
+4. (Oprional) Disable the crosshair in the settings if you find it distracting.
 
 Keys
 ----
