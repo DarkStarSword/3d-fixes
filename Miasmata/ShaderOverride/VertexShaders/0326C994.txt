@@ -64,6 +64,12 @@
     dcl_texcoord o1.xy
     dcl_texcoord1 o2.xyz
     dcl_texcoord2 o3
+
+def c220, 0, 1, 0.0625, 2
+
+dcl_2d s0
+texldl r31, c220.z, s0
+
     mad r0.xy, v0, c4.x, c4.y
     mul r0.xy, r0, c2
     mov r0.z, c4.z
@@ -71,7 +77,36 @@
     mad o0.xy, v0, c4.x, c4.y
     mov o0.zw, -c4.xywy
     mad o1.xy, v0, c5, c5.zxzw
-    mov o2.xyz, v1
+    //mov o2.xyz, v1
     mov o3.zw, c1.xyxy
+
+// v1 is in world coordinates and needs to be corrected. Unfortunately we don't
+// have access to the inverse view-projection matrix, nor do we have any way to
+// derive it. So let's use what we *do* have - the world-view-projection,
+// copied from the water shader and inverted. The water doesn't rotate, so we
+// can use that - we run both the correction amount through it, as well as a
+// second point at the origin, then subtract the origin from the correction and
+// we wind up with the correction amount in world space independent of the
+// translation of the water. Simple, ey?
+
+// Run a reference point at the origin 0,0,0,1 through the matrix:
+mov r30.xyzw, c220.xxxy
+dp4 r10.x, r30, c180
+dp4 r10.y, r30, c181
+dp4 r10.z, r30, c182
+dp4 r10.w, r30, c183
+
+// Run the correction amount through the matrix:
+mov r30.xyzw, c220.xxxy
+mov r30.x, r31.x
+dp4 r11.x, r30, c180
+dp4 r11.y, r30, c181
+dp4 r11.z, r30, c182
+dp4 r11.w, r30, c183
+
+// Subtract one from the other:
+add r12, r11, -r10
+// And adjust the coordinate:
+add o2.xyz, v1, -r12
 
 // approximately 9 instruction slots used
