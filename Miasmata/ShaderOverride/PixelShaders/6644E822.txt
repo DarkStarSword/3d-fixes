@@ -159,42 +159,29 @@ texldl r31, c220, s13
 mov r30.x, c220.x
 
 mul r31.w, r31.x, c220.w
-if_lt r22.x, r31.x // Right eye, left separation of screen
-	if_lt r22.x, r31.w
-		// left separation/2 of screen
-		mov r11.xyz, v3
-	else
-		// Past the edge of the screen for the opposite eye, before the
-		// part of the screen with clipping fog. Interpolate between the
-		// corrected and uncorrected coordinates to hide the fact that
-		// we are switching betweeen stereo and 2D at the edge.
-		add r22.z, -r22.x, r31.x
-		rcp r31.z, r31.w
-		mul r22.w, r22.z, r31.z
-		mov r23.xyz, v3
-		mov r21.xyz, v1
-		lrp r11, r22.www, r23, r21
-	endif
+if_lt r22.x, r31.w
+	// left separation/2 of screen. Interpolate between the corrected and
+	// uncorrected coordinates to remove the clipping without a visible
+	// seam in the fog
+	add r22.z, -r22.x, r31.w
+	rcp r31.z, r31.w
+	mul r22.w, r22.z, r31.z
+	mov r23.xyz, v3
+	mov r21.xyz, v1
+	lrp r11, r22.www, r23, r21
 endif
 
 add r30.w, c220.y, r31.w
-add r30.z, c220.y, r31.x
-if_gt r22.x, r30.z // Left eye, right separation of screen
-	if_gt r22.x, r30.w
-		// Right separation/2 of screen
-		mov r11.xyz, v3
-	else
-		// Past the edge of the screen for the opposite eye, before the
-		// part of the screen with clipping fog. Interpolate between the
-		// corrected and uncorrected coordinates to hide the fact that
-		// we are switching betweeen stereo and 2D at the edge.
-		add r22.z, -r22.x, r30.z
-		rcp r31.z, r31.w
-		mul r22.w, r22.z, r31.z
-		mov r23.xyz, v3
-		mov r21.xyz, v1
-		lrp r11, r22.www, r23, r21
-	endif
+if_gt r22.x, r30.w
+	// right separation/2 of screen. Interpolate between the corrected and
+	// uncorrected coordinates to remove the clipping without a visible
+	// seam in the fog
+	add r22.z, -r22.x, r30.w
+	rcp r31.z, r31.w
+	mul r22.w, r22.z, r31.z
+	mov r23.xyz, v3
+	mov r21.xyz, v1
+	lrp r11, r22.www, r23, r21
 endif
 
     dp3 r0.y, r11, c12 // lightshaft_binorm
