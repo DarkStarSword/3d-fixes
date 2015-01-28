@@ -89,3 +89,7 @@ def multiply(m1, m2):
 			# r_y = dp4 m1_y t_x
 			r[y,x] = np.dot(m1[y].A1, t[x].A1)
 	return r
+
+def to_regs(m, start=210):
+    for i in range(4):
+        print('def c%i, %g, %g, %g, %g' % (start+i, m[i, 0], m[i, 1], m[i, 2], m[i, 3]))
