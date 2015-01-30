@@ -72,6 +72,10 @@
     dcl_2d s4
     dcl_2d s5
     dcl_2d s6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
     mad r0.xy, vPos, c9, c9.zwzw
     mul r0.xy, r0, v4.w
     nrm_pp r1.xyz, v2
@@ -109,6 +113,12 @@
     mad_pp r5.xy, r3, c15.x, r0
     mad_pp r5.w, -c0.w, r0.w, c0.w
     mov r5.z, -c1.w
+
+// DNERefelctionTexture fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f --auto-fix-unreal-dne-reflection CRC32_83CA47A1_341.txt
+texldl r7, c220.z, s13
+mad r5.x, -r7.x, c220.w, r5.x
+
     texldl_pp r5, r5, s2
     dp3_sat_pp r0.x, r3, r1
     max_pp r1.xyz, r0.w, r2
