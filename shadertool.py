@@ -1195,6 +1195,42 @@ def auto_fix_unreal_light_shafts(tree, args):
 
     tree.autofixed = True
 
+unreal_DNEReflectionTexture_pattern = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
+def auto_fix_unreal_dne_reflection(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal DNE reflection fix is only applicable to pixel shaders')
+
+    try:
+        match = find_header(tree, unreal_DNEReflectionTexture_pattern)
+    except KeyError:
+        debug('Shader does not use DNEReflectionTexture')
+        return
+
+    orig = Register(match.group('sampler'))
+    debug('DNEReflectionTexture identified as %s' % orig)
+
+    results = scan_shader(tree, orig, write=False)
+    if not results:
+        debug('DNEReflectionTexture is not used in shader')
+        return
+    if len(results) > 1:
+        debug("Autofixing a shader using DNEReflectionTexture multiple times is untested and disabled for safety. Please enable it, test and report back.")
+        return
+
+    t = tree._find_free_reg('r', PS3)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+
+    for (sampler_line, sampler_linepos, sampler_instr) in results:
+        orig_pos = pos = prev_line_pos(tree, sampler_line + offset)
+        reg = sampler_instr.args[1]
+        pos += insert_vanity_comment(args, tree, pos, "DNERefelctionTexture fix inserted with")
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        pos += tree.insert_instr(pos, NewInstruction('mad', [reg.x, -t.x, stereo_const.w, reg.x]))
+        pos += tree.insert_instr(pos)
+        offset += pos - orig_pos
+
+        tree.autofixed = True
+
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
@@ -1478,6 +1514,8 @@ def parse_args():
             help="Disable the stereo correction in Unreal Engine pixel shaders that also use the vPos semantic")
     parser.add_argument('--auto-fix-unreal-light-shafts', action='store_true',
             help="Attempt to automatically fix light shafts found in Unreal games")
+    parser.add_argument('--auto-fix-unreal-dne-reflection', action='store_true',
+            help="Attempt to automatically fix reflective floor surfaces found in Unreal games")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1539,7 +1577,8 @@ def args_require_reg_analysis(args):
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog or \
                 args.disable_redundant_unreal_correction or \
-                args.auto_fix_unreal_light_shafts
+                args.auto_fix_unreal_light_shafts or \
+                args.auto_fix_unreal_dne_reflection
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1639,6 +1678,8 @@ def main():
                 disable_redundant_unreal_correction(tree, args)
             if args.auto_fix_unreal_light_shafts:
                 auto_fix_unreal_light_shafts(tree, args)
+            if args.auto_fix_unreal_dne_reflection:
+                auto_fix_unreal_dne_reflection(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
