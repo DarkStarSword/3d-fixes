@@ -1544,6 +1544,8 @@ def args_require_reg_analysis(args):
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
 
+processed = set()
+
 def main():
     args = parse_args()
 
@@ -1566,6 +1568,12 @@ def main():
     args.files = f
 
     for file in args.files:
+        crc = shaderutil.get_filename_crc(file)
+        if crc in processed:
+            print('Skipping %s - CRC already processed' % file)
+            continue
+        processed.add(crc)
+
         if args.restore_original:
             debug('Restoring %s...' % file)
             restore_original_shader(file)
