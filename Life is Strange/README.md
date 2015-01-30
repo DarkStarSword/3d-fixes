@@ -4,6 +4,7 @@ Life is Strange
 Fixed
 -----
 - Fog
+- Glow around sun
 
 Installation
 ------------

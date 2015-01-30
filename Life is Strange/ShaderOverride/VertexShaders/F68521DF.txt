@@ -34,6 +34,7 @@
 //   bUseExponentialHeightFog c20      1
 //   FogMaxHeight             c21      1
 //
+// Glow around sun and sun
 
     vs_3_0
     def c5, 0.159154937, 0.5, 6.28318548, -3.14159274
@@ -52,6 +53,10 @@
     dcl_texcoord6 o4
     dcl_texcoord5 o5
     dcl_position o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mul r0, c7, v0.y
     mad r0, c6, v0.x, r0
     mad r0, c8, v0.z, r0
@@ -153,6 +158,17 @@
     mov o4.w, r3.z
     mov o5.xyz, r0
     mov o5.w, r3.w
+
+// This shader is responsible for both the sun (which is already correct) and
+// the glow around the sun (which varies wildly with convergence). In order to
+// fix this for both, I'm doing a simple skybox depth correction that moves
+// both of them to infinty independent of their original placements (and since
+// the sun is already there it won't move), which turns out to simplify down to
+// X += separation * convergence
+
+texldl r31, c220.z, s0
+mad r3.x, r31.x, r31.y, r3.x
+
     mov o6, r3
 
 // approximately 115 instruction slots used
