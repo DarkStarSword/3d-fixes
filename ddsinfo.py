@@ -9,10 +9,17 @@
 
 import sys
 import struct
+import numpy as np
+from PIL import Image
+import math
 
 # Documentation:
 # https://en.wikipedia.org/wiki/S3_Texture_Compression
 # http://msdn.microsoft.com/en-us/library/windows/desktop/bb943991(v=vs.85).aspx
+
+d3d9_pixel_formats = {
+	113: np.dtype([('R', '<f2'), ('G', '<f2'), ('B', '<f2'), ('A', '<f2')]), # D3DFMT_A16B16G16R16F
+}
 
 class DDSPixelFormat(object):
 	# http://msdn.microsoft.com/en-us/library/windows/desktop/bb943984(v=vs.85).aspx
@@ -42,6 +49,7 @@ class DDSPixelFormat(object):
 		assert(not self.flags & self.Flags.ALPHA) # old file
 		if self.flags & self.Flags.FOURCC:
 			self.four_cc = four_cc
+			self.format = struct.unpack('<I', self.four_cc)[0]
 		if self.flags & self.Flags.RGB: # uncompressed
 			self.rgb_bit_count = rgb_bit_count
 			self.r_bit_mask = r_bit_mask
@@ -57,7 +65,7 @@ class DDSPixelFormat(object):
 		if self.flags & self.Flags.ALPHAPIXELS:
 			ret.append('Alpha Bit Mask: 0x%x' % self.a_bit_mask)
 		if self.flags & self.Flags.FOURCC:
-			ret.append('FourCC: 0x%.2x%.2x%.2x%.2x %i "%s"' % ((tuple(self.four_cc)) + (struct.unpack('<I', self.four_cc)[0], self.four_cc.decode('ascii'),)) )
+			ret.append('FourCC: 0x%.2x%.2x%.2x%.2x %i "%s"' % ((tuple(self.four_cc)) + (self.format, self.four_cc.decode('ascii'),)) )
 		if self.flags & self.Flags.RGB:
 			ret.append('RGB Bit Count: %i' % self.rgb_bit_count)
 			ret.append('Red Bit Mask: 0x%x' % self.r_bit_mask)
@@ -116,9 +124,65 @@ class DDSHeader(object):
 
 		return '%s\n\n%s' % ('\n'.join(ret), str(self.pixel_format))
 
+def val_to_rainbow(val, min, max):
+	segments = (
+		(0, 0, 0),
+		(255, 0, 0),
+		(255, 255, 0),
+		(0, 255, 0),
+		(0, 255, 255),
+		(0, 0, 255),
+		(255, 0, 255),
+		(255, 255, 255),
+	)
+
+	if val < min:
+		return segments[0]
+
+	def interpolate(pos, val1, val2):
+		return int((1-pos) * val1 + pos * val2)
+
+	segment_range = (max - min) / (len(segments) - 1)
+	for i in range(len(segments) - 1):
+		if val < segment_range * i:
+			continue
+		if val > segment_range * (i+1):
+			continue
+		pos = (val - (segment_range * i)) / segment_range
+		r = interpolate(pos, segments[i][0], segments[i+1][0])
+		g = interpolate(pos, segments[i][1], segments[i+1][1])
+		b = interpolate(pos, segments[i][2], segments[i+1][2])
+		return (r, g, b)
+
+	return segments[-1]
+
+def scale_pixel(val):
+	return math.sqrt(val)
+
 if __name__ == '__main__':
 	for file in sys.argv[1:]:
-		header = DDSHeader(open(file, 'rb'))
+		fp = open(file, 'rb')
+		header = DDSHeader(fp)
 		print(header)
+
+		if header.pixel_format.format in d3d9_pixel_formats:
+			dtype = d3d9_pixel_formats[header.pixel_format.format]
+			buf = np.fromfile(fp, dtype, count=header.width * header.height)
+
+			# FIXME: Make this generic
+			out = Image.new('L', (header.width, header.height))
+			# out = Image.new('RGB', (header.width, header.height))
+			pixels = out.load()
+			# FIXME: This will be *slow*, use numpy methods to speed this up:
+			for y in range(header.height):
+				for x in range(header.width):
+					val = float(buf[y * header.width + x]['A']) # FIXME: Hardcoded channel
+					# pixels[x, y] = int(val * 8) # FIXME: Hardcoded scaling
+					# pixels[x, y] = val_to_rainbow(val, 0.0, 32.0) # FIXME: Hardcoded scaling
+					# pixels[x, y] = val_to_rainbow(scale_pixel(val), 0.0, scale_pixel(32.0)) # FIXME: Hardcoded scaling
+					pixels[x, y] = int(scale_pixel(val) * (256 / scale_pixel(32.0))) # FIXME: Hardcoded scaling
+				print('.', end='')
+				sys.stdout.flush()
+			out.save('sqrt.png')
 
 # vi:noexpandtab:sw=8:ts=8
