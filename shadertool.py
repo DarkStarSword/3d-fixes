@@ -1119,6 +1119,17 @@ def auto_fix_vertex_halo(tree, args):
 
     tree.autofixed = True
 
+def find_header(tree, comment_pattern):
+    for line in range(tree.shader_start):
+        for token in tree[line]:
+            if not isinstance(token, CPPStyleComment):
+                continue
+
+            match = comment_pattern.match(token)
+            if match is not None:
+                return match
+    raise KeyError()
+
 unreal_NvStereoEnabled_pattern = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 def disable_redundant_unreal_correction(tree, args):
     # In Life Is Strange I found a lot of Unreal Engine shaders are now using
@@ -1134,24 +1145,55 @@ def disable_redundant_unreal_correction(tree, args):
         debug('Shader does not use vPos')
         return
 
-    for line in range(tree.shader_start):
-        for token in tree[line]:
-            if not isinstance(token, CPPStyleComment):
-                continue
+    try:
+        match = find_header(tree, unreal_NvStereoEnabled_pattern)
+    except KeyError:
+        debug('Shader does not use NvStereoEnabled')
+        return
 
-            match = unreal_NvStereoEnabled_pattern.match(token)
-            if match is None:
-                continue
+    constant = Register(match.group('constant'))
+    debug('Disabling NvStereoEnabled %s' % constant)
 
-            constant = Register(match.group('constant'))
-            debug('Disabling NvStereoEnabled %s' % constant)
+    tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+    tree.insert_decl('def', [constant, 0, 0, 0, 0], comment='Overrides NvStereoEnabled passed from Unreal Engine')
+    tree.insert_decl()
 
-            tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
-            tree.insert_decl('def', [constant, 0, 0, 0, 0], comment='Overrides NvStereoEnabled passed from Unreal Engine')
-            tree.insert_decl()
+    tree.autofixed = True
 
-            tree.autofixed = True
-            return
+unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
+def auto_fix_unreal_light_shafts(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal light shaft auto fix is only applicable to pixel shaders')
+
+    try:
+        match = find_header(tree, unreal_TextureSpaceBlurOrigin_pattern)
+    except KeyError:
+        debug('Shader does not use TextureSpaceBlurOrigin')
+        return
+
+    orig = Register(match.group('constant'))
+    debug('TextureSpaceBlurOrigin identified as %s' % orig)
+
+    results = scan_shader(tree, orig, write=False)
+    if not results:
+        debug('TextureSpaceBlurOrigin is not used in shader')
+        return
+
+    adj = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3)
+    stereo_const, _ = insert_stereo_declarations(tree, args, w = 0.5)
+
+    replace_regs = {orig: adj}
+    tree.do_replacements(replace_regs, False)
+
+    pos = tree.decl_end
+    pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal light shaft fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [adj, orig]), comment='TextureSpaceBlurOrigin')
+    pos += tree.insert_instr(pos, NewInstruction('mad', [adj.x, t.x, stereo_const.w, adj.x]), comment='Adjust each eye by 1/2 separation')
+    pos += tree.insert_instr(pos)
+
+    tree.autofixed = True
 
 def add_unity_autofog_VS3(tree, reason):
     try:
@@ -1434,6 +1476,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
             help="Disable the stereo correction in Unreal Engine pixel shaders that also use the vPos semantic")
+    parser.add_argument('--auto-fix-unreal-light-shafts', action='store_true',
+            help="Attempt to automatically fix light shafts found in Unreal games")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1494,7 +1538,8 @@ def args_require_reg_analysis(args):
                 args.auto_adjust_texcoords or \
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog or \
-                args.disable_redundant_unreal_correction
+                args.disable_redundant_unreal_correction or \
+                args.auto_fix_unreal_light_shafts
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1584,6 +1629,8 @@ def main():
                 auto_fix_vertex_halo(tree, args)
             if args.disable_redundant_unreal_correction:
                 disable_redundant_unreal_correction(tree, args)
+            if args.auto_fix_unreal_light_shafts:
+                auto_fix_unreal_light_shafts(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
