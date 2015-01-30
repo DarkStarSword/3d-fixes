@@ -75,8 +75,12 @@
     dcl_2d s7
 
 // Redundant Unreal Engine stereo correction disabled by DarkStarSword's shadertool.py:
-// shadertool.py -i --disable-redundant-unreal-correction --only-autofixed --ignore-parse-errors CRC32_F13B19EB_360.txt
+// shadertool.py -i -f --git --disable-redundant-unreal-correction --auto-fix-unreal-dne-reflection --only-autofixed CRC32_F13B19EB_166.txt
 def c3, 0, 0, 0, 0 // Overrides NvStereoEnabled passed from Unreal Engine
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
 
     mad r0.xy, vPos, c7, c7.zwzw
     mul r0.xy, r0, v3.w
@@ -107,6 +111,12 @@ def c3, 0, 0, 0, 0 // Overrides NvStereoEnabled passed from Unreal Engine
     mad_pp r4.xy, r4, c6.yzzw, c6.y
     mad_pp r4.w, -c0.w, r3.w, c0.w
     mov r4.z, c6.w
+
+// DNERefelctionTexture fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f --git --disable-redundant-unreal-correction --auto-fix-unreal-dne-reflection --only-autofixed CRC32_F13B19EB_166.txt
+texldl r7, c220.z, s13
+mad r4.x, -r7.x, c220.w, r4.x
+
     texldl_pp r4, r4, s1
     max_pp r5.xyz, r3.w, r2
     mad_pp r1.w, r1.x, c15.x, c15.y
