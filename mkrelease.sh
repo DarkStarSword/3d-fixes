@@ -29,7 +29,7 @@ if [ -f "$dir/$readme_src" ]; then
 
 fi
 
-cd "$dir" && zip -9 -r "$zip" .
+cd "$dir" && zip -9 -r "$zip" . --exclude \*.swp
 
 if [ "$rm_tmp_dir" = 1 ]; then
 	rm -frv "$tmp_dir"
