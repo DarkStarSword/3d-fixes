@@ -352,10 +352,17 @@ class ShaderBlock(SyntaxTree):
             newtree.append(t)
         SyntaxTree.__init__(self, newtree)
 
-    def insert_decl(self, *inst):
+    def insert_decl(self, *inst, comment=None):
         off = 1
+        line = SyntaxTree()
         if inst:
-            self.insert(self.decl_end, SyntaxTree([NewInstruction(*inst)]))
+            line.append(NewInstruction(*inst))
+        if inst and comment:
+            line.append(WhiteSpace(' '))
+        if comment:
+            line.append(CPPStyleComment('// %s' % comment))
+        if line:
+            self.insert(self.decl_end, line)
             self.decl_end += 1
             off += 1
         self.insert(self.decl_end, NewLine('\n'))
@@ -778,16 +785,19 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     offset += tree.insert_decl()
     return tree.stereo_const, offset
 
+vanity_args = None
 def vanity_comment(args, tree, what):
-    a = []
-    for arg in sys.argv[1:]:
-        if arg not in args.files:
-            a.append(arg)
-    a.append(tree.filename)
+    global vanity_args
+
+    if vanity_args is None:
+        vanity_args = []
+        for arg in sys.argv[1:]:
+            if arg not in args.files:
+                vanity_args.append(arg)
 
     return [
         "%s DarkStarSword's shadertool.py:" % what,
-        '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(a)),
+        '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(vanity_args + [tree.filename])),
     ]
 
 def insert_vanity_comment(args, tree, where, what):
@@ -886,7 +896,7 @@ def adjust_output(tree, args):
 
 def auto_adjust_texcoords(tree, args):
     if not isinstance(tree, VS3):
-        raise Exception('Auto texcoord adjustmost is only applicable to vertex shaders')
+        raise Exception('Auto texcoord adjustment is only applicable to vertex shaders')
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
     pos_out = find_declaration(tree, 'dcl_position', 'o')
@@ -1012,7 +1022,7 @@ def auto_fix_vertex_halo(tree, args):
     # shaders, etc.
 
     if not isinstance(tree, VS3):
-        raise Exception('Auto texcoord adjustmost is only applicable to vertex shaders')
+        raise Exception('Auto texcoord adjustment is only applicable to vertex shaders')
 
     # 1. Find output position variable from declarations
     pos_out = find_declaration(tree, 'dcl_position', 'o')
@@ -1108,6 +1118,40 @@ def auto_fix_vertex_halo(tree, args):
     pos += tree.insert_instr(pos)
 
     tree.autofixed = True
+
+unreal_NvStereoEnabled_pattern = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
+def disable_redundant_unreal_correction(tree, args):
+    # In Life Is Strange I found a lot of Unreal Engine shaders are now using
+    # the vPos semantic, and then applying a stereo correction on top of that,
+    # which is wrong as vPos is already the correct screen location.
+
+    if not isinstance(tree, PS3):
+        raise Exception('Disabling redundant Unreal correction is only applicable to pixel shaders')
+
+    try:
+        vPos = find_declaration(tree, 'dcl', 'vPos.xy')
+    except IndexError:
+        debug('Shader does not use vPos')
+        return
+
+    for line in range(tree.shader_start):
+        for token in tree[line]:
+            if not isinstance(token, CPPStyleComment):
+                continue
+
+            match = unreal_NvStereoEnabled_pattern.match(token)
+            if match is None:
+                continue
+
+            constant = Register(match.group('constant'))
+            debug('Disabling NvStereoEnabled %s' % constant)
+
+            tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+            tree.insert_decl('def', [constant, 0, 0, 0, 0], comment='Overrides NvStereoEnabled passed from Unreal Engine')
+            tree.insert_decl()
+
+            tree.autofixed = True
+            return
 
 def add_unity_autofog_VS3(tree, reason):
     try:
@@ -1388,6 +1432,8 @@ def parse_args():
             help="Adjust any texcoord that matches the output position from a vertex shader")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
+            help="Disable the stereo correction in Unreal Engine pixel shaders that also use the vPos semantic")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1447,7 +1493,8 @@ def args_require_reg_analysis(args):
                 args.unadjust or \
                 args.auto_adjust_texcoords or \
                 args.auto_fix_vertex_halo or \
-                args.add_unity_autofog
+                args.add_unity_autofog or \
+                args.disable_redundant_unreal_correction
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1535,6 +1582,8 @@ def main():
             tree.autofixed = False
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(tree, args)
+            if args.disable_redundant_unreal_correction:
+                disable_redundant_unreal_correction(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
