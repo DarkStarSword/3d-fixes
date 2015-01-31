@@ -691,6 +691,27 @@ def install_shader(shader, file, args):
 
     return install_shader_to(shader, file, args, gamedir)
 
+def check_shader_installed(file):
+    # TODO: Refactor common code with install functions
+    src_dir = os.path.realpath(os.path.dirname(os.path.join(os.curdir, file)))
+    dumps = os.path.realpath(os.path.join(src_dir, '../..'))
+    if os.path.basename(dumps).lower() != 'dumps':
+        raise Exception("Not checking if %s installed - not in a Dumps directory" % file)
+    gamedir = os.path.realpath(os.path.join(src_dir, '../../..'))
+
+    override_dir = os.path.join(gamedir, 'ShaderOverride')
+
+    if os.path.basename(src_dir).lower().startswith('vertex'):
+        shader_dir = os.path.join(override_dir, 'VertexShaders')
+    elif os.path.basename(src_dir).lower().startswith('pixel'):
+        shader_dir = os.path.join(override_dir, 'PixelShaders')
+    else:
+        raise ValueError("Couldn't determine type of shader from directory")
+
+    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
+    dest = os.path.join(shader_dir, dest_name)
+    return os.path.exists(dest)
+
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
     parent = os.path.realpath(os.path.join(src_dir, '..'))
@@ -1557,6 +1578,10 @@ def parse_args():
             args.in_place = True
             args.auto_convert = False
 
+    args.precheck_installed = False
+    if args.install and not args.force and not args.output and not args.install_to and not args.to_git:
+        args.precheck_installed = True
+
     if args.restore_original:
         args.auto_convert = False
 
@@ -1612,6 +1637,10 @@ def main():
             print('Skipping %s - CRC already processed' % file)
             continue
         processed.add(crc)
+
+        if args.precheck_installed and check_shader_installed(file):
+            print('Skipping %s - already installed and you did not specify --force' % file)
+            continue
 
         if args.restore_original:
             debug('Restoring %s...' % file)
