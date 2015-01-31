@@ -24,8 +24,13 @@ reg_names = {
 
 class NoFreeRegisters(Exception): pass
 
+verbosity = 0
 def debug(*args, **kwargs):
     print(file=sys.stderr, *args, **kwargs)
+
+def debug_verbose(level, *args, **kwargs):
+    if verbosity >= level:
+        return debug(*args, **kwargs)
 
 class InstructionSeparator(object): pass # Newline and semicolon
 class Ignore(object): pass # Tokens ignored when analysing shader, but preserved for manipulation (whitespace, comments)
@@ -1488,6 +1493,8 @@ def do_ini_updates():
         debug()
 
 def parse_args():
+    global verbosity
+
     parser = argparse.ArgumentParser(description = 'nVidia 3D Vision Shaderhacker Tool')
     parser.add_argument('files', nargs='+',
             help='List of shader assembly files to process')
@@ -1566,6 +1573,9 @@ def parse_args():
             help='Continue with the next file in the event of a parse error')
     parser.add_argument('--ignore-register-errors', action='store_true',
             help='Continue with the next file in the event that a fix cannot be applied due to running out of registers')
+
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+            help='Level of verbosity')
     args = parser.parse_args()
 
     if args.to_git:
@@ -1587,6 +1597,8 @@ def parse_args():
 
     if args.add_unity_autofog:
         args.auto_convert = False
+
+    verbosity = args.verbose
 
     return args
 
@@ -1634,12 +1646,12 @@ def main():
     for file in args.files:
         crc = shaderutil.get_filename_crc(file)
         if crc in processed:
-            print('Skipping %s - CRC already processed' % file)
+            debug_verbose(1, 'Skipping %s - CRC already processed' % file)
             continue
         processed.add(crc)
 
         if args.precheck_installed and check_shader_installed(file):
-            print('Skipping %s - already installed and you did not specify --force' % file)
+            debug_verbose(1, 'Skipping %s - already installed and you did not specify --force' % file)
             continue
 
         if args.restore_original:
