@@ -10,7 +10,11 @@
 import sys
 import struct
 import numpy as np
-from PIL import Image
+try:
+	from PIL import Image
+except ImportError:
+	print('PIL for Python 3 not installed - will not be able to save images')
+	Image = None
 import math
 
 # Documentation:
@@ -164,6 +168,9 @@ if __name__ == '__main__':
 		fp = open(file, 'rb')
 		header = DDSHeader(fp)
 		print(header)
+
+		if Image is None: # PIL not installed
+			sys.exit(0)
 
 		if header.pixel_format.format in d3d9_pixel_formats:
 			dtype = d3d9_pixel_formats[header.pixel_format.format]
