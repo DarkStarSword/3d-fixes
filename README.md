@@ -9,16 +9,20 @@ these fixes.
 
 ### Complete Fixes ###
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
-- The Book of Unwritten Tales 2 (Early Access - expect updates)
+- The Book of Unwritten Tales 2 (Fixes shadows, halos, etc.)
 - Montague's Mount (Fixes halos, shadows, etc.)
 - Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
 - World of Diving (Fixed halos, shadows, etc.)
 - The Forest (Fixed halos, shadows)
 - Legends of Aethereus (Fixed halos, shadows, skybox, etc.)
+- DreadOut (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
+- Eleusis (Fixed shadows, light shafts, etc.)
+- Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
+- Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
-- Miasmata (Partial high quality water fix, no longer need Aion profile)
+- Miasmata (Skybox, reflections, light shafts fixed via new technique, etc.)
 
 Misc
 ====
@@ -61,7 +65,8 @@ some of the process of hacking them. It's very early and the code is not very
 pretty. At the moment it can:
 - Install shaders to the ShaderOverride directory, taking care of naming the
   file correctly.
-- Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0
+- Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0, optionally adding instructions
+  to preserve fog that can stop working on shader model upgrades.
 - Analyse shader register usage and look for free constants.
 - Disable an entire shader by setting it's output to 0 or 1.
 - Disable individual texcoord outputs from a vertex shader.
@@ -73,6 +78,14 @@ pretty. At the moment it can:
   passed in from Helix mod.
 - Insert a depth adjustment suitable for UI elements to the value of a constant
   register component (typically passed in from DX9Settings.ini).
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
+- Automatically fix light shafts in Unreal Engine games.
+- Remove Unreal's stereo correction in shaders using vPos where it does more
+  harm than good.
+- Automatically fix certain types of reflective surfaces in Unreal games (those
+  using a 2D DNEReflectionTexture, used in Life Is Strange).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
