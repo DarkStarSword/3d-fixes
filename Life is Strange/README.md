@@ -1,6 +1,10 @@
 Life is Strange (Episode 1)
 ===========================
 
+Update 2015-02-01
+-----------------
+- Added subtitle depth adjustment (see below)
+
 Fixed
 -----
 - Halos
@@ -12,13 +16,22 @@ Fixed
 - Reflections on ground
 - Clipping on decals
 - Convergence is increased to 50.0 by default. To save a custom setting, press
-  0 on the number row before adjusting the convergence, then press F7 to save.
+  plus on the number row before adjusting the convergence, then press F7 to
+  save.
 
 Installation
 ------------
 Unpack the zip file under:
 
     ...\Steam\SteamApps\common\Life Is Strange\Binaries\Win32
+
+Subtitile Depth Adjustment
+--------------------------
+The subtitle & menu depth can be adjusted with the keys on the number row. This
+can cause in-world HUD elements to flicker momentarily when at a certain
+distance from the camera, so it is disabled by default. tilde sets screen
+depth, 0 sets 99.5% and 1-9 sets anywhere between. Press minus on the number
+row to disable the adjustment and return to the game's default depth.
 
 Notes
 -----
