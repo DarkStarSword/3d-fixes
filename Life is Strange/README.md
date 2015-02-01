@@ -25,13 +25,15 @@ Unpack the zip file under:
 
     ...\Steam\SteamApps\common\Life Is Strange\Binaries\Win32
 
-Subtitile Depth Adjustment
---------------------------
-The subtitle & menu depth can be adjusted with the keys on the number row. This
-can cause in-world HUD elements to flicker momentarily when at a certain
-distance from the camera, so it is disabled by default. tilde sets screen
-depth, 0 sets 99.5% and 1-9 sets anywhere between. Press minus on the number
-row to disable the adjustment and return to the game's default depth.
+Subtitle Depth Adjustment
+-------------------------
+I recommend disabling the subtitles in the settings, but if you prefer to play
+with them enabled you may adjust their depth with the keys on the number row.
+This adjusts the subtitles and menus, but can cause in-world HUD elements to
+flicker momentarily when at a certain distance from the camera, so it is
+disabled by default. tilde sets screen depth, 0 sets 99.5% and 1-9 sets
+anywhere between. Press minus on the number row to disable the adjustment and
+return to the game's default depth.
 
 Notes
 -----
