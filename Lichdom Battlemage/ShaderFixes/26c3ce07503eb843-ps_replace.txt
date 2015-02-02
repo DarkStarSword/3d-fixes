@@ -1,3 +1,5 @@
+// Snow surface with broken noise sampler (DISABLED)
+// To make noise easier to see, disable output of 8d9899a4415a7fb1
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -39,6 +41,8 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+
   r0.x = saturate(1.000000015e-001 * g_SnowMultipliers.x);
   r0.x = 1.000000000e+000 + -r0.x;
   r0.yzw = sceneNormalsSampler.Sample(sceneNormalsSampler_s, v1.xy).xyz;
@@ -59,13 +63,19 @@ void main(
   r2.w = 1.000000015e-001 * r2.w;
   r0.x = r2.w * r0.x;
   r4.xyz = float3(1.250000e-001,1.250000e-001,1.250000e-001) * r3.xyz;
+
+// volumeNoiseSampler needs to be stereo adjusted
+// For now, kill the effect
   r2.w = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+r2.w = 1;
   r4.xyz = r3.xyz * float3(2.500000e-001,2.500000e-001,2.500000e-001) + r2.www;
   r4.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+r4.x = 1;
   r2.w = dot(r4.xx, r2.ww);
   r4.xyz = r3.xyz * float3(6.250000e-001,6.250000e-001,6.250000e-001) + r2.www;
   r4.xyz = -r0.xxx * r2.www + r4.xyz;
   r0.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+r0.x = 1;
   r0.x = r0.x * r2.w;
   r0.x = r0.x * 4.000000000e+000 + -2.500000000e-001;
   r0.x = saturate(5.000000000e-001 * r0.x);
