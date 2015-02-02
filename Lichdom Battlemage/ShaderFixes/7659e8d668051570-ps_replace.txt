@@ -1,3 +1,5 @@
+// puffy fog in snow level
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[3];
@@ -59,7 +61,7 @@ void main(
   float4 v1 : TEXCOORD0,
   float4 v2 : TEXCOORD1,
   float4 v3 : TEXCOORD2,
-  float4 v4 : TEXCOORD3,
+  float4 v4 : TEXCOORD3, // Where does this come from? VS only has 2 texcoord outputs
   float4 v5 : TEXCOORD4,
   float4 v6 : COLOR0,
   out float4 o0 : SV_Target0)
@@ -93,6 +95,11 @@ void main(
   r1.xyz = -AvgFogVolumeContrib.xyz + r1.xyz;
   r1.xyz = AvgFogVolumeContrib.www * r1.xyz + AvgFogVolumeContrib.xyz;
   r2.xy = v4.xy / v4.ww;
+
+// Fix halo on fog:
+float4 stereo = StereoParams.Load(0);
+r2.x += stereo.x / 2;
+
   r1.w = sceneDepthSampler.Sample(sceneDepthSampler_s, r2.xy).x;
   r2.x = PS_NearFarClipDist.z * v4.w;
   r1.w = r1.w * PS_NearFarClipDist.y + -r2.x;
