@@ -1,3 +1,5 @@
+// Foliage surface shader
+
 cbuffer cb4 : register(b4)
 {
   float4 cb4[7];
@@ -101,6 +103,10 @@ void main(
   r0.z = dot(g_VS_ViewProjZeroMatr._m20_m21_m22_m23, r2.xyzw);
   r0.w = dot(g_VS_ViewProjZeroMatr._m30_m31_m32_m33, r2.xyzw);
   o0.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.w - stereo.y);
+
   r0.xy = r0.xy * float2(1.000000e+000,-1.000000e+000) + r0.ww;
   o2.zw = r0.zw;
   o2.xy = float2(5.000000e-001,5.000000e-001) * r0.xy;
