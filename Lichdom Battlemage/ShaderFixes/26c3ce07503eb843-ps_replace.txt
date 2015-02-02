@@ -1,0 +1,661 @@
+
+cbuffer PER_BATCH : register(b0)
+{
+  float4 g_SnowVolumeParams : packoffset(c0);
+  float4 g_SnowMultipliers : packoffset(c1);
+  float4 g_fWaterLevel : packoffset(c2);
+  float4 g_WorldViewPos : packoffset(c3);
+  float4 g_SnowOcc_WindOffs : packoffset(c4);
+  float4 PS_NearFarClipDist : packoffset(c5);
+  row_major float3x4 g_SnowOcc_TransMat : packoffset(c6);
+}
+SamplerState sceneExtendedGBufferSampler_s : register(s0);
+SamplerState snowFrostBumpSampler_s : register(s1);
+SamplerState snowSpatterMapSampler_s : register(s2);
+SamplerState snowOcclusionMapSampler_s : register(s3);
+SamplerState volumeNoiseSampler_s : register(s4);
+SamplerState sceneDepthMapSampler_s : register(s7);
+SamplerState sceneNormalsSampler_s : register(s12);
+Texture2D<float4> sceneExtendedGBufferSampler : register(t0);
+Texture2D<float4> snowSpatterMapSampler : register(t1);
+Texture3D<float4> volumeNoiseSampler : register(t2);
+Texture2D<float4> snowFrostBumpSampler : register(t3);
+Texture2D<float4> snowOcclusionMapSampler : register(t4);
+Texture2D<float4> sceneDepthMapSampler : register(t7);
+Texture2D<float4> sceneNormalsSampler : register(t12);
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main(
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1,
+  out float4 o2 : SV_Target2)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = saturate(1.000000015e-001 * g_SnowMultipliers.x);
+  r0.x = 1.000000000e+000 + -r0.x;
+  r0.yzw = sceneNormalsSampler.Sample(sceneNormalsSampler_s, v1.xy).xyz;
+  r0.yzw = r0.yzw * float3(2.000000e+000,2.000000e+000,2.000000e+000) + float3(-1.000000e+000,-1.000000e+000,-1.000000e+000);
+  r1.x = dot(r0.yzw, r0.yzw);
+  r1.x = rsqrt(r1.x);
+  r1.yzw = r1.xxx * r0.yzw;
+  r2.xyz = saturate(float3(-2.500000e-001,-2.500000e-001,-2.500000e-001) + abs(r1.yzw));
+  r2.w = sceneDepthMapSampler.Sample(sceneDepthMapSampler_s, v1.xy).x;
+  r3.xyz = r2.www * v2.xyz + g_WorldViewPos.xyz;
+  r4.xyz = float3(1.000000e+001,1.000000e+001,1.000000e+001) * r3.xyz;
+  r2.w = snowSpatterMapSampler.Sample(snowSpatterMapSampler_s, r4.zx).w;
+  r2.w = r2.w * r2.y;
+  r4.z = snowSpatterMapSampler.Sample(snowSpatterMapSampler_s, r4.yz).w;
+  r4.x = snowSpatterMapSampler.Sample(snowSpatterMapSampler_s, r4.xy).w;
+  r2.w = r4.z * r2.x + r2.w;
+  r2.w = r4.x * r2.z + r2.w;
+  r2.w = 1.000000015e-001 * r2.w;
+  r0.x = r2.w * r0.x;
+  r4.xyz = float3(1.250000e-001,1.250000e-001,1.250000e-001) * r3.xyz;
+  r2.w = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+  r4.xyz = r3.xyz * float3(2.500000e-001,2.500000e-001,2.500000e-001) + r2.www;
+  r4.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+  r2.w = dot(r4.xx, r2.ww);
+  r4.xyz = r3.xyz * float3(6.250000e-001,6.250000e-001,6.250000e-001) + r2.www;
+  r4.xyz = -r0.xxx * r2.www + r4.xyz;
+  r0.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
+  r0.x = r0.x * r2.w;
+  r0.x = r0.x * 4.000000000e+000 + -2.500000000e-001;
+  r0.x = saturate(5.000000000e-001 * r0.x);
+  r2.w = 9.999999776e-003 * r0.x;
+  r4.xyz = r3.xyz * float3(2.500000e+000,2.500000e+000,2.500000e+000) + r2.www;
+  r5.xyz = snowFrostBumpSampler.Sample(snowFrostBumpSampler_s, r4.zx).xyz;
+  r5.xyz = r5.xyz * r2.yyy;
+  r6.xyz = snowFrostBumpSampler.Sample(snowFrostBumpSampler_s, r4.yz).xyz;
+  r4.xyz = snowFrostBumpSampler.Sample(snowFrostBumpSampler_s, r4.xy).xyz;
+  r2.xyw = r6.xyz * r2.xxx + r5.xyz;
+  r2.xyz = r4.xyz * r2.zzz + r2.xyw;
+  r2.x = dot(r2.xyz, r2.xyz);
+  r2.x = rsqrt(r2.x);
+  r2.x = r2.z * r2.x;
+  r2.y = saturate(r0.w * r1.x + -3.000000119e-001);
+  r2.y = 1.000000000e+001 * r2.y;
+  r2.y = min(r2.y, 1.000000000e+000);
+  r2.x = r2.x * r2.y;
+  r2.x = r2.x * 1.000000015e-001 + r1.w;
+  r2.y = log2(r2.x);
+  r2.x = saturate(2.000000030e-001 + r2.x);
+  r3.w = 1.000000000e+000;
+  r2.z = dot(g_SnowOcc_TransMat._m10_m11_m12_m13, r3.xyzw);
+  r4.w = g_SnowOcc_WindOffs.y + -r2.z;
+  r2.z = dot(g_SnowOcc_TransMat._m00_m01_m02_m03, r3.xyzw);
+  r2.w = dot(g_SnowOcc_TransMat._m20_m21_m22_m23, r3.xyzw);
+  r2.w = -9.960937500e-001 + r2.w;
+  r4.x = g_SnowOcc_WindOffs.x + r2.z;
+  r5.xy = float2(9.765625e-004,1.000977e+000) + r4.xw;
+  r5.xw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r5.xy).yx;
+  r6.w = r5.x;
+  r4.y = 1.000000000e+000 + r4.w;
+  r7.xyzw = float4(9.765625e-004,1.000000e+000,0.000000e+000,1.000977e+000) + r4.xwxw;
+  r5.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r4.xy).xy;
+  r4.xy = float2(1.024004e+003,1.024004e+003) * r4.xy;
+  r4.xy = frac(r4.xy);
+  r6.x = r5.y;
+  r4.zw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.xy).xy;
+  r7.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.zw).xy;
+  r6.y = r4.w;
+  r5.y = r4.z;
+  r6.z = r7.y;
+  r5.z = r7.x;
+  r5.xyzw = r5.xyzw + r2.wwww;
+  r6.xyzw = r6.xyzw + r2.wwww;
+  r6.xyzw = saturate(float4(5.120000e+002,5.120000e+002,5.120000e+002,5.120000e+002) * r6.xyzw);
+  r5.xyzw = saturate(float4(5.120000e+002,5.120000e+002,5.120000e+002,5.120000e+002) * r5.xyzw);
+  r2.zw = r6.zw + -r6.xy;
+  r2.zw = r4.yy * r2.zw + r6.xy;
+  r2.w = r2.w + -r2.z;
+  r2.z = r4.x * r2.w + r2.z;
+  r6.xyz = g_SnowVolumeParams.xyz + -r3.xyz;
+  r2.w = dot(r6.xyz, r6.xyz);
+  r2.w = sqrt(r2.w);
+  r4.zw = saturate(g_SnowMultipliers.wz);
+  r2.w = -r2.w * g_SnowVolumeParams.w + r4.z;
+  r3.w = -1.000100017e+000 + r4.z;
+  r2.w = r2.w / r3.w;
+  r2.w = saturate(1.000000000e+000 + -r2.w);
+  r3.w = -1.250000000e-001 + g_fWaterLevel.x;
+  r3.w = r3.z + -r3.w;
+  r3.w = saturate(4.000000000e+000 * r3.w);
+  r3.w = r3.w * r3.w;
+  r2.w = r3.w * r2.w;
+  r3.w = min(g_SnowMultipliers.x, 1.000000000e+001);
+  r3.w = r3.w * r2.w;
+  r2.w = r4.w * r2.w;
+  r2.z = r3.w * r2.z;
+  r3.w = max(r2.z, 9.999999975e-007);
+  r2.z = saturate(-r2.z * 1.000000015e-001 + 1.000000000e+000);
+  r2.z = -r2.z + r0.x;
+  r2.z = max(r2.z, 0.000000000e+000);
+  r3.w = 1.000000000e+001 / r3.w;
+  r3.w = max(r3.w, 9.999999975e-007);
+  r2.y = r3.w * r2.y;
+  r2.y = exp2(r2.y);
+  r2.y = -2.500000000e-001 + r2.y;
+  r2.y = saturate(1.000000000e+001 * r2.y);
+  r3.w = 8.000000000e+000 * r2.z;
+  r2.z = 1.000000000e+000 + -r2.z;
+  r3.w = min(r3.w, 1.000000000e+000);
+  r2.y = r3.w * r2.y;
+  r4.zw = r5.zw + -r5.xy;
+  r4.yz = r4.yy * r4.zw + r5.xy;
+  r3.w = r4.z + -r4.y;
+  r3.w = r4.x * r3.w + r4.y;
+  r2.w = r3.w * r2.w;
+  r2.x = r2.w * r2.x;
+  r0.x = saturate(r2.x * r0.x);
+  r2.x = r2.y * r2.z + r0.x;
+  r2.z = r2.y * r2.z;
+  o0.x = 7.500000000e-001 * r2.z;
+  o0.w = min(r2.x, 1.000000000e+000);
+  r2.x = dot(-r3.xyz, -r3.xyz);
+  r2.x = rsqrt(r2.x);
+  r2.xzw = -r3.xyz * r2.xxx;
+  r3.xyz = r1.yzw * float3(5.000000e-001,5.000000e-001,5.000000e-001) + float3(5.000000e-001,5.000000e-001,5.000000e-001);
+  r2.x = saturate(dot(r2.xzw, r3.xyz));
+  r0.yzw = -r0.yzw * r1.xxx + r3.xyz;
+  r1.x = 1.001000047e+000 + -r2.x;
+  r1.x = r1.x * r1.x;
+  r1.x = r1.x * r1.x + 1.000000000e+000;
+  r1.x = r1.x * r0.x;
+  o0.y = r0.x;
+  o0.z = 3.000000119e-001 * r1.x;
+  r2.xz = sceneExtendedGBufferSampler.Sample(sceneExtendedGBufferSampler_s, v1.xy).xy;
+  r0.x = 2.550000000e+002 * r2.x;
+  r0.x = (uint)r0.x;
+  r1.x = (uint)r0.x >> 6;
+  r2.x = r1.x ? 0.000000000e+000 : r2.y;
+  r1.x = r1.x ? 1 : 0.000000000e+000;
+  bitmask.x = ((~(-1 << 26)) << 6) & 0xffffffff;
+  r0.x = (((uint)r1.x << 6) & bitmask.x) | ((uint)r0.x & ~bitmask.x);
+  r0.x = r0.x;
+  o2.x = 3.921568859e-003 * r0.x;
+  o1.xyz = r2.xxx * r0.yzw + r1.yzw;
+  o1.w = 1.000000000e+000;
+  r0.x = 3.000000119e-001 + -r2.z;
+  o2.y = r2.x * r0.x + r2.z;
+  o2.zw = float2(0.000000e+000,1.000000e+000);
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer PER_BATCH
+// {
+//
+//   float4 g_SnowVolumeParams;         // Offset:    0 Size:    16
+//   float4 g_SnowMultipliers;          // Offset:   16 Size:    16
+//   float4 g_fWaterLevel;              // Offset:   32 Size:    16
+//   float4 g_WorldViewPos;             // Offset:   48 Size:    16
+//   float4 g_SnowOcc_WindOffs;         // Offset:   64 Size:    16
+//   float4 PS_NearFarClipDist;         // Offset:   80 Size:    16 [unused]
+//   row_major float3x4 g_SnowOcc_TransMat;// Offset:   96 Size:    48
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// sceneExtendedGBufferSampler       sampler      NA          NA    0        1
+// snowFrostBumpSampler              sampler      NA          NA    1        1
+// snowSpatterMapSampler             sampler      NA          NA    2        1
+// snowOcclusionMapSampler           sampler      NA          NA    3        1
+// volumeNoiseSampler                sampler      NA          NA    4        1
+// sceneDepthMapSampler              sampler      NA          NA    7        1
+// sceneNormalsSampler               sampler      NA          NA   12        1
+// sceneExtendedGBufferSampler       texture  float4          2d    0        1
+// snowSpatterMapSampler             texture  float4          2d    1        1
+// volumeNoiseSampler                texture  float4          3d    2        1
+// snowFrostBumpSampler              texture  float4          2d    3        1
+// snowOcclusionMapSampler           texture  float4          2d    4        1
+// sceneDepthMapSampler              texture  float4          2d    7        1
+// sceneNormalsSampler               texture  float4          2d   12        1
+// PER_BATCH                         cbuffer      NA          NA    0        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xy  
+// TEXCOORD                 1   xyzw        2     NONE   float   xyz 
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+// SV_Target                2   xyzw        2   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb0[9], immediateIndexed
+dcl_sampler s0, mode_default
+dcl_sampler s1, mode_default
+dcl_sampler s2, mode_default
+dcl_sampler s3, mode_default
+dcl_sampler s4, mode_default
+dcl_sampler s7, mode_default
+dcl_sampler s12, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture3d (float,float,float,float) t2
+dcl_resource_texture2d (float,float,float,float) t3
+dcl_resource_texture2d (float,float,float,float) t4
+dcl_resource_texture2d (float,float,float,float) t7
+dcl_resource_texture2d (float,float,float,float) t12
+dcl_input_ps linear v1.xy
+dcl_input_ps linear v2.xyz
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_output o2.xyzw
+dcl_temps 8
+mul_sat r0.x, cb0[1].x, l(0.100000)
+add r0.x, -r0.x, l(1.000000)
+sample_indexable(texture2d)(float,float,float,float) r0.yzw, v1.xyxx, t12.wxyz, s12
+mad r0.yzw, r0.yyzw, l(0.000000, 2.000000, 2.000000, 2.000000), l(0.000000, -1.000000, -1.000000, -1.000000)
+dp3 r1.x, r0.yzwy, r0.yzwy
+rsq r1.x, r1.x
+mul r1.yzw, r0.yyzw, r1.xxxx
+add_sat r2.xyz, |r1.yzwy|, l(-0.250000, -0.250000, -0.250000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r2.w, v1.xyxx, t7.yzwx, s7
+mad r3.xyz, r2.wwww, v2.xyzx, cb0[3].xyzx
+mul r4.xyz, r3.xyzx, l(10.000000, 10.000000, 10.000000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r2.w, r4.zxzz, t1.xyzw, s2
+mul r2.w, r2.y, r2.w
+sample_indexable(texture2d)(float,float,float,float) r4.z, r4.yzyy, t1.xywz, s2
+sample_indexable(texture2d)(float,float,float,float) r4.x, r4.xyxx, t1.wxyz, s2
+mad r2.w, r4.z, r2.x, r2.w
+mad r2.w, r4.x, r2.z, r2.w
+mul r2.w, r2.w, l(0.100000)
+mul r0.x, r0.x, r2.w
+mul r4.xyz, r3.xyzx, l(0.125000, 0.125000, 0.125000, 0.000000)
+sample_indexable(texture3d)(float,float,float,float) r2.w, r4.xyzx, t2.xyzw, s4
+mad r4.xyz, r3.xyzx, l(0.250000, 0.250000, 0.250000, 0.000000), r2.wwww
+sample_indexable(texture3d)(float,float,float,float) r4.x, r4.xyzx, t2.wxyz, s4
+dp2 r2.w, r4.xxxx, r2.wwww
+mad r4.xyz, r3.xyzx, l(0.625000, 0.625000, 0.625000, 0.000000), r2.wwww
+mad r4.xyz, -r0.xxxx, r2.wwww, r4.xyzx
+sample_indexable(texture3d)(float,float,float,float) r0.x, r4.xyzx, t2.wxyz, s4
+mul r0.x, r2.w, r0.x
+mad r0.x, r0.x, l(4.000000), l(-0.250000)
+mul_sat r0.x, r0.x, l(0.500000)
+mul r2.w, r0.x, l(0.010000)
+mad r4.xyz, r3.xyzx, l(2.500000, 2.500000, 2.500000, 0.000000), r2.wwww
+sample_indexable(texture2d)(float,float,float,float) r5.xyz, r4.zxzz, t3.xyzw, s1
+mul r5.xyz, r2.yyyy, r5.xyzx
+sample_indexable(texture2d)(float,float,float,float) r6.xyz, r4.yzyy, t3.xyzw, s1
+sample_indexable(texture2d)(float,float,float,float) r4.xyz, r4.xyxx, t3.xyzw, s1
+mad r2.xyw, r6.xyxz, r2.xxxx, r5.xyxz
+mad r2.xyz, r4.xyzx, r2.zzzz, r2.xywx
+dp3 r2.x, r2.xyzx, r2.xyzx
+rsq r2.x, r2.x
+mul r2.x, r2.x, r2.z
+mad_sat r2.y, r0.w, r1.x, l(-0.300000)
+mul r2.y, r2.y, l(10.000000)
+min r2.y, r2.y, l(1.000000)
+mul r2.x, r2.y, r2.x
+mad r2.x, r2.x, l(0.100000), r1.w
+log r2.y, r2.x
+add_sat r2.x, r2.x, l(0.200000)
+mov r3.w, l(1.000000)
+dp4 r2.z, cb0[7].xyzw, r3.xyzw
+add r4.w, -r2.z, cb0[4].y
+dp4 r2.z, cb0[6].xyzw, r3.xyzw
+dp4 r2.w, cb0[8].xyzw, r3.xyzw
+add r2.w, r2.w, l(-0.996094)
+add r4.x, r2.z, cb0[4].x
+add r5.xy, r4.xwxx, l(0.000977, 1.000977, 0.000000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r5.xw, r5.xyxx, t4.yzwx, s3
+mov r6.w, r5.x
+add r4.y, r4.w, l(1.000000)
+add r7.xyzw, r4.xwxw, l(0.000977, 1.000000, 0.000000, 1.000977)
+sample_indexable(texture2d)(float,float,float,float) r5.xy, r4.xyxx, t4.xyzw, s3
+mul r4.xy, r4.xyxx, l(1024.003662, 1024.003662, 0.000000, 0.000000)
+frc r4.xy, r4.xyxx
+mov r6.x, r5.y
+sample_indexable(texture2d)(float,float,float,float) r4.zw, r7.xyxx, t4.zwxy, s3
+sample_indexable(texture2d)(float,float,float,float) r7.xy, r7.zwzz, t4.xyzw, s3
+mov r6.y, r4.w
+mov r5.y, r4.z
+mov r6.z, r7.y
+mov r5.z, r7.x
+add r5.xyzw, r2.wwww, r5.xyzw
+add r6.xyzw, r2.wwww, r6.xyzw
+mul_sat r6.xyzw, r6.xyzw, l(512.000000, 512.000000, 512.000000, 512.000000)
+mul_sat r5.xyzw, r5.xyzw, l(512.000000, 512.000000, 512.000000, 512.000000)
+add r2.zw, -r6.xxxy, r6.zzzw
+mad r2.zw, r4.yyyy, r2.zzzw, r6.xxxy
+add r2.w, -r2.z, r2.w
+mad r2.z, r4.x, r2.w, r2.z
+add r6.xyz, -r3.xyzx, cb0[0].xyzx
+dp3 r2.w, r6.xyzx, r6.xyzx
+sqrt r2.w, r2.w
+mov_sat r4.zw, cb0[1].wwwz
+mad r2.w, -r2.w, cb0[0].w, r4.z
+add r3.w, r4.z, l(-1.000100)
+div r2.w, r2.w, r3.w
+add_sat r2.w, -r2.w, l(1.000000)
+add r3.w, cb0[2].x, l(-0.125000)
+add r3.w, -r3.w, r3.z
+mul_sat r3.w, r3.w, l(4.000000)
+mul r3.w, r3.w, r3.w
+mul r2.w, r2.w, r3.w
+min r3.w, cb0[1].x, l(10.000000)
+mul r3.w, r2.w, r3.w
+mul r2.w, r2.w, r4.w
+mul r2.z, r2.z, r3.w
+max r3.w, r2.z, l(0.000001)
+mad_sat r2.z, -r2.z, l(0.100000), l(1.000000)
+add r2.z, r0.x, -r2.z
+max r2.z, r2.z, l(0.000000)
+div r3.w, l(10.000000), r3.w
+max r3.w, r3.w, l(0.000001)
+mul r2.y, r2.y, r3.w
+exp r2.y, r2.y
+add r2.y, r2.y, l(-0.250000)
+mul_sat r2.y, r2.y, l(10.000000)
+mul r3.w, r2.z, l(8.000000)
+add r2.z, -r2.z, l(1.000000)
+min r3.w, r3.w, l(1.000000)
+mul r2.y, r2.y, r3.w
+add r4.zw, -r5.xxxy, r5.zzzw
+mad r4.yz, r4.yyyy, r4.zzwz, r5.xxyx
+add r3.w, -r4.y, r4.z
+mad r3.w, r4.x, r3.w, r4.y
+mul r2.w, r2.w, r3.w
+mul r2.x, r2.x, r2.w
+mul_sat r0.x, r0.x, r2.x
+mad r2.x, r2.y, r2.z, r0.x
+mul r2.z, r2.z, r2.y
+mul o0.x, r2.z, l(0.750000)
+min o0.w, r2.x, l(1.000000)
+dp3 r2.x, -r3.xyzx, -r3.xyzx
+rsq r2.x, r2.x
+mul r2.xzw, r2.xxxx, -r3.xxyz
+mad r3.xyz, r1.yzwy, l(0.500000, 0.500000, 0.500000, 0.000000), l(0.500000, 0.500000, 0.500000, 0.000000)
+dp3_sat r2.x, r2.xzwx, r3.xyzx
+mad r0.yzw, -r0.yyzw, r1.xxxx, r3.xxyz
+add r1.x, -r2.x, l(1.001000)
+mul r1.x, r1.x, r1.x
+mad r1.x, r1.x, r1.x, l(1.000000)
+mul r1.x, r0.x, r1.x
+mov o0.y, r0.x
+mul o0.z, r1.x, l(0.300000)
+sample_indexable(texture2d)(float,float,float,float) r2.xz, v1.xyxx, t0.xzyw, s0
+mul r0.x, r2.x, l(255.000000)
+ftou r0.x, r0.x
+ushr r1.x, r0.x, l(6)
+movc r2.x, r1.x, l(0), r2.y
+movc r1.x, r1.x, l(1), l(0)
+bfi r0.x, l(26), l(6), r1.x, r0.x
+utof r0.x, r0.x
+mul o2.x, r0.x, l(0.003922)
+mad o1.xyz, r2.xxxx, r0.yzwy, r1.yzwy
+mov o1.w, l(1.000000)
+add r0.x, -r2.z, l(0.300000)
+mad o2.y, r2.x, r0.x, r2.z
+mov o2.zw, l(0,0,0,1.000000)
+ret 
+// Approximately 147 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Recompiled ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.30.9200.20789
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer PER_BATCH
+// {
+//
+//   float4 g_SnowVolumeParams;         // Offset:    0 Size:    16
+//   float4 g_SnowMultipliers;          // Offset:   16 Size:    16
+//   float4 g_fWaterLevel;              // Offset:   32 Size:    16
+//   float4 g_WorldViewPos;             // Offset:   48 Size:    16
+//   float4 g_SnowOcc_WindOffs;         // Offset:   64 Size:    16
+//   float4 PS_NearFarClipDist;         // Offset:   80 Size:    16 [unused]
+//   row_major float3x4 g_SnowOcc_TransMat;// Offset:   96 Size:    48
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// sceneExtendedGBufferSampler_s     sampler      NA          NA    0        1
+// snowFrostBumpSampler_s            sampler      NA          NA    1        1
+// snowSpatterMapSampler_s           sampler      NA          NA    2        1
+// snowOcclusionMapSampler_s         sampler      NA          NA    3        1
+// volumeNoiseSampler_s              sampler      NA          NA    4        1
+// sceneDepthMapSampler_s            sampler      NA          NA    7        1
+// sceneNormalsSampler_s             sampler      NA          NA   12        1
+// sceneExtendedGBufferSampler       texture  float4          2d    0        1
+// snowSpatterMapSampler             texture  float4          2d    1        1
+// volumeNoiseSampler                texture  float4          3d    2        1
+// snowFrostBumpSampler              texture  float4          2d    3        1
+// snowOcclusionMapSampler           texture  float4          2d    4        1
+// sceneDepthMapSampler              texture  float4          2d    7        1
+// sceneNormalsSampler               texture  float4          2d   12        1
+// PER_BATCH                         cbuffer      NA          NA    0        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xy  
+// TEXCOORD                 1   xyzw        2     NONE   float   xyz 
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+// SV_Target                2   xyzw        2   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb0[9], immediateIndexed
+dcl_sampler s0, mode_default
+dcl_sampler s1, mode_default
+dcl_sampler s2, mode_default
+dcl_sampler s3, mode_default
+dcl_sampler s4, mode_default
+dcl_sampler s7, mode_default
+dcl_sampler s12, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture3d (float,float,float,float) t2
+dcl_resource_texture2d (float,float,float,float) t3
+dcl_resource_texture2d (float,float,float,float) t4
+dcl_resource_texture2d (float,float,float,float) t7
+dcl_resource_texture2d (float,float,float,float) t12
+dcl_input_ps linear v1.xy
+dcl_input_ps linear v2.xyz
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_output o2.xyzw
+dcl_temps 8
+mul_sat r0.x, l(0.100000), cb0[1].x
+add r0.x, -r0.x, l(1.000000)
+sample_indexable(texture2d)(float,float,float,float) r0.yzw, v1.xyxx, t12.wxyz, s12
+mad r0.yzw, r0.yyzw, l(0.000000, 2.000000, 2.000000, 2.000000), l(0.000000, -1.000000, -1.000000, -1.000000)
+dp3 r1.x, r0.yzwy, r0.yzwy
+rsq r1.x, r1.x
+mul r1.yzw, r0.yyzw, r1.xxxx
+add_sat r2.xyz, |r1.yzwy|, l(-0.250000, -0.250000, -0.250000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r2.w, v1.xyxx, t7.yzwx, s7
+mad r3.xyz, r2.wwww, v2.xyzx, cb0[3].xyzx
+mul r4.xyz, r3.xyzx, l(10.000000, 10.000000, 10.000000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r2.w, r4.zxzz, t1.xyzw, s2
+mul r2.w, r2.y, r2.w
+sample_indexable(texture2d)(float,float,float,float) r4.z, r4.yzyy, t1.xywz, s2
+sample_indexable(texture2d)(float,float,float,float) r4.x, r4.xyxx, t1.wxyz, s2
+mad r2.w, r4.z, r2.x, r2.w
+mad r2.w, r4.x, r2.z, r2.w
+mul r0.x, r0.x, r2.w
+mul r0.x, r0.x, l(0.100000)
+mul r4.xyz, r3.xyzx, l(0.125000, 0.125000, 0.125000, 0.000000)
+sample_indexable(texture3d)(float,float,float,float) r2.w, r4.xyzx, t2.xyzw, s4
+mad r4.xyz, r3.xyzx, l(0.250000, 0.250000, 0.250000, 0.000000), r2.wwww
+sample_indexable(texture3d)(float,float,float,float) r4.x, r4.xyzx, t2.wxyz, s4
+dp2 r2.w, r4.xxxx, r2.wwww
+mad r4.xyz, r3.xyzx, l(0.625000, 0.625000, 0.625000, 0.000000), r2.wwww
+mad r4.xyz, -r0.xxxx, r2.wwww, r4.xyzx
+sample_indexable(texture3d)(float,float,float,float) r0.x, r4.xyzx, t2.wxyz, s4
+mul r0.x, r2.w, r0.x
+mad r0.x, r0.x, l(4.000000), l(-0.250000)
+mul_sat r0.x, r0.x, l(0.500000)
+mul r2.w, r0.x, l(0.010000)
+mad r4.xyz, r3.xyzx, l(2.500000, 2.500000, 2.500000, 0.000000), r2.wwww
+sample_indexable(texture2d)(float,float,float,float) r5.xyz, r4.zxzz, t3.xyzw, s1
+mul r5.xyz, r2.yyyy, r5.xyzx
+sample_indexable(texture2d)(float,float,float,float) r6.xyz, r4.yzyy, t3.xyzw, s1
+sample_indexable(texture2d)(float,float,float,float) r4.xyz, r4.xyxx, t3.xyzw, s1
+mad r2.xyw, r6.xyxz, r2.xxxx, r5.xyxz
+mad r2.xyz, r4.xyzx, r2.zzzz, r2.xywx
+dp3 r2.x, r2.xyzx, r2.xyzx
+rsq r2.x, r2.x
+mul r2.x, r2.x, r2.z
+mad_sat r2.y, r1.x, r0.w, l(-0.300000)
+mul r2.y, r2.y, l(10.000000)
+min r2.y, r2.y, l(1.000000)
+mul r2.x, r2.y, r2.x
+mad r2.x, r2.x, l(0.100000), r1.w
+log r2.y, r2.x
+add_sat r2.x, r2.x, l(0.200000)
+mov r3.w, l(1.000000)
+dp4 r2.z, cb0[7].xyzw, r3.xyzw
+add r4.y, -r2.z, cb0[4].y
+dp4 r2.z, cb0[6].xyzw, r3.xyzw
+dp4 r2.w, cb0[8].xyzw, r3.xyzw
+add r2.w, r2.w, l(-0.996094)
+add r4.x, r2.z, cb0[4].x
+add r5.xy, r4.xyxx, l(0.000977, 1.000977, 0.000000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r5.xw, r5.xyxx, t4.yzwx, s3
+mov r6.w, r5.x
+add r4.z, r4.y, l(1.000000)
+add r7.xyzw, r4.xyxy, l(0.000977, 1.000000, 0.000000, 1.000977)
+sample_indexable(texture2d)(float,float,float,float) r5.xy, r4.xzxx, t4.xyzw, s3
+mul r4.xy, r4.xzxx, l(1024.004028, 1024.004028, 0.000000, 0.000000)
+frc r4.xy, r4.xyxx
+mov r6.x, r5.y
+sample_indexable(texture2d)(float,float,float,float) r4.zw, r7.xyxx, t4.zwxy, s3
+sample_indexable(texture2d)(float,float,float,float) r7.xy, r7.zwzz, t4.xyzw, s3
+mov r6.y, r4.w
+mov r5.y, r4.z
+mov r6.z, r7.y
+mov r5.z, r7.x
+add r5.xyzw, r2.wwww, r5.xyzw
+add r6.xyzw, r2.wwww, r6.xyzw
+mul_sat r6.xyzw, r6.xyzw, l(512.000000, 512.000000, 512.000000, 512.000000)
+mul_sat r5.xyzw, r5.xyzw, l(512.000000, 512.000000, 512.000000, 512.000000)
+add r2.zw, -r6.xxxy, r6.zzzw
+mad r2.zw, r4.yyyy, r2.zzzw, r6.xxxy
+add r2.w, -r2.z, r2.w
+mad r2.z, r4.x, r2.w, r2.z
+add r6.xyz, -r3.xyzx, cb0[0].xyzx
+dp3 r2.w, r6.xyzx, r6.xyzx
+sqrt r2.w, r2.w
+mov_sat r4.zw, cb0[1].wwwz
+mad r2.w, -r2.w, cb0[0].w, r4.z
+add r3.w, r4.z, l(-1.000100)
+div r2.w, r2.w, r3.w
+add_sat r2.w, -r2.w, l(1.000000)
+add r3.w, l(-0.125000), cb0[2].x
+add r3.w, -r3.w, r3.z
+mul_sat r3.w, r3.w, l(4.000000)
+mul r3.w, r3.w, r3.w
+mul r2.w, r2.w, r3.w
+min r3.w, l(10.000000), cb0[1].x
+mul r3.w, r2.w, r3.w
+mul r2.w, r2.w, r4.w
+mul r2.z, r2.z, r3.w
+max r3.w, r2.z, l(0.000001)
+mad_sat r2.z, r2.z, l(-0.100000), l(1.000000)
+add r2.z, r0.x, -r2.z
+max r2.z, r2.z, l(0.000000)
+div r3.w, l(10.000000), r3.w
+max r3.w, r3.w, l(0.000001)
+mul r2.y, r2.y, r3.w
+exp r2.y, r2.y
+add r2.y, r2.y, l(-0.250000)
+mul_sat r2.y, r2.y, l(10.000000)
+mul r3.w, r2.z, l(8.000000)
+add r2.z, -r2.z, l(1.000000)
+min r3.w, r3.w, l(1.000000)
+mul r2.y, r2.y, r3.w
+add r4.zw, -r5.xxxy, r5.zzzw
+mad r4.yz, r4.yyyy, r4.zzwz, r5.xxyx
+add r3.w, -r4.y, r4.z
+mad r3.w, r4.x, r3.w, r4.y
+mul r2.w, r2.w, r3.w
+mul r2.x, r2.x, r2.w
+mul_sat r0.x, r0.x, r2.x
+mad r2.x, r2.y, r2.z, r0.x
+mul r2.z, r2.z, r2.y
+mul o0.x, r2.z, l(0.750000)
+min o0.w, r2.x, l(1.000000)
+dp3 r2.x, -r3.xyzx, -r3.xyzx
+rsq r2.x, r2.x
+mul r2.xzw, r2.xxxx, -r3.xxyz
+mad r3.xyz, r1.yzwy, l(0.500000, 0.500000, 0.500000, 0.000000), l(0.500000, 0.500000, 0.500000, 0.000000)
+dp3_sat r2.x, r2.xzwx, r3.xyzx
+mad r0.yzw, -r0.yyzw, r1.xxxx, r3.xxyz
+add r1.x, -r2.x, l(1.001000)
+mul r1.x, r1.x, r1.x
+mad r1.x, r1.x, r1.x, l(1.000000)
+mul r1.x, r0.x, r1.x
+mov o0.y, r0.x
+mul o0.z, r1.x, l(0.300000)
+sample_indexable(texture2d)(float,float,float,float) r2.xz, v1.xyxx, t0.xzyw, s0
+mul r0.x, r2.x, l(255.000000)
+ftou r0.x, r0.x
+ushr r1.x, r0.x, l(6)
+utof r1.x, r1.x
+ne r1.x, l(0.000000, 0.000000, 0.000000, 0.000000), r1.x
+movc r2.x, r1.x, l(0), r2.y
+and r1.x, r1.x, l(1)
+bfi r0.x, l(26), l(6), r1.x, r0.x
+utof r0.x, r0.x
+mul o2.x, r0.x, l(0.003922)
+mad o1.xyz, r2.xxxx, r0.yzwy, r1.yzwy
+mov o1.w, l(1.000000)
+add r0.x, -r2.z, l(0.300000)
+mad o2.y, r2.x, r0.x, r2.z
+mov o2.zw, l(0,0,0,1.000000)
+ret 
+// Approximately 149 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
