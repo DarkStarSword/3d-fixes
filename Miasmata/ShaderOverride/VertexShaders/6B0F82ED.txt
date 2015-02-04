@@ -12,9 +12,15 @@ def c221, 64, 0.015625, 0, 0
 dcl_2d s0
 dcl_2d s3 // refr_sampler copied from water pixel shader
 
+// For loop to improve stereo cursor accuracy:
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 0, 0, 0.5 // 1/i0.x, 0.5
+
     mov r0.xy, v0
     mov r0.zw, c0.xyxy
     mov o1.xy, v1
+
+texldl r31, c220.z, s0
 
 mov r30, c250
 if_eq r30.y, c220.y // Depth buffer is currently valid (not in a menu)
@@ -30,26 +36,41 @@ if_eq r30.y, c220.y // Depth buffer is currently valid (not in a menu)
 	// instruction and directly outputing the contents of the sampler to identify
 	// the channel with the depth information.
 
-	// Sample in the screen center. We might get better results by looping from the
-	// center through to center+separation and testing the depth buffer at regular
-	// intervals to find an object we have actually hit, but this is reasonable:
-	texldl r5, c220.ww, s3
+	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
+	// center of the screen and work our way towards center + separation (ideally
+	// we would loop one pixel at a time, but as the loop counts must be constant
+	// we can't do that here, so we just choose a granuality in i0 and c227.
+	// Alternatively we could loop one pixel at a time with a hardcoded maximum
+	// number of pixels)
 
-	// scale depth buffer to world Z (game dependent - look for scaling applied to
-	// the depth buffer wherever else it is used. In this case multiply by 64):
-	mul r5.w, r5.w, c221.x
+	mov r20.xyzw, c220.wwxx		// xy=sample coords, z = X offset from center, w = depth
+	mov r21, r20			// Working copy
+	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
+	rep i0
+		mad r21.z, r31.x, c227.x, r21.z	// adjustment += separation / i0.x
 
-	// Regular old stereo correction formula:
-	texldl r31, c220.z, s0
-	add r31.w, r5.w, -r31.y
-	mul r31.w, r31.w, r31.x
+		// Calculate W for this adjustment amount:
+		add r21.w, r31.x, -r21.z	// separation - adjustment
+		rcp r21.w, r21.w
+		mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
 
-	// Since this is a UI shader and W=1, we need to apply the perspective divide ourselves:
-	rcp r31.z, r5.w
-	mul r31.w, r31.w, r31.z
+		// Read depth texture at this pixel:
+		add r21.x, c220.w, r21.z	// X = 0.5 + adjustment
+		texldl r5, r21.xy, s3
+
+		// scale depth buffer to world Z (game dependent - look for scaling applied to
+		// the depth buffer wherever else it is used. In this case multiply by 64):
+		mul r5.w, r5.w, c221.x
+
+		// If the sampled depth is closer than the calculated depth, exit the loop:
+		break_ge r21.w, r5.w
+
+		// Set the output depth to this pixel
+		mov r20, r21
+	endrep
 
 	// Finally adjust the X coordinate:
-	add r0.x, r0.x, r31.w
+	add r0.x, r0.x, r20.z
 endif
 
 mov o0, r0
