@@ -6,8 +6,50 @@
     dcl_texcoord v1
     dcl_position o0
     dcl_texcoord o1.xy
-    mov o0.xy, v0
-    mov o0.zw, c0.xyxy
+
+def c220, 0, 1, 0.0625, 0.5
+def c221, 64, 0.015625, 0, 0
+dcl_2d s0
+dcl_2d s3 // refr_sampler copied from water pixel shader
+
+    mov r0.xy, v0
+    mov r0.zw, c0.xyxy
     mov o1.xy, v1
 
-// approximately 3 instruction slots used
+mov r30, c250
+if_eq r30.y, c220.y // Depth buffer is currently valid (not in a menu)
+
+	// Adjust cursor depth based on the W component of the refr_sampler copied from
+	// the water shader, which has the scene depth.
+	// How do I know this? The water was the only surface with a halo around nearer
+	// objects, which suggests it had access to the depth buffer in some way (it
+	// would use this to calculate the water opacity based on depth). None of the
+	// sampler names sounded promising, so I determined that the texkill
+	// instruction caused the halo (removing it removed the halo), so from there it
+	// was a simple matter of looking at the samplers that provided input to that
+	// instruction and directly outputing the contents of the sampler to identify
+	// the channel with the depth information.
+
+	// Sample in the screen center. We might get better results by looping from the
+	// center through to center+separation and testing the depth buffer at regular
+	// intervals to find an object we have actually hit, but this is reasonable:
+	texldl r5, c220.ww, s3
+
+	// scale depth buffer to world Z (game dependent - look for scaling applied to
+	// the depth buffer wherever else it is used. In this case multiply by 64):
+	mul r5.w, r5.w, c221.x
+
+	// Regular old stereo correction formula:
+	texldl r31, c220.z, s0
+	add r31.w, r5.w, -r31.y
+	mul r31.w, r31.w, r31.x
+
+	// Since this is a UI shader and W=1, we need to apply the perspective divide ourselves:
+	rcp r31.z, r5.w
+	mul r31.w, r31.w, r31.z
+
+	// Finally adjust the X coordinate:
+	add r0.x, r0.x, r31.w
+endif
+
+mov o0, r0
