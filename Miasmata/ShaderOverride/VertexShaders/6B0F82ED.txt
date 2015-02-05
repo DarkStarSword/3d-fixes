@@ -58,7 +58,9 @@ if_eq r30.y, c220.y // Depth buffer is currently valid (not in a menu)
 			mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
 
 			// Read depth texture at this pixel:
-			add r21.x, c220.w, r21.z	// X = 0.5 + adjustment
+			//add r21.x, c220.w, r21.z	// X = 0.5 + adjustment
+			// Had to divide adjustment by 2 for whatever reason:
+			mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
 			texldl r5, r21.xy, s3
 
 			// scale depth buffer to world Z (game dependent - look for scaling applied to
