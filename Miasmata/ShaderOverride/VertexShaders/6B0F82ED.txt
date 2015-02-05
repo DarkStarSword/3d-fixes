@@ -69,12 +69,17 @@ if_eq v0.z, c220.x
 				mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
 				texldl r5, r21.xy, s3
 
-				// scale depth buffer to world Z (game dependent - look for scaling applied to
-				// the depth buffer wherever else it is used. In this case multiply by 64):
-				mul r5.w, r5.w, c221.x
+				// Ignore reads of 0 - can happen on the water at the edge of the map
+				if_ne r5.w, c220.x
 
-				// If the sampled depth is closer than the calculated depth, exit the loop:
-				break_ge r21.w, r5.w
+					// scale depth buffer to world Z (game dependent - look for scaling applied to
+					// the depth buffer wherever else it is used. In this case multiply by 64):
+					mul r5.w, r5.w, c221.x
+
+					// If the sampled depth is closer than the calculated depth, exit the loop:
+					break_ge r21.w, r5.w
+
+				endif
 
 				// Set the output depth to this pixel
 				mov r20, r21
