@@ -22,15 +22,18 @@ Improvements
 - Medium/high quality water fixed with accurate real-time reflections.
 - Update to latest Helix Mod.
 - Move sky depth to infinity, such that it no longer varies with convergence.
-- Fixed alignment issue between the water and sky at the horizon.
+- Fixed alignment issue between the water and sky at the horizon (medium & high
+  quality water only).
+- Fixed light shafts.
+- Added an automatic stereo crosshair
 
 Known Issues
 ------------
 - Triangulation can be falsely obscured by an object to the left of the
   landmark while in 3D... I suspect this may be related to a haloing issue
   since it is obscured by the same offset that the water used to be broken by.
-- God Rays
-- Would be nice to auto-adjust the mouse cursor depth
+- Low quality water settings have issues near the edge of the map, visible on
+  the horizon. Use medium or high quality water instead.
 - **RESTART THE GAME AFTER CHANGING ANY GRAPHICS SETTINGS**
 
 Installation
