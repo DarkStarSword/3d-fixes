@@ -216,14 +216,17 @@
     dcl_2d s2
     dcl_2d s3
     dcl_2d s4
-    add r0.x, c27.z, -v0.z
+
+dcl_texcoord5 v5 // New input with corrected world coordinates
+
+    add r0.x, c27.z, -v5.z // Use corrected world position
     add r0, r0.x, c44.x
     texkill r0
-    add r0.xyz, -c27, v0
+    add r0.xyz, -c27, v5 // Use corrected world position
     rcp r0.w, r0.z
     mul r0.w, r0.w, -c27.z
     mul r0.xyz, r0.w, r0
-    lrp r1.xyz, r0.w, v0, c27
+    lrp r1.xyz, r0.w, v0, c27 // Use uncorrected world position - blends a little better at the edge of the map (still not great)
     dp3 r0.w, r0, r0
     rsq r0.w, r0.w
     rcp r2.x, r0.w

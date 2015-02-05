@@ -219,18 +219,38 @@
     dcl_2d s3
     dcl_2d s4
     dcl_2d s5
-    add r0.xyz, -c27, v0
+
+dcl_texcoord5 v5 // New input with corrected world coordinates
+
+// We need to use both corrected and uncorrected wold positions here. The
+// corrected position will fix the reflections, but we need the uncorrected
+// position for the shadows & ripples. Interleave instructions using corrected
+// and uncorrected for the first part of this shader until we no longer need
+// the uncorrected version.
+
+    add r0.xyz, -c27, v5 // Changed to use corrected world position from vertex shader
+add r20.xyz, -c27, v0 // Uncorrected world position, which we need for shadows
     dp3 r0.w, r0, r0
+dp3 r20.w, r20, r20
     rsq r0.w, r0.w
+rsq r20.w, r20.w
     rcp r1.x, r0.w
+rcp r21.x, r20.w
     mul r1.x, r1.x, c44.x
+mul r21.x, r21.x, c44.x
     max r2.x, c44.y, r1.x
+max r22.x, c44.y, r21.x
     rcp r1.x, r2.x
+rcp r21.x, r22.x
     mul r2.z, r2.x, c43.x
+mul r22.z, r22.x, c43.x
     mul r1.x, r1.x, c39.x
+mul r21.x, r21.x, c39.x
     mul r1.yzw, r0.w, r0.xxyz
-    mul r3.xy, r1.x, r1.yzzw
-    mul r3.zw, c38.x, v0.xyxy
+mul r21.yzw, r20.w, r20.xxyz
+    // mul r3.xy, r1.x, r1.yzzw // Needs original world position...
+mul r3.xy, r21.x, r21.yzzw // ...like this
+    mul r3.zw, c38.x, v0.xyxy // Original world position (corrected position breaks shadows & ripples)
     texld r4, r3.zwzw, s1
     mad r4.xz, r4.y, r3.xyyw, r3.zyww
     texld r5, r4.xzzw, s1
@@ -306,7 +326,7 @@
     cmp r2.xyw, r0.w, r2, c46.y
     add r0.xyz, r0, r2.xyww
     mov r5.w, c44.y
-    mov r3.z, v0.z
+    mov r3.z, v5.z
     add r2.xyw, r3.xyzz, -c24.xyzz
     dp3 r0.w, r2.xyww, c25
     dp3 r1.x, r2.xyww, c26
