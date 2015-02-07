@@ -19,10 +19,10 @@ these fixes.
 - Eleusis (Fixed shadows, light shafts, etc.)
 - Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
 - Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
+- Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
-- Miasmata (Skybox, reflections, light shafts fixed via new technique, etc.)
 
 Misc
 ====
