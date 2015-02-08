@@ -33,7 +33,7 @@ some of the basics of the game in a bit more detail.
 
 This game has been fixed for 3D before - 3d4dd did an excellent job in making
 it playable in 3D, and it was in fact [his fix][2] that prompted my second
-playthrough of the game, which later lead to me getting involved with modding
+playthrough of the game, which later led to me getting involved with modding
 the game before I took up 3D fixing. I released an [unofficial community
 patch][3] to fix some of the bugs in the game, an [achievement tracker][4] to
 help out completionists with some of the harder or broken achievements, a
