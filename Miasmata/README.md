@@ -130,7 +130,7 @@ Installation
 
 - [Download the fix here][7]
 
-[7]: https://s3.amazonaws.com/DarkStarSword/3Dfix-Miasmata-2015-02-08.zip
+[7]: https://s3.amazonaws.com/DarkStarSword/3Dfix-Miasmata-2015-02-09.zip
 
 - If you have assigned Miasmata to the Aion profile for the previous version of
   this fix, remove it from that profile.
@@ -199,3 +199,14 @@ to know ahead of time how to work around them.
 
 4. As already mentioned several times, changing the graphics quality settings
    you cause a "grainy water" rendering issue until the game is restarted.
+
+Update 2015-02-09
+-----------------
+
+- Fixed black seam that could appear at the edge of the map if the camera was
+  tilted (such as during the ending cutscene).
+
+- Fix will now work with older versions of the game, such as the v2.0.0.4
+  version from GOG. Note that this old version was only tested with all
+  graphics settings set to high, and the fog/god rays have clipping issues on
+  this version, so it is recommended to update.
