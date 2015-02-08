@@ -1,5 +1,5 @@
-Miasmata (Updated)
-==================
+Miasmata
+========
 
 I'd like to present a game that is pretty special to me. I first played it (in
 2D) back in 2012 not long after it came out, and I had quite an amazing
