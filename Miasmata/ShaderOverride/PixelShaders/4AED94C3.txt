@@ -224,13 +224,16 @@
 
 dcl_texcoord5 v5 // New input with corrected world coordinates
 
-    add r0.x, c36.z, -v0.z // Using uncorrected coordinate here does better for black seam when camera is tilted. A seam is still visible, but no longer black
+    add r0.x, c36.z, -v0.z // Using uncorrected coordinate here does better for black seam when camera is tilted.
     add r0, r0.x, c53.x
     texkill r0
     mov r0.w, c53.z
     add r1.xyz, -c36, v5 // Use corrected world position
+add r21.xyz, -c36, v0 // Inverleaving corrected & uncorrected coords to improve remaining (non-black) seam when camera is tilted
     rcp r1.w, r1.z
+rcp r21.w, r21.z
     mul r1.w, r1.w, -c36.z
+mul r1.w, r21.w, -c36.z
     mul r1.xyz, r1.w, r1
     lrp r2.xyz, r1.w, v0, c36 // Use uncorrected world position - blends a little better at the edge of the map (still not great)
     dp3 r1.w, r1, r1
