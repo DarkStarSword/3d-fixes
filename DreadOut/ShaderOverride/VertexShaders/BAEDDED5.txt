@@ -40,6 +40,9 @@ dcl_texcoord o0
 dcl_texcoord1 o1
 dcl_position o2
 
+def c220, 0, 1, 0.0625, 0.5
+def c221, 1.025, 0.58, 0, 0 // 1.025 = FOV without phone, 0.58 = FOV on phone
+
 // Extra output to pass the FOV to pixel shaders:
 dcl_texcoord5 o5.x
 
@@ -61,14 +64,33 @@ dcl_texcoord5 o5.x
 // mov r30.z, c182.x
 // mov r30.w, c183.x
 // dp4 r30.x, r30, c190 // Calculate P[0,0]
+// rcp r30.x, r30.x // Calculate P.I[0,0]
+
 // Use matrices from PrePassLighting, which seem more reliable than the above,
 // especially when the phone camera is active:
-mov r30.x, c184.x
-mov r30.y, c185.x
-mov r30.z, c186.x
-mov r30.w, c187.x
-dp4 r30.x, r30, c194 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
+// mov r22, c220
+// if_ne c187.w, r22.x
+// 	mov r30.x, c184.x
+// 	mov r30.y, c185.x
+// 	mov r30.z, c186.x
+// 	mov r30.w, c187.x
+// 	dp4 r30.x, r30, c194 // Calculate P[0,0]
+// 	rcp r30.x, r30.x // Calculate P.I[0,0]
+// endif
+
+// In Act 2 the only way I could find to determine the correct FOV was by
+// detecting if the camera was in use or not. The shadows outside the camera
+// get mucked up, but this is the best I can do. I might still be able to
+// determine if the passed in light matrix is valid, which will probably yield
+// better results when it is.
+mov r20, c200
+if_eq r20.x, c220.y
+	// Phone active, use FOV correction factor 0.58
+	mov r30.x, c221.y
+else
+	// Phone inactive, use FOV correction factor 1.025
+	mov r30.x, c221.x
+endif
 
 // Copy calculated FOV to pixel shaders:
 mov o5.x, r30.x
