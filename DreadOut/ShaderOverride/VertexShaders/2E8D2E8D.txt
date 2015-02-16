@@ -1,3 +1,5 @@
+// Vignette
+
     vs_3_0
     dcl_position o0
     dcl_texcoord o1
@@ -5,11 +7,55 @@
     dcl_position v0
     dcl_texcoord v1
     dcl_color v2
+
+def c220, 0, 1, 0.0625, 2
+dcl_2d s0
+
     mov o2, v2
     mad o1.xy, v1, c4, c4.zwzw
-    dp4 o0.w, v0, c3
-    dp4 o0.z, v0, c2
-    dp4 o0.y, v0, c1
-    dp4 o0.x, v0, c0
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.y, v0, c1
+    dp4 r0.x, v0, c0
+
+texldl r31, c220.z, s0
+
+// Move vignette back to screen depth:
+// add r31.w, r0.w, -r31.y
+// mad r0.x, -r31.w, r31.x, r0.x
+// 
+// // Experimental: Expand vignette out to maybe look better in stereo
+// if_lt r0.x, c220.x // Left side
+// 	if_lt r31.x, c220.x // Left eye
+// 		//add r0.x, r0.x, r31.x
+// 		mad r0.x, r31.x, c220.w, r0.x
+// 	endif
+// else // Right side
+// 	if_gt r31.x, c220.x // Right eye
+// 		//add r0.x, r0.x, r31.x
+// 		mad r0.x, r31.x, c220.w, r0.x
+// 	endif
+// endif
+
+// Experimental: Similar to above, but maintains original vignette depth
+// Only removes stereo correction on one half of each eye, other half gets it
+// applied again to make up for the loss of depth
+add r31.w, r0.w, -r31.y
+mul r31.w, r31.w, r31.x
+if_lt r0.x, c220.x // Left side
+	if_gt r31.x, c220.x // right eye
+		add r0.x, r0.x, -r31.w
+	else
+		add r0.x, r0.x, r31.w
+	endif
+else // Right side
+	if_lt r31.x, c220.x // left eye
+		add r0.x, r0.x, -r31.w
+	else
+		add r0.x, r0.x, r31.w
+	endif
+endif
+
+mov o0, r0
 
 // approximately 6 instruction slots used
