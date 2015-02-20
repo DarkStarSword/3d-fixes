@@ -24,11 +24,18 @@ class md2helixProcessor(markdown.treeprocessors.Treeprocessor):
 				root.remove(node)
 		for node in root.getiterator():
 			if node.tag == 'h2':
-				print 'Downgrading header: "%s"' % node.text
-				node.tag = 'p'
-				child = etree.SubElement(node, 'u')
-				child.text = node.text
-				node.text = ""
+				print 'Upgrading header: "%s"' % node.text
+				node.tag = 'h1'
+				# child = etree.SubElement(node, 'u')
+				# child.text = node.text
+				# node.text = ""
+		for node in root.getiterator():
+			if node.tag == 'h3':
+				print 'Upgrading header: "%s"' % node.text
+				node.tag = 'h2'
+				# child = etree.SubElement(node, 'u')
+				# child.text = node.text
+				# node.text = ""
 		return root
 
 if __name__ == '__main__':
