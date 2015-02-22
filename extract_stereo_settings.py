@@ -30,11 +30,11 @@ def main():
 	xsettings = xroot.appendChild(document.createElement('Settings'))
 	for i in range(0, table_len, struct_size):
 		buf = f.read(struct_size)
-		(name, id, unknown) = struct.unpack(struct_fmt, buf)
+		(name, id, text) = struct.unpack(struct_fmt, buf)
 		name = name[:name.find(b'\0')].decode('ascii')
-		# print('0x%.8x: 0x%.8x %s' % (id, unknown, name))
+		# print('0x%.8x: 0x%.8x %s' % (id, text, name))
 		# Wiki headers:
-		print('=== %s (0x%.8x) ===' % (name, id))
+		print('=== %s (0x%.8x)%s ===' % (name, id, text and ' - text' or ''))
 
 		xsetting = document.createElement('CustomSetting')
 		xname = document.createElement('UserfriendlyName')
