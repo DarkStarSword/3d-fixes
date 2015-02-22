@@ -8,11 +8,17 @@ import xml.dom
 # find a cross reference to the first entry in the table, check the code that
 # references it to find the length of the table, then just determine what file
 # offset that corresponds to. The first entry was "Time"):
-table_off = 0xEC9BF0
-table_len = 0x4A40
+
+# Old driver
+# table_off = 0xEC9BF0
+# table_len = 0x4A40
 
 struct_fmt = '<100sII'
 struct_size = struct.calcsize(struct_fmt)
+
+# 344.75 64bit
+table_off = 0x1116270
+table_len = 0x111AD88 + struct_size - table_off
 
 def main():
 	f = open("c:\\windows\\SysWOW64\\nvwgf2um.dll", 'rb')
@@ -27,6 +33,8 @@ def main():
 		(name, id, unknown) = struct.unpack(struct_fmt, buf)
 		name = name[:name.find(b'\0')].decode('ascii')
 		# print('0x%.8x: 0x%.8x %s' % (id, unknown, name))
+		# Wiki headers:
+		print('=== %s (0x%.8x) ===' % (name, id))
 
 		xsetting = document.createElement('CustomSetting')
 		xname = document.createElement('UserfriendlyName')
