@@ -42,15 +42,6 @@ dcl_2d s0
     mov r0.w, r0.z
     dp4 r0.x, v0, c0
     dp4 r0.y, v0, c1
-
-mov o0, r0 // Relocated from line 50 with shadertool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed JAW_Fog Plane/vp/5874635E.txt
-texldl r2, c220.z, s0
-add r2.w, r0.w, -r2.y
-mad r0.x, r2.w, r2.x, r0.x
-
     mul r1.xyz, r0.xyww, c9.x
     mov r1.y, -r1
     add r1.xy, r1, r1.z
@@ -60,13 +51,18 @@ mad r0.x, r2.w, r2.x, r0.x
     mul r1.y, r0.z, r1.z
     dp4 r0.z, v0, c2
     mad o1.x, r1.y, c9, r1
-
-//     mov o0, r0 // Relocated to line 41 with shadertool.py
-mov o0.z, r0.z // Inserted by shadertool.py
-
+    mov r3, r0
     mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
     mov o1.zw, r0
     dp4 o2.w, v0, c7
     dp4 o2.z, v0, c6
     dp4 o2.y, v0, c5
     dp4 o2.x, v0, c4
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty -f --unadjust=position 5874635E.txt
+texldl r2, c220.z, s0
+add r2.w, r3.w, -r2.y
+mul r2.w, r2.w, r2.x
+add r3.x, r3.x, -r2.w
+mov o0, r3
