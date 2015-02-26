@@ -1,3 +1,41 @@
+// CRC32: 9686392B | Unity headers extracted from ScatteringTransparent.shader
+// Shader "JAW/Sky Plane/Scattering Transparent" {
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Front
+//       Fog { Mode Off }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_Time]
+//           Vector 9 [eyePosition]
+//           Vector 10 [sunColor]
+//           Float 11 [sunIntensity]
+//           Vector 12 [sunDirection]
+//           Float 13 [cloudEyeHeight]
+//           Vector 14 [windDirection]
+//           Float 15 [windSpeed]
+//           Vector 16 [cloudColor]
+//           Float 17 [overrideColor]
+//           Float 18 [cloudMie]
+//           Vector 19 [vBetaMie]
+//           Vector 20 [BetaMieTheta]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0
     dcl_position o0
     dcl_color o1
@@ -10,6 +48,10 @@
     def c24, 0.166666672, 6, -3, -1
     def c25, 6, -2, -4, 0
     dcl_position v0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     mov r1.x, c19.z
     mul r1.x, c18, r1
     mul r1.y, r1.x, c21.w
@@ -98,11 +140,20 @@
       mul r1.xyz, r1, r1.w
     else
     endif
-    mov o0, r0
+    //mov o0, r0
     mov o1.xyz, r1
     mov o2.xy, r3.zwzw
     mov o3.xy, r4
     mov o4.xy, r3
     mov o1.w, c23.x
+
+// Expand the clouds horizontally to remove the gap at the edge of the screen
+// Multiply X by 1+separation
+texldl r31, c220.z, s0
+abs r31.z, r31.x
+add r31.w, r31.z, c220.y
+mul r0.x, r0.x, r31.w
+
+mov o0, r0
 
 // approximately 106 instruction slots used
