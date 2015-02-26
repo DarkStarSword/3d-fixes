@@ -1,0 +1,108 @@
+    vs_3_0
+    dcl_position o0
+    dcl_color o1
+    dcl_texcoord o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    def c21, 1.5, 0.000609999988, 0.000289999996, 100
+    def c22, 0.200000003, 1.00999999, 2.71828198, 0.809999943
+    def c23, 1, 0, 2, 4
+    def c24, 0.166666672, 6, -3, -1
+    def c25, 6, -2, -4, 0
+    dcl_position v0
+    mov r1.x, c19.z
+    mul r1.x, c18, r1
+    mul r1.y, r1.x, c21.w
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    add r0.xyz, r0, -c9
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r2.xyz, r0.w, r0
+    pow r0, c22.z, -r1.y
+    dp3 r1.x, r2, c12
+    mad r0.y, r1.x, c22.x, c22
+    pow r1, r0.y, c21.x
+    add r0.z, -r0.x, c23.x
+    abs r0.w, r2.y
+    mov r0.y, r1.x
+    mov r0.x, c20.z
+    mul r1.zw, r2.xyzx, c13.x
+    rcp r0.y, r0.y
+    mul r0.x, c18, r0
+    mul r0.x, r0, r0.y
+    mul r0.y, r0.x, r0.z
+    mov r0.x, c8
+    mul r0.x, c15, r0
+    rcp r0.z, c19.z
+    mul r0.z, r0.y, r0
+    mul r1.x, r0.w, r0
+    mul r0.xy, r1.x, c14
+    mul r0.xy, r0, c21.x
+    mul r1.xy, r1.x, c14.zwzw
+    mov r3.y, r0.w
+    mad r3.zw, r1, c21.y, r0.xyxy
+    mad r4.xy, r1.zwzw, c21.z, r1
+    mul r0.z, r0, c18.x
+    mul r0.xyz, r0.z, c10
+    mul r0.xyz, r0, c11.x
+    mul r1.xyz, r0, c22.w
+    mov r1.w, c23.x
+    dp4 r0.x, v0, c0
+    mov r3.x, r2.y
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.y, v0, c1
+    if_eq c17.x, r1.w
+      max r1.y, r1, r1.z
+      max r1.w, r1.x, r1.y
+      min r2.x, c16.y, c16.z
+      max r1.z, c16.y, c16
+      min r2.x, r2, c16
+      max r1.z, r1, c16.x
+      add r2.w, r1.z, -r2.x
+      mov r1.xy, c23.y
+      if_ne r2.w, c23.y
+        rcp r1.y, r1.z
+        rcp r1.x, r2.w
+        add r2.xyz, r1.z, -c16
+        mul r2.xyz, r2, r1.x
+        add r2.xyz, r2, -r2.zxyw
+        mov r1.x, r1.z
+        add r2.xy, r2, c23.zwzw
+        mul r1.y, r2.w, r1
+        if_ge c16.x, r1.x
+          mov r1.x, r2.z
+        else
+          if_ge c16.y, r1.z
+            mov r1.x, r2
+          else
+            mov r1.x, r2.y
+          endif
+        endif
+        mul r1.x, r1, c24
+        frc r1.x, r1
+      endif
+      mad r1.z, r1.x, c24.y, c24
+      abs r1.z, r1
+      add_sat r2.x, r1.z, c24.w
+      mad r1.z, r1.x, c25.x, c25
+      abs r1.z, r1
+      mad r1.x, r1, c25, c25.y
+      abs r1.x, r1
+      add_sat r2.z, -r1, c23
+      add_sat r2.y, -r1.x, c23.z
+      add r2.xyz, r2, c24.w
+      mad r1.xyz, r2, r1.y, c23.x
+      mul r1.xyz, r1, r1.w
+    else
+    endif
+    mov o0, r0
+    mov o1.xyz, r1
+    mov o2.xy, r3.zwzw
+    mov o3.xy, r4
+    mov o4.xy, r3
+    mov o1.w, c23.x
+
+// approximately 106 instruction slots used
