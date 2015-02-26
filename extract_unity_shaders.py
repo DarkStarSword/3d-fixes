@@ -633,15 +633,21 @@ def main():
                 if shader.name != 'd3d9':
                     continue
                 assert(not shader.fog)
-                for fog_tree in create_fog_asm(shader.shader_asm):
-                    fog_asm = str(fog_tree)
-                    if fog_asm == shader.shader_asm:
-                        continue
-                    fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
-                    del fog_shader.crc
-                    fog_shader.fog = fog_tree.fog_type
-                    fog_shader.fog_orig_crc = shader.crc
-                    handle_shader_asm(fog_asm, fog_shader, fog_asm)
+                try:
+                    for fog_tree in create_fog_asm(shader.shader_asm):
+                        fog_asm = str(fog_tree)
+                        if fog_asm == shader.shader_asm:
+                            continue
+                        fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
+                        del fog_shader.crc
+                        fog_shader.fog = fog_tree.fog_type
+                        fog_shader.fog_orig_crc = shader.crc
+                        handle_shader_asm(fog_asm, fog_shader, fog_asm)
+                except SyntaxError as e:
+                    import traceback, time
+                    traceback.print_exc()
+                    time.sleep(0.1)
+                    continue
 
     for shaders in shader_index.values():
         if len(shaders) == 1:
