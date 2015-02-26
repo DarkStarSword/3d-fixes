@@ -230,8 +230,8 @@ def parse_keywords(tree, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            handle_shader_asm(token, parent, strip_quotes(token))
             parent.fog = None
+            handle_shader_asm(token, parent, strip_quotes(token))
             continue
 
         if not isinstance(token, Identifier):
