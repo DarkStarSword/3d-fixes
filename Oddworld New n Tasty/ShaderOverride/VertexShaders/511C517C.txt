@@ -1,14 +1,83 @@
+// CRC32: 511C517C | Matched 4 variants of 1 shaders: JAW/FX/Distortion/Shockwaves
+// 
+//    Unity headers extracted from Shockwaves.shader
+//    Shader "JAW/FX/Distortion/Shockwaves" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "black" {}
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+// 1:     Pass 1/4 {
+// 2:     Pass 2/4 {
+// 4:     Pass 3/4 {
+// 8:     Pass 4/4 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 4 [aspect]
+//              Vector 5 [position1] // ripple
+//              Vector 6 [position2] // ripple
+//              Vector 7 [position3]
+//              Vector 8 [position4]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0
     dcl_position o0
     dcl_texcoord1 o1
-    dcl_texcoord2 o2
-    dcl_texcoord3 o3
+    dcl_texcoord2 o2 // ripple
+    dcl_texcoord3 o3 // ripple
     dcl_texcoord4 o4
     dcl_texcoord5 o5
     dcl_position v0
     dcl_texcoord v1
-    add r0.zw, v1.xyxy, -c5.xyxy
-    add r0.xy, v1, -c6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+mov r5, c5
+mov r6, c6
+
+mov r30, c200
+if_eq r30.x, c220.y // Copied MVP matrix is currently valid
+	texldl r31, c220.z, s0
+
+	// Run a coordinate at the origin through the MVP matrix of the red power
+	// circles to find their depth so we can align the ripples with them:
+	mov r10, c220.xxxy
+	dp4 r11.w, r10, c195 // c195 is 4th col of passed in MVP matrix
+
+	// Stereo correction:
+	add r31.w, r11.w, -r31.y
+	mul r31.w, r31.w, r31.x
+
+	// Divide by 2 because it's Unity:
+	mul r31.w, r31.w, c220.w
+
+	// We have to do the perspective divide since this is a post-processing shader:
+	rcp r31.z, r11.w
+	mul r31.w, r31.w, r31.z
+
+
+	// Adjust ripple origin:
+	add r5.x, r5.x, r31.w
+	add r6.x, r6.x, r31.w
+endif
+
+    add r0.zw, v1.xyxy, -r5.xyxy
+    add r0.xy, v1, -r6
     mul o2.x, r0.z, c4
     mov o2.y, r0.w
     add r0.zw, v1.xyxy, -c7.xyxy
