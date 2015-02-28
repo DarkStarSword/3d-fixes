@@ -1,0 +1,32 @@
+    ps_3_0
+    dcl_fog v9.x
+    dcl_2d s0
+    dcl_2d s1
+    def c6, 0.5, 0, 2.71828198, 1
+    def c7, 0, -0.5, 0.5, 0
+    dcl_texcoord v0
+    texldp r0, v0, s0
+    dp4 r1.x, r0, c7.xxyz
+    dp4 r0.y, r0, c6.xxyy
+    texldp r0.x, v0, s1
+    add r1.x, r1, c6
+    mul r1.xyz, r1.x, c4
+    mad r2.x, r0, c0.z, c0.w
+    mul r1.w, r0.y, c2.x
+    pow r0, c6.z, -r1.w
+    rcp r0.y, r2.x
+    add r0.y, -v0.z, r0
+    mov r0.z, r0.x
+    mul_sat r0.x, r0.y, c5
+    add r0.y, -r0.z, c6.w
+    mul r0.x, r0.y, r0
+    mul r1.xyz, r1, c3.x
+    mad r30.xyz, r0.x, r1, c1
+    mov r30.w, r0.x
+    mul r31.x, c9.x, v9.x
+    mul r31.x, r31.x, r31.x
+    exp_sat r31.x, -r31.x
+    lrp r30.xyz, r31.x, r30, c8
+    mov oC0, r30
+
+// approximately 25 instruction slots used (2 texture, 23 arithmetic)
