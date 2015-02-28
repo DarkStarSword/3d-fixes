@@ -49,9 +49,15 @@ dcl_2d s0
 
 mov r5, c5
 mov r6, c6
+mov r7, c7
+mov r8, c8
 
 mov r30, c200
-if_eq r30.x, c220.y // Copied MVP matrix is currently valid
+// Test if the MVP matrix is currently valid
+// Disabling this test as the ripples snap out of alignment towards the edge of
+// the screen after the red circle has disappeared
+//if_eq r30.x, c220.y
+
 	texldl r31, c220.z, s0
 
 	// Run a coordinate at the origin through the MVP matrix of the red power
@@ -74,16 +80,19 @@ if_eq r30.x, c220.y // Copied MVP matrix is currently valid
 	// Adjust ripple origin:
 	add r5.x, r5.x, r31.w
 	add r6.x, r6.x, r31.w
-endif
+	add r7.x, r7.x, r31.w
+	add r8.x, r8.x, r31.w
+
+//endif
 
     add r0.zw, v1.xyxy, -r5.xyxy
     add r0.xy, v1, -r6
     mul o2.x, r0.z, c4
     mov o2.y, r0.w
-    add r0.zw, v1.xyxy, -c7.xyxy
+    add r0.zw, v1.xyxy, -r7.xyxy
     mul o3.x, r0, c4
     mov o3.y, r0
-    add r0.xy, v1, -c8
+    add r0.xy, v1, -r8
     mov o1.xy, v1
     mul o4.x, r0.z, c4
     mov o4.y, r0.w
