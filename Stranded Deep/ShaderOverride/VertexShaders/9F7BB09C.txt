@@ -69,7 +69,10 @@ dcl_color o2
 
 
 def c220, 0, 1, 0.0625, 2
-def c221, -1, 0.999, 0, 0
+def c221, -1, 0.999, 0, 0 // Full screen fade to black coordinates
+def c222, 0.96, 1.0, 0.10, 0.15 // Crosshair texture coordinates
+def c223, -0.01, 0.01, -0.01, 0.01 // Crosshair X+Y bounds
+def c224, 0.216, 0, 0, 0 // Crosshair fade threshold
 dcl_2d s0
 
     mov o2, v2
@@ -81,10 +84,7 @@ dcl_2d s0
 
 // approximately 6 instruction slots used
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui=c200.z -f VertexShader_63_CRC32_9F7BB09C.txt
-
-// Texture blacklist no good - crosshair, fade to black, inventory, menus, etc. use the same texture
+// Texture blacklist unusable - crosshair, fade to black, inventory, menus, etc. use the same texture
 //mov r25.x, c251.x
 //if_eq r25.x, c220.x
 
@@ -97,8 +97,36 @@ if_ge r0.x, c221.y
 	mov r30.x, c220.x
 endif
 
+// Detect crosshair based on texture coordinates:
+if_ge v1.x, c222.x
+if_le v1.x, c222.y
+if_ge v1.y, c222.z
+if_le v1.y, c222.w
+	// Confirm vertex is in center of screen:
+	if_ge r0.x, c223.x
+	if_le r0.x, c223.y
+	if_ge r0.y, c223.z
+	if_le r0.y, c223.w
+		// Remove crosshair when it is faded out:
+		if_le v2.x, c224.x
+			mov r30.x, -c220.y
+		endif
+	endif
+	endif
+	endif
+	endif
+endif
+endif
+endif
+endif
+
+
 if_eq r30.x, c220.y
 	texldl r1, c220.z, s0
 	mad r0.x, r1.x, c200.z, r0.x
 endif
 mov o1, r0
+
+if_eq r30.x, -c220.y
+	mov o1, c220.xxxx
+endif
