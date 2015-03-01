@@ -1,0 +1,58 @@
+// CRC32: 713880FA | Unity headers extracted from Unlit - Transparent Colored.shader
+// Shader "Unlit/Transparent Colored" {
+//   Properties {
+//    _MainTex ("Base (RGB), Alpha (A)", 2D) = "white" {}
+//   }
+//   SubShader 1/2 {
+//     LOD 100
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Offset -1, -1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_color v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov o2, v2
+    mad o0.xy, v1, c4, c4.zwzw
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.y, v0, c1
+    dp4 r0.x, v0, c0
+
+// approximately 6 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py --in-place --ui=c200.z 713880FA.txt
+texldl r1, c220.z, s0
+mad r0.x, r1.x, c200.z, r0.x
+mov o1, r0
