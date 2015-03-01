@@ -9,6 +9,7 @@ Fixed
 - Moved highlights on ocean floor to correct depth
 - Sun shafts
 - Underwater crepuscular rays
+- Automatically remove the crosshair when it is faded out
 
 Installation
 ------------
@@ -23,8 +24,6 @@ Installation
 3. Launch the game and set quality to Ultra (other settings may work as well,
    but I haven't tested them)
 
-4. (Oprional) Disable the crosshair in the settings if you find it distracting.
-
 Keys
 ----
 - L: Activate recommended convergence preset - use after starting a new game,
@@ -36,6 +35,9 @@ Keys
 
 - X: Cycles between four four HUD depth presets - 75% (default), 99.5%, screen
   depth and 50%.
+
+- V: Cycles crosshair modes between automatic, always enabled and always
+  disabled (crosshair must be enabled in the settings).
 
 Troubleshooting
 ---------------
