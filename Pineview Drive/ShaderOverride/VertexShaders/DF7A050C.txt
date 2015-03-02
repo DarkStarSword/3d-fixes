@@ -87,13 +87,6 @@ if_eq r0.w, c220.y
 	mov r30.z, c182.x
 	mov r30.w, c183.x
 	dp4 r30.x, r30, c190 // Calculate P[0,0]
-
-	rcp r30.x, r30.x // Calculate P.I[0,0]
-	mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
-
-	// Matrices failed to copy into directional lighting shader, hardcode here as
-	// well in case the same problem exists here:
-	mov r30.x, c220.w
 else
 	mov r20.x, c220.x // Clear flag to indicate we are drawing a light in the scene
 
@@ -105,10 +98,14 @@ else
 	mov r30.z, c186.x
 	mov r30.w, c187.x
 	dp4 r30.x, r30, c4 // Calculate P[0,0]
-
-	rcp r30.x, r30.x // Calculate P.I[0,0]
-	mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 endif
+
+if_eq r30.x, c220.x
+	mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+else
+	rcp r30.x, r30.x // Calculate P.I[0,0]
+endif
+mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 
 if_eq r20.x, c220.x
 	// Apply stereo correction to screen coords stored in texcoord:
