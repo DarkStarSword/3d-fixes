@@ -49,10 +49,21 @@ dcl_2d s0
     dp4 r0.y, v0, c1
     dp4 r0.x, v0, c0
 
-// approximately 6 instruction slots used
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py --in-place --ui=c200.z 713880FA.txt
-texldl r1, c220.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+// Disable UI adjustment for anything in full-screen:
+mov r30.x, c220.y
+if_le r0.x, -c220.y
+	mov r30.x, c220.x
+endif
+if_ge r0.x, c220.y
+	mov r30.x, c220.x
+endif
+
+if_eq r30.x, c220.y
+	// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py --in-place --ui=c200.z 713880FA.txt
+	texldl r1, c220.z, s0
+	mad r0.x, r1.x, c200.z, r0.x
+endif
+
 mov o1, r0

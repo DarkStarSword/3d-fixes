@@ -318,10 +318,20 @@ dcl_2d s0
     dp4 r0.y, v0, c1
     dp4 r0.x, v0, c0
 
-// approximately 7 instruction slots used
+// Disable UI adjustment for anything in full-screen:
+mov r30.x, c220.y
+if_le r0.x, -c220.y
+	mov r30.x, c220.x
+endif
+if_ge r0.x, c220.y
+	mov r30.x, c220.x
+endif
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --lookup-header-json /home/dss/3d-fixes/__unity__/Pineview Drive/ShaderHeaders.json --ui=c200.z --git VertexShader_68_CRC32_40F99615.txt
-texldl r1, c220.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+if_eq r30.x, c220.y
+	// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py -i --lookup-header-json /home/dss/3d-fixes/__unity__/Pineview Drive/ShaderHeaders.json --ui=c200.z --git VertexShader_68_CRC32_40F99615.txt
+	texldl r1, c220.z, s0
+	mad r0.x, r1.x, c200.z, r0.x
+endif
+
 mov o2, r0
