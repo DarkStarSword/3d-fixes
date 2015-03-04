@@ -41,18 +41,18 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0
-    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_fog o9
     dcl_position o0
-    dcl_texcoord0 o1
+    dcl_texcoord o1
     dcl_texcoord1 o2
     dcl_texcoord2 o3
     dcl_texcoord3 o4
     dcl_texcoord4 o5
-    def c19, 1.00000000, 0.50000000, 0, 0
-    dcl_position0 v0
-    dcl_tangent0 v1
-    dcl_normal0 v2
-    dcl_texcoord0 v3
+    def c19, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
@@ -87,21 +87,25 @@ dcl_2d s0
     mov r0.x, r1
     mov r0.y, r1
     mov o0, r0
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/dss/common/Pineview Drive --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_Hardsurface Pro ScreenSpace Reflection/vp/BA935CA0.txt
-texldl r3, c220.z, s0
-add r3.w, r0.w, -r3.y
-mad r0.x, r3.w, r3.x, r0.x
-
-    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o9, r0.z
     rcp r0.x, r1.w
     min o1.w, r1, r0.x
     add r0.xy, r1.z, r1
-    mov o5.zw, r0
-    mul o5.xy, r0, c19.y
+    mov r4.zw, r0
+    mul r4.xy, r0, c19.y
     mad o2.xy, v3, c18, c18.zwzw
     dp3 o3.z, v2, c4
     dp3 o3.x, v1, c4
     dp3 o4.z, v2, c5
     dp3 o4.x, v1, c5
+
+// approximately 41 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --lookup-header-json /home/dss/3d-fixes/__unity__/Pineview Drive/ShaderHeaders.json -f --adjust-multiply=0.5 --adjust=texcoord4 --git VertexShader_135_CRC32_BA935CA0.txt
+texldl r3, c220.z, s0
+add r3.w, r4.w, -r3.y
+mul r3.w, r3.w, r3.x
+mul r3.w, r3.w, c220.w
+add r4.x, r4.x, r3.w
+mov o5, r4
