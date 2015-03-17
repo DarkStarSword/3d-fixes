@@ -19,10 +19,9 @@ Fixed
 
 Known Issues
 ------------
-- Volumetric ray-marched light shafts are only partially fixed, and currently
-  have a distorted halo around the character and other objects inside them.
-  These are most noticeable in The Hand That Feeds and the Pandemonium.
-  **Press U to cycle between the partial fix (default), mono and disabled.**
+- Volumetric ray-marched light shafts are disabled. You can re-enable them with
+  U and toggle them between no fix (at screen depth), and a partial inaccurate
+  fix that causes a halo around the character and other objects inside them.
 - Reflections are mono
 - The mouse cursor depth is not adjustable as it uses a hardware cursor.
 
