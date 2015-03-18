@@ -69,6 +69,9 @@
 def c220, 0, 0.85, 0.0625, 0.5
 dcl_2d s13
 
+// Extra input from VS with P.I[0,0]:
+dcl_texcoord5 v5.x
+
     // NOT doing Mike's correction here as it leaves a 1px halo around the
     // character. The vertex shader has been corrected instead, which is more
     // accurate.
@@ -84,39 +87,10 @@ dcl_2d s13
     mul r0.xyw, r1.xyzz, r0.x // view-space coord using .xyw -> Depth is in r0.w
     mov r0.z, c23.y
 
-// We need to get the horizontal FOV, which is in the projection matrix at
-// [0,0] (well, actually it's cot(fov_h / 2), but that's what we need).
-//
-// Unfortunately none of the Unity shaders use the projection matrix, so we
-// need to calculate it. We have the MVP matrix in c190 and the inverted MV
-// matrix in c180, which was copied from the VS with Helix mod (refer to the
-// DX9Settings.ini).
-//
-// We can calculate the projection matrix by multiplying the inverted MV matrix
-// by the MVP matrix: P = MV.I * MVP
-//
-// Since we only need one field in the projection matrix, we can avoid doing a
-// full matrix multiplication here. We only need to multiply the first row of
-// the inverted MV matrix with the first column of the MVP matrix. The matrix
-// regs are columns (I think - feels backwards to me), which means we need to
-// transpose the first component of each of the MV regs into a temporary
-// register to get it's first row:
-mov r21.x, c180.x
-mov r21.y, c181.x
-mov r21.z, c182.x
-mov r21.w, c183.x
-// Now calculate the dot product of the first row of MV.I with the first column
-// of MVP and store the result in r20.x - this is Projection[0,0]:
-dp4 r20.x, r21, c190
-
-// We need to divide by the FOV, so invert it:
-rcp r20.x, r20.x
-
-// And now we can adjust the shadow:
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
 add r31.w, r0.w, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
-mul r31.w, r31.w, r20.x // Adjust by FOV we just calculated
+mul r31.w, r31.w, v5.x // Adjust by FOV we just calculated
 add r0.x, r0.x, -r31.w  // Finally adjust the X coord
 
     dp4 r10.w, r0.xywz, c5
