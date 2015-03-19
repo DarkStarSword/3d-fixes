@@ -165,18 +165,18 @@ def mv_mvp_m00i(mv, mvp):
 # // + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
 #
 # // Do some multiplications in parallel with SIMD instructions:
-# mov r21, mv1
-# mul r20.xyz, mv0.yzx, r21.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
-# mul r21.xyz, mv0.zxy, r21.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+# mov r22.xyz, mv1
+# mul r20.xyz, mv0.yzx, r22.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+# mul r21.xyz, mv0.zxy, r22.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
 # // Do the subtractions:
 # add r20.xyz, r20.xyz, -r21.xyz // mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
 # // Now the multiplications:
 # mul r20.xyz, r20.xyz, mv2.xyz
 # // Sum it together to get the determinant:
-# add r22.x, r20.x, r20.y
-# add r22.x, r22.x, r20.z
+# add r22.w, r20.x, r20.y
+# add r22.w, r22.w, r20.z
 # // And finally get 1/determinant:
-# rcp r22.x, r22.x
+# rcp r22.w, r22.w
 #
 # // 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
 # //    the 4th column of the MV matrix is 0,0,0,1
@@ -186,13 +186,12 @@ def mv_mvp_m00i(mv, mvp):
 # // m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
 #
 # // Do some multiplications in parallel with SIMD instructions:
-# mov r21, mv2
-# mul r20.xyz, mv1.yzx, r21.zxy // mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
-# mul r21.xyz, mv1.zxy, r21.yzx // mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+# mul r20.xyz, r22.yzx, mv2.zxy // mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+# mul r21.xyz, r22.zxy, mv2.yzx // mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
 # // Do the subtractions:
 # add r20.xyz, r20.xyz, -r21.xyz // mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
 # // Multiply against 1/determinant:
-# mul r20.xyz, r20.xyz, r22.xxx
+# mul r20.xyz, r20.xyz, r22.www
 #
 # // 3. Multiply the first row of the inverted MV matrix with the 1st column of
 # //    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):

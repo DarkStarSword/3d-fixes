@@ -75,7 +75,7 @@ dcl_2d s0
 // Determine if drawing a full screen quad by testing if output position w == 1.
 // Seems to be more reliable than an input position test:
 if_eq r0.w, c220.y
-	mov r22.w, c220.y // Set flag to indicate we are drawing a full-screen quad
+	mov r23.x, c220.y // Set flag to indicate we are drawing a full-screen quad
 
 	// We are drawing a full-screen quad, so we can't use the matrices from
 	// this shader and have to use an alternate source copied from elsewhere:
@@ -86,7 +86,7 @@ if_eq r0.w, c220.y
 	mov r30.w, c183.x
 	dp4 r30.x, r30, c190 // Calculate P[0,0]
 else
-	mov r22.w, c220.x // Clear flag to indicate we are drawing a light in the scene
+	mov r23.x, c220.x // Clear flag to indicate we are drawing a light in the scene
 
 	// Our projection matrix will be valid, so we can use the matrices
 	// passed into this shader. Rather than have Helix mod invert the
@@ -109,18 +109,18 @@ else
 	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
 
 	// Do some multiplications in parallel with SIMD instructions:
-	mov r21, c1
-	mul r20.xyz, c0.yzx, r21.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
-	mul r21.xyz, c0.zxy, r21.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	mov r22.xyz, c1
+	mul r20.xyz, c0.yzx, r22.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, c0.zxy, r22.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
 	// Do the subtractions:
 	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
 	// Now the multiplications:
 	mul r20.xyz, r20.xyz, c2.xyz
 	// Sum it together to get the determinant:
-	add r22.x, r20.x, r20.y
-	add r22.x, r22.x, r20.z
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
 	// And finally get 1/determinant:
-	rcp r22.x, r22.x
+	rcp r22.w, r22.w
 
 	// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
 	//    the 4th column of the MV matrix is 0,0,0,1
@@ -130,13 +130,12 @@ else
 	// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
 
 	// Do some multiplications in parallel with SIMD instructions:
-	mov r21, c2
-	mul r20.xyz, c1.yzx, r21.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
-	mul r21.xyz, c1.zxy, r21.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+	mul r20.xyz, r22.yzx, c2.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+	mul r21.xyz, r22.zxy, c2.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
 	// Do the subtractions:
 	add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
 	// Multiply against 1/determinant:
-	mul r20.xyz, r20.xyz, r22.xxx
+	mul r20.xyz, r20.xyz, r22.www
 
 	// 3. Multiply the first row of the inverted MV matrix with the 1st column of
 	//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
@@ -151,7 +150,7 @@ else
 endif
 mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 
-if_eq r22.w, c220.x
+if_eq r23.x, c220.x
 	// Apply stereo correction to screen coords stored in texcoord:
 	texldl r31, c220.z, s0
 	add r31.w, r0.w, -r31.y
@@ -165,7 +164,7 @@ endif
     dp4 r2.x, v0, c0
     dp4 r2.y, v0, c1
 
-if_eq r22.w, c220.x
+if_eq r23.x, c220.x
 	mad r2.x, r31.w, r30.x, r2.x
 endif
 
