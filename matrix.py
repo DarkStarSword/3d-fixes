@@ -58,6 +58,32 @@ def projection(near, far, fov_horiz, fov_vert):
         [0, 0, -q*near, 0]
     ])
 
+def projection_nv_equiv(near, far, fov_horiz, fov_vert, separation, convergence):
+    '''
+    Returns two projection matrices that have an equivelent adjustment to the
+    nvidia formula built in, allowing the familiar convergence and separation
+    settings to work the same.
+    '''
+    w = 1 / tan(radians(fov_horiz) / 2)
+    h = 1 / tan(radians(fov_vert)  / 2)
+    q = far / (far - near)
+
+    left = np.matrix([
+        [                      w, 0,       0, 0],
+        [                      0, h,       0, 0],
+        [            -separation, 0,       q, 1],
+        [ separation*convergence, 0, -q*near, 0]
+    ])
+
+    right = np.matrix([
+        [                      w, 0,       0, 0],
+        [                      0, h,       0, 0],
+        [             separation, 0,       q, 1],
+        [-separation*convergence, 0, -q*near, 0]
+    ])
+
+    return (left, right)
+
 def fov_w(matrix):
     return degrees(2 * atan(1/matrix[0, 0]))
 
