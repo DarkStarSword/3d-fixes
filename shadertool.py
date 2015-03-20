@@ -1157,7 +1157,7 @@ def find_header(tree, comment_pattern):
     raise KeyError()
 
 unreal_NvStereoEnabled_pattern = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
-def disable_redundant_unreal_correction(tree, args):
+def disable_unreal_correction(tree, args, redundant_check):
     # In Life Is Strange I found a lot of Unreal Engine shaders are now using
     # the vPos semantic, and then applying a stereo correction on top of that,
     # which is wrong as vPos is already the correct screen location.
@@ -1165,11 +1165,12 @@ def disable_redundant_unreal_correction(tree, args):
     if not isinstance(tree, PS3):
         raise Exception('Disabling redundant Unreal correction is only applicable to pixel shaders')
 
-    try:
-        vPos = find_declaration(tree, 'dcl', 'vPos.xy')
-    except IndexError:
-        debug('Shader does not use vPos')
-        return
+    if redundant_check:
+        try:
+            vPos = find_declaration(tree, 'dcl', 'vPos.xy')
+        except IndexError:
+            debug('Shader does not use vPos')
+            return
 
     try:
         match = find_header(tree, unreal_NvStereoEnabled_pattern)
@@ -1180,7 +1181,10 @@ def disable_redundant_unreal_correction(tree, args):
     constant = Register(match.group('constant'))
     debug('Disabling NvStereoEnabled %s' % constant)
 
-    tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+    if redundant_check:
+        tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+    else:
+        tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine stereo correction disabled by")
     tree.insert_decl('def', [constant, 0, 0, 0, 0], comment='Overrides NvStereoEnabled passed from Unreal Engine')
     tree.insert_decl()
 
@@ -1256,6 +1260,79 @@ def auto_fix_unreal_dne_reflection(tree, args):
         offset += pos - orig_pos
 
         tree.autofixed = True
+
+unreal_ScreenToShadowMatrix_pattern = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
+def auto_fix_unreal_shadows(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal shadow auto fix is only applicable to pixel shaders')
+
+    try:
+        match = find_header(tree, unreal_ScreenToShadowMatrix_pattern)
+    except KeyError:
+        debug('Shader does not use ScreenToShadowMatrix')
+        return
+
+    screen2shadow0 = Register(match.group('constant'))
+    screen2shadow2 = Register('c%i' % (screen2shadow0.num + 2))
+    debug('ScreenToShadowMatrix identified as %s %s' % (screen2shadow0, screen2shadow2))
+
+    results0 = scan_shader(tree, screen2shadow0, write=False)
+    results2 = scan_shader(tree, screen2shadow2, write=False)
+    if not results0 or not results2:
+        debug('ScreenToShadowMatrix is not used in shader')
+        return
+    if len(results0) > 1 or len(results2) > 1:
+        debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
+        return
+
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+    texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
+    mask = ''
+    if texcoord.swizzle:
+        mask = '.%s' % texcoord.swizzle
+    texcoord_adj = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3)
+
+    replace_regs = {texcoord.reg: texcoord_adj}
+    tree.do_replacements(replace_regs, False)
+
+    orig_offset = pos = tree.decl_end
+    pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [texcoord_adj.x, t.w, t.x, texcoord_adj.x]))
+    pos += tree.insert_instr(pos)
+    offset += pos - orig_offset
+
+    (x_line, x_linepos, x_instr) = results0[0]
+    (z_line, z_linepos, z_instr) = results2[0]
+    line = min(x_line, z_line)
+
+    orig_pos = pos = prev_line_pos(tree, line + offset)
+    if x_instr.args[1] == screen2shadow0:
+        x_reg = x_instr.args[2]
+    elif x_instr.args[2] == screen2shadow0:
+        x_reg = x_instr.args[1]
+    else:
+        raise Exception('ScreenToShadowMatrix[0] used in an unexpected way')
+
+    if z_instr.args[1] == screen2shadow2:
+        w_reg = z_instr.args[2]
+    elif z_instr.args[2] == screen2shadow2:
+        w_reg = z_instr.args[1]
+    else:
+        raise Exception('ScreenToShadowMatrix[2] used in an unexpected way')
+
+    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine shadow fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, w_reg, -t.y]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, -t.w, t.x, x_reg]))
+    pos += tree.insert_instr(pos)
+    offset += pos - orig_pos
+
+    disable_unreal_correction(tree, args, False)
+
+    tree.autofixed = True
 
 def add_unity_autofog_VS3(tree, reason):
     try:
@@ -1544,6 +1621,8 @@ def parse_args():
             help="Attempt to automatically fix light shafts found in Unreal games")
     parser.add_argument('--auto-fix-unreal-dne-reflection', action='store_true',
             help="Attempt to automatically fix reflective floor surfaces found in Unreal games")
+    parser.add_argument('--auto-fix-unreal-shadows', action='store_true',
+            help="Attempt to automatically fix shadows in Unreal games")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1615,7 +1694,8 @@ def args_require_reg_analysis(args):
                 args.add_unity_autofog or \
                 args.disable_redundant_unreal_correction or \
                 args.auto_fix_unreal_light_shafts or \
-                args.auto_fix_unreal_dne_reflection
+                args.auto_fix_unreal_dne_reflection or \
+                args.auto_fix_unreal_shadows
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1716,11 +1796,13 @@ def main():
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(tree, args)
             if args.disable_redundant_unreal_correction:
-                disable_redundant_unreal_correction(tree, args)
+                disable_unreal_correction(tree, args, true)
             if args.auto_fix_unreal_light_shafts:
                 auto_fix_unreal_light_shafts(tree, args)
             if args.auto_fix_unreal_dne_reflection:
                 auto_fix_unreal_dne_reflection(tree, args)
+            if args.auto_fix_unreal_shadows:
+                auto_fix_unreal_shadows(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
