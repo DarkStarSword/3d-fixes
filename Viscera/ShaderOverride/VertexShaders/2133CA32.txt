@@ -54,6 +54,10 @@
     dcl_texcoord7 o4.xyz
     dcl_texcoord5 o5
     dcl_position o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
     mul r0, c8, v0.y
     mad r0, c7, v0.x, r0
     mad r0, c9, v0.z, r0
@@ -88,7 +92,7 @@
     mul r0.w, r0.w, c6.w
     mad r4.x, r0.w, c25.x, r4.x
     mul r0.w, r4.w, c18.z
-    mad o6.xy, r0.w, c18, r4
+    mad r7.xy, r0.w, c18, r4
     mad r5.xyz, r0, -c4.w, c4
     mul r6.xyz, r5.y, c16
     mad r5.xyw, c15.xyzz, r5.x, r6.xyzz
@@ -170,6 +174,12 @@
     mul o1, c27.xxyy, v4.xyxx
     mov o3.w, -c5.y
     mov o5, r4
-    mov o6.zw, r4
+    mov r7.zw, r4
 
 // approximately 121 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f --stereo-sampler-vs=s3 --ui=c200.z VertexShader_16_CRC32_2133CA32.txt
+texldl r8, c220.z, s3
+mad r7.x, r8.x, c200.z, r7.x
+mov o6, r7
