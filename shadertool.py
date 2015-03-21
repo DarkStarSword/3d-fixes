@@ -397,7 +397,6 @@ class ShaderBlock(SyntaxTree):
         def pr_verbose(*args, **kwargs):
             if verbose:
                 debug(*args, **kwargs)
-
         self.local_consts = RegSet()
         self.addressed_regs = RegSet()
         self.declared = []
@@ -1655,6 +1654,8 @@ def parse_args():
 
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity')
+    parser.add_argument('--quiet', '-q', action='count', default=0,
+            help='Suppress usual informational messages, intended for batch processing large amounts of shaders')
     args = parser.parse_args()
 
     if args.to_git:
@@ -1677,7 +1678,7 @@ def parse_args():
     if args.add_unity_autofog:
         args.auto_convert = False
 
-    verbosity = args.verbose
+    verbosity = args.verbose - args.quiet
 
     return args
 
@@ -1731,7 +1732,7 @@ def main():
         processed.add(crc)
 
         if args.precheck_installed and check_shader_installed(file):
-            debug_verbose(1, 'Skipping %s - already installed and you did not specify --force' % file)
+            debug_verbose(0, 'Skipping %s - already installed and you did not specify --force' % file)
             continue
 
         if args.restore_original:
