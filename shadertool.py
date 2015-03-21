@@ -1316,6 +1316,10 @@ def auto_fix_unreal_shadows(tree, args):
     line = min(x_line, z_line)
 
     orig_pos = pos = prev_line_pos(tree, line + offset)
+
+    if x_instr.opcode != 'mad' or z_instr.opcode != 'mad':
+        raise Exception('ScreenToShadowMatrix[0] used in an unexpected way (column-major/row-major?)')
+
     if x_instr.args[1] == screen2shadow0:
         x_reg = x_instr.args[2]
     elif x_instr.args[2] == screen2shadow0:
