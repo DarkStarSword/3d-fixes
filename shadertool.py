@@ -672,13 +672,13 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
     dest = os.path.join(shader_dir, dest_name)
     if not args.force and os.path.exists(dest):
-        debug('Skipping %s - already installed' % file)
+        debug_verbose(0, 'Skipping %s - already installed' % file)
         return False
 
     if show_full_path:
-        debug('Installing to %s...' % dest)
+        debug_verbose(0, 'Installing to %s...' % dest)
     else:
-        debug('Installing to %s...' % os.path.relpath(dest, os.curdir))
+        debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
     return True # Returning success will allow ini updates
@@ -992,7 +992,7 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
     tmp = reg
     if components:
         tmp += '.%s' % components
-    debug("Scanning shader %s from line %i to %i for %s %s..." % (
+    debug_verbose(1, "Scanning shader %s from line %i to %i for %s %s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             pos_to_line(tree, start), pos_to_line(tree, end - direction),
             {True: 'write to', False: 'read from'}[write],
@@ -1025,14 +1025,14 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
             if write:
                 dest = instr.args[0]
                 if is_match(dest):
-                    debug('Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
+                    debug_verbose(1, 'Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
                     ret.append(Match(i, j, instr))
                     if stop:
                         return ret
             else:
                 for arg in instr.args[1:]:
                     if is_match(arg):
-                        debug('Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
+                        debug_verbose(1, 'Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
                         ret.append(Match(i, j, instr))
                         if stop:
                             return ret
@@ -1124,7 +1124,7 @@ def auto_fix_vertex_halo(tree, args):
         #    the temporary register:
         results = scan_shader(tree, temp_reg.reg, write=False, start=output_line + 1, end=scan_until, stop=True)
         if not results:
-            debug('No other reads of temporary variable found, nothing to fix')
+            debug_verbose(0, 'No other reads of temporary variable found, nothing to fix')
             return
 
     # 9. Insert stereo conversion after new location of move to output position.
@@ -1133,7 +1133,7 @@ def auto_fix_vertex_halo(tree, args):
     pos = next_line_pos(tree, output_line + offset)
     t = tree._find_free_reg('r', VS3)
 
-    debug('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
+    debug_verbose(0, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
@@ -1168,17 +1168,17 @@ def disable_unreal_correction(tree, args, redundant_check):
         try:
             vPos = find_declaration(tree, 'dcl', 'vPos.xy')
         except IndexError:
-            debug('Shader does not use vPos')
+            debug_verbose(0, 'Shader does not use vPos')
             return
 
     try:
         match = find_header(tree, unreal_NvStereoEnabled_pattern)
     except KeyError:
-        debug('Shader does not use NvStereoEnabled')
+        debug_verbose(0, 'Shader does not use NvStereoEnabled')
         return
 
     constant = Register(match.group('constant'))
-    debug('Disabling NvStereoEnabled %s' % constant)
+    debug_verbose(0, 'Disabling NvStereoEnabled %s' % constant)
 
     if redundant_check:
         tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
@@ -1197,15 +1197,15 @@ def auto_fix_unreal_light_shafts(tree, args):
     try:
         match = find_header(tree, unreal_TextureSpaceBlurOrigin_pattern)
     except KeyError:
-        debug('Shader does not use TextureSpaceBlurOrigin')
+        debug_verbose(0, 'Shader does not use TextureSpaceBlurOrigin')
         return
 
     orig = Register(match.group('constant'))
-    debug('TextureSpaceBlurOrigin identified as %s' % orig)
+    debug_verbose(0, 'TextureSpaceBlurOrigin identified as %s' % orig)
 
     results = scan_shader(tree, orig, write=False)
     if not results:
-        debug('TextureSpaceBlurOrigin is not used in shader')
+        debug_verbose(0, 'TextureSpaceBlurOrigin is not used in shader')
         return
 
     adj = tree._find_free_reg('r', PS3)
@@ -1232,15 +1232,15 @@ def auto_fix_unreal_dne_reflection(tree, args):
     try:
         match = find_header(tree, unreal_DNEReflectionTexture_pattern)
     except KeyError:
-        debug('Shader does not use DNEReflectionTexture')
+        debug_verbose(0, 'Shader does not use DNEReflectionTexture')
         return
 
     orig = Register(match.group('sampler'))
-    debug('DNEReflectionTexture identified as %s' % orig)
+    debug_verbose(0, 'DNEReflectionTexture identified as %s' % orig)
 
     results = scan_shader(tree, orig, write=False)
     if not results:
-        debug('DNEReflectionTexture is not used in shader')
+        debug_verbose(0, 'DNEReflectionTexture is not used in shader')
         return
     if len(results) > 1:
         debug("Autofixing a shader using DNEReflectionTexture multiple times is untested and disabled for safety. Please enable it, test and report back.")
@@ -1268,17 +1268,17 @@ def auto_fix_unreal_shadows(tree, args):
     try:
         match = find_header(tree, unreal_ScreenToShadowMatrix_pattern)
     except KeyError:
-        debug('Shader does not use ScreenToShadowMatrix')
+        debug_verbose(0, 'Shader does not use ScreenToShadowMatrix')
         return
 
     screen2shadow0 = Register(match.group('constant'))
     screen2shadow2 = Register('c%i' % (screen2shadow0.num + 2))
-    debug('ScreenToShadowMatrix identified as %s %s' % (screen2shadow0, screen2shadow2))
+    debug_verbose(0, 'ScreenToShadowMatrix identified as %s %s' % (screen2shadow0, screen2shadow2))
 
     results0 = scan_shader(tree, screen2shadow0, write=False)
     results2 = scan_shader(tree, screen2shadow2, write=False)
     if not results0 or not results2:
-        debug('ScreenToShadowMatrix is not used in shader')
+        debug_verbose(0, 'ScreenToShadowMatrix is not used in shader')
         return
     if len(results0) > 1 or len(results2) > 1:
         debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
@@ -1336,7 +1336,7 @@ def auto_fix_unreal_shadows(tree, args):
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
-        debug('Shader already has a fog output: %s' % d)
+        debug_verbose(0, 'Shader already has a fog output: %s' % d)
         return
     except:
         pass
@@ -1371,7 +1371,7 @@ def add_unity_autofog_VS3(tree, reason):
 def add_unity_autofog_PS3(tree, mad_fog, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
-        debug('Shader already has a fog input: %s' % d)
+        debug_verbose(0, 'Shader already has a fog input: %s' % d)
         return
     except:
         pass
@@ -1506,7 +1506,7 @@ def disable_shader(tree, args):
 def lookup_header_json(tree, index, file):
     if len(tree) and len(tree[0]) and isinstance(tree[0][0], CPPStyleComment) \
             and tree[0][0].startswith('// CRC32'):
-                debug('%s appears to already contain headers' % file)
+                debug_verbose(0, '%s appears to already contain headers' % file)
                 return tree
 
     crc = shaderutil.get_filename_crc(file)
@@ -1744,7 +1744,7 @@ def main():
         if args.original:
             file = find_original_shader(file)
 
-        debug('parsing %s...' % file)
+        debug_verbose(0, 'parsing %s...' % file)
         try:
             if file == '-':
                 tree = parse_shader(sys.stdin.read(), args)
@@ -1759,7 +1759,7 @@ def main():
             do_ini_updates()
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
-            debug('Converting to Shader Model 3...')
+            debug_verbose(0, 'Converting to Shader Model 3...')
             tree.to_shader_model_3(args)
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
