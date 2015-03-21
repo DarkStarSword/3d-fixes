@@ -1289,6 +1289,29 @@ def auto_fix_unreal_shadows(tree, args):
         debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
         return
 
+    (x_line, x_linepos, x_instr) = results0[0]
+    (z_line, z_linepos, z_instr) = results2[0]
+
+    if x_instr.opcode != 'mad' or z_instr.opcode != 'mad':
+        debug('ScreenToShadowMatrix used in an unexpected way (column-major/row-major?)')
+        return
+
+    if x_instr.args[1] == screen2shadow0:
+        x_reg = x_instr.args[2]
+    elif x_instr.args[2] == screen2shadow0:
+        x_reg = x_instr.args[1]
+    else:
+        debug('ScreenToShadowMatrix[0] used in an unexpected way')
+        return
+
+    if z_instr.args[1] == screen2shadow2:
+        w_reg = z_instr.args[2]
+    elif z_instr.args[2] == screen2shadow2:
+        w_reg = z_instr.args[1]
+    else:
+        debug('ScreenToShadowMatrix[2] used in an unexpected way')
+        return
+
     debug_verbose(-1, 'Applying Unreal Engine 3 shadow fix')
 
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
@@ -1311,29 +1334,8 @@ def auto_fix_unreal_shadows(tree, args):
     pos += tree.insert_instr(pos)
     offset += pos - orig_offset
 
-    (x_line, x_linepos, x_instr) = results0[0]
-    (z_line, z_linepos, z_instr) = results2[0]
     line = min(x_line, z_line)
-
     orig_pos = pos = prev_line_pos(tree, line + offset)
-
-    if x_instr.opcode != 'mad' or z_instr.opcode != 'mad':
-        raise Exception('ScreenToShadowMatrix[0] used in an unexpected way (column-major/row-major?)')
-
-    if x_instr.args[1] == screen2shadow0:
-        x_reg = x_instr.args[2]
-    elif x_instr.args[2] == screen2shadow0:
-        x_reg = x_instr.args[1]
-    else:
-        raise Exception('ScreenToShadowMatrix[0] used in an unexpected way')
-
-    if z_instr.args[1] == screen2shadow2:
-        w_reg = z_instr.args[2]
-    elif z_instr.args[2] == screen2shadow2:
-        w_reg = z_instr.args[1]
-    else:
-        raise Exception('ScreenToShadowMatrix[2] used in an unexpected way')
-
     pos += insert_vanity_comment(args, tree, pos, "Unreal Engine shadow fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, w_reg, -t.y]))
     pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, -t.w, t.x, x_reg]))
