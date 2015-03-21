@@ -1060,15 +1060,15 @@ def auto_fix_vertex_halo(tree, args):
         return
     if len(results) > 1:
         # FUTURE: We may be able to handle certain cases of this
-        debug("Can't autofix a vertex shader writing to output position from multiple instructions")
+        debug_verbose(0, "Can't autofix a vertex shader writing to output position from multiple instructions")
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
-        debug('Output not using mov instruction: %s' % output_instr)
+        debug_verbose(-1, 'Output not using mov instruction: %s' % output_instr)
         return
     temp_reg = output_instr.args[1]
     if not temp_reg.startswith('r'):
-        debug('Output not moved from a temporary register: %s' % output_instr)
+        debug_verbose(-1, 'Output not moved from a temporary register: %s' % output_instr)
         return
 
     # 3. Scan upwards to find where the X or W components of the temporary
@@ -1097,7 +1097,7 @@ def auto_fix_vertex_halo(tree, args):
             components = ''.join(set(itertools.chain(*components)))
             tree.insert_instr(next_line_pos(tree, output_line))
             instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
-            debug("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
+            debug_verbose(-1, "Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
             tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
 
         # Actually do the relocation from 5 (FIXME: Move this up, being careful
@@ -1106,9 +1106,9 @@ def auto_fix_vertex_halo(tree, args):
         line.insert(0, CPPStyleComment('// '))
         line.append(WhiteSpace(' '))
         line.append(CPPStyleComment('// Relocated to line %i with shadertool.py' % pos_to_line(tree, relocate_to)))
-        debug("Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
+        debug_verbose(-1, "Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
         tree.insert_instr(prev_line_pos(tree, output_line))
-        debug("Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
+        debug_verbose(-1, "Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
         relocate_to += tree.insert_instr(prev_line_pos(tree, relocate_to))
         tree.insert_instr(prev_line_pos(tree, relocate_to), output_instr, 'Relocated from line %i with shadertool.py' % pos_to_line(tree, output_line))
         output_line = relocate_to
@@ -1133,7 +1133,7 @@ def auto_fix_vertex_halo(tree, args):
     pos = next_line_pos(tree, output_line + offset)
     t = tree._find_free_reg('r', VS3)
 
-    debug_verbose(0, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
+    debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
@@ -1178,7 +1178,7 @@ def disable_unreal_correction(tree, args, redundant_check):
         return
 
     constant = Register(match.group('constant'))
-    debug_verbose(0, 'Disabling NvStereoEnabled %s' % constant)
+    debug_verbose(-1, 'Disabling NvStereoEnabled %s' % constant)
 
     if redundant_check:
         tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
@@ -1208,6 +1208,8 @@ def auto_fix_unreal_light_shafts(tree, args):
         debug_verbose(0, 'TextureSpaceBlurOrigin is not used in shader')
         return
 
+    debug_verbose(-1, 'Applying Unreal Engine 3 light shaft fix')
+
     adj = tree._find_free_reg('r', PS3)
     t = tree._find_free_reg('r', PS3)
     stereo_const, _ = insert_stereo_declarations(tree, args, w = 0.5)
@@ -1224,6 +1226,7 @@ def auto_fix_unreal_light_shafts(tree, args):
 
     tree.autofixed = True
 
+# Not sure if this is a generic UE3 thing, or specific to Life Is Strange
 unreal_DNEReflectionTexture_pattern = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
 def auto_fix_unreal_dne_reflection(tree, args):
     if not isinstance(tree, PS3):
@@ -1245,6 +1248,8 @@ def auto_fix_unreal_dne_reflection(tree, args):
     if len(results) > 1:
         debug("Autofixing a shader using DNEReflectionTexture multiple times is untested and disabled for safety. Please enable it, test and report back.")
         return
+
+    debug_verbose(-1, 'Applying DNE reflection fix')
 
     t = tree._find_free_reg('r', PS3)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
@@ -1283,6 +1288,8 @@ def auto_fix_unreal_shadows(tree, args):
     if len(results0) > 1 or len(results2) > 1:
         debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
         return
+
+    debug_verbose(-1, 'Applying Unreal Engine 3 shadow fix')
 
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
     texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
@@ -1349,7 +1356,7 @@ def add_unity_autofog_VS3(tree, reason):
 
     results = scan_shader(tree, pos_out, write=True)
     if len(results) != 1:
-        debug('Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
+        debug_verbose(0, 'Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
@@ -1363,6 +1370,7 @@ def add_unity_autofog_VS3(tree, reason):
     tree.fog_type = 'FOG'
     fog_output = NewInstruction('mov', [Register('o9'), temp_reg.z])
     tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py %s' % reason)
+    debug_verbose(-1, "Line %i: %s" % (pos_to_line(tree, output_line+2), tree[output_line+2]))
     decl = NewInstruction('dcl_fog', [Register('o9')])
     # Inserting this in a specific spot to match Unity rather than using
     # insert_decl(), so manually increment decl_end as well:
@@ -1416,6 +1424,8 @@ def add_unity_autofog_PS3(tree, mad_fog, reason):
         pos += add_instr('mul', ['r31.x', fog_c2.x, 'v9.x'])
         pos += add_instr('mul', ['r31.x', 'r31.x', 'r31.x'])
         pos += add_instr('exp_sat', ['r31.x', '-r31.x'])
+
+    debug_verbose(-1, "Inserting pixel shader fog instructions (%s)" % tree.fog_type)
 
     pos += add_instr('lrp', ['r30.xyz', 'r31.x', 'r30', fog_c1])
     pos += add_instr('mov', ['oC0', 'r30'])
@@ -1655,7 +1665,7 @@ def parse_args():
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity')
     parser.add_argument('--quiet', '-q', action='count', default=0,
-            help='Suppress usual informational messages, intended for batch processing large amounts of shaders')
+            help='Suppress usual informational messages. Specify multiple times to suppress more messages.')
     args = parser.parse_args()
 
     if not args.output and not args.in_place and not args.install and not \
@@ -1750,7 +1760,7 @@ def main():
         if args.original:
             file = find_original_shader(file)
 
-        debug_verbose(0, 'parsing %s...' % file)
+        debug_verbose(-2, 'parsing %s...' % file)
         try:
             if file == '-':
                 tree = parse_shader(sys.stdin.read(), args)
