@@ -135,3 +135,7 @@ games.
 
 ### calc_shader_crc.py ###
 Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
+
+### unity_asset_extractor.py ###
+An alternative to Unity Asset Explorer, to extract assets (currently limited to
+shaders) from Unity 4 and Unity 5 games in batch.
