@@ -66,11 +66,57 @@
     dcl_texcoord0 v0.xy
     dcl_texcoord2 v1.xyz
     dcl_texcoord3 v2.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s12
+texldl r31, c220.z, s12
+
     texld r0.x, v0, s1
     mad r0.x, r0, c13, c13.y
     rcp r0.x, r0.x
     mul r5.xyz, r0.x, v2
-    add r0.xyz, r5, c12
+    add r0.xyz, r5, c12 // r0 now has the world coordinates
+
+// UNVERIFIED FIX
+
+// In order to fix the depth of the highlights on the sand of the water
+// caustics and the underwater shadows, we need to apply a stereo correction to
+// r0, which is in world-coordinates, but we need either view-space or
+// projection-space coordinates to apply a stereo correction.
+// This shader has the inverse view matrix already, so we can use that and it's
+// inverse (in c170 thanks to Helix mod) to change between world-space and
+// view-space, but we still need part of the inverse projection matrix to be
+// able to correct view-space coords, so we use the same technique that we used
+// to fix Unity shadows to calculate it.
+
+// Calculate P.I[0,0] required for stereo corrections in view-space:
+// Transpose first component of MV.I matrix into r30:
+mov r30.x, c180.x
+mov r30.y, c181.x
+mov r30.z, c182.x
+mov r30.w, c183.x
+dp4 r30.x, r30, c190 // Calculate P[0,0]
+rcp r30.x, r30.x // Calculate P.I[0,0]
+
+// Convert r0 to view-space coords:
+mov r29.xyz, r0
+mov r29.w, c220.y
+dp4 r28.x, r29, c170
+dp4 r28.y, r29, c171
+dp4 r28.z, r29, c172
+dp4 r28.w, r29, c173
+
+// Apply view-space stereo correction formula:
+add r31.w, r28.z, r31.y // I'm not sure why I'm adding and not subtracting, but it lines it up perfectly!
+mul r31.w, r31.w, r31.x
+mad r28.x, r31.w, r30.x, r28.x
+
+// Convert back to world-space coords:
+dp4 r0.x, r28, c8
+dp4 r0.y, r28, c9
+dp4 r0.z, r28, c10
+
+
     mov r0.w, c28.z
     dp4 r3.x, r0, c0
     dp4 r3.z, r0, c2
