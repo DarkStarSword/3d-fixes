@@ -188,29 +188,34 @@ keywords = {
 
 shader_index = {}
 shader_list = []
-crc_list = {}
-crc_headers = {}
+hash_list = {}
+hash_headers = {}
 
 def handle_shader_asm(token, parent, asm):
     parent.shader_asm = asm
     # Index shaders by assembly:
     if token in shader_index:
         # Minimise calls to shaderasm.exe
-        parent.crc = shader_index[token][0].crc
+        parent.hash = shader_index[token][0].hash
+        parent.hash_type = shader_index[token][0].hash_type
+        parent.hash_fmt = shader_index[token][0].hash_fmt
     else:
         shader_index[token] = []
-        add_shader_crc(parent)
-        if parent.crc:
-            if parent.crc in crc_list:
-                print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.crc, '-'*17))
-                crc_list[parent.crc].append(parent)
+        add_shader_hash(parent)
+        if parent.hash:
+            if parent.hash in hash_list:
+                if parent.hash_type == 'crc32':
+                    print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.hash, '-'*17))
+                else: #if parent.hash_type == 'fnv64':
+                    print('%s WARNING: FNV64 COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
+                hash_list[parent.hash].append(parent)
                 print('\n'.join([ \
                         os.path.sep.join(export_filename_combined_long([get_parents(x)], None)) \
-                        for x in crc_list[parent.crc] ]))
+                        for x in hash_list[parent.hash] ]))
                 print('%s OVERRIDING THESE SHADERS MAY BE DANGEROUS %s' % ('-'*18, '-'*18))
                 print()
             else:
-                crc_list[parent.crc] = [parent]
+                hash_list[parent.hash] = [parent]
     shader_index[token].append(parent)
     shader_list.append(parent)
 
@@ -312,6 +317,20 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
+def get_hash_filename_base(shader):
+    if shader.sub_program.hash_type == 'crc32':
+        return shader.sub_program.hash_fmt % shader.sub_program.hash
+
+    if shader.sub_program.hash_type == 'fnv64':
+        # Emulate 3Dmigto style naming
+        if shader.program.name == 'fp':
+            shader_type = 'ps'
+        elif shader.program.name == 'vp':
+            shader_type = 'vs'
+        return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
+
+    assert(False)
+
 def export_filename_combined_long(shaders, args):
     ret = []
 
@@ -337,8 +356,8 @@ def export_filename_combined_long(shaders, args):
 
     ret.append(shaders[0].program.name)
 
-    if args and not args.filename_keywords and shaders[0].sub_program.crc:
-        ret.append('%.8X' % shaders[0].sub_program.crc)
+    if args and not args.filename_keywords and shaders[0].sub_program.hash:
+        ret.append(get_hash_filename_base(shaders[0]))
     else:
         def keywords(shader):
             if 'Keywords' in shader.sub_program.keywords:
@@ -356,14 +375,25 @@ def export_filename_combined_long(shaders, args):
     return ret
 
 def export_filename_combined_short(shader, args):
-    if not shader.sub_program.crc:
+    if not shader.sub_program.hash:
         return None
-    return (
-        'ShaderCRCs',
-        shader.shader.name,
-        shader.program.name,
-        '%.8X' % shader.sub_program.crc,
-    )
+
+    if shader.sub_program.hash_type == 'crc32':
+        return (
+            'ShaderCRCs',
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
+        )
+
+    if shader.sub_program.hash_type == 'fnv64':
+        return (
+            'ShaderFNVs',
+            shader.shader.name,
+            get_hash_filename_base(shader),
+        )
+
+    assert(False)
 
 def export_filename_combined(sub_programs, args):
     shaders = list(map(get_parents, sub_programs))
@@ -500,34 +530,63 @@ def calc_shader_crc(shader_asm):
 
     return zlib.crc32(blob)
 
-def add_shader_crc(sub_program):
-    sub_program.crc = None
-    if sub_program.name != 'd3d9':
-        return
+def add_shader_hash_crc(sub_program):
     try:
-        sub_program.crc = calc_shader_crc(sub_program.shader_asm)
+        sub_program.hash = calc_shader_crc(sub_program.shader_asm)
+        sub_program.hash_type = 'crc32'
+        sub_program.hash_fmt = '%.8X'
     except:
         pass
-    if not sub_program.crc:
+    if not sub_program.hash:
         print('WARNING: Unable to determine shader CRC32 - is shaderasm.exe installed?')
 
-def add_header_crc(headers, sub_program):
-    if sub_program.crc:
-        if sub_program.fog:
-            headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.crc, sub_program.fog, sub_program.fog_orig_crc, headers[0])
-        else:
-            headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
+fnv_offset_basis = 0xcbf29ce484222325
+fnv_prime = 0x100000001b3
+def fnv64_1(input):
+    hash = fnv_offset_basis
+    for octet in input:
+        assert(octet & 0xff == octet)
+        hash = (hash * fnv_prime) & 0xffffffffffffffff
+        hash = hash ^ octet
+    return hash
+
+def add_shader_hash_fnv(sub_program):
+    bin = decode_unity_d3d11_shader(sub_program.shader_asm)
+    sub_program.hash = fnv64_1(bin)
+    sub_program.hash_type = 'fnv64'
+    sub_program.hash_fmt = '%.16x'
+
+def add_shader_hash(sub_program):
+    sub_program.hash = None
+    sub_program.hash_type = None
+    sub_program.hash_fmt = None
+    if sub_program.name == 'd3d9':
+        return add_shader_hash_crc(sub_program)
+    if sub_program.name.startswith('d3d11'):
+        return add_shader_hash_fnv(sub_program)
+
+def add_header_hash(headers, sub_program):
+    if sub_program.hash:
+        if sub_program.hash_type == 'crc32':
+            if sub_program.fog:
+                headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
+            else:
+                headers[0] = 'CRC32: %.8X | %s' % (sub_program.hash, headers[0])
+        elif sub_program.hash_type == 'fnv64':
+            headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
 
 def index_headers(headers, sub_program):
-    if sub_program.crc:
-        crc_headers['%.8X' % sub_program.crc] = headers
+    # TODO: Also store d3d11 hashes, but no point until there is a tool to look
+    # them up
+    if sub_program.hash and sub_program.hash_type == 'crc32':
+        hash_headers['%.8X' % sub_program.hash] = headers
 
 def save_header_index():
     try:
         out = json.load(open(shader_idx_filename, 'r', encoding='utf-8'))
-        out.update(crc_headers)
+        out.update(hash_headers)
     except:
-        out = crc_headers
+        out = hash_headers
     print('Saving header index %s...' % shader_idx_filename)
     json.dump(out, open(shader_idx_filename, 'w', encoding='utf-8'), sort_keys = True, indent = 0)
 
@@ -565,23 +624,27 @@ def _export_shader(sub_program, headers, path_components):
     dest = os.path.join(os.curdir, *path_components)
     headers = commentify(headers)
     index_headers(headers, sub_program)
-    print('Extracting %s.txt...' % dest)
-    with open('%s.txt' % dest, 'w') as f:
-        f.write(headers)
-        if sub_program.name.startswith('d3d11'):
-            f.write('\n//\n')
-            f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
-        else:
+
+    if sub_program.name.startswith('d3d11'):
+        print('Extracting %s_headers.txt...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
+            if sub_program.name.startswith('d3d11'):
+                f.write('\n//\n')
+                f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
+        print('Extracting %s_original.bin...' % dest)
+        with open('%s_original.bin' % dest, 'wb') as f:
+            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
+    else:
+        print('Extracting %s.txt...' % dest)
+        with open('%s.txt' % dest, 'w') as f:
+            f.write(headers)
             f.write('\n\n')
             f.write(indent_like_helix(sub_program.shader_asm))
-    if sub_program.name.startswith('d3d11'):
-        print('Decoding %s.bin...' % dest)
-        with open('%s.bin' % dest, 'wb') as f:
-            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
 
 def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
-    add_header_crc(headers, sub_program)
+    add_header_hash(headers, sub_program)
     add_vanity_tag(headers)
 
     path_components = export_filename_combined([sub_program], args)
@@ -607,7 +670,7 @@ def dedupe_shaders(shader_list, args):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
-    add_header_crc(headers, shader_list[0])
+    add_header_hash(headers, shader_list[0])
     add_vanity_tag(headers)
     # print(commentify(headers))
 
@@ -670,9 +733,9 @@ def main():
                         if fog_asm == shader.shader_asm:
                             continue
                         fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
-                        del fog_shader.crc
+                        del fog_shader.hash
                         fog_shader.fog = fog_tree.fog_type
-                        fog_shader.fog_orig_crc = shader.crc
+                        fog_shader.fog_orig_crc = shader.hash
                         handle_shader_asm(fog_asm, fog_shader, fog_asm)
                 except SyntaxError as e:
                     import traceback, time
