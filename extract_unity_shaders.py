@@ -537,6 +537,29 @@ def add_vanity_tag(headers):
     headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
     headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
 
+def decode_unity_d3d11_shader(asm):
+    # Pretty straight forward encoding - each byte is split in half and offset
+    # from the letter 'a'.
+
+    # Strip off first line, which is the shader model and not part of the
+    # binary file:
+    asm = list(asm[asm.find('\n'):])
+
+    def next_char():
+        char = ' '
+        while char.isspace():
+            char = asm.pop(0)
+        return char
+
+    ret = []
+    while len(asm):
+        upper = ord(next_char()) - ord('a')
+        lower = ord(next_char()) - ord('a')
+        assert(upper & 0xffff == upper)
+        assert(lower & 0xffff == lower)
+        ret.append((upper << 4) | lower)
+    return bytes(ret)
+
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
@@ -545,8 +568,16 @@ def _export_shader(sub_program, headers, path_components):
     print('Extracting %s.txt...' % dest)
     with open('%s.txt' % dest, 'w') as f:
         f.write(headers)
-        f.write('\n\n')
-        f.write(indent_like_helix(sub_program.shader_asm))
+        if sub_program.name.startswith('d3d11'):
+            f.write('\n//\n')
+            f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
+        else:
+            f.write('\n\n')
+            f.write(indent_like_helix(sub_program.shader_asm))
+    if sub_program.name.startswith('d3d11'):
+        print('Decoding %s.bin...' % dest)
+        with open('%s.bin' % dest, 'wb') as f:
+            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
 
 def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
