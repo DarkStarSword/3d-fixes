@@ -57,8 +57,3 @@ Notes
 -----
 - This is an early access game and the fix is likely to be broken by updates,
   so be sure to check back regularly, and report any broken effects.
-
-- This game has pushed DirectX9 shaders right to their limits, which caused me
-  some problems creating the fix. Everything seems to be working now, but
-  please let me know if you notice any details on the terrain or Ocean that are
-  missing with the fix installed (such as missing shadows on the sand).
