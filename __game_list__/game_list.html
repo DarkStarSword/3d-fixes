@@ -4,7 +4,9 @@
 <p><h1>This page requires javascript to display the game list!</h1></p>
 </noscript>
 
-<div id="gamelist_content"><em>Loading...</em></div>
+<div id="loading_content"><p><em>Loading...</em></p></div>
+
+<div id="gamelist_content"></div>
 <br/>
 <h3>Guides, Tools, etc.</h3>
 <div id="guides_content"><em>Loading...</em></div>
@@ -115,36 +117,13 @@ function add_link(parent, prefix, url, title, text, postfix)
   parent.appendChild(document.createElement('br'));
 }
 
-function handle_response(response)
+var games = {};
+var games_list = [];
+var guides = [];
+var misc = [];
+
+function show_game_list()
 {
-  var games = {};
-  var games_list = [];
-  var guides = [];
-  var misc = [];
-
-  for (var idx in response.items) {
-    var post = response.items[idx];
-    post.path = get_path(post.url);
-
-    if (jQuery.inArray(post.path, hidden_posts) != -1)
-      continue;
-
-    if (is_guide(post))
-      guides.push(post);
-    else if (is_misc(post))
-      misc.push(post);
-    else {
-      post.clean_title = post_title(post);
-      var game_title = title_game(post.clean_title).toLowerCase();
-      if (game_title in games) {
-        games[game_title].push(post);
-      } else {
-        games[game_title] = [post];
-        games_list.push(game_title);
-      }
-    }
-  }
-
   var gamelist_elem = document.getElementById("gamelist_content");
   gamelist_elem.innerHTML = "";
   games_list = games_list.sort();
@@ -183,7 +162,47 @@ function handle_response(response)
     $(".blogger-clickTrap").remove(); /* So links work while previewing page */
   }, 500);
 }
+
+function collate_responses(response)
+{
+  if (response.nextPageToken) {
+    jQuery.ajax({
+      url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&key=GET_YOUR_OWN_API_KEY&pageToken=" + response.nextPageToken,
+      success : collate_responses
+    });
+  }
+
+  for (var idx in response.items) {
+    var post = response.items[idx];
+    post.path = get_path(post.url);
+
+    if (jQuery.inArray(post.path, hidden_posts) != -1)
+      continue;
+
+    if (is_guide(post))
+      guides.push(post);
+    else if (is_misc(post))
+      misc.push(post);
+    else {
+      post.clean_title = post_title(post);
+      var game_title = title_game(post.clean_title).toLowerCase();
+      if (game_title in games) {
+        games[game_title].push(post);
+      } else {
+        games[game_title] = [post];
+        games_list.push(game_title);
+      }
+    }
+  }
+
+  show_game_list();
+
+  if (!response.nextPageToken) {
+    var loading_elem = document.getElementById("loading_content");
+    loading_elem.innerHTML = "";
+  }
+}
 // @license end
 //--></script>
-<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)&orderBy=published&maxResults=500&callback=handle_response&key=GET_YOUR_OWN_API_KEY"></script>
+<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&callback=collate_responses&key=GET_YOUR_OWN_API_KEY"></script>
 <!-- vi:se et sw=2 ts=2 ai:-->
