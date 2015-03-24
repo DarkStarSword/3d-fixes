@@ -1324,28 +1324,36 @@ def auto_fix_unreal_shadows(tree, args):
 
     debug_verbose(-1, 'Applying Unreal Engine 3 shadow fix')
 
-    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
-    texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
-    mask = ''
-    if texcoord.swizzle:
-        mask = '.%s' % texcoord.swizzle
-    texcoord_adj = tree._find_free_reg('r', PS3)
-    t = tree._find_free_reg('r', PS3)
+    try:
+        vPos = find_declaration(tree, 'dcl', 'vPos.xy')
+    except IndexError:
+        vPos = None
 
-    replace_regs = {texcoord.reg: texcoord_adj}
-    tree.do_replacements(replace_regs, False)
+    t = tree._find_free_reg('r', PS3)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+    if vPos is None:
+        texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
+
+        mask = ''
+        if texcoord.swizzle:
+            mask = '.%s' % texcoord.swizzle
+        texcoord_adj = tree._find_free_reg('r', PS3)
+
+        replace_regs = {texcoord.reg: texcoord_adj}
+        tree.do_replacements(replace_regs, False)
 
     orig_offset = tree.decl_end
     vanity_inserted = disable_unreal_correction(tree, args, False)
 
     pos = tree.decl_end
-    if not vanity_inserted:
-        pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
-    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
-    pos += tree.insert_instr(pos, NewInstruction('mad', [texcoord_adj.x, t.w, t.x, texcoord_adj.x]))
-    pos += tree.insert_instr(pos)
+    if vPos is None:
+        if not vanity_inserted:
+            pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
+        pos += tree.insert_instr(pos, NewInstruction('mad', [texcoord_adj.x, t.w, t.x, texcoord_adj.x]))
+        pos += tree.insert_instr(pos)
     offset += pos - orig_offset
 
     line = min(x_line, z_line)
