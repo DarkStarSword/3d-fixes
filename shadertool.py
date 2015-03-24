@@ -1699,7 +1699,7 @@ def parse_args():
     if not args.output and not args.in_place and not args.install and not \
             args.install_to and not args.to_git and not args.find_free_consts \
             and not args.show_regs and not args.debug_tokeniser and not \
-            args.debug_syntax_tree:
+            args.debug_syntax_tree and not args.restore_original:
         parser.error("did not specify anything to do (e.g. --install, --install-to, --in-place, --output, --show-regs, etc)");
 
     if args.to_git:
