@@ -735,9 +735,16 @@ def get_alias(game):
         return game
 
 def install_shader_to_git(shader, file, args):
-    game_dir = os.path.basename(find_game_dir(file))
+    game_dir = find_game_dir(file)
+
+    # Filter out common subdirectory names:
+    blacklisted_names = ('win32', 'win64', 'binaries')
+    while os.path.basename(game_dir).lower() in blacklisted_names:
+        game_dir = os.path.realpath(os.path.join(game_dir, '..'))
+
+    game = os.path.basename(game_dir)
     script_dir = os.path.dirname(__file__)
-    alias = get_alias(game_dir)
+    alias = get_alias(game)
     dest_dir = os.path.join(script_dir, alias)
 
     return install_shader_to(shader, file, args, dest_dir, True)
