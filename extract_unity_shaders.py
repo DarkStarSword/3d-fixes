@@ -206,8 +206,10 @@ def handle_shader_asm(token, parent, asm):
             if parent.hash in hash_list:
                 if parent.hash_type == 'crc32':
                     print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.hash, '-'*17))
-                else: #if parent.hash_type == 'fnv64':
-                    print('%s WARNING: FNV64 COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
+                elif parent.hash_type == '3Dmigoto':
+                    print('%s WARNING: 3DMigoto HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
+                else:
+                    print('%s WARNING: HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
                 hash_list[parent.hash].append(parent)
                 print('\n'.join([ \
                         os.path.sep.join(export_filename_combined_long([get_parents(x)], None)) \
@@ -321,7 +323,7 @@ def get_hash_filename_base(shader):
     if shader.sub_program.hash_type == 'crc32':
         return shader.sub_program.hash_fmt % shader.sub_program.hash
 
-    if shader.sub_program.hash_type == 'fnv64':
+    if shader.sub_program.hash_type == '3Dmigoto':
         # Emulate 3Dmigto style naming
         if shader.program.name == 'fp':
             shader_type = 'ps'
@@ -386,7 +388,7 @@ def export_filename_combined_short(shader, args):
             get_hash_filename_base(shader),
         )
 
-    if shader.sub_program.hash_type == 'fnv64':
+    if shader.sub_program.hash_type == '3Dmigoto':
         return (
             'ShaderFNVs',
             shader.shader.name,
@@ -550,10 +552,27 @@ def fnv64_1(input):
         hash = hash ^ octet
     return hash
 
+def fnv_3Dmigoto_shader(input):
+    # 3Dmigoto does not implement FNV correctly as it starts with hash=0
+    # instead of hash=fnv_offset_basis, but we need to match it's
+    # implementation:
+    hash = 0
+    for octet in input:
+        assert(octet & 0xff == octet)
+        hash = (hash * fnv_prime) & 0xffffffffffffffff
+        hash = hash ^ octet
+    return hash
+
 def add_shader_hash_fnv(sub_program):
     bin = decode_unity_d3d11_shader(sub_program.shader_asm)
-    sub_program.hash = fnv64_1(bin)
-    sub_program.hash_type = 'fnv64'
+
+    # Does not match 3Dmigoto's hash function:
+    # sub_program.hash = fnv64_1(bin)
+    # sub_program.hash_type = 'fnv64'
+
+    sub_program.hash = fnv_3Dmigoto_shader(bin)
+    sub_program.hash_type = '3Dmigoto'
+
     sub_program.hash_fmt = '%.16x'
 
 def add_shader_hash(sub_program):
@@ -572,8 +591,10 @@ def add_header_hash(headers, sub_program):
                 headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
             else:
                 headers[0] = 'CRC32: %.8X | %s' % (sub_program.hash, headers[0])
-        elif sub_program.hash_type == 'fnv64':
-            headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
+        # elif sub_program.hash_type == 'fnv64':
+        #     headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
+        elif sub_program.hash_type == '3Dmigoto':
+            headers[0] = '3DMigoto: %.16x | %s' % (sub_program.hash, headers[0])
 
 def index_headers(headers, sub_program):
     # TODO: Also store d3d11 hashes, but no point until there is a tool to look
