@@ -1841,7 +1841,7 @@ def main():
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(tree, args)
             if args.disable_redundant_unreal_correction:
-                disable_unreal_correction(tree, args, true)
+                disable_unreal_correction(tree, args, True)
             if args.auto_fix_unreal_light_shafts:
                 auto_fix_unreal_light_shafts(tree, args)
             if args.auto_fix_unreal_dne_reflection:
