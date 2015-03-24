@@ -49,7 +49,7 @@ class Token(str):
 #     pattern = re.compile(r'-')
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
+    pattern = re.compile(r'[a-zA-Z_\-!][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
 
 class Comma(Token):
     pattern = re.compile(r',')
@@ -193,6 +193,7 @@ class OpCode(str):
 class Register(str):
     pattern = re.compile(r'''
         (?P<negate>-)?
+        (?P<not>!)?
         (?P<type>[a-zA-Z]+)
         (?P<num>\d*)
         (?P<absolute>_abs)?
@@ -214,6 +215,7 @@ class Register(str):
             raise SyntaxError('Expected register, found %s' % s)
         ret = str.__new__(cls, s)
         ret.negate = match.group('negate') or ''
+        ret.bool_not = match.group('not') or ''
         ret.absolute = match.group('absolute') or ''
         ret.type = match.group('type')
         ret.num = match.group('num')
@@ -232,7 +234,7 @@ class Register(str):
     def __str__(self, negate=None):
         if negate is None:
             negate = self.negate
-        r = '%s%s%s' % (negate, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
+        r = '%s%s%s%s' % (negate, self.bool_not, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
         if self.address_reg:
             r += self.address_reg
         if self.swizzle:
