@@ -1177,13 +1177,13 @@ def disable_unreal_correction(tree, args, redundant_check):
             vPos = find_declaration(tree, 'dcl', 'vPos.xy')
         except IndexError:
             debug_verbose(0, 'Shader does not use vPos')
-            return
+            return False
 
     try:
         match = find_header(tree, unreal_NvStereoEnabled_pattern)
     except KeyError:
         debug_verbose(0, 'Shader does not use NvStereoEnabled')
-        return
+        return False
 
     constant = Register(match.group('constant'))
     debug_verbose(-1, 'Disabling NvStereoEnabled %s' % constant)
@@ -1196,6 +1196,8 @@ def disable_unreal_correction(tree, args, redundant_check):
     tree.insert_decl()
 
     tree.autofixed = True
+
+    return True
 
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 def auto_fix_unreal_light_shafts(tree, args):
@@ -1333,8 +1335,12 @@ def auto_fix_unreal_shadows(tree, args):
     replace_regs = {texcoord.reg: texcoord_adj}
     tree.do_replacements(replace_regs, False)
 
-    orig_offset = pos = tree.decl_end
-    pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
+    orig_offset = tree.decl_end
+    vanity_inserted = disable_unreal_correction(tree, args, False)
+
+    pos = tree.decl_end
+    if not vanity_inserted:
+        pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
     pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
@@ -1349,8 +1355,6 @@ def auto_fix_unreal_shadows(tree, args):
     pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, -t.w, t.x, x_reg]))
     pos += tree.insert_instr(pos)
     offset += pos - orig_pos
-
-    disable_unreal_correction(tree, args, False)
 
     tree.autofixed = True
 
