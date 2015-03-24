@@ -822,10 +822,11 @@ def vanity_comment(args, tree, what):
     global vanity_args
 
     if vanity_args is None:
-        vanity_args = []
-        for arg in sys.argv[1:]:
-            if arg not in args.files:
-                vanity_args.append(arg)
+        # Using a set here for *MASSIVE* performance boost over a list (e.g.
+        # Life Is Strange has 75,000 pixel shaders hangs for minutes as a list,
+        # as a set it's a fraction of a second)
+        file_set = set(args.files)
+        vanity_args = list(filter(lambda x: x not in file_set, sys.argv[1:]))
 
     return [
         "%s DarkStarSword's shadertool.py:" % what,
