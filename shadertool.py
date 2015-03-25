@@ -577,6 +577,8 @@ class VS2(VertexShader):
         insert_converted_by(self, 'vs_2_0')
 
 class PS2(PixelShader):
+    model = 'ps_2_0'
+
     def to_shader_model_3(self, args):
         def fixup_ps2_dcl(tree, node, parent, idx):
             reg = node.args[0]
@@ -596,16 +598,22 @@ class PS2(PixelShader):
             for reg in sorted(self.reg_types['t']):
                 replace_regs[reg.reg] = new_reg = self._find_free_reg('v', PS3)
 
-        self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
+        self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
+        insert_converted_by(self, self.model) # Do this before changing the class!
         self.__class__ = PS3
-        insert_converted_by(self, 'ps_2_0')
+
+class PS2X(PS2):
+    # Need to verify, but this looks like the same conversion as ps_2_0 should
+    # work
+    model = 'ps_2_x'
 
 sections = {
     'vs_3_0': VS3,
     'ps_3_0': PS3,
     'vs_2_0': VS2,
     'ps_2_0': PS2,
+    'ps_2_x': PS2X,
     'vs_1_1': VS11,
 }
 
