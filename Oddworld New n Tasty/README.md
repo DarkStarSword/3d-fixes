@@ -19,9 +19,19 @@ Installation
 2. Run HeliXmodLauncher.exe and leave it open
 3. Run the game
 
+Troubleshooting
+---------------
+If this fix does not work for you, rename helixmod.dll to d3d9.dll and try
+running the game again (you will no longer need to use HeliXmodLauncher.exe).
+
+If after renaming helixmod.dll to d3d9.dll you get crashes when launching the
+game and you are running the Steam version, try deleting the
+GameOverlayRenderer.dll from the Steam directory *while Steam is running*
+(Steam will automatically restore this file whenever it is launched).
+
 Convergence Presets
 -------------------
-Four convergence presets are provided on the numbers 1-4 for convienience. 1 is
+Four convergence presets are provided on the numbers 1-4 for convenience. 1 is
 the lowest setting for the main menu, and 2-4 are higher settings for gameplay.
 
 You can save your own custom convergence settings on 2-4, by activating the
