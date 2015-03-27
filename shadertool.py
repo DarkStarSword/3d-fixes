@@ -581,15 +581,16 @@ class PS2(PixelShader):
 
     def to_shader_model_3(self, args):
         def fixup_ps2_dcl(tree, node, parent, idx):
+            modifier = node.opcode[3:]
             reg = node.args[0]
             if reg.type == 'v':
-                node.opcode = 'dcl_color'
+                node.opcode = 'dcl_color%s' % modifier
                 if reg.num:
-                    node.opcode = 'dcl_color%d' % reg.num
+                    node.opcode = 'dcl_color%d%s' % (reg.num, modifier)
             elif reg.type == 't':
-                node.opcode = 'dcl_texcoord'
+                node.opcode = 'dcl_texcoord%s' % modifier
                 if reg.num:
-                    node.opcode = 'dcl_texcoord%d' % reg.num
+                    node.opcode = 'dcl_texcoord%d%s' % (reg.num, modifier)
             node[0] = node.opcode
         self.analyse_regs()
         replace_regs = {}
@@ -599,7 +600,8 @@ class PS2(PixelShader):
                 replace_regs[reg.reg] = new_reg = self._find_free_reg('v', PS3)
 
         self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
-                {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
+                {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl,
+                'dcl_centroid': fixup_ps2_dcl, 'dcl_pp': fixup_ps2_dcl})
         insert_converted_by(self, self.model) # Do this before changing the class!
         self.__class__ = PS3
 
