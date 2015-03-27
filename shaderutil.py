@@ -6,6 +6,8 @@ import sys, os
 import re
 import urllib.parse
 
+class NoCRCError(Exception): pass
+
 def handle_sigint(f):
     def wrap(*args, **kwargs):
         try:
@@ -28,7 +30,7 @@ def get_filename_crc(filename):
     basename = os.path.basename(filename)
     match = shader_pattern.match(basename)
     if match is None:
-        raise Exception('Unable to determine CRC32 from filename - %s' % filename)
+        raise NoCRCError('Unable to determine CRC32 from filename - %s' % filename)
     crc = match.group('CRC').upper()
     return '%s%s' % ('0'*(8-len(crc)), crc)
 

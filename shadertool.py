@@ -1777,11 +1777,15 @@ def main():
     args.files = f
 
     for file in args.files:
-        crc = shaderutil.get_filename_crc(file)
-        if crc in processed:
-            debug_verbose(1, 'Skipping %s - CRC already processed' % file)
-            continue
-        processed.add(crc)
+        try:
+            crc = shaderutil.get_filename_crc(file)
+        except shaderutil.NoCRCError:
+            pass
+        else:
+            if crc in processed:
+                debug_verbose(1, 'Skipping %s - CRC already processed' % file)
+                continue
+            processed.add(crc)
 
         if args.precheck_installed and check_shader_installed(file):
             debug_verbose(0, 'Skipping %s - already installed and you did not specify --force' % file)
