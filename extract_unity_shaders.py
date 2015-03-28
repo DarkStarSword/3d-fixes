@@ -329,6 +329,10 @@ def get_hash_filename_base(shader):
             shader_type = 'ps'
         elif shader.program.name == 'vp':
             shader_type = 'vs'
+        elif shader.program.name == 'gp':
+            shader_type = 'gs'
+        else:
+            raise Exception("Unknown program type: %s" % shader.program.name)
         return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
 
     assert(False)
@@ -595,6 +599,8 @@ def add_header_hash(headers, sub_program):
         #     headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
         elif sub_program.hash_type == '3Dmigoto':
             headers[0] = '3DMigoto: %.16x | %s' % (sub_program.hash, headers[0])
+        else:
+            raise Exception("Unknown hash type: %s" % sub_program.hash_type)
 
 def index_headers(headers, sub_program):
     # TODO: Also store d3d11 hashes, but no point until there is a tool to look
