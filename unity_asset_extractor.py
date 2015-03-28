@@ -106,7 +106,12 @@ def parse_version_14(file, version):
 
     (u2, u3, unknown_table_len, u5, u6, u7) = struct.unpack('<IBBBBB', file.read(9))
     print("Unknown table length: {0}".format(unknown_table_len))
-    assert(u2 == 5)
+
+    # Not sure what this value represents, but it seems to be consistent within
+    # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    print("Unknown value: 0x{:02x}".format(u2))
+    assert(u2 == 0x5 or u2 == 0x13)
+
     assert(u3 == 0)
     assert(u5 == 0)
     assert(u6 == 0)
