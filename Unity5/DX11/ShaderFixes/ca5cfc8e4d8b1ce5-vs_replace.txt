@@ -169,28 +169,6 @@ void main(
 float4 stereo = StereoParams.Load(0);
 float separation = stereo.x; float convergence = stereo.y;
 
-// Looks like UNITY_MATRIX_IT_MV is 0, so we can't just do this:
-//    float4x4 projection = mul(UNITY_MATRIX_IT_MV, UNITY_MATRIX_MVP);
-//    fov = 1 / projection[0].x;
-
-// Instead, we have to calculate this the long way:
-
-// I already have an optimised version of this calculation in assembler for
-// Unity 4 (the committed version is for column-major order, but the optimised
-// row-major version was only slightly longer). I'm guessing the HLSL
-// determinant() function won't be optimised because it can't make assumptions
-// about the matrix (and that is a *large* amount of multiplications that could
-// be eliminated), so we can probably do better, but for now this is clearer:
-float det = 1 / determinant(UNITY_MATRIX_MV);
-
-float3 mvi;
-mvi.x = ((UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m22) - (UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m12)) * det;
-mvi.y = ((UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m02) - (UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m22)) * det;
-mvi.z = ((UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m12) - (UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m02)) * det;
-
-fov = 1 / dot(mvi, UNITY_MATRIX_MVP._m00_m10_m20);
-
-
   r0.xyzw = UNITY_MATRIX_MVP[1].xyzw * v0.yyyy;
   r0.xyzw = UNITY_MATRIX_MVP[0].xyzw * v0.xxxx + r0.xyzw;
   r0.xyzw = UNITY_MATRIX_MVP[2].xyzw * v0.zzzz + r0.xyzw;
@@ -213,8 +191,36 @@ if (!full_screen) {
   r0.xyz = UNITY_MATRIX_MV[2].xyz * v0.zzz + r0.xyz;
   r0.xyz = UNITY_MATRIX_MV[3].xyz * v0.www + r0.xyz;
 
-if (!full_screen && fov) {
+if (!full_screen) {
+	// Looks like UNITY_MATRIX_IT_MV is 0, so we can't just do this:
+	//    float4x4 projection = mul(UNITY_MATRIX_IT_MV, UNITY_MATRIX_MVP);
+	//    fov = 1 / projection[0].x;
+
+	// Instead, we have to calculate this the long way:
+
+	// I already have an optimised version of this calculation in assembler for
+	// Unity 4 (the committed version is for column-major order, but the optimised
+	// row-major version was only slightly longer). I'm guessing the HLSL
+	// determinant() function won't be optimised because it can't make assumptions
+	// about the matrix (and that is a *large* amount of multiplications that could
+	// be eliminated), so we can probably do better, but for now this is clearer:
+	float det = 1 / determinant(UNITY_MATRIX_MV);
+
+	float3 mvi;
+	mvi.x = ((UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m22) - (UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m12)) * det;
+	mvi.y = ((UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m02) - (UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m22)) * det;
+	mvi.z = ((UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m12) - (UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m02)) * det;
+
+	fov = 1 / dot(mvi, UNITY_MATRIX_MVP._m00_m10_m20);
+
 	r0.x += separation * (depth - convergence) * fov;
+} else {
+	// FIXME: Will need support in 3Dmigoto to copy in the matrices from
+	// elsewhere to determine this!
+	// NOTE that this is used for physical lighting effects, including
+	// specular reflections and some other shadow-like effects on the
+	// ground (not direct shadows), which may be only look slightly broken.
+	fov = 1;
 }
 
   r1.xyz = float3(-1.000000e+000,-1.000000e+000,1.000000e+000) * r0.xyz;
