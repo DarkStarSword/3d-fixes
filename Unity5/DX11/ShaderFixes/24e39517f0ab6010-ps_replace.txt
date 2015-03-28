@@ -1,3 +1,57 @@
+// 3DMigoto: 24e39517f0ab6010 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 2/2 {
+//     Tags { "ShadowmapFilter"="PCF_5x5" }
+//     Pass 1/1 {
+//       Tags { "ShadowmapFilter"="PCF_5x5" }
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 97017
+//       Program "fp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//           ConstBuffer "$Globals" 128
+//           Vector 112 [_ShadowMapTexture_TexelSize]
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 112 [_ZBufferParams]
+//           Vector 128 [unity_OrthoParams]
+//           ConstBuffer "UnityShadows" 416
+//           Matrix 128 [unity_World2Shadow0]
+//           Matrix 192 [unity_World2Shadow1]
+//           Matrix 256 [unity_World2Shadow2]
+//           Matrix 320 [unity_World2Shadow3]
+//           Vector 0 [unity_ShadowSplitSpheres0]
+//           Vector 16 [unity_ShadowSplitSpheres1]
+//           Vector 32 [unity_ShadowSplitSpheres2]
+//           Vector 48 [unity_ShadowSplitSpheres3]
+//           Vector 64 [unity_ShadowSplitSqRadii]
+//           Vector 384 [_LightShadowData]
+//           Vector 400 [unity_ShadowFadeCenterAndType]
+//           ConstBuffer "UnityPerCamera2" 64
+//           Matrix 0 [_CameraToWorld]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityShadows" 2
+//           BindCB "UnityPerCamera2" 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_4_0
+
+
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -35,6 +89,7 @@ void main(
   float3 v1 : TEXCOORD1,
   float4 v2 : TEXCOORD2,
   float4 v3 : SV_POSITION0,
+  float fov : TEXCOORD3, // New input from vertex shader with unity_CameraInvProjection[0].x;
   out float4 o0 : SV_Target0)
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7;
@@ -51,11 +106,21 @@ void main(
   r1.z = r0.x * r0.z + v2.z;
   r0.xzw = -v1.xyz * r0.yyy + r1.xyz;
   r1.xyz = v1.xyz * r0.yyy;
+
+float depth = r1.z;
+
   r0.xyz = cb1[8].www * r0.xzw + r1.xyz;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x; float convergence = stereo.y;
+r0.x -= separation * (depth - convergence) * fov;
+
+// UnityPerCamera2._CameraToWorld
   r1.xyzw = cb3[1].xyzw * r0.yyyy;
   r1.xyzw = cb3[0].xyzw * r0.xxxx + r1.xyzw;
   r0.xyzw = cb3[2].xyzw * r0.zzzz + r1.xyzw;
   r0.xyzw = cb3[3].xyzw + r0.xyzw;
+
   r1.xyz = -cb2[0].xyz + r0.xyz;
   r1.x = dot(r1.xyz, r1.xyz);
   r2.xyz = -cb2[1].xyz + r0.xyz;
