@@ -143,7 +143,11 @@ float depth = o0.w;
 // correction, but we would have to remember to account for the difference in
 // the perspective divide, so the maths is slightly simpler to do this first):
 
-o0.x += stereo.x * (depth - convergence);
+// Only perform this adjustment if the depth is not 1, as that usually
+// signifies a UI element and is not meaningful.
+
+if (depth != 1)
+	o0.x += stereo.x * (depth - convergence);
 
 // Now remove the driver's correction. Normally we would subtract the stereo
 // correction to achieve this, but since the correction is being applied
