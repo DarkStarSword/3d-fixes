@@ -1,3 +1,52 @@
+// Torch flames
+
+// 3DMigoto: daa8f248aa09fc99 | Unity headers extracted from Particle Add.shader
+// Shader "Particles/Additive" {
+//   Properties {
+//    _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//    _MainTex ("Particle Texture", 2D) = "white" { }
+//    _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha One
+//       AlphaTest Greater 0.01
+//       ColorMask RGB
+//       GpuProgramID 23090
+//       Program "vp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "FOG_EXP" "SOFTPARTICLES_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           ConstBuffer "$Globals" 144
+//           Vector 112 [_MainTex_ST]
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 80 [_ProjectionParams]
+//           ConstBuffer "UnityPerDraw" 336
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 64 [glstate_matrix_modelview0]
+//           ConstBuffer "UnityFog" 32
+//           Vector 16 [unity_FogParams]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityPerDraw" 2
+//           BindCB "UnityFog" 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[2];
@@ -41,6 +90,10 @@ void main(
   r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
   r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
   o0.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.w - stereo.y);
+
   o1.xyzw = v1.xyzw;
   r0.z = cb3[1].y * r0.z;
   p2.x = exp2(-r0.z);
