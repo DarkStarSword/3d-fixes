@@ -29,13 +29,23 @@ dcl_2d s0
 //mov r25.x, c251.x
 //if_eq r25.x, c220.x
 
-// Blacklist full screen fade to black based on X coordinate near edge of screen:
+// Blacklist full screen fade to black based on coordinate near corner of screen:
 mov r30.x, c220.y
 if_le r0.x, c221.x
-	mov r30.x, c220.x
+	if_le r0.y, c221.x
+		mov r30.x, c220.x
+	endif
+	if_ge r0.y, c221.y
+		mov r30.x, c220.x
+	endif
 endif
 if_ge r0.x, c221.y
-	mov r30.x, c220.x
+	if_le r0.y, c221.x
+		mov r30.x, c220.x
+	endif
+	if_ge r0.y, c221.y
+		mov r30.x, c220.x
+	endif
 endif
 
 // Detect crosshair based on texture coordinates:
