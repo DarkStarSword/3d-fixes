@@ -750,7 +750,7 @@ def install_shader_to_git(shader, file, args):
     game_dir = find_game_dir(file)
 
     # Filter out common subdirectory names:
-    blacklisted_names = ('win32', 'win64', 'binaries')
+    blacklisted_names = ('win32', 'win64', 'binaries', 'bin', 'win_x86', 'win_x64')
     while os.path.basename(game_dir).lower() in blacklisted_names:
         game_dir = os.path.realpath(os.path.join(game_dir, '..'))
 
