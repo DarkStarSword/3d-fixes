@@ -1,0 +1,40 @@
+// Skybox
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_color v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_position o0
+    dcl_color o1
+    dcl_texcoord o2.xyz
+    dcl_texcoord1 o3.xyz
+    dcl_texcoord2 o4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    dp4 r10.x, v0, c0
+    dp4 r10.y, v0, c1
+    dp4 r10.z, v0, c2
+    dp4 r10.w, v0, c3
+    dp4 o2.x, v0, c4
+    dp4 o2.y, v0, c5
+    dp4 o2.z, v0, c6
+    dp3 o3.x, v1, c4
+    dp3 o3.y, v1, c5
+    dp3 o3.z, v1, c6
+    mov o1, v2
+    mov o4.xy, v3
+    mov o4.zw, v4.xyxy
+
+// Move skybox to infinity. This shader also draws part of the ground, and
+// there is no single dpeth we can test against for the skybox, and texture
+// matching doesn't work (or is inconsistent with CalcTexCRCatUpdate). Instead
+// match the corresponding pixel shader for the sky.
+
+texldl r31, c220.z, s3
+mad r10.x, r31.x, r31.y, r10.x
+
+mov o0, r10
