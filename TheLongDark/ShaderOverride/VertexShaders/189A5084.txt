@@ -1,0 +1,69 @@
+// CRC32: 189A5084 | Matched 2 variants of 1 shaders: EasyRoads3D/EasyRoads3D Surface
+// 
+//    Unity headers extracted from EasyRoads3D-Surface.shader
+//    Shader "EasyRoads3D/EasyRoads3D Surface" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Overlay+140" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Overlay+140" "RenderType"="Opaque" }
+//          ZTest Always
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c11, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord1 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o2, r0 // Relocated from line 52 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. -f --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed EasyRoads3D_EasyRoads3D Surface/vp/189A5084.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c11.x
+    mul r1.y, r1, c8.x
+    mad o1.xy, r1.z, c9.zwzw, r1
+
+//     mov o2, r0 // Relocated to line 49 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.zw, r0
+    mad o0.xy, v2, c10, c10.zwzw
