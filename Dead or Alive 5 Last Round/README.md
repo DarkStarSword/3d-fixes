@@ -12,3 +12,7 @@ Fixed
 Installation
 ------------
 Extract zip file under ...\Steam\SteamApps\common\Dead or Alive 5 Last Round
+
+Known Issues
+------------
+- Sun flare is at wrong depth
