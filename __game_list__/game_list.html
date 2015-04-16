@@ -181,6 +181,18 @@ function show_game_list()
   game_list_shown = true;
 }
 
+function add_game(post)
+{
+  post.clean_title = post_title(post);
+  var game_title = title_game(post.clean_title).toLowerCase();
+  if (game_title in games) {
+    games[game_title].push(post);
+  } else {
+    games[game_title] = [post];
+    games_list.push(game_title);
+  }
+}
+
 function collate_responses(response)
 {
   if (response.nextPageToken) {
@@ -201,16 +213,8 @@ function collate_responses(response)
       guides.push(post);
     else if (is_misc(post))
       misc.push(post);
-    else {
-      post.clean_title = post_title(post);
-      var game_title = title_game(post.clean_title).toLowerCase();
-      if (game_title in games) {
-        games[game_title].push(post);
-      } else {
-        games[game_title] = [post];
-        games_list.push(game_title);
-      }
-    }
+    else
+      add_game(post);
   }
 
   show_game_list();
@@ -229,14 +233,7 @@ function collate_extra_list(response)
     post.tag = response.tag;
     post.description = response.description;
 
-    post.clean_title = post_title(post);
-    var game_title = title_game(post.clean_title).toLowerCase();
-    if (game_title in games) {
-      games[game_title].push(post);
-    } else {
-      games[game_title] = [post];
-      games_list.push(game_title);
-    }
+    add_game(post);
   }
 
   if (game_list_shown)
@@ -245,6 +242,10 @@ function collate_extra_list(response)
 
 jQuery.ajax({
   url : "https://ian.ozlabs.org/game_list/game_list_extra.json",
+  success : collate_extra_list
+});
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/opengl.json",
   success : collate_extra_list
 });
 // @license end
