@@ -51,6 +51,11 @@
     dcl_texcoord v0.xy
     dcl_texcoord1 v1.xyz
     dcl_texcoord2 v2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x;
+
     dcl_2d s0
     dcl_2d s1
     mov r0.xy, v2
@@ -60,9 +65,17 @@
     lrp r2.x, c24.w, r1.x, r0.w
     lrp r0.z, r1.x, v2.w, v2.z
     mad r0.xyz, v1, -r2.x, r0
-    mul r1.xyz, r2.x, v1
+    mul r1.xyz, r2.x, v1 // r1.z has depth
     mad r0.xyz, c24.w, r0, r1
     mov r0.w, c34.x
+
+// Subtract view-space stereo correction formula to fix shadows:
+texldl r31, c220.z, s15
+add r31.w, r1.z, -r31.y
+mul r31.w, r31.w, r31.x
+mad r0.x, -r31.w, v5.x, r0.x
+
+// _CameraToWorld
     dp4 r1.x, c19, r0
     dp4 r1.y, c20, r0
     dp4 r1.z, c21, r0
