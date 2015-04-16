@@ -104,7 +104,7 @@ def parse_version_14(file, version):
     (unity_version, ) = struct.unpack('8s', file.read(8))
     print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
 
-    (u2, u3, unknown_table_len, u5, u6, u7) = struct.unpack('<IBBBBB', file.read(9))
+    (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
     print("Unknown table length: {0}".format(unknown_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
@@ -113,7 +113,6 @@ def parse_version_14(file, version):
     assert(u2 == 0x5 or u2 == 0x13)
 
     assert(u3 == 0)
-    assert(u5 == 0)
     assert(u6 == 0)
     assert(u7 == 0)
 
@@ -141,6 +140,58 @@ def parse_version_14(file, version):
 
         extract_resource(file, data_off, offset, size, type2)
 
+def parse_version_15(file, version):
+    # Looks almost identical to version 14, but each TOC entry has extra padding
+    # TODO: Refactor common parts
+    (data_off, u1) = struct.unpack('>2I', file.read(8))
+
+    print("Data offset: 0x{0:x} ({0})".format(data_off))
+    assert(data_off >= 4096)
+
+    # print("Unknown1: 0x{0:08x} ({0})".format(u1))
+    # Non-zero in version 8
+    assert(u1 == 0)
+
+    (unity_version, ) = struct.unpack('8s', file.read(8))
+    print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
+
+    (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
+    print("Unknown table length: {0}".format(unknown_table_len))
+
+    # Not sure what this value represents, but it seems to be consistent within
+    # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    print("Unknown value: 0x{:02x}".format(u2))
+    assert(u2 == 0x5 or u2 == 0x13)
+
+    assert(u3 == 0)
+    assert(u6 == 0)
+    assert(u7 == 0)
+
+    for i in range(unknown_table_len):
+        (id,) = struct.unpack('<i', file.read(4))
+
+        if (id < 0):
+            u = struct.unpack('>8I', file.read(32))
+            print(("   {:3}: {:3}" + " {:08x}" * 8).format(*([i, id] + list(u))))
+        else:
+            u = struct.unpack('>4I', file.read(16))
+            print(("   {:3}: {:3}" + " {:08x}" * 4).format(*([i, id] + list(u))))
+
+    (num_resources, u1, u2, u3) = struct.unpack('<I3B', file.read(7))
+    assert(u1 == 0)
+    assert(u2 == 0)
+    assert(u3 == 0)
+
+    print("Num resources: {}".format(num_resources))
+    for i in range(num_resources):
+        (id, u1, offset, size, type1, type2, type3, u2) = struct.unpack('<4IiHhI', file.read(28))
+        name = get_resource_name(file, data_off, offset)
+        print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, {}, {}, {}, u2: 0x{:x}".format(id, offset, size, type1, type2, type3, name, u2))
+        assert(u1 == 0)
+        # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
+
+        extract_resource(file, data_off, offset, size, type2)
+
 def unsupported_version(file, version):
     print("Unsupported file version {}".format(version))
 
@@ -148,6 +199,7 @@ parsers = {
     8: unsupported_version,
     9: parse_version_9,
     14: parse_version_14,
+    15: parse_version_15, # Seen in The Forest 0.15
 }
 
 def analyse(file):
