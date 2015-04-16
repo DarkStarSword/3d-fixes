@@ -218,7 +218,17 @@ def analyse(file):
     parsers.get(version, unsupported_version)(file, version)
 
 def main():
+
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    import glob
+    f = []
     for file in sys.argv[1:]:
+        if '*' in file:
+            f.extend(glob.glob(file))
+        else:
+            f.append(file)
+
+    for file in f:
         print('Analysing %s...' % file)
         analyse(open(file, 'rb'))
         print()

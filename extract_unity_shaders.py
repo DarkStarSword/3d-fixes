@@ -736,6 +736,16 @@ def main():
     args = parse_args()
     processed = set()
 
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    import glob
+    f = []
+    for file in args.shaders:
+        if '*' in file:
+            f.extend(glob.glob(file))
+        else:
+            f.append(file)
+    args.shaders = f
+
     for filename in args.shaders:
         shader_list = []
         print('Parsing %s...' % filename)
