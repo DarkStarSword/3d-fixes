@@ -878,7 +878,7 @@ def adjust_ui_depth(tree, args):
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
     pos_reg = tree._find_free_reg('r', VS3)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
     dst_reg = find_declaration(tree, 'dcl_position', 'o').reg
 
     replace_regs = {dst_reg: pos_reg}
@@ -934,7 +934,7 @@ def adjust_output(tree, args):
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     for reg in args.adjust:
         _adjust_output(tree, reg, args, stereo_const, tmp_reg)
@@ -947,7 +947,7 @@ def auto_adjust_texcoords(tree, args):
     pos_out = find_declaration(tree, 'dcl_position', 'o')
     pos_reg = tree._find_free_reg('r', VS3)
     pos_adj = tree._find_free_reg('r', VS3)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     replace_regs = {pos_out: pos_reg}
     for (t, r) in output_texcoords(tree):
@@ -1153,7 +1153,7 @@ def auto_fix_vertex_halo(tree, args):
     # FIXME: Refactor common code with the adjust_output, etc
     stereo_const, offset = insert_stereo_declarations(tree, args)
     pos = next_line_pos(tree, output_line + offset)
-    t = tree._find_free_reg('r', VS3)
+    t = tree._find_free_reg('r', VS3, desired=31)
 
     debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
@@ -1235,7 +1235,7 @@ def auto_fix_unreal_light_shafts(tree, args):
     debug_verbose(-1, 'Applying Unreal Engine 3 light shaft fix')
 
     adj = tree._find_free_reg('r', PS3)
-    t = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, _ = insert_stereo_declarations(tree, args, w = 0.5)
 
     replace_regs = {orig: adj}
@@ -1275,7 +1275,7 @@ def auto_fix_unreal_dne_reflection(tree, args):
 
     debug_verbose(-1, 'Applying DNE reflection fix')
 
-    t = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     for (sampler_line, sampler_linepos, sampler_instr) in results:
@@ -1343,7 +1343,7 @@ def auto_fix_unreal_shadows(tree, args):
     except IndexError:
         vPos = None
 
-    t = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
     if vPos is None:
         texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
@@ -1489,7 +1489,7 @@ def fix_unity_lighting_ps(tree, args):
     line.append(WhiteSpace(' '))
     line.append(CPPStyleComment('// depth in %s' % depth))
 
-    t = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3, desired=31)
     texcoord = tree._find_free_reg('v', PS3)
     offset = tree.insert_decl()
     offset += tree.insert_decl('dcl_texcoord5', ['%s.x' % texcoord], comment='New input from vertex shader with unity_CameraInvProjection[0].x')
@@ -1645,7 +1645,7 @@ def disable_output(tree, args):
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     for reg in args.disable_output:
         _disable_output(tree, reg, args, stereo_const, tmp_reg)
@@ -1662,7 +1662,7 @@ def disable_shader(tree, args):
 
     # FUTURE: Maybe search for an existing 0 or 1...
     stereo_const, _ = insert_stereo_declarations(tree, args)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     append_vanity_comment(args, tree, 'Shader disabled by')
     if args.disable == '0':
