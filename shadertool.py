@@ -783,14 +783,20 @@ def restore_original_shader(file):
     except OSError as e:
         debug(str(e))
 
+class StereoSamplerAlreadyInUse(Exception): pass
+
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
 
     if isinstance(tree, VertexShader) and args.stereo_sampler_vs:
         tree.stereo_sampler = args.stereo_sampler_vs
+        if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
+            raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
     elif isinstance(tree, PixelShader) and args.stereo_sampler_ps:
         tree.stereo_sampler = args.stereo_sampler_ps
+        if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
+            raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
     elif 's' in tree.reg_types and tree.def_stereo_sampler in tree.reg_types['s']:
         # FIXME: There could be a few reasons for this. For now I assume the
         # shader was already using the sampler, but it's also possible we have
@@ -1970,7 +1976,7 @@ def main():
                 a.adjust = args.unadjust
                 a.adjust_multiply = -1
                 adjust_output(tree, a)
-        except NoFreeRegisters as e:
+        except (NoFreeRegisters, StereoSamplerAlreadyInUse) as e:
             if args.ignore_register_errors:
                 import traceback, time
                 traceback.print_exc()
