@@ -988,7 +988,7 @@ def next_line_pos(tree, position):
             return p + 1
     return len(tree) + 1
 
-def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
+def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, opcode=None):
     assert(direction == 1 or direction == -1)
     assert(write is not None)
 
@@ -1042,6 +1042,8 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
             if not instr.args:
                 continue
             # debug('scanning %s' % instr)
+            if opcode and instr.opcode != opcode:
+                continue
             if write:
                 dest = instr.args[0]
                 if is_match(dest):
@@ -1378,6 +1380,134 @@ def auto_fix_unreal_shadows(tree, args):
 
     tree.autofixed = True
 
+unity_CameraToWorld = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+# unity_CameraDepthTexture = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
+unity_ZBufferParams = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
+def fix_unity_lighting_ps(tree, args):
+    if not isinstance(tree, PS3):
+        # We could potentially fix the vertex shaders as well, but since there
+        # is only a few of them and they sometimes need custom adjustments,
+        # it's easier to just use a template (check my 3d-fixes repository) and
+        # tweak as necessary.
+        raise Exception('Unity lighting adjustment is only applicable to pixel shaders. Check my templates for the corresponding vertex shader & DX9Settings.ini!')
+
+    try:
+        match = find_header(tree, unity_CameraToWorld)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
+    _CameraToWorld0 = Register('c' + match.group('matrix'))
+
+    try:
+        match = find_header(tree, unity_ZBufferParams)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
+        return
+    _ZBufferParams = Register('c' + match.group('constant'))
+
+    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld0, _ZBufferParams))
+
+    # Find _CameraToWorld usage - adjustment must be above this point, and this
+    # gives us the register with X that needs to be adjusted:
+    results = scan_shader(tree, _CameraToWorld0, write=False, opcode='dp4')
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (_CameraToWorld_line, linepos, instr) = results[0]
+
+    if instr.args[1] == _CameraToWorld0:
+        reg = instr.args[2]
+    elif instr.args[2] == _CameraToWorld0:
+        reg = instr.args[1]
+    else:
+        assert(False)
+    if reg.swizzle:
+        x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
+    else:
+        x_reg = Register('%s.x' % reg.reg)
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step and more can go wrong)
+    results = scan_shader(tree, _ZBufferParams, write=False, end=_CameraToWorld_line-1)
+    if len(results) != 2:
+        debug_verbose(0, '_ZBufferParams read %i times (only exactly 2 reads currently supported)' % len(results))
+        return
+    (line, linepos, instr) = results[0]
+    if results[1].line != line:
+        debug_verbose(0, '_ZBufferParams read from two different instructions' % len(results))
+        return
+    reg = instr.args[0]
+
+    # We're expecting a reciprocal calculation as part of the Z buffer -> world
+    # Z scaling:
+    results = scan_shader(tree, reg.reg, components=reg.swizzle, opcode='rcp',
+            write=False, start=line+1, end=_CameraToWorld_line-1, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected rcp instruction')
+        return
+    (line, linepos, instr) = results[0]
+    reg = instr.args[0]
+
+    # Find where the reciprocal is next used:
+    results = scan_shader(tree, reg.reg, components=reg.swizzle, write=False,
+            start=line+1, end=_CameraToWorld_line-1, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected instruction')
+        return
+    (line, linepos, instr) = results[0]
+    reg = instr.args[0]
+
+    # Some shader variants have a few extra intermediate steps:
+    if instr.opcode == 'lrp':
+        # Could potentially check if constant used in instrction is
+        # unity_OrthoParams for safety
+        results = scan_shader(tree, reg.reg, components=reg.swizzle,
+                write=False, start=line+1, end=_CameraToWorld_line-1)
+        if len(results) < 2:
+            debug_verbose(0, 'Could not find expected mad+mul instructions')
+            return
+        (line, linepos, instr) = results[0]
+        if instr.opcode != 'mad':
+            debug_verbose(0, 'Could not find expected mad instruction, found %s' % instr)
+            return
+        (line, linepos, instr) = results[1]
+        reg = instr.args[0]
+
+    # Hopefully we have now found the mul instruction that scales the
+    # view-space ray and can determine which register has the depth:
+    if instr.opcode != 'mul':
+        debug_verbose(0, 'Could not find expected mul instruction, found %s' % instr)
+        return
+
+    if not reg.swizzle or len(reg.swizzle) != 3:
+        debug_verbose(0, 'Ray multiply had unexpected mask: %s' % instr)
+        return
+
+    depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+
+    line = tree[line]
+    line.append(WhiteSpace(' '))
+    line.append(CPPStyleComment('// depth in %s' % depth))
+
+    t = tree._find_free_reg('r', PS3)
+    texcoord = tree._find_free_reg('v', PS3)
+    offset = tree.insert_decl()
+    offset += tree.insert_decl('dcl_texcoord5', ['%s.x' % texcoord], comment='New input from vertex shader with unity_CameraInvProjection[0].x')
+    stereo_const, offset2 = insert_stereo_declarations(tree, args, w = 0.5)
+
+    pos = _CameraToWorld_line + offset + offset2
+    debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos_to_line(tree, pos), depth, x_reg))
+    pos += insert_vanity_comment(args, tree, pos, "Unity light/shadow fix (pixel shader stage) inserted with")
+
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mul', [t.w, t.w, separation]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg.x, -t.w, texcoord.x, x_reg.x]))
+    pos += tree.insert_instr(pos)
+
+    tree.autofixed = True
+
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
@@ -1670,6 +1800,8 @@ def parse_args():
             help="Attempt to automatically fix reflective floor surfaces found in Unreal games")
     parser.add_argument('--auto-fix-unreal-shadows', action='store_true',
             help="Attempt to automatically fix shadows in Unreal games")
+    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1751,7 +1883,8 @@ def args_require_reg_analysis(args):
                 args.disable_redundant_unreal_correction or \
                 args.auto_fix_unreal_light_shafts or \
                 args.auto_fix_unreal_dne_reflection or \
-                args.auto_fix_unreal_shadows
+                args.auto_fix_unreal_shadows or \
+                args.fix_unity_lighting_ps
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1863,6 +1996,8 @@ def main():
                 auto_fix_unreal_dne_reflection(tree, args)
             if args.auto_fix_unreal_shadows:
                 auto_fix_unreal_shadows(tree, args)
+            if args.fix_unity_lighting_ps:
+                fix_unity_lighting_ps(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
