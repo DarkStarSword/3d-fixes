@@ -6,6 +6,7 @@ import shaderutil
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
+collected_errors = []
 
 reg_names = {
     'c': 'Referenced Constants',
@@ -453,7 +454,7 @@ class ShaderBlock(SyntaxTree):
                 self.reg_types[reg_type].add(r)
                 return r
 
-        raise NoFreeRegisters(self.filename, reg_type)
+        raise NoFreeRegisters(reg_type)
 
     def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
         for (node, parent, idx) in self.iter_all():
@@ -1718,6 +1719,18 @@ def do_ini_updates():
                 debug(line)
         debug()
 
+def show_collected_errors():
+    if not collected_errors:
+        return
+    debug()
+    debug()
+    debug('!' * 79)
+    debug('!' * 11 + ' The following shaders had errors and were not processed ' + '!' * 11)
+    debug('!' * 79)
+    debug()
+    for (filename, exception) in collected_errors:
+        debug('%s: %s: %s' % (filename, exception.__class__.__name__, str(exception)))
+
 def parse_args():
     global verbosity
 
@@ -1913,10 +1926,11 @@ def main():
                 tree = parse_shader(open(file, 'r', newline=None).read(), args)
         except Exception as e:
             if args.ignore_parse_errors:
+                collected_errors.append((file, e))
                 import traceback, time
                 traceback.print_exc()
-                time.sleep(0.1)
                 continue
+            show_collected_errors()
             do_ini_updates()
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
@@ -1978,9 +1992,9 @@ def main():
                 adjust_output(tree, a)
         except (NoFreeRegisters, StereoSamplerAlreadyInUse) as e:
             if args.ignore_register_errors:
+                collected_errors.append((file, e))
                 import traceback, time
                 traceback.print_exc()
-                time.sleep(0.1)
                 continue
             raise
 
@@ -2025,6 +2039,7 @@ def main():
                 debug('\nCAUTION: Address reg was applied offset from these consts:')
                 debug(', '.join(sorted(address_reg_ps)))
 
+    show_collected_errors()
     do_ini_updates()
 
 if __name__ == '__main__':
