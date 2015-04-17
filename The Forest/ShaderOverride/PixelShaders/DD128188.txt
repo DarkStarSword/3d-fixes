@@ -1,0 +1,136 @@
+// CRC32: DD128188 | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassLighting
+// 
+//    Unity headers extracted from Internal-PrePassLighting.shader
+//    Shader "Hidden/Internal-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Blend DstColor Zero
+//          GpuProgramID 1343
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" "SUNSHINE_DISABLED" }
+// 8:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" "SUNSHINE_FILTER_HARD" }
+// 4:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" "SUNSHINE_FILTER_PCF_2x2" }
+// 2:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" "SUNSHINE_FILTER_PCF_3x3" }
+//              Matrix 8 [_CameraToWorld] 3
+//              Matrix 4 [_LightMatrix0]
+//              Matrix 0 [unity_World2Shadow0]
+//              Vector 18 [_LightColor]
+//              Vector 17 [_LightPos]
+//              Vector 14 [_LightShadowData]
+//              Vector 12 [_ProjectionParams]
+//              Vector 11 [_WorldSpaceCameraPos]
+//              Vector 13 [_ZBufferParams]
+//              Vector 16 [unity_ColorSpaceLuminance]
+//              Vector 19 [unity_LightmapFade]
+//              Vector 15 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraNormalsTexture] 2D 0
+//              SetTexture 1 [_CameraDepthTexture] 2D 1
+//              SetTexture 2 [_LightTextureB0] 2D 2
+//              SetTexture 3 [_LightTexture0] 2D 3
+//              SetTexture 4 [_ShadowMapTexture] 2D 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c20, 2, -1, 1, 0
+    def c21, 128, 0, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    mov r0.z, c20.z
+    rcp r0.x, v1.z
+    mul r0.x, r0.x, c12.z
+    mul r0.xyw, r0.x, v1.xyzz
+    rcp r1.x, v0.w
+    mul r1.xy, r1.x, v0
+    texld r2, r1, s1
+    texld_pp r1, r1, s0
+    mad r2.x, c13.x, r2.x, c13.y
+    rcp r2.x, r2.x
+    mul r3.xyz, r0.xyww, r2.x
+    mov r3.w, c20.z
+    dp4 r4.x, c8, r3
+    dp4 r4.y, c9, r3
+    dp4 r4.z, c10, r3
+    mov r4.w, c20.z
+    dp4 r5.x, c0, r4
+    dp4 r5.y, c1, r4
+    dp4 r5.z, c2, r4
+    dp4 r5.w, c3, r4
+    texldp_pp r5, r5, s4
+    lrp_pp r2.y, r5.x, r0.z, c14.x
+    add r0.xyz, r4, -c15
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mad r0.x, r0.w, -r2.x, r0.x
+    mad r0.x, c15.w, r0.x, r3.z
+    mad_sat r0.y, r0.x, c14.z, c14.w
+    mad r0.x, r0.x, c19.z, c19.w
+    add_sat r0.x, -r0.x, c20.z
+    add_sat_pp r0.y, r0.y, r2.y
+    dp4 r2.x, c4, r4
+    dp4 r2.y, c5, r4
+    dp4 r2.z, c6, r4
+    dp4 r2.w, c7, r4
+    texldp r3, r2, s3
+    add r2.xyz, -r4, c17
+    add r3.xyz, r4, -c11
+    dp3 r0.z, r2, r2
+    mul r0.w, r0.z, c17.w
+    rsq r0.z, r0.z
+    mul_pp r2.xyz, r0.z, r2
+    texld r4, r0.w, s2
+    mul r0.z, r3.w, r4.x
+    mul r0.y, r0.y, r0.z
+    cmp r0.y, r2.w, c20.w, r0.y
+    mov_sat r0.z, r0.y
+    dp3 r0.w, r3, r3
+    rsq r0.w, r0.w
+    mad r3.xyz, r3, -r0.w, r2
+    nrm_pp r4.xyz, r3
+    mad_pp r1.xyz, r1, c20.x, c20.y
+    mul_pp r0.w, r1.w, c21.x
+    nrm_pp r3.xyz, r1
+    dp3_pp r1.x, r4, r3
+    dp3_pp r1.y, r2, r3
+    max_pp r2.x, r1.y, c20.w
+    mul r0.y, r0.y, r2.x
+    mul_pp r2.xyz, r0.y, c18
+    max_pp r0.y, r1.x, c20.w
+    pow r1.x, r0.y, r0.w
+    mul r0.y, r0.z, r1.x
+    mov r1.xyz, c18
+    mul_pp r1.xyw, r1.xyzz, c16.xyzz
+    add_pp r0.zw, r1.xyyw, r1.x
+    mul_pp r0.w, r0.w, r1.y
+    mad_pp r0.z, r1.z, c16.z, r0.z
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    dp2add_pp r0.z, c16.w, r0.w, r0.z
+    mul_pp r2.w, r0.z, r0.y
+    mul_pp r0, r0.x, r2
+    exp_pp oC0.x, -r0.x
+    exp_pp oC0.y, -r0.y
+    exp_pp oC0.z, -r0.z
+    exp_pp oC0.w, -r0.w
