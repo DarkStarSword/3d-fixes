@@ -1462,7 +1462,7 @@ def fix_unity_lighting_ps(tree, args):
     line.append(CPPStyleComment('// depth in %s' % depth))
 
     t = tree._find_free_reg('r', PS3, desired=31)
-    texcoord = tree._find_free_reg('v', PS3)
+    texcoord = tree._find_free_reg('v', PS3, desired=5)
     offset = tree.insert_decl()
     offset += tree.insert_decl('dcl_texcoord5', ['%s.x' % texcoord], comment='New input from vertex shader with unity_CameraInvProjection[0].x')
     stereo_const, offset2 = insert_stereo_declarations(tree, args, w = 0.5)
