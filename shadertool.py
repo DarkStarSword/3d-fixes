@@ -939,40 +939,6 @@ def adjust_output(tree, args):
     for reg in args.adjust:
         _adjust_output(tree, reg, args, stereo_const, tmp_reg)
 
-def auto_adjust_texcoords(tree, args):
-    if not isinstance(tree, VS3):
-        raise Exception('Auto texcoord adjustment is only applicable to vertex shaders')
-
-    stereo_const, _ = insert_stereo_declarations(tree, args)
-    pos_out = find_declaration(tree, 'dcl_position', 'o')
-    pos_reg = tree._find_free_reg('r', VS3)
-    pos_adj = tree._find_free_reg('r', VS3)
-    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
-
-    replace_regs = {pos_out: pos_reg}
-    for (t, r) in output_texcoords(tree):
-        replace_regs[r] = tree._find_free_reg('r', VS3)
-    tree.do_replacements(replace_regs, False)
-
-    append_vanity_comment(args, tree, 'Automatically adjust texcoords that match the output position. Inserted with')
-    tree.add_inst('mov', [pos_out, pos_reg])
-    for (t, r) in output_texcoords(tree):
-        tree.add_inst('mov', [r, replace_regs[r]])
-    if args.condition:
-        tree.add_inst('mov', [tmp_reg.x, args.condition])
-        tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
-    separation = tmp_reg.x; convergence = tmp_reg.y
-    tree.add_inst('mov', [pos_adj, pos_reg])
-    tree.add_inst('add', [tmp_reg.w, pos_adj.w, -convergence])
-    tree.add_inst('mad', [pos_adj.x, tmp_reg.w, separation, pos_adj.x])
-    for (t, r) in output_texcoords(tree):
-        tree.add_inst('if_eq', [r, pos_reg])
-        tree.add_inst('mov', [r, pos_adj])
-        tree.add_inst('endif', [])
-    if args.condition:
-        tree.add_inst('endif', [])
-
 def pos_to_line(tree, position):
     return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
 
@@ -1788,8 +1754,6 @@ def parse_args():
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
     parser.add_argument('--no-mad', action='store_false', dest='use_mad',
             help="Use mad instruction to make stereo correction more concise")
-    parser.add_argument('--auto-adjust-texcoords', action='store_true',
-            help="Adjust any texcoord that matches the output position from a vertex shader")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
@@ -1877,7 +1841,6 @@ def args_require_reg_analysis(args):
                 args.disable_output or \
                 args.adjust or \
                 args.unadjust or \
-                args.auto_adjust_texcoords or \
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog or \
                 args.disable_redundant_unreal_correction or \
@@ -1983,8 +1946,6 @@ def main():
                 tree = add_unity_autofog(tree)[0]
             if args.disable:
                 disable_shader(tree, args)
-            if args.auto_adjust_texcoords:
-                auto_adjust_texcoords(tree, args)
             tree.autofixed = False
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(tree, args)
