@@ -1,0 +1,161 @@
+// CRC32: 6A8B0727 | Matched 2 variants of 1 shaders: Hidden/Sunshine-PrePassLighting
+// 
+//    Unity headers extracted from Sunshine-PrePassLighting.shader
+//    Shader "Hidden/Sunshine-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 2/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 124095
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" }
+// 2:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_2x2" }
+//              Matrix 4 [_CameraToWorld] 3
+//              Matrix 0 [sunshine_CascadeRanges]
+//              Matrix 7 [sunshine_WorldToSunVP] 3
+//              Vector 16 [_LightColor]
+//              Vector 15 [_LightDir]
+//              Vector 11 [_ProjectionParams]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 12 [_ZBufferParams]
+//              Vector 25 [sunshine_CascadeFarRatiosSq]
+//              Vector 24 [sunshine_CascadeNearRatiosSq]
+//              Vector 18 [sunshine_Lightmap_TexelSize]
+//              Vector 20 [sunshine_OvercastCoord]
+//              Vector 21 [sunshine_OvercastVectorsUV]
+//              Vector 22 [sunshine_ShadowCoordDepthStart]
+//              Vector 26 [sunshine_ShadowFadeParams]
+//              Vector 19 [sunshine_ShadowParamsAndHalfTexel]
+//              Vector 23 [sunshine_ShadowToWorldScale]
+//              Vector 14 [unity_ColorSpaceLuminance]
+//              Vector 17 [unity_LightmapFade]
+//              Vector 13 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [sunshine_Lightmap] 2D 1
+//              SetTexture 2 [sunshine_OvercastMap] 2D 2
+//              SetTexture 3 [_CameraNormalsTexture] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c27, 1, 123456792, 0, -2
+    def c28, 1, 0.00392156886, 1.53787005e-005, 6.03086292e-008
+    def c29, 128, 0, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    rcp r0.x, v1.z
+    mul r0.x, r0.x, c11.z
+    mul r0.xyz, r0.x, v1
+    rcp r0.w, v0.w
+    mul r1.xy, r0.w, v0
+    texld r2, r1, s0
+    texld_pp r1, r1, s3
+    mad r0.w, c12.x, r2.x, c12.y
+    rcp r0.w, r0.w
+    mul r2.xyz, r0.w, r0
+    mov r2.w, c27.x
+    dp4 r3.x, c4, r2
+    dp4 r3.y, c5, r2
+    dp4 r3.z, c6, r2
+    mov r3.w, c27.x
+    dp4 r4.z, c9, r3
+    dp4 r4.x, c7, r3
+    dp4 r4.y, c8, r3
+    add r2.xyw, r4.xyzz, -c22.xyzz
+    mul r2.xyw, r2, c23.xyzz
+    dp3 r0.x, r2.xyww, r2.xyww
+    mul r0.y, r0.x, c27.y
+    frc r0.y, r0.y
+    mov r5.xz, c27
+    mad r0.y, r0.y, -c19.y, r5.x
+    mad r6, r0.x, -r0.y, c25
+    mad r7, r0.x, r0.y, -c24
+    mad_sat r0.x, r0.x, -c26.y, c26.x
+    cmp r6, r6, c27.x, c27.z
+    cmp r6, r7, r6, c27.z
+    mul r7, r6.y, c1
+    mad r7, c0, r6.x, r7
+    mad r7, c2, r6.z, r7
+    mad r6, c3, r6.w, r7
+    mad r2.xy, r6.zwzw, r4, r6
+    mov r6.xy, c21
+    mad r4.xw, r6.xyzy, r4.x, c20.xyzy
+    mad r4.xy, c21.zwzw, r4.y, r4.xwzw
+    texld r6, r4, s2
+    add r2.xy, r2, -c19.zwzw
+    mul r2.xy, r2, c18.zwzw
+    frc r7.xy, r2
+    add r2.xy, r2, -r7
+    mov r4.xy, c18
+    mad r2.xy, r2, r4, c19.zwzw
+    add r4.xy, r2, c18
+    texld r8, r4, s1
+    dp4 r8.w, r8, c28
+    texld r9, r2, s1
+    mad r10, c18.xyxy, r5.xzzx, r2.xyxy
+    dp4 r8.x, r9, c28
+    texld r9, r10, s1
+    texld r10, r10.zwzw, s1
+    dp4 r8.z, r10, c28
+    dp4 r8.y, r9, c28
+    add r4, r4.z, -r8
+    cmp_pp r4, r4, c27.x, c27.z
+    add r7.zw, -r7.xyxy, c27.x
+    mul_pp r7, r7.wwyy, r7.zxzx
+    dp4_pp r0.y, r4, r7
+    mad r0.x, r0.y, -r0.x, c27.x
+    mad r0.x, r0.x, -r6.w, c27.x
+    mad_pp r0.x, r0.x, -c19.x, r5.x
+    mov_sat r0.y, r0.x
+    mul_pp r1.w, r1.w, c29.x
+    mad_pp r1.xyz, r1, -c27.w, -c27.x
+    nrm_pp r4.xyz, r1
+    add r1.xyz, r3, -c10
+    add r2.xyw, r3.xyzz, -c13.xyzz
+    dp3 r2.x, r2.xyww, r2.xyww
+    rsq r2.x, r2.x
+    rcp r2.x, r2.x
+    mad r0.z, r0.z, -r0.w, r2.x
+    mad r0.z, c13.w, r0.z, r2.z
+    mad r0.z, r0.z, c17.z, c17.w
+    add_sat r0.z, -r0.z, c27.x
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mad r1.xyz, r1, -r0.w, -c15
+    nrm_pp r2.xyz, r1
+    dp3_pp r0.w, r2, r4
+    dp3_pp r1.x, -c15, r4
+    max_pp r2.x, r1.x, c27.z
+    mul r0.x, r0.x, r2.x
+    mul_pp r2.xyz, r0.x, c16
+    max_pp r1.x, r0.w, c27.z
+    pow r0.x, r1.x, r1.w
+    mul r0.x, r0.y, r0.x
+    mov r1.xyz, c16
+    mul_pp r1.xyw, r1.xyzz, c14.xyzz
+    add_pp r0.yw, r1, r1.x
+    mul_pp r0.w, r0.w, r1.y
+    mad_pp r0.y, r1.z, c14.z, r0.y
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    dp2add_pp r0.y, c14.w, r0.w, r0.y
+    mul_pp r2.w, r0.y, r0.x
+    mul_pp oC0, r0.z, r2
