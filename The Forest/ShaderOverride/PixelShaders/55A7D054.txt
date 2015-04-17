@@ -1,0 +1,179 @@
+// CRC32: 55A7D054 | Matched 6 variants of 2 shaders: Hidden/Internal-DeferredShading AFS Grass, Hidden/Internal-DeferredShading AFS Grass Sunshine
+// 
+//    Unity headers extracted from Internal-DeferredShading AfsGrass.shader
+//    Shader "Hidden/Internal-DeferredShading AFS Grass" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//       _SrcBlend ("", Float) = 1
+//       _DstBlend ("", Float) = 1
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/2 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend [_SrcBlend] [_DstBlend]
+//          GpuProgramID 65358
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "POINT" "SHADOWS_OFF" "UNITY_HDR_ON" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Vector 8 [_LightColor]
+//              Vector 7 [_LightPos]
+//              Vector 4 [_ProjectionParams]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 5 [_ZBufferParams]
+//              Vector 6 [unity_LightGammaCorrectionConsts]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_CameraGBufferTexture0] 2D 2
+//              SetTexture 3 [_CameraGBufferTexture1] 2D 3
+//              SetTexture 4 [_CameraGBufferTexture2] 2D 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//     Unity headers extracted from Internal-DeferredShading AfsGrass Sunshine.shader
+//     Shader "Hidden/Internal-DeferredShading AFS Grass Sunshine" {
+//       Properties {
+//        _LightTexture0 ("", any) = "" { }
+//        _LightTextureB0 ("", 2D) = "" { }
+//        _ShadowMapTexture ("", any) = "" { }
+//        _SrcBlend ("", Float) = 1
+//        _DstBlend ("", Float) = 1
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Pass 1/2 {
+//           Tags { "SHADOWSUPPORT"="true" }
+//           ZWrite Off
+//           Blend [_SrcBlend] [_DstBlend]
+//           GpuProgramID 64906
+//           Program "fp" {
+//             SubProgram "d3d9 " {
+// 01:           Keywords { "POINT" "SHADOWS_OFF" "SUNSHINE_DISABLED" "UNITY_HDR_ON" }
+// 10:           Keywords { "POINT" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" "UNITY_HDR_ON" }
+// 08:           Keywords { "POINT" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" "UNITY_HDR_ON" }
+// 04:           Keywords { "POINT" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_3x3" "UNITY_HDR_ON" }
+// 02:           Keywords { "POINT" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_4x4" "UNITY_HDR_ON" }
+//               Matrix 0 [_CameraToWorld] 3
+//               Vector 8 [_LightColor]
+//               Vector 7 [_LightPos]
+//               Vector 4 [_ProjectionParams]
+//               Vector 3 [_WorldSpaceCameraPos]
+//               Vector 5 [_ZBufferParams]
+//               Vector 6 [unity_LightGammaCorrectionConsts]
+//               SetTexture 0 [_CameraDepthTexture] 2D 0
+//               SetTexture 1 [_LightTextureB0] 2D 1
+//               SetTexture 2 [_CameraGBufferTexture0] 2D 2
+//               SetTexture 3 [_CameraGBufferTexture1] 2D 3
+//               SetTexture 4 [_CameraGBufferTexture2] 2D 4
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c9, 1, 2, -1, 0
+    def c10, 9.99999975e-005, 0.967999995, 0.0299999993, 10
+    def c11, -0.5, 0, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    rcp r0.x, v1.z
+    mul r0.x, r0.x, c4.z
+    mul r0.xyz, r0.x, v1
+    rcp r0.w, v0.w
+    mul r1.xy, r0.w, v0
+    texld r2, r1, s0
+    mad r0.w, c5.x, r2.x, c5.y
+    rcp r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov_pp r0.w, c9.x
+    dp4 r2.x, c0, r0
+    dp4 r2.y, c1, r0
+    dp4 r2.z, c2, r0
+    add r0.xyz, r2, -c3
+    add r2.xyz, r2, -c7
+    nrm_pp r3.xyz, r0
+    dp3 r0.x, r2, r2
+    rsq r0.y, r0.x
+    mul r0.x, r0.x, c7.w
+    texld r4, r0.x, s1
+    mul_pp r0.xzw, r4.x, c8.xyyz
+    mad_pp r4.xyz, r2, -r0.y, -r3
+    mul_pp r2.xyz, r0.y, r2
+    nrm_pp r5.xyz, r4
+    texld_pp r4, r1, s4
+    mad_pp r4.xyz, r4, c9.y, c9.z
+    nrm_pp r6.xyz, r4
+    dp3_pp r0.y, r6, r5
+    dp3_pp r1.z, -r2, r5
+    dp3_pp r1.w, r6, -r2
+    dp3_pp r2.x, r6, -r3
+    max_pp r3.x, r2.x, c9.w
+    max_pp r2.x, r1.w, c9.w
+    max_pp r2.y, r1.z, c9.w
+    max_pp r1.z, r0.y, c9.w
+    texld_pp r5, r1, s3
+    texld_pp r6, r1, s2
+    add_pp r0.y, -r5.w, c9.x
+    add_pp r1.x, -r0.y, c9.x
+    mad_pp r1.x, r1.x, c10.y, c10.z
+    log_pp r1.x, r1.x
+    rcp r1.x, r1.x
+    mul_pp r1.x, r1.x, c10.w
+    mul_pp r1.y, r1.x, r1.x
+    mad_pp r1.x, r1.x, r1.x, c9.x
+    mul_pp r1.x, r1.x, c6.y
+    pow_pp r2.z, r1.z, r1.y
+    mul_pp r1.x, r1.x, r2.z
+    mul_pp r1.y, r0.y, r0.y
+    mul_pp r1.z, r1.y, c6.w
+    mov r4.x, c9.x
+    mad_pp r1.y, r1.y, -c6.w, r4.x
+    mad_pp r1.w, r3.x, r1.y, r1.z
+    add_pp r2.z, -r3.x, c9.x
+    mad_pp r1.y, r2.x, r1.y, r1.z
+    mad r1.y, r1.y, r1.w, c10.x
+    rcp_pp r1.y, r1.y
+    mul_pp r1.x, r1.x, r1.y
+    mul_pp r1.x, r2.x, r1.x
+    mul_pp r1.x, r1.x, c6.x
+    max_pp r2.w, r1.x, c9.w
+    mul_pp r1.xyz, r0.xzww, r2.w
+    add_pp r1.w, -r2.y, c9.x
+    mul_pp r2.y, r2.y, r2.y
+    dp2add_pp r0.y, r2.y, r0.y, c11.x
+    mul_pp r2.y, r1.w, r1.w
+    mul_pp r2.y, r2.y, r2.y
+    mul_pp r1.w, r1.w, r2.y
+    lrp_pp r3.xyz, r1.w, c9.x, r5
+    mul_pp r1.xyz, r1, r3
+    mul_pp r1.xyz, r4.w, r1
+    mul_pp r1.w, r2.z, r2.z
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r1.w, r2.z, r1.w
+    mad_pp r1.w, r0.y, r1.w, c9.x
+    add_pp r2.y, -r2.x, c9.x
+    mul_pp r2.z, r2.y, r2.y
+    mul_pp r2.z, r2.z, r2.z
+    mul_pp r2.y, r2.y, r2.z
+    mad_pp r0.y, r0.y, r2.y, c9.x
+    mul_pp r0.y, r1.w, r0.y
+    mul_pp r0.y, r2.x, r0.y
+    mul_pp r0.xyz, r0.y, r0.xzww
+    mad_pp oC0.xyz, r6, r0, r1
+    mov_pp oC0.w, c9.x
