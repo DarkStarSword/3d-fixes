@@ -1,0 +1,141 @@
+// CRC32: C72ED75E | Matched 3 variants of 3 shaders: Particles/Alpha Blended Premultiply, Particles/Star Shader, Particles/Sun Shader
+// 
+//    Unity headers extracted from Particle Premultiply Blend.shader
+//    Shader "Particles/Alpha Blended Premultiply" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 48937
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Star Shader.shader
+//    Shader "Particles/Star Shader" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/3 {
+//        Tags { "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          BindChannels {
+//             Bind "vertex", Vertex
+//             Bind "color", Color
+//             Bind "texcoord", TexCoord
+//            }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha One
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          GpuProgramID 50150
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Sun Shader.shader
+//    Shader "Particles/Sun Shader" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/3 {
+//        Tags { "QUEUE"="Transparent-395" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent-395" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          BindChannels {
+//             Bind "vertex", Vertex
+//             Bind "color", Color
+//             Bind "texcoord", TexCoord
+//            }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha One
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          GpuProgramID 50150
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c10, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
+
+    dp4 o2.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c7.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+    mul r1.xzw, r0.xywz, c10.x
+    mov o2.xyw, r0
+    mov o1.w, r0.w
+    mad o1.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 r0.x, c6, v0
+    mov o1.z, -r0.x
+    mad o0.xy, v2, c9, c9.zwzw
+    mov o3, v1
