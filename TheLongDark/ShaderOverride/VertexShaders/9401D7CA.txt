@@ -1,0 +1,101 @@
+// CRC32: 9401D7CA | Unity headers extracted from TGP_Basic.shader
+// Shader "Toony Gooch Pro/Normal/MultipleLights/Basic" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "white" { }
+//    _Ramp ("Toon Ramp (RGB)", 2D) = "gray" { }
+//    _Color ("Highlight Color", Color) = (0.8,0.8,0.8,1)
+//    _SColor ("Shadow Color", Color) = (0,0,0,1)
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 45765
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 16 [_MainTex_ST]
+//           Vector 7 [_ProjectionParams]
+//           Vector 8 [_ScreenParams]
+//           Vector 11 [unity_SHAb]
+//           Vector 10 [unity_SHAg]
+//           Vector 9 [unity_SHAr]
+//           Vector 14 [unity_SHBb]
+//           Vector 13 [unity_SHBg]
+//           Vector 12 [unity_SHBr]
+//           Vector 15 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c17, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v2, c16, c16.zwzw
+    mul r0.xyz, v1.y, c5
+    mad r0.xyz, c4, v1.x, r0
+    mad r0.xyz, c6, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c12, r2
+    dp4 r3.y, c13, r2
+    dp4 r3.z, c14, r2
+    mad r0.xyz, c15, r0.x, r3
+    mov r1.w, c17.x
+    dp4 r2.x, c9, r1
+    dp4 r2.y, c10, r1
+    dp4 r2.z, c11, r1
+    mov o1.xyz, r1
+    add o2.xyz, r0, r2
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c7.x
+    mul r1.w, r1.x, c17.y
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o4, r0 // Relocated from line 83 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Toony Gooch Pro_Normal_MultipleLights_Basic/vp/9401D7CA.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c17.y
+    mad o3.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o4, r0 // Relocated to line 80 with shadertool.py
+mov o4.z, r0.z // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o3.zw, r0
