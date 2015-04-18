@@ -44,6 +44,12 @@
     dcl_2d s0
     dcl_2d s1
     dcl_2d s2
+
+dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
     mov r0.xyz, c9
     mul_pp r0.xyw, r0.xyzz, c7.xyzz
     add_pp r0.xw, r0.yyzw, r0.x
@@ -61,8 +67,16 @@
     texld_pp r1, r1, s2
     mad r2.x, c5.x, r2.x, c5.y
     rcp r2.x, r2.x
-    mul r3.xyz, r0.yzww, r2.x
+    mul r3.xyz, r0.yzww, r2.x // depth in r3.z
     mov r3.w, c11.x
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
+// shadertool.py --fix-unity-lighting-ps --in-place 8C7699BA.txt
+texldl r31, c220.z, s13
+add r31.w, r3.z, -r31.y
+mul r31.w, r31.w, r31.x
+mad r3.x, -r31.w, v5.x, r3.x
+
     dp4 r4.x, c0, r3
     dp4 r4.y, c1, r3
     dp4 r4.z, c2, r3

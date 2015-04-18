@@ -114,19 +114,134 @@
     dcl_position o0
     dcl_texcoord o1
     dcl_texcoord1 o2.xyz
+
+// Extra output to pass the FOV to pixel shaders:
+dcl_texcoord5 o5.x
+
+def c220, 0, 1, 0.0625, 1
+dcl_2d s0
+
+    // Rearranged to simplify shader:
+    dp4 r0.x, c0, v0
     dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mov o0, r0 // moved up before the stereo correction
+
+// Determine if drawing a full screen quad by testing if output position w == 1.
+// Seems to be more reliable than an input position test:
+if_eq r0.w, c220.y
+	mov r23.x, c220.y // Set flag to indicate we are drawing a full-screen quad
+
+	// Our projection matrix will not be valid, so we use the matrices
+	// copied from a different shader:
+	mov r25, c180 // MV[0]
+	mov r26, c181 // MV[1]
+	mov r27, c182 // MV[2]
+	mov r28, c190 // MVP[0]
+else
+	mov r23.x, c220.x // Clear flag to indicate we are drawing a light in the scene
+
+	// Our projection matrix will be valid, so we can use the matrices
+	// passed into this shader:
+	mov r25, c4 // MV[0]
+	mov r26, c5 // MV[1]
+	mov r27, c6 // MV[2]
+	mov r28, c0 // MVP[0]
+endif
+
+mov r24, c200
+if_eq r24.w, c220.y
+	// Use inverse projection matrix is valid, so use it directly:
+	mov r30.x, c170.x
+else
+	// We can't use Helix mod to invert the MV matrix since we are either
+	// using the matrix passed directily into this shader, or a 3x4 matrix
+	// copied from a different shader (Helix mod expects a 4x4 matrix).
+	// So let's do it directly in assembly instead! It sounds complicated,
+	// but we can make some large simplifications based on assumptions
+	// about the MV and MVP matrices and the fact we only need one cell of
+	// the (inverse) projection matrix, which means it is actually possible
+	// to do in a farily small number of instructions :)
+
+	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+	//    4th column of the MV matrix is 0,0,0,1
+	//
+	// mathomatic simplified it to:
+	// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+	//
+	// Replace row numbers with register components (assumes column-major order):
+	//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+	// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r25.yzx, r26.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, r25.zxy, r26.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, r27.xyz
+	// Sum it together to get the determinant:
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
+	if_eq r22.w, c220.x
+		mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+	else
+		// And finally get 1/determinant:
+		rcp r22.w, r22.w
+
+		// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+		//    the 4th column of the MV matrix is 0,0,0,1
+		//
+		// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+		// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+		// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+		// Do some multiplications in parallel with SIMD instructions:
+		mul r20.xyz, r26.yzx, r27.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+		mul r21.xyz, r26.zxy, r27.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+		// Do the subtractions:
+		add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+		// Multiply against 1/determinant:
+		mul r20.xyz, r20.xyz, r22.www
+
+		// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+		//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+		dp3 r30.x, r20.xyz, r28.xyz
+
+		if_eq r30.x, c220.x
+			mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+		else
+			rcp r30.x, r30.x // Calculate P.I[0,0]
+		endif
+	endif
+endif
+
+mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
+
+if_eq r23.x, c220.x
+	// Apply stereo correction to screen coords stored in texcoord:
+	texldl r31, c220.z, s0
+	add r31.w, r0.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r0.x, r0.x, r31.w
+endif
+
     mul r1.x, r0.y, c7.x
     mul r1.w, r1.x, c10.x
-    dp4 r0.x, c0, v0
-    dp4 r0.w, c3, v0
     mul r1.xz, r0.xyww, c10.x
     mad o1.xy, r1.z, c8.zwzw, r1.xwzw
     dp4 r1.x, c4, v0
     dp4 r1.y, c5, v0
     dp4 r1.z, c6, v0
+
+if_eq r23.x, c220.x
+	// Apply view-space stereo correction to ray:
+	mad r1.x, r31.w, r30.x, r1.x
+endif
+
     mul r2.xyz, r1, c10.yyzw
     mad r1.xyz, r1, -c10.yyzw, v1
     mad o2.xyz, c9.x, r1, r2
-    dp4 r0.z, c2, v0
-    mov o0, r0
     mov o1.zw, r0
