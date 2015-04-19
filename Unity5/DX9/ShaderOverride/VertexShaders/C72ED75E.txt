@@ -126,13 +126,27 @@ dcl_texcoord1 o1
 dcl_position o2
 dcl_color o3
 
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 o2.z, c2, v0
     dp4 r0.y, c1, v0
     mul r0.z, r0.y, c7.x
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
+
+mov o2.xyw, r0 // Relocated from line 135 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -f -I /home/dss/3d-fixes/TheLongDark --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Particles_Alpha Blended Premultiply/vp/C72ED75E.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
     mul r1.xzw, r0.xywz, c10.x
-    mov o2.xyw, r0
+
+//     mov o2.xyw, r0 // Relocated to line 134 with shadertool.py
     mov o1.w, r0.w
     mad o1.xy, r1.z, c8.zwzw, r1.xwzw
     dp4 r0.x, c6, v0
