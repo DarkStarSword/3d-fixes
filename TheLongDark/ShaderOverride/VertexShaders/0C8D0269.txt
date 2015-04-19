@@ -52,7 +52,6 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
-dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c26, 1.20000005, 2, 1.60000002, 4.80000019
     def c27, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
     def c28, 0.00600000005, 0.0199999996, 0.0500000007, -0.161616161
@@ -143,27 +142,25 @@ dcl_2d s0
     add o3.xyz, r1, r3
     dp4 r1.x, c0, r0
     dp4 r1.w, c3, r0
-
-mov o6, r1 // Relocated from line 146 with shadertool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_TerrainEngine_Details_BillboardWavingDoublePass/vp/0C8D0269.txt
-texldl r31, c220.z, s0
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
-
     mul r2.xz, r1.xyww, c32.y
     dp4 r1.y, c1, r0
     dp4 r1.z, c2, r0
     mul r0.x, r1.y, c10.x
-
-//     mov o6, r1 // Relocated to line 142 with shadertool.py
-mov o6.yz, r1.yz // Inserted by shadertool.py
-
-mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
-    mov o4.zw, r1
+    mov o6, r1
+    mov r5.zw, r1
     mul r0.y, r1.z, c19.x
     mul r0.y, r0.y, -r0.y
     exp o5.x, r0.y
     mul r2.w, r0.x, c32.y
-    mad o4.xy, r2.z, c11.zwzw, r2.xwzw
+    mad r5.xy, r2.z, c11.zwzw, r2.xwzw
+
+// approximately 76 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py --orig --in-place --adjust=o4 --adjust-multiply=0.5 /cygdrive/c/Steam/SteamApps/common/TheLongDark/Dumps/AllShaders/VertexShader/0C8D0269.txt
+texldl r31, c220.z, s0
+add r31.w, r5.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r5.x, r5.x, r31.w
+mov o4, r5
