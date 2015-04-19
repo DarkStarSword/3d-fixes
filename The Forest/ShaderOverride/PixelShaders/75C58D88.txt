@@ -169,6 +169,17 @@
     dcl_2d s7
     dcl_2d s8
     dcl_2d s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py --stereo-sampler-ps=s15 --adjust-input=texcoord4 -I /home/dss/The Forest -f 75C58D88.txt
+mov r30, v4
+texldl r31, c220.z, s15
+add r31.w, r30.w, -r31.y
+mad r30.x, r31.w, r31.x, r30.x
+
     mov r0.xw, c42
     mad r0.xy, c8.x, r0.x, v3.xzzw
     rcp r0.z, c8.x
@@ -229,19 +240,19 @@
     nrm_pp r1.xyz, r0
     mul r2.xyz, r1, c28.x
     mov r2.w, c43.x
-    add r2, r2, v4
+    add r2, r2, r30
     texldp r3, r2, s9
     mad r0.x, c4.z, r3.x, c4.w
     rcp r0.x, r0.x
-    add_sat r0.x, -r0.x, v4.z
+    add_sat r0.x, -r0.x, r30.z
     add r0.x, r0.x, c43.y
-    add r3, -r2, v4
+    add r3, -r2, r30
     mad r2, r0.x, r3, r2
     rcp r0.x, r2.w
     mad r0.yz, r2.xxyw, -r0.x, -c42.w
-    cmp r0.yz, r0, r2.xxyw, v4.xxyw
+    cmp r0.yz, r0, r2.xxyw, r30.xxyw
     mul r3.xy, r0.x, r0.yzzw
-    cmp r2.xy, r3, r0.yzzw, v4
+    cmp r2.xy, r3, r0.yzzw, r30
     texldp r2, r2, s6
     mad r0.xyz, c29, c29.w, -r2
     mul r1.w, c29.w, c29.w
@@ -252,19 +263,19 @@
     cmp r0.xyz, -r1.w, -c42.w, r0
     mul r2.xyz, r1, c30.x
     mov r2.w, c43.x
-    add r2, r2, v4
+    add r2, r2, r30
     texldp r3, r2, s9
     mad r1.w, c4.z, r3.x, c4.w
     rcp r1.w, r1.w
-    add_sat r1.w, -r1.w, v4.z
+    add_sat r1.w, -r1.w, r30.z
     add r1.w, r1.w, c43.y
-    add r3, -r2, v4
+    add r3, -r2, r30
     mad r2, r1.w, r3, r2
     rcp r1.w, r2.w
     mad r3.xy, r2, -r1.w, -c42.w
-    cmp r3.xy, r3, r2, v4
+    cmp r3.xy, r3, r2, r30
     mul r3.zw, r1.w, r3.xyxy
-    cmp r2.xy, r3.zwzw, r3, v4
+    cmp r2.xy, r3.zwzw, r3, r30
     texldp r2, r2, s8
     mad r3.xyz, c31, c31.w, -r2
     mul r1.w, c31.w, c31.w
@@ -305,7 +316,7 @@
     rcp r0.x, c38.x
     mad r0.xy, v3.xzzw, r0.x, r1
     texld r0, r0, s7
-    texldp r1, v4, s9
+    texldp r1, r30, s9
     mad r0.w, c4.z, r1.x, c4.w
     rcp r0.w, r0.w
     add r0.w, r0.w, -v5.x
