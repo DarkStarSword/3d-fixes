@@ -946,6 +946,49 @@ def adjust_output(tree, args):
     for reg in args.adjust:
         _adjust_output(tree, reg, args, stereo_const, tmp_reg)
 
+def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
+    # TODO: Refactor common code with _adjust_output
+
+    repl_reg = tree._find_free_reg('r', VS3, desired=30)
+
+    if reg.startswith('dcl_texcoord'):
+        org_reg = find_declaration(tree, reg, 'v').reg
+    if reg.startswith('texcoord'):
+        org_reg = find_declaration(tree, 'dcl_%s' % reg, 'v').reg
+    else:
+        org_reg = reg
+    replace_regs = {org_reg: repl_reg}
+    tree.do_replacements(replace_regs, False)
+
+    pos = tree.decl_end - 1
+    pos += insert_vanity_comment(args, tree, pos, "Input adjustment inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('mov', [repl_reg, org_reg]))
+    if args.condition:
+        pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
+        pos += tree.insert_instr(pos, NewInstruction('if_eq', [tmp_reg.x, stereo_const.x]))
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler]))
+    separation = tmp_reg.x; convergence = tmp_reg.y
+    pos += tree.insert_instr(pos, NewInstruction('add', [tmp_reg.w, repl_reg.w, -convergence]))
+    if args.use_mad and not args.adjust_multiply:
+        pos += tree.insert_instr(pos, NewInstruction('mad', [repl_reg.x, tmp_reg.w, separation, repl_reg.x]))
+    else:
+        pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, separation]))
+        if args.adjust_multiply and args.adjust_multiply != -1:
+            pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, stereo_const.w]))
+        if args.adjust_multiply and args.adjust_multiply == -1:
+            pos += tree.insert_instr(pos, NewInstruction('add', [repl_reg.x, repl_reg.x, -tmp_reg.w]))
+        else:
+            pos += tree.insert_instr(pos, NewInstruction('add', [repl_reg.x, repl_reg.x, tmp_reg.w]))
+    if args.condition:
+        pos += tree.insert_instr(pos, NewInstruction('endif', []))
+
+def adjust_input(tree, args):
+    stereo_const, _ = insert_stereo_declarations(tree, args)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
+
+    for reg in args.adjust_input:
+        _adjust_output(tree, reg, args, stereo_const, tmp_reg)
+
 def pos_to_line(tree, position):
     return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
 
@@ -1765,6 +1808,8 @@ def parse_args():
             help="Disable a given texcoord in the shader")
     parser.add_argument('--adjust', '--adjust-output', '--adjust-texcoord', action='append',
             help="Apply the stereo formula to an output (texcoord or position)")
+    parser.add_argument('--adjust-input', action='append',
+            help="Apply the stereo formula to a shader input")
     parser.add_argument('--adjust-multiply', '--adjust-multiplier', '--multiply', type=float,
             help="Multiplier for the stereo adjustment. If you notice the broken effect switches eyes try 0.5")
     parser.add_argument('--unadjust', action='append', nargs='?', default=None, const='position',
@@ -1859,6 +1904,7 @@ def args_require_reg_analysis(args):
                 args.disable or \
                 args.disable_output or \
                 args.adjust or \
+                args.adjust_input or \
                 args.unadjust or \
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog or \
@@ -1985,6 +2031,8 @@ def main():
                 disable_output(tree, args)
             if args.adjust:
                 adjust_output(tree, args)
+            if args.adjust_input:
+                adjust_input(tree, args)
             if args.unadjust:
                 a = copy.copy(args)
                 a.adjust = args.unadjust
