@@ -1092,7 +1092,7 @@ def auto_fix_vertex_halo(tree, args):
 
     # 2. Locate where in the shader the output position is set and note which
     #    temporary register was copied to it.
-    results = scan_shader(tree, pos_out, write=True)
+    results = scan_shader(tree, pos_out, components='xw', write=True)
     if not results:
         debug("Couldn't find write to output position register")
         return
