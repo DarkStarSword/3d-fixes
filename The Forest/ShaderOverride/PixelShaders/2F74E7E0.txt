@@ -154,7 +154,7 @@
     dcl_texcoord v0
     dcl_texcoord1 v1
     dcl_texcoord2 v2
-    dcl_texcoord3 v3
+    dcl_texcoord3 v3 // Screen position
     dcl_texcoord4 v4.x
     dcl_texcoord5_pp v5.xyz
     dcl_2d s0
@@ -166,6 +166,19 @@
     dcl_2d s6
     dcl_2d s7
     dcl_2d s8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Adjust input coord to fix opacity halo + refraction, but use original
+// position for reflection
+mov r23, v3
+add r31.w, r23.w, -r31.y
+mul r31.w, r31.w, r31.x
+mad r23.x, r31.w, c220.w, r23.x
+
     rcp r0.x, c6.x
     mov r1.x, v0.w
     mov r1.z, v2.w
@@ -230,7 +243,10 @@
     rcp r0.z, c36.x
     mad r0.xy, r1.xzzw, r0.z, r0
     texld r0, r0, s6
-    texldp r3, v3, s8
+
+// Fix opacity halo:
+    texldp r3, r23, s8
+
     mad r0.w, c2.z, r3.x, c2.w
     rcp r0.w, r0.w
     add r0.w, r0.w, -v4.x
@@ -238,22 +254,26 @@
     mul_sat_pp r3.w, r0.w, r1.w
     add r0.w, -r3.w, -c40.w
     mul r0.xyz, r0.w, r0
+
+// reflection - for best result some lines need original position, other need adjusted
     mul r4.xyz, r2, c26.x
     mov r4.w, c41.x
     add r4, r4, v3
     texldp r5, r4, s8
     mad r0.w, c2.z, r5.x, c2.w
     rcp r0.w, r0.w
-    add_sat r0.w, -r0.w, v3.z
+    add_sat r0.w, -r0.w, r23.z
     add r0.w, r0.w, c41.y
     add r5, -r4, v3
     mad r4, r0.w, r5, r4
     rcp r0.w, r4.w
     mad r5.xy, r4, -r0.w, -c40.w
-    cmp r5.xy, r5, r4, v3
+    cmp r5.xy, r5, r4, r23
     mul r5.zw, r0.w, r5.xyxy
-    cmp r4.xy, r5.zwzw, r5, v3
+    cmp r4.xy, r5.zwzw, r5, r23
     texldp r4, r4, s5
+
+// reflection
     mad r5.xyz, c27, c27.w, -r4
     mul r0.w, c27.w, c27.w
     mad r4.xyz, r0.w, r5, r4
@@ -261,22 +281,26 @@
     rsq r0.w, r0.w
     rcp r0.w, r0.w
     cmp r4.xyz, -r0.w, -c40.w, r4
+
+// refraction
     mul r5.xyz, r2, c28.x
     mov r5.w, c41.x
-    add r5, r5, v3
+    add r5, r5, r23
     texldp r6, r5, s8
     mad r0.w, c2.z, r6.x, c2.w
     rcp r0.w, r0.w
-    add_sat r0.w, -r0.w, v3.z
+    add_sat r0.w, -r0.w, r23.z
     add r0.w, r0.w, c41.y
-    add r6, -r5, v3
+    add r6, -r5, r23
     mad r5, r0.w, r6, r5
     rcp r0.w, r5.w
     mad r6.xy, r5, -r0.w, -c40.w
-    cmp r6.xy, r6, r5, v3
+    cmp r6.xy, r6, r5, r23
     mul r6.zw, r0.w, r6.xyxy
-    cmp r5.xy, r6.zwzw, r6, v3
+    cmp r5.xy, r6.zwzw, r6, r23
     texldp r5, r5, s7
+
+// refraction
     mad r6.xyz, c29, c29.w, -r5
     mul r0.w, c29.w, c29.w
     mad r5.xyz, r0.w, r6, r5
@@ -311,6 +335,8 @@
     pow r2.x, r1.y, c30.x
     cmp r0.w, r0.w, r2.x, -c40.w
     lrp r1.y, r0.w, -r2.w, c31.x
+
+// reflection
     mul r0.w, r1.y, c25.x
     lrp r1.yzw, r0.w, r4.xxyz, r5.xxyz
     mad_pp r0.xyz, r0, c38.x, r1.yzww
