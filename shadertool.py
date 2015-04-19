@@ -946,7 +946,7 @@ def adjust_output(tree, args):
     for reg in args.adjust:
         _adjust_output(tree, reg, args, stereo_const, tmp_reg)
 
-def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
+def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     # TODO: Refactor common code with _adjust_output
 
     repl_reg = tree._find_free_reg('r', VS3, desired=30)
@@ -987,7 +987,7 @@ def adjust_input(tree, args):
     tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     for reg in args.adjust_input:
-        _adjust_output(tree, reg, args, stereo_const, tmp_reg)
+        _adjust_input(tree, reg, args, stereo_const, tmp_reg)
 
 def pos_to_line(tree, position):
     return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
