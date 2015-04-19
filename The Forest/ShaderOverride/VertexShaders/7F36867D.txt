@@ -231,8 +231,11 @@ dcl_2d s0
 
 // approximately 6 instruction slots used
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui=c200.z -f VertexShader_63_CRC32_7F36867D.txt
-texldl r31, c220.z, s0
-mad r0.x, r31.x, c200.z, r0.x
+// Only adjust when originally drawn at screen depth:
+if_eq r0.w, c220.y
+	// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py -i --ui=c200.z -f VertexShader_63_CRC32_7F36867D.txt
+	texldl r31, c220.z, s0
+	mad r0.x, r31.x, c200.z, r0.x
+endif
 mov o1, r0
