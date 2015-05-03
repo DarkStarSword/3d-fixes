@@ -8,6 +8,7 @@ Fixed
 - Water
 - Fog & heat distortion effects
 - UI depth adjusted
+- Lens flare
 
 Installation
 ------------
@@ -20,5 +21,5 @@ Keys
 
 Known Issues
 ------------
-- Sun flare is at wrong depth
 - Reflection on Alpha-152's mirror attack is wrong
+- Flashing critical marker on health bar is at screen depth
