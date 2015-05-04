@@ -325,12 +325,17 @@ def get_hash_filename_base(shader):
 
     if shader.sub_program.hash_type == '3Dmigoto':
         # Emulate 3Dmigto style naming
-        if shader.program.name == 'fp':
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
             shader_type = 'ps'
-        elif shader.program.name == 'vp':
+        elif shader.program.name == 'vp': # Vertex Shader
             shader_type = 'vs'
-        elif shader.program.name == 'gp':
+        elif shader.program.name == 'gp': # Geometry Shader
             shader_type = 'gs'
+        elif shader.program.name == 'hp': # Hull Shader
+            shader_type = 'hs'
+        elif shader.program.name == 'dp': # Domain Shader
+            shader_type = 'ds'
+        # Still missing compute shaders from this list
         else:
             raise Exception("Unknown program type: %s" % shader.program.name)
         return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
