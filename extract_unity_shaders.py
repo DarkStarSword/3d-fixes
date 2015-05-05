@@ -62,16 +62,25 @@ def tokenise(input):
         if not isinstance(value, Strip):
             yield value
 
-def curly_scope(old_tree):
+def _curly_scope(old_tree, pos):
     tree = Tree()
-    while old_tree:
-        token = old_tree.pop(0)
+    end = len(old_tree)
+    while pos < end:
+        token = old_tree[pos]
         if isinstance(token, CurlyRight):
-            return tree
+            return (tree, pos)
         if isinstance(token, CurlyLeft):
-            tree.append(curly_scope(old_tree))
+            (branch, pos) = _curly_scope(old_tree, pos + 1)
+            assert(pos is not None)
+            tree.append(branch)
         else:
             tree.append(token)
+        pos += 1
+    return (tree, None)
+
+def curly_scope(old_tree):
+    (tree, pos) = _curly_scope(old_tree, 0)
+    assert(pos is None)
     return tree
 
 def ignore_whitespace(tree):
