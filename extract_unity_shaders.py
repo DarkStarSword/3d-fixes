@@ -97,10 +97,10 @@ def next_interesting(tree):
         return r
 
 class Keyword(object):
-    def __init__(self, keyword, tokens, parent):
+    def __init__(self, keyword, tokens, parent, args):
         self.keyword = keyword
         self.parent = parent
-        return self.parse(tokens, parent)
+        return self.parse(tokens, parent, args)
 
     def __str__(self):
         return self.keyword
@@ -122,10 +122,10 @@ class Tree(list):
         return '{%s}' % stringify(self)
 
 class NamedTree(Keyword, Tree):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         self.orig_name = next_interesting(tokens)
         self.name = strip_quotes(self.orig_name)
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self, args=args))
 
     def header(self):
         return '%s %s {' % (Keyword.__str__(self), self.orig_name)
@@ -146,11 +146,11 @@ class UnnamedTree(Keyword, Tree):
     def parent_counter(self, val):
         return setattr(self.parent, self.parent_counter_attr, val)
 
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         self.parent_counter += 1
         self.counter = self.parent_counter
 
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self, args=args))
 
     def header(self):
         return '%s %i/%i {' % (Keyword.__str__(self), self.counter, self.parent_counter)
@@ -159,7 +159,7 @@ class UnnamedTree(Keyword, Tree):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
 class StringifyLine(Keyword):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         t = []
         while True:
             token = next(tokens)
@@ -172,7 +172,7 @@ class StringifyLine(Keyword):
         return '%s %s' % (Keyword.__str__(self), self.line.strip())
 
 class Keywords(Keyword, set):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         set.__init__(self, map(strip_quotes, map(str, ignore_whitespace(next_interesting(tokens)))))
 
     def __str__(self):
@@ -234,7 +234,7 @@ def create_fog_asm(asm):
     tree = shadertool.parse_shader(asm)
     return shadertool.add_unity_autofog(tree)
 
-def parse_keywords(tree, parent=None, filename=None):
+def parse_keywords(tree, parent=None, filename=None, args=None):
     ret = []
     tokens = iter(tree)
     if parent is not None and not hasattr(parent, 'keywords'):
@@ -247,6 +247,8 @@ def parse_keywords(tree, parent=None, filename=None):
 
         if isinstance(token, String):
             parent.fog = None
+            if args.type and parent.name not in args.type:
+                continue
             handle_shader_asm(token, parent, strip_quotes(token))
             continue
 
@@ -254,11 +256,11 @@ def parse_keywords(tree, parent=None, filename=None):
             raise SyntaxError('Expected Identifier, found: %s' % repr(token))
 
         if token in keywords:
-            item = keywords[token](token, tokens, parent)
+            item = keywords[token](token, tokens, parent, args)
         else:
             # I used to be strict and fail on any unrecognised keywords, but I
             # kept running into more so now I just stringify them:
-            item = StringifyLine(token, tokens, parent)
+            item = StringifyLine(token, tokens, parent, args)
 
         if filename is not None:
             item.filename = filename
@@ -734,6 +736,8 @@ def parse_args():
             help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
     parser.add_argument('--fog', action='store_true',
             help='Generate additional shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--type', action='append',
+            help='Filter types of shaders to process, useful to avoid unecessary slow hash calculations')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')
@@ -770,7 +774,7 @@ def main():
         processed.add(digest)
         tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
         tree = curly_scope(tree)
-        tree = parse_keywords(tree, filename=os.path.basename(filename))
+        tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
 
     if args.fog:
         for shaders in list(shader_index.values()):
