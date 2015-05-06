@@ -51,7 +51,7 @@ def get_page(pageToken = None):
         'orderBy': 'updated',
         'fields': 'items(author/displayName,content,id,title,updated,url,labels),nextPageToken',
         'key': api_key,
-        'maxResults': 1000000000, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
+        'maxResults': 500, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
         'fetchBodies': str(fetch_all).lower(),
     }
     if pageToken is not None:
