@@ -53,28 +53,6 @@ def c221, 650, 0.5, 0.00167, 0
     dp4 o2.y, v0, c1
     dp4 o2.x, v0, c0
 
-mov r20, c200
-if_eq r20.y, c220.y
-	mov r30.x, c170.x
-else
-	// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
-	// For a detailed explanation of what we are doing here, see this thread:
-	// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
-
-	// Transpose first component of the MV.I matrix regs into r30:
-	mov r30.x, c180.x
-	mov r30.y, c181.x
-	mov r30.z, c182.x
-	mov r30.w, c183.x
-	dp4 r30.x, r30, c190 // Calculate P[0,0]
-endif
-
-if_eq r30.x, c220.x
-	mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
-else
-	rcp r30.x, r30.x // Calculate P.I[0,0]
-endif
-
 // Calculate FOV from the camera frustrum:
 // First, find the distance between the top two points:
 
