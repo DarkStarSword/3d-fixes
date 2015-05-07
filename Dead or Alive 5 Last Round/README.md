@@ -24,10 +24,6 @@ Keys
 - F7: Save custom convergence to current convergence preset
 - B: Cycle UI between several presets (pop out, screen depth, inside screen)
 
-Known Issues
-------------
-- Flashing critical marker on health bar is at screen depth
-
 Compatibility with uMod
 -----------------------
 If you wish to use this fix in conjunction with uMod, follow these instructions:
