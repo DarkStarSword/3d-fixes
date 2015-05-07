@@ -19,8 +19,9 @@ Note that HeliXmodLauncher.exe is only provided for compatibility with uMod
 
 Keys
 ----
-- C: Toggle convergence between two gameplay presets
+- C: Cycle between three convergence presets
 - V: Hold to set lower convergence for cut scenes
+- F7: Save custom convergence to current convergence preset
 - B: Cycle UI between several presets (pop out, screen depth, inside screen)
 
 Known Issues
