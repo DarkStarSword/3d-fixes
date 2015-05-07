@@ -156,6 +156,29 @@ if_eq r30.x, c220.x
 else
 	rcp r30.x, r30.x // Calculate P.I[0,0]
 endif
+
+// Calculate FOV from the camera frustrum:
+// First, find the distance between the top two points:
+
+mov r22.xyz, c160
+mov r23.xyz, c161
+
+// Subtract the top two corners to find the relative horizontal position:
+add r24.xyz, r23, -r22
+
+// Pythagorus to find the distance:
+dp3 r24.w, r24.xyz, r24.xyz
+rsq r30.x, r24.w
+rcp r30.x, r30.x
+
+// Divide by two as we need 1/2 the FOV:
+mul r30.x, r30.x, c221.y
+
+// In this case it turns out that the frustrum coordinates are at the far
+// clipping plane. Copy in _ProjectionParams from other shaders and multiply by
+// 1/far in w to get the equivelent of tan(fov_horizontal / 2):
+mul r30.x, r30.x, c150.w
+
 mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 
 if_eq r23.x, c220.x
