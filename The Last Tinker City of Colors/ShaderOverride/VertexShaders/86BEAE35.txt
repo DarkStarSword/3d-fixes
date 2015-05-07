@@ -1,0 +1,125 @@
+// CRC32: 86BEAE35 | Matched 2 variants of 1 shaders: Mimimi/FX/Bumped Specular Window
+// 
+//    Unity headers extracted from FX-Normal-BumpSpec-Window.shader
+//    Shader "Mimimi/FX/Bumped Specular Window" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ColorSecond ("_ColorSecond", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Settings ("Speed, Pos, Emission, w", Vector) = (2,1.5,1,6)
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_Time]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_SHAr]
+//              Vector 12 [unity_SHAg]
+//              Vector 13 [unity_SHAb]
+//              Vector 14 [unity_SHBr]
+//              Vector 15 [unity_SHBg]
+//              Vector 16 [unity_SHBb]
+//              Vector 17 [unity_SHC]
+//              Vector 18 [unity_Scale]
+//              Vector 19 [_Color]
+//              Vector 20 [_ColorSecond]
+//              Vector 21 [_Settings]
+//              Vector 22 [_MainTex_ST]
+//              Vector 23 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 51 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c24, 0.15915491, 0.50000000, 6.28318501, -3.14159298
+    def c25, 1.00000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+    dcl_texcoord0 v2
+    dcl_color0 v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r1.xyz, v1, c18.w
+    dp3 r2.w, r1, c5
+    dp3 r0.x, r1, c4
+    mov r0.y, r2.w
+    dp3 r0.z, r1, c6
+    mov r0.w, c25.x
+    mul r1, r0.xyzz, r0.yzzx
+    dp4 r2.z, r0, c13
+    dp4 r2.y, r0, c12
+    dp4 r2.x, r0, c11
+    dp4 r0.w, r1, c16
+    dp4 r0.y, r1, c14
+    dp4 r0.z, r1, c15
+    add r1.xyz, r2, r0.yzww
+    mul r0.z, c21.y, c21
+    mov r0.y, c8
+    mad r0.y, c21.x, r0, r0.z
+    mul r0.z, r2.w, r2.w
+    mad r0.y, r0, c24.x, c24
+    frc r0.w, r0.y
+    mad r0.w, r0, c24.z, c24
+    sincos r2.xy, r0.w
+    mad r0.x, r0, r0, -r0.z
+    mul r0.xyz, r0.x, c17
+    add o4.xyz, r1, r0
+    add r0.z, r2.y, c25.x
+    mul r1.w, r0.z, c24.y
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 107 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_FX_Bumped Specular Window/vp/86BEAE35.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c24.y
+    mul r1.y, r1, c9.x
+    mad o3.xy, r1.z, c10.zwzw, r1
+    mov r1.xyz, c20
+    add r1.xyz, -c19, r1
+    mad r1.xyz, r1.w, r1, c19
+
+//     mov o0, r0 // Relocated to line 101 with shadertool.py
+    mul o2.xyz, r1, v3.x
+    mov o3.zw, r0
+    mad o1.zw, v2.xyxy, c23.xyxy, c23
+    mad o1.xy, v2, c22, c22.zwzw

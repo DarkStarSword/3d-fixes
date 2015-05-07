@@ -1,0 +1,104 @@
+// CRC32: EBC07A21 | Matched 2 variants of 1 shaders: Mimimi/DetailBumped/Specular
+// 
+//    Unity headers extracted from DetailBump-Specular.shader
+//    Shader "Mimimi/DetailBumped/Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.27451,0.27451,0.27451,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.105855
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _BumpMapDetail ("Normalmap Detail", 2D) = "bump" {}
+//       _Detail ("_Detail", Range(0,1)) = 0.522388
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_World2Object]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [unity_LightmapST]
+//              Vector 13 [_MainTex_ST]
+//              Vector 14 [_BumpMap_ST]
+//              Vector 15 [_BumpMapDetail_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 27 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c16, 0.50000000, 1.00000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r3.xyz, r0, v1.w
+    mov r1.xyz, c8
+    mov r1.w, c16.y
+    dp4 r2.z, r1, c6
+    dp4 r2.x, r1, c4
+    dp4 r2.y, r1, c5
+    mad r1.xyz, r2, c11.w, -v0
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 85 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_DetailBumped_Specular/vp/EBC07A21.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xyz, r0.xyww, c16.x
+    mul r2.y, r2, c9.x
+    dp3 o5.y, r1, r3
+    mad o3.xy, r2.z, c10.zwzw, r2
+    dp3 o5.z, v2, r1
+    dp3 o5.x, r1, v1
+
+//     mov o0, r0 // Relocated to line 79 with shadertool.py
+    mov o3.zw, r0
+    mad o1.zw, v3.xyxy, c14.xyxy, c14
+    mad o1.xy, v3, c13, c13.zwzw
+    mad o2.xy, v3, c15, c15.zwzw
+    mad o4.xy, v4, c12, c12.zwzw
