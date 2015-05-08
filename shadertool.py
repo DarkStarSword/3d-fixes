@@ -36,6 +36,7 @@ def debug_verbose(level, *args, **kwargs):
 class InstructionSeparator(object): pass # Newline and semicolon
 class Ignore(object): pass # Tokens ignored when analysing shader, but preserved for manipulation (whitespace, comments)
 class Strip(object): pass # Removed during tokenisation, not preserved
+class StripDuringConversion(object): pass # Removed during shader model upgrade
 class Number(object): pass
 
 class Token(str):
@@ -88,6 +89,9 @@ class NullByte(Token, Strip):
 class Bracket(Token):
     pattern = re.compile(r'(\(|\))') # Seen in a Miasmata preshader
 
+class ParallelPlus(Token, Ignore, StripDuringConversion):
+    pattern = re.compile(r'\+')
+
 class Anything(Token):
     pattern = re.compile(r'.')
 
@@ -105,6 +109,7 @@ tokens = (
     Identifier,
     Bracket,
     NullByte,
+    ParallelPlus,
     # Anything,
 )
 
@@ -140,10 +145,10 @@ class SyntaxTree(list):
         returned for each node to allow for easy replacing.
         '''
         for (i, token) in enumerate(self):
-            yield (token, self, i)
+            yield (token, self, i, i)
             if isinstance(token, SyntaxTree):
-                for (j, (t, p, pi)) in enumerate(token.iter_all()):
-                    yield (t, p, pi)
+                for (j, (t, p, pi, _)) in enumerate(token.iter_all()):
+                    yield (t, p, pi, i)
 
     def iter_flat(self):
         '''
@@ -404,7 +409,7 @@ class ShaderBlock(SyntaxTree):
         self.addressed_regs = RegSet()
         self.declared = []
         self.reg_types = {}
-        for (inst, parent, idx) in self.iter_all():
+        for (inst, parent, idx, gi) in self.iter_all():
             if not isinstance(inst, Instruction):
                 continue
             if inst.is_definition():
@@ -456,8 +461,8 @@ class ShaderBlock(SyntaxTree):
 
         raise NoFreeRegisters(reg_type)
 
-    def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
-        for (node, parent, idx) in self.iter_all():
+    def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None, re_callbacks=()):
+        for (node, parent, idx, gi) in self.iter_all():
             if isinstance(node, Register):
                 if not replace_dcl and parent.is_declaration():
                     continue
@@ -468,13 +473,19 @@ class ShaderBlock(SyntaxTree):
                     parent[idx] = insts[node.opcode]
                 if callbacks is not None and node.opcode in callbacks:
                     callbacks[node.opcode](self, node, parent, idx)
+                for (exp, cb) in re_callbacks:
+                    match = exp.match(node.opcode)
+                    if match:
+                        cb(self, node, parent, idx, match, gi)
+            if isinstance(node, StripDuringConversion):
+                parent[idx] = WhiteSpace(' ')
 
     def discard_if_unused(self, regs, reason = 'unused'):
         self.analyse_regs()
         discard = self.unref_consts.intersection(RegSet(regs))
         if not discard:
             return
-        for (node, parent, idx) in self.iter_all():
+        for (node, parent, idx, gi) in self.iter_all():
             if isinstance(node, Instruction) and node.is_definition() and node.args[0] in discard:
                 parent[idx] = CPPStyleComment('// Discarded %s constant %s' % (reason, node.args[0]))
 
@@ -577,6 +588,87 @@ class VS2(VertexShader):
         vs_to_shader_model_3_common(self, 'vs_2_0', args)
         insert_converted_by(self, 'vs_2_0')
 
+class PS11(PixelShader):
+    model = 'ps_1_1'
+
+    x2 = re.compile(r'^(?P<before>.+)(?P<modifier>_x2)(?P<after>.*)$')
+    x4 = re.compile(r'^(?P<before>.+)(?P<modifier>_x4)(?P<after>.*)$')
+    x8 = re.compile(r'^(?P<before>.+)(?P<modifier>_x8)(?P<after>.*)$')
+    d2 = re.compile(r'^(?P<before>.+)(?P<modifier>_d2)(?P<after>.*)$')
+    d4 = re.compile(r'^(?P<before>.+)(?P<modifier>_d4)(?P<after>.*)$')
+    d8 = re.compile(r'^(?P<before>.+)(?P<modifier>_d8)(?P<after>.*)$')
+
+    def to_shader_model_3(self, args):
+        self.analyse_regs()
+        self.insert_decl()
+        replace_regs = {}
+
+        # For _x* and _d* instruction modifier fixups:
+        mul_reg = self._find_free_reg('c', PS3)
+        div_reg = self._find_free_reg('c', PS3)
+        self.insert_decl('def', [mul_reg, '2', '4', '8', '0'])
+        self.insert_decl('def', [div_reg, '0.5', '0.25', '0.125', '0'])
+
+        if 'v' in self.reg_types:
+            for reg in sorted(self.reg_types['v']):
+                opcode = 'dcl_color'
+                if reg.num:
+                    opcode = 'dcl_color%d' % reg.num
+                self.insert_decl(opcode, [reg])
+
+        if 't' in self.reg_types:
+            for reg in sorted(self.reg_types['t']):
+                out = self._find_free_reg('r', PS3)
+                replace_regs[reg.reg] = out
+
+        new_dcls = []
+
+        def fixup_ps11_tex(tree, node, parent, idx):
+            reg = node.args[0]
+            dcl = 'dcl_texcoord%d' % reg.num
+            vreg = self._find_free_reg('v', PS3)
+            sreg = 's%d' % reg.num
+            new_dcls.append(('dcl_texcoord%d' % reg.num, [vreg]))
+            new_dcls.append(('dcl_2d', [sreg])) # FIXME: What if it's not a Tex2D?
+            parent[idx] = NewInstruction('texld', (reg, vreg, sreg))
+
+        def fixup_ps11_modifier(tree, node, parent, idx, match, gi):
+            reg = node.args[0]
+            node.opcode = match.group('before') + match.group('after')
+            node[0] = node.opcode
+            modifier = match.group('modifier')
+            if modifier[1] == 'x':
+                creg = mul_reg
+            elif modifier[1] == 'd':
+                creg = div_reg
+            if modifier[2] == '2':
+                component = 'x'
+            elif modifier[2] == '4':
+                component = 'y'
+            elif modifier[2] == '8':
+                component = 'z'
+            tree.insert_instr(gi + 2, NewInstruction('mul', [reg, reg, '%s.%s' % (creg, component)]))
+
+        self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
+                {'tex': fixup_ps11_tex}, (
+                    (self.x2, fixup_ps11_modifier),
+                    (self.x4, fixup_ps11_modifier),
+                    (self.x8, fixup_ps11_modifier),
+                    (self.d2, fixup_ps11_modifier),
+                    (self.d4, fixup_ps11_modifier),
+                    (self.d8, fixup_ps11_modifier),
+                ))
+
+        for dcl in new_dcls:
+            self.insert_decl(*dcl)
+        self.insert_decl()
+
+        self.add_inst('mov', ['oC0', 'r0'])
+
+        insert_converted_by(self, self.model) # Do this before changing the class!
+        self.__class__ = PS3
+
+
 class PS2(PixelShader):
     model = 'ps_2_0'
 
@@ -618,6 +710,7 @@ sections = {
     'ps_2_0': PS2,
     'ps_2_x': PS2X,
     'vs_1_1': VS11,
+    'ps_1_1': PS11,
 }
 
 def process_sections(tree):
