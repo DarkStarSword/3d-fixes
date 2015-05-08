@@ -710,7 +710,7 @@ sections = {
     'ps_2_0': PS2,
     'ps_2_x': PS2X,
     'vs_1_1': VS11,
-    'ps_1_1': PS11,
+    # 'ps_1_1': PS11, # Not enabling yet as it is pretty alpha code
 }
 
 def process_sections(tree):
