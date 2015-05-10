@@ -77,31 +77,92 @@ mov r20, c200
 // Seems to be more reliable than an input position test:
 if_eq r0.w, c220.y
 	mov r23.x, c220.y // Set flag to indicate we are drawing a full-screen quad
+
+	// Calculate FOV from the camera frustrum:
+	// First, find the distance between the top two points:
+
+	mov r24.xyz, c160
+	mov r25.xyz, c161
+
+	// Subtract the top two corners to find the relative horizontal position:
+	add r24.xyz, r25, -r24
+
+	// Pythagorus to find the distance:
+	dp3 r24.w, r24.xyz, r24.xyz
+	rsq r30.x, r24.w
+	rcp r30.x, r30.x
+
+	// Divide by two as we need 1/2 the FOV:
+	mul r30.x, r30.x, c221.y
+
+	// In this case it turns out that the frustrum coordinates are at the far
+	// clipping plane. Copy in _ProjectionParams from other shaders and multiply by
+	// 1/far in w to get the equivelent of tan(fov_horizontal / 2):
+	mul r30.x, r30.x, c150.w
+
 else
 	mov r23.x, c220.x // Clear flag to indicate we are drawing a light in the scene
+
+	// Our projection matrix will be valid, so we can use the matrices
+	// passed into this shader. Rather than have Helix mod invert the
+	// matrix for us (which will use up one of the two matrix copy slots in
+	// Helix mod), let's do it directly in assembly! It sounds complicated,
+	// but we can make some large simplifications based on assumptions
+	// about the MV and MVP matrices and the fact we only need one cell of
+	// the (inverse) projection matrix, which means it is actually possible
+	// to do in a farily small number of instructions :)
+
+	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+	//    4th column of the MV matrix is 0,0,0,1
+	//
+	// mathomatic simplified it to:
+	// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+	//
+	// Replace row numbers with register components (assumes column-major order):
+	//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+	// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mov r22.xyz, c1
+	mul r20.xyz, c0.yzx, r22.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, c0.zxy, r22.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, c2.xyz
+	// Sum it together to get the determinant:
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
+	// And finally get 1/determinant:
+	rcp r22.w, r22.w
+
+	// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+	//    the 4th column of the MV matrix is 0,0,0,1
+	//
+	// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+	// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+	// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r22.yzx, c2.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+	mul r21.xyz, r22.zxy, c2.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+	// Multiply against 1/determinant:
+	mul r20.xyz, r20.xyz, r22.www
+
+	// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+	//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+	dp3 r30.x, r20.xyz, c4.xyz
+
+	if_eq r30.x, c220.x
+		mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+	else
+		rcp r30.x, r30.x // Calculate P.I[0,0]
+	endif
+
 endif
-
-// Calculate FOV from the camera frustrum:
-// First, find the distance between the top two points:
-
-mov r24.xyz, c160
-mov r25.xyz, c161
-
-// Subtract the top two corners to find the relative horizontal position:
-add r24.xyz, r25, -r24
-
-// Pythagorus to find the distance:
-dp3 r24.w, r24.xyz, r24.xyz
-rsq r30.x, r24.w
-rcp r30.x, r30.x
-
-// Divide by two as we need 1/2 the FOV:
-mul r30.x, r30.x, c221.y
-
-// In this case it turns out that the frustrum coordinates are at the far
-// clipping plane. Copy in _ProjectionParams from other shaders and multiply by
-// 1/far in w to get the equivelent of tan(fov_horizontal / 2):
-mul r30.x, r30.x, c150.w
 
 mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
 
