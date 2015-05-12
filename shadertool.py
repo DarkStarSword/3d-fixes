@@ -1227,7 +1227,8 @@ def auto_fix_vertex_halo(tree, args):
             components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
             components = ''.join(set(itertools.chain(*components)))
             tree.insert_instr(next_line_pos(tree, output_line))
-            instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
+            # Only apply components to destination (as mask) to avoid bugs like this one: "mov o6.yz, r1.yz"
+            instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), temp_reg.reg])
             debug_verbose(-1, "Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
             tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
 
