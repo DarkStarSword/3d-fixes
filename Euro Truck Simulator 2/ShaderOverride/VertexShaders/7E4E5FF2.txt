@@ -1,3 +1,5 @@
+// Sun & bloom around lights
+
     vs_3_0
     dcl_position v0
     dcl_color v1
@@ -6,10 +8,15 @@
     dcl_color o1
     dcl_texcoord o2.xyz
     dcl_texcoord1 o3.xy
-    dp4 o0.x, v0, c0
-    dp4 o0.y, v0, c1
-    dp4 o0.z, v0, c2
-    dp4 o0.w, v0, c3
+
+def c220, 0, 1, 0.0625, 0.5
+def c221, 4, 6, 0, 0
+dcl_2d s3
+
+    dp4 r10.x, v0, c0
+    dp4 r10.y, v0, c1
+    dp4 r10.z, v0, c2
+    dp4 r10.w, v0, c3
     dp4 o2.x, v0, c4
     dp4 o2.y, v0, c5
     dp4 o2.z, v0, c6
@@ -17,3 +24,14 @@
     mov o1, v1
 
 // approximately 9 instruction slots used
+
+// Move sun to infinity. Shader also affects car headlights (and can't filter
+// on texture or pixel shader), so check the depth:
+texldl r31, c220.z, s3
+if_ge r10.w, c221.x
+	if_le r10.w, c221.y
+		mad r10.x, r31.x, r31.y, r10.x
+	endif
+endif
+
+mov o0, r10
