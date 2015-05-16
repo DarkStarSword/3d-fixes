@@ -11,6 +11,8 @@ Fixed
 Known Issues
 ------------
 - Convergence is locked :-(
+- After visiting a Truck shop, the mouse cursor may be stuck at the wrong
+  depth. Restarting the game is the only reliably workaround I've found.
 
 Installation
 ------------
@@ -21,4 +23,4 @@ Notes
 Some of the fixes were a little tricky to separate out from other effects. If
 you spot something at infinity that shouldn't be (such as headlights), or
 something that should be at infinity that isn't (like the sun or clouds) please
-make a save as soon as you notice it and send it to me.
+let me know.
