@@ -14,7 +14,7 @@ Known Issues
 
 Installation
 ------------
-Extract zip file to ...Steam\SteamApps\common\Euro Truck Simulator 2\bin\win_x86\
+Extract zip file to ...Steam\SteamApps\common\Euro Truck Simulator 2\
 
 Notes
 -----
