@@ -14,11 +14,11 @@ def c220, 0, 1, 0.0625, 4
 // depth bounds:
 def c221, 4, 6, 0, 0
 
-// texcoord filter:
+// texcoord filter (no good):
 def c222, 0, 1, 0, 1
 
 // Colour filter:
-def c223, 0.7, 0.4, 0.3, 1.0
+def c223, 0.6, 0.2, 0.1, 1.0 // Red really can't go lower :(
 def c224, 1.2, 1.1, 0.8, 1.1
 
 dcl_2d s3
@@ -44,24 +44,20 @@ texldl r31, c220.z, s3
 // at certain depths (easiest to see - put truck in reverse, use exterior cam
 // and zoom):
 
-//if_ge r10.w, c221.x
-//	if_le r10.w, c221.y
+if_ge r10.w, c221.x
+if_le r10.w, c221.y
 
-// Attempt 2 - check the texture coordinates:
+	// Attempt 3 - check the colour:
 
-// if_ge v2.x, c222.x
-// if_le v2.x, c222.y
-// if_ge v2.y, c222.z
-// if_le v2.y, c222.w
+	sge r28, v1, c223
+	slt r29, v1, c224
+	min r30, r28, r29
+	dp4 r30.x, r30, c220.y
+	if_eq r30.x, c220.w
+	//if_eq r28.x, c220.y // Use to test individual components
+		mad r10.x, r31.x, r31.y, r10.x
+	endif
 
-// Attempt 3 - check the colour:
-
-sge r28, v1, c223
-slt r29, v1, c224
-min r30, r28, r29
-dp4 r30.x, r30, c220.y
-if_eq r30.x, c220.w
-	mad r10.x, r31.x, r31.y, r10.x
 endif
-
+endif
 mov o0, r10
