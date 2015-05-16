@@ -9,17 +9,27 @@
     dcl_texcoord o2.xyz
     dcl_texcoord1 o3.xy
 
-def c220, 0, 1, 0.0625, 4
+def c220, 0, 1, 0.0625, 3
 
 // depth bounds:
 def c221, 4, 6, 0, 0
 
-// texcoord filter (no good):
-def c222, 0, 1, 0, 1
-
-// Colour filter:
+// Sun colour bounds filter:
 def c223, 0.6, 0.2, 0.1, 1.0 // Red really can't go lower :(
 def c224, 1.2, 1.1, 0.8, 1.1
+
+// White lights (e.g. headlights)
+// Also - somehow matches green / yellow traffic lights?
+def c225, 0.50, 0.50, 0.50, 0 //0.8
+def c226, 0.51, 0.51, 0.51, 0 //1.01
+
+// Red lights (e.g. break lights)
+def c227, 0.10, 0.10, 0.10, 0
+def c228, 0.11, 0.11, 0.11, 0
+
+// White lights on some trucks
+def c229, 0.63, 0.63, 0.63, 0
+def c230, 0.64, 0.64, 0.64, 0
 
 dcl_2d s3
 
@@ -47,15 +57,39 @@ texldl r31, c220.z, s3
 if_ge r10.w, c221.x
 if_le r10.w, c221.y
 
-	// Attempt 3 - check the colour:
+	// Attempt 2 - filter on texture coordinates - no go.
 
-	sge r28, v1, c223
-	slt r29, v1, c224
+	// Attempt 3 - check the sun colour:
+	// Gave up on this - the sun changes colour too much throughout the
+	// day/weather and I couldn't define a range that always matched it
+	// without matching other lights as well.
+	// sge r28, v1, c223
+	// slt r29, v1, c224
+	// min r30, r28, r29
+	// dp4 r30.x, r30, c220.y
+	// if_eq r30.x, c220.w
+
+	// Attempt 4 - blacklist other lights:
+	// This turns out to be workable - there are only a few specific
+	// colours that the other lights seem to use:
+	sge r28, v1, c225
+	slt r29, v1, c226
 	min r30, r28, r29
-	dp4 r30.x, r30, c220.y
-	if_eq r30.x, c220.w
-	//if_eq r28.x, c220.y // Use to test individual components
-		mad r10.x, r31.x, r31.y, r10.x
+	dp3 r30.x, r30.xyz, c220.y
+	if_ne r30.x, c220.w
+		sge r28, v1, c227
+		slt r29, v1, c228
+		min r30, r28, r29
+		dp3 r30.x, r30.xyz, c220.y
+		if_ne r30.x, c220.w
+			sge r28, v1, c229
+			slt r29, v1, c230
+			min r30, r28, r29
+			dp3 r30.x, r30.xyz, c220.y
+			if_ne r30.x, c220.w
+				mad r10.x, r31.x, r31.y, r10.x
+			endif
+		endif
 	endif
 
 endif
