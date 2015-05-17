@@ -9,6 +9,7 @@ Fixed
 - Moved highlights on ocean floor to correct depth
 - Sun shafts
 - Underwater crepuscular rays
+- Automatically adjust the crosshair depth
 - Automatically remove the crosshair when it is faded out
 
 Installation
