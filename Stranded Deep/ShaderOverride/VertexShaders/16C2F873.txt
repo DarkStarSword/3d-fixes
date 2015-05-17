@@ -134,6 +134,11 @@ dcl_color o3
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
+dcl_2d s3 // Copy of _CameraDepthTexture
+
+// For loop to improve stereo cursor accuracy:
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
     mov o3, v1
     mov o0.xy, v2
@@ -143,10 +148,58 @@ dcl_2d s0
     dp4 r0.y, v0, c1
     dp4 r0.x, v0, c0
 
-// approximately 7 instruction slots used
+texldl r31, c220.z, s0
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --ui=c200.z --git VertexShader_59_CRC32_16C2F873.txt
-texldl r1, c220.z, s0
-mad r0.x, r1.x, c200.z, r0.x
+	// Adjust cursor depth based on the W component of the refr_sampler copied from
+	// the water shader, which has the scene depth.
+	// How do I know this? The water was the only surface with a halo around nearer
+	// objects, which suggests it had access to the depth buffer in some way (it
+	// would use this to calculate the water opacity based on depth). None of the
+	// sampler names sounded promising, so I determined that the texkill
+	// instruction caused the halo (removing it removed the halo), so from there it
+	// was a simple matter of looking at the samplers that provided input to that
+	// instruction and directly outputing the contents of the sampler to identify
+	// the channel with the depth information.
+
+	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
+	// center of the screen and work our way towards center + separation (ideally
+	// we would loop one pixel at a time, but as the loop counts must be constant
+	// we can't do that here, so we just choose a granuality in i0 and c227.
+	// Alternatively we could loop one pixel at a time with a hardcoded maximum
+	// number of pixels)
+
+	mov r20.xyzw, c220.wwxx		// xy=sample coords, z = X offset from center, w = depth
+	mov r21, r20			// Working copy
+	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
+	rep i0
+		mad r21.z, r31.x, c227.x, r21.z	// adjustment += separation / i0.x
+
+		// Calculate W for this adjustment amount:
+		add r21.w, r31.x, -r21.z	// separation - adjustment
+		rcp r21.w, r21.w
+		mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
+
+		// Read depth texture at this pixel:
+		//add r21.x, c220.w, r21.z	// X = 0.5 + adjustment
+		// Had to divide adjustment by 2 for whatever reason:
+		mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
+		texldl r5, r21.xy, s3
+
+		// scale depth buffer to world Z (game dependent - look for scaling applied to
+		// the depth buffer wherever else it is used. In the case of Unity we use
+		// _ZBufferParams):
+		mad r5.x, r5.x, c150.x, c150.y
+		add r5.y, c150.z, c150.w // Derive 1/far from _ZBufferParams
+		mul r5.x, r5.x, r5.y
+		rcp r5.x, r5.x
+
+		// If the sampled depth is closer than the calculated depth, exit the loop:
+		break_ge r21.w, r5.x
+
+		// Set the output depth to this pixel
+		mov r20, r21
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r0.x, r0.x, r20.z
 mov o2, r0

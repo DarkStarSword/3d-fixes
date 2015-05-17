@@ -71,8 +71,6 @@ dcl_position o1
 dcl_color o2
 
 def c220, 0, 1, 0.0625, 0.5
-def c221, 1, 1, 1, 1 // Colour
-def c223, 0.05, 0.06, 0.08, 0.09 // Item description Y bounds, top + bottom are separate
 dcl_2d s0
 dcl_2d s3 // Copy of _CameraDepthTexture
 
@@ -87,35 +85,8 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
     dp4 r0.y, v0, c1
     dp4 r0.x, v0, c0
 
-mov r30.x, c220.y
-
-// Detect item description text based on...
-// colour (RGB, not A):
-if_eq v1.x, c221.x
-if_eq v1.y, c221.y
-if_eq v1.z, c221.z
-	// vertical position (bottom):
-	if_ge r0.y, c223.x
-	if_le r0.y, c223.y
-		mov r30.x, c220.w
-	endif
-	endif
-	// vertical position (top):
-	if_ge r0.y, c223.z
-	if_le r0.y, c223.w
-		mov r30.x, c220.w
-	endif
-	endif
-endif
-endif
-endif
-
 texldl r31, c220.z, s0
 
-if_eq r30.x, c220.y
-	mad r0.x, r31.x, c200.z, r0.x
-endif
-if_eq r30.x, c220.w
 	// Adjust cursor depth based on the W component of the refr_sampler copied from
 	// the water shader, which has the scene depth.
 	// How do I know this? The water was the only surface with a halo around nearer
@@ -168,5 +139,4 @@ if_eq r30.x, c220.w
 
 	// Finally adjust the X coordinate:
 	add r0.x, r0.x, r20.z
-endif
 mov o1, r0
