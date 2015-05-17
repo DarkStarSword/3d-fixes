@@ -34,9 +34,6 @@ Keys
 - F: Holding sets a convergence suitable for use with the watch, and will
   return to the L preset on release.
 
-- X: Cycles between four four HUD depth presets - 75% (default), 99.5%, screen
-  depth and 50%.
-
 - V: Cycles crosshair modes between automatic, always enabled and always
   disabled (crosshair must be enabled in the settings).
 
