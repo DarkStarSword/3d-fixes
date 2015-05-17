@@ -1,0 +1,172 @@
+// CRC32: A8CF097D | Matched 7 variants of 7 shaders: Beam Team/Post Effects/FXAA, Beam Team/Post Effects/Water Distort and Droplets, Beam Team/Special/Texture Distortion, Custom/VolumetricClouds, Hidden/Beam Team/Ocean/ComputeDisplacement, Hidden/Beam Team/Ocean/ComputeSpectrum, Hidden/Beam Team/Ocean/Encode Float/DecodeToFloat2D
+// 
+//    Unity headers extracted from FXAA.shader
+//    Shader "Beam Team/Post Effects/FXAA" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from BeamTeamWaterDistortAndDroplets.shader
+//    Shader "Beam Team/Post Effects/Water Distort and Droplets" {
+//      Properties {
+//       _MainTex ("Base", 2D) = "black" {}
+//      }
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Distortion.shader
+//    Shader "Beam Team/Special/Texture Distortion" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" {}
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Offset -1, -1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from VolumetricClouds.shader
+//    Shader "Custom/VolumetricClouds" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ComputeDisplacement.shader
+//    Shader "Hidden/Beam Team/Ocean/ComputeDisplacement" {
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ComputeSpectrum.shader
+//    Shader "Hidden/Beam Team/Ocean/ComputeSpectrum" {
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from DecodedToFloat2D.shader
+//    Shader "Hidden/Beam Team/Ocean/Encode Float/DecodeToFloat2D" {
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_position v0
+    dcl_texcoord v1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov o1.xy, v1
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.y, v0, c1
+    dp4 r0.x, v0, c0
+
+// approximately 5 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --ui=c200.z VertexShader_1_CRC32_A8CF097D.txt
+texldl r31, c220.z, s0
+mad r0.x, r31.x, c200.z, r0.x
+mov o0, r0
