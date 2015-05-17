@@ -5,14 +5,15 @@ Fixed
 -----
 - Shadows
 - Halos
-- Crosshair toggle key added
+- Automatic crosshair depth added
 - Distracting lens grit removed
 
 Keys
 ----
 - Backslash: Load recommended convergence preset (use after starting new game)
 - X: Cycle between five UI depth presets
-- V: Toggle crosshair (HUD must be enabled in settings)
+- V: Cycle crosshair between three modes: auto, match UI depth and off (HUD
+  must be enabled in settings)
 - L: Toggle lens grit
 
 Notes
