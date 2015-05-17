@@ -1,11 +1,55 @@
+// CRC32: C70AB70C | Unity headers extracted from BlendModesOverlay.shader
+// Shader "Hidden/BlendModesOverlay" {
+//   Properties {
+//    _MainTex ("Screen Blended", 2D) = "" { }
+//    _Overlay ("Color", 2D) = "grey" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 4/5 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       ColorMask RGB
+//       GpuProgramID 222246
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Float 0 [_Intensity]
+//           SetTexture 0 [_Overlay] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
     def c1, -0.5, 1, 0, 2
     dcl_texcoord v0.xy
     dcl_texcoord1 v1.xy
     dcl_2d s0
     dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.6
+dcl_2d s13
+
     texld_pp r0, v1, s1
+
+// Lens grit. Adjusting the sample coordinates to adjust the depth of this
+// effect doesn't really help
+
     texld_pp r1, v0, s0
+
+// Instead, optionally disable lens grit - set to 0.6 to approximately match
+// original brightness:
+mov r20, c200
+if_eq r20.y, c220.x
+	mov r1, c220.wwww
+endif
+
     add r2.xyz, r0, r0
     add r3.xyz, r0, c1.x
     cmp r4.xyz, r3, c1.z, c1.y
@@ -19,5 +63,3 @@
     lrp_pp r2.xyz, c0.x, r1, r0
     mov_pp r2.w, r0.w
     mov_pp oC0, r2
-
-// approximately 15 instruction slots used (2 texture, 13 arithmetic)
