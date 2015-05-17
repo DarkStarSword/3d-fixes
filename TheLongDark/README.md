@@ -11,9 +11,9 @@ Fixed
 Keys
 ----
 - Backslash: Load recommended convergence preset (use after starting new game)
-- X: Cycle between five UI depth presets
-- V: Cycle crosshair between three modes: auto, match UI depth and off (HUD
-  must be enabled in settings)
+- X: Cycle between five UI depth presets (other than the crosshair)
+- V: Toggle crosshair between automatic depth and disabled (HUD must be enabled
+  in settings)
 - L: Toggle lens grit
 
 Notes

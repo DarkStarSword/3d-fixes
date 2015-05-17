@@ -108,7 +108,7 @@ dcl_2d s3 // Copy of _CameraDepthTexture
 
 // For loop to improve stereo cursor accuracy:
 defi i0, 255, 0, 0, 0
-def c227, 0.00390625, 15000, 0, 0.5 // 1/i0.x, 0.5
+def c227, 0.00390625, 0, 0, 0.5 // 1/i0.x, 0.5
 
     dp4 r0.x, c0, v0
     dp4 r0.y, c1, v0
@@ -212,8 +212,9 @@ if_eq r30.x, c220.w
 		// the depth buffer wherever else it is used. In the case of Unity we use
 		// _ZBufferParams):
 		mad r5.x, r5.x, c150.x, c150.y
+		add r5.y, c150.z, c150.w // Derive 1/far from _ZBufferParams
+		mul r5.x, r5.x, r5.y
 		rcp r5.x, r5.x
-		mul r5.x, r5.x, c227.y
 
 		// If the sampled depth is closer than the calculated depth, exit the loop:
 		break_ge r21.w, r5.x
