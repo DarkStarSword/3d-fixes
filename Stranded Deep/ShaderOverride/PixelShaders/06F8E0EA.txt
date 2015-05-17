@@ -1,5 +1,5 @@
-// CRC32: 72C35664 | Unity headers extracted from Ocean.shader
-// Shader "BEAM Team/Ocean/Ocean" {
+// CRC32: 06F8E0EA | Unity headers extracted from Ocean.shader
+// Shader "Beam Team/Ocean/Ocean" {
 //   Properties {
 //    _Map0 ("Base (RGB)", 2D) = "black" {}
 //    _Map1 ("Base (RGB)", 2D) = "black" {}
@@ -52,8 +52,8 @@
 //           Float 17 [_WaveBlend]
 //           Float 18 [_Timer]
 //           Vector 19 [_BigWaves]
-//           Vector 20 [_WindDir]
-//           Float 21 [_WindSpeed]
+//           Vector 20 [_Direction]
+//           Float 21 [_Speed]
 //           Vector 22 [_SunDirection]
 //           Float 23 [_DetailFresnelLevel]
 //           Float 24 [_RefractionLevel]
@@ -95,17 +95,17 @@
     dcl_2d s7
     dcl_2d s8
     dcl_2d s9
-    def c31, 2, -1, 1, 0
-    def c32, 0.768900156, 0.5, 0.783792973, 2.71828198
-    def c33, 0.0078125, 0.0199999996, 0.453999996, 0.5
-    def c34, -100, 0.0066986098, 0.399902344, -50
-    def c35, 0.700195313, 0.300048828, 2, -1.20019531
-    def c36, 0.0200042706, 1.5, 123456792, 0.170000002
-    def c37, 1, 0.00392156979, 1.53799992e-005, 5.99999979e-008
-    def c38, 0, 2, 1.59960938, 4
-    def c39, 0.100000001, 0.0599999987, 0.0299987793, 0.300000012
-    def c40, 10, 0.998000026, -0.5, 0
-    dcl_texcoord v0
+    def c31, 2.00000000, -1.00000000, 1.00000000, 0.00000000
+    def c32, 0.76890016, 0.50000000, 0.78379297, 2.71828198
+    def c33, 0.00781250, 0.02000000, 0.45400000, 0.50000000
+    def c34, -100.00000000, 0.00669861, 0.39990234, -50.00000000
+    def c35, 0.70019531, 0.30004883, 2.00000000, -1.20019531
+    def c36, 0.02000427, 1.50000000, 123456792.00000000, 0.17000000
+    def c37, 1.00000000, 0.00392157, 0.00001538, 0.00000006
+    def c38, 0.00000000, 2.00000000, 1.59960938, 4.00000000
+    def c39, 0.10000000, 0.06000000, 0.02999878, 0.30000001
+    def c40, 10.00000000, 0.99800003, -0.50000000, 0
+    dcl_texcoord0 v0
     dcl_texcoord1 v1
     dcl_texcoord2 v2.xyz
     dcl_texcoord3 v3.xyz
@@ -189,9 +189,9 @@ mad r21.x, r31.w, r31.x, r21.x
     add r1.y, r0.x, c31.z
     mov_pp r0.y, c26
     add_pp r0.y, c34.w, r0
-    mul_sat_pp r1.x, r0.y, c36
+    mul_pp_sat r1.x, r0.y, c36
     add_pp r1.x, -r1, c36.y
-    max_sat_pp r1.x, r1, c32.y
+    max_pp_sat r1.x, r1, c32.y
     mov_pp r0.x, -r3
     mov_pp r0.z, -r3.y
     mov_pp r0.y, c34.z
@@ -213,15 +213,15 @@ mad r21.x, r31.w, r31.x, r21.x
     mul_pp r1.xyz, r2.y, r1
     mad_pp r0.xyz, -r1, c31.x, -r0
     dp3_pp r0.x, v4.xzyw, r0
-    mad_sat_pp r0.y, r0.x, c35.z, c35.w
-    mad_sat_pp r0.x, r2.y, c35, c35.y
+    mad_pp_sat r0.y, r0.x, c35.z, c35.w
+    mad_pp_sat r0.x, r2.y, c35, c35.y
     texld r2.yw, v6.zwzw, s0
     mad_pp r4.xy, r2.wyzw, c31.x, c31.y
     mul_pp r2.zw, r4.xyxy, r4.xyxy
     mul_pp r0.x, r0, r0.y
     add r1.z, r2.x, -r20
     abs r1.z, r1
-    add_sat_pp r3.z, r2, r2.w
+    add_pp_sat r3.z, r2, r2.w
     mul r2.x, -r1.z, c36.w
     mov_pp r1.w, c21.x
     mov r1.xy, c20
@@ -235,7 +235,7 @@ mad r21.x, r31.w, r31.x, r21.x
     texld r6.yw, v6, s0
     mad_pp r2.xy, r6.wyzw, c31.x, c31.y
     mul_pp r2.zw, r2.xyxy, r2.xyxy
-    add_sat_pp r2.z, r2, r2.w
+    add_pp_sat r2.z, r2, r2.w
     add_pp r3.z, -r3, c31
     rsq_pp r2.w, r3.z
     rcp_pp r4.z, r2.w
@@ -250,7 +250,7 @@ mad r21.x, r31.w, r31.x, r21.x
     add r1.z, -r0.x, c31
     mad_pp r1.xy, r1.wyzw, c31.x, c31.y
     mul_pp r0.xy, r1, r1
-    add_sat_pp r0.y, r0.x, r0
+    add_pp_sat r0.y, r0.x, r0
     mov_pp r0.x, c27
     mul r0.z, r0, r1
     add_pp r5.z, c31, -r0.x
@@ -270,7 +270,7 @@ mad r21.x, r31.w, r31.x, r21.x
     mov_pp r2.w, c26.y
     add_pp r1.z, c34.x, r2.w
     rsq_pp r3.z, r3.z
-    mul_sat_pp r1.z, r1, c34.y
+    mul_pp_sat r1.z, r1, c34.y
     mul_pp r2.w, r1.z, r1
     mul_pp r1.xy, r3.z, r1
     dp3_pp r0.y, r4, r4
@@ -335,7 +335,7 @@ mad r21.x, r31.w, r31.x, r21.x
     rsq_pp r6.x, r2.y
     mul r5.w, -r2.x, c33.x
     pow_sat r2, c32.w, r5.w
-    mad_pp r0.xyz, r0.w, r0, -r1
+    add_pp r0.xyz, r0, -r1
     mul r1.w, r1, r0
     mad r1.w, r1, r2.x, c33.y
     mad_pp r0.xyz, r1.w, r0, r1
@@ -384,5 +384,3 @@ mad r21.x, r31.w, r31.x, r21.x
     add_pp r0.xyz, r0, r1
     mul_pp oC0.xyz, r0, r4.w
     mov_pp oC0.w, c31.z
-
-// approximately 256 instruction slots used (18 texture, 238 arithmetic)
