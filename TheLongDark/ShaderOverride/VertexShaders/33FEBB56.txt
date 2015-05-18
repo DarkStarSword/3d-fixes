@@ -49,11 +49,14 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
     mov o0.xyw, r0
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_Final Interpolation/vp/33FEBB56.txt
-texldl r31, c220.z, s0
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
-
     mov o1.xz, r0.xyww
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c201.x -f Hidden_Final Interpolation/vp/33FEBB56.txt
+texldl r31, c220.z, s0
+if_ne r31.x, -r31.x
+mov r31.w, c201.x
+if_eq r31.w, c220.x
+mov o0.xyzw, c220.xxxx
+endif
+endif
