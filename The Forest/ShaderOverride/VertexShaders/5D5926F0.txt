@@ -1,0 +1,103 @@
+// CRC32: 5D5926F0 | Matched 2 variants of 1 shaders: Bolt/Area Of Interest Spheres
+// 
+//    Unity headers extracted from BoltShaderPOI.shader
+//    Shader "Bolt/Area Of Interest Spheres" {
+//      Properties {
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One One
+//          GpuProgramID 220702
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_SHAb]
+//              Vector 13 [unity_SHAg]
+//              Vector 12 [unity_SHAr]
+//              Vector 17 [unity_SHBb]
+//              Vector 16 [unity_SHBg]
+//              Vector 15 [unity_SHBr]
+//              Vector 18 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c19, 0.150000006, 0.5, 1, 0
+    dcl_position v0
+    dcl_normal v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mad r0.xyz, r0, c19.x, v0
+    mov r0.w, v0.w
+    dp4 o0.x, c4, r0
+    dp4 o0.y, c5, r0
+    dp4 o0.z, c6, r0
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o4, r1 // Relocated from line 67 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Bolt_Area Of Interest Spheres/vp/5D5926F0.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c19.y
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c10.x
+
+//     mov o4, r1 // Relocated to line 63 with shadertool.py
+mov o4.zy, r1.zy // Inserted by shadertool.py
+
+    mov o1.zw, r1
+    mul r2.w, r0.x, c19.y
+    mad o1.xy, r2.z, c11.zwzw, r2.xwzw
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c15, r2
+    dp4 r3.y, c16, r2
+    dp4 r3.z, c17, r2
+    mad r0.xyz, c18, r0.x, r3
+    mov r1.w, c19.z
+    dp4 r2.x, c12, r1
+    dp4 r2.y, c13, r1
+    dp4 r2.z, c14, r1
+    add o3.xyz, r0, r2
+    mov o2, c19.w

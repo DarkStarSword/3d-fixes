@@ -62,16 +62,25 @@ def tokenise(input):
         if not isinstance(value, Strip):
             yield value
 
-def curly_scope(old_tree):
+def _curly_scope(old_tree, pos):
     tree = Tree()
-    while old_tree:
-        token = old_tree.pop(0)
+    end = len(old_tree)
+    while pos < end:
+        token = old_tree[pos]
         if isinstance(token, CurlyRight):
-            return tree
+            return (tree, pos)
         if isinstance(token, CurlyLeft):
-            tree.append(curly_scope(old_tree))
+            (branch, pos) = _curly_scope(old_tree, pos + 1)
+            assert(pos is not None)
+            tree.append(branch)
         else:
             tree.append(token)
+        pos += 1
+    return (tree, None)
+
+def curly_scope(old_tree):
+    (tree, pos) = _curly_scope(old_tree, 0)
+    assert(pos is None)
     return tree
 
 def ignore_whitespace(tree):
@@ -88,10 +97,10 @@ def next_interesting(tree):
         return r
 
 class Keyword(object):
-    def __init__(self, keyword, tokens, parent):
+    def __init__(self, keyword, tokens, parent, args):
         self.keyword = keyword
         self.parent = parent
-        return self.parse(tokens, parent)
+        return self.parse(tokens, parent, args)
 
     def __str__(self):
         return self.keyword
@@ -113,10 +122,10 @@ class Tree(list):
         return '{%s}' % stringify(self)
 
 class NamedTree(Keyword, Tree):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         self.orig_name = next_interesting(tokens)
         self.name = strip_quotes(self.orig_name)
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self, args=args))
 
     def header(self):
         return '%s %s {' % (Keyword.__str__(self), self.orig_name)
@@ -137,11 +146,11 @@ class UnnamedTree(Keyword, Tree):
     def parent_counter(self, val):
         return setattr(self.parent, self.parent_counter_attr, val)
 
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         self.parent_counter += 1
         self.counter = self.parent_counter
 
-        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self))
+        Tree.__init__(self, parse_keywords(next_interesting(tokens), parent=self, args=args))
 
     def header(self):
         return '%s %i/%i {' % (Keyword.__str__(self), self.counter, self.parent_counter)
@@ -150,7 +159,7 @@ class UnnamedTree(Keyword, Tree):
         return '%s\n%s\n}' % (self.header(), stringify_nl(self))
 
 class StringifyLine(Keyword):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         t = []
         while True:
             token = next(tokens)
@@ -163,7 +172,7 @@ class StringifyLine(Keyword):
         return '%s %s' % (Keyword.__str__(self), self.line.strip())
 
 class Keywords(Keyword, set):
-    def parse(self, tokens, parent):
+    def parse(self, tokens, parent, args):
         set.__init__(self, map(strip_quotes, map(str, ignore_whitespace(next_interesting(tokens)))))
 
     def __str__(self):
@@ -188,29 +197,36 @@ keywords = {
 
 shader_index = {}
 shader_list = []
-crc_list = {}
-crc_headers = {}
+hash_list = {}
+hash_headers = {}
 
 def handle_shader_asm(token, parent, asm):
     parent.shader_asm = asm
     # Index shaders by assembly:
     if token in shader_index:
         # Minimise calls to shaderasm.exe
-        parent.crc = shader_index[token][0].crc
+        parent.hash = shader_index[token][0].hash
+        parent.hash_type = shader_index[token][0].hash_type
+        parent.hash_fmt = shader_index[token][0].hash_fmt
     else:
         shader_index[token] = []
-        add_shader_crc(parent)
-        if parent.crc:
-            if parent.crc in crc_list:
-                print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.crc, '-'*17))
-                crc_list[parent.crc].append(parent)
+        add_shader_hash(parent)
+        if parent.hash:
+            if parent.hash in hash_list:
+                if parent.hash_type == 'crc32':
+                    print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.hash, '-'*17))
+                elif parent.hash_type == '3Dmigoto':
+                    print('%s WARNING: 3DMigoto HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
+                else:
+                    print('%s WARNING: HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
+                hash_list[parent.hash].append(parent)
                 print('\n'.join([ \
                         os.path.sep.join(export_filename_combined_long([get_parents(x)], None)) \
-                        for x in crc_list[parent.crc] ]))
+                        for x in hash_list[parent.hash] ]))
                 print('%s OVERRIDING THESE SHADERS MAY BE DANGEROUS %s' % ('-'*18, '-'*18))
                 print()
             else:
-                crc_list[parent.crc] = [parent]
+                hash_list[parent.hash] = [parent]
     shader_index[token].append(parent)
     shader_list.append(parent)
 
@@ -218,7 +234,7 @@ def create_fog_asm(asm):
     tree = shadertool.parse_shader(asm)
     return shadertool.add_unity_autofog(tree)
 
-def parse_keywords(tree, parent=None, filename=None):
+def parse_keywords(tree, parent=None, filename=None, args=None):
     ret = []
     tokens = iter(tree)
     if parent is not None and not hasattr(parent, 'keywords'):
@@ -230,19 +246,21 @@ def parse_keywords(tree, parent=None, filename=None):
             break
 
         if isinstance(token, String):
-            handle_shader_asm(token, parent, strip_quotes(token))
             parent.fog = None
+            if args.type and parent.name not in args.type:
+                continue
+            handle_shader_asm(token, parent, strip_quotes(token))
             continue
 
         if not isinstance(token, Identifier):
             raise SyntaxError('Expected Identifier, found: %s' % repr(token))
 
         if token in keywords:
-            item = keywords[token](token, tokens, parent)
+            item = keywords[token](token, tokens, parent, args)
         else:
             # I used to be strict and fail on any unrecognised keywords, but I
             # kept running into more so now I just stringify them:
-            item = StringifyLine(token, tokens, parent)
+            item = StringifyLine(token, tokens, parent, args)
 
         if filename is not None:
             item.filename = filename
@@ -312,6 +330,29 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
+def get_hash_filename_base(shader):
+    if shader.sub_program.hash_type == 'crc32':
+        return shader.sub_program.hash_fmt % shader.sub_program.hash
+
+    if shader.sub_program.hash_type == '3Dmigoto':
+        # Emulate 3Dmigto style naming
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
+            shader_type = 'ps'
+        elif shader.program.name == 'vp': # Vertex Shader
+            shader_type = 'vs'
+        elif shader.program.name == 'gp': # Geometry Shader
+            shader_type = 'gs'
+        elif shader.program.name == 'hp': # Hull Shader
+            shader_type = 'hs'
+        elif shader.program.name == 'dp': # Domain Shader
+            shader_type = 'ds'
+        # Still missing compute shaders from this list
+        else:
+            raise Exception("Unknown program type: %s" % shader.program.name)
+        return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
+
+    assert(False)
+
 def export_filename_combined_long(shaders, args):
     ret = []
 
@@ -337,8 +378,8 @@ def export_filename_combined_long(shaders, args):
 
     ret.append(shaders[0].program.name)
 
-    if args and not args.filename_keywords and shaders[0].sub_program.crc:
-        ret.append('%.8X' % shaders[0].sub_program.crc)
+    if args and not args.filename_keywords and shaders[0].sub_program.hash:
+        ret.append(get_hash_filename_base(shaders[0]))
     else:
         def keywords(shader):
             if 'Keywords' in shader.sub_program.keywords:
@@ -356,14 +397,25 @@ def export_filename_combined_long(shaders, args):
     return ret
 
 def export_filename_combined_short(shader, args):
-    if not shader.sub_program.crc:
+    if not shader.sub_program.hash:
         return None
-    return (
-        'ShaderCRCs',
-        shader.shader.name,
-        shader.program.name,
-        '%.8X' % shader.sub_program.crc,
-    )
+
+    if shader.sub_program.hash_type == 'crc32':
+        return (
+            'ShaderCRCs',
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
+        )
+
+    if shader.sub_program.hash_type == '3Dmigoto':
+        return (
+            'ShaderFNVs',
+            shader.shader.name,
+            get_hash_filename_base(shader),
+        )
+
+    assert(False)
 
 def export_filename_combined(sub_programs, args):
     shaders = list(map(get_parents, sub_programs))
@@ -500,34 +552,84 @@ def calc_shader_crc(shader_asm):
 
     return zlib.crc32(blob)
 
-def add_shader_crc(sub_program):
-    sub_program.crc = None
-    if sub_program.name != 'd3d9':
-        return
+def add_shader_hash_crc(sub_program):
     try:
-        sub_program.crc = calc_shader_crc(sub_program.shader_asm)
+        sub_program.hash = calc_shader_crc(sub_program.shader_asm)
+        sub_program.hash_type = 'crc32'
+        sub_program.hash_fmt = '%.8X'
     except:
         pass
-    if not sub_program.crc:
+    if not sub_program.hash:
         print('WARNING: Unable to determine shader CRC32 - is shaderasm.exe installed?')
 
-def add_header_crc(headers, sub_program):
-    if sub_program.crc:
-        if sub_program.fog:
-            headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.crc, sub_program.fog, sub_program.fog_orig_crc, headers[0])
+fnv_offset_basis = 0xcbf29ce484222325
+fnv_prime = 0x100000001b3
+def fnv64_1(input):
+    hash = fnv_offset_basis
+    for octet in input:
+        assert(octet & 0xff == octet)
+        hash = (hash * fnv_prime) & 0xffffffffffffffff
+        hash = hash ^ octet
+    return hash
+
+def fnv_3Dmigoto_shader(input):
+    # 3Dmigoto does not implement FNV correctly as it starts with hash=0
+    # instead of hash=fnv_offset_basis, but we need to match it's
+    # implementation:
+    hash = 0
+    for octet in input:
+        assert(octet & 0xff == octet)
+        hash = (hash * fnv_prime) & 0xffffffffffffffff
+        hash = hash ^ octet
+    return hash
+
+def add_shader_hash_fnv(sub_program):
+    bin = decode_unity_d3d11_shader(sub_program.shader_asm)
+
+    # Does not match 3Dmigoto's hash function:
+    # sub_program.hash = fnv64_1(bin)
+    # sub_program.hash_type = 'fnv64'
+
+    sub_program.hash = fnv_3Dmigoto_shader(bin)
+    sub_program.hash_type = '3Dmigoto'
+
+    sub_program.hash_fmt = '%.16x'
+
+def add_shader_hash(sub_program):
+    sub_program.hash = None
+    sub_program.hash_type = None
+    sub_program.hash_fmt = None
+    if sub_program.name == 'd3d9':
+        return add_shader_hash_crc(sub_program)
+    if sub_program.name.startswith('d3d11'):
+        return add_shader_hash_fnv(sub_program)
+
+def add_header_hash(headers, sub_program):
+    if sub_program.hash:
+        if sub_program.hash_type == 'crc32':
+            if sub_program.fog:
+                headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
+            else:
+                headers[0] = 'CRC32: %.8X | %s' % (sub_program.hash, headers[0])
+        # elif sub_program.hash_type == 'fnv64':
+        #     headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
+        elif sub_program.hash_type == '3Dmigoto':
+            headers[0] = '3DMigoto: %.16x | %s' % (sub_program.hash, headers[0])
         else:
-            headers[0] = 'CRC32: %.8X | %s' % (sub_program.crc, headers[0])
+            raise Exception("Unknown hash type: %s" % sub_program.hash_type)
 
 def index_headers(headers, sub_program):
-    if sub_program.crc:
-        crc_headers['%.8X' % sub_program.crc] = headers
+    # TODO: Also store d3d11 hashes, but no point until there is a tool to look
+    # them up
+    if sub_program.hash and sub_program.hash_type == 'crc32':
+        hash_headers['%.8X' % sub_program.hash] = headers
 
 def save_header_index():
     try:
         out = json.load(open(shader_idx_filename, 'r', encoding='utf-8'))
-        out.update(crc_headers)
+        out.update(hash_headers)
     except:
-        out = crc_headers
+        out = hash_headers
     print('Saving header index %s...' % shader_idx_filename)
     json.dump(out, open(shader_idx_filename, 'w', encoding='utf-8'), sort_keys = True, indent = 0)
 
@@ -537,20 +639,55 @@ def add_vanity_tag(headers):
     headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
     headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
 
+def decode_unity_d3d11_shader(asm):
+    # Pretty straight forward encoding - each byte is split in half and offset
+    # from the letter 'a'.
+
+    # Strip off first line, which is the shader model and not part of the
+    # binary file:
+    asm = list(asm[asm.find('\n'):])
+
+    def next_char():
+        char = ' '
+        while char.isspace():
+            char = asm.pop(0)
+        return char
+
+    ret = []
+    while len(asm):
+        upper = ord(next_char()) - ord('a')
+        lower = ord(next_char()) - ord('a')
+        assert(upper & 0xffff == upper)
+        assert(lower & 0xffff == lower)
+        ret.append((upper << 4) | lower)
+    return bytes(ret)
+
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
     headers = commentify(headers)
     index_headers(headers, sub_program)
-    print('Extracting %s.txt...' % dest)
-    with open('%s.txt' % dest, 'w') as f:
-        f.write(headers)
-        f.write('\n\n')
-        f.write(indent_like_helix(sub_program.shader_asm))
+
+    if sub_program.name.startswith('d3d11'):
+        print('Extracting %s_headers.txt...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
+            if sub_program.name.startswith('d3d11'):
+                f.write('\n//\n')
+                f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
+        print('Extracting %s_original.bin...' % dest)
+        with open('%s_original.bin' % dest, 'wb') as f:
+            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
+    else:
+        print('Extracting %s.txt...' % dest)
+        with open('%s.txt' % dest, 'w') as f:
+            f.write(headers)
+            f.write('\n\n')
+            f.write(indent_like_helix(sub_program.shader_asm))
 
 def export_shader(sub_program, args):
     headers = collect_headers(sub_program)
-    add_header_crc(headers, sub_program)
+    add_header_hash(headers, sub_program)
     add_vanity_tag(headers)
 
     path_components = export_filename_combined([sub_program], args)
@@ -576,7 +713,7 @@ def dedupe_shaders(shader_list, args):
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
-    add_header_crc(headers, shader_list[0])
+    add_header_hash(headers, shader_list[0])
     add_vanity_tag(headers)
     # print(commentify(headers))
 
@@ -599,6 +736,8 @@ def parse_args():
             help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
     parser.add_argument('--fog', action='store_true',
             help='Generate additional shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--type', action='append',
+            help='Filter types of shaders to process, useful to avoid unecessary slow hash calculations')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')
@@ -615,6 +754,16 @@ def main():
     args = parse_args()
     processed = set()
 
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    import glob
+    f = []
+    for file in args.shaders:
+        if '*' in file:
+            f.extend(glob.glob(file))
+        else:
+            f.append(file)
+    args.shaders = f
+
     for filename in args.shaders:
         shader_list = []
         print('Parsing %s...' % filename)
@@ -625,7 +774,7 @@ def main():
         processed.add(digest)
         tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
         tree = curly_scope(tree)
-        tree = parse_keywords(tree, filename=os.path.basename(filename))
+        tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
 
     if args.fog:
         for shaders in list(shader_index.values()):
@@ -633,15 +782,21 @@ def main():
                 if shader.name != 'd3d9':
                     continue
                 assert(not shader.fog)
-                for fog_tree in create_fog_asm(shader.shader_asm):
-                    fog_asm = str(fog_tree)
-                    if fog_asm == shader.shader_asm:
-                        continue
-                    fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
-                    del fog_shader.crc
-                    fog_shader.fog = fog_tree.fog_type
-                    fog_shader.fog_orig_crc = shader.crc
-                    handle_shader_asm(fog_asm, fog_shader, fog_asm)
+                try:
+                    for fog_tree in create_fog_asm(shader.shader_asm):
+                        fog_asm = str(fog_tree)
+                        if fog_asm == shader.shader_asm:
+                            continue
+                        fog_shader = copy.copy(shader) # Not a deep copy - shader's parent should still link to original, etc
+                        del fog_shader.hash
+                        fog_shader.fog = fog_tree.fog_type
+                        fog_shader.fog_orig_crc = shader.hash
+                        handle_shader_asm(fog_asm, fog_shader, fog_asm)
+                except SyntaxError as e:
+                    import traceback, time
+                    traceback.print_exc()
+                    time.sleep(0.1)
+                    continue
 
     for shaders in shader_index.values():
         if len(shaders) == 1:

@@ -1,0 +1,79 @@
+// CRC32: BAEDDED5 | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassCollectShadows
+// 
+//    Unity headers extracted from Internal-PrePassCollectShadows.shader
+//    Shader "Hidden/Internal-PrePassCollectShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 8:           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+// 2:           Keywords { "SHADOWS_NATIVE" }
+// 4:           Keywords { "SHADOWS_NONATIVE" "SHADOWS_SPLIT_SPHERES" }
+// 1:           Keywords { "SHADOWS_NONATIVE" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_normal0 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+// Extra output to pass the FOV to pixel shaders:
+dcl_texcoord5 o5.x
+
+def c220, 0, 1, 0.0625, 0.5
+def c221, 650, 0.5, 0.00167, 0
+
+    mov o1.xyz, v2
+    mov o0.xy, v1
+    dp4 o2.w, v0, c3
+    dp4 o2.z, v0, c2
+    dp4 o2.y, v0, c1
+    dp4 o2.x, v0, c0
+
+// Calculate FOV from the camera frustrum:
+// First, find the distance between the top two points:
+
+mov r22.xyz, c160
+mov r23.xyz, c161
+
+// Subtract the top two corners to find the relative horizontal position:
+add r24.xyz, r23, -r22
+
+// Pythagorus to find the distance:
+dp3 r24.w, r24.xyz, r24.xyz
+rsq r30.x, r24.w
+rcp r30.x, r30.x
+
+// Divide by two as we need 1/2 the FOV:
+mul r30.x, r30.x, c221.y
+
+// In this case it turns out that the frustrum coordinates are at the far
+// clipping plane. Copy in _ProjectionParams from other shaders and multiply by
+// 1/far in w to get the equivelent of tan(fov_horizontal / 2):
+mul r30.x, r30.x, c150.w
+
+// Copy calculated FOV to pixel shaders:
+mov o5.x, r30.x

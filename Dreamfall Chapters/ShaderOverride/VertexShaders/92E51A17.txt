@@ -106,10 +106,12 @@
     dcl_position v0
     dcl_normal v1
 
-def c220, 0, 1, 0.0625, 0.5
+// Extra output to pass the FOV to pixel shaders:
+dcl_texcoord5 o5.x
+
+def c220, 0, 1, 0.0625, 1
 dcl_2d s0
 
-//      r0.z = (-999 < _LightAsQuad ? 1 : 0)
     mov r0.x, c10
     slt r0.z, c11.w, r0.x
     max r0.z, -r0, r0 // Useless instruction
@@ -119,22 +121,136 @@ dcl_2d s0
     dp4 r0.x, v0, c4
     dp4 r0.y, v0, c5
 
-// Output position about to be copied, apply stereo correction:
+// Determine if drawing a full screen quad by testing if output position w == 1.
+// Seems to be more reliable than an input position test:
+if_eq r0.w, c220.y
+	mov r23.x, c220.y // Set flag to indicate we are drawing a full-screen quad
+
+	// We are drawing a full-screen quad, so we can't use the matrices from
+	// this shader and have to use an alternate source copied from elsewhere:
+
+	// We don't have an unprojection or projection matrix handy, but we can
+	// calculate the projection matrix from the inverted MV matrix in c180
+	// (obtained via HelixMod inverting the MV matrix copied from another
+	// shader) and the MVP matrix as P = MV.I * MVP
+	//
+	// If we assume that we have a typical projection matrix (which is not
+	// necessarily guaranteed, say if a game used D3DMatrixPerspectiveOffCenter,
+	// but that's unlikely, so let's ignore it), i.e.
+	//
+	// P = fh  0 0 0   fh = cot(fov_h / 2)
+	//      0 fv 0 0   fv = cot(fov_v / 2)
+	//      0  0 q 1    q = far / (far - near)
+	//      0  0 v 0    v = -q * near
+	//
+	// Then a typical unprojection matrix will be:
+	//
+	// P.I = 1/fh    0 0 0   1/fh = tan(fov_h / 2)
+	//          0 1/fv 0 0   1/fv = tan(fov_v / 2)
+	//          0    0 0 x    x = too hard, don't care
+	//          0    0 x x
+	//
+	// Then we can significantly simplify the maths. Firstly, we only care about
+	// the X coordinate, so we only need to worry about the first row and first
+	// column. Secondly, since we have already assumed that 6 of those fields are
+	// 0, we can ignore them - the only field we actually need is P.I[0,0], which
+	// is just 1/P[0,0].
+	//
+	// Since we only need one field in the projection matrix, we can avoid doing a
+	// full matrix multiplication here. We only need to multiply the first row of
+	// the inverted MV matrix with the first column of the MVP matrix. The matrix
+	// regs are columns (this is not guaranteed, but will almost always be the
+	// case as it makes multiplying a vertex by a matrix a series of dot products,
+	// which is much more efficient), which means we need to transpose the first
+	// component of each of the MV regs into a temporary register to get it's first
+	// row:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	// Now calculate the dot product of the first row of MV.I with the first column
+	// of MVP (in c190-c193) and store the result in r30.x - this is Projection[0,0]:
+	dp4 r30.x, r30, c190
+else
+	mov r23.x, c220.x // Clear flag to indicate we are drawing a light in the scene
+
+	// Our projection matrix will be valid, so we can use the matrices
+	// passed into this shader. Rather than have Helix mod invert the
+	// matrix for us (which will use up one of the two matrix copy slots in
+	// Helix mod), let's do it directly in assembly! It sounds complicated,
+	// but we can make some large simplifications based on assumptions
+	// about the MV and MVP matrices and the fact we only need one cell of
+	// the (inverse) projection matrix, which means it is actually possible
+	// to do in a farily small number of instructions :)
+
+	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+	//    4th column of the MV matrix is 0,0,0,1
+	//
+	// mathomatic simplified it to:
+	// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+	//
+	// Replace row numbers with register components (assumes column-major order):
+	//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+	// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mov r22.xyz, c1
+	mul r20.xyz, c0.yzx, r22.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, c0.zxy, r22.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, c2.xyz
+	// Sum it together to get the determinant:
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
+	// And finally get 1/determinant:
+	rcp r22.w, r22.w
+
+	// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+	//    the 4th column of the MV matrix is 0,0,0,1
+	//
+	// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+	// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+	// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r22.yzx, c2.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+	mul r21.xyz, r22.zxy, c2.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+	// Multiply against 1/determinant:
+	mul r20.xyz, r20.xyz, r22.www
+
+	// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+	//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+	dp3 r30.x, r20.xyz, c4.xyz
+
+endif
+
+if_eq r30.x, c220.x
+	mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+else
+	// As already stated we need the inverse projection matrix, but from the
+	// simplifications we have made all we really need is P.I[0,0], which is simply
+	// 1/P[0,0], so calculate it's reciprocal:
+	rcp r30.x, r30.x
+endif
+mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
+
 mov r10, r0
-texldl r31, c220.z, s0
-add r31.w, r10.w, -r31.y
-mul r31.w, r31.w, r31.x
-add r10.x, r10.x, r31.w
+if_eq r23.x, c220.x
+	// Output position about to be copied, apply stereo correction if
+	// drawing a light in the scene:
+	texldl r31, c220.z, s0
+	add r31.w, r10.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r10.x, r10.x, r31.w
+endif
 
-// inline float4 ComputeScreenPos (float4 pos) {
-// 	float4 o = pos * 0.5f;
     mul r1.xyz, r10.xyww, c11.x
-
-// #if defined(UNITY_HALF_TEXEL_OFFSET)
-//	o.xy = float2(o.x, o.y*_ProjectionParams.x) + o.w * _ScreenParams.zw;
-//                         ^^^^^^^^^^^^^^^^^^^^^^^
     mul r1.y, r1, c8.x
-
 
 // o.ray = mul (UNITY_MATRIX_MV, v.vertex).xyz * float3(-1,-1,1);
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -142,111 +258,49 @@ add r10.x, r10.x, r31.w
     dp4 r2.x, v0, c0
     dp4 r2.y, v0, c1
 
-// We just calculated the position in view-space and are about to convert it
-// into a ray to pass to the pixel shader. We need to adjust the coord here.
-// r31.w has the amount we are adjusting the X coord in projection space, so we
-// can unproject that to determine how much to adjust the view space X coord
-// by. We don't have an unprojection or projection matrix handy, but we can
-// calculate the projection matrix from the inverted MV matrix in c180
-// (obtained via HelixMod inverting the MV matrix passed in to this shader) and
-// the MVP matrix as P = MV.I * MVP
-//
-// If we assume that we have a typical projection matrix (which is not
-// necessarily guaranteed, say if a game used D3DMatrixPerspectiveOffCenter,
-// but that's unlikely, so let's ignore it), i.e.
-//
-// P = fh  0 0 0   fh = cot(fov_h / 2)
-//      0 fv 0 0   fv = cot(fov_v / 2)
-//      0  0 q 1    q = far / (far - near)
-//      0  0 v 0    v = -q * near
-//
-// Then a typical unprojection matrix will be:
-//
-// P.I = 1/fh    0 0 0   1/fh = tan(fov_h / 2)
-//          0 1/fv 0 0   1/fv = tan(fov_v / 2)
-//          0    0 0 x    x = too hard, don't care
-//          0    0 x x
-//
-// Then we can significantly simplify the maths. Firstly, we only care about
-// the X coordinate, so we only need to worry about the first row and first
-// column. Secondly, since we have already assumed that 6 of those fields are
-// 0, we can ignore them - the only field we actually need is P.I[0,0], which
-// is just 1/P[0,0].
-//
-// Since we only need one field in the projection matrix, we can avoid doing a
-// full matrix multiplication here. We only need to multiply the first row of
-// the inverted MV matrix with the first column of the MVP matrix. The matrix
-// regs are columns (this is not guaranteed, but will almost always be the
-// case as it makes multiplying a vertex by a matrix a series of dot products,
-// which is much more efficient), which means we need to transpose the first
-// component of each of the MV regs into a temporary register to get it's first
-// row:
-mov r21.x, c180.x
-mov r21.y, c181.x
-mov r21.z, c182.x
-mov r21.w, c183.x
-// Now calculate the dot product of the first row of MV.I with the first column
-// of MVP (in c4-c7) and store the result in r20.x - this is Projection[0,0]:
-dp4 r20.x, r21, c4
-// As already stated we need the inverse projection matrix, but from the
-// simplifications we have made all we really need is P.I[0,0], which is simply
-// 1/P[0,0], so calculate it's reciprocal:
-rcp r20.x, r20.x
+if_eq r23.x, c220.x
+	// We just calculated the position in view-space and are about to convert it
+	// into a ray to pass to the pixel shader. We need to adjust the coord here.
+	// r31.w has the amount we are adjusting the X coord in projection space, so we
+	// can unproject that to determine how much to adjust the view space X coord
+	// by.
 
-// Finally, adjust the view-space X coord
-// The formula we are applying is this:
-//     ViewX = ViewX + separation * (ViewZ - convergence) * tan(fov_h / 2)
-//     ViewX = ViewX + separation * (ViewZ - convergence) * P.I[0,0]
-// And since ViewZ = ProjW, it becomes:
-//     ViewX = ViewX + separation * (ProjW - convergence) * P.I[0,0]
-// And since ProjXCorrection = separation * (ProjW - convergence), it becomes:
-//     ViewX = ViewX + ProjXCorrection * tan(fov_h / 2)
-//     ViewX = ViewX + ProjXCorrection * P.I[0,0]
-// As we previously calculated ProjXCorrection to fix the coord passed to
-// ComputeScreenPos (for texcoord0), we can do this with one instruction:
-mad r2.x, r31.w, r20.x, r2.x
+	// The formula we are applying is this:
+	//     ViewX = ViewX + separation * (ViewZ - convergence) * tan(fov_h / 2)
+	//     ViewX = ViewX + separation * (ViewZ - convergence) * P.I[0,0]
+	// And since ViewZ = ProjW, it becomes:
+	//     ViewX = ViewX + separation * (ProjW - convergence) * P.I[0,0]
+	// And since ProjXCorrection = separation * (ProjW - convergence), it becomes:
+	//     ViewX = ViewX + ProjXCorrection * tan(fov_h / 2)
+	//     ViewX = ViewX + ProjXCorrection * P.I[0,0]
+	// As we previously calculated ProjXCorrection to fix the coord passed to
+	// ComputeScreenPos (for texcoord0), we can do this with one instruction:
+	mad r2.x, r31.w, r30.x, r2.x
 
-// Note that we wanted to do this conversion here, because the next instruction
-// is about to turn the view-space position into a ray. I think we could have
-// still done it afterwards, but we would have needed to recalculate the stereo
-// correction for the new ViewZ value instead of reusing ProjXCorrection:
+	// Note that we wanted to do this conversion here, because the next instruction
+	// is about to turn the view-space position into a ray. I think we could have
+	// still done it afterwards, but we would have needed to recalculate the stereo
+	// correction for the new ViewZ value instead of reusing ProjXCorrection:
+endif
 
 //      r3.xyz = normal - (mul (UNITY_MATRIX_MV, v.vertex).xyz * float3(-1,-1,1))
     mad r3.xyz, -r2, c11.yyzw, v1
 
-//      r0.z = (0 < o.pos.z ? 1 : 0)
     slt r0.z, c12.x, r0
-
-//      r2.w = 0 < normal.z  +  normal.z < 0
-// i.e. r2.w is 1 if normal.z is non-zero (according to comment this means rendering full-screen quad)
     slt r1.w, v1.z, c12.x
     slt r2.w, c12.x, v1.z
     add r2.w, r1, r2
-
-//      r1.w = (0 < o.pos.z ? 0.5 : -0.5)
     add r1.w, -r0.z, c11.z
-
-//      r1.w = (0 < o.pos.z ? 0.5 : -0.5)   if normal is non-zero (rendering full-screen quad)
     mul r1.w, r1, r2
-
-//      r0.z = (0 < o.pos.z ? _LightAsQuad/2 : 0)   different if normal=0
     mad r0.z, r0, c10.x, r1.w
-
-//      r2.w = _LightAsQuad if normal.z if non-zero
     mul r2.xyz, r2, c11.yyzw
-
-// o.ray = lerp(o.ray, v.normal, _LightAsQuad);
     mad o2.xyz, r0.z, r3, r2
 
 // o.pos = mul(UNITY_MATRIX_MVP, v.vertex);   - last part of the MVP projection for output position
     dp4 r0.z, v0, c6
 
-//	o.xy = float2(o.x, o.y*_ProjectionParams.x) + o.w * _ScreenParams.zw;
     mad o1.xy, r1.z, c9.zwzw, r1
-
     mov o0, r0
-
-// 	o.zw = pos.zw;
     mov o1.zw, r0
 
 // approximately 25 instruction slots used

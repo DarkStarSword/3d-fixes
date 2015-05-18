@@ -6,6 +6,7 @@ import shaderutil
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
+collected_errors = []
 
 reg_names = {
     'c': 'Referenced Constants',
@@ -35,6 +36,7 @@ def debug_verbose(level, *args, **kwargs):
 class InstructionSeparator(object): pass # Newline and semicolon
 class Ignore(object): pass # Tokens ignored when analysing shader, but preserved for manipulation (whitespace, comments)
 class Strip(object): pass # Removed during tokenisation, not preserved
+class StripDuringConversion(object): pass # Removed during shader model upgrade
 class Number(object): pass
 
 class Token(str):
@@ -49,7 +51,7 @@ class Token(str):
 #     pattern = re.compile(r'-')
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z_\-][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
+    pattern = re.compile(r'[a-zA-Z_\-!][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
 
 class Comma(Token):
     pattern = re.compile(r',')
@@ -87,6 +89,9 @@ class NullByte(Token, Strip):
 class Bracket(Token):
     pattern = re.compile(r'(\(|\))') # Seen in a Miasmata preshader
 
+class ParallelPlus(Token, Ignore, StripDuringConversion):
+    pattern = re.compile(r'\+')
+
 class Anything(Token):
     pattern = re.compile(r'.')
 
@@ -104,6 +109,7 @@ tokens = (
     Identifier,
     Bracket,
     NullByte,
+    ParallelPlus,
     # Anything,
 )
 
@@ -139,10 +145,10 @@ class SyntaxTree(list):
         returned for each node to allow for easy replacing.
         '''
         for (i, token) in enumerate(self):
-            yield (token, self, i)
+            yield (token, self, i, i)
             if isinstance(token, SyntaxTree):
-                for (j, (t, p, pi)) in enumerate(token.iter_all()):
-                    yield (t, p, pi)
+                for (j, (t, p, pi, _)) in enumerate(token.iter_all()):
+                    yield (t, p, pi, i)
 
     def iter_flat(self):
         '''
@@ -193,6 +199,7 @@ class OpCode(str):
 class Register(str):
     pattern = re.compile(r'''
         (?P<negate>-)?
+        (?P<not>!)?
         (?P<type>[a-zA-Z]+)
         (?P<num>\d*)
         (?P<absolute>_abs)?
@@ -214,6 +221,7 @@ class Register(str):
             raise SyntaxError('Expected register, found %s' % s)
         ret = str.__new__(cls, s)
         ret.negate = match.group('negate') or ''
+        ret.bool_not = match.group('not') or ''
         ret.absolute = match.group('absolute') or ''
         ret.type = match.group('type')
         ret.num = match.group('num')
@@ -232,7 +240,7 @@ class Register(str):
     def __str__(self, negate=None):
         if negate is None:
             negate = self.negate
-        r = '%s%s%s' % (negate, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
+        r = '%s%s%s%s' % (negate, self.bool_not, self.reg, self.absolute) # FIXME: Sync type and num if reg changed
         if self.address_reg:
             r += self.address_reg
         if self.swizzle:
@@ -397,12 +405,11 @@ class ShaderBlock(SyntaxTree):
         def pr_verbose(*args, **kwargs):
             if verbose:
                 debug(*args, **kwargs)
-
         self.local_consts = RegSet()
         self.addressed_regs = RegSet()
         self.declared = []
         self.reg_types = {}
-        for (inst, parent, idx) in self.iter_all():
+        for (inst, parent, idx, gi) in self.iter_all():
             if not isinstance(inst, Instruction):
                 continue
             if inst.is_definition():
@@ -452,10 +459,10 @@ class ShaderBlock(SyntaxTree):
                 self.reg_types[reg_type].add(r)
                 return r
 
-        raise NoFreeRegisters(self.filename, reg_type)
+        raise NoFreeRegisters(reg_type)
 
-    def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None):
-        for (node, parent, idx) in self.iter_all():
+    def do_replacements(self, regs, replace_dcl, insts=None, callbacks=None, re_callbacks=()):
+        for (node, parent, idx, gi) in self.iter_all():
             if isinstance(node, Register):
                 if not replace_dcl and parent.is_declaration():
                     continue
@@ -466,13 +473,19 @@ class ShaderBlock(SyntaxTree):
                     parent[idx] = insts[node.opcode]
                 if callbacks is not None and node.opcode in callbacks:
                     callbacks[node.opcode](self, node, parent, idx)
+                for (exp, cb) in re_callbacks:
+                    match = exp.match(node.opcode)
+                    if match:
+                        cb(self, node, parent, idx, match, gi)
+            if isinstance(node, StripDuringConversion):
+                parent[idx] = WhiteSpace(' ')
 
     def discard_if_unused(self, regs, reason = 'unused'):
         self.analyse_regs()
         discard = self.unref_consts.intersection(RegSet(regs))
         if not discard:
             return
-        for (node, parent, idx) in self.iter_all():
+        for (node, parent, idx, gi) in self.iter_all():
             if isinstance(node, Instruction) and node.is_definition() and node.args[0] in discard:
                 parent[idx] = CPPStyleComment('// Discarded %s constant %s' % (reason, node.args[0]))
 
@@ -575,18 +588,102 @@ class VS2(VertexShader):
         vs_to_shader_model_3_common(self, 'vs_2_0', args)
         insert_converted_by(self, 'vs_2_0')
 
+class PS11(PixelShader):
+    model = 'ps_1_1'
+
+    x2 = re.compile(r'^(?P<before>.+)(?P<modifier>_x2)(?P<after>.*)$')
+    x4 = re.compile(r'^(?P<before>.+)(?P<modifier>_x4)(?P<after>.*)$')
+    x8 = re.compile(r'^(?P<before>.+)(?P<modifier>_x8)(?P<after>.*)$')
+    d2 = re.compile(r'^(?P<before>.+)(?P<modifier>_d2)(?P<after>.*)$')
+    d4 = re.compile(r'^(?P<before>.+)(?P<modifier>_d4)(?P<after>.*)$')
+    d8 = re.compile(r'^(?P<before>.+)(?P<modifier>_d8)(?P<after>.*)$')
+
+    def to_shader_model_3(self, args):
+        self.analyse_regs()
+        self.insert_decl()
+        replace_regs = {}
+
+        # For _x* and _d* instruction modifier fixups:
+        mul_reg = self._find_free_reg('c', PS3)
+        div_reg = self._find_free_reg('c', PS3)
+        self.insert_decl('def', [mul_reg, '2', '4', '8', '0'])
+        self.insert_decl('def', [div_reg, '0.5', '0.25', '0.125', '0'])
+
+        if 'v' in self.reg_types:
+            for reg in sorted(self.reg_types['v']):
+                opcode = 'dcl_color'
+                if reg.num:
+                    opcode = 'dcl_color%d' % reg.num
+                self.insert_decl(opcode, [reg])
+
+        if 't' in self.reg_types:
+            for reg in sorted(self.reg_types['t']):
+                out = self._find_free_reg('r', PS3)
+                replace_regs[reg.reg] = out
+
+        new_dcls = []
+
+        def fixup_ps11_tex(tree, node, parent, idx):
+            reg = node.args[0]
+            dcl = 'dcl_texcoord%d' % reg.num
+            vreg = self._find_free_reg('v', PS3)
+            sreg = 's%d' % reg.num
+            new_dcls.append(('dcl_texcoord%d' % reg.num, [vreg]))
+            new_dcls.append(('dcl_2d', [sreg])) # FIXME: What if it's not a Tex2D?
+            parent[idx] = NewInstruction('texld', (reg, vreg, sreg))
+
+        def fixup_ps11_modifier(tree, node, parent, idx, match, gi):
+            reg = node.args[0]
+            node.opcode = match.group('before') + match.group('after')
+            node[0] = node.opcode
+            modifier = match.group('modifier')
+            if modifier[1] == 'x':
+                creg = mul_reg
+            elif modifier[1] == 'd':
+                creg = div_reg
+            if modifier[2] == '2':
+                component = 'x'
+            elif modifier[2] == '4':
+                component = 'y'
+            elif modifier[2] == '8':
+                component = 'z'
+            tree.insert_instr(gi + 2, NewInstruction('mul', [reg, reg, '%s.%s' % (creg, component)]))
+
+        self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
+                {'tex': fixup_ps11_tex}, (
+                    (self.x2, fixup_ps11_modifier),
+                    (self.x4, fixup_ps11_modifier),
+                    (self.x8, fixup_ps11_modifier),
+                    (self.d2, fixup_ps11_modifier),
+                    (self.d4, fixup_ps11_modifier),
+                    (self.d8, fixup_ps11_modifier),
+                ))
+
+        for dcl in new_dcls:
+            self.insert_decl(*dcl)
+        self.insert_decl()
+
+        self.add_inst('mov', ['oC0', 'r0'])
+
+        insert_converted_by(self, self.model) # Do this before changing the class!
+        self.__class__ = PS3
+
+
 class PS2(PixelShader):
+    model = 'ps_2_0'
+
     def to_shader_model_3(self, args):
         def fixup_ps2_dcl(tree, node, parent, idx):
+            modifier = node.opcode[3:]
             reg = node.args[0]
             if reg.type == 'v':
-                node.opcode = 'dcl_color'
+                node.opcode = 'dcl_color%s' % modifier
                 if reg.num:
-                    node.opcode = 'dcl_color%d' % reg.num
+                    node.opcode = 'dcl_color%d%s' % (reg.num, modifier)
             elif reg.type == 't':
-                node.opcode = 'dcl_texcoord'
+                node.opcode = 'dcl_texcoord%s' % modifier
                 if reg.num:
-                    node.opcode = 'dcl_texcoord%d' % reg.num
+                    node.opcode = 'dcl_texcoord%d%s' % (reg.num, modifier)
             node[0] = node.opcode
         self.analyse_regs()
         replace_regs = {}
@@ -595,17 +692,25 @@ class PS2(PixelShader):
             for reg in sorted(self.reg_types['t']):
                 replace_regs[reg.reg] = new_reg = self._find_free_reg('v', PS3)
 
-        self.do_replacements(replace_regs, True, {'ps_2_0': 'ps_3_0'},
-                {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl})
+        self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
+                {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl,
+                'dcl_centroid': fixup_ps2_dcl, 'dcl_pp': fixup_ps2_dcl})
+        insert_converted_by(self, self.model) # Do this before changing the class!
         self.__class__ = PS3
-        insert_converted_by(self, 'ps_2_0')
+
+class PS2X(PS2):
+    # Need to verify, but this looks like the same conversion as ps_2_0 should
+    # work
+    model = 'ps_2_x'
 
 sections = {
     'vs_3_0': VS3,
     'ps_3_0': PS3,
     'vs_2_0': VS2,
     'ps_2_0': PS2,
+    'ps_2_x': PS2X,
     'vs_1_1': VS11,
+    # 'ps_1_1': PS11, # Not enabling yet as it is pretty alpha code
 }
 
 def process_sections(tree):
@@ -673,13 +778,13 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
     dest = os.path.join(shader_dir, dest_name)
     if not args.force and os.path.exists(dest):
-        debug('Skipping %s - already installed' % file)
+        debug_verbose(0, 'Skipping %s - already installed' % file)
         return False
 
     if show_full_path:
-        debug('Installing to %s...' % dest)
+        debug_verbose(0, 'Installing to %s...' % dest)
     else:
-        debug('Installing to %s...' % os.path.relpath(dest, os.curdir))
+        debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
     return True # Returning success will allow ini updates
@@ -736,9 +841,16 @@ def get_alias(game):
         return game
 
 def install_shader_to_git(shader, file, args):
-    game_dir = os.path.basename(find_game_dir(file))
+    game_dir = find_game_dir(file)
+
+    # Filter out common subdirectory names:
+    blacklisted_names = ('win32', 'win64', 'binaries', 'bin', 'win_x86', 'win_x64')
+    while os.path.basename(game_dir).lower() in blacklisted_names:
+        game_dir = os.path.realpath(os.path.join(game_dir, '..'))
+
+    game = os.path.basename(game_dir)
     script_dir = os.path.dirname(__file__)
-    alias = get_alias(game_dir)
+    alias = get_alias(game)
     dest_dir = os.path.join(script_dir, alias)
 
     return install_shader_to(shader, file, args, dest_dir, True)
@@ -765,14 +877,20 @@ def restore_original_shader(file):
     except OSError as e:
         debug(str(e))
 
+class StereoSamplerAlreadyInUse(Exception): pass
+
 def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
 
     if isinstance(tree, VertexShader) and args.stereo_sampler_vs:
         tree.stereo_sampler = args.stereo_sampler_vs
+        if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
+            raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
     elif isinstance(tree, PixelShader) and args.stereo_sampler_ps:
         tree.stereo_sampler = args.stereo_sampler_ps
+        if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
+            raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
     elif 's' in tree.reg_types and tree.def_stereo_sampler in tree.reg_types['s']:
         # FIXME: There could be a few reasons for this. For now I assume the
         # shader was already using the sampler, but it's also possible we have
@@ -816,10 +934,11 @@ def vanity_comment(args, tree, what):
     global vanity_args
 
     if vanity_args is None:
-        vanity_args = []
-        for arg in sys.argv[1:]:
-            if arg not in args.files:
-                vanity_args.append(arg)
+        # Using a set here for *MASSIVE* performance boost over a list (e.g.
+        # Life Is Strange has 75,000 pixel shaders hangs for minutes as a list,
+        # as a set it's a fraction of a second)
+        file_set = set(args.files)
+        vanity_args = list(filter(lambda x: x not in file_set, sys.argv[1:]))
 
     return [
         "%s DarkStarSword's shadertool.py:" % what,
@@ -859,7 +978,7 @@ def adjust_ui_depth(tree, args):
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
     pos_reg = tree._find_free_reg('r', VS3)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
     dst_reg = find_declaration(tree, 'dcl_position', 'o').reg
 
     replace_regs = {dst_reg: pos_reg}
@@ -915,44 +1034,53 @@ def adjust_output(tree, args):
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     for reg in args.adjust:
         _adjust_output(tree, reg, args, stereo_const, tmp_reg)
 
-def auto_adjust_texcoords(tree, args):
-    if not isinstance(tree, VS3):
-        raise Exception('Auto texcoord adjustment is only applicable to vertex shaders')
+def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
+    # TODO: Refactor common code with _adjust_output
 
-    stereo_const, _ = insert_stereo_declarations(tree, args)
-    pos_out = find_declaration(tree, 'dcl_position', 'o')
-    pos_reg = tree._find_free_reg('r', VS3)
-    pos_adj = tree._find_free_reg('r', VS3)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    repl_reg = tree._find_free_reg('r', VS3, desired=30)
 
-    replace_regs = {pos_out: pos_reg}
-    for (t, r) in output_texcoords(tree):
-        replace_regs[r] = tree._find_free_reg('r', VS3)
+    if reg.startswith('dcl_texcoord'):
+        org_reg = find_declaration(tree, reg, 'v').reg
+    if reg.startswith('texcoord'):
+        org_reg = find_declaration(tree, 'dcl_%s' % reg, 'v').reg
+    else:
+        org_reg = reg
+    replace_regs = {org_reg: repl_reg}
     tree.do_replacements(replace_regs, False)
 
-    append_vanity_comment(args, tree, 'Automatically adjust texcoords that match the output position. Inserted with')
-    tree.add_inst('mov', [pos_out, pos_reg])
-    for (t, r) in output_texcoords(tree):
-        tree.add_inst('mov', [r, replace_regs[r]])
+    pos = tree.decl_end - 1
+    pos += insert_vanity_comment(args, tree, pos, "Input adjustment inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('mov', [repl_reg, org_reg]))
     if args.condition:
-        tree.add_inst('mov', [tmp_reg.x, args.condition])
-        tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
+        pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
+        pos += tree.insert_instr(pos, NewInstruction('if_eq', [tmp_reg.x, stereo_const.x]))
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler]))
     separation = tmp_reg.x; convergence = tmp_reg.y
-    tree.add_inst('mov', [pos_adj, pos_reg])
-    tree.add_inst('add', [tmp_reg.w, pos_adj.w, -convergence])
-    tree.add_inst('mad', [pos_adj.x, tmp_reg.w, separation, pos_adj.x])
-    for (t, r) in output_texcoords(tree):
-        tree.add_inst('if_eq', [r, pos_reg])
-        tree.add_inst('mov', [r, pos_adj])
-        tree.add_inst('endif', [])
+    pos += tree.insert_instr(pos, NewInstruction('add', [tmp_reg.w, repl_reg.w, -convergence]))
+    if args.use_mad and not args.adjust_multiply:
+        pos += tree.insert_instr(pos, NewInstruction('mad', [repl_reg.x, tmp_reg.w, separation, repl_reg.x]))
+    else:
+        pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, separation]))
+        if args.adjust_multiply and args.adjust_multiply != -1:
+            pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, stereo_const.w]))
+        if args.adjust_multiply and args.adjust_multiply == -1:
+            pos += tree.insert_instr(pos, NewInstruction('add', [repl_reg.x, repl_reg.x, -tmp_reg.w]))
+        else:
+            pos += tree.insert_instr(pos, NewInstruction('add', [repl_reg.x, repl_reg.x, tmp_reg.w]))
     if args.condition:
-        tree.add_inst('endif', [])
+        pos += tree.insert_instr(pos, NewInstruction('endif', []))
+
+def adjust_input(tree, args):
+    stereo_const, _ = insert_stereo_declarations(tree, args)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
+
+    for reg in args.adjust_input:
+        _adjust_input(tree, reg, args, stereo_const, tmp_reg)
 
 def pos_to_line(tree, position):
     return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
@@ -969,7 +1097,7 @@ def next_line_pos(tree, position):
             return p + 1
     return len(tree) + 1
 
-def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
+def scan_shader(tree, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, opcode=None):
     assert(direction == 1 or direction == -1)
     assert(write is not None)
 
@@ -993,7 +1121,7 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
     tmp = reg
     if components:
         tmp += '.%s' % components
-    debug("Scanning shader %s from line %i to %i for %s %s..." % (
+    debug_verbose(1, "Scanning shader %s from line %i to %i for %s %s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             pos_to_line(tree, start), pos_to_line(tree, end - direction),
             {True: 'write to', False: 'read from'}[write],
@@ -1023,17 +1151,19 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
             if not instr.args:
                 continue
             # debug('scanning %s' % instr)
+            if opcode and instr.opcode != opcode:
+                continue
             if write:
                 dest = instr.args[0]
                 if is_match(dest):
-                    debug('Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
+                    debug_verbose(1, 'Found write to %s on line %s: %s' % (dest, pos_to_line(tree, i), instr))
                     ret.append(Match(i, j, instr))
                     if stop:
                         return ret
             else:
                 for arg in instr.args[1:]:
                     if is_match(arg):
-                        debug('Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
+                        debug_verbose(1, 'Found read from %s on line %s: %s' % (arg, pos_to_line(tree, i), instr))
                         ret.append(Match(i, j, instr))
                         if stop:
                             return ret
@@ -1055,21 +1185,21 @@ def auto_fix_vertex_halo(tree, args):
 
     # 2. Locate where in the shader the output position is set and note which
     #    temporary register was copied to it.
-    results = scan_shader(tree, pos_out, write=True)
+    results = scan_shader(tree, pos_out, components='xw', write=True)
     if not results:
         debug("Couldn't find write to output position register")
         return
     if len(results) > 1:
         # FUTURE: We may be able to handle certain cases of this
-        debug("Can't autofix a vertex shader writing to output position from multiple instructions")
+        debug_verbose(0, "Can't autofix a vertex shader writing to output position from multiple instructions")
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
-        debug('Output not using mov instruction: %s' % output_instr)
+        debug_verbose(-1, 'Output not using mov instruction: %s' % output_instr)
         return
     temp_reg = output_instr.args[1]
     if not temp_reg.startswith('r'):
-        debug('Output not moved from a temporary register: %s' % output_instr)
+        debug_verbose(-1, 'Output not moved from a temporary register: %s' % output_instr)
         return
 
     # 3. Scan upwards to find where the X or W components of the temporary
@@ -1097,8 +1227,9 @@ def auto_fix_vertex_halo(tree, args):
             components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
             components = ''.join(set(itertools.chain(*components)))
             tree.insert_instr(next_line_pos(tree, output_line))
-            instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), '%s.%s' % (temp_reg.reg, components)])
-            debug("Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
+            # Only apply components to destination (as mask) to avoid bugs like this one: "mov o6.yz, r1.yz"
+            instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), temp_reg.reg])
+            debug_verbose(-1, "Line %i: Inserting '%s'" % (pos_to_line(tree, output_line)+1, instr))
             tree.insert_instr(next_line_pos(tree, output_line), instr, 'Inserted by shadertool.py')
 
         # Actually do the relocation from 5 (FIXME: Move this up, being careful
@@ -1107,9 +1238,9 @@ def auto_fix_vertex_halo(tree, args):
         line.insert(0, CPPStyleComment('// '))
         line.append(WhiteSpace(' '))
         line.append(CPPStyleComment('// Relocated to line %i with shadertool.py' % pos_to_line(tree, relocate_to)))
-        debug("Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
+        debug_verbose(-1, "Line %i: %s" % (pos_to_line(tree, output_line), tree[output_line]))
         tree.insert_instr(prev_line_pos(tree, output_line))
-        debug("Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
+        debug_verbose(-1, "Line %i: Relocating '%s' to here" % (pos_to_line(tree, relocate_to), output_instr))
         relocate_to += tree.insert_instr(prev_line_pos(tree, relocate_to))
         tree.insert_instr(prev_line_pos(tree, relocate_to), output_instr, 'Relocated from line %i with shadertool.py' % pos_to_line(tree, output_line))
         output_line = relocate_to
@@ -1125,16 +1256,16 @@ def auto_fix_vertex_halo(tree, args):
         #    the temporary register:
         results = scan_shader(tree, temp_reg.reg, write=False, start=output_line + 1, end=scan_until, stop=True)
         if not results:
-            debug('No other reads of temporary variable found, nothing to fix')
+            debug_verbose(0, 'No other reads of temporary variable found, nothing to fix')
             return
 
     # 9. Insert stereo conversion after new location of move to output position.
     # FIXME: Refactor common code with the adjust_output, etc
     stereo_const, offset = insert_stereo_declarations(tree, args)
     pos = next_line_pos(tree, output_line + offset)
-    t = tree._find_free_reg('r', VS3)
+    t = tree._find_free_reg('r', VS3, desired=31)
 
-    debug('Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
+    debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
@@ -1157,7 +1288,7 @@ def find_header(tree, comment_pattern):
     raise KeyError()
 
 unreal_NvStereoEnabled_pattern = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
-def disable_redundant_unreal_correction(tree, args):
+def disable_unreal_correction(tree, args, redundant_check):
     # In Life Is Strange I found a lot of Unreal Engine shaders are now using
     # the vPos semantic, and then applying a stereo correction on top of that,
     # which is wrong as vPos is already the correct screen location.
@@ -1165,26 +1296,32 @@ def disable_redundant_unreal_correction(tree, args):
     if not isinstance(tree, PS3):
         raise Exception('Disabling redundant Unreal correction is only applicable to pixel shaders')
 
-    try:
-        vPos = find_declaration(tree, 'dcl', 'vPos.xy')
-    except IndexError:
-        debug('Shader does not use vPos')
-        return
+    if redundant_check:
+        try:
+            vPos = find_declaration(tree, 'dcl', 'vPos.xy')
+        except IndexError:
+            debug_verbose(0, 'Shader does not use vPos')
+            return False
 
     try:
         match = find_header(tree, unreal_NvStereoEnabled_pattern)
     except KeyError:
-        debug('Shader does not use NvStereoEnabled')
-        return
+        debug_verbose(0, 'Shader does not use NvStereoEnabled')
+        return False
 
     constant = Register(match.group('constant'))
-    debug('Disabling NvStereoEnabled %s' % constant)
+    debug_verbose(-1, 'Disabling NvStereoEnabled %s' % constant)
 
-    tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+    if redundant_check:
+        tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Redundant Unreal Engine stereo correction disabled by")
+    else:
+        tree.decl_end += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine stereo correction disabled by")
     tree.insert_decl('def', [constant, 0, 0, 0, 0], comment='Overrides NvStereoEnabled passed from Unreal Engine')
     tree.insert_decl()
 
     tree.autofixed = True
+
+    return True
 
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 def auto_fix_unreal_light_shafts(tree, args):
@@ -1194,19 +1331,21 @@ def auto_fix_unreal_light_shafts(tree, args):
     try:
         match = find_header(tree, unreal_TextureSpaceBlurOrigin_pattern)
     except KeyError:
-        debug('Shader does not use TextureSpaceBlurOrigin')
+        debug_verbose(0, 'Shader does not use TextureSpaceBlurOrigin')
         return
 
     orig = Register(match.group('constant'))
-    debug('TextureSpaceBlurOrigin identified as %s' % orig)
+    debug_verbose(0, 'TextureSpaceBlurOrigin identified as %s' % orig)
 
     results = scan_shader(tree, orig, write=False)
     if not results:
-        debug('TextureSpaceBlurOrigin is not used in shader')
+        debug_verbose(0, 'TextureSpaceBlurOrigin is not used in shader')
         return
 
+    debug_verbose(-1, 'Applying Unreal Engine 3 light shaft fix')
+
     adj = tree._find_free_reg('r', PS3)
-    t = tree._find_free_reg('r', PS3)
+    t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, _ = insert_stereo_declarations(tree, args, w = 0.5)
 
     replace_regs = {orig: adj}
@@ -1221,6 +1360,7 @@ def auto_fix_unreal_light_shafts(tree, args):
 
     tree.autofixed = True
 
+# Not sure if this is a generic UE3 thing, or specific to Life Is Strange
 unreal_DNEReflectionTexture_pattern = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
 def auto_fix_unreal_dne_reflection(tree, args):
     if not isinstance(tree, PS3):
@@ -1229,21 +1369,23 @@ def auto_fix_unreal_dne_reflection(tree, args):
     try:
         match = find_header(tree, unreal_DNEReflectionTexture_pattern)
     except KeyError:
-        debug('Shader does not use DNEReflectionTexture')
+        debug_verbose(0, 'Shader does not use DNEReflectionTexture')
         return
 
     orig = Register(match.group('sampler'))
-    debug('DNEReflectionTexture identified as %s' % orig)
+    debug_verbose(0, 'DNEReflectionTexture identified as %s' % orig)
 
     results = scan_shader(tree, orig, write=False)
     if not results:
-        debug('DNEReflectionTexture is not used in shader')
+        debug_verbose(0, 'DNEReflectionTexture is not used in shader')
         return
     if len(results) > 1:
         debug("Autofixing a shader using DNEReflectionTexture multiple times is untested and disabled for safety. Please enable it, test and report back.")
         return
 
-    t = tree._find_free_reg('r', PS3)
+    debug_verbose(-1, 'Applying DNE reflection fix')
+
+    t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     for (sampler_line, sampler_linepos, sampler_instr) in results:
@@ -1257,10 +1399,229 @@ def auto_fix_unreal_dne_reflection(tree, args):
 
         tree.autofixed = True
 
+unreal_ScreenToShadowMatrix_pattern = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
+def auto_fix_unreal_shadows(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal shadow auto fix is only applicable to pixel shaders')
+
+    try:
+        match = find_header(tree, unreal_ScreenToShadowMatrix_pattern)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use ScreenToShadowMatrix')
+        return
+
+    screen2shadow0 = Register(match.group('constant'))
+    screen2shadow2 = Register('c%i' % (screen2shadow0.num + 2))
+    debug_verbose(0, 'ScreenToShadowMatrix identified as %s %s' % (screen2shadow0, screen2shadow2))
+
+    results0 = scan_shader(tree, screen2shadow0, write=False)
+    results2 = scan_shader(tree, screen2shadow2, write=False)
+    if not results0 or not results2:
+        debug_verbose(0, 'ScreenToShadowMatrix is not used in shader')
+        return
+    if len(results0) > 1 or len(results2) > 1:
+        debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
+        return
+
+    (x_line, x_linepos, x_instr) = results0[0]
+    (z_line, z_linepos, z_instr) = results2[0]
+
+    if x_instr.opcode != 'mad' or z_instr.opcode != 'mad':
+        debug('ScreenToShadowMatrix used in an unexpected way (column-major/row-major?)')
+        return
+
+    if x_instr.args[1] == screen2shadow0:
+        x_reg = x_instr.args[2]
+    elif x_instr.args[2] == screen2shadow0:
+        x_reg = x_instr.args[1]
+    else:
+        debug('ScreenToShadowMatrix[0] used in an unexpected way')
+        return
+
+    if z_instr.args[1] == screen2shadow2:
+        w_reg = z_instr.args[2]
+    elif z_instr.args[2] == screen2shadow2:
+        w_reg = z_instr.args[1]
+    else:
+        debug('ScreenToShadowMatrix[2] used in an unexpected way')
+        return
+
+    debug_verbose(-1, 'Applying Unreal Engine 3 shadow fix')
+
+    try:
+        vPos = find_declaration(tree, 'dcl', 'vPos.xy')
+    except IndexError:
+        vPos = None
+
+    t = tree._find_free_reg('r', PS3, desired=31)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+    if vPos is None:
+        texcoord = find_declaration(tree, 'dcl_texcoord', 'v')
+
+        mask = ''
+        if texcoord.swizzle:
+            mask = '.%s' % texcoord.swizzle
+        texcoord_adj = tree._find_free_reg('r', PS3)
+
+        replace_regs = {texcoord.reg: texcoord_adj}
+        tree.do_replacements(replace_regs, False)
+
+    orig_offset = tree.decl_end
+    vanity_inserted = disable_unreal_correction(tree, args, False)
+
+    pos = tree.decl_end
+    if vPos is None:
+        if not vanity_inserted:
+            pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
+        pos += tree.insert_instr(pos, NewInstruction('mad', [texcoord_adj.x, t.w, t.x, texcoord_adj.x]))
+        pos += tree.insert_instr(pos)
+    offset += pos - orig_offset
+
+    line = min(x_line, z_line)
+    orig_pos = pos = prev_line_pos(tree, line + offset)
+    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine shadow fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, w_reg, -t.y]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, -t.w, t.x, x_reg]))
+    pos += tree.insert_instr(pos)
+    offset += pos - orig_pos
+
+    tree.autofixed = True
+
+unity_CameraToWorld = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+# unity_CameraDepthTexture = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
+unity_ZBufferParams = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
+def fix_unity_lighting_ps(tree, args):
+    if not isinstance(tree, PS3):
+        # We could potentially fix the vertex shaders as well, but since there
+        # is only a few of them and they sometimes need custom adjustments,
+        # it's easier to just use a template (check my 3d-fixes repository) and
+        # tweak as necessary.
+        raise Exception('Unity lighting adjustment is only applicable to pixel shaders. Check my templates for the corresponding vertex shader & DX9Settings.ini!')
+
+    try:
+        match = find_header(tree, unity_CameraToWorld)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
+    _CameraToWorld0 = Register('c' + match.group('matrix'))
+
+    try:
+        match = find_header(tree, unity_ZBufferParams)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
+        return
+    _ZBufferParams = Register('c' + match.group('constant'))
+
+    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld0, _ZBufferParams))
+
+    # Find _CameraToWorld usage - adjustment must be above this point, and this
+    # gives us the register with X that needs to be adjusted:
+    results = scan_shader(tree, _CameraToWorld0, write=False, opcode='dp4')
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (_CameraToWorld_line, linepos, instr) = results[0]
+
+    if instr.args[1] == _CameraToWorld0:
+        reg = instr.args[2]
+    elif instr.args[2] == _CameraToWorld0:
+        reg = instr.args[1]
+    else:
+        assert(False)
+    if reg.swizzle:
+        x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
+    else:
+        x_reg = Register('%s.x' % reg.reg)
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step and more can go wrong)
+    results = scan_shader(tree, _ZBufferParams, write=False, end=_CameraToWorld_line-1)
+    if len(results) != 2:
+        debug_verbose(0, '_ZBufferParams read %i times (only exactly 2 reads currently supported)' % len(results))
+        return
+    (line, linepos, instr) = results[0]
+    if results[1].line != line:
+        debug_verbose(0, '_ZBufferParams read from two different instructions' % len(results))
+        return
+    reg = instr.args[0]
+
+    # We're expecting a reciprocal calculation as part of the Z buffer -> world
+    # Z scaling:
+    results = scan_shader(tree, reg.reg, components=reg.swizzle, opcode='rcp',
+            write=False, start=line+1, end=_CameraToWorld_line-1, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected rcp instruction')
+        return
+    (line, linepos, instr) = results[0]
+    reg = instr.args[0]
+
+    # Find where the reciprocal is next used:
+    results = scan_shader(tree, reg.reg, components=reg.swizzle, write=False,
+            start=line+1, end=_CameraToWorld_line-1, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected instruction')
+        return
+    (line, linepos, instr) = results[0]
+    reg = instr.args[0]
+
+    # Some shader variants have a few extra intermediate steps:
+    if instr.opcode == 'lrp':
+        # Could potentially check if constant used in instrction is
+        # unity_OrthoParams for safety
+        results = scan_shader(tree, reg.reg, components=reg.swizzle,
+                write=False, start=line+1, end=_CameraToWorld_line-1)
+        if len(results) < 2:
+            debug_verbose(0, 'Could not find expected mad+mul instructions')
+            return
+        (line, linepos, instr) = results[0]
+        if instr.opcode != 'mad':
+            debug_verbose(0, 'Could not find expected mad instruction, found %s' % instr)
+            return
+        (line, linepos, instr) = results[1]
+        reg = instr.args[0]
+
+    # Hopefully we have now found the mul instruction that scales the
+    # view-space ray and can determine which register has the depth:
+    if instr.opcode != 'mul':
+        debug_verbose(0, 'Could not find expected mul instruction, found %s' % instr)
+        return
+
+    if not reg.swizzle or len(reg.swizzle) != 3:
+        debug_verbose(0, 'Ray multiply had unexpected mask: %s' % instr)
+        return
+
+    depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+
+    line = tree[line]
+    line.append(WhiteSpace(' '))
+    line.append(CPPStyleComment('// depth in %s' % depth))
+
+    t = tree._find_free_reg('r', PS3, desired=31)
+    texcoord = tree._find_free_reg('v', PS3, desired=5)
+    offset = tree.insert_decl()
+    offset += tree.insert_decl('dcl_texcoord5', ['%s.x' % texcoord], comment='New input from vertex shader with unity_CameraInvProjection[0].x')
+    stereo_const, offset2 = insert_stereo_declarations(tree, args, w = 0.5)
+
+    pos = _CameraToWorld_line + offset + offset2
+    debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos_to_line(tree, pos), depth, x_reg))
+    pos += insert_vanity_comment(args, tree, pos, "Unity light/shadow fix (pixel shader stage) inserted with")
+
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mul', [t.w, t.w, separation]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg.x, -t.w, texcoord.x, x_reg.x]))
+    pos += tree.insert_instr(pos)
+
+    tree.autofixed = True
+
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
-        debug('Shader already has a fog output: %s' % d)
+        debug_verbose(0, 'Shader already has a fog output: %s' % d)
         return
     except:
         pass
@@ -1273,7 +1634,7 @@ def add_unity_autofog_VS3(tree, reason):
 
     results = scan_shader(tree, pos_out, write=True)
     if len(results) != 1:
-        debug('Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
+        debug_verbose(0, 'Output position written from %i instructions (only exactly 1 write currently supported)' % len(results))
         return
     (output_line, output_linepos, output_instr) = results[0]
     if output_instr.opcode != 'mov':
@@ -1287,6 +1648,7 @@ def add_unity_autofog_VS3(tree, reason):
     tree.fog_type = 'FOG'
     fog_output = NewInstruction('mov', [Register('o9'), temp_reg.z])
     tree.insert_instr(next_line_pos(tree, output_line), fog_output, 'Inserted by shadertool.py %s' % reason)
+    debug_verbose(-1, "Line %i: %s" % (pos_to_line(tree, output_line+2), tree[output_line+2]))
     decl = NewInstruction('dcl_fog', [Register('o9')])
     # Inserting this in a specific spot to match Unity rather than using
     # insert_decl(), so manually increment decl_end as well:
@@ -1295,7 +1657,7 @@ def add_unity_autofog_VS3(tree, reason):
 def add_unity_autofog_PS3(tree, mad_fog, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
-        debug('Shader already has a fog input: %s' % d)
+        debug_verbose(0, 'Shader already has a fog input: %s' % d)
         return
     except:
         pass
@@ -1340,6 +1702,8 @@ def add_unity_autofog_PS3(tree, mad_fog, reason):
         pos += add_instr('mul', ['r31.x', fog_c2.x, 'v9.x'])
         pos += add_instr('mul', ['r31.x', 'r31.x', 'r31.x'])
         pos += add_instr('exp_sat', ['r31.x', '-r31.x'])
+
+    debug_verbose(-1, "Inserting pixel shader fog instructions (%s)" % tree.fog_type)
 
     pos += add_instr('lrp', ['r30.xyz', 'r31.x', 'r30', fog_c1])
     pos += add_instr('mov', ['oC0', 'r30'])
@@ -1391,7 +1755,7 @@ def disable_output(tree, args):
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     for reg in args.disable_output:
         _disable_output(tree, reg, args, stereo_const, tmp_reg)
@@ -1408,7 +1772,7 @@ def disable_shader(tree, args):
 
     # FUTURE: Maybe search for an existing 0 or 1...
     stereo_const, _ = insert_stereo_declarations(tree, args)
-    tmp_reg = tree._find_free_reg('r', VS3)
+    tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     append_vanity_comment(args, tree, 'Shader disabled by')
     if args.disable == '0':
@@ -1430,7 +1794,7 @@ def disable_shader(tree, args):
 def lookup_header_json(tree, index, file):
     if len(tree) and len(tree[0]) and isinstance(tree[0][0], CPPStyleComment) \
             and tree[0][0].startswith('// CRC32'):
-                debug('%s appears to already contain headers' % file)
+                debug_verbose(0, '%s appears to already contain headers' % file)
                 return tree
 
     crc = shaderutil.get_filename_crc(file)
@@ -1492,6 +1856,18 @@ def do_ini_updates():
                 debug(line)
         debug()
 
+def show_collected_errors():
+    if not collected_errors:
+        return
+    debug()
+    debug()
+    debug('!' * 79)
+    debug('!' * 11 + ' The following shaders had errors and were not processed ' + '!' * 11)
+    debug('!' * 79)
+    debug()
+    for (filename, exception) in collected_errors:
+        debug('%s: %s: %s' % (filename, exception.__class__.__name__, str(exception)))
+
 def parse_args():
     global verbosity
 
@@ -1526,6 +1902,8 @@ def parse_args():
             help="Disable a given texcoord in the shader")
     parser.add_argument('--adjust', '--adjust-output', '--adjust-texcoord', action='append',
             help="Apply the stereo formula to an output (texcoord or position)")
+    parser.add_argument('--adjust-input', action='append',
+            help="Apply the stereo formula to a shader input")
     parser.add_argument('--adjust-multiply', '--adjust-multiplier', '--multiply', type=float,
             help="Multiplier for the stereo adjustment. If you notice the broken effect switches eyes try 0.5")
     parser.add_argument('--unadjust', action='append', nargs='?', default=None, const='position',
@@ -1534,8 +1912,6 @@ def parse_args():
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
     parser.add_argument('--no-mad', action='store_false', dest='use_mad',
             help="Use mad instruction to make stereo correction more concise")
-    parser.add_argument('--auto-adjust-texcoords', action='store_true',
-            help="Adjust any texcoord that matches the output position from a vertex shader")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
@@ -1544,6 +1920,10 @@ def parse_args():
             help="Attempt to automatically fix light shafts found in Unreal games")
     parser.add_argument('--auto-fix-unreal-dne-reflection', action='store_true',
             help="Attempt to automatically fix reflective floor surfaces found in Unreal games")
+    parser.add_argument('--auto-fix-unreal-shadows', action='store_true',
+            help="Attempt to automatically fix shadows in Unreal games")
+    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1576,7 +1956,16 @@ def parse_args():
 
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity')
+    parser.add_argument('--quiet', '-q', action='count', default=0,
+            help='Suppress usual informational messages. Specify multiple times to suppress more messages.')
     args = parser.parse_args()
+
+    if not args.output and not args.in_place and not args.install and not \
+            args.install_to and not args.to_git and not args.find_free_consts \
+            and not args.show_regs and not args.debug_tokeniser and not \
+            args.debug_syntax_tree and not args.restore_original and not \
+            args.lookup_header_json:
+        parser.error("did not specify anything to do (e.g. --install, --install-to, --in-place, --output, --show-regs, etc)");
 
     if args.to_git:
         if not args.output and not args.install and not args.install_to and not args.to_git:
@@ -1598,7 +1987,7 @@ def parse_args():
     if args.add_unity_autofog:
         args.auto_convert = False
 
-    verbosity = args.verbose
+    verbosity = args.verbose - args.quiet
 
     return args
 
@@ -1609,13 +1998,15 @@ def args_require_reg_analysis(args):
                 args.disable or \
                 args.disable_output or \
                 args.adjust or \
+                args.adjust_input or \
                 args.unadjust or \
-                args.auto_adjust_texcoords or \
                 args.auto_fix_vertex_halo or \
                 args.add_unity_autofog or \
                 args.disable_redundant_unreal_correction or \
                 args.auto_fix_unreal_light_shafts or \
-                args.auto_fix_unreal_dne_reflection
+                args.auto_fix_unreal_dne_reflection or \
+                args.auto_fix_unreal_shadows or \
+                args.fix_unity_lighting_ps
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -1644,14 +2035,18 @@ def main():
     args.files = f
 
     for file in args.files:
-        crc = shaderutil.get_filename_crc(file)
-        if crc in processed:
-            debug_verbose(1, 'Skipping %s - CRC already processed' % file)
-            continue
-        processed.add(crc)
+        try:
+            crc = shaderutil.get_filename_crc(file)
+        except shaderutil.NoCRCError:
+            pass
+        else:
+            if crc in processed:
+                debug_verbose(1, 'Skipping %s - CRC already processed' % file)
+                continue
+            processed.add(crc)
 
         if args.precheck_installed and check_shader_installed(file):
-            debug_verbose(1, 'Skipping %s - already installed and you did not specify --force' % file)
+            debug_verbose(0, 'Skipping %s - already installed and you did not specify --force' % file)
             continue
 
         if args.restore_original:
@@ -1663,7 +2058,7 @@ def main():
         if args.original:
             file = find_original_shader(file)
 
-        debug('parsing %s...' % file)
+        debug_verbose(-2, 'parsing %s...' % file)
         try:
             if file == '-':
                 tree = parse_shader(sys.stdin.read(), args)
@@ -1671,14 +2066,15 @@ def main():
                 tree = parse_shader(open(file, 'r', newline=None).read(), args)
         except Exception as e:
             if args.ignore_parse_errors:
+                collected_errors.append((file, e))
                 import traceback, time
                 traceback.print_exc()
-                time.sleep(0.1)
                 continue
+            show_collected_errors()
             do_ini_updates()
             raise
         if args.auto_convert and hasattr(tree, 'to_shader_model_3'):
-            debug('Converting to Shader Model 3...')
+            debug_verbose(0, 'Converting to Shader Model 3...')
             tree.to_shader_model_3(args)
         if args.debug_syntax_tree:
             debug(repr(tree), end='')
@@ -1710,33 +2106,37 @@ def main():
                 tree = add_unity_autofog(tree)[0]
             if args.disable:
                 disable_shader(tree, args)
-            if args.auto_adjust_texcoords:
-                auto_adjust_texcoords(tree, args)
             tree.autofixed = False
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(tree, args)
             if args.disable_redundant_unreal_correction:
-                disable_redundant_unreal_correction(tree, args)
+                disable_unreal_correction(tree, args, True)
             if args.auto_fix_unreal_light_shafts:
                 auto_fix_unreal_light_shafts(tree, args)
             if args.auto_fix_unreal_dne_reflection:
                 auto_fix_unreal_dne_reflection(tree, args)
+            if args.auto_fix_unreal_shadows:
+                auto_fix_unreal_shadows(tree, args)
+            if args.fix_unity_lighting_ps:
+                fix_unity_lighting_ps(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
                 disable_output(tree, args)
             if args.adjust:
                 adjust_output(tree, args)
+            if args.adjust_input:
+                adjust_input(tree, args)
             if args.unadjust:
                 a = copy.copy(args)
                 a.adjust = args.unadjust
                 a.adjust_multiply = -1
                 adjust_output(tree, a)
-        except NoFreeRegisters as e:
+        except (NoFreeRegisters, StereoSamplerAlreadyInUse) as e:
             if args.ignore_register_errors:
+                collected_errors.append((file, e))
                 import traceback, time
                 traceback.print_exc()
-                time.sleep(0.1)
                 continue
             raise
 
@@ -1781,6 +2181,7 @@ def main():
                 debug('\nCAUTION: Address reg was applied offset from these consts:')
                 debug(', '.join(sorted(address_reg_ps)))
 
+    show_collected_errors()
     do_ini_updates()
 
 if __name__ == '__main__':

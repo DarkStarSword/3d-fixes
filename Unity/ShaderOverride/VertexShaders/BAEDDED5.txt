@@ -43,6 +43,8 @@ dcl_position o2
 // Extra output to pass the FOV to pixel shaders:
 dcl_texcoord5 o5.x
 
+def c220, 0, 1, 0.0625, 1
+
     mov o1.xyz, v2
     mov o0.xy, v1
     dp4 o2.w, v0, c3
@@ -61,7 +63,11 @@ mov r30.y, c181.x
 mov r30.z, c182.x
 mov r30.w, c183.x
 dp4 r30.x, r30, c190 // Calculate P[0,0]
-rcp r30.x, r30.x // Calculate P.I[0,0]
+if_eq r30.x, c220.x
+	mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+else
+	rcp r30.x, r30.x // Calculate P.I[0,0]
+endif
 
 // Copy calculated FOV to pixel shaders:
 mov o5.x, r30.x

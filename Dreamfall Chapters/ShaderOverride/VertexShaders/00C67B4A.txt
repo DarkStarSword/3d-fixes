@@ -1,0 +1,126 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c32, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_position o6
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r3.xyz, v2, c14.w
+    dp4 r0.x, v0, c5
+    add r1, -r0.x, c18
+    dp3 r3.w, r3, c5
+    dp3 r4.x, r3, c4
+    dp3 r3.x, r3, c6
+    mul r2, r3.w, r1
+    dp4 r0.x, v0, c4
+    add r0, -r0.x, c17
+    mul r1, r1, r1
+    mov r4.z, r3.x
+    mad r2, r4.x, r0, r2
+    mov r4.w, c32.x
+    dp4 r4.y, v0, c6
+    mad r1, r0, r0, r1
+    add r0, -r4.y, c19
+    mad r1, r0, r0, r1
+    mad r0, r3.x, r0, r2
+    mul r2, r1, c20
+    mov r4.y, r3.w
+    rsq r1.x, r1.x
+    rsq r1.y, r1.y
+    rsq r1.w, r1.w
+    rsq r1.z, r1.z
+    mul r0, r0, r1
+    add r1, r2, c32.x
+    rcp r1.x, r1.x
+    rcp r1.y, r1.y
+    rcp r1.w, r1.w
+    rcp r1.z, r1.z
+    max r0, r0, c32.y
+    mul r0, r0, r1
+    mul r1.xyz, r0.y, c22
+    mad r1.xyz, r0.x, c21, r1
+    mad r0.xyz, r0.z, c23, r1
+    mad r1.xyz, r0.w, c24, r0
+    mul r0, r4.xyzz, r4.yzzx
+    mul r1.w, r3, r3
+    dp4 r3.z, r0, c30
+    dp4 r3.y, r0, c29
+    dp4 r3.x, r0, c28
+    mad r1.w, r4.x, r4.x, -r1
+    mul r0.xyz, r1.w, c31
+    dp4 r2.z, r4, c27
+    dp4 r2.y, r4, c26
+    dp4 r2.x, r4, c25
+    add r2.xyz, r2, r3
+    add r2.xyz, r2, r0
+    mov r3, c8
+    mov r0.xyz, v1
+    add o4.xyz, r2, r1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r1.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r2.xyz, v1.w, r1
+    mov r0, c10
+    dp4 r1.z, c16, r0
+    mov r0, c9
+    dp4 r1.y, c16, r0
+    dp4 r1.x, c16, r3
+    mov r0.xyz, c15
+    mov r0.w, c32.x
+    dp4 r3.z, r0, c10
+    dp4 r3.x, r0, c8
+    dp4 r3.y, r0, c9
+    mad r3.xyz, r3, c14.w, -v0
+    dp3 o3.y, r2, r1
+    dp3 r0.y, r2, c4
+    dp3 r0.w, -r3, c4
+    dp3 r0.x, v1, c4
+    dp3 r0.z, v2, c4
+    mul o0, r0, c14.w
+    dp3 r0.y, r2, c5
+    dp3 r0.w, -r3, c5
+    dp3 r0.x, v1, c5
+    dp3 r0.z, v2, c5
+    mul o1, r0, c14.w
+    dp3 r0.y, r2, c6
+    dp3 r0.w, -r3, c6
+    dp3 r0.x, v1, c6
+    dp3 r0.z, v2, c6
+    mul o2, r0, c14.w
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp3 o3.z, v2, r1
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o6, r0 // Relocated from line 108 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -i 00C67B4A.txt
+texldl r5, c220.z, s0
+add r5.w, r0.w, -r5.y
+mad r0.x, r5.w, r5.x, r0.x
+
+    mul r2.xyz, r0.xyww, c32.z
+    dp3 o3.x, v1, r1
+    mov r1.x, r2
+    mul r1.y, r2, c12.x
+    mad o5.xy, r2.z, c13.zwzw, r1
+
+//     mov o6, r0 // Relocated to line 103 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o5.zw, r0
+
+// approximately 94 instruction slots used

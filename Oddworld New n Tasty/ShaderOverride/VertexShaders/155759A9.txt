@@ -1,0 +1,103 @@
+// CRC32: 155759A9 | Matched 2 variants of 1 shaders: Hidden/Camera-DepthTexture
+// 
+//    Unity headers extracted from Camera-DepthTexture.shader
+//    Shader "Hidden/Camera-DepthTexture" {
+//      Properties {
+//       _MainTex ("", 2D) = "white" {}
+//       _Cutoff ("", Float) = 0.5
+//       _Color ("", Color) = (1,1,1,1)
+// 1:    _ExtrusionAmount ("Extrusion Amount", Range(-2,2)) = 0.5
+//      }
+//      Fallback Off
+// 2:   SubShader 3/9 {
+// 1:   SubShader 6/12 {
+//        Tags { "RenderType"="TreeBark" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="TreeBark" }
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_Time]
+//              Vector 9 [_Scale]
+//              Vector 10 [_SquashPlaneNormal]
+//              Float 11 [_SquashAmount]
+//              Vector 12 [_Wind]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    ; 42 ALU
+    def c13, 1.00000000, 2.00000000, -0.50000000, -1.00000000
+    def c14, 1.97500002, 0.79299998, 0.37500000, 0.19300000
+    def c15, 2.00000000, 3.00000000, 0.30000001, 0.10000000
+    dcl_position0 v0
+    dcl_normal0 v2
+    dcl_texcoord1 v4
+    dcl_color0 v5
+
+dcl_texcoord o0
+dcl_position o1
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, c7
+    dp3 r0.x, c13.x, r0
+    add r0.x, v5, r0
+    mov r0.y, r0.x
+    mul r2.xyz, v0, c9
+    add r0.x, v5.y, r0
+    dp3 r0.x, r2, r0.x
+    add r0.xy, r0, c8.y
+    mul r0, r0.xxyy, c14
+    frc r0, r0
+    mad r0, r0, c13.y, c13.z
+    frc r0, r0
+    mad r0, r0, c13.y, c13.w
+    abs r0, r0
+    mad r1, -r0, c15.x, c15.y
+    mul r0, r0, r0
+    mul r0, r0, r1
+    add r3.xy, r0.xzzw, r0.ywzw
+    mul r0.xyz, r3.y, c12
+    mul r1.xyz, v4.y, r0
+    mul r0.w, v5.y, c15
+    mov r1.w, c13.x
+    mul r0.xz, r0.w, v2
+    mul r0.y, v4, c15.z
+    mad r0.xyz, r3.xyxw, r0, r1
+    mad r0.xyz, r0, c12.w, r2
+    mad r1.xyz, v4.x, c12, r0
+    dp3 r0.x, r1, c10
+    add r0.x, r0, c10.w
+    mul r0.xyz, r0.x, c10
+    add r1.xyz, -r0, r1
+    mad r1.xyz, r0, c11.x, r1
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+    mov o1, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_Camera-DepthTexture/vp/155759A9.txt
+texldl r4, c220.z, s0
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0.xy, r0.zwzw

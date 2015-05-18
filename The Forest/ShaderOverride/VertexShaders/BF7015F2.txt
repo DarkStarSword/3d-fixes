@@ -1,0 +1,124 @@
+// CRC32: BF7015F2 | Matched 5 variants of 1 shaders: Transparent/Refractive
+// 
+//     Unity headers extracted from Refractive.shader
+//     Shader "Transparent/Refractive" {
+//       Properties {
+//        _MainTex ("Base (RGB), Alpha (A)", 2D) = "white" { }
+//        _BumpMap ("Normal Map (RGB)", 2D) = "bump" { }
+//        _Mask ("Specularity (R), Shininess (G), Refraction (B)", 2D) = "black" { }
+//        _Color ("Color Tint", Color) = (1,1,1,1)
+//        _Specular ("Specular Color", Color) = (0,0,0,0)
+//        _Focus ("Focus", Range(-100,100)) = -100
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.2
+//       }
+//       Fallback Off
+//       SubShader 1/4 {
+//         LOD 500
+//         Tags { "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         GrabPass {
+//           Name "BASE"
+//           Tags { "LIGHTMODE"="Always" }
+//          }
+//         Pass 2/2 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZWrite Off
+//           Cull Off
+//           Blend SrcAlpha One
+//           AlphaTest Greater 0
+//           ColorMask RGB
+//           GpuProgramID 94010
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "color" Color
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_MainTex_ST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c11, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_texcoord6 o6
+dcl_position o7
+dcl_color o8
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c0, v0
+    dp4 r1.y, c1, v0
+    mov r0.y, -r1.y
+    dp4 r1.w, c3, v0
+    add r0.yz, r0.xxyw, r1.w
+    mov r1.x, r0.x
+    mul o6.xy, r0.yzzw, c11.x
+    mad o0.xy, v3, c10, c10.zwzw
+    dp4 o4.x, c4, v0
+    dp4 o4.y, c5, v0
+    dp4 o4.z, c6, v0
+    dp4 r1.z, c2, v0
+    mov o7, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Transparent_Refractive/vp/BF7015F2.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mov o5, r1
+    mov o6.zw, r1
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o1.x, r0.z
+    mul r1.xyz, v2.y, c8.zxyw
+    mad r1.xyz, c7.zxyw, v2.x, r1
+    mad r1.xyz, c9.zxyw, v2.z, r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r1.zxyw, r0.yzxw, -r2
+    mul r2.xyz, r2, v1.w
+    mov o1.y, r2.x
+    mov o1.z, r1.y
+    mov o2.x, r0.x
+    mov o3.x, r0.y
+    mov o2.y, r2.y
+    mov o3.y, r2.z
+    mov o2.z, r1.z
+    mov o3.z, r1.x
+    mov o8, v4

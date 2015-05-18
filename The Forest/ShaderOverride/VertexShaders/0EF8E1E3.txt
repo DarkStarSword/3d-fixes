@@ -1,0 +1,100 @@
+// CRC32: 0EF8E1E3 | Unity headers extracted from Sheen.shader
+// Shader "Custom/Sheen" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//    _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//    _Metallic ("Metallic", Range(0,1)) = 0
+//    _Sheen ("Sheen Texture", 2D) = "white" { }
+//    _SheenScale ("Sheen Texture Scale", Range(0,1)) = 0.25
+//    _SheenSpeed ("Blink Speed", Float) = 60
+//    _SheenIntensity ("Blink Intensity", Range(0,1)) = 0.01
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 52180
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 16 [_MainTex_ST]
+//           Vector 10 [_ProjectionParams]
+//           Vector 11 [_ScreenParams]
+//           Vector 14 [unity_SHBb]
+//           Vector 13 [unity_SHBg]
+//           Vector 12 [unity_SHBr]
+//           Vector 15 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c17, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v2, c16, c16.zwzw
+    dp4 o3.x, c4, v0
+    dp4 o3.y, c5, v0
+    dp4 o3.z, c6, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    mov o2.xyz, r1
+    dp4 r1.x, c12, r2
+    dp4 r1.y, c13, r2
+    dp4 r1.z, c14, r2
+    mad o4.xyz, c15, r0.x, r1
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c17.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 82 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Custom_Sheen/vp/0EF8E1E3.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c17.x
+    mad o5.xy, r1.z, c11.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 79 with shadertool.py
+mov o0.z, r0.z // Inserted by shadertool.py
+
+    mov o5.zw, r0
+    mov o6, c17.y

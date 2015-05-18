@@ -1,0 +1,145 @@
+// CRC32: CFA5C5D6 | Unity headers extracted from Refractive.shader
+// Shader "Transparent/Refractive" {
+//   Properties {
+//    _MainTex ("Base (RGB), Alpha (A)", 2D) = "white" { }
+//    _BumpMap ("Normal Map (RGB)", 2D) = "bump" { }
+//    _Mask ("Specularity (R), Shininess (G), Refraction (B)", 2D) = "black" { }
+//    _Color ("Color Tint", Color) = (1,1,1,1)
+//    _Specular ("Specular Color", Color) = (0,0,0,0)
+//    _Focus ("Focus", Range(-100,100)) = -100
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.2
+//   }
+//   Fallback Off
+//   SubShader 1/4 {
+//     LOD 500
+//     Tags { "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     GrabPass {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" }
+//      }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       AlphaTest Greater 0
+//       ColorMask RGB
+//       GpuProgramID 521
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_OFF" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 18 [_MainTex_ST]
+//           Vector 17 [unity_FogParams]
+//           Vector 12 [unity_SHAb]
+//           Vector 11 [unity_SHAg]
+//           Vector 10 [unity_SHAr]
+//           Vector 15 [unity_SHBb]
+//           Vector 14 [unity_SHBg]
+//           Vector 13 [unity_SHBr]
+//           Vector 16 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c19, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_texcoord6 o6
+dcl_texcoord7 o7
+dcl_position o8
+dcl_color o9
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c0, v0
+    dp4 r1.y, c1, v0
+    mov r0.y, -r1.y
+    dp4 r1.w, c3, v0
+    add r0.yz, r0.xxyw, r1.w
+    mov r1.x, r0.x
+    mul o5.xy, r0.yzzw, c19.x
+    mad o0.xy, v3, c18, c18.zwzw
+    dp4 o1.w, c4, v0
+    dp4 o2.w, c5, v0
+    dp4 o3.w, c6, v0
+    mul r0.xyz, v2.y, c8
+    mad r0.xyz, c7, v2.x, r0
+    mad r0.xyz, c9, v2.z, r0
+    nrm r2.xyz, r0
+    mul r0.x, r2.y, r2.y
+    mad r0.x, r2.x, r2.x, -r0.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c13, r3
+    dp4 r4.y, c14, r3
+    dp4 r4.z, c15, r3
+    mad r0.xyz, c16, r0.x, r4
+    mov r2.w, c19.y
+    dp4 r3.x, c10, r2
+    dp4 r3.y, c11, r2
+    dp4 r3.z, c12, r2
+    add o6.xyz, r0, r3
+    dp4 r1.z, c2, v0
+
+mov o8, r1 // Relocated from line 109 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Transparent_Refractive/vp/CFA5C5D6.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r0.x, r1.z, c17.x
+    mul r0.x, r0.x, -r0.x
+    exp o7.x, r0.x
+
+//     mov o8, r1 // Relocated to line 106 with shadertool.py
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4, r1
+    mov o5.zw, r1
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o1.x, r0.z
+    mul r1.xyz, r0, r2.zxyw
+    mad r1.xyz, r2.yzxw, r0.yzxw, -r1
+    mul r1.xyz, r1, v1.w
+    mov o1.y, r1.x
+    mov o1.z, r2.x
+    mov o2.x, r0.x
+    mov o3.x, r0.y
+    mov o2.y, r1.y
+    mov o3.y, r1.z
+    mov o2.z, r2.y
+    mov o3.z, r2.z
+    mov o9, v4

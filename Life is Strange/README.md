@@ -1,6 +1,12 @@
 Life is Strange (Episode 1)
 ===========================
 
+Update 2015-03-25
+-----------------
+- Fixed Chapter 2
+- Disable some fog effects that broke with SkipSetScissorRect (Press P to
+  re-enable this)
+
 Update 2015-02-01
 -----------------
 - Added subtitle depth adjustment (see below)

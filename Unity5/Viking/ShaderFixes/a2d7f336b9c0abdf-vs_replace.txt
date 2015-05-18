@@ -1,0 +1,85 @@
+// 3DMigoto: a2d7f336b9c0abdf | Matched 2 variants of 1 shaders: Hidden/Dof/DX11Dof
+// 
+//    Unity headers extracted from DepthOfFieldDX11.shader
+//    Shader "Hidden/Dof/DX11Dof" {
+//      Properties {
+//       _MainTex ("", 2D) = "white" { }
+//       _BlurredColor ("", 2D) = "white" { }
+//       _FgCocMask ("", 2D) = "white" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+// 1:     Pass 2/3 {
+// 2:     Pass 3/3 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+// 2:       Blend DstAlpha One, Zero One
+// 1:       Blend One One
+// 2:       GpuProgramID 136572
+// 1:       GpuProgramID 76948
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              SetBuffer 0 [pointBuffer]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_5_0
+
+
+struct appendStruct {
+	float3 pos;
+	float4 color;
+};
+
+StructuredBuffer<appendStruct> pointBuffer;
+
+struct vs_out {
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD0;
+	float4 color : TEXCOORD1;
+	float cocOverlap : TEXCOORD2;
+};
+
+#define UNITY_UV_STARTS_AT_TOP 1
+
+Texture2D<float4> StereoParams : register(t125);
+
+vs_out main (uint id : SV_VertexID)
+{
+
+float4 stereo = StereoParams.Load(0);
+
+	vs_out o;
+	float2 pos = pointBuffer[id].pos.xy ;
+
+//pos.x += stereo.x / 2;
+
+	o.pos = float4(pos * 2.0 - 1.0, 0, 1);
+	o.color =  pointBuffer[id].color;
+	#if UNITY_UV_STARTS_AT_TOP
+		o.pos.y *= -1;
+	#endif
+	o.cocOverlap = pointBuffer[id].pos.z;
+
+// Extract eye information embedded Z from 3f9324116cce2bd9. If pos.z is
+// negative it is the right eye. Add one and negate it to get the original
+// pos.z:
+bool right = false;
+if (pointBuffer[id].pos.z < 0) {
+	o.cocOverlap = -(o.cocOverlap + 1);
+	right = true;
+}
+
+// Filter out points for wrong eye:
+if ((right && stereo.z == 1) || (!right && stereo.z == -1))
+	o.pos = 1;
+
+	return o;
+}

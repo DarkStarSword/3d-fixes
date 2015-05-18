@@ -1,0 +1,114 @@
+// CRC32: E61EC781 | Matched 4 variants of 1 shaders: Mimimi/Character/Desaturate Bumped Specular Dissolve
+// 
+//    Unity headers extracted from Emo-MainChar-BumpSpec-Dissolve.shader
+//    Shader "Mimimi/Character/Desaturate Bumped Specular Dissolve" {
+//      Properties {
+//       _Brightness ("_Brightness", Range(1,5)) = 1
+//       _Health ("_Health", Range(0,1)) = 1
+//       _RimColor ("Rim Color", Color) = (0.26,0.19,0.16,0)
+//       _RimPower ("Rim Power", Range(0.5,8)) = 3
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _SliceGuide ("_SliceGuide", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Amount ("Extrusion Amount", Range(0,1)) = 0
+//       _Settings ("Resolution, Speed, Strength, Player Dis", Vector) = (0.1,1,0.3,6)
+//       _DisColor ("_DisColor", Color) = (0.26,0.19,0.16,0)
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 5/5 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" "LIGHTPROBES_OFF" }
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" "LIGHTPROBES_ON" }
+// 8:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" "LIGHTPROBES_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" "LIGHTPROBES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_World2Object]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [_Settings]
+//              Float 13 [_Amount]
+//              Vector 14 [unity_LightmapST]
+//              Vector 15 [_MainTex_ST]
+//              Vector 16 [_SliceGuide_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 32 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c17, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r2.xyz, r0, v1.w
+    mul r1.xyz, v2, c12.x
+    mad r1.xyz, r1, c13.x, v0
+    mov r0.w, c17.x
+    mov r0.xyz, c8
+    dp4 r3.z, r0, c6
+    dp4 r3.y, r0, c5
+    dp4 r3.x, r0, c4
+    mad r0.xyz, r3, c11.w, -r1
+    mov r1.w, v0
+    dp3 r3.y, r0, r2
+    dp3 r3.x, r0, v1
+    dp3 r3.z, v2, r0
+    dp3 r0.x, r3, r3
+    rsq r0.z, r0.x
+    mul o2.xyz, r0.z, r3
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+
+mov o0, r0 // Relocated from line 96 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_Character_Desaturate Bumped Specular Dissolve/vp/E61EC781.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xyz, r0.xyww, c17.y
+    mul r2.y, r2, c9.x
+    mad o3.xy, r2.z, c10.zwzw, r2
+
+//     mov o0, r0 // Relocated to line 93 with shadertool.py
+    mov o3.zw, r0
+    mad o1.zw, v3.xyxy, c16.xyxy, c16
+    mad o1.xy, v3, c15, c15.zwzw
+    mad o4.xy, v4, c14, c14.zwzw

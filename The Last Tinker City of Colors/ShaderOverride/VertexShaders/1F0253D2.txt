@@ -1,0 +1,207 @@
+// CRC32: 1F0253D2 | Unity headers extracted from ReColor-Wind-Bumped-Specular-CullOff.shader
+// Shader "Mimimi/ReColor/Wind/Bumped Specular CullOff" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,0)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
+//    _BumpMap ("Normalmap", 2D) = "bump" {}
+//    _Wind ("Wind params", Vector) = (1,1,1,1)
+//    _WindEdgeFlutter ("Wind edge fultter factor", Float) = 0.5
+//    _WindEdgeFlutterFreqScale ("Wind edge fultter freq scale", Float) = 0.5
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "RenderType"="Opaque" }
+//       Cull Off
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord2
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Matrix 8 [_World2Object]
+//           Vector 12 [_Time]
+//           Vector 13 [_ProjectionParams]
+//           Vector 14 [_ScreenParams]
+//           Vector 15 [_WorldSpaceLightPos0]
+//           Vector 16 [unity_4LightPosX0]
+//           Vector 17 [unity_4LightPosY0]
+//           Vector 18 [unity_4LightPosZ0]
+//           Vector 19 [unity_4LightAtten0]
+//           Vector 20 [unity_LightColor0]
+//           Vector 21 [unity_LightColor1]
+//           Vector 22 [unity_LightColor2]
+//           Vector 23 [unity_LightColor3]
+//           Vector 24 [unity_SHAr]
+//           Vector 25 [unity_SHAg]
+//           Vector 26 [unity_SHAb]
+//           Vector 27 [unity_SHBr]
+//           Vector 28 [unity_SHBg]
+//           Vector 29 [unity_SHBb]
+//           Vector 30 [unity_SHC]
+//           Vector 31 [unity_Scale]
+//           Vector 32 [_Wind]
+//           Float 33 [_WindEdgeFlutter]
+//           Float 34 [_WindEdgeFlutterFreqScale]
+//           Vector 35 [_MainTex_ST]
+//           Vector 36 [_BumpMap_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 113 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c37, 1.00000000, 2.00000000, -0.50000000, -1.00000000
+    def c38, 1.97500002, 0.79299998, 0.37500000, 0.19300000
+    def c39, 2.00000000, 3.00000000, 0.30000001, 0.10000000
+    def c40, 0.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, c7
+    dp3 r0.y, c37.x, r0
+    add r0.x, r0.y, c33
+    mov r3.xyz, c8
+    mov r7.w, c37.x
+    mov r0.z, c12.y
+    dp3 r0.x, v0, r0.x
+    mad r0.xy, c34.x, r0.z, r0
+    mul r0, r0.xxyy, c38
+    frc r0, r0
+    mad r0, r0, c37.y, c37.z
+    frc r0, r0
+    mad r0, r0, c37.y, c37.w
+    abs r1, r0
+    mad r0, -r1, c39.x, c39.y
+    mul r1, r1, r1
+    mul r1, r1, r0
+    add r1.xy, r1.xzzw, r1.ywzw
+    mov r0.xyz, c10
+    dp3 r0.z, c32, r0
+    dp3 r0.x, c32, r3
+    mul r1.zw, v2.xyxz, c33.x
+    mul r3.xz, r1.zyww, c39.w
+    mov r2.xyz, c9
+    dp3 r0.y, c32, r2
+    mul r2.xyz, r0, r1.y
+    mov r1.w, v0
+    mul r2.xyz, v5.x, r2
+    mul r3.y, v5.x, c39.z
+    mad r1.xyz, r1.xyxw, r3, r2
+    mul r0.w, v5.x, c32
+    mad r1.xyz, r1, r0.w, v0
+    mad r1.xyz, v5.x, r0, r1
+    dp4 r8.xy, r1, c5
+    add r3, -r8.x, c17
+    dp4 r8.x, r1, c4
+    dp4 r6.zw, r1, c6
+    mul r0, r3, r3
+    add r2, -r8.x, c16
+    mad r4, r2, r2, r0
+    add r0, -r6.z, c18
+    mul r6.xyz, v2, c31.w
+    dp3 r8.z, r6, c5
+    mad r4, r0, r0, r4
+    dp3 r7.x, r6, c4
+    mul r3, r8.z, r3
+    mad r2, r7.x, r2, r3
+    dp3 r3.w, r6, c6
+    mad r0, r3.w, r0, r2
+    mul r5, r4, c19
+    mov r7.y, r8.z
+    mov r7.z, r3.w
+    rsq r2.x, r4.x
+    rsq r2.y, r4.y
+    rsq r2.z, r4.z
+    rsq r2.w, r4.w
+    mul r0, r0, r2
+    add r2, r5, c37.x
+    rcp r2.x, r2.x
+    rcp r2.y, r2.y
+    rcp r2.w, r2.w
+    rcp r2.z, r2.z
+    max r0, r0, c40.x
+    mul r0, r0, r2
+    mul r2.xyz, r0.y, c21
+    mad r2.xyz, r0.x, c20, r2
+    mad r0.xyz, r0.z, c22, r2
+    mul r2.z, r8, r8
+    mad r4.xyz, r0.w, c23, r0
+    mul r0, r7.xyzz, r7.yzzx
+    mov r8.z, r6.w
+    dp4 r2.w, r1, c3
+    dp4 r2.x, r1, c0
+    dp4 r2.y, r1, c1
+
+mov o0, r2 // Relocated from line 181 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_ReColor_Wind_Bumped Specular CullOff/vp/1F0253D2.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    mul r3.xyz, r2.xyww, c40.y
+    dp4 r6.z, r0, c29
+    dp4 r6.y, r0, c28
+    dp4 r6.x, r0, c27
+    mad r2.z, r7.x, r7.x, -r2
+    mul r0.xyz, r2.z, c30
+    dp4 r2.z, r1, c2
+    dp4 r5.z, r7, c26
+    dp4 r5.y, r7, c25
+    dp4 r5.x, r7, c24
+    add r5.xyz, r5, r6
+    add r0.xyz, r5, r0
+    add o4.xyz, r0, r4
+    mov r0.x, r3
+    mul r0.y, r3, c13.x
+    mad o5.xy, r3.z, c14.zwzw, r0
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r1.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r0, c10
+    dp4 r3.z, c15, r0
+    mov r0, c9
+    dp4 r3.y, c15, r0
+
+//     mov o0, r2 // Relocated to line 157 with shadertool.py
+mov o0.z, r2.z // Inserted by shadertool.py
+
+    mov o5.zw, r2
+    mul r2.xyz, r1, v1.w
+    mov r1, c8
+    dp4 r3.x, c15, r1
+    mov o2.xyz, r8
+    dp3 o3.y, r3, r2
+    dp3 o3.z, v2, r3
+    dp3 o3.x, r3, v1
+    mad o1.zw, v3.xyxy, c36.xyxy, c36
+    mad o1.xy, v3, c35, c35.zwzw

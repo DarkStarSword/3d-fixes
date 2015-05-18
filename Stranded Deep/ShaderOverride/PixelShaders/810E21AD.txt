@@ -1,0 +1,92 @@
+// CRC32: 810E21AD | Unity headers extracted from Distortion.shader
+// Shader "Beam Team/Special/Texture Distortion" {
+//   Properties {
+//    _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" {}
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Offset -1, -1
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Vector 0 [_Time]
+//           SetTexture 0 [_MainTex] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    dcl_2d s0
+    def c1, 2, 1.5, 0.159154907, 0.5
+    def c2, 6.28318501, -3.14159298, 2.5, 6
+    def c3, 4, 4.19999981, 8, 9
+    def c4, 3.5, 3, 12, 11
+    def c5, 4.5, 0.25, 0.00400000019, 0
+    dcl_texcoord v0.xy
+    mul_pp r1.x, -v0, c2.w
+    mov r0.x, c0.y
+    mad_pp r0.y, -v0, c1.x, v0.x
+    mad r0.y, c1, -r0.x, r0
+    mad_pp r0.z, v0.y, c3.x, r1.x
+    mov r0.x, c0.y
+    mad r0.z, c3.y, r0.x, r0
+    mad r0.x, r0.y, c1.z, c1.w
+    mad r0.y, r0.z, c1.z, c1.w
+    frc r0.y, r0
+    frc r0.x, r0
+    mad r0.x, r0, c2, c2.y
+    sincos r2.xy, r0.x
+    mad r1.y, r0, c2.x, c2
+    sincos r0.xy, r1.y
+    mul r0.z, r0.x, c1.w
+    mul_pp r0.y, v0, c3.z
+    mad r1.y, r2, c5, r0.z
+    mad_pp r0.y, v0.x, c3.w, r0
+    mov r0.x, c0.y
+    mad r0.x, c4, r0, r0.y
+    mad r0.y, r0.x, c1.z, c1.w
+    frc r0.z, r0.y
+    mul_pp r0.x, -v0.y, c4.z
+    mad_pp r0.y, v0.x, c4.w, r0.x
+    mov r0.x, c0.y
+    mad r0.x, c5, r0, r0.y
+    mad r1.w, r0.z, c2.x, c2.y
+    mad r1.z, r0.x, c1, c1.w
+    sincos r0.xy, r1.w
+    frc r0.x, r1.z
+    mad r3.x, r0.y, c5.y, r1.y
+    mad r0.x, r0, c2, c2.y
+    sincos r2.xy, r0.x
+    mad_pp r0.y, v0, c4, -r1.x
+    mov r0.x, c0.y
+    mad r0.y, c2.z, -r0.x, r0
+    mad r0.z, r0.y, c1, c1.w
+    mul_pp r0.x, v0, c2.z
+    mad_pp r0.y, v0.x, c1.x, r0.x
+    mov r0.x, c0.y
+    mad r0.x, c2.z, r0, r0.y
+    frc r0.y, r0.z
+    mad r0.x, r0, c1.z, c1.w
+    mad r1.y, r0, c2.x, c2
+    frc r1.x, r0
+    sincos r0.xy, r1.y
+    mad r0.y, r1.x, c2.x, c2
+    sincos r1.xy, r0.y
+    mul r0.x, r0, c1.w
+    mad r0.x, r1.y, c5.y, r0
+    mad r3.y, r2, c5, r0.x
+    mad r0.xy, -r3, c5.z, v0
+    texld r0, r0, s0
+    mov_pp oC0, r0
+
+// approximately 97 instruction slots used (1 texture, 96 arithmetic)

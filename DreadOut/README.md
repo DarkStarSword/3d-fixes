@@ -23,6 +23,9 @@ Known Issues
   set the separation to 1% which will make the image on the camera mostly
   usable.
 
+- Some shadows are broken in some of the cutscenes in Act 2 - these would need
+  additional features in Helix mod to fix.
+
 Installation (64bit)
 --------------------
 1. Extract the zip file to the game directory

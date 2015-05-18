@@ -1,0 +1,74 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c12, 2, 1, 6.40884876, -3.14159274
+    def c13, 0.0240000002, 0.0799999982, 0.200000003, -0.161616161
+    def c14, 0.0480000004, 0.0599999987, 0.239999995, 0.0960000008
+    def c15, 1.20000005, 2, 1.60000002, 4.80000019
+    def c16, 0.00833330024, -0.000198409994, 0, 0
+    def c17, 0.215387449, 0.358979076, 0.287183255, 0.861549795
+    def c18, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c19, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.x, c10.z
+    mad r1.x, c12, -r0, -v5.z
+    mul r2.xyz, v0.z, c13
+    add r1.x, r1, c12.y
+    mad r0, v0.x, c14, r2.xyyz
+    add r1.y, v5, c10
+    mul r1.x, r1, c8
+    mul r1.x, r1, r1.y
+    mad r0, r1.x, c15, r0
+    frc r0, r0
+    mad r0, r0, c12.z, c12.w
+    mul r1, r0, r0
+    mul r2, r1, r0
+    mad r0, r2, c13.w, r0
+    mul r2, r2, r1
+    mul r1, r2, r1
+    mad r0, r2, c16.x, r0
+    add r3.x, v5.w, c10.w
+    mad r0, r1, c16.y, r0
+    mul r2.x, v3.y, r3
+    mul r0, r0, r2.x
+    mul r0, r0, c17
+    mul r0, r0, r0
+    mul r1, r0, r0
+    dp4 r0.z, r1, c18
+    dp4 r0.x, r1, c19
+    mov r0.y, c16.z
+    dp3 r1.y, r0, c6
+    dp3 r1.x, r0, c4
+    add r0.xz, v0, -r1.xyyw
+    mov r0.yw, v0
+    dp4 r1.x, r0, c2
+    add r1.x, r1, c9
+    max r1.y, r1.x, c16.z
+    add r1.y, r1, -r1.x
+    mad r1.z, r1.y, c9.y, r1.x
+    dp4 r1.w, r0, c3
+    dp4 r1.x, r0, c0
+    dp4 r1.y, r0, c1
+    mov o2, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -i FF8C71ED.txt
+texldl r4, c220.z, s0
+add r4.w, r1.w, -r4.y
+mad r1.x, r4.w, r4.x, r1.x
+
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0, r1
+    mad o1.xy, v3, c11, c11.zwzw
+
+// approximately 42 instruction slots used

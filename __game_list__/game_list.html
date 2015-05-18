@@ -1,10 +1,14 @@
-<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.</i></p>
+<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.
+<br />
+If you know of other tweak guides or would like to write one, please post in <a href="https://forums.geforce.com/default/topic/820445/3d-vision/games-that-require-config-registry-or-profile-changes-to-work-with-nvidias-stereoscopic-drivers-/">this thread</a>.</i></p>
 
 <noscript>
 <p><h1>This page requires javascript to display the game list!</h1></p>
 </noscript>
 
-<div id="gamelist_content"><em>Loading...</em></div>
+<div id="loading_content"><p><em>Loading...</em></p></div>
+
+<div id="gamelist_content"></div>
 <br/>
 <h3>Guides, Tools, etc.</h3>
 <div id="guides_content"><em>Loading...</em></div>
@@ -94,6 +98,9 @@ function title_game(title)
 
 function post_extra(post)
 {
+  if (post.tag) {
+    return '<span title="' + post.description + '"><small> ' + post.tag + '</small></span>';
+  }
   if (jQuery.inArray("disabled", post.labels) != -1) {
     return '<span title="Fix is limited to disabling broken effects"><small> [Disabled Effects]</small></span>';
   }
@@ -115,36 +122,27 @@ function add_link(parent, prefix, url, title, text, postfix)
   parent.appendChild(document.createElement('br'));
 }
 
-function handle_response(response)
+var games = {};
+var games_list = [];
+var guides = [];
+var misc = [];
+var game_list_shown = false;
+
+function published_sort(a, b)
 {
-  var games = {};
-  var games_list = [];
-  var guides = [];
-  var misc = [];
+        var a_date = new Date(a.published);
+        var b_date = new Date(b.published);
 
-  for (var idx in response.items) {
-    var post = response.items[idx];
-    post.path = get_path(post.url);
+        if (!a.published)
+          return 1;
+        if (!b.published)
+          return -1;
 
-    if (jQuery.inArray(post.path, hidden_posts) != -1)
-      continue;
+        return b_date - a_date;
+}
 
-    if (is_guide(post))
-      guides.push(post);
-    else if (is_misc(post))
-      misc.push(post);
-    else {
-      post.clean_title = post_title(post);
-      var game_title = title_game(post.clean_title).toLowerCase();
-      if (game_title in games) {
-        games[game_title].push(post);
-      } else {
-        games[game_title] = [post];
-        games_list.push(game_title);
-      }
-    }
-  }
-
+function show_game_list()
+{
   var gamelist_elem = document.getElementById("gamelist_content");
   gamelist_elem.innerHTML = "";
   games_list = games_list.sort();
@@ -154,6 +152,7 @@ function handle_response(response)
       post = games[title][0];
       add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post));
     } else {
+      games[title].sort(published_sort);
       add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":");
       for (j in games[title]) {
         post = games[title][j];
@@ -179,11 +178,77 @@ function handle_response(response)
     add_link(misc_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
   }
 
-  setTimeout(function() {
-    $(".blogger-clickTrap").remove(); /* So links work while previewing page */
-  }, 500);
+  game_list_shown = true;
 }
+
+function add_game(post)
+{
+  post.clean_title = post_title(post);
+  var game_title = title_game(post.clean_title).toLowerCase();
+  if (game_title in games) {
+    games[game_title].push(post);
+  } else {
+    games[game_title] = [post];
+    games_list.push(game_title);
+  }
+}
+
+function collate_responses(response)
+{
+  if (response.nextPageToken) {
+    jQuery.ajax({
+      url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&key=GET_YOUR_OWN_API_KEY&pageToken=" + response.nextPageToken,
+      success : collate_responses
+    });
+  }
+
+  for (var idx in response.items) {
+    var post = response.items[idx];
+    post.path = get_path(post.url);
+
+    if (jQuery.inArray(post.path, hidden_posts) != -1)
+      continue;
+
+    if (is_guide(post))
+      guides.push(post);
+    else if (is_misc(post))
+      misc.push(post);
+    else
+      add_game(post);
+  }
+
+  show_game_list();
+
+  if (!response.nextPageToken) {
+    var loading_elem = document.getElementById("loading_content");
+    loading_elem.innerHTML = "";
+  }
+}
+
+function collate_extra_list(response)
+{
+  for (var idx in response.items) {
+    var post = response.items[idx];
+    post.path = get_path(post.url);
+    post.tag = response.tag;
+    post.description = response.description;
+
+    add_game(post);
+  }
+
+  if (game_list_shown)
+    show_game_list();
+}
+
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/game_list_extra.json",
+  success : collate_extra_list
+});
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/opengl.json",
+  success : collate_extra_list
+});
 // @license end
 //--></script>
-<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)&orderBy=published&maxResults=1000000000&callback=handle_response&key=GET_YOUR_OWN_API_KEY"></script>
+<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&callback=collate_responses&key=GET_YOUR_OWN_API_KEY"></script>
 <!-- vi:se et sw=2 ts=2 ai:-->

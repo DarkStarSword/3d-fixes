@@ -20,6 +20,9 @@ these fixes.
 - Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
 - Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
 - Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
+- Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
+- Pineview Drive (Halos, shadows, sun shafts, etc.)
+- Viscera Cleanup Detail (shadows, missing UI, etc.)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
@@ -86,6 +89,7 @@ pretty. At the moment it can:
   harm than good.
 - Automatically fix certain types of reflective surfaces in Unreal games (those
   using a 2D DNEReflectionTexture, used in Life Is Strange).
+- Automatically fix shadows in Unreal Engine games.
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
@@ -131,3 +135,7 @@ games.
 
 ### calc_shader_crc.py ###
 Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
+
+### unity_asset_extractor.py ###
+An alternative to Unity Asset Explorer, to extract assets (currently limited to
+shaders) from Unity 4 and Unity 5 games in batch.

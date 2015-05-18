@@ -1,0 +1,134 @@
+// CRC32: 2BE9B51D | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassLighting
+// 
+//    Unity headers extracted from Internal-PrePassLighting.shader
+//    Shader "Hidden/Internal-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 3/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Blend One One
+//          GpuProgramID 189300
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "POINT" "SHADOWS_CUBE" "SUNSHINE_DISABLED" }
+// 8:           Keywords { "POINT" "SHADOWS_CUBE" "SUNSHINE_FILTER_HARD" }
+// 4:           Keywords { "POINT" "SHADOWS_CUBE" "SUNSHINE_FILTER_PCF_2x2" }
+// 2:           Keywords { "POINT" "SHADOWS_CUBE" "SUNSHINE_FILTER_PCF_3x3" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Vector 11 [_LightColor]
+//              Vector 10 [_LightPos]
+//              Vector 6 [_LightPositionRange]
+//              Vector 7 [_LightShadowData]
+//              Vector 4 [_ProjectionParams]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 5 [_ZBufferParams]
+//              Vector 9 [unity_ColorSpaceLuminance]
+//              Vector 12 [unity_LightmapFade]
+//              Vector 8 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraNormalsTexture] 2D 0
+//              SetTexture 1 [_CameraDepthTexture] 2D 1
+//              SetTexture 2 [_LightTextureB0] 2D 2
+//              SetTexture 3 [_ShadowMapTexture] CUBE 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c13, 2, -1, 1, 0.970000029
+    def c14, 1, 0.00392156886, 1.53787005e-005, 6.03086292e-008
+    def c15, 0, 128, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+
+dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+    mov r0.xyz, c11
+    mul_pp r0.xyw, r0.xyzz, c9.xyzz
+    add_pp r0.xw, r0.yyzw, r0.x
+    mul_pp r0.y, r0.w, r0.y
+    mad_pp r0.x, r0.z, c9.z, r0.x
+    rsq_pp r0.y, r0.y
+    rcp_pp r0.y, r0.y
+    dp2add_pp r0.x, c9.w, r0.y, r0.x
+    rcp r0.y, v1.z
+    mul r0.y, r0.y, c4.z
+    mul r0.yzw, r0.y, v1.xxyz
+    rcp r1.x, v0.w
+    mul r1.xy, r1.x, v0
+    texld r2, r1, s1
+    texld_pp r1, r1, s0
+    mad r2.x, c5.x, r2.x, c5.y
+    rcp r2.x, r2.x
+    mul r3.xyz, r0.yzww, r2.x // depth in r3.z
+    mov_pp r3.w, c13.z
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
+// shadertool.py --stereo-sampler-ps=s15 --fix-unity-lighting-ps --ignore-register-errors --in-place 2BE9B51D.txt
+texldl r31, c220.z, s15
+add r31.w, r3.z, -r31.y
+mul r31.w, r31.w, r31.x
+mad r3.x, -r31.w, v5.x, r3.x
+
+    dp4 r4.x, c0, r3
+    dp4 r4.y, c1, r3
+    dp4 r4.z, c2, r3
+    add r2.yzw, r4.xxyz, -c3.xxyz
+    dp3 r0.y, r2.yzww, r2.yzww
+    rsq r0.y, r0.y
+    add r3.xyw, r4.xyzz, -c10.xyzz
+    add r4.xyz, r4, -c8
+    dp3 r0.z, r4, r4
+    rsq r0.z, r0.z
+    rcp r0.z, r0.z
+    mad r0.z, r0.w, -r2.x, r0.z
+    mad r0.z, c8.w, r0.z, r3.z
+    mad r0.z, r0.z, c12.z, c12.w
+    add_sat r0.z, -r0.z, c13.z
+    dp3 r0.w, r3.xyww, r3.xyww
+    rsq r2.x, r0.w
+    mul r0.w, r0.w, c10.w
+    texld r4, r0.w, s2
+    mul_pp r4.yzw, r2.x, r3.xxyw
+    texld r3, r3.xyww, s3
+    dp4 r0.w, r3, c14
+    rcp r2.x, r2.x
+    mul r2.x, r2.x, c6.w
+    mad r0.w, r2.x, -c13.w, r0.w
+    mov r3.z, c13.z
+    cmp_pp r0.w, r0.w, r3.z, c7.x
+    mul r0.w, r0.w, r4.x
+    mad r2.xyz, r2.yzww, -r0.y, -r4.yzww
+    nrm_pp r3.xyz, r2
+    mad_pp r1.xyz, r1, c13.x, c13.y
+    mul_pp r0.y, r1.w, c15.y
+    nrm_pp r2.xyz, r1
+    dp3_pp r1.x, r3, r2
+    dp3_pp r1.y, -r4.yzww, r2
+    max_pp r2.x, r1.y, c15.x
+    mul r1.y, r0.w, r2.x
+    mov_sat r0.w, r0.w
+    mul_pp r2.yzw, r1.y, c11.xxyz
+    max_pp r3.x, r1.x, c15.x
+    pow r1.x, r3.x, r0.y
+    mul r0.y, r0.w, r1.x
+    mul_pp r2.x, r0.x, r0.y
+    mul_pp oC0, r0.z, r2

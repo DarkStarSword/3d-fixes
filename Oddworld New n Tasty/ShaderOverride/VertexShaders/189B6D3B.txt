@@ -1,0 +1,82 @@
+// CRC32: 189B6D3B | Matched 2 variants of 1 shaders: Hidden/Glow 11/GlowObjectsDepth
+// 
+//    Unity headers extracted from Glow11GlowObjectsDepth.shader
+//    Shader "Hidden/Glow 11/GlowObjectsDepth" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (1,1,1,1)
+//       _GlowStrength ("Glow Strength", Float) = 1
+//       _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//       _TintColor1 ("Effect Colour Tint 1", Color) = (1,1,1,1)
+//       _TintColor2 ("Effect Colour Tint 2", Color) = (1,1,1,1)
+//       _Pulse_Speed ("_Pulse_Speed", Range(0,5)) = 1.34
+//       _GlowTex2 ("Glow", 2D) = "" {}
+//       _GlowStrength2 ("Glow Strength 2", Float) = 1
+//      }
+//      Fallback Off
+//      SubShader 1/5 {
+//        Tags { "RenderType"="Glow11" "RenderEffect"="Glow11" }
+//        Pass 1/1 {
+//          Name "OPAQUEGLOW"
+//          Tags { "RenderType"="Glow11" "RenderEffect"="Glow11" }
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "GLOW11_GLOW_GLOWTEX" "GLOW11_MULTIPLY_VERT" }
+// 2:           Keywords { "GLOW11_GLOW_GLOWTEX" "GLOW11_MULTIPLY_VERT_ALPHA" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [_GlowTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 14 ALU
+    dcl_position o0
+    dcl_color0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord3 o3
+    def c11, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_color0 v2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r1.w, v0, c7
+    dp4 r0.x, v0, c4
+    mov r0.w, r1
+    dp4 r0.y, v0, c5
+
+mov o0, r0 // Relocated from line 60 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_Glow 11_GlowObjectsDepth/vp/189B6D3B.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c11.x
+    mul r1.y, r1, c8.x
+    dp4 r0.z, v0, c6
+
+//     mov o0, r0 // Relocated to line 57 with shadertool.py
+mov o0.z, r0.z // Inserted by shadertool.py
+
+    dp4 r0.x, v0, c2
+    mad o3.xy, r1.z, c9.zwzw, r1
+    mov o1, v2
+    mad o2.xy, v1, c10, c10.zwzw
+    mov o3.z, -r0.x
+    mov o3.w, r1

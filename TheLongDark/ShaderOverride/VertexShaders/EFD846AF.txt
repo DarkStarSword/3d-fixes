@@ -1,0 +1,116 @@
+// CRC32: EFD846AF | Matched 2 variants of 1 shaders: Decal/Colored/Shadow/Transparent Bumped Diffuse Colored Shadow
+// 
+//    Unity headers extracted from Decal-Alpha-Bumped-Colored-Receive-Shadow.shader
+//    Shader "Decal/Colored/Shadow/Transparent Bumped Diffuse Colored Shadow" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Decal/Transparent Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 2/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha One
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 108822
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 13 [_BumpMap_ST]
+//              Vector 12 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c14, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_color o6
+    dcl_texcoord5 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c12, c12.zwzw
+    mad o1.zw, v3.xyxy, c13.xyxy, c13
+    dp4 o5.x, c4, v0
+    dp4 o5.y, c5, v0
+    dp4 o5.z, c6, v0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c14.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 74 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Decal_Colored_Shadow_Transparent Bumped Diffuse Colored Shadow/vp/EFD846AF.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c14.x
+    mad o7.xy, r1.z, c11.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 71 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o7.zw, r0
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r1.xyz, c8.zxyw, v2.y
+    mad r1.xyz, c7.zxyw, v2.x, r1
+    mad r1.xyz, c9.zxyw, v2.z, r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r1.zxyw, r0.yzxw, -r2
+    mul r2.xyz, r2, v1.w
+    mov o2.y, r2.x
+    mov o2.z, r1.y
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.z
+    mov o4.z, r1.x
+    mov o6, v4

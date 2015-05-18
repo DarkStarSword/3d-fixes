@@ -64,6 +64,9 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
+// Extra input from VS with P.I[0,0]:
+dcl_texcoord5 v5.x
+
     rcp r0.x, v0.w
     mul r1.xy, v0, r0.x
     texld r0.x, r1, s1
@@ -77,31 +80,11 @@ dcl_2d s13
 
 // We need to adjust this view-space coordinate by this formula:
 // ViewX = ViewX + separation * (convergence - ViewZ) * P.I[0,0]
-//
-// We need P.I[0,0]
-// We have MV.I in c180 and MVP in c190 (refer to DX9Settings.ini)
-// We can calculate P as = MV.I * MVP
-// We make assumptions about P to simplify the maths, so that:
-// P.I[0,0] = 1 / P[0,0]
 
-// Transpose the first component of each of the MV.I regs into a temporary
-// register to get it's first row:
-mov r21.x, c180.x
-mov r21.y, c181.x
-mov r21.z, c182.x
-mov r21.w, c183.x
-// Now calculate the dot product of the first row of MV.I with the first column
-// of MVP and store the result in r20.x - this is Projection[0,0]:
-dp4 r20.x, r21, c190
-
-// Invert it to get P.I[0,0] (simplified from assumptions we make about P):
-rcp r20.x, r20.x
-
-// And now we can adjust the view-space coordinate:
 texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
 add r31.w, r3.z, -r31.y // r31.w = depth - convergence
 mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
-mul r31.w, r31.w, r20.x // r31.w = separation * (depth - convergence) * P.I[0,0]
+mul r31.w, r31.w, v5.x // r31.w = separation * (depth - convergence) * P.I[0,0]
 add r3.x, r3.x, -r31.w  // Finally adjust the X coord
 
     dp4 r6.z, r3, c2

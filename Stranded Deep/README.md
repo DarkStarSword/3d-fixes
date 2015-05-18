@@ -9,6 +9,8 @@ Fixed
 - Moved highlights on ocean floor to correct depth
 - Sun shafts
 - Underwater crepuscular rays
+- Automatically adjust the crosshair depth
+- Automatically remove the crosshair when it is faded out
 
 Installation
 ------------
@@ -23,8 +25,6 @@ Installation
 3. Launch the game and set quality to Ultra (other settings may work as well,
    but I haven't tested them)
 
-4. (Oprional) Disable the crosshair in the settings if you find it distracting.
-
 Keys
 ----
 - L: Activate recommended convergence preset - use after starting a new game,
@@ -34,8 +34,8 @@ Keys
 - F: Holding sets a convergence suitable for use with the watch, and will
   return to the L preset on release.
 
-- X: Cycles between four four HUD depth presets - 75% (default), 99.5%, screen
-  depth and 50%.
+- V: Cycles crosshair modes between automatic, always enabled and always
+  disabled (crosshair must be enabled in the settings).
 
 Troubleshooting
 ---------------
@@ -55,8 +55,3 @@ Notes
 -----
 - This is an early access game and the fix is likely to be broken by updates,
   so be sure to check back regularly, and report any broken effects.
-
-- This game has pushed DirectX9 shaders right to their limits, which caused me
-  some problems creating the fix. Everything seems to be working now, but
-  please let me know if you notice any details on the terrain or Ocean that are
-  missing with the fix installed (such as missing shadows on the sand).

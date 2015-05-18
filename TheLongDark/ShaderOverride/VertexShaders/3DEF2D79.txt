@@ -1,0 +1,218 @@
+// CRC32: 3DEF2D79 | Matched 4 variants of 4 shaders: Hidden/Unlit/Premultiplied Colored 1, Hidden/Unlit/Text 1, Hidden/Unlit/Transparent Colored 1, Hidden/Unlit/Transparent Packed 1
+// 
+//    Unity headers extracted from Unlit - Premultiplied Colored 1.shader
+//    Shader "Hidden/Unlit/Premultiplied Colored 1" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//      }
+//      Fallback "Unlit/Premultiplied Colored"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend One OneMinusSrcAlpha
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 48490
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ClipRange0]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit - Text 1.shader
+//    Shader "Hidden/Unlit/Text 1" {
+//      Properties {
+//       _MainTex ("Alpha (A)", 2D) = "white" { }
+//      }
+//      Fallback "Unlit/Text"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Offset -1, -1
+//          GpuProgramID 15459
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ClipRange0]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit - Transparent Colored 1.shader
+//    Shader "Hidden/Unlit/Transparent Colored 1" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//      }
+//      SubShader 1/2 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 8907
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ClipRange0]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit - Transparent Packed 1.shader
+//    Shader "Hidden/Unlit/Transparent Packed 1" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 33860
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ClipRange0]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+dcl_2d s3 // Copy of _CameraDepthTexture
+
+// For loop to improve stereo cursor accuracy:
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 0, 0, 0.5 // 1/i0.x, 0.5
+
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mad o1.xy, v0, c4.zwzw, c4
+    mov o3, v1
+    mov o0.xy, v2
+
+texldl r31, c220.z, s0
+
+mov r20.w, c150.w // Check if _ZBufferParams is valid
+if_ne r20.w, c220.x
+	// Adjust cursor depth based on the W component of the refr_sampler copied from
+	// the water shader, which has the scene depth.
+	// How do I know this? The water was the only surface with a halo around nearer
+	// objects, which suggests it had access to the depth buffer in some way (it
+	// would use this to calculate the water opacity based on depth). None of the
+	// sampler names sounded promising, so I determined that the texkill
+	// instruction caused the halo (removing it removed the halo), so from there it
+	// was a simple matter of looking at the samplers that provided input to that
+	// instruction and directly outputing the contents of the sampler to identify
+	// the channel with the depth information.
+
+	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
+	// near clipping plane and work our way towards center + separation (ideally
+	// we would loop one pixel at a time, but as the loop counts must be constant
+	// we can't do that here, so we just choose a granuality in i0 and c227.
+	// Alternatively we could loop one pixel at a time with a hardcoded maximum
+	// number of pixels)
+
+	rcp r20.w, c150.w		// W = starting depth = near clipping plane
+	add r31.w, r20.w, -r31.y	// near - convergence
+	mad r20.x, r31.w, r31.x, c220.w	// X sample coord = center + separation * (near - convergence)
+	mov r20.y, c220.w		// Y sample coord = center
+	add r20.z, r20.x, -c220.w	// Z = X offset from center
+	add r31.z, r31.x, -r20.z	// Total distance to cover (separation - starting X offset)
+
+	mov r21, r20			// Working copy
+	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
+	rep i0
+		mad r21.z, r31.z, c227.x, r21.z	// adjustment += (total distance to cover) / i0.x (granuality)
+
+		// Calculate W for this adjustment amount:
+		add r21.w, r31.x, -r21.z	// separation - adjustment
+		rcp r21.w, r21.w
+		mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
+
+		// Read depth texture at this pixel:
+		//add r21.x, c220.w, r21.z	// X = 0.5 + adjustment
+		// Had to divide adjustment by 2 for whatever reason:
+		mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
+		texldl r5, r21.xy, s3
+
+		// scale depth buffer to world Z (game dependent - look for scaling applied to
+		// the depth buffer wherever else it is used. In the case of Unity we use
+		// _ZBufferParams):
+		mad r5.x, r5.x, c150.x, c150.y
+		add r5.y, c150.z, c150.w // Derive 1/far from _ZBufferParams
+		mul r5.x, r5.x, r5.y
+		rcp r5.x, r5.x
+
+		// If the sampled depth is closer than the calculated depth, exit the loop:
+		break_ge r21.w, r5.x
+
+		// Set the output depth to this pixel
+		mov r20, r21
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r0.x, r0.x, r20.z
+endif
+mov o2, r0
