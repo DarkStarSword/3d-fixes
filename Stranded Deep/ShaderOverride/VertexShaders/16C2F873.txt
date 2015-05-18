@@ -162,17 +162,23 @@ texldl r31, c220.z, s0
 	// the channel with the depth information.
 
 	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
-	// center of the screen and work our way towards center + separation (ideally
+	// near clipping plane and work our way towards center + separation (ideally
 	// we would loop one pixel at a time, but as the loop counts must be constant
 	// we can't do that here, so we just choose a granuality in i0 and c227.
 	// Alternatively we could loop one pixel at a time with a hardcoded maximum
 	// number of pixels)
 
-	mov r20.xyzw, c220.wwxx		// xy=sample coords, z = X offset from center, w = depth
+	rcp r20.w, c150.w		// W = starting depth = near clipping plane
+	add r31.w, r20.w, -r31.y	// near - convergence
+	mad r20.x, r31.w, r31.x, c220.w	// X sample coord = center + separation * (near - convergence)
+	mov r20.y, c220.w		// Y sample coord = center
+	add r20.z, r20.x, -c220.w	// Z = X offset from center
+	add r31.z, r31.x, -r20.z	// Total distance to cover (separation - starting X offset)
+
 	mov r21, r20			// Working copy
 	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
 	rep i0
-		mad r21.z, r31.x, c227.x, r21.z	// adjustment += separation / i0.x
+		mad r21.z, r31.z, c227.x, r21.z	// adjustment += (total distance to cover) / i0.x (granuality)
 
 		// Calculate W for this adjustment amount:
 		add r21.w, r31.x, -r21.z	// separation - adjustment
