@@ -141,6 +141,8 @@ texldl r31, c220.z, s0
 
 // UI depth adjustment - only adjust if W == 1 to avoid moving plankton
 if_eq r0.w, c220.y
+mov r20.w, c150.w // Check if _ZBufferParams is valid
+if_ne r20.w, c220.x
 	// Adjust cursor depth based on the W component of the refr_sampler copied from
 	// the water shader, which has the scene depth.
 	// How do I know this? The water was the only surface with a halo around nearer
@@ -199,5 +201,6 @@ if_eq r0.w, c220.y
 
 	// Finally adjust the X coordinate:
 	add r0.x, r0.x, r20.z
+endif
 endif
 mov o1, r0
