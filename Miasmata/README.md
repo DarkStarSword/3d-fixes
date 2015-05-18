@@ -130,7 +130,7 @@ Installation
 
 - [Download the fix here][7]
 
-[7]: https://s3.amazonaws.com/DarkStarSword/3Dfix-Miasmata-2015-02-09.zip
+[7]: https://s3.amazonaws.com/DarkStarSword/3Dfix-Miasmata-2015-05-18.zip
 
 - If you have assigned Miasmata to the Aion profile for the previous version of
   this fix, remove it from that profile.
@@ -210,3 +210,9 @@ Update 2015-02-09
   version from GOG. Note that this old version was only tested with all
   graphics settings set to high, and the fog/god rays have clipping issues on
   this version, so it is recommended to update.
+
+Update 2015-05-18
+-----------------
+
+- Automatic stereo crosshair will now work on objects popped out of the screen
+  with high convergence settings.
