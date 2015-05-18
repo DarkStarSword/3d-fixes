@@ -22,8 +22,6 @@ Keys
 
 - F7: Save custom convergence preset to backslash key
 
-- X: Cycle between five UI depth presets (other than the crosshair)
-
 - V: Toggle crosshair between automatic depth and disabled (HUD must be enabled
   in settings)
 
