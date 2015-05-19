@@ -1,0 +1,444 @@
+// CRC32: CD61F9B3 | Matched 15 variants of 14 shaders: Dreamfall/FX/Additive (Soft) Boost, Hidden/Internal-Flare, Hidden/Internal-GUITexture, Hidden/Internal-Halo, OVRGUIShader, Particles/Additive, Particles/Additive (Soft), Particles/Alpha Blended, Particles/Alpha Blended Premultiply, Particles/Multiply, Particles/Multiply (Double), Particles/~Additive-Multiply, Sonic Ether/Particles/Additive, Transparent/Cutout/Soft Edge Unlit
+// 
+//    Unity headers extracted from Particle-Additive-Soft-Boost.shader
+//    Shader "Dreamfall/FX/Additive (Soft) Boost" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _Boost ("Boost", Float) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend One OneMinusSrcColor
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Internal-Flare.shader
+//    Shader "Hidden/Internal-Flare" {
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Overlay" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Overlay" }
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend One One
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_FlareTexture_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Internal-GUITexture.shader
+//    Shader "Hidden/Internal-GUITexture" {
+//      Properties {
+//       _MainTex ("Texture", any) = "" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Overlay" "ForceSupported"="True" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Overlay" "ForceSupported"="True" }
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Internal-Halo.shader
+//    Shader "Hidden/Internal-Halo" {
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Overlay" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Overlay" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend OneMinusDstColor One
+//          AlphaTest Greater 0
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_HaloFalloff_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from resources_182.shader
+//    Shader "OVRGUIShader" {
+//      Properties {
+//       _MainTex ("Texture", any) = "" {}
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Tags { "ForceSupported"="true" "QUEUE"="Overlay" "RenderType"="Overlay" }
+//        Pass 1/1 {
+//          Tags { "ForceSupported"="true" "QUEUE"="Overlay" "RenderType"="Overlay" }
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend One OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Add.shader
+//    Shader "Particles/Additive" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend SrcAlpha One
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle AddSmooth.shader
+//    Shader "Particles/Additive (Soft)" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend One OneMinusSrcColor
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Alpha Blend.shader
+//    Shader "Particles/Alpha Blended" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Premultiply Blend.shader
+//    Shader "Particles/Alpha Blended Premultiply" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Blend One OneMinusSrcAlpha
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Multiply.shader
+//    Shader "Particles/Multiply" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (1,1,1,1)
+//            }
+//          Blend Zero SrcColor
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle MultiplyDouble.shader
+//    Shader "Particles/Multiply (Double)" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0.5,0.5,0.5,0.5)
+//            }
+//          Blend DstColor SrcColor
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle AddMultiply.shader
+//    Shader "Particles/~Additive-Multiply" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,1)
+//            }
+//          Blend One OneMinusSrcAlpha
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from SEParticlesAdditive.shader
+//    Shader "Sonic Ether/Particles/Additive" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" {}
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _EmissionGain ("Emission Gain", Range(0,1)) = 0.3
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend SrcAlpha One
+//          AlphaTest Greater 0.01
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from AlphaTest-SoftEdgeUnlit.shader
+//    Shader "Transparent/Cutout/Soft Edge Unlit" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//       _Cutoff ("Base Alpha cutoff", Range(0,0.9)) = 0.5
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+// 1:     Pass 1/2 {
+// 2:     Pass 2/2 {
+// 2:       Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" "RequireOption"="SoftVegetation" }
+// 1:       Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+// 2:       ZWrite Off
+//          Cull Off
+// 2:       Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// UI *and* lens flare *and* bloom
+// Matches only bloom around certain lights - no adjustment needed, just using
+// this to prevent the UI adjustment being applied.
+
+    vs_3_0
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+    mov o2, v1
+    mad o0.xy, v2, c4, c4.zwzw
+    dp4 o1.w, v0, c3
+    dp4 o1.z, v0, c2
+    dp4 o1.y, v0, c1
+    dp4 o1.x, v0, c0
