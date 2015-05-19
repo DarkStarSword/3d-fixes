@@ -143,17 +143,6 @@ texldl r31, c220.z, s0
 if_eq r0.w, c220.y
 mov r20.w, c150.w // Check if _ZBufferParams is valid
 if_ne r20.w, c220.x
-	// Adjust cursor depth based on the W component of the refr_sampler copied from
-	// the water shader, which has the scene depth.
-	// How do I know this? The water was the only surface with a halo around nearer
-	// objects, which suggests it had access to the depth buffer in some way (it
-	// would use this to calculate the water opacity based on depth). None of the
-	// sampler names sounded promising, so I determined that the texkill
-	// instruction caused the halo (removing it removed the halo), so from there it
-	// was a simple matter of looking at the samplers that provided input to that
-	// instruction and directly outputing the contents of the sampler to identify
-	// the channel with the depth information.
-
 	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
 	// near clipping plane and work our way towards center + separation (ideally
 	// we would loop one pixel at a time, but as the loop counts must be constant
