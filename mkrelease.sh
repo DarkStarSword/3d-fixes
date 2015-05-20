@@ -19,6 +19,14 @@ fi
 
 zip=${PWD}/3Dfix-${game}-$date.zip
 
+status=$(git status --porcelain "$dir")
+if [ -n "$status" ]; then
+	echo
+	echo "ABORTING: Working directory is not clean!"
+	git status -s "$dir"
+	exit 1
+fi
+
 rm -fv "$zip" || true
 
 if [ -f "$dir/$readme_src" ]; then
