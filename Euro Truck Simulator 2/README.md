@@ -10,13 +10,21 @@ Fixed
 
 Known Issues
 ------------
-- Convergence is locked :-(
 - After visiting a Truck shop, the mouse cursor may be stuck at the wrong
   depth. Restarting the game is the only reliably workaround I've found.
 
 Installation
 ------------
 Extract zip file to ...Steam\SteamApps\common\Euro Truck Simulator 2\
+
+Unlocking the Convergence
+-------------------------
+By default, the convergence is locked in this game. If you would like to unlock
+it, open the config file in My Documents/Euro Truck Simulator 2
+
+find: uset r_nv_stereo_mode "2"
+
+set to: uset r_nv_stereo_mode "1"
 
 Notes
 -----
