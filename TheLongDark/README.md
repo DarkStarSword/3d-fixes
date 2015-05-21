@@ -13,7 +13,11 @@ Installation
 ------------
 1. Extract zip file to ...\Steam\SteamApps\common\TheLongDark\
 
-2. Press backslash after starting a new game, loading a new area or whenever
+2. Launch the game via the tld_dx9.bat in the game directory (alternatively add
+   -force-d3d9 to the launch options in Steam: right click -> properties -> set
+   launch options)
+
+3. Press backslash after starting a new game, loading a new area or whenever
    the convergence resets.
 
 Keys
