@@ -11,3 +11,4 @@ Fixed
 Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
+- Fog is slightly off (looks a bit weird even in 2D)
