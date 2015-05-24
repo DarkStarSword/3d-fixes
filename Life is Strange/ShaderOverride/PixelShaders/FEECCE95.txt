@@ -8,14 +8,11 @@
 //   float NvStereoEnabled;
 //   sampler2D NvStereoFixTexture;
 //   sampler2D PixelTexture2D_0;
-//   sampler2D PixelTexture2D_1;
 //   sampler2D SceneColorTexture;
 //   float4 ScreenPositionScaleBias;
 //   float4x4 ScreenToLight;
 //   float4 UniformPixelVector_0;
 //   float4 UniformPixelVector_1;
-//   float4 UniformPixelVector_2;
-//   float4 UniformPixelVector_3;
 //
 //
 // Registers:
@@ -28,30 +25,26 @@
 //   NvStereoEnabled         c3       1
 //   ScreenToLight           c7       4
 //   UniformPixelVector_1    c11      1
-//   UniformPixelVector_2    c12      1
-//   UniformPixelVector_3    c13      1
-//   LightFunctionParameters c14      1
+//   LightFunctionParameters c12      1
 //   SceneColorTexture       s0       1
 //   NvStereoFixTexture      s1       1
 //   PixelTexture2D_0        s2       1
-//   PixelTexture2D_1        s3       1
 //
 
     ps_3_0
     def c4, 0.0625, 0, 9.99999975e-006, 100000
-    def c5, 0.333000004, -1, 1, 0
+    def c5, 0.075000003, 1, 0.333000004, -1
     dcl_texcoord v0.xyw
     dcl_2d s0
     dcl_2d s1
     dcl_2d s2
-    dcl_2d s3
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
 
 // Unreal Engine stereo correction disabled by DarkStarSword's shadertool.py:
-// shadertool.py -i --stereo-sampler-ps=s15 --auto-fix-unreal-lights -f PixelShader_37_CRC32_33CB97B3.txt
+// shadertool.py -i --stereo-sampler-ps=s15 --disable-redundant-unreal-correction --auto-fix-unreal-shadows --auto-fix-unreal-lights --auto-fix-unreal-dne-reflection --only-autofixed --quiet CRC32_FEECCE95_166.txt
 def c3, 0, 0, 0, 0 // Overrides NvStereoEnabled passed from Unreal Engine
 
 texldl r31, c220.z, s15
@@ -85,7 +78,7 @@ mad r2.x, r31.w, r31.x, r2.x
     mul r1.xyz, r0.z, c8.xyww
 
 // Unreal Engine light fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --stereo-sampler-ps=s15 --auto-fix-unreal-lights -f PixelShader_37_CRC32_33CB97B3.txt
+// shadertool.py -i --stereo-sampler-ps=s15 --disable-redundant-unreal-correction --auto-fix-unreal-shadows --auto-fix-unreal-lights --auto-fix-unreal-dne-reflection --only-autofixed --quiet CRC32_FEECCE95_166.txt
 add r31.w, r0.x, -r31.y
 mad r0.y, -r31.w, r31.x, r0.y
 
@@ -94,23 +87,21 @@ mad r0.y, -r31.w, r31.x, r0.y
     add r0.xyz, r0, c10.xyww
     rcp r0.z, r0.z
     mul r0.xy, r0.z, r0
-    mov r1.xy, c11
-    mad r0.zw, r0.xyxy, r1.xyxy, c12.xyxy
-    texld_pp r1, r0.zwzw, s2
-    mad r0.xy, r1, c13, r0
-    texld r0, r0, s3
-    add_pp r0.xyz, r0, c0
-    dp3 r0.w, r0, c5.x
-    lrp_pp r1.xyz, c14.x, r0.w, r0
-    add r0.xyz, r1, c5.y
-    mov_pp r1.z, c5.z
-    mad_pp r0.xyz, c14.y, r0, r1.z
+    mov r1.xy, c5
+    mad r0.xy, r0, r1.x, c11
+    texld r0, r0, s2
+    add r0.x, -r0.x, c5.y
+    add_pp r0.xyz, r0.x, c0
+    dp3 r0.w, r0, c5.z
+    lrp_pp r1.xzw, c12.x, r0.w, r0.xyyz
+    add r0.xyz, r1.xzww, c5.w
+    mad_pp r0.xyz, c12.y, r0, r1.y
     rsq_pp r0.x, r0.x
     rsq_pp r0.y, r0.y
     rsq_pp r0.z, r0.z
     rcp_pp oC0.x, r0.x
     rcp_pp oC0.y, r0.y
     rcp_pp oC0.z, r0.z
-    mov_pp oC0.w, c5.z
+    mov_pp oC0.w, c5.y
 
-// approximately 50 instruction slots used (5 texture, 45 arithmetic)
+// approximately 48 instruction slots used (4 texture, 44 arithmetic)
