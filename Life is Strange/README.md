@@ -1,6 +1,11 @@
 Life is Strange (Episode 1)
 ===========================
 
+Update 2015-05-24
+-----------------
+- Fixed Chapter 3
+- Fixed some more lighting effects
+
 Update 2015-03-25
 -----------------
 - Fixed Chapter 2
@@ -24,6 +29,11 @@ Fixed
 - Convergence is increased to 50.0 by default. To save a custom setting, press
   plus on the number row before adjusting the convergence, then press F7 to
   save.
+
+Known Issues
+------------
+In the early parts of chapter 3, the halos around a number of lights are at the
+wrong depth.
 
 Installation
 ------------
