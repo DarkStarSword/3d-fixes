@@ -1400,53 +1400,53 @@ def auto_fix_unreal_dne_reflection(tree, args):
         tree.autofixed = True
 
 unreal_ScreenToShadowMatrix_pattern = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
-def auto_fix_unreal_shadows(tree, args):
+def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_pattern, matrix_name='ScreenToShadowMatrix', name="shadow"):
     if not isinstance(tree, PS3):
-        raise Exception('Unreal shadow auto fix is only applicable to pixel shaders')
+        raise Exception('Unreal %s auto fix is only applicable to pixel shaders' % name)
 
     try:
-        match = find_header(tree, unreal_ScreenToShadowMatrix_pattern)
+        match = find_header(tree, pattern)
     except KeyError:
-        debug_verbose(0, 'Shader does not use ScreenToShadowMatrix')
+        debug_verbose(0, 'Shader does not use %s' % matrix_name)
         return
 
-    screen2shadow0 = Register(match.group('constant'))
-    screen2shadow2 = Register('c%i' % (screen2shadow0.num + 2))
-    debug_verbose(0, 'ScreenToShadowMatrix identified as %s %s' % (screen2shadow0, screen2shadow2))
+    matrix0 = Register(match.group('constant'))
+    matrix2 = Register('c%i' % (matrix0.num + 2))
+    debug_verbose(0, '%s identified as %s %s' % (matrix_name, matrix0, matrix2))
 
-    results0 = scan_shader(tree, screen2shadow0, write=False)
-    results2 = scan_shader(tree, screen2shadow2, write=False)
+    results0 = scan_shader(tree, matrix0, write=False)
+    results2 = scan_shader(tree, matrix2, write=False)
     if not results0 or not results2:
-        debug_verbose(0, 'ScreenToShadowMatrix is not used in shader')
+        debug_verbose(0, '%s is not used in shader' % matrix_name)
         return
     if len(results0) > 1 or len(results2) > 1:
-        debug("Autofixing a shader using ScreenToShadowMatrix multiple times is untested and disabled for safety. Please enable it, test and report back.")
+        debug("Autofixing a shader using %s multiple times is untested and disabled for safety. Please enable it, test and report back." % matrix_name)
         return
 
     (x_line, x_linepos, x_instr) = results0[0]
     (z_line, z_linepos, z_instr) = results2[0]
 
     if x_instr.opcode != 'mad' or z_instr.opcode != 'mad':
-        debug('ScreenToShadowMatrix used in an unexpected way (column-major/row-major?)')
+        debug('%s used in an unexpected way (column-major/row-major?)' % matrix_name)
         return
 
-    if x_instr.args[1] == screen2shadow0:
+    if x_instr.args[1].reg == matrix0:
         x_reg = x_instr.args[2]
-    elif x_instr.args[2] == screen2shadow0:
+    elif x_instr.args[2].reg == matrix0:
         x_reg = x_instr.args[1]
     else:
-        debug('ScreenToShadowMatrix[0] used in an unexpected way')
+        debug('%s[0] used in an unexpected way' % matrix_name)
         return
 
-    if z_instr.args[1] == screen2shadow2:
+    if z_instr.args[1].reg == matrix2:
         w_reg = z_instr.args[2]
-    elif z_instr.args[2] == screen2shadow2:
+    elif z_instr.args[2].reg == matrix2:
         w_reg = z_instr.args[1]
     else:
-        debug('ScreenToShadowMatrix[2] used in an unexpected way')
+        debug('%s[2] used in an unexpected way' % matrix_name)
         return
 
-    debug_verbose(-1, 'Applying Unreal Engine 3 shadow fix')
+    debug_verbose(-1, 'Applying Unreal Engine 3 %s fix' % name)
 
     try:
         vPos = find_declaration(tree, 'dcl', 'vPos.xy')
@@ -1472,7 +1472,7 @@ def auto_fix_unreal_shadows(tree, args):
     pos = tree.decl_end
     if vPos is None:
         if not vanity_inserted:
-            pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine shadow fix inserted with")
+            pos += insert_vanity_comment(args, tree, tree.decl_end, "Unreal Engine %s fix inserted with" % name)
         pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
         pos += tree.insert_instr(pos, NewInstruction('mov', [texcoord_adj + mask, texcoord.reg]))
         pos += tree.insert_instr(pos, NewInstruction('add', [t.w, texcoord_adj.w, -t.y]))
@@ -1482,13 +1482,17 @@ def auto_fix_unreal_shadows(tree, args):
 
     line = min(x_line, z_line)
     orig_pos = pos = prev_line_pos(tree, line + offset)
-    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine shadow fix inserted with")
+    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine %s fix inserted with" % name)
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, w_reg, -t.y]))
     pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, -t.w, t.x, x_reg]))
     pos += tree.insert_instr(pos)
     offset += pos - orig_pos
 
     tree.autofixed = True
+
+unreal_ScreenToLight_pattern = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
+def auto_fix_unreal_lights(tree, args):
+    return auto_fix_unreal_shadows(tree, args, unreal_ScreenToLight_pattern, matrix_name='ScreenToLight', name="light")
 
 unity_CameraToWorld = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
 # unity_CameraDepthTexture = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
@@ -1922,6 +1926,8 @@ def parse_args():
             help="Attempt to automatically fix reflective floor surfaces found in Unreal games")
     parser.add_argument('--auto-fix-unreal-shadows', action='store_true',
             help="Attempt to automatically fix shadows in Unreal games")
+    parser.add_argument('--auto-fix-unreal-lights', action='store_true',
+            help="Attempt to automatically fix lights in Unreal games")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -2006,6 +2012,7 @@ def args_require_reg_analysis(args):
                 args.auto_fix_unreal_light_shafts or \
                 args.auto_fix_unreal_dne_reflection or \
                 args.auto_fix_unreal_shadows or \
+                args.auto_fix_unreal_lights or \
                 args.fix_unity_lighting_ps
 
         # Also needs register analysis, but earlier than this test:
@@ -2117,6 +2124,8 @@ def main():
                 auto_fix_unreal_dne_reflection(tree, args)
             if args.auto_fix_unreal_shadows:
                 auto_fix_unreal_shadows(tree, args)
+            if args.auto_fix_unreal_lights:
+                auto_fix_unreal_lights(tree, args)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(tree, args)
             if args.adjust_ui_depth:
