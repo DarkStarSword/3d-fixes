@@ -133,8 +133,11 @@ void main(
   r1.z = 1.000000e+000 / r1.z;
   r2.xyz = r1.zzz * r0.yzw;
 
+float depth = r2.z;
+
 float4 stereo = StereoParams.Load(0);
-r2.x -= stereo.x * (r2.z - stereo.y) * fov;
+float separation = stereo.x; float convergence = stereo.y;
+r2.x -= separation * (depth - convergence) * fov;
 
   r3.xyz = cb3[1].xyz * r2.yyy;
   r2.xyw = cb3[0].xyz * r2.xxx + r3.xyz;
