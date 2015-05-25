@@ -1,3 +1,98 @@
+// 3DMigoto: d51692cf09ce55e9 | Matched 10 variants of 1 shaders: Custom/Water/Water_Under_Test
+// 
+//      Unity headers extracted from Water_Under_Test.shader
+//      Shader "Custom/Water/Water_Under_Test" {
+//        Properties {
+//         _Glossiness ("Glossiness", Range(0,1)) = 1
+//         _Distance ("Distance", Float) = 25
+//         _Distance_Power ("Distance_Power", Float) = 0.2
+//         _DistanceVertex ("Distance Vertex", Float) = 25
+//         _Tessellation ("Tessellation", Float) = 5
+//         _Color1 ("Color1", Color) = (0.186202,0.36947,0.904412,1)
+//         _Alpha1 ("Alpha1", Float) = 1
+//         _Alpha2 ("Alpha2", Float) = 0.3
+//         _BumpMap ("Normal", 2D) = "bump" { }
+//         _NormalStrength ("NormalStrength", Range(-1,1)) = 0.2
+//         _MainTex ("MainTex", 2D) = "white" { }
+//         _VertexStrength ("Vertex Strength", Range(0,0.2)) = 0
+//         _Speed ("Speed", Float) = 0
+//         _BumpMap_Detail ("Normal Detail", 2D) = "bump" { }
+//         _DetailStrength ("Detail Strength", Range(-1,1)) = 0
+//         _TexDetail ("Tex Detail", 2D) = "white" { }
+//         _DetailVertexStrength ("Detail Vertex Strength", Range(0,0.2)) = 0
+//         _DetailSpeed ("Detail Speed", Float) = 0
+//         _Refraction ("Refraction", Float) = 0.02
+//         _Metallic ("Metallic", Range(0,1)) = 0
+//         _Specular ("Specular", Color) = (0.5,0.5,0.5,1)
+//        [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//        }
+//        Fallback "Diffuse"
+//        SubShader 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          GrabPass {
+//           }
+// 0ff:     Pass 1/3 {
+// 300:     Pass 2/3 {
+// 0ff:       Name "FORWARD"
+// 300:       Name "FORWARD_DELTA"
+// 300:       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+// 0ff:       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//            ZWrite Off
+//            Cull Front
+// 300:       Blend One One
+// 0ff:       Blend SrcAlpha OneMinusSrcAlpha
+// 300:       GpuProgramID 126378
+// 0ff:       GpuProgramID 18995
+//            Program "vp" {
+//              SubProgram "d3d11 " {
+// 010:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 001:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 040:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 004:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 020:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 002:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 080:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 008:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 200:           Keywords { "DIRECTIONAL" "FOG_EXP" }
+// 100:           Keywords { "DIRECTIONAL" }
+//                Bind "vertex" Vertex
+//                Bind "color" Color
+//                Bind "normal" Normal
+//                Bind "tangent" TexCoord4
+//                SetTexture 0 [_MainTex] 2D 0
+//                SetTexture 1 [_TexDetail] 2D 1
+//                ConstBuffer "$Globals" 336
+//                Vector 144 [_TimeEditor]
+//                Float 240 [_Speed]
+//                Float 252 [_DetailSpeed]
+//                Float 256 [_VertexStrength]
+//                Float 260 [_DetailVertexStrength]
+//                Vector 272 [_MainTex_ST]
+//                Vector 288 [_TexDetail_ST]
+//                ConstBuffer "UnityPerCamera" 144
+//                Vector 0 [_Time]
+//                Vector 80 [_ProjectionParams]
+//                ConstBuffer "UnityPerDraw" 336
+//                Matrix 0 [glstate_matrix_mvp]
+//                Matrix 64 [glstate_matrix_modelview0]
+//                Matrix 192 [_Object2World]
+//                Matrix 256 [_World2Object]
+//                BindCB "$Globals" 0
+//                BindCB "UnityPerCamera" 1
+//                BindCB "UnityPerDraw" 2
+//              }
+//            }
+//          }
+//        }
+//      }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// water surface from underneath - Ocean in pool level
+
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -84,6 +179,10 @@ void main(
   r1.xyzw = cb2[2].xyzw * r0.zzzz + r1.xyzw;
   r1.xyzw = cb2[3].xyzw * v0.wwww + r1.xyzw;
   o0.xyzw = r1.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r1.x += stereo.x * (r1.w - stereo.y);
+
   r2.xyzw = cb2[13].xyzw * r0.yyyy;
   r2.xyzw = cb2[12].xyzw * r0.xxxx + r2.xyzw;
   r2.xyzw = cb2[14].xyzw * r0.zzzz + r2.xyzw;
@@ -131,7 +230,7 @@ void main(
   return;
 }
 
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Generated by Microsoft (R) D3D Shader Disassembler
 //
