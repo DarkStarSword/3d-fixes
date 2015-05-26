@@ -1,0 +1,80 @@
+// CRC32: BC59DA03 | Matched 8 variants of 1 shaders: Beam Team/Atmosphere/Atmospheric Spherical Fog Volume
+// 
+//     Unity headers extracted from BeamTeamAtmosphericSphericalFogVolume.shader
+//     Shader "Beam Team/Atmosphere/Atmospheric Spherical Fog Volume" {
+//       Fallback Off
+//       SubShader 1/1 {
+//         Tags { "QUEUE"="Transparent-100" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         Pass 1/1 {
+//           Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Transparent-100" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZTest Always
+//           ZWrite Off
+//           Cull Front
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           GpuProgramID 40484
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "STORM_OFF" "VERTEXLIGHT_ON" }
+// 01:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "STORM_OFF" }
+// 40:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "STORM_ON" "VERTEXLIGHT_ON" }
+// 10:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "STORM_ON" }
+// 08:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "STORM_OFF" "VERTEXLIGHT_ON" }
+// 02:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "STORM_OFF" }
+// 80:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "STORM_ON" "VERTEXLIGHT_ON" }
+// 20:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "STORM_ON" }
+//               Bind "vertex" Vertex
+//               Matrix 4 [_Object2World] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 8 [_ProjectionParams]
+//               Vector 9 [_ScreenParams]
+//               Vector 7 [_WorldSpaceCameraPos]
+//               Vector 10 [_WorldSpaceLightPos0]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c11, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c8.x
+    mul r1.w, r1.x, c11.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 62 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Atmosphere_Atmospheric Spherical Fog Volume/vp/BC59DA03.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c11.x
+    mad o1.xy, r1.z, c9.zwzw, r1.xwzw
+    dp4 r1.x, c4, v0
+    dp4 r1.y, c5, v0
+    dp4 r1.z, c6, v0
+    add o3.xyz, r1, -c7
+    mov o2.xyz, r1
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 54 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o1.zw, r0
+    mov o4.xyz, c10
