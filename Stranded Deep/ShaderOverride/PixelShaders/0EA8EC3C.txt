@@ -1,3 +1,82 @@
+// CRC32: 0EA8EC3C | Matched 5 variants of 1 shaders: Beam Team/Ocean/Ocean
+// 
+//     Unity headers extracted from Ocean.shader
+//     Shader "Beam Team/Ocean/Ocean" {
+//       Properties {
+//        _Map0 ("Base (RGB)", 2D) = "black" { }
+//        _Map1 ("Base (RGB)", 2D) = "black" { }
+//        _Map2 ("Base (RGB)", 2D) = "black" { }
+//        _Map3 ("Base (RGB)", 2D) = "black" { }
+//        _Map4 ("Base (RGB)", 2D) = "black" { }
+//        _MaxLod ("Max LOD level", Float) = 0
+//        _LodFadeDist ("LOD fade distance", Float) = 128
+//        _FourierSize ("Computed FFT size", Float) = 0
+//       [HideInInspector]  _MainTex ("Base (RGB)", 2D) = "black" { }
+//        _Bump ("Normal Map (RGB)", 2D) = "bump" { }
+//        _FoamTex ("Foam: Sparse (R) Medium (G) Coarse (B)", 2D) = "white" { }
+//        _FoamRampTex ("Foam Ramp: Sparse (R) Medium (G) Coarse (B)", 2D) = "white" { }
+//        _Reflection ("Reflection (RGB)", 2D) = "white" { }
+//        _Tile ("UV Tiling", Float) = 40
+//        _DetailFresnelLevel ("Fresnel: Detail normal contribution", Float) = 0.5
+//        _ReflectionLevel ("Reflection: Amount of distortion", Float) = 3
+//        _RefractionLevel ("Refraction: Amount of distortion", Float) = 0.44
+//        _SunSpec ("Sun specular 'hardness'", Float) = 1000
+//        _WaveBlend ("Wave Edge Blending", Float) = 0.5
+//        _FoamBlend ("Foam Blending", Float) = 1
+//        _FoamInt ("Foam Intensity", Float) = 5
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Tags { "ForceNoShadowCasting"="true" "QUEUE"="Transparent-200" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//         GrabPass {
+//           "_Refraction"
+//          }
+//         Pass 1/1 {
+//           Tags { "ForceNoShadowCasting"="true" "QUEUE"="Transparent-200" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//           ZWrite Off
+//           GpuProgramID 55573
+//           Program "fp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "SUNSHINE_DISABLED" }
+// 10:           Keywords { "SUNSHINE_FILTER_HARD" }
+// 01:           Keywords { "SUNSHINE_FILTER_PCF_2x2" }
+// 08:           Keywords { "SUNSHINE_FILTER_PCF_3x3" }
+// 04:           Keywords { "SUNSHINE_FILTER_PCF_4x4" }
+//               Vector 6 [_BigWaves]
+//               Float 10 [_DetailFresnelLevel]
+//               Vector 7 [_Direction]
+//               Float 15 [_FoamBlend]
+//               Float 16 [_FoamInt]
+//               Vector 17 [_LightColor0]
+//               Float 11 [_RefractionLevel]
+//               Vector 0 [_SinTime]
+//               Float 8 [_Speed]
+//               Float 14 [_StormFade]
+//               Vector 9 [_SunDirection]
+//               Vector 13 [_SunPosition]
+//               Float 12 [_SunSpec]
+//               Float 3 [_Tile]
+//               Float 5 [_Timer]
+//               Float 4 [_WaveBlend]
+//               Vector 1 [_WorldSpaceCameraPos]
+//               Vector 2 [_ZBufferParams]
+//               SetTexture 0 [_SkyMap] 2D 0
+//               SetTexture 1 [_EdgeBlendDepthTexture] 2D 1
+//               SetTexture 2 [_CameraDepthTexture] 2D 2
+//               SetTexture 3 [_Bump] 2D 3
+//               SetTexture 4 [_Map1] 2D 4
+//               SetTexture 5 [_Refraction] 2D 5
+//               SetTexture 6 [_FoamTex] 2D 6
+//               SetTexture 7 [_FoamRampTex] 2D 7
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c18, 4, -0.100000001, -0.0599999987, -0.0112710549
     def c19, 0.5, 0.784000039, 0.0199999996, 0.453999996
@@ -22,6 +101,28 @@
     dcl_2d s5
     dcl_2d s6
     dcl_2d s7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../../.. -f --stereo-sampler-ps=s15 --adjust-input=v0 --adjust-input=v1 --adjust-multiply=0.5 0EA8EC3C.txt
+mov r7, v1
+texldl r31, c220.z, s15
+add r31.w, r7.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r7.x, r7.x, r31.w
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../../.. -f --stereo-sampler-ps=s15 --adjust-input=v0 --adjust-input=v1 --adjust-multiply=0.5 0EA8EC3C.txt
+mov r30, v0
+texldl r31, c220.z, s15
+add r31.w, r30.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r30.x, r30.x, r31.w
+
     mul_pp r0, c21.wwzw, v3.xyxz
     texldl_pp r0, r0, s4
     mov_pp r1.xz, -r0.xyyw
@@ -36,10 +137,10 @@
     dp3_pp r1.x, r1.xzyw, v4
     mad_sat_pp r1.x, r1.x, c22.y, c22.z
     mul r1.x, r1.x, r1.w
-    texldp r2, v0, s1
+    texldp r2, r30, s1
     mad r1.y, c2.z, r2.x, c2.w
     rcp r1.y, r1.y
-    add r1.yz, r1.y, -v0.xwzw
+    add r1.yz, r1.y, -r30.xwzw
     mul r1.z, r1_abs.z, c23.w
     mul_sat r1.y, r1.y, c4.x
     exp r1.z, r1.z
@@ -91,13 +192,13 @@
     mul r0.xy, r0, c11.x
     mul r0.xy, r1.y, r0
     mov r0.zw, c21.z
-    add r0, r0, v1
+    add r0, r0, r7
     texldp r3, r0, s2
     texldp_pp r0, r0, s5
     mad r0.w, c2.z, r3.x, c2.w
     rcp r0.w, r0.w
-    add r0.w, r0.w, -v1.z
-    texldp_pp r3, v1, s5
+    add r0.w, r0.w, -r7.z
+    texldp_pp r3, r7, s5
     cmp_pp r0.xyz, r0.w, r0, r3
     mad_pp r0.xyz, r1.x, r2, r0
     dp3_pp r0.w, r6, r6
@@ -183,5 +284,3 @@
     mul r0.w, r1.y, r0.w
     mad_pp oC0.xyz, r0.w, c17, r0
     mov_pp oC0.w, c21.w
-
-// approximately 177 instruction slots used (13 texture, 164 arithmetic)
