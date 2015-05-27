@@ -1,3 +1,52 @@
+// CRC32: A385DB52 | Unity headers extracted from BeamTeamVolumetricFog.shader
+// Shader "Beam Team/Post Effects/Volumetric Fog" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "black" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 14686
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "CAUSTICS_ON" "INGAME" "WATER_BELOW" }
+//           Matrix 7 [_InverseViewMatrix] 3
+//           Matrix 0 [sunshine_CascadeRanges]
+//           Matrix 4 [sunshine_WorldToSunVP] 3
+//           Float 23 [_BelowVisibility]
+//           Float 22 [_StormFade]
+//           Vector 20 [_SunColor]
+//           Float 21 [_SunFade]
+//           Vector 25 [_UnderwaterColor]
+//           Vector 24 [_WaterSunColor]
+//           Vector 10 [_WorldSpaceCameraPos]
+//           Vector 11 [_ZBufferParams]
+//           Vector 18 [sunshine_CascadeFarRatiosSq]
+//           Vector 17 [sunshine_CascadeNearRatiosSq]
+//           Vector 13 [sunshine_OvercastCoord]
+//           Vector 14 [sunshine_OvercastVectorsUV]
+//           Vector 15 [sunshine_ShadowCoordDepthStart]
+//           Vector 19 [sunshine_ShadowFadeParams]
+//           Vector 12 [sunshine_ShadowParamsAndHalfTexel]
+//           Vector 16 [sunshine_ShadowToWorldScale]
+//           SetTexture 0 [sunshine_Lightmap] 2D 0
+//           SetTexture 1 [sunshine_OvercastMap] 2D 1
+//           SetTexture 2 [_CameraDepthTexture] 2D 2
+//           SetTexture 3 [_CameraDepthNormalsTexture] 2D 3
+//           SetTexture 4 [_MainTex] 2D 4
+//           SetTexture 5 [_CausticsBump] 2D 5
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c26, 3.55539989, 0, -1.77769995, 1
     def c27, 2, -1, 0.699999988, 0.300000012
@@ -17,15 +66,183 @@
     dcl_2d s3
     dcl_2d s4
     dcl_2d s5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+texldl r31, c220.z, s15
+
     mov r0.w, c28.w
     mul r0.x, r0.w, c23.x
     rcp r0.x, r0.x
     nrm_pp r1.xyz, v1
     rcp r0.y, -r1.y
-    texld r2, v0, s2
-    mad r0.z, c11.x, r2.x, c11.y
+    texld r2, v0, s2 // _CameraDepthTexture
+    mad r0.z, c11.x, r2.x, c11.y // _ZBufferParams
     rcp r0.z, r0.z
-    mad r2.xyz, r0.z, v2, c10
+    mad r2.xyz, r0.z, v2, c10 // _WorldSpaceCameraPos
+
+// In order to fix the depth of the highlights on the sand of the water
+// caustics and the underwater shadows, we need to apply a stereo correction to
+// r2, which is in world-coordinates, but we need either view-space or
+// projection-space coordinates to apply a stereo correction.
+// This shader has the inverse view matrix already, so we can use that and it's
+// inverse to change between world-space and view-space, but we still need part
+// of the inverse projection matrix to be able to correct view-space coords, so
+// we use the same technique that we used to fix Unity shadows to calculate it.
+
+// 1) Calculate P.I[0,0] required for stereo corrections in view-space:
+	mov r25, c180 // MV[0]
+	mov r26, c181 // MV[1]
+	mov r27, c182 // MV[2]
+	mov r28, c190 // MVP[0]
+
+	// We can't use Helix mod to invert the MV matrix since we are either
+	// using the matrix passed directily into this shader, or a 3x4 matrix
+	// copied from a different shader (Helix mod expects a 4x4 matrix).
+	// So let's do it directly in assembly instead! It sounds complicated,
+	// but we can make some large simplifications based on assumptions
+	// about the MV and MVP matrices and the fact we only need one cell of
+	// the (inverse) projection matrix, which means it is actually possible
+	// to do in a farily small number of instructions :)
+
+	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+	//    4th column of the MV matrix is 0,0,0,1
+	//
+	// mathomatic simplified it to:
+	// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+	//
+	// Replace row numbers with register components (assumes column-major order):
+	//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+	// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r25.yzx, r26.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, r25.zxy, r26.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, r27.xyz
+	// Sum it together to get the determinant:
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
+	if_eq r22.w, c220.x
+		mov r30.w, c220.w // One of the inputs was zero, use a hardcoded FOV
+	else
+		// And finally get 1/determinant:
+		rcp r22.w, r22.w
+
+		// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+		//    the 4th column of the MV matrix is 0,0,0,1
+		//
+		// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+		// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+		// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+		// Do some multiplications in parallel with SIMD instructions:
+		mul r20.xyz, r26.yzx, r27.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+		mul r21.xyz, r26.zxy, r27.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+		// Do the subtractions:
+		add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+		// Multiply against 1/determinant:
+		mul r20.xyz, r20.xyz, r22.www
+
+		// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+		//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+		dp3 r30.w, r20.xyz, r28.xyz
+
+		if_eq r30.w, c220.x
+			mov r30.w, c220.w // One of the inputs was zero, use a hardcoded FOV
+		else
+			rcp r30.w, r30.w // Calculate P.I[0,0]
+		endif
+	endif
+
+// 2) Invert the _InverseViewMatrix to get the regular view matrix:
+	mov r25, c7 // V.I[0]
+	mov r26, c8 // V.I[1]
+	mov r27, c9 // V.I[2]
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r25.yzx, r26.zxy	// m0.y*m1.z, m0.z*m1.x, m0.x*m1.y
+	mul r21.xyz, r25.zxy, r26.yzx	// m0.z*m1.y, m0.x*m1.z, m0.y*m1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// m0.y*m1.z - m0.z*m1.y, m0.z*m1.x - m0.x*m1.z, m0.x*m1.y - m0.y*m1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, r27.xyz
+	// Sum it together to get the determinant:
+	add r30.z, r20.x, r20.y
+	add r30.z, r30.z, r20.z
+
+	// 1st row, simplifying by assuimg the 4th column 0,0,0,1
+	// dst0.x = (m1.y*m2.z - m1.z*m2.y) / determinant
+	// dst0.y = (m1.z*m2.x - m1.x*m2.z) / determinant
+	// dst0.z = (m1.x*m2.y - m1.y*m2.x) / determinant
+	// dst0.w = 0
+
+	mul r28.xyz, r26.yzx, r27.zxy
+	mul r29.xyz, r26.zxy, r27.yzx
+	add r20.xyz, r28, -r29
+
+	// 2nd row
+	// dst1.x = (col0.z*m2.y - col0.y*m2.z) / determinant
+	// dst1.y = (col0.x*m2.z - col0.z*m2.x) / determinant
+	// dst1.z = (col0.y*m2.x - col0.x*m2.y) / determinant
+	// dst1.w = 0
+
+	mul r28.xyz, r25.zxy, r27.yzx
+	mul r29.xyz, r25.yzx, r27.zxy
+	add r21.xyz, r28, -r29
+
+	// 3nd row
+	// dst2.x = (col0.y*m1.z - col0.z*m1.y) / determinant
+	// dst2.y = (col0.z*m1.x - col0.x*m1.z) / determinant
+	// dst2.z = (col0.x*m1.y - col0.y*m1.x) / determinant
+	// dst2.w = 0
+
+	mul r28.xyz, r25.yzx, r26.zxy
+	mul r29.xyz, r25.zxy, r26.yzx
+	add r22.xyz, r28, -r29
+
+	// 4th row
+	// dst3.x = - col0.w*dst0.x - col1.w*dst1.x - col2.w*dst2.x
+	// dst3.y = - col0.w*dst0.y - col1.w*dst1.y - col2.w*dst2.y
+	// dst3.z = - col0.w*dst0.z - col1.w*dst1.z - col2.w*dst2.z
+	// dst3.w =   col0.x*dst0.x + col1.x*dst1.x + col2.x*dst2.x (always 1?)
+
+	mul r28.xyzw, r25.wwwx, r20.xyzx
+	mul r29.xyzw, r26.wwwx, r21.xyzx
+	add r23.xyzw, r28, r29
+	mul r28.xyzw, r27.wwwx, r22.xyzx
+	add r23.xyzw, r23, r28
+	mov r23.xyz, -r23
+
+	// Multiply against 1/determinant (and zero out 4th column):
+	rcp r30.x, r30.z
+	mov r30.y, c220.x
+	mul r20, r20, r30.xxxy
+	mul r21, r21, r30.xxxy
+	mul r22, r22, r30.xxxy
+	mul r23, r23, r30.xxxx
+
+	// Note that this matrix is now in ROW major order!
+
+// Convert r2 to view-space coords:
+mul r28, r20, r2.x
+mad r28, r21, r2.y, r28
+mad r28, r22, r2.z, r28
+add r28, r23, r28
+
+// Apply view-space stereo correction formula:
+add r31.w, r28.z, r31.y // I'm not sure why I'm adding and not subtracting, but it lines it up perfectly!
+mul r31.w, r31.w, r31.x
+mad r28.x, r31.w, r30.w, r28.x
+
+// Convert back to world-space coords:
+dp4 r2.x, r28, c7
+dp4 r2.y, r28, c8
+dp4 r2.z, r28, c9
+
     mul r3.xyz, r0.z, v2
     dp3 r0.z, r3, r3
     rsq r0.z, r0.z
@@ -141,5 +358,3 @@
     mad r0.xyz, r0, c34, -r4
     mad_pp oC0.xyz, r1.x, r0, r4
     mov_pp oC0.w, r4.w
-
-// approximately 130 instruction slots used (11 texture, 119 arithmetic)
