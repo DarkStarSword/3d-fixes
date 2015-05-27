@@ -2,6 +2,7 @@
 
 import numpy as np
 from math import *
+import pyasm
 
 def translate(x, y, z):
     return np.matrix([
@@ -142,6 +143,35 @@ def determinant_euclidean(m):
             - (m[0,1]*m[1,0]*m[2,2]) \
             + (m[0,2]*m[1,0]*m[2,1]) \
             - (m[0,2]*m[1,1]*m[2,0])
+
+def col_major_regs(m):
+    r1 = pyasm.Register(m.T.tolist()[0])
+    r2 = pyasm.Register(m.T.tolist()[1])
+    r3 = pyasm.Register(m.T.tolist()[2])
+    r4 = pyasm.Register(m.T.tolist()[3])
+    return (r1, r2, r3, r4)
+
+def _determinant_euclidean_asm_col_major(col0, col1, col2):
+    tmp0 = pyasm.Register()
+    tmp1 = pyasm.Register()
+    det = pyasm.Register()
+
+    # Do some multiplications in parallel with SIMD instructions:
+    tmp0.xyz = pyasm.mul(col0.yzx, col1.zxy)    # m0.y*m1.z, m0.z*m1.x, m0.x*m1.y
+    tmp1.xyz = pyasm.mul(col0.zxy, col1.yzx)    # m0.z*m1.y, m0.x*m1.z, m0.y*m1.x
+    # Do the subtractions:
+    tmp0.xyz = pyasm.add(tmp0.xyz, -tmp1.xyz)   # m0.y*m1.z - m0.z*m1.y, m0.z*m1.x - m0.x*m1.z, m0.x*m1.y - m0.y*m1.x
+    # Now the multiplications:
+    tmp0.xyz = pyasm.mul(tmp0.xyz, col2.xyz)
+    # Sum it together to get the determinant:
+    det.x = pyasm.add(tmp0.x, tmp0.y)
+    det.x = pyasm.add(det.x, tmp0.z)
+
+    return det
+
+def determinant_euclidean_asm_col_major(m):
+    (col0, col1, col2, _) = col_major_regs(m)
+    return _determinant_euclidean_asm_col_major(col0, col1, col2)
 
 def inverse(m, d):
     n = np.matrix([[0]*4]*4)
