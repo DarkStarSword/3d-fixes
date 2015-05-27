@@ -10,21 +10,27 @@ readme_src=README.md
 readme_dst=3Dfix-README.txt
 tmp_dir=$(dirname $(readlink -f "$0"))/__MKRELEASE_TMP__
 rm_tmp_dir=
-date=$(date '+%Y-%m-%d')
 
 if [ ! -d "$dir" -o ! "$tag" ]; then
 	echo "Usage: $0 game tag"
 	exit 1
 fi
 
+date="$3"
+if [ -z "$date" ]; then
+	date=$(date '+%Y-%m-%d')
+fi
+
 zip=${PWD}/3Dfix-${game}-$date.zip
 
-status=$(git status --porcelain "$dir")
-if [ -n "$status" ]; then
-	echo
-	echo "ABORTING: Working directory is not clean!"
-	git status -s "$dir"
-	exit 1
+if [ "$tag" != "--no-repo" ]; then
+	status=$(git status --porcelain "$dir")
+	if [ -n "$status" ]; then
+		echo
+		echo "ABORTING: Working directory is not clean!"
+		git status -s "$dir"
+		exit 1
+	fi
 fi
 
 broken_symlinks=$(find -L "$dir" -type l -ls)
@@ -64,7 +70,9 @@ if [ "$rm_tmp_dir" = 1 ]; then
 	rm -frv "$tmp_dir"
 fi
 
-echo
-git tag -f "$tag-$date" -m "$game $date"
-echo
-git show -s --format=short "$tag-$date"
+if [ "$tag" != "--no-repo" ]; then
+	echo
+	git tag -f "$tag-$date" -m "$game $date"
+	echo
+	git show -s --format=short "$tag-$date"
+fi
