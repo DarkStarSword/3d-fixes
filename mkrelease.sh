@@ -27,6 +27,14 @@ if [ -n "$status" ]; then
 	exit 1
 fi
 
+broken_symlinks=$(find -L "$dir" -type l -ls)
+if [ -n "$broken_symlinks" ]; then
+	echo
+	echo "ABORTING: Broken symlinks found:"
+	echo "$broken_symlinks"
+	exit 1
+fi
+
 rm -fv "$zip" || true
 
 if [ -f "$dir/$readme_src" ]; then
