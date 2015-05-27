@@ -64,4 +64,7 @@ if [ "$rm_tmp_dir" = 1 ]; then
 	rm -frv "$tmp_dir"
 fi
 
+echo
 git tag -f "$tag-$date" -m "$game $date"
+echo
+git show -s --format=short "$tag-$date"
