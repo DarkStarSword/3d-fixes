@@ -23,6 +23,9 @@ these fixes.
 - Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
 - Pineview Drive (Halos, shadows, sun shafts, etc.)
 - Viscera Cleanup Detail (shadows, missing UI, etc.)
+- Dead or Alive 5: Last Round (water, halos, lens flare)
+- The Last Tinker: City of Colors (new technique to fix shadows)
+- Euro Truck Simulator 2 (skybox, god rays, reflections)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
@@ -90,6 +93,7 @@ pretty. At the moment it can:
 - Automatically fix certain types of reflective surfaces in Unreal games (those
   using a 2D DNEReflectionTexture, used in Life Is Strange).
 - Automatically fix shadows in Unreal Engine games.
+- Apply the tedious part of a Unity shadow fix (but not the difficult part!)
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
@@ -139,3 +143,6 @@ Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
 ### unity_asset_extractor.py ###
 An alternative to Unity Asset Explorer, to extract assets (currently limited to
 shaders) from Unity 4 and Unity 5 games in batch.
+
+### dx11shaderanalyse.py ###
+Decodes some information in the ISGN & OSGN sections of DX11 shaders.
