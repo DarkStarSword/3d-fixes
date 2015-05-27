@@ -25,9 +25,10 @@ Notes
 - This is an early access game with new content being developed all the time.
   Please check back for updates to the fix for any issues in future content.
 
-- The game is likely to crash when alt+tabbing out. This is a general problem
-  with Unity 5 + DirectX 11 + exclusive mode full screen, and not specific to
-  this fix (other than the fact we need exclusive mode full screen).
+- The game is likely to become unresponsive when alt+tabbing out. This is a
+  general problem with Unity 5 + DirectX 11 + exclusive mode full screen, and
+  not specific to this fix (other than the fact we need exclusive mode full
+  screen). A workaround is to use alt+enter to switch to windowed mode first.
 
 - This has not been tested on Windows 8.1. If you have crashes you may need to
   use Flugan's wrapper instead - refer to the forums for details.
