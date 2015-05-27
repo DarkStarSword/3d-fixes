@@ -156,11 +156,9 @@ def _determinant_euclidean_asm_col_major(col0, col1, col2):
     tmp1 = pyasm.Register()
     det = pyasm.Register()
 
-    # Do some multiplications in parallel with SIMD instructions:
-    tmp0.xyz = pyasm.mul(col0.yzx, col1.zxy)    # m0.y*m1.z, m0.z*m1.x, m0.x*m1.y
-    tmp1.xyz = pyasm.mul(col0.zxy, col1.yzx)    # m0.z*m1.y, m0.x*m1.z, m0.y*m1.x
-    # Do the subtractions:
-    tmp0.xyz = pyasm.add(tmp0.xyz, -tmp1.xyz)   # m0.y*m1.z - m0.z*m1.y, m0.z*m1.x - m0.x*m1.z, m0.x*m1.y - m0.y*m1.x
+    # Do some multiplications & subtractions in parallel with SIMD instructions:
+    tmp0.xyz = pyasm.mul(col0.zxy, col1.yzx)            # m0.z*m1.y, m0.x*m1.z, m0.y*m1.x
+    tmp0.xyz = pyasm.mad(col0.yzx, col1.zxy, -tmp0.xyz) # m0.y*m1.z - m0.z*m1.y, m0.z*m1.x - m0.x*m1.z, m0.x*m1.y - m0.y*m1.x
     # Now the multiplications:
     tmp0.xyz = pyasm.mul(tmp0.xyz, col2.xyz)
     # Sum it together to get the determinant:
@@ -245,9 +243,8 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     # dst0.z = (m1.x*m2.y - m1.y*m2.x) / determinant
     # dst0.w = 0
 
-    tmp0.xyz = pyasm.mul(col1.yzx, col2.zxy)
-    tmp1.xyz = pyasm.mul(col1.zxy, col2.yzx)
-    dst0.xyz = pyasm.add(tmp0, -tmp1)
+    dst0.xyz = pyasm.mul(col1.zxy, col2.yzx)
+    dst0.xyz = pyasm.mad(col1.yzx, col2.zxy, -dst0.xyz)
 
     # 2nd row
     # dst1.x = (col0.z*m2.y - col0.y*m2.z) / determinant
@@ -255,9 +252,8 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     # dst1.z = (col0.y*m2.x - col0.x*m2.y) / determinant
     # dst1.w = 0
 
-    tmp0.xyz = pyasm.mul(col0.zxy, col2.yzx)
-    tmp1.xyz = pyasm.mul(col0.yzx, col2.zxy)
-    dst1.xyz = pyasm.add(tmp0, -tmp1)
+    dst1.xyz = pyasm.mul(col0.yzx, col2.zxy)
+    dst1.xyz = pyasm.mad(col0.zxy, col2.yzx, -dst1.xyz)
 
     # 3nd row
     # dst2.x = (col0.y*m1.z - col0.z*m1.y) / determinant
@@ -265,9 +261,8 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     # dst2.z = (col0.x*m1.y - col0.y*m1.x) / determinant
     # dst2.w = 0
 
-    tmp0.xyz = pyasm.mul(col0.yzx, col1.zxy)
-    tmp1.xyz = pyasm.mul(col0.zxy, col1.yzx)
-    dst2.xyz = pyasm.add(tmp0, -tmp1)
+    dst2.xyz = pyasm.mul(col0.zxy, col1.yzx)
+    dst2.xyz = pyasm.mad(col0.yzx, col1.zxy, -dst2.xyz)
 
     # 4th row
     # dst3.x = - col0.w*dst0.x - col1.w*dst1.x - col2.w*dst2.x
@@ -275,11 +270,9 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     # dst3.z = - col0.w*dst0.z - col1.w*dst1.z - col2.w*dst2.z
     # dst3.w =   col0.x*dst0.x + col1.x*dst1.x + col2.x*dst2.x (always 1?)
 
-    tmp0.xyzw = pyasm.mul(col0.wwwx, dst0.xyzx)
-    tmp1.xyzw = pyasm.mul(col1.wwwx, dst1.xyzx)
-    tmp2.xyzw = pyasm.mul(col2.wwwx, dst2.xyzx)
-    dst3.xyzw = pyasm.add(tmp0, tmp1)
-    dst3.xyzw = pyasm.add(dst3, tmp2)
+    dst3.xyzw = pyasm.mul(col0.wwwx, dst0.xyzx)
+    dst3.xyzw = pyasm.mad(col1.wwwx, dst1.xyzx, dst3.xyzw)
+    dst3.xyzw = pyasm.mad(col2.wwwx, dst2.xyzx, dst3.xyzw)
     dst3.xyz  = pyasm.mov(-dst3)
 
     # Multiply against 1/determinant (and zero out 4th column):
