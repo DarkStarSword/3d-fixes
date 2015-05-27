@@ -146,3 +146,8 @@ shaders) from Unity 4 and Unity 5 games in batch.
 
 ### dx11shaderanalyse.py ###
 Decodes some information in the ISGN & OSGN sections of DX11 shaders.
+
+### pyasm.py ###
+Implements shader like semantics in Python, including registers supporting
+masks and swizzles using a natural syntax, and various shader instructions.
+Useful to prototype & debug complicated algorithms.
