@@ -173,8 +173,8 @@ def determinant_euclidean_asm_col_major(m):
     (col0, col1, col2, _) = col_major_regs(m)
     return _determinant_euclidean_asm_col_major(col0, col1, col2)
 
-def inverse(m, d):
-    n = np.matrix([[0]*4]*4)
+def _inverse(m, d):
+    n = np.matrix([[0.0]*4]*4)
     n[0,0] = m[1,2]*m[2,3]*m[3,1] - m[1,3]*m[2,2]*m[3,1] + m[1,3]*m[2,1]*m[3,2] - m[1,1]*m[2,3]*m[3,2] - m[1,2]*m[2,1]*m[3,3] + m[1,1]*m[2,2]*m[3,3]
     n[0,1] = m[0,3]*m[2,2]*m[3,1] - m[0,2]*m[2,3]*m[3,1] - m[0,3]*m[2,1]*m[3,2] + m[0,1]*m[2,3]*m[3,2] + m[0,2]*m[2,1]*m[3,3] - m[0,1]*m[2,2]*m[3,3]
     n[0,2] = m[0,2]*m[1,3]*m[3,1] - m[0,3]*m[1,2]*m[3,1] + m[0,3]*m[1,1]*m[3,2] - m[0,1]*m[1,3]*m[3,2] - m[0,2]*m[1,1]*m[3,3] + m[0,1]*m[1,2]*m[3,3]
@@ -193,9 +193,12 @@ def inverse(m, d):
     n[3,3] = m[0,1]*m[1,2]*m[2,0] - m[0,2]*m[1,1]*m[2,0] + m[0,2]*m[1,0]*m[2,1] - m[0,0]*m[1,2]*m[2,1] - m[0,1]*m[1,0]*m[2,2] + m[0,0]*m[1,1]*m[2,2]
     return n / d
 
-def inverse_euclidean(m, d):
+def inverse(m):
+    return _inverse(m, determinant(m))
+
+def _inverse_euclidean(m, d):
     # Simplifying on the assumption that the 4th column is 0,0,0,1
-    n = np.matrix([[0]*4]*4)
+    n = np.matrix([[0.0]*4]*4)
     n[0,0] = m[1,1]*m[2,2] - m[1,2]*m[2,1]
     n[1,0] = m[1,2]*m[2,0] - m[1,0]*m[2,2]
     n[2,0] = m[1,0]*m[2,1] - m[1,1]*m[2,0]
@@ -217,6 +220,84 @@ def inverse_euclidean(m, d):
     # assert(n[3,3] == 1)
 
     return n / d
+
+def inverse_euclidean(m):
+    return _inverse_euclidean(m, determinant_euclidean(m))
+
+def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
+    '''
+    Performs a matrix inverse in a manner as would be done in assembly.
+    Note that the input matrix is in column-major order, but the resulting
+    inverted matrix will be in ROW-major order.
+    '''
+    std_consts = pyasm.Register([0, 1, 0.0625, 0.5])
+    tmp0 = pyasm.Register()
+    tmp1 = pyasm.Register()
+    tmp2 = pyasm.Register()
+    dst0 = pyasm.Register()
+    dst1 = pyasm.Register()
+    dst2 = pyasm.Register()
+    dst3 = pyasm.Register()
+
+    # 1st row, simplifying by assuimg the 4th column 0,0,0,1
+    # dst0.x = (m1.y*m2.z - m1.z*m2.y) / determinant
+    # dst0.y = (m1.z*m2.x - m1.x*m2.z) / determinant
+    # dst0.z = (m1.x*m2.y - m1.y*m2.x) / determinant
+    # dst0.w = 0
+
+    tmp0.xyz = pyasm.mul(col1.yzx, col2.zxy)
+    tmp1.xyz = pyasm.mul(col1.zxy, col2.yzx)
+    dst0.xyz = pyasm.add(tmp0, -tmp1)
+
+    # 2nd row
+    # dst1.x = (col0.z*m2.y - col0.y*m2.z) / determinant
+    # dst1.y = (col0.x*m2.z - col0.z*m2.x) / determinant
+    # dst1.z = (col0.y*m2.x - col0.x*m2.y) / determinant
+    # dst1.w = 0
+
+    tmp0.xyz = pyasm.mul(col0.zxy, col2.yzx)
+    tmp1.xyz = pyasm.mul(col0.yzx, col2.zxy)
+    dst1.xyz = pyasm.add(tmp0, -tmp1)
+
+    # 3nd row
+    # dst2.x = (col0.y*m1.z - col0.z*m1.y) / determinant
+    # dst2.y = (col0.z*m1.x - col0.x*m1.z) / determinant
+    # dst2.z = (col0.x*m1.y - col0.y*m1.x) / determinant
+    # dst2.w = 0
+
+    tmp0.xyz = pyasm.mul(col0.yzx, col1.zxy)
+    tmp1.xyz = pyasm.mul(col0.zxy, col1.yzx)
+    dst2.xyz = pyasm.add(tmp0, -tmp1)
+
+    # 4th row
+    # dst3.x = - col0.w*dst0.x - col1.w*dst1.x - col2.w*dst2.x
+    # dst3.y = - col0.w*dst0.y - col1.w*dst1.y - col2.w*dst2.y
+    # dst3.z = - col0.w*dst0.z - col1.w*dst1.z - col2.w*dst2.z
+    # dst3.w =   col0.x*dst0.x + col1.x*dst1.x + col2.x*dst2.x (always 1?)
+
+    tmp0.xyzw = pyasm.mul(col0.wwwx, dst0.xyzx)
+    tmp1.xyzw = pyasm.mul(col1.wwwx, dst1.xyzx)
+    tmp2.xyzw = pyasm.mul(col2.wwwx, dst2.xyzx)
+    dst3.xyzw = pyasm.add(tmp0, tmp1)
+    dst3.xyzw = pyasm.add(dst3, tmp2)
+    dst3.xyz  = pyasm.mov(-dst3)
+
+    # Multiply against 1/determinant (and zero out 4th column):
+    inv_det = pyasm.rcp(d.x)
+    inv_det.y = pyasm.mov(std_consts.x)
+    dst0 = pyasm.mul(dst0, inv_det.xxxy)
+    dst1 = pyasm.mul(dst1, inv_det.xxxy)
+    dst2 = pyasm.mul(dst2, inv_det.xxxy)
+    dst3 = pyasm.mul(dst3, inv_det.xxxx)
+
+    # Note that this matrix has been transposed and is now in ROW major order!
+
+    return (dst0, dst1, dst2, dst3)
+
+def inverse_euclidean_asm_col_major(m):
+    (col0, col1, col2, _) = col_major_regs(m)
+    d = _determinant_euclidean_asm_col_major(col0, col1, col2)
+    return _inverse_euclidean_asm_col_major(col0, col1, col2, d)
 
 def inverse_matrix_euclidean_m0(m, d):
     # Return the 1st row of an inverted matrix, simplifying on the assumption
