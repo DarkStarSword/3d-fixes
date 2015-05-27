@@ -272,3 +272,24 @@ def mv_mvp_m00i(mv, mvp):
 # //    simplifying based on assumptions about the structure of a projection
 # //    matrix (should even work for off-center projection matrices):
 # rcp r20.x, r20.x
+
+def random_euclidean_matrix(multiplier=1):
+    '''
+    Generates a matrix with random euclidean transformations applied to it in a
+    random order. Useful for testing simplified matrix algorithms that are
+    supposed to work on matrices that do not use the homogeneous 4th
+    coordinate but have no other assumptions (e.g. model-view, but not
+    model-view-projection).
+    '''
+    import random
+    m = np.identity(4)
+    steps = random.randint(1,10)
+    for i in range(steps):
+        m = m * random.choice((
+            translate(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier),
+            scale(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier),
+            rotate_x(random.random() * 180),
+            rotate_y(random.random() * 180),
+            rotate_z(random.random() * 180)
+        ))
+    return m
