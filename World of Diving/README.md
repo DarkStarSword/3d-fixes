@@ -3,10 +3,19 @@ World of Diving
 
 Fixed
 -----
-- halos on all surfaces
+- halos on all semi-transparent effects
 - Unity Light, Shadows & Specular highlights fixed.
 - Water refraction, halos, etc
 - Flashlight clipping
+
+Installation
+------------
+1. Windows 7 and Windows 8 (not Windows 8.1) users may need to install the
+   "evil update" (KB2670838)
+
+2. Unpack the zip file to ...\Steam\SteamApps\World of Diving
+
+3. Press ] after starting a new game to load the recommended convergence.
 
 Convergence Presets
 -------------------
@@ -18,3 +27,10 @@ Notes
 -----
 - This is an early access game with new content being developed all the time.
   Please check back for updates to the fix for any issues in future content.
+
+- The game is likely to crash when alt+tabbing out. This is a general problem
+  with Unity 5 + DirectX 11 + exclusive mode full screen, and not specific to
+  this fix (other than the fact we need exclusive mode full screen).
+
+- This has not been tested on Windows 8.1. If you have crashes you may need to
+  use Flugan's wrapper instead - refer to the forums for details.
