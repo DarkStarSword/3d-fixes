@@ -10,12 +10,9 @@ Fixed
 
 Installation
 ------------
-1. Windows 7 and Windows 8 (not Windows 8.1) users may need to install the
-   "evil update" (KB2670838)
+1. Unpack the zip file to ...\Steam\SteamApps\World of Diving
 
-2. Unpack the zip file to ...\Steam\SteamApps\World of Diving
-
-3. Press ] after starting a new game to load the recommended convergence.
+2. Press ] after starting a new game to load the recommended convergence.
 
 Convergence Presets
 -------------------
