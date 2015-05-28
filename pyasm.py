@@ -158,46 +158,50 @@ def py_to_asm(function, **reg_replacements):
             return reg, target.value.id
         raise SyntaxError(target)
 
-    def get_indent_and_comments(source):
+    def preprocess(source):
         # Syntax tree has whitespace & comments stripped, so use the tokenizer
-        # to get them instead
+        # to get them instead & strip out any pydoc.
+
         import tokenize, token, io
-        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
+
         line_indents = []
         comments = []
-        comment_positions = []
-        indent = comment = ''
-        for t in tokens:
-            if t.type == token.INDENT:
-                indent = t.string
-            if t.type == tokenize.COMMENT:
-                comment = t.string
-                comment_positions.append(t.start)
-            if t.type in (token.NEWLINE, tokenize.NL):
-                line_indents.append(indent)
-                comments.append(comment)
-                # indent = '' - only counts new indents?
-                comment = ''
-        return (line_indents, comments, comment_positions)
 
-    def line_comment(lineno):
-        if comments[lineno] == '':
-            return ''
-        return ' //' + comments[lineno][1:]
+        def _preprocess(tokens):
+            import token
+            lineno = 0
+            indent = comment = ''
+            for t in tokens:
+                if t.type == token.INDENT:
+                    indent = t.string
+                if t.type == tokenize.COMMENT:
+                    comment = '//' + t.string[1:]
+                if t.type in (token.NEWLINE, tokenize.NL):
+                    line_indents.append(indent)
+                    comments.append(comment)
+                    # indent = '' - only counts new indents?
+                    comment = ''
+                    lineno += 1
+                if t.type == token.STRING:
+                    continue
+                yield (t.type, t.string)
+
+        stream = io.StringIO(source).readline
+        stream = _preprocess(tokenize.generate_tokens(stream))
+        source = tokenize.untokenize(stream)
+        return source, line_indents, comments
 
     import ast, inspect
     source = inspect.getsource(function)
-    (line_indents, comments, comment_positions) = get_indent_and_comments(source)
+    source, line_indents, comments = preprocess(source)
     tree = ast.parse(source)
+
+    # Transform python comments into assembly comments:
+    source = source.replace('#', '//')
 
     # Split source into lines, and adjust ast line numbers to start at 0:
     source = source.splitlines()
     ast.increment_lineno(tree, -1)
-
-    # Convert Python comments into asm comments:
-    for (row, col) in comment_positions:
-        line = source[row-1]
-        source[row-1] = line[:col] + '//' + comments[row-1][1:]
 
     # Since we just got the source to the passed in function, there should be
     # exactly one function here:
@@ -241,13 +245,18 @@ def py_to_asm(function, **reg_replacements):
             registers.add(reg_bare)
 
             args = [reg] + [ reg_name(a)[0] for a in instr.args ]
-            source[instr.lineno] = '{}{} {}{}'.format(line_indents[instr.lineno], instr.func.attr, ', '.join(args), line_comment(instr.lineno))
+            source[instr.lineno] = '{}{} {} {}'.format(
+                    line_indents[instr.lineno],
+                    instr.func.attr,
+                    ', '.join(args),
+                    comments[instr.lineno]).rstrip()
 
             continue
 
         raise SyntaxError(statement)
 
-    print('\n'.join(source))
+    print('\n'.join(source).strip('\n'))
+
     unbound = registers.difference(reg_replacements.values())
     if unbound:
-        print('// UNBOUND REGISTERS:', ', '.join(sorted(unbound)))
+        print('\n// UNBOUND REGISTERS:', ', '.join(sorted(unbound)))
