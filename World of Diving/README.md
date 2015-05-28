@@ -4,9 +4,12 @@ World of Diving
 Fixed
 -----
 - halos on all semi-transparent effects
-- Unity Light, Shadows & Specular highlights fixed.
+- Unity Lights & Shadows
 - Water refraction, halos, etc
 - Flashlight clipping
+- Specular highlights fixed, but depends on correct FOV setting. Press ~ to
+  switch between presets for the regular gameplay and the camera. Highlights
+  will be broken while using the Scuba-scooter as the FOV varies.
 
 Installation
 ------------
