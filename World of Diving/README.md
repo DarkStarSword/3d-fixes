@@ -35,3 +35,6 @@ Notes
 
 - This has not been tested on Windows 8.1. If you have crashes you may need to
   use Flugan's wrapper instead - refer to the forums for details.
+
+- If you get really bad graphical glitches (flickering lights, dots appearing
+  in one eye, etc), quit and restart the game.
