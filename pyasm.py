@@ -123,3 +123,131 @@ def rcp(source):
         return Register(1 / source[0])
     except ZeroDivisionError:
         return Register(float('inf'))
+
+def py_to_asm(function, **reg_replacements):
+    '''
+    Convert a python function implemented with pyasm registers and functions
+    into shader assembly. Specify variable replacements with keyword arguments,
+    e.g. py_to_asm(matrix._determinant_euclidean_asm_col_major,
+                   col0='r20', col1='r21', col2='r22', det='r30', tmp0='r25')
+    '''
+
+    # I could have just used some regular expression search & replace and it
+    # would have been much simpler, but I've been interested in learning about
+    # Python's representation of itself for a while and this seemed like as
+    # good an opportunity as any. This function is prety hacky and long as I
+    # was figuring things out as I went. I might still go back to regexp...
+
+    def delete_line(lineno):
+        del source[lineno]
+        del line_indents[lineno]
+        del comments[lineno]
+        ast.increment_lineno(tree, -1)
+
+    def reg_name(target):
+        # Return (register with swizzle/mask, register without swizzle/mask)
+        prefix = ''
+        if isinstance(target, ast.UnaryOp):
+            assert(isinstance(target.op, ast.USub))
+            prefix = '-'
+            target = target.operand
+        if isinstance(target, ast.Name):
+            return ('{}{}'.format(prefix, target.id), target.id)
+        if isinstance(target, ast.Attribute):
+            reg = '{}{}.{}'.format(prefix, target.value.id, target.attr)
+            return reg, target.value.id
+        raise SyntaxError(target)
+
+    def get_indent_and_comments(source):
+        # Syntax tree has whitespace & comments stripped, so use the tokenizer
+        # to get them instead
+        import tokenize, token, io
+        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
+        line_indents = []
+        comments = []
+        comment_positions = []
+        indent = comment = ''
+        for t in tokens:
+            if t.type == token.INDENT:
+                indent = t.string
+            if t.type == tokenize.COMMENT:
+                comment = t.string
+                comment_positions.append(t.start)
+            if t.type in (token.NEWLINE, tokenize.NL):
+                line_indents.append(indent)
+                comments.append(comment)
+                # indent = '' - only counts new indents?
+                comment = ''
+        return (line_indents, comments, comment_positions)
+
+    def line_comment(lineno):
+        if comments[lineno] == '':
+            return ''
+        return ' //' + comments[lineno][1:]
+
+    import ast, inspect
+    source = inspect.getsource(function)
+    (line_indents, comments, comment_positions) = get_indent_and_comments(source)
+    tree = ast.parse(source)
+
+    # Split source into lines, and adjust ast line numbers to start at 0:
+    source = source.splitlines()
+    ast.increment_lineno(tree, -1)
+
+    # Convert Python comments into asm comments:
+    for (row, col) in comment_positions:
+        line = source[row-1]
+        source[row-1] = line[:col] + '//' + comments[row-1][1:]
+
+    # Since we just got the source to the passed in function, there should be
+    # exactly one function here:
+    assert(len(tree.body) == 1)
+    function = tree.body[0]
+    delete_line(function.lineno)
+
+    # Rename variables:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            node.id = reg_replacements.get(node.id, node.id)
+        if isinstance(node, ast.arg):
+            node.arg = reg_replacements.get(node.arg, node.arg)
+
+    # Get a list of inputs the function takes:
+    inputs = [ a.arg for a in function.args.args ]
+    registers = set(inputs[:])
+
+    for statement in function.body:
+        if isinstance(statement, ast.Return):
+            # Since this will be pasted inline return is irrelevant:
+            delete_line(statement.lineno)
+            continue
+
+        if isinstance(statement, ast.Assign):
+            # Not expecting any code to use multiple destination targets:
+            assert(len(statement.targets) == 1)
+            target = statement.targets[0]
+            reg, reg_bare = reg_name(target)
+
+            instr = statement.value
+            if isinstance(instr, ast.Attribute):
+                assert(instr.value == 'pyasm')
+                instr = instr.attr
+            if instr.func.attr == 'Register':
+                # TODO: If the register is initialised with constants we should
+                # handle it specially
+                delete_line(instr.lineno)
+                continue
+
+            registers.add(reg_bare)
+
+            args = [reg] + [ reg_name(a)[0] for a in instr.args ]
+            source[instr.lineno] = '{}{} {}{}'.format(line_indents[instr.lineno], instr.func.attr, ', '.join(args), line_comment(instr.lineno))
+
+            continue
+
+        raise SyntaxError(statement)
+
+    print('\n'.join(source))
+    unbound = registers.difference(reg_replacements.values())
+    if unbound:
+        print('// UNBOUND REGISTERS:', ', '.join(sorted(unbound)))
