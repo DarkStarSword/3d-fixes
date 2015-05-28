@@ -238,27 +238,27 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     dst3 = pyasm.Register()
 
     # 1st row, simplifying by assuimg the 4th column 0,0,0,1
-    # dst0.x = (m1.y*m2.z - m1.z*m2.y) / determinant
-    # dst0.y = (m1.z*m2.x - m1.x*m2.z) / determinant
-    # dst0.z = (m1.x*m2.y - m1.y*m2.x) / determinant
+    # dst0.x = (m1.y*m2.z - m1.z*m2.y)
+    # dst0.y = (m1.z*m2.x - m1.x*m2.z)
+    # dst0.z = (m1.x*m2.y - m1.y*m2.x)
     # dst0.w = 0
 
     dst0.xyz = pyasm.mul(col1.zxy, col2.yzx)
     dst0.xyz = pyasm.mad(col1.yzx, col2.zxy, -dst0.xyz)
 
     # 2nd row
-    # dst1.x = (col0.z*m2.y - col0.y*m2.z) / determinant
-    # dst1.y = (col0.x*m2.z - col0.z*m2.x) / determinant
-    # dst1.z = (col0.y*m2.x - col0.x*m2.y) / determinant
+    # dst1.x = (col0.z*m2.y - col0.y*m2.z)
+    # dst1.y = (col0.x*m2.z - col0.z*m2.x)
+    # dst1.z = (col0.y*m2.x - col0.x*m2.y)
     # dst1.w = 0
 
     dst1.xyz = pyasm.mul(col0.yzx, col2.zxy)
     dst1.xyz = pyasm.mad(col0.zxy, col2.yzx, -dst1.xyz)
 
     # 3nd row
-    # dst2.x = (col0.y*m1.z - col0.z*m1.y) / determinant
-    # dst2.y = (col0.z*m1.x - col0.x*m1.z) / determinant
-    # dst2.z = (col0.x*m1.y - col0.y*m1.x) / determinant
+    # dst2.x = (col0.y*m1.z - col0.z*m1.y)
+    # dst2.y = (col0.z*m1.x - col0.x*m1.z)
+    # dst2.z = (col0.x*m1.y - col0.y*m1.x)
     # dst2.w = 0
 
     dst2.xyz = pyasm.mul(col0.zxy, col1.yzx)
