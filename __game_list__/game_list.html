@@ -233,7 +233,12 @@ function collate_extra_list(response)
     post.tag = response.tag;
     post.description = response.description;
 
-    add_game(post);
+    if (response.class == 'guide')
+      guides.push(post);
+    else if (response.class == 'misc')
+      misc.push(post);
+    else
+      add_game(post);
   }
 
   if (game_list_shown)
@@ -246,6 +251,10 @@ jQuery.ajax({
 });
 jQuery.ajax({
   url : "https://ian.ozlabs.org/game_list/opengl.json",
+  success : collate_extra_list
+});
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/guides.json",
   success : collate_extra_list
 });
 // @license end
