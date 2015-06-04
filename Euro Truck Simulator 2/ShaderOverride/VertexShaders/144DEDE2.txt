@@ -1,0 +1,49 @@
+// skybox - some clouds
+// VS 144DEDE2 PS 1A0C455B
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_color v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_position o0
+    dcl_color o1
+    dcl_texcoord o2.xyz
+    dcl_texcoord1 o3.xyz
+    dcl_texcoord2 o4
+
+def c220, 0, 1, 0.0625, 3
+dcl_2d s3
+
+    dp4 r10.x, v0, c0
+    dp4 r10.y, v0, c1
+    dp4 r10.z, v0, c2
+    dp4 r10.w, v0, c3
+    dp4 o2.x, v0, c4
+    dp4 o2.y, v0, c5
+    dp4 o2.z, v0, c6
+    dp3 o3.x, v1, c4
+    dp3 o3.y, v1, c5
+    dp3 o3.z, v1, c6
+    mad o4.xy, v3, c7.x, c7.y
+    mad o4.zw, v4.xyxy, c7.z, c7.w
+    mov o1, v2
+
+// Move skybox to infinity. This shader also adjusts the tarmac and other parts
+// of the ground, as well as the "xxx" floating over roads that cannot be
+// driven down in the sim.
+
+// Pixel shader filtering can't distinguish between the "xxx" and the clouds,
+// so we have to use texture filtering. So far this seems to be working
+// matching the FFFFFFFF (ie dynamically rendered) texture, but it is
+// regrettable that AFAIK the two filtering methods cannot be combined in Helix
+// mod.
+
+mov r25.x, c251
+if_eq r25.x, c220.w
+	texldl r31, c220.z, s3
+	mad r10.x, r31.x, r31.y, r10.x
+endif
+
+mov o0, r10

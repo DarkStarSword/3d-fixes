@@ -1,0 +1,112 @@
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c23, 0.00999999978, 0.159154907, 0.5, 1
+    def c24, 6.28318501, -3.14159298, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xy, c18, c18
+    add r0.x, r0, r0.y
+    rsq r0.x, r0.x
+    mul r0.xy, r0.x, c18
+    mul r0.zw, r0.xyxy, c18.z
+    mul r0.zw, r0, c12.y
+    mad r7.xy, r0.zwzw, c23.x, v3
+    mul r0.z, r7.x, c12.y
+    mul r0.w, r7.y, c12.y
+    mul r0.y, r0, r0.w
+    mul r0.x, r0.z, r0
+    mul r0.x, r0, c19
+    mul r0.y, r0, c19
+    mad r0.x, r0, c23.y, c23.z
+    mad r0.y, r0, c23, c23.z
+    frc r0.y, r0
+    frc r0.x, r0
+    mad r0.x, r0, c24, c24.y
+    sincos r1.xy, r0.x
+    mad r2.x, r0.y, c24, c24.y
+    sincos r0.xy, r2.x
+    add r0.w, r1.y, r0.x
+    mov r2.xyz, v1
+    mul r1.xyz, v2.zxyw, r2.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mad r1.y, r0.w, c19.z, v0
+    mul r4.xyz, v1.w, r0
+    mov r0, c10
+    dp4 r6.z, c16, r0
+    mov r0, c9
+    dp4 r6.y, c16, r0
+    mov r1.xzw, v0
+    mov r2.xyz, c13
+    mov r2.w, c23
+    dp4 r3.z, r2, c10
+    dp4 r3.y, r2, c9
+    dp4 r3.x, r2, c8
+    mad r5.xyz, r3, c17.w, -r1
+    dp4 r0.w, r1, c3
+    dp3 r3.y, r4, r5
+    dp3 r3.x, v1, r5
+    dp3 r3.z, v2, r5
+    dp3 r2.x, r3, r3
+    rsq r3.w, r2.x
+    mov r2, c8
+    dp4 r6.x, c16, r2
+    dp3 r0.y, r4, r6
+    dp3 r0.x, v1, r6
+    dp3 r0.z, v2, r6
+    mad r3.xyz, r3.w, r3, r0
+    dp3 r0.x, r3, r3
+    rsq r0.z, r0.x
+    mul o7.xyz, r0.z, r3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+
+mov o0, r0 // Relocated from line 75 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed F2B6ECF9.txt
+texldl r8, c220.z, s0
+add r8.w, r0.w, -r8.y
+mad r0.x, r8.w, r8.x, r0.x
+
+    mul r2.xyz, r0.xyww, c23.z
+
+//     mov o0, r0 // Relocated to line 74 with shadertool.py
+    mov o2.zw, r0
+    mul r2.y, r2, c14.x
+    dp3 r0.w, -r5, c4
+    dp3 r0.y, r4, c4
+    dp3 r0.x, v1, c4
+    dp3 r0.z, v2, c4
+    mul o3, r0, c17.w
+    dp3 r0.w, -r5, c5
+    dp3 r0.y, r4, c5
+    dp3 r0.x, v1, c5
+    dp3 r0.z, v2, c5
+    mul o4, r0, c17.w
+    dp3 r0.w, -r5, c6
+    dp3 r0.y, r4, c6
+    dp3 r0.x, v1, c6
+    dp3 r0.z, v2, c6
+    mad o2.xy, r2.z, c15.zwzw, r2
+    mul o5, r0, c17.w
+    mad o1.zw, r7.xyxy, c22.xyxy, c22
+    mad o1.xy, r7, c21, c21.zwzw
+    mad o6.xy, v4, c20, c20.zwzw
+
+// approximately 94 instruction slots used

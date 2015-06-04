@@ -1,0 +1,460 @@
+// 3DMigoto: bed093ac2b4e71c4 | Matched 4 variants of 1 shaders: FX/Water4
+// 
+//    Unity headers extracted from FX-Water4.shader
+//    Shader "FX/Water4" {
+//      Properties {
+//       _ReflectionTex ("Internal reflection", 2D) = "white" { }
+//       _MainTex ("Fallback texture", 2D) = "black" { }
+//       _ShoreTex ("Shore & Foam texture ", 2D) = "black" { }
+//       _BumpMap ("Normals ", 2D) = "bump" { }
+//       _DistortParams ("Distortions (Bump waves, Reflection, Fresnel power, Fresnel bias)", Vector) = (1,1,2,1.15)
+//       _InvFadeParemeter ("Auto blend parameter (Edge, Shore, Distance scale)", Vector) = (0.15,0.15,0.5,1)
+//       _AnimationTiling ("Animation Tiling (Displacement)", Vector) = (2.2,2.2,-1.1,-1.1)
+//       _AnimationDirection ("Animation Direction (displacement)", Vector) = (1,1,1,1)
+//       _BumpTiling ("Bump Tiling", Vector) = (1,1,-2,3)
+//       _BumpDirection ("Bump Direction & Speed", Vector) = (1,1,-1,1)
+//       _FresnelScale ("FresnelScale", Range(0.15,4)) = 0.75
+//       _BaseColor ("Base color", Color) = (0.54,0.95,0.99,0.5)
+//       _ReflectionColor ("Reflection color", Color) = (0.54,0.95,0.99,0.5)
+//       _SpecularColor ("Specular color", Color) = (0.72,0.72,0.72,1)
+//       _WorldLightDir ("Specular light direction", Vector) = (0,0.1,-0.5,0)
+//       _Shininess ("Shininess", Range(2,500)) = 200
+//       _Foam ("Foam (intensity, cutoff)", Vector) = (0.1,0.375,0,0)
+//       _GerstnerIntensity ("Per vertex displacement", Float) = 1
+//       _GAmplitude ("Wave Amplitude", Vector) = (0.3,0.35,0.25,0.25)
+//       _GFrequency ("Wave Frequency", Vector) = (1.3,1.35,1.25,1.25)
+//       _GSteepness ("Wave Steepness", Vector) = (1,1,1,1)
+//       _GSpeed ("Wave Speed", Vector) = (1.2,1.375,1.1,1.5)
+//       _GDirectionAB ("Wave Direction", Vector) = (0.3,0.85,0.85,0.25)
+//       _GDirectionCD ("Wave Direction", Vector) = (0.1,0.9,0.5,0.5)
+//      }
+//      Fallback "Transparent/Diffuse"
+//      SubShader 1/3 {
+//        LOD 500
+//        Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//        GrabPass {
+//          "_RefractionTex"
+//         }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 51342
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 4:           Keywords { "FOG_EXP" "WATER_EDGEBLEND_OFF" "WATER_REFLECTIVE" "WATER_VERTEX_DISPLACEMENT_ON" }
+// 8:           Keywords { "FOG_EXP" "WATER_EDGEBLEND_OFF" "WATER_SIMPLE" "WATER_VERTEX_DISPLACEMENT_ON" }
+// 1:           Keywords { "FOG_EXP" "WATER_EDGEBLEND_ON" "WATER_REFLECTIVE" "WATER_VERTEX_DISPLACEMENT_ON" }
+// 2:           Keywords { "FOG_EXP" "WATER_EDGEBLEND_ON" "WATER_SIMPLE" "WATER_VERTEX_DISPLACEMENT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              ConstBuffer "$Globals" 400
+//              Float 96 [_GerstnerIntensity]
+//              Vector 256 [_BumpTiling]
+//              Vector 272 [_BumpDirection]
+//              Vector 288 [_GAmplitude]
+//              Vector 304 [_GFrequency]
+//              Vector 320 [_GSteepness]
+//              Vector 336 [_GSpeed]
+//              Vector 352 [_GDirectionAB]
+//              Vector 368 [_GDirectionCD]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 0 [_Time]
+//              Vector 64 [_WorldSpaceCameraPos] 3
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[16];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[24];
+}
+
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main(
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float o6 : TEXCOORD5)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = cb2[13].xyz * v0.yyy;
+  r0.xyz = cb2[12].xyz * v0.xxx + r0.xyz;
+  r0.xyz = cb2[14].xyz * v0.zzz + r0.xyz;
+  r0.xyz = cb2[15].xyz * v0.www + r0.xyz;
+  r1.x = dot(cb0[22].xy, r0.xz);
+  r1.y = dot(cb0[22].zw, r0.xz);
+  r1.z = dot(cb0[23].xy, r0.xz);
+  r1.w = dot(cb0[23].zw, r0.xz);
+  r2.xyzw = cb1[0].yyyy * cb0[21].xyzw;
+  r1.xyzw = cb0[19].xyzw * r1.xyzw + r2.xyzw;
+  sincos(r1.xyzw, r1.xyzw, r3.xyzw);
+  r4.xyzw = cb0[20].xyzw * cb0[18].xyzw;
+  r5.xyzw = cb0[22].ywxz * r4.xyxy;
+  r4.xyzw = cb0[23].xyzw * r4.zzww;
+  r6.xy = r5.zw;
+  r6.zw = r4.xz;
+  r5.zw = r4.yw;
+  r4.z = dot(r3.xyzw, r5.xyzw);
+  r4.x = dot(r3.xyzw, r6.xyzw);
+  r4.y = dot(r1.xyzw, cb0[18].xyzw);
+  r1.xyz = v0.xyz + r4.xyz;
+  r3.xy = r4.xz + r0.xz;
+  o2.xyz = -cb1[4].xyz + r0.xyz;
+  o2.w = saturate(r4.y);
+  r0.xyzw = cb2[1].xyzw * r1.yyyy;
+  r0.xyzw = cb2[0].xyzw * r1.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * r1.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.w - stereo.y);
+
+  r4.x = dot(cb0[22].xy, r3.xy);
+  r4.y = dot(cb0[22].zw, r3.xy);
+  r4.z = dot(cb0[23].xy, r3.xy);
+  r4.w = dot(cb0[23].zw, r3.xy);
+  r2.xyzw = cb0[19].xyzw * r4.xyzw + r2.xyzw;
+  r2.xyzw = cos(r2.xyzw);
+  r3.xyzw = cb0[19].xyzw * cb0[18].xyzw;
+  r4.xyzw = cb0[22].ywxz * r3.xyxy;
+  r3.xyzw = cb0[23].xyzw * r3.zzww;
+  r5.xy = r4.zw;
+  r5.zw = r3.xz;
+  r4.zw = r3.yw;
+  r1.w = dot(r2.xyzw, r4.xyzw);
+  r2.x = dot(r2.xyzw, r5.xyzw);
+  r2.x = -r2.x;
+  r2.z = -r1.w;
+  r2.xz = cb0[6].xx * r2.xz;
+  r2.y = 2.000000000e+000;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  o1.xyz = r2.xyz * r1.www;
+  o1.w = 1.000000000e+000;
+  r2.xyzw = cb2[13].xzxz * r1.yyyy;
+  r2.xyzw = cb2[12].xzxz * r1.xxxx + r2.xyzw;
+  r1.xyzw = cb2[14].xzxz * r1.zzzz + r2.xyzw;
+  r1.xyzw = cb2[15].xzxz * v0.wwww + r1.xyzw;
+  r1.xyzw = cb1[0].xxxx * cb0[17].xyzw + r1.xyzw;
+  o3.xyzw = cb0[16].xyzw * r1.xyzw;
+  r1.x = cb1[5].x * r0.y;
+  r1.w = 5.000000000e-001 * r1.x;
+  r1.xz = float2(5.000000e-001,5.000000e-001) * r0.xw;
+  o4.xy = r1.xw + r1.zz;
+  o4.zw = r0.zw;
+  o5.zw = r0.zw;
+  r0.xy = r0.xy * float2(1.000000e+000,-1.000000e+000) + r0.ww;
+  o6.x = r0.z;
+  o5.xy = float2(5.000000e-001,5.000000e-001) * r0.xy;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) D3D Shader Disassembler
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// POSITION                 0   xyzw        0     NONE   float   xyzw
+// TANGENT                  0   xyzw        1     NONE   float       
+// NORMAL                   0   xyz         2     NONE   float       
+// TEXCOORD                 0   xyzw        3     NONE   float       
+// TEXCOORD                 1   xyzw        4     NONE   float       
+// TEXCOORD                 2   xyzw        5     NONE   float       
+// TEXCOORD                 3   xyzw        6     NONE   float       
+// COLOR                    0   xyzw        7     NONE   float       
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_POSITION              0   xyzw        0      POS   float   xyzw
+// TEXCOORD                 0   xyzw        1     NONE   float   xyzw
+// TEXCOORD                 1   xyzw        2     NONE   float   xyzw
+// TEXCOORD                 2   xyzw        3     NONE   float   xyzw
+// TEXCOORD                 3   xyzw        4     NONE   float   xyzw
+// TEXCOORD                 4   xyzw        5     NONE   float   xyzw
+// TEXCOORD                 5   x           6     NONE   float   x   
+//
+vs_4_0
+dcl_constantbuffer cb0[24], immediateIndexed
+dcl_constantbuffer cb1[6], immediateIndexed
+dcl_constantbuffer cb2[16], immediateIndexed
+dcl_input v0.xyzw
+dcl_output_siv o0.xyzw, position
+dcl_output o1.xyzw
+dcl_output o2.xyzw
+dcl_output o3.xyzw
+dcl_output o4.xyzw
+dcl_output o5.xyzw
+dcl_output o6.x
+dcl_temps 7
+mul r0.xyz, v0.yyyy, cb2[13].xyzx
+mad r0.xyz, cb2[12].xyzx, v0.xxxx, r0.xyzx
+mad r0.xyz, cb2[14].xyzx, v0.zzzz, r0.xyzx
+mad r0.xyz, cb2[15].xyzx, v0.wwww, r0.xyzx
+dp2 r1.x, cb0[22].xyxx, r0.xzxx
+dp2 r1.y, cb0[22].zwzz, r0.xzxx
+dp2 r1.z, cb0[23].xyxx, r0.xzxx
+dp2 r1.w, cb0[23].zwzz, r0.xzxx
+mul r2.xyzw, cb0[21].xyzw, cb1[0].yyyy
+mad r1.xyzw, cb0[19].xyzw, r1.xyzw, r2.xyzw
+sincos r1.xyzw, r3.xyzw, r1.xyzw
+mul r4.xyzw, cb0[18].xyzw, cb0[20].xyzw
+mul r5.xyzw, r4.xyxy, cb0[22].ywxz
+mul r4.xyzw, r4.zzww, cb0[23].xyzw
+mov r6.xy, r5.zwzz
+mov r6.zw, r4.xxxz
+mov r5.zw, r4.yyyw
+dp4 r4.z, r3.xyzw, r5.xyzw
+dp4 r4.x, r3.xyzw, r6.xyzw
+dp4 r4.y, r1.xyzw, cb0[18].xyzw
+add r1.xyz, r4.xyzx, v0.xyzx
+add r3.xy, r0.xzxx, r4.xzxx
+add o2.xyz, r0.xyzx, -cb1[4].xyzx
+mov_sat o2.w, r4.y
+mul r0.xyzw, r1.yyyy, cb2[1].xyzw
+mad r0.xyzw, cb2[0].xyzw, r1.xxxx, r0.xyzw
+mad r0.xyzw, cb2[2].xyzw, r1.zzzz, r0.xyzw
+mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
+mov o0.xyzw, r0.xyzw
+dp2 r4.x, cb0[22].xyxx, r3.xyxx
+dp2 r4.y, cb0[22].zwzz, r3.xyxx
+dp2 r4.z, cb0[23].xyxx, r3.xyxx
+dp2 r4.w, cb0[23].zwzz, r3.xyxx
+mad r2.xyzw, cb0[19].xyzw, r4.xyzw, r2.xyzw
+sincos null, r2.xyzw, r2.xyzw
+mul r3.xyzw, cb0[18].xyzw, cb0[19].xyzw
+mul r4.xyzw, r3.xyxy, cb0[22].ywxz
+mul r3.xyzw, r3.zzww, cb0[23].xyzw
+mov r5.xy, r4.zwzz
+mov r5.zw, r3.xxxz
+mov r4.zw, r3.yyyw
+dp4 r1.w, r2.xyzw, r4.xyzw
+dp4 r2.x, r2.xyzw, r5.xyzw
+mov r2.x, -r2.x
+mov r2.z, -r1.w
+mul r2.xz, r2.xxzx, cb0[6].xxxx
+mov r2.y, l(2.000000)
+dp3 r1.w, r2.xyzx, r2.xyzx
+rsq r1.w, r1.w
+mul o1.xyz, r1.wwww, r2.xyzx
+mov o1.w, l(1.000000)
+mul r2.xyzw, r1.yyyy, cb2[13].xzxz
+mad r2.xyzw, cb2[12].xzxz, r1.xxxx, r2.xyzw
+mad r1.xyzw, cb2[14].xzxz, r1.zzzz, r2.xyzw
+mad r1.xyzw, cb2[15].xzxz, v0.wwww, r1.xyzw
+mad r1.xyzw, cb1[0].xxxx, cb0[17].xyzw, r1.xyzw
+mul o3.xyzw, r1.xyzw, cb0[16].xyzw
+mul r1.x, r0.y, cb1[5].x
+mul r1.w, r1.x, l(0.500000)
+mul r1.xz, r0.xxwx, l(0.500000, 0.000000, 0.500000, 0.000000)
+add o4.xy, r1.zzzz, r1.xwxx
+mov o4.zw, r0.zzzw
+mov o5.zw, r0.zzzw
+mad r0.xy, r0.xyxx, l(1.000000, -1.000000, 0.000000, 0.000000), r0.wwww
+mov o6.x, r0.z
+mul o5.xy, r0.xyxx, l(0.500000, 0.500000, 0.000000, 0.000000)
+ret 
+// Approximately 0 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Recompiled ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.30.9200.20789
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cb2
+// {
+//
+//   float4 cb2[16];                    // Offset:    0 Size:   256
+//
+// }
+//
+// cbuffer cb1
+// {
+//
+//   float4 cb1[6];                     // Offset:    0 Size:    96
+//
+// }
+//
+// cbuffer cb0
+// {
+//
+//   float4 cb0[24];                    // Offset:    0 Size:   384
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// cb0                               cbuffer      NA          NA    0        1
+// cb1                               cbuffer      NA          NA    1        1
+// cb2                               cbuffer      NA          NA    2        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// POSITION                 0   xyzw        0     NONE   float   xyzw
+// TANGENT                  0   xyzw        1     NONE   float       
+// NORMAL                   0   xyz         2     NONE   float       
+// TEXCOORD                 0   xyzw        3     NONE   float       
+// TEXCOORD                 1   xyzw        4     NONE   float       
+// TEXCOORD                 2   xyzw        5     NONE   float       
+// TEXCOORD                 3   xyzw        6     NONE   float       
+// COLOR                    0   xyzw        7     NONE   float       
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_POSITION              0   xyzw        0      POS   float   xyzw
+// TEXCOORD                 0   xyzw        1     NONE   float   xyzw
+// TEXCOORD                 1   xyzw        2     NONE   float   xyzw
+// TEXCOORD                 2   xyzw        3     NONE   float   xyzw
+// TEXCOORD                 3   xyzw        4     NONE   float   xyzw
+// TEXCOORD                 4   xyzw        5     NONE   float   xyzw
+// TEXCOORD                 5   x           6     NONE   float   x   
+//
+vs_4_0
+dcl_constantbuffer cb2[16], immediateIndexed
+dcl_constantbuffer cb1[6], immediateIndexed
+dcl_constantbuffer cb0[24], immediateIndexed
+dcl_input v0.xyzw
+dcl_output_siv o0.xyzw, position
+dcl_output o1.xyzw
+dcl_output o2.xyzw
+dcl_output o3.xyzw
+dcl_output o4.xyzw
+dcl_output o5.xyzw
+dcl_output o6.x
+dcl_temps 7
+mul r0.xyz, v0.yyyy, cb2[13].xyzx
+mad r0.xyz, cb2[12].xyzx, v0.xxxx, r0.xyzx
+mad r0.xyz, cb2[14].xyzx, v0.zzzz, r0.xyzx
+mad r0.xyz, cb2[15].xyzx, v0.wwww, r0.xyzx
+dp2 r1.x, cb0[22].xyxx, r0.xzxx
+dp2 r1.y, cb0[22].zwzz, r0.xzxx
+dp2 r1.z, cb0[23].xyxx, r0.xzxx
+dp2 r1.w, cb0[23].zwzz, r0.xzxx
+mul r2.xyzw, cb1[0].yyyy, cb0[21].xyzw
+mad r1.xyzw, cb0[19].xyzw, r1.xyzw, r2.xyzw
+sincos r1.xyzw, r3.xyzw, r1.xyzw
+mul r4.xyzw, cb0[18].xyzw, cb0[20].xyzw
+mul r5.xyzw, r4.xyxy, cb0[22].xzyw
+mul r4.xyzw, r4.zzww, cb0[23].xyzw
+mov r6.xy, r5.zwzz
+mov r6.zw, r4.yyyw
+mov r5.zw, r4.xxxz
+dp4 r4.x, r3.xyzw, r5.xyzw
+dp4 r4.z, r3.xyzw, r6.xyzw
+dp4 r4.y, r1.xyzw, cb0[18].xyzw
+add r1.xyz, r4.xyzx, v0.xyzx
+add r3.xy, r0.xzxx, r4.xzxx
+add o2.xyz, r0.xyzx, -cb1[4].xyzx
+mov_sat o2.w, r4.y
+mul r0.xyzw, r1.yyyy, cb2[1].xyzw
+mad r0.xyzw, cb2[0].xyzw, r1.xxxx, r0.xyzw
+mad r0.xyzw, cb2[2].xyzw, r1.zzzz, r0.xyzw
+mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
+mov o0.xyzw, r0.xyzw
+dp2 r4.x, cb0[22].xyxx, r3.xyxx
+dp2 r4.y, cb0[22].zwzz, r3.xyxx
+dp2 r4.z, cb0[23].xyxx, r3.xyxx
+dp2 r4.w, cb0[23].zwzz, r3.xyxx
+mad r2.xyzw, cb0[19].xyzw, r4.xyzw, r2.xyzw
+sincos null, r2.xyzw, r2.xyzw
+mul r3.xyzw, cb0[18].xyzw, cb0[19].xyzw
+mul r4.xyzw, r3.xyxy, cb0[22].ywxz
+mul r3.xyzw, r3.zzww, cb0[23].xyzw
+mov r5.xy, r4.zwzz
+mov r5.zw, r3.xxxz
+mov r4.zw, r3.yyyw
+dp4 r1.w, r2.xyzw, r4.xyzw
+dp4 r2.x, r2.xyzw, r5.xyzw
+mov r2.x, -r2.x
+mov r2.z, -r1.w
+mul r2.xz, r2.xxzx, cb0[6].xxxx
+mov r2.y, l(2.000000)
+dp3 r1.w, r2.xyzx, r2.xyzx
+rsq r1.w, r1.w
+mul o1.xyz, r1.wwww, r2.xyzx
+mov o1.w, l(1.000000)
+mul r2.xyzw, r1.yyyy, cb2[13].xzxz
+mad r2.xyzw, cb2[12].xzxz, r1.xxxx, r2.xyzw
+mad r1.xyzw, cb2[14].xzxz, r1.zzzz, r2.xyzw
+mad r1.xyzw, cb2[15].xzxz, v0.wwww, r1.xyzw
+mad r1.xyzw, cb1[0].xxxx, cb0[17].xyzw, r1.xyzw
+mul o3.xyzw, r1.xyzw, cb0[16].xyzw
+mul r1.x, r0.y, cb1[5].x
+mul r1.y, r1.x, l(0.500000)
+mul r1.x, r0.x, l(0.500000)
+mad o4.xy, r0.wwww, l(0.500000, 0.500000, 0.000000, 0.000000), r1.xyxx
+mov o4.zw, r0.zzzw
+mov o5.zw, r0.zzzw
+mad r0.xy, r0.xyxx, l(1.000000, -1.000000, 0.000000, 0.000000), r0.wwww
+mov o6.x, r0.z
+mul o5.xy, r0.xyxx, l(0.500000, 0.500000, 0.000000, 0.000000)
+ret 
+// Approximately 67 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

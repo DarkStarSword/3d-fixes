@@ -31,7 +31,7 @@ fetch_all = True # TODO: Only fetch bodies for posts not already retrieved
 ignorred_labels = set(['guide', 'hidden', 'misc'])
 download_dir = 'downloads'
 shader_pattern = re.compile('^[0-9A-F]{8}.txt$', re.IGNORECASE)
-poll_updates = 14 * 24 * 60 * 60 # atime of a downloaded file must be at least this old to check for updates
+poll_updates = 14 * 24 * 60 * 60 # ctime of a downloaded file must be at least this old to check for updates
 
 def query_blogger_api(url, params):
     url = '%s?%s' % (url, urllib.parse.urlencode(params))
@@ -51,7 +51,7 @@ def get_page(pageToken = None):
         'orderBy': 'updated',
         'fields': 'items(author/displayName,content,id,title,updated,url,labels),nextPageToken',
         'key': api_key,
-        'maxResults': 1000000000, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
+        'maxResults': 500, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
         'fetchBodies': str(fetch_all).lower(),
     }
     if pageToken is not None:
@@ -131,16 +131,30 @@ def download_file(url):
     dest = shaderutil.url_to_download_path(url, download_dir)
 
     if os.path.exists(dest):
+        # We check ctime here, since atime can be updated by simply reading the
+        # file, and we want mtime to match the upstream file. ctime could also
+        # be modified externally (chmod, chown, etc), but that's not really an
+        # issue since it won't matter if we miss one update here or there.
         st = os.stat(dest)
-        if time.time() - st.st_atime < poll_updates:
-            # FIXME: atime may not be the best thing to use since it can be
-            # updated by other things and then we may never check for updates
+        if time.time() - st.st_ctime < poll_updates:
             return dest
+
         last_modified = get_url_last_modified(url)
+
         if int(st.st_mtime) == last_modified:
             # FIXME: Also check file size matches Content-Length
             # print('Skipping %s - up to date' % url)
+
+            # We want to update ctime to indicate that we have checked this
+            # file for updates without modifying it. One way we can achieve
+            # this is to touch it's permissions (setting them to their current
+            # value is sufficient).
+            # NOTE that this won't work on Windows, where ctime is the creation
+            # time rather than the inode modified time.
+            os.chmod(dest, os.stat(dest).st_mode)
+
             return dest
+
         rename_to = '%s~%s' % (time.strftime("%Y%m%d%H%M%S", time.gmtime(st.st_mtime)), os.path.basename(dest))
         rename_to = os.path.join(os.path.dirname(dest), rename_to)
         print('%s updated' % url)

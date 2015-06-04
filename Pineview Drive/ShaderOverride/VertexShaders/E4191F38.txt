@@ -1,0 +1,141 @@
+// CRC32: E4191F38 | Matched 2 variants of 1 shaders: Hidden/TerrainEngine/Details/BillboardWavingDoublePass
+// 
+//    Unity headers extracted from WavingGrassBillboard.shader
+//    Shader "Hidden/TerrainEngine/Details/BillboardWavingDoublePass" {
+//      Properties {
+//       _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//       _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//       _Cutoff ("Cutoff", Float) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        LOD 200
+//        Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="GrassBillboard" }
+//        Pass 4/6 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="GrassBillboard" }
+//          ZWrite Off
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ProjectionParams]
+//              Vector 5 [_ScreenParams]
+//              Vector 6 [_WavingTint]
+//              Vector 7 [_WaveAndDistance]
+//              Vector 8 [_CameraPosition]
+//              Vector 9 [_CameraRight]
+//              Vector 10 [_CameraUp]
+//              Vector 11 [unity_LightmapST]
+//              Vector 12 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c13, 0.00000000, 1.00000000, 6.40884876, -3.14159274
+    def c14, 0.00600000, 0.02000000, 0.05000000, -0.16161616
+    def c15, 0.01200000, 0.02000000, 0.06000000, 0.02400000
+    def c16, 1.20000005, 2.00000000, 1.60000002, 4.80000019
+    def c17, 0.00833330, -0.00019841, -0.50000000, 0.50000000
+    def c18, 0.00600000, 0.02000000, -0.02000000, 0.10000000
+    def c19, 0.02400000, 0.04000000, -0.12000000, 0.09600000
+    def c20, 0.47193992, 0.18877596, 0.09438798, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+    dcl_color0 v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+dcl_color o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    add r0.xyz, v0, -c8
+    dp3 r0.x, r0, r0
+    slt r0.x, c7.w, r0
+    max r0.x, -r0, r0
+    slt r0.x, c13, r0
+    add r0.x, -r0, c13.y
+    mul r0.xy, r0.x, v1
+    mad r1.xyz, r0.x, c9, v0
+    mad r3.xyz, r0.y, c10, r1
+    mul r0.x, r3.z, c7.y
+    mul r1.xyz, r0.x, c14
+    mul r0.x, r3, c7.y
+    mad r0, r0.x, c15, r1.xyyz
+    mov r1.x, c7
+    mad r0, c16, r1.x, r0
+    frc r0, r0
+    mad r0, r0, c13.z, c13.w
+    mul r1, r0, r0
+    mul r2, r1, r0
+    mad r0, r2, c14.w, r0
+    mul r2, r2, r1
+    mul r1, r2, r1
+    mad r0, r2, c17.x, r0
+    mad r0, r1, c17.y, r0
+    mul r0, r0, r0
+    mul r0, r0, r0
+    mul r1, r0, v1.y
+    dp4 r2.x, r1, c19
+    dp4 r2.y, r1, c18
+    mad r1.xz, -r2.xyyw, c7.z, r3
+    mov r1.y, r3
+    mov r1.w, v0
+    dp4 r2.w, r1, c3
+    dp4 r2.z, r1, c2
+    dp4 r2.x, r1, c0
+    dp4 r2.y, r1, c1
+
+mov o3, r2 // Relocated from line 121 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Pineview Drive --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_TerrainEngine_Details_BillboardWavingDoublePass/vp/E4191F38.txt
+texldl r4, c220.z, s0
+add r4.w, r2.w, -r4.y
+mad r2.x, r4.w, r4.x, r2.x
+
+    mul r3.xyz, r2.xyww, c17.w
+    mul r3.y, r3, c4.x
+    mad o1.xy, r3.z, c5.zwzw, r3
+    add r3.xyz, r1, -c8
+    dp3 r1.x, r3, r3
+    add r1.x, -r1, c7.w
+    mul r1.w, r1.x, c8
+    mov r1.xyz, c6
+    dp4 r0.x, r0, c20.xxyz
+    mul r1.w, r1, c16.y
+    add r1.xyz, c17.z, r1
+    mad r0.xyz, r0.x, r1, c17.w
+    min r0.w, r1, c13.y
+    mul r0.xyz, r0, v5
+
+//     mov o3, r2 // Relocated to line 107 with shadertool.py
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.zw, r2
+    max o4.w, r0, c13.x
+    mul o4.xyz, r0, c16.y
+    mad o0.xy, v3, c12, c12.zwzw
+    mad o2.xy, v4, c11, c11.zwzw

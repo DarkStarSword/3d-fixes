@@ -1,0 +1,208 @@
+// CRC32: 37D7D342 | Unity headers extracted from Bleakness-Dimension-Circle-Object.shader
+// Shader "Mimimi/Bleakness/Dimension Circle Object" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Maske", 2D) = "white" {}
+//    _Settings ("Resolution, Speed, Strength, Player Dis", Vector) = (2,3.49,0.3,6)
+//    _InvFade ("_InvFade", Range(0.05,5)) = 1
+//    _RimPower ("Rim Power", Range(0.5,8)) = 3
+//    _TexAnimSettings ("_TexAnimSettings", Vector) = (1,1,1,1)
+//    _SpreadPos ("_SpreadPosNew", Vector) = (0,0,0,100000)
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Matrix 0 [glstate_matrix_modelview0]
+//           Matrix 4 [glstate_matrix_mvp]
+//           Matrix 8 [_Object2World]
+//           Matrix 12 [_World2Object]
+//           Vector 16 [_Time]
+//           Vector 17 [_WorldSpaceCameraPos]
+//           Vector 18 [_ProjectionParams]
+//           Vector 19 [_ScreenParams]
+//           Vector 20 [unity_Scale]
+//           Vector 21 [_Settings]
+//           Vector 22 [_TexAnimSettings]
+//           Vector 23 [_PlayerPos]
+//           Vector 24 [_SpreadPos]
+//           Vector 25 [_HitPos0]
+//           Vector 26 [_HitPosCircle]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 153 ALU, 2 FLOW
+    dcl_position0 v0
+    dcl_normal0 v1
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord2 o2
+    dcl_texcoord3 o3
+    dcl_texcoord4 o4
+    dcl_texcoord5 o5
+    dcl_texcoord6 o6
+    dcl_texcoord7 o7
+    def c27, 2.20000005, 0.15915491, 0.50000000, 0.20000000
+    def c28, 6.28318501, -3.14159298, 3.11999989, 0.44999999
+    def c29, 1.45000005, 1.00000000, 25.00000000, 0.04000000
+    def c30, 2.00000000, 3.00000000, 0.00000000, 0.25000000
+    def c31, 9.21875000, 0.10847457, -1.00000000, 0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r3.w, v0
+    dp4 r0.z, v0, c10
+    dp4 r0.x, v0, c8
+    dp4 r0.y, v0, c9
+    add r1.xyz, -r0, c23
+    add r2.xyz, r0, -c23
+    dp3 r0.w, r1, r1
+    dp3 r1.w, r2, r2
+    rsq r1.y, r1.w
+    rsq r0.w, r0.w
+    dp4 r1.w, v0, c11
+    mov r2.w, c29.y
+    mul r1.xz, r0.w, r1
+    rcp r1.y, r1.y
+    add_sat r0.w, -r1.y, c21
+    mov r1.y, c30.z
+    mad r4.xyz, r1, r0.w, r0
+    mov r1.xyz, r4
+    dp4 r0.z, r1, c14
+    dp4 r0.x, r1, c12
+    dp4 r0.y, r1, c13
+    mul r2.xyz, r0, c20.w
+    add r0.x, r2, r2.y
+    add r0.y, r0.x, r2.z
+    mov r0.x, c16
+    mul r1.y, r0, c21.x
+    mul r1.x, c21.y, -r0
+    mad r0.x, r1, c27, r1.y
+    mad r0.x, r0, c27.y, c27.z
+    frc r0.x, r0
+    mad r1.z, r0.x, c28.x, c28.y
+    sincos r0.xy, r1.z
+    mul r0.x, r0.y, c21.z
+    mad r3.z, -r0.x, c27.w, r2
+    mad r0.y, r1.x, c28.z, r1
+    mad r0.x, r0.y, c27.y, c27.z
+    mad r0.y, r1.x, c29.x, r1
+    frc r0.x, r0
+    mad r0.x, r0, c28, c28.y
+    mad r0.y, r0, c27, c27.z
+    sincos r1.xy, r0.x
+    frc r0.y, r0
+    mad r1.x, r0.y, c28, c28.y
+    sincos r0.xy, r1.x
+    mul r0.x, r1.y, c21.z
+    mad r3.y, r0.x, c28.w, r2
+    mul r0.x, r0.y, c21.z
+    mad r3.x, r0, c27.z, r2
+    dp4 r1.w, r3, c7
+    dp3 r0.z, r3, r3
+    rsq r0.z, r0.z
+    mul r6.xyz, r0.z, r3
+    dp4 r0.x, r3, c4
+    dp4 r2.z, r3, c10
+    dp4 r2.x, r3, c8
+    dp4 r2.y, r3, c9
+    add r5.xyz, -r2, c17
+    add r2.xyz, r4, -c24
+    dp4 r0.y, r3, c5
+    mov r0.w, r1
+
+mov o0, r0 // Relocated from line 183 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_Bleakness_Dimension Circle Object/vp/37D7D342.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c27.z
+    mul r1.y, r1, c18.x
+    mad r1.xy, r1.z, c19.zwzw, r1
+    dp3 r1.z, r2, r2
+    rsq r1.z, r1.z
+    rcp r1.z, r1.z
+    add r1.z, r1, -c24.w
+    add r2.x, r1.z, c29.z
+    dp4 r1.z, r3, c2
+    mul_sat r2.x, r2, c29.w
+    mad r2.y, -r2.x, c30.x, c30
+    mul r2.x, r2, r2
+    mov r4.w, c30.z
+    mul r2.x, r2, r2.y
+    dp4 r0.z, r3, c6
+    mul_sat r3.w, r2.x, c30.x
+    mov r2.xyz, c17
+    dp4 r7.z, r2, c14
+    dp4 r7.x, r2, c12
+    dp4 r7.y, r2, c13
+    add r2.w, -r3, c29.y
+    mov r5.xyz, -r5
+    mov r1.z, -r1
+    mad r2.xyz, r7, c20.w, -r3
+    mov r3.w, c29.y
+    if_ne c25.w, r4.w
+    mov r4.w, c25
+    add r4.w, c16.y, -r4
+    mul r4.w, r4, c30.x
+    mul r6.w, r4, r4
+    add r7.xyz, r4, -c25
+    dp3 r5.w, r7, r7
+    rsq r5.w, r5.w
+    mul r6.w, r6, c30
+    rcp r5.w, r5.w
+    add r4.w, r4, r6
+    add r4.w, -r4, r5
+    add r4.w, r4, c31.x
+    mul_sat r4.w, r4, c31.y
+    mad r5.w, -r4, c30.x, c30.y
+    mul r4.w, r4, r4
+    mul r4.w, r4, r5
+    mul_sat r4.w, r4, c30.x
+    add r2.w, r4, r2
+    add_sat r2.w, r2, c31.z
+    endif
+    mov r4.w, c30.z
+    if_ne c26.w, r4.w
+    add r4.xyz, r4, -c26
+    dp3 r3.w, r4, r4
+    rsq r3.w, r3.w
+    rcp r3.w, r3.w
+    add r3.w, r3, -c26
+    add r3.w, r3, c30.x
+    mul_sat r3.w, r3, c27.z
+    mad r4.x, -r3.w, c30, c30.y
+    mul r3.w, r3, r3
+    mul r3.w, r3, r4.x
+    mul_sat r3.w, r3, c30.x
+    endif
+
+//     mov o0, r0 // Relocated to line 123 with shadertool.py
+mov o0.z, r0.z // Inserted by shadertool.py
+
+    add r0.x, r3.w, r2.w
+    mul o1.xyz, r3, c22.w
+    mov o2, r1
+    mov o7, v0
+    mov o3.xyz, r5
+    mov o4.xyz, v1
+    mov o5.xyz, r2
+    mov o6.xyz, r6
+    add_sat o1.w, r0.x, c31.z

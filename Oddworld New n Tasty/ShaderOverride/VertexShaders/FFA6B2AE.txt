@@ -1,0 +1,115 @@
+// CRC32: FFA6B2AE | Unity headers extracted from advancedFoliageShader.shader
+// Shader "ats advanced foliage shader" {
+//   Properties {
+//    _Color ("Shininess(R) Edge fluttering(G) 2nd Bending (B) 1st Bending(A)", Color) = (1,1,1,1)
+//    _TranslucencyColor ("Translucency Color", Color) = (0.73,0.85,0.41,1)
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//    _TranslucencyViewDependency ("View dependency", Range(0,1)) = 0.7
+//    _ShadowStrength ("Shadow Strength", Range(0,1)) = 0.8
+//    _ShadowOffsetScale ("Shadow Offset Scale", Float) = 1
+//    _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//    _BumpTransSpecMap ("Normal (GA) Trans(R) Spec(B)", 2D) = "bump" {}
+//    _Scale ("Scale", Vector) = (1,1,1,1)
+//    _SquashAmount ("Squash", Float) = 1
+//   }
+//   SubShader 1/2 {
+//     LOD 200
+//     Tags { "IGNOREPROJECTOR"="True" "RenderType"="AtsFoliage" }
+//     Pass 3/4 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "IGNOREPROJECTOR"="True" "RenderType"="AtsFoliage" }
+//       Cull Off
+//       Fog { Mode Off }
+//       Offset 1, 1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_Time]
+//           Vector 9 [unity_LightShadowBias]
+//           Vector 10 [_Wind]
+//           Vector 11 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    ; 46 ALU
+    def c12, 1.00000000, 2.00000000, -0.50000000, -1.00000000
+    def c13, 1.97500002, 0.79299998, 0.37500000, 0.19300000
+    def c14, 2.00000000, 3.00000000, 0.10000000, 0.22500001
+    def c15, 0.00000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, c7
+    dp3 r2.x, c12.x, r0
+    add r0.y, v5.x, r2.x
+    add r0.x, v5.y, r0.y
+    add r0.zw, v0.xyxz, c8.y
+    dp3 r0.x, v0, r0.x
+    add r0.xy, r0.zwzw, r0
+    mul r0, r0.xxyy, c13
+    frc r0, r0
+    mad r0, r0, c12.y, c12.z
+    frc r0, r0
+    mad r0, r0, c12.y, c12.w
+    abs r0, r0
+    mad r1, -r0, c14.x, c14.y
+    mul r0, r0, r0
+    mul r0, r0, r1
+    add r2.zw, r0.xyxz, r0.xyyw
+    mul r0.xyz, r2.w, c10
+    mul r1.xyz, v5.z, r0
+    slt r0.xy, -v2.xzzw, v2.xzzw
+    slt r0.zw, v2.xyxz, -v2.xyxz
+    sub r0.zw, r0.xyxy, r0
+    mul r1.w, v5.y, c14.z
+    mul r0.xy, r1.w, v2.xzzw
+    mul r0.xz, r0.xyyw, r0.zyww
+    mul r0.y, v5.z, c14.w
+    mad r0.xyz, r2.zwzw, r0, r1
+    mad r1.xyz, r0, c10.w, v0
+    mul r0.xyz, v5.z, c10
+    mad r0.xyz, r0, r2.x, r1
+    mov r0.w, v0
+    dp4 r1.x, r0, c2
+    add r1.x, r1, c9
+    max r1.y, r1.x, c15.x
+    add r1.y, r1, -r1.x
+    mad r1.z, r1.y, c9.y, r1.x
+    dp4 r1.w, r0, c3
+    dp4 r1.x, r0, c0
+    dp4 r1.y, r0, c1
+    mov o2, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ats advanced foliage shader/vp/FFA6B2AE.txt
+texldl r3, c220.z, s0
+add r3.w, r1.w, -r3.y
+mad r1.x, r3.w, r3.x, r1.x
+
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0, r1
+    mad o1.xy, v3, c11, c11.zwzw

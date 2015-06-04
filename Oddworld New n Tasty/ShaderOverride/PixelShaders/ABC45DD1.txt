@@ -1,0 +1,63 @@
+// CRC32: ABC45DD1 | Unity headers extracted from Vapor.shader
+// Shader "JAW/FX/Vapor" {
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Vector 0 [_ZBufferParams]
+//           Vector 1 [vaporColor]
+//           Float 2 [vaporDensity]
+//           Float 3 [lightIntensity]
+//           Vector 4 [lightColor]
+//           Float 5 [inverseFadeDistance]
+//           SetTexture 0 [vaporTexture] 2D 0
+//           SetTexture 1 [_CameraDepthTexture] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    ; 18 ALU, 2 TEX
+    dcl_2d s0
+    dcl_2d s1
+    def c6, 0.50000000, 0.00000000, 2.71828198, 1.00000000
+    def c7, 0.00000000, -0.50000000, 0.50000000, 0
+    dcl_texcoord0 v0
+
+dcl vPos.xy
+
+// Use screen coords for depth sampler, original coords for vapor texture
+mov r31.xy, vPos.xy
+rcp r31.z, c210.x
+rcp r31.w, c210.y
+mul r31.xy, r31.xy, r31.zw
+
+    texldp r0, v0, s0
+    dp4 r1.x, r0, c7.xxyz
+    dp4 r0.y, r0, c6.xxyy
+    //texldp r0.x, v0, s1
+texld r0.x, r31, s1
+    add r1.x, r1, c6
+    mul r1.xyz, r1.x, c4
+    mad r2.x, r0, c0.z, c0.w
+    mul r1.w, r0.y, c2.x
+    pow r0, c6.z, -r1.w
+    rcp r0.y, r2.x
+    add r0.y, -v0.z, r0
+    mov r0.z, r0.x
+    mul_sat r0.x, r0.y, c5
+    add r0.y, -r0.z, c6.w
+    mul r0.x, r0.y, r0
+    mul r1.xyz, r1, c3.x
+    mad oC0.xyz, r0.x, r1, c1
+    mov oC0.w, r0.x

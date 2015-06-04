@@ -1,0 +1,109 @@
+// CRC32: A0B8FEDB | Matched 6 variants of 1 shaders: Hidden/Hardsurface Pro ScreenSpace Reflection
+// 
+//     Unity headers extracted from HardSurfacePro Hidden ScreenSpace Reflection.shader
+//     Shader "Hidden/Hardsurface Pro ScreenSpace Reflection" {
+//       Fallback "Diffuse"
+//       SubShader 2/2 {
+// 01:     Pass 1/6 {
+// 02:     Pass 2/6 {
+// 04:     Pass 3/6 {
+// 08:     Pass 4/6 {
+// 10:     Pass 5/6 {
+// 20:     Pass 6/6 {
+// 01:       Name "SSREFLECTION"
+// 02:       Name "SSREFLECTIONBUMP"
+// 10:       Name "SSREFLECTIONBUMPCUTOUT"
+// 08:       Name "SSREFLECTIONCUTOUT"
+// 04:       Name "SSREFLECTIONSPECULAR"
+// 20:       Name "SSREFLECTIONSPECULARCUTOUT"
+//           ZWrite Off
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "tangent" TexCoord2
+//               Matrix 0 [glstate_matrix_mvp]
+//               Matrix 4 [glstate_matrix_invtrans_modelview0]
+//               Matrix 8 [_Object2World]
+//               Matrix 12 [_World2Object]
+//               Vector 16 [_WorldSpaceCameraPos]
+//               Vector 17 [unity_Scale]
+//               Vector 18 [_BumpMap_ST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c19, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r1.xyz, r0, v1.w
+    mov r0.w, c19.x
+    mov r0.xyz, c16
+    dp3 o2.y, r1, c4
+    dp3 o3.y, r1, c5
+    dp4 r2.z, r0, c14
+    dp4 r2.x, r0, c12
+    dp4 r2.y, r0, c13
+    mad r0.xyz, r2, c17.w, -v0
+    dp3 o0.y, r0, r1
+    dp4 r1.z, v0, c3
+    dp3 o0.z, v2, r0
+    dp3 o0.x, r0, v1
+    mov r0.w, r1.z
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+    dp4 r0.z, v0, c10
+    dp4 r0.x, v0, c8
+    dp4 r0.y, v0, c9
+    add r0.xyz, -r0, c16
+    dp3 r0.x, r0, r0
+    rsq r1.w, r0.x
+    dp4 r0.z, v0, c2
+    mov r0.x, r1
+    mov r0.y, r1
+    mov o5, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Pineview Drive --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_Hardsurface Pro ScreenSpace Reflection/vp/A0B8FEDB.txt
+texldl r3, c220.z, s0
+add r3.w, r0.w, -r3.y
+mad r0.x, r3.w, r3.x, r0.x
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    rcp r0.x, r1.w
+    min o0.w, r1, r0.x
+    add r0.xy, r1.z, r1
+    mov o4.zw, r0
+    mul o4.xy, r0, c19.y
+    mad o1.xy, v3, c18, c18.zwzw
+    dp3 o2.z, v2, c4
+    dp3 o2.x, v1, c4
+    dp3 o3.z, v2, c5
+    dp3 o3.x, v1, c5

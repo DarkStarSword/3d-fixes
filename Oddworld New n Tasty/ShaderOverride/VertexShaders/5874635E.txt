@@ -1,0 +1,68 @@
+// CRC32: 5874635E (FOG + 70CE4DA8) | Unity headers extracted from FogPlane.shader
+// Shader "JAW/Fog Plane" {
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_ScreenParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    ; 20 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord2 o2
+    def c9, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.z, v0, c3
+    rcp r1.w, c8.y
+    mov r0.w, r0.z
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mul r1.xyz, r0.xyww, c9.x
+    mov r1.y, -r1
+    add r1.xy, r1, r1.z
+    mul r1.w, r0.z, r1
+    rcp r1.z, c8.x
+    mad o1.y, r1.w, c9.x, r1
+    mul r1.y, r0.z, r1.z
+    dp4 r0.z, v0, c2
+    mad o1.x, r1.y, c9, r1
+    mov r3, r0
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o1.zw, r0
+    dp4 o2.w, v0, c7
+    dp4 o2.z, v0, c6
+    dp4 o2.y, v0, c5
+    dp4 o2.x, v0, c4
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty -f --unadjust=position 5874635E.txt
+texldl r2, c220.z, s0
+add r2.w, r3.w, -r2.y
+mul r2.w, r2.w, r2.x
+add r3.x, r3.x, -r2.w
+mov o0, r3

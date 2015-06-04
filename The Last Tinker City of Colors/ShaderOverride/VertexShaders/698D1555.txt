@@ -1,0 +1,84 @@
+// CRC32: 698D1555 | Matched 2 variants of 1 shaders: Mimimi/DetailBumped/Diffuse
+// 
+//    Unity headers extracted from DetailBump-Diffuse.shader
+//    Shader "Mimimi/DetailBumped/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _BumpMapDetail ("Normalmap Detail", 2D) = "bump" {}
+//       _Detail ("_Detail", Range(0,1)) = 0.522388
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ProjectionParams]
+//              Vector 5 [_ScreenParams]
+//              Vector 6 [unity_LightmapST]
+//              Vector 7 [_MainTex_ST]
+//              Vector 8 [_BumpMap_ST]
+//              Vector 9 [_BumpMapDetail_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    ; 13 ALU
+    def c10, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_texcoord1 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o4, r0 // Relocated from line 64 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_DetailBumped_Diffuse/vp/698D1555.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c10.x
+    mul r1.y, r1, c4.x
+    mad o2.xy, r1.z, c5.zwzw, r1
+
+//     mov o4, r0 // Relocated to line 61 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o2.zw, r0
+    mad o0.zw, v1.xyxy, c8.xyxy, c8
+    mad o0.xy, v1, c7, c7.zwzw
+    mad o1.xy, v1, c9, c9.zwzw
+    mad o3.xy, v2, c6, c6.zwzw

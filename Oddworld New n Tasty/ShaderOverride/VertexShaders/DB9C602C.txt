@@ -1,0 +1,95 @@
+// CRC32: DB9C602C | Matched 21 variants of 1 shaders: Hidden/Glow 11/GlowObjectsDepth
+// 
+//         Unity headers extracted from Glow11GlowObjectsDepth.shader
+//         Shader "Hidden/Glow 11/GlowObjectsDepth" {
+//           Properties {
+//            _TintColor ("Tint Color", Color) = (1,1,1,1)
+//            _GlowStrength ("Glow Strength", Float) = 1
+//            _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//            _TintColor1 ("Effect Colour Tint 1", Color) = (1,1,1,1)
+//            _TintColor2 ("Effect Colour Tint 2", Color) = (1,1,1,1)
+//            _Pulse_Speed ("_Pulse_Speed", Range(0,5)) = 1.34
+//            _GlowTex2 ("Glow", 2D) = "" {}
+//            _GlowStrength2 ("Glow Strength 2", Float) = 1
+//           }
+//           Fallback Off
+// 000007:   SubShader 1/5 {
+// 000ff8:   SubShader 2/5 {
+// 1ff000:   SubShader 3/5 {
+// 1ff000:     Tags { "QUEUE"="AlphaTest" "RenderType"="Glow11TransparentCutout" "RenderEffect"="Glow11TransparentCutout" }
+// 000ff8:     Tags { "QUEUE"="Transparent" "RenderType"="Glow11Transparent" "RenderEffect"="Glow11Transparent" }
+// 000007:     Tags { "RenderType"="Glow11" "RenderEffect"="Glow11" }
+//             Pass 1/1 {
+// 000007:       Name "OPAQUEGLOW"
+// 1ff000:       Tags { "QUEUE"="AlphaTest" "RenderType"="Glow11TransparentCutout" "RenderEffect"="Glow11TransparentCutout" }
+// 000ff8:       Tags { "QUEUE"="Transparent" "RenderType"="Glow11Transparent" "RenderEffect"="Glow11Transparent" }
+// 000007:       Tags { "RenderType"="Glow11" "RenderEffect"="Glow11" }
+// 000ff8:       ZWrite Off
+// 000ff8:       Cull Off
+//               Fog { Mode Off }
+// 1ff000:       AlphaTest Greater [_Cutoff]
+// 000ff8:       Blend SrcAlpha OneMinusSrcAlpha
+//               Program "vp" {
+//                 SubProgram "d3d9 " {
+// 080400:           Keywords { "GLOW11_GLOW_GLOWCOLOR" "GLOW11_MULTIPLY_GLOWCOLOR" }
+// 100800:           Keywords { "GLOW11_GLOW_GLOWCOLOR" "GLOW11_MULTIPLY_MAINTEX_ALPHA" }
+// 040200:           Keywords { "GLOW11_GLOW_GLOWCOLOR" "NO_MULTIPLY" }
+// 010080:           Keywords { "GLOW11_GLOW_MAINCOLOR" "GLOW11_MULTIPLY_GLOWCOLOR" }
+// 020100:           Keywords { "GLOW11_GLOW_MAINCOLOR" "GLOW11_MULTIPLY_MAINTEX_ALPHA" }
+// 008040:           Keywords { "GLOW11_GLOW_MAINCOLOR" "NO_MULTIPLY" }
+// 002012:           Keywords { "GLOW11_GLOW_MAINTEX" "GLOW11_MULTIPLY_GLOWCOLOR" }
+// 004024:           Keywords { "GLOW11_GLOW_MAINTEX" "GLOW11_MULTIPLY_MAINTEX_ALPHA" }
+// 001009:           Keywords { "GLOW11_GLOW_MAINTEX" "NO_MULTIPLY" }
+//                   Bind "vertex" Vertex
+//                   Bind "texcoord" TexCoord0
+//                   Matrix 0 [glstate_matrix_modelview0]
+//                   Matrix 4 [glstate_matrix_mvp]
+//                   Vector 8 [_ProjectionParams]
+//                   Vector 9 [_ScreenParams]
+//                   Vector 10 [_MainTex_ST]
+//                 }
+//               }
+//             }
+//           }
+//         }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 13 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord3 o2
+    def c11, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r1.w, v0, c7
+    dp4 r0.x, v0, c4
+    mov r0.w, r1
+    dp4 r0.y, v0, c5
+
+mov o0, r0 // Relocated from line 74 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_Glow 11_GlowObjectsDepth/vp/DB9C602C.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c11.x
+    mul r1.y, r1, c8.x
+    dp4 r0.z, v0, c6
+
+//     mov o0, r0 // Relocated to line 71 with shadertool.py
+mov o0.z, r0.z // Inserted by shadertool.py
+
+    dp4 r0.x, v0, c2
+    mad o2.xy, r1.z, c9.zwzw, r1
+    mad o1.xy, v1, c10, c10.zwzw
+    mov o2.z, -r0.x
+    mov o2.w, r1

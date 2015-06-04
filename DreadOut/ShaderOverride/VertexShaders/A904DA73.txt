@@ -1,0 +1,108 @@
+// CRC32: A904DA73 | Matched 2 variants of 1 shaders: Custom/ColorMapUltra_SimpleBumpedSpecReflective
+// 
+//    Unity headers extracted from ColorMapUltra_SimpleBumpedSpecRefl.shader
+//    Shader "Custom/ColorMapUltra_SimpleBumpedSpecReflective" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Gloss(A)", 2D) = "white" {}
+//       _BumpTex ("BumpTexture (RGB)", 2D) = "bump" {}
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _TSpecularColor ("Terrain Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _TSpecPower ("Terrain Specular Power", Float) = 1
+//       _TerrainFresnel ("Fresnel: Intensity/Power/Bias/-)", Vector) = (1,2,1.15,0)
+//       _TerrainReflectionColor ("Terrain Reflection Color", Color) = (1,1,1,1)
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "NO_FRESNEL" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" "NO_FRESNEL" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_SHAr]
+//              Vector 11 [unity_SHAg]
+//              Vector 12 [unity_SHAb]
+//              Vector 13 [unity_SHBr]
+//              Vector 14 [unity_SHBg]
+//              Vector 15 [unity_SHBb]
+//              Vector 16 [unity_SHC]
+//              Vector 17 [unity_Scale]
+//              Vector 18 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c19, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r2.xyz, v1, c17.w
+    dp3 r1.w, r2, c5
+    dp3 r0.x, r2, c4
+    dp3 r0.z, r2, c6
+    mov r0.y, r1.w
+    mul r2, r0.xyzz, r0.yzzx
+    mov r0.w, c19.y
+    dp4 r3.z, r0, c12
+    dp4 r3.y, r0, c11
+    dp4 r3.x, r0, c10
+    mul r0.y, r1.w, r1.w
+    mad r0.x, r0, r0, -r0.y
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r4.z, r2, c15
+    dp4 r4.y, r2, c14
+    dp4 r4.x, r2, c13
+    add r4.xyz, r3, r4
+    mul r3.xyz, r0.x, c16
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 37 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed A904DA73.txt
+texldl r5, c220.z, s0
+add r5.w, r0.w, -r5.y
+mad r0.x, r5.w, r5.x, r0.x
+
+    mul r2.xyz, r0.xyww, c19.x
+    mul r2.y, r2, c8.x
+    add o5.xyz, r4, r3
+    mad o4.xy, r2.z, c9.zwzw, r2
+
+//     mov o0, r0 // Relocated to line 33 with shadertool.py
+    mov o4.zw, r0
+    mov o2.xyz, r1
+    mov o3.xyz, r1
+    mad o1.xy, v2, c18, c18.zwzw
+
+// approximately 30 instruction slots used

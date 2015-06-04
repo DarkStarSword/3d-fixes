@@ -1,0 +1,54 @@
+// CRC32: 8F5BDCA8 | Unity headers extracted from SunShaftsComposite.shader
+// Shader "BEAM Team/Post Effects/Sun Shafts" {
+//   Properties {
+//    _MainTex ("Base", 2D) = "" {}
+//    _ColorBuffer ("Color", 2D) = "" {}
+//    _Skybox ("Skybox", 2D) = "" {}
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/5 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Vector 0 [_SunColor]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_ColorBuffer] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    dcl_2d s0
+    dcl_2d s1
+    def c1, 1, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xy
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Correct sun shafts origin:
+mov r21.xy, v1
+mul r31.w, r31.x, -c220.w // Adjust by -1/2 separation
+add r21.x, r21.x, r31.w
+
+    texld r0, r21, s1
+    texld r1, v0, s0
+    mul_sat_pp r0, r0, c0
+    add r0, -r0, c1.x
+    add r1, -r1, c1.x
+    mad r0, -r1, r0, c1.x
+    mov_pp oC0, r0
+
+// approximately 7 instruction slots used (2 texture, 5 arithmetic)

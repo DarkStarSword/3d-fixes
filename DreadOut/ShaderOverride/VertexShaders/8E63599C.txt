@@ -1,0 +1,111 @@
+// CRC32: 8E63599C | Matched 4 variants of 2 shaders: Decal/Colored/Cutout Diffuse Colored, Decal/Mobile/Colored/Cutout Diffuse Colored
+// 
+//    Unity headers extracted from Decal-AlphaTest-Diffuse-Colored.shader
+//    Shader "Decal/Colored/Cutout Diffuse Colored" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Decal/Cutout VertexLit"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          ColorMask RGB
+//          Offset -1, -1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Mobile-Decal-AlphaTest-Diffuse-Colored.shader
+//    Shader "Decal/Mobile/Colored/Cutout Diffuse Colored" {
+//      Properties {
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Decal/Cutout VertexLit"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/3 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          ColorMask RGB
+//          Offset -1, -1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 10 [unity_LightmapST]
+//              Vector 11 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_color o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    def c12, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_color v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 19 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 8E63599C.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c12.x
+    mul r1.y, r1, c8.x
+    mad o4.xy, r1.z, c9.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 16 with shadertool.py
+    mov o2, v4
+    mov o4.zw, r0
+    mad o1.xy, v2, c11, c11.zwzw
+    mad o3.xy, v3, c10, c10.zwzw
+
+// approximately 12 instruction slots used

@@ -1,0 +1,70 @@
+// CRC32: 980D648D | Matched 2 variants of 1 shaders: Mimimi/FX/Smooth-Color-Dark
+// 
+//    Unity headers extracted from FX-Smooth-Color.shader
+//    Shader "Mimimi/FX/Smooth-Color-Dark" {
+//      Properties {
+//       _Color ("Color", Color) = (0.5,0.5,0.5,0.5)
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "SOFTPARTICLES_OFF" }
+// 2:           Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    ; 12 ALU
+    def c10, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+
+dcl_texcoord1 o0
+dcl_position o1
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r1.w, v0, c7
+    mov r0.w, r1
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+
+mov o1, r0 // Relocated from line 51 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_FX_Smooth-Color-Dark/vp/980D648D.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c10.x
+    mul r1.y, r1, c8.x
+    mad o0.xy, r1.z, c9.zwzw, r1
+    dp4 r0.z, v0, c6
+    dp4 r1.x, v0, c2
+
+//     mov o1, r0 // Relocated to line 46 with shadertool.py
+mov o1.z, r0.z // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0.z, -r1.x
+    mov o0.w, r1

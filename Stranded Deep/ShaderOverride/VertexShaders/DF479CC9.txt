@@ -1,0 +1,136 @@
+// CRC32: DF479CC9 | Unity headers extracted from Grass.shader
+// Shader "BEAM Team/Skylight/Terrain/Details/Grass" {
+//   Properties {
+//    _Color ("Diffuse Tint", Color) = (1,1,1,1)
+//    _MainTex ("Diffuse (RGB) Transparency (A)", 2D) = "white" {}
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "ForceNoShadowCasting"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="AfsSunshineGrass" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "ForceNoShadowCasting"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="AfsSunshineGrass" }
+//       ColorMask RGB
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_DISABLED" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_ProjectionParams]
+//           Vector 9 [_ScreenParams]
+//           Vector 10 [unity_SHAr]
+//           Vector 11 [unity_SHAg]
+//           Vector 12 [unity_SHAb]
+//           Vector 13 [unity_SHBr]
+//           Vector 14 [unity_SHBg]
+//           Vector 15 [unity_SHBb]
+//           Vector 16 [unity_SHC]
+//           Vector 17 [unity_Scale]
+//           Vector 18 [_AfsWaveAndDistance]
+//           Vector 19 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c20, 0.0240000002, 0.0799999982, 0.200000003, -0.161616161
+    def c21, 0.0480000004, 0.0599999987, 0.239999995, 0.0960000008
+    def c22, 1.20000005, 2, 1.60000002, 4.80000019
+    def c23, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c24, 0.215387449, 0.358979076, 0.287183255, 0.861549795
+    def c25, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c26, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c27, 8, 1, 0.5, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r1.x, v0.z, c18.y
+    mul r2.xyz, r1.x, c20
+    mul r1.x, v0, c18.y
+    mad r1, r1.x, c21, r2.xyyz
+    mov r2.x, c18
+    mad r1, c22, r2.x, r1
+    frc r1, r1
+    mad r1, r1, c23.x, c23.y
+    mul r2, r1, r1
+    mul r3, r2, r1
+    mad r1, r3, c20.w, r1
+    mul r3, r3, r2
+    mul r2, r3, r2
+    mad r1, r3, c23.z, r1
+    mad r1, r2, c23.w, r1
+    mul r1, r1, c24
+    mov r2.yw, v0
+    mul r2.x, v5.w, c18.z
+    mul r1, r1, r1
+    mul r1, r1, r2.x
+    dp4 r3.y, r1, c25
+    dp4 r3.x, r1, c26
+    mad r2.xz, -r3.xyyw, c27.x, v0
+    dp4 r1.w, r2, c3
+    dp4 r1.z, r2, c2
+    dp4 r1.x, r2, c0
+    dp4 r1.y, r2, c1
+    mul r2.xyz, v2, c17.w
+
+mov o0, r1 // Relocated from line 49 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors DF479CC9.txt
+texldl r5, c220.z, s0
+add r5.w, r1.w, -r5.y
+mad r1.x, r5.w, r5.x, r1.x
+
+    mul r3.xyz, r1.xyww, c27.z
+
+//     mov o0, r1 // Relocated to line 48 with shadertool.py
+    dp3 r3.w, r2, c5
+    dp3 r1.x, r2, c4
+    dp3 r4.w, r2, c6
+    mov o5.zw, r1
+    mul r3.y, r3, c8.x
+    mov r1.y, r3.w
+    mov r1.z, r4.w
+    mul r2, r1.xyzz, r1.yzzx
+    mad o5.xy, r3.z, c9.zwzw, r3
+    mov r1.w, c27.y
+    dp4 r3.z, r1, c12
+    dp4 r3.y, r1, c11
+    dp4 r3.x, r1, c10
+    mul r1.y, r3.w, r3.w
+    dp4 r4.z, r2, c15
+    dp4 r4.y, r2, c14
+    dp4 r4.x, r2, c13
+    mad r1.y, r1.x, r1.x, -r1
+    mul r2.xyz, r1.y, c16
+    add r3.xyz, r3, r4
+    add o4.xyz, r3, r2
+    mov o2, r0
+    mov o3.z, r4.w
+    mov o3.y, r3.w
+    mov o3.x, r1
+    mad o1.xy, v3, c19, c19.zwzw
+
+// approximately 56 instruction slots used

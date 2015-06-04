@@ -1,0 +1,68 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c19, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r5.xyz, r0, v1.w
+    mov r1.w, c19.y
+    mov r1.xyz, c12
+    dp4 r0.z, r1, c10
+    dp4 r0.x, r1, c8
+    dp4 r0.y, r1, c9
+    mad r4.xyz, r0, c16.w, -v0
+    mov r0, c10
+    dp4 r6.z, c15, r0
+    mov r0, c9
+    mov r1, c8
+    dp4 r6.y, c15, r0
+    dp4 r6.x, c15, r1
+    dp4 r2.w, v0, c3
+    dp4 r2.z, v0, c2
+    dp4 r2.x, v0, c0
+    dp4 r2.y, v0, c1
+
+mov o5, r2 // Relocated from line 47 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -i 20A77453.txt
+texldl r7, c220.z, s0
+add r7.w, r2.w, -r7.y
+mad r2.x, r7.w, r7.x, r2.x
+
+    mul r3.xyz, r2.xyww, c19.x
+    mul r0.y, r3, c13.x
+    mov r0.x, r3
+    dp3 o2.y, r4, r5
+    dp3 o3.y, r5, r6
+    mad o1.xy, r3.z, c14.zwzw, r0
+    dp3 o2.z, v2, r4
+    dp3 o2.x, r4, v1
+    dp3 o3.z, v2, r6
+    dp3 o3.x, v1, r6
+
+//     mov o5, r2 // Relocated to line 37 with shadertool.py
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.zw, r2
+    mov o4.xyz, c19.z
+    mad o0.zw, v3.xyxy, c18.xyxy, c18
+    mad o0.xy, v3, c17, c17.zwzw
+
+// approximately 36 instruction slots used

@@ -1,0 +1,182 @@
+// CRC32: F97BD8F3 | Matched 4 variants of 1 shaders: BEAM Team/Skylight/Transparent/Glass - Bumped Specular Transparent
+// 
+//    Unity headers extracted from Glass - Bumped Specular Transparent.shader
+//    Shader "BEAM Team/Skylight/Transparent/Glass - Bumped Specular Transparent" {
+//      Properties {
+//       _Color ("Glass Color (RGB) Transparency (A)", Color) = (1,1,1,1)
+//       _NormalStrength ("Normal Map Strength", Range(0,128)) = 64
+//       _MainTex ("Diffuse Albedo (NOT IN USE)", 2D) = "white" {}
+//       _SpecTex ("Specular Albedo (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normal Map", 2D) = "bump" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "ForceNoShadowCasting"="true" "QUEUE"="Transparent+550" "RenderType"="Ocean" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "ForceNoShadowCasting"="true" "QUEUE"="Transparent+550" "RenderType"="Ocean" }
+//          Blend One OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" "VERTEXLIGHT_ON" }
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_3x3" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_4x4" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 8 [_Object2World]
+//              Matrix 12 [_World2Object]
+//              Matrix 16 [sunshine_CameraVToSunVP]
+//              Vector 20 [_WorldSpaceCameraPos]
+//              Vector 21 [_WorldSpaceLightPos0]
+//              Vector 22 [unity_4LightPosX0]
+//              Vector 23 [unity_4LightPosY0]
+//              Vector 24 [unity_4LightPosZ0]
+//              Vector 25 [unity_4LightAtten0]
+//              Vector 26 [unity_LightColor0]
+//              Vector 27 [unity_LightColor1]
+//              Vector 28 [unity_LightColor2]
+//              Vector 29 [unity_LightColor3]
+//              Vector 30 [unity_SHAr]
+//              Vector 31 [unity_SHAg]
+//              Vector 32 [unity_SHAb]
+//              Vector 33 [unity_SHBr]
+//              Vector 34 [unity_SHBg]
+//              Vector 35 [unity_SHBb]
+//              Vector 36 [unity_SHC]
+//              Vector 37 [unity_Scale]
+//              Vector 38 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    def c39, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r4.xyz, v2, c37.w
+    dp4 r0.x, v0, c9
+    add r2, -r0.x, c23
+    dp3 r4.w, r4, c9
+    dp3 r5.x, r4, c8
+    dp3 r4.x, r4, c10
+    mul r3, r4.w, r2
+    dp4 r0.x, v0, c8
+    add r0, -r0.x, c22
+    mul r2, r2, r2
+    mov r5.z, r4.x
+    mad r3, r5.x, r0, r3
+    mov r5.w, c39.y
+    dp4 r5.y, v0, c10
+    mad r2, r0, r0, r2
+    add r0, -r5.y, c24
+    mad r2, r0, r0, r2
+    mad r0, r4.x, r0, r3
+    mul r3, r2, c25
+    mov r5.y, r4.w
+    rsq r2.x, r2.x
+    rsq r2.y, r2.y
+    rsq r2.w, r2.w
+    rsq r2.z, r2.z
+    mul r0, r0, r2
+    add r2, r3, c39.y
+    rcp r2.x, r2.x
+    rcp r2.y, r2.y
+    rcp r2.w, r2.w
+    rcp r2.z, r2.z
+    max r0, r0, c39.z
+    mul r0, r0, r2
+    mul r2.xyz, r0.y, c27
+    mad r2.xyz, r0.x, c26, r2
+    mad r0.xyz, r0.z, c28, r2
+    mad r2.xyz, r0.w, c29, r0
+    mul r0, r5.xyzz, r5.yzzx
+    mul r2.w, r4, r4
+    dp4 r4.z, r0, c35
+    dp4 r4.y, r0, c34
+    dp4 r4.x, r0, c33
+    mad r2.w, r5.x, r5.x, -r2
+    mul r0.xyz, r2.w, c36
+    dp4 r3.z, r5, c32
+    dp4 r3.y, r5, c31
+    dp4 r3.x, r5, c30
+    add r3.xyz, r3, r4
+    add r3.xyz, r3, r0
+    add o6.xyz, r3, r2
+    mov r0.xyz, v1
+    mul r2.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r2.xyz, v2.yzxw, r0.zxyw, -r2
+    mul r5.xyz, r2, v1.w
+    mov r2, c13
+    mov r0, c14
+    dp4 r3.z, c21, r0
+    mov r0, c12
+    dp4 r3.x, c21, r0
+    dp4 r3.y, c21, r2
+    mov r0.xyz, c20
+    mov r0.w, c39.y
+    dp4 r2.z, r0, c14
+    dp4 r2.x, r0, c12
+    dp4 r2.y, r0, c13
+    mad r2.xyz, r2, c37.w, -v0
+    dp4 r0.w, v0, c7
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+
+mov o0, r0 // Relocated from line 86 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors F97BD8F3.txt
+texldl r6, c220.z, s0
+add r6.w, r0.w, -r6.y
+mad r0.x, r6.w, r6.x, r0.x
+
+    mul r4.xyz, r0.xyww, c39.x
+
+//     mov o0, r0 // Relocated to line 85 with shadertool.py
+    mov o3.zw, r0
+    mov r4.y, -r4
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    dp3 o5.y, r3, r5
+    dp3 o7.y, r5, r2
+    add o3.xy, r4, r4.z
+    dp3 o5.z, v2, r3
+    dp3 o5.x, r3, v1
+    dp3 o7.z, v2, r2
+    dp3 o7.x, v1, r2
+    mov o2, r1
+    dp4 o4.w, r0, c19
+    dp4 o4.z, r0, c18
+    dp4 o4.y, r0, c17
+    dp4 o4.x, r0, c16
+    mad o1.xy, v3, c38, c38.zwzw
+
+// approximately 91 instruction slots used
