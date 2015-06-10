@@ -73,6 +73,18 @@ def make_ids_friendly(data):
 		data = data.replace(id, name)
 	return data
 
+def sort_settings(profile):
+	# FIXME: This is pretty rigid at the moment. Tries to preserve first
+	# and last couple of lines to get Profile, EndProfile, ShowOn and
+	# ProfileType. Might be better to just sort settings and executables?
+	lines = profile.split('\r\n')
+	start = '\r\n'.join(lines[:4]) + '\r\n'
+	middle = lines[4:-3]
+	end = '\r\n'.join(lines[-3:])
+	if middle:
+		end = '\r\n' + end
+	return start + '\r\n'.join(sorted(middle)) + end
+
 def sort_profiles(data):
 	# XXX: Assumes windows style newlines
 	profiles = []
@@ -83,7 +95,7 @@ def sort_profiles(data):
 		if start == -1:
 			break
 		end = data.find('\r\nEndProfile', start + 1) + 14
-		profiles.append(data[start:end])
+		profiles.append(sort_settings(data[start:end]))
 		pos = end
 	return data[:first] + ''.join(sorted(profiles))
 
