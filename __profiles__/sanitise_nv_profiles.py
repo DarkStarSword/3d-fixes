@@ -73,6 +73,20 @@ def make_ids_friendly(data):
 		data = data.replace(id, name)
 	return data
 
+def sort_profiles(data):
+	# XXX: Assumes windows style newlines
+	profiles = []
+	buf = []
+	pos = first = data.find('\r\n\r\n')
+	while True:
+		start = data.find('\r\nProfile', pos)
+		if start == -1:
+			break
+		end = data.find('\r\nEndProfile', start + 1) + 14
+		profiles.append(data[start:end])
+		pos = end
+	return data[:first] + ''.join(sorted(profiles))
+
 def main():
 	parse_custom_setting_names_xml()
 	for file in sys.argv[1:]:
@@ -81,6 +95,7 @@ def main():
 		sanitise(file, stream)
 		stream.seek(0)
 		buf = make_ids_friendly(stream.read().decode('ascii'))
+		buf = sort_profiles(buf)
 		open(dest, 'wb').write(buf.encode('ascii'))
 
 if __name__ == '__main__':
