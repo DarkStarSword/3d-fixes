@@ -6,6 +6,8 @@ wacko. This program cleans them up. Note that for now this process is one way.
 '''
 
 import sys, os, codecs
+import io
+from xml.dom import minidom
 
 def process_string(string, o):
 	'''
@@ -21,9 +23,8 @@ def process_string(string, o):
 		# this to Python2)... IIRC this was added in Python 3.4:
 		o.write(b'0x' + codecs.encode(string, 'hex'))
 
-def sanitise(in_filename, out_filename):
+def sanitise(in_filename, o):
 	i = open(in_filename, 'rb').read()
-	o = open(out_filename, 'wb')
 
 	assert(i[0:2] == b'\xff\xfe')
 	pos = 2
@@ -43,10 +44,44 @@ def sanitise(in_filename, out_filename):
 
 		pos = strendpos + 2
 
+replace_map = []
+
+def parse_custom_setting_names_xml():
+	# The encoding specified in the nvidia inspector XML document is
+	# bogus. It claims to be utf-16, but is actually utf-8. I haven't tried
+	# checking if I am able to use a correctly encoded file with it, but in
+	# order to work with the original I'll decode it myself here:
+	xml = open('../CustomSettingNames_en-EN.xml', 'rb').read().decode('utf-8')
+	dom = minidom.parseString(xml)
+	# print('\n'.join(dir(dom)))
+	for CustomSetting in dom.getElementsByTagName('CustomSetting'):
+		nodes = CustomSetting.getElementsByTagName('HexSettingID')
+		assert(len(nodes) == 1)
+		assert(len(nodes[0].childNodes) == 1)
+		HexSettingID = 'ID_' + nodes[0].childNodes[0].data.lower()
+
+		# I've never understood why XML parsing libraries all lack this basic functionality:
+		nodes = [ x for x in CustomSetting.childNodes if x.nodeName == 'UserfriendlyName' ]
+		assert(len(nodes) == 1)
+		assert(len(nodes[0].childNodes) == 1)
+		UserfriendlyName = nodes[0].childNodes[0].data
+
+		replace_map.append((HexSettingID, '{} ({})'.format(HexSettingID, UserfriendlyName)))
+
+def make_ids_friendly(data):
+	for (id, name) in replace_map:
+		data = data.replace(id, name)
+	return data
+
 def main():
+	parse_custom_setting_names_xml()
 	for file in sys.argv[1:]:
 		dest = '{}-cleaned.txt'.format(file[:file.rfind('.')])
-		sanitise(file, dest)
+		stream = io.BytesIO() #FIXME: Refactor this away
+		sanitise(file, stream)
+		stream.seek(0)
+		buf = make_ids_friendly(stream.read().decode('ascii'))
+		open(dest, 'wb').write(buf.encode('ascii'))
 
 if __name__ == '__main__':
 	main()
