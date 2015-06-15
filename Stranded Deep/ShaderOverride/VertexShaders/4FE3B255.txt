@@ -1,0 +1,71 @@
+// CRC32: 4FE3B255 | Unity headers extracted from AlphaTest-VertexLit.shader
+// Shader "Transparent/Cutout/VertexLit" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Spec Color", Color) = (1,1,1,0)
+//    _Emission ("Emissive Color", Color) = (0,0,0,0)
+//    _Shininess ("Shininess", Range(0.1,1)) = 0.7
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//   }
+//   SubShader 1/1 {
+//     LOD 100
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//     Pass 4/5 {
+//       Name "CASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//       Cull Off
+//       Fog { Mode Off }
+//       Offset 1, 1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [unity_LightShadowBias]
+//           Vector 5 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c6, 0, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, v0, c2
+    add r0.x, r0, c4
+    max r0.y, r0.x, c6.x
+    add r0.y, r0, -r0.x
+    mad r0.z, r0.y, c4.y, r0.x
+    dp4 r0.w, v0, c3
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mov o2, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors 4FE3B255.txt
+texldl r1, c220.z, s0
+add r1.w, r0.w, -r1.y
+mad r0.x, r1.w, r1.x, r0.x
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0, r0
+    mad o1.xy, v1, c5, c5.zwzw
+
+// approximately 11 instruction slots used

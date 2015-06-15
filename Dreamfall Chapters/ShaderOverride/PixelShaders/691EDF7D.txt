@@ -1,0 +1,166 @@
+// Shader unfixable with current techniques :( Intentionally disabled
+
+//- CRC32: 691EDF7D | Unity headers extracted from Internal-PrePassCollectShadows.shader
+//+ CRC32: DF3A8F27 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+//  Shader "Hidden/Internal-PrePassCollectShadows" {
+//    Properties {
+//     _ShadowMapTexture ("", any) = "" {}
+//    }
+//    Fallback Off
+//    SubShader 1/1 {
+//      Pass 1/1 {
+//        ZTest Always
+//        ZWrite Off
+//        Cull Off
+//        Fog { Mode Off }
+//        Program "fp" {
+//          SubProgram "d3d9 " {
+//            Keywords { "SHADOWS_NATIVE" }
+// ----- These inputs did not change -----
+//            SetTexture 0 [_CameraDepthTexture] 2D 0
+//            SetTexture 1 [_ShadowMapTexture] 2D 1
+// ----- These are inputs to the Dreamfall shader -----
+//            Vector 4 [_ZBufferParams]
+//            Vector 5 [unity_LightShadowBias]        | Dropped
+//            Vector 6 [_LightSplitsNear]
+//            Vector 7 [_LightSplitsFar]
+//            Vector 8 [_LightShadowData]
+//            Vector 9 [_ShadowMapTexture_TexelSize]  | Dropped
+// ----- These are the inputs to the original shader from Unity -----
+//            Matrix 0 [unity_World2Shadow0]          | Replace c0-c3 with c100-103 (From Helix Mod)
+//            Matrix 4 [unity_World2Shadow1]          | Replace c4 with texcoord8, c5-6 with c105-106 (From Helix Mod), drop c7
+//            Matrix 8 [unity_World2Shadow2]          | Replace c8-10 with texcoord2-4, drop c11
+//            Matrix 12 [unity_World2Shadow3]         | Replace c12-14 with texcoord5-7, drop c15
+// !!!!!!!!!  Matrix 16 [_CameraToWorld]              | ***** Darnit! Not enough outputs or Helix mod features to copy this in! *****
+//            Vector 20 [_ZBufferParams]              | Replace c20 with c4
+//            Vector 21 [_LightSplitsNear]            | Replace c21 with c6
+//            Vector 22 [_LightSplitsFar]             | Replace c22 with c7
+//            Vector 23 [_LightShadowData]            | Replace c23 with c8
+//          }
+//        }
+//      }
+//    }
+//  }
+//  
+//  Headers extracted with DarkStarSword's extract_unity_shaders.py
+//  https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+
+
+///////////////////////////////////////////////
+// THIS SHADER HAS BEEN INTENTIONALLY BROKEN //
+//    TO MAKE IT OBVIOUS IF IT IS IN USE     //
+///////////////////////////////////////////////
+ps_3_0
+def c220, 0, 1, 0.0625, 0.5
+dcl vPos.xy
+
+mov r11.xy, vPos.xy
+rcp r11.z, c210.x
+rcp r11.w, c210.y
+mul r11.xy, r11.xy, r11.zw
+
+if_gt r11.x, c220.w
+	if_gt r11.y, c220.w
+		mov oC0.xyzw, c220.xxxx
+	else
+		mov oC0.xyzw, c220.yyyy
+	endif
+else
+	if_gt r11.y, c220.w
+		mov oC0.xyzw, c220.yyyy
+	else
+		mov oC0.xyzw, c220.xxxx
+	endif
+endif
+
+// The reason this won't work is we don't have enough capability to copy the
+// inputs from the vertex shader to here. We need 4x4 + 4*(3x4) matrices = 16
+// 4-component registers. We have 8 free 4-component registers + 3 unused
+// components from the vertex shader, plus we use Helix mod to copy 1 matrix +
+// 2 constants = 14.75 4-component registers :(
+
+// Helix mod can copy 2 matrices and 3 constants, but we already use 1 of each
+// to copy the inverted MV matrix and one column of the MVP matrix in, and
+// can't avoid that as we need that here as well.
+
+// If someone later finds a way to make up the last two inputs, you can fix
+// this shader by uncommenting the below original from unity with the stereo
+// correction applied, and replace all inputs as described in the above
+// comment, or by whatever remapping you end up using.
+
+// It might be easier to replace the shaders in the unity .asset files
+// directly, then we can easily add a fixed version that has all the right
+// inputs.
+
+
+
+//     ps_3_0
+//     dcl_2d s0
+//     dcl_2d s1
+//     def c24, 0.00000000, 1.00000000, 255.00000000, 0.00392157
+//     dcl_texcoord v0.xy // texcoord (uv?)
+//     dcl_texcoord1 v1 //.xyz = v.normal (ray?), .w = P.I[0,0]
+// 
+// // Extra inputs passed from VS:
+// dcl_texcoord2 v2 // unity_World2Shadow2[0]
+// dcl_texcoord3 v3 // unity_World2Shadow2[1]
+// dcl_texcoord4 v4 // unity_World2Shadow2[2]
+// dcl_texcoord5 v5 // unity_World2Shadow3[0]
+// dcl_texcoord6 v6 // unity_World2Shadow3[1]
+// dcl_texcoord7 v7 // unity_World2Shadow3[2]
+// dcl_texcoord8 v8 // unity_World2Shadow1[0]
+// 
+// def c220, 0, 0.85, 0.0625, 0.5
+// dcl_2d s13
+// 
+//     texld r0, v0, s0
+//     mad r0.x, r0, c20, c20.y
+//     rcp r0.x, r0.x
+//     mul r1.xyz, r0.x, v1
+//     add r2, r1.z, -c21
+//     add r3, r1.z, -c22
+//     cmp r3, r3, c24.x, c24.y
+//     cmp r2, r2, c24.y, c24.x
+//     mul r2, r2, r3
+//     mov r1.w, c24.y
+// 
+// // This is a variation of the stereo-correction formula for view-space coords:
+// texldl r31, c220.z, s13 // r31.x = separation, r31.y = convergence
+// add r31.w, r2.z, -r31.y // r31.w = depth - convergence
+// mul r31.w, r31.w, r31.x // r31.w = separation * (depth - convergence)
+// mad r2.x, -r31.w, v1.w, r2.x // X -= separation * (depth - convergence) * P.I[0,0]
+// 
+//     dp4 r3.w, r1, c19
+//     dp4 r3.z, r1, c18
+//     dp4 r3.x, r1, c16
+//     dp4 r3.y, r1, c17
+//     dp4 r1.z, r3, c6
+//     dp4 r1.x, r3, c4
+//     dp4 r1.y, r3, c5
+//     mul r4.xyz, r2.y, r1
+//     dp4 r1.z, r3, c2
+//     dp4 r1.y, r3, c1
+//     dp4 r1.x, r3, c0
+//     mad r4.xyz, r2.x, r1, r4
+//     dp4 r2.y, r3, c13
+//     dp4 r2.x, r3, c12
+//     dp4 r1.z, r3, c10
+//     dp4 r1.y, r3, c9
+//     dp4 r1.x, r3, c8
+//     mad r1.xyz, r2.z, r1, r4
+//     dp4 r2.z, r3, c14
+//     mad r1.xyz, r2, r2.w, r1
+//     add r2.x, -r0, c24.y
+//     mov r0.x, c23
+//     mul r2.xy, r2.x, c24.yzxw
+//     frc r2.xy, r2
+//     add r0.x, c24.y, -r0
+//     mov r0.y, c24
+//     texld r1, r1, s1
+//     mad r0.x, r1, r0, c23
+//     mov r1.y, r2
+//     mad r1.x, -r2.y, c24.w, r2
+//     mov r0.w, r1.y
+//     mov r0.z, r1.x
+//     mov_pp oC0, r0

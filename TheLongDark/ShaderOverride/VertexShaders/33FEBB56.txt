@@ -1,0 +1,62 @@
+// CRC32: 33FEBB56 | Matched 8 variants of 1 shaders: Hidden/Final Interpolation
+// 
+//     Unity headers extracted from FinalInterpolation.shader
+//     Shader "Hidden/Final Interpolation" {
+//       Properties {
+//        _ZTest ("", Float) = 8
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Pass 1/1 {
+//           ZTest [_ZTest]
+//           ZWrite Off
+//           Fog { Mode Off }
+//           Blend One SrcAlpha
+//           GpuProgramID 18403
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 10:           Keywords { "DIRECTIONAL_SHAFTS" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_OFF" }
+// 40:           Keywords { "DIRECTIONAL_SHAFTS" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_ON" }
+// 01:           Keywords { "DIRECTIONAL_SHAFTS" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_OFF" }
+// 04:           Keywords { "DIRECTIONAL_SHAFTS" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_ON" }
+// 20:           Keywords { "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 80:           Keywords { "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+// 02:           Keywords { "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 08:           Keywords { "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+//               Bind "vertex" Vertex
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 4 [_ProjectionParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_position o0
+    dcl_texcoord o1.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 o0.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul o1.y, r0.y, c4.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+    mov o0.xyw, r0
+    mov o1.xz, r0.xyww
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c201.x -f Hidden_Final Interpolation/vp/33FEBB56.txt
+texldl r31, c220.z, s0
+if_ne r31.x, -r31.x
+mov r31.w, c201.x
+if_eq r31.w, c220.x
+mov o0.xyzw, c220.xxxx
+endif
+endif

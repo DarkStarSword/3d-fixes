@@ -1,35 +1,57 @@
-The Book of Unwritten Tales 2 (Chapters 1 & 2)
-==============================================
+The Book of Unwritten Tales 2
+=============================
+
+The fix has been updated for the final release with all five chapters. Special
+thanks to KING Art for granting me access to the Chapter 5 private beta to get
+this fix ready ahead of time :)
+
+Shadows are now fixed. If you have installed a previous version of this fix, be
+sure to delete the ShaderOverride folder before installing the new version,
+otherwise shadows will still be disabled.
 
 Fixed
 -----
-- Disables broken shadows (automatically re-enabled when switching to 2D). Some
-  shadows work in 3D and these have been left enabled.
-- Can adjust depth of in-game text and icons (item descriptions, subtitles,
-  inventory, etc) by pressing keys on the number row. `~ will set screen depth,
-  1-9 will set depth to 10%-90% and 0 sets depth to 100% separation.
-- Halo on fog fixed
-- Halo on magnifying glass' light beam fixed
-- Two convergence presets are provided: L sets a reasonable convergence for
-  most of the game and K sets a lower convergence suitable for the drunken
-  punch minigame in chapter 2. Convergence can still be adjusted manually, but
-  beware the issue with the F6 key mentioned below.
+- Shadows, halos, etc.
+- Manual convergence and UI depth presets added (see below)
+- Menus, books and maps automatically activate custom separation, convergence
+  and UI depth presets tailored to each one.
+
+Keys
+----
+I recommend you get comfortable with switching between different convergence
+and UI depth presets to suit each individual scene in the game. The recommended
+L preset is conservative to make it usable for the entire game (except for the
+drunken punch minigame in chapter 2, which needs the K preset), but some scenes
+may look better with a higher convergence.
+
+UI, subtitles and inventory depth adjustment (not mouse cursor):
+
+- ~: Screen depth
+- 1-9: 10-90% depth
+- 0: 100% depth
+
+Convergence presets:
+
+- K: Low convergence preset for the drunken punch minigame in chapter 2
+- **L: Recommended preset for most of the game**
+- semicolon: High preset for extra pop (can be too high in some scenes)
+- quote: Extra high preset for extreme pop (can be too high in some scenes)
+
+The convergence presets on K and L are fixed, but the presets on semicolon and
+quote can be customised to your preference. Start by activating the preset,
+adjusting the convergence with Ctrl+F5/F6 (advanced key bindings must be
+enabled in the control panel), then press F7 to save.
 
 Known Issues
 ------------
-- Adjusting separation with Ctrl+F3/F4 causes game to crash, so I recommend you
-  have your desired separation set ahead of time.
-- Pressing F6 will cause the game to stop responding to further mouse clicks,
-  which makes adjusting convergence with the default keybindings challenging.
-  You can use the L and K keys to select different convergence presets, or be
-  prepared to restart the game after manually adjusting the convergence.
 - Mouse cursor depth cannot be adjusted as the game uses a hardware cursor.
-- The reflections in the mirror in Ivo's bedroom are broken.
+- The default convergence preset does not get activated automatically when the
+  game is launched. Press L to manually activate it after launching the game.
 - There's a few scenes in the game where the background is little more than a
   pre-rendered texture drawn over extremely simplified 3D geometry that doesn't
   really look very convincing in 3D. Fortunately there are only a few of these
-  (mostly when talking to other characters) and outside of them the 3D looks
-  fantastic!
+  (mostly when talking to other characters, and mostly in chapter 1) and
+  outside of them the 3D looks fantastic!
 
 Installation
 ------------
@@ -44,12 +66,17 @@ up with this directory structure:
     ...\The Book of Unwritten Tales 2\ShaderOverride\	(new)
     ...\The Book of Unwritten Tales 2\DX9Settings.ini	(new)
 
+**After launching the game, press L to activate the recommended convergence
+preset.**
+
 Notes
 -----
-This is an early access episodic game and is likely to receive numerous
-updates which could break these fixes (update 2 already broke one). Be sure to
-check the Helix blog for updates and if you find that one of my fixes no longer
-works please let me know.
+- I have not found all the optional side quests in the game yet. If you notice
+  a rendering issue in one of them, or find more books that need a custom
+  stereo preset please let me know.
+- I updated the fix during the chapter 5 private beta, but have not thouroughly
+  checked if anything changed for the public release. Let me know if you find
+  something broken.
 
 Interested in learning to fix 3D Games?
 ---------------------------------------

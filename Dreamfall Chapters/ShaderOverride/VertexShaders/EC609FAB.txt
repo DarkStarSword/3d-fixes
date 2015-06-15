@@ -1,0 +1,106 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c32, 1, 2, 0, 0.5
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r3.xyz, v1, c30.w
+    dp3 r5.x, r3, c6
+    dp3 r4.x, r3, c4
+    dp3 r3.w, r3, c5
+    dp4 r0.x, v0, c5
+    add r1, -r0.x, c16
+    mul r2, r3.w, r1
+    dp4 r0.x, v0, c4
+    add r0, -r0.x, c15
+    mul r1, r1, r1
+    mov r4.z, r5.x
+    mov r4.w, c32.x
+    mad r2, r4.x, r0, r2
+    dp4 r4.y, v0, c6
+    mad r1, r0, r0, r1
+    add r0, -r4.y, c17
+    mad r1, r0, r0, r1
+    mad r0, r5.x, r0, r2
+    mul r2, r1, c18
+    mov r4.y, r3.w
+    rsq r1.x, r1.x
+    rsq r1.y, r1.y
+    rsq r1.w, r1.w
+    rsq r1.z, r1.z
+    mul r0, r0, r1
+    add r1, r2, c32.x
+    dp4 r2.z, r4, c25
+    dp4 r2.y, r4, c24
+    dp4 r2.x, r4, c23
+    rcp r1.x, r1.x
+    rcp r1.y, r1.y
+    rcp r1.w, r1.w
+    rcp r1.z, r1.z
+    max r0, r0, c32.z
+    mul r0, r0, r1
+    mul r1.xyz, r0.y, c20
+    mad r1.xyz, r0.x, c19, r1
+    mad r0.xyz, r0.z, c21, r1
+    mul r1, r4.xyzz, r4.yzzx
+    mad r0.xyz, r0.w, c22, r0
+    dp4 r3.z, r1, c28
+    dp4 r3.x, r1, c26
+    dp4 r3.y, r1, c27
+    add r3.xyz, r2, r3
+    mov r1.w, c32.x
+    mov r1.xyz, c12
+    dp4 r2.z, r1, c10
+    dp4 r2.y, r1, c9
+    dp4 r2.x, r1, c8
+    mul r0.w, r3, r3
+    mad r1.w, r4.x, r4.x, -r0
+    mad r1.xyz, r2, c30.w, -v0
+    dp3 r0.w, v1, -r1
+    mul r2.xyz, v1, r0.w
+    mad r1.xyz, -r2, c32.y, -r1
+    mul r4.yzw, r1.w, c29.xxyz
+    add r3.xyz, r3, r4.yzww
+    add o3.xyz, r3, r0
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp3 o1.z, r1, c6
+    dp3 o1.y, r1, c5
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o5, r0 // Relocated from line 84 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -i EC609FAB.txt
+texldl r6, c220.z, s0
+add r6.w, r0.w, -r6.y
+mad r0.x, r6.w, r6.x, r0.x
+
+    mul r2.xyz, r0.xyww, c32.w
+    dp3 o1.x, r1, c4
+    mov r1.x, r2
+    mul r1.y, r2, c13.x
+    mad o4.xy, r2.z, c14.zwzw, r1
+
+//     mov o5, r0 // Relocated to line 79 with shadertool.py
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4.zw, r0
+    mov o2.z, r5.x
+    mov o2.y, r3.w
+    mov o2.x, r4
+    mad o0.xy, v2, c31, c31.zwzw
+
+// approximately 75 instruction slots used

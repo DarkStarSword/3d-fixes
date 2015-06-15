@@ -1,0 +1,87 @@
+// CRC32: 44D72F13 (FOG + 0805631E) | Matched 2 variants of 1 shaders: vertexPainter/vB_DiffuseNormal_3tex
+// 
+//    Unity headers extracted from vB_DiffuseNormal_3tex.shader
+//    Shader "vertexPainter/vB_DiffuseNormal_3tex" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex1 ("Texture 1 (RGB)", 2D) = "white" {}
+//       _BumpMap1 ("Bumpmap 1 (RGB)", 2D) = "bump" {}
+//       _MainTex2 ("Texture 2 (RGB)", 2D) = "white" {}
+//       _BumpMap2 ("Bumpmap 2 (RGB)", 2D) = "bump" {}
+//       _MainTex3 ("Texture 3 (RGB)", 2D) = "white" {}
+//       _BumpMap3 ("Bumpmap 3 (RGB)", 2D) = "bump" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ProjectionParams]
+//              Vector 5 [_ScreenParams]
+//              Vector 6 [unity_LightmapST]
+//              Vector 7 [_MainTex1_ST]
+//              Vector 8 [_MainTex2_ST]
+//              Vector 9 [_MainTex3_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    ; 14 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c10, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_texcoord1 v2
+    dcl_color0 v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 66 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/common/Oddworld New n Tasty --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed vertexPainter_vB_DiffuseNormal_3tex/vp/44D72F13.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c10.x
+    mul r1.y, r1, c4.x
+    mad o4.xy, r1.z, c5.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 63 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o3, v3
+    mov o4.zw, r0
+    mad o1.zw, v1.xyxy, c8.xyxy, c8
+    mad o1.xy, v1, c7, c7.zwzw
+    mad o2.xy, v1, c9, c9.zwzw
+    mad o5.xy, v2, c6, c6.zwzw

@@ -9,14 +9,26 @@ these fixes.
 
 ### Complete Fixes ###
 - Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
-- The Book of Unwritten Tales 2 (Early Access - expect updates)
+- The Book of Unwritten Tales 2 (Fixes shadows, halos, etc.)
+- Montague's Mount (Fixes halos, shadows, etc.)
+- Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
+- World of Diving (Fixed halos, shadows, etc.)
+- The Forest (Fixed halos, shadows)
+- Legends of Aethereus (Fixed halos, shadows, skybox, etc.)
+- DreadOut (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
+- Eleusis (Fixed shadows, light shafts, etc.)
+- Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
+- Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
+- Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
+- Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
+- Pineview Drive (Halos, shadows, sun shafts, etc.)
+- Viscera Cleanup Detail (shadows, missing UI, etc.)
+- Dead or Alive 5: Last Round (water, halos, lens flare)
+- The Last Tinker: City of Colors (new technique to fix shadows)
+- Euro Truck Simulator 2 (skybox, god rays, reflections)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
-- Miasmata (Partial high quality water fix, no longer need Aion profile)
-
-### Work in Progress ###
-- World of Diving (Partial shadow fix, fixed or disabled halos)
 
 Misc
 ====
@@ -33,6 +45,11 @@ get values for Helix Mod's DX9Settings.ini
 
 ### \__game_list__ ###
 Source for the auto-updating game list on the Helix Mod blog.
+
+### \__shader_database__ ###
+Python script to crawl the helix blog downloading every fix it can find and
+creating a database of shaders so we can look up if a particular shader has
+been fixed previously, as may happen with games using the same engine.
 
 ### mkrelease.sh ###
 Small script to package up a game's fixes for release, replacing the symlinked
@@ -52,6 +69,85 @@ some of the stereo attributes that I've identified in each profile.
 This is a python tool I've started working on to parse shaders and automate
 some of the process of hacking them. It's very early and the code is not very
 pretty. At the moment it can:
-- Install shaders to the ShaderOverride directory
-- Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0
+- Install shaders to the ShaderOverride directory, taking care of naming the
+  file correctly.
+- Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0, optionally adding instructions
+  to preserve fog that can stop working on shader model upgrades.
 - Analyse shader register usage and look for free constants.
+- Disable an entire shader by setting it's output to 0 or 1.
+- Disable individual texcoord outputs from a vertex shader.
+- Apply the stereo correction formula to an output texcoord of a vertex shader,
+  optionally with a custom multiplier (try 0.5 if a correction switches eyes).
+- Reverse the stereo correction formula on the output position of a vertex
+  shader to unstereoize it.
+- Disabled outputs, adjustments, etc. can be made conditional on a register
+  passed in from Helix mod.
+- Insert a depth adjustment suitable for UI elements to the value of a constant
+  register component (typically passed in from DX9Settings.ini).
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
+- Automatically fix light shafts in Unreal Engine games.
+- Remove Unreal's stereo correction in shaders using vPos where it does more
+  harm than good.
+- Automatically fix certain types of reflective surfaces in Unreal games (those
+  using a 2D DNEReflectionTexture, used in Life Is Strange).
+- Automatically fix shadows in Unreal Engine games.
+- Apply the tedious part of a Unity shadow fix (but not the difficult part!)
+
+### extract_stereo_settings.py ###
+Short python script to extract the table of Stereo settings from the nVidia
+driver and write them to a CustomSettingNames_en-EN.xml which can be used with
+nVidia Inspector.
+
+### matrix.py ###
+Small Python module to create typical matrices for translation, rotation,
+scaling and projection in 3D to help me understand the maths behind them.
+
+### extract_unity_shaders.py ###
+Python script to parse the compiled output of Unity shaders and pull out all
+the different variants into separate files, with headers intact.
+
+### ddsinfo.py ###
+Decodes the header on a DDS file. Use GetSampler1FromReg, GetSampler2FromReg or
+GetSampler3FromReg in a shader section of DX9Settings.ini to extract a texture
+passed to a shader, press F12 in game to dump it out as Tex1.dds, Tex2.dds or
+Tex3.dds, then use this tool to decode it's header. This doesn't (yet) convert
+it into another image format (but doing so would not be hard to add - I already
+have a version that can decompress S3 textures in my Miasmata-fixes
+repository, or you can always look for other tools to decode or show DDS files).
+
+The idea here is to narrow down the list of render targets in the LOG.txt when
+searching for a surface that needs to be stereoised - e.g. you can match the
+FourCC with a Format and the Width & Height (Possibly Levels - is that mip-maps
+by any chance?).
+
+### interlaced2jps.py ###
+Converts an interlaced image into a jps file
+
+### screenshot_archive.py ###
+This script periodically sorts all 3D screenshots into directories for the
+games they are from and renames them to include the date and time they were
+taken.
+
+Place it in the Documents\NVStereoscopic3D.IMG directory and run it.
+
+### \__shaderasm__ & shaderasm.exe ###
+Small C++ project to assemble a shader .txt file. Used by
+extract_unity_shaders.py to calculate the CRC32 of shaders extracted from Unity
+games.
+
+### calc_shader_crc.py ###
+Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
+
+### unity_asset_extractor.py ###
+An alternative to Unity Asset Explorer, to extract assets (currently limited to
+shaders) from Unity 4 and Unity 5 games in batch.
+
+### dx11shaderanalyse.py ###
+Decodes some information in the ISGN & OSGN sections of DX11 shaders.
+
+### pyasm.py ###
+Implements shader like semantics in Python, including registers supporting
+masks and swizzles using a natural syntax, and various shader instructions.
+Useful to prototype & debug complicated algorithms.

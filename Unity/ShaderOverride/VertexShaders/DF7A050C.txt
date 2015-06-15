@@ -1,0 +1,177 @@
+// CRC32: DF7A050C | Matched 45 variants of 1 shaders: Hidden/Internal-PrePassLighting
+// 
+//               Unity headers extracted from Internal-PrePassLighting.shader
+//               Shader "Hidden/Internal-PrePassLighting" {
+//                 Properties {
+//                  _LightTexture0 ("", any) = "" {}
+//                  _LightTextureB0 ("", 2D) = "" {}
+//                  _ShadowMapTexture ("", any) = "" {}
+//                 }
+//                 Fallback Off
+//                 SubShader 1/1 {
+// 000000007fff:     Pass 1/3 {
+// 00003fff8000:     Pass 2/3 {
+// 1fffc0000000:     Pass 3/3 {
+//                     Tags { "ShadowSupport"="True" }
+//                     ZWrite Off
+//                     Fog { Mode Off }
+// 000000007fff:       Blend DstColor Zero
+// 1fffffff8000:       Blend One One
+//                     Program "vp" {
+//                       SubProgram "d3d9 " {
+// 000080010002:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
+// 002000400080:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 000400080010:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+// 004000800100:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+// 080010002000:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 008001000200:           Keywords { "POINT" "SHADOWS_CUBE" }
+// 000040008001:           Keywords { "POINT" "SHADOWS_OFF" }
+// 100020004000:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 010002000400:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" }
+// 000200040008:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+// 040008001000:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" }
+// 001000200040:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" }
+// 020004000800:           Keywords { "SHADOWS_DEPTH" "SHADOWS_SOFT" "SPOT" }
+// 000800100020:           Keywords { "SHADOWS_DEPTH" "SPOT" }
+// 000100020004:           Keywords { "SHADOWS_OFF" "SPOT" }
+//                         Bind "vertex" Vertex
+//                         Bind "normal" Normal
+//                         Matrix 0 [glstate_matrix_modelview0]
+//                         Matrix 4 [glstate_matrix_mvp]
+//                         Vector 8 [_ProjectionParams]
+//                         Vector 9 [_ScreenParams]
+//                         Float 10 [_LightAsQuad]
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    def c11, 0.50000000, -1.00000000, 1.00000000, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+
+// Extra output to pass the FOV to pixel shaders:
+dcl_texcoord5 o5.x
+
+def c220, 0, 1, 0.0625, 1
+dcl_2d s0
+
+    dp4 r0.w, v0, c7
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    mov o0, r0 // moved up before the stereo correction
+
+// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+// For a detailed explanation of what we are doing here, see this thread:
+// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
+
+// Determine if drawing a full screen quad by testing if output position w == 1.
+// Seems to be more reliable than an input position test:
+if_eq r0.w, c220.y
+	mov r23.x, c220.y // Set flag to indicate we are drawing a full-screen quad
+
+	// We are drawing a full-screen quad, so we can't use the matrices from
+	// this shader and have to use an alternate source copied from elsewhere:
+	// Transpose first component of the MV.I matrix regs into r30:
+	mov r30.x, c180.x
+	mov r30.y, c181.x
+	mov r30.z, c182.x
+	mov r30.w, c183.x
+	dp4 r30.x, r30, c190 // Calculate P[0,0]
+else
+	mov r23.x, c220.x // Clear flag to indicate we are drawing a light in the scene
+
+	// Our projection matrix will be valid, so we can use the matrices
+	// passed into this shader. Rather than have Helix mod invert the
+	// matrix for us (which will use up one of the two matrix copy slots in
+	// Helix mod), let's do it directly in assembly! It sounds complicated,
+	// but we can make some large simplifications based on assumptions
+	// about the MV and MVP matrices and the fact we only need one cell of
+	// the (inverse) projection matrix, which means it is actually possible
+	// to do in a farily small number of instructions :)
+
+	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+	//    4th column of the MV matrix is 0,0,0,1
+	//
+	// mathomatic simplified it to:
+	// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+	//
+	// Replace row numbers with register components (assumes column-major order):
+	//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+	// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mov r22.xyz, c1
+	mul r20.xyz, c0.yzx, r22.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, c0.zxy, r22.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+	// Now the multiplications:
+	mul r20.xyz, r20.xyz, c2.xyz
+	// Sum it together to get the determinant:
+	add r22.w, r20.x, r20.y
+	add r22.w, r22.w, r20.z
+	// And finally get 1/determinant:
+	rcp r22.w, r22.w
+
+	// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+	//    the 4th column of the MV matrix is 0,0,0,1
+	//
+	// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+	// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+	// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r22.yzx, c2.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+	mul r21.xyz, r22.zxy, c2.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+	// Multiply against 1/determinant:
+	mul r20.xyz, r20.xyz, r22.www
+
+	// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+	//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+	dp3 r30.x, r20.xyz, c4.xyz
+
+endif
+
+if_eq r30.x, c220.x
+	mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
+else
+	rcp r30.x, r30.x // Calculate P.I[0,0]
+endif
+mov o5.x, r30.x // Copy P.I[0,0] to pixel shaders
+
+if_eq r23.x, c220.x
+	// Apply stereo correction to screen coords stored in texcoord:
+	texldl r31, c220.z, s0
+	add r31.w, r0.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r0.x, r0.x, r31.w
+endif
+
+    mul r1.xyz, r0.xyww, c11.x
+    mul r1.y, r1, c8.x
+    dp4 r2.z, v0, c2
+    dp4 r2.x, v0, c0
+    dp4 r2.y, v0, c1
+
+if_eq r23.x, c220.x
+	mad r2.x, r31.w, r30.x, r2.x
+endif
+
+    mad o1.xy, r1.z, c9.zwzw, r1
+    mad r1.xyz, -r2, c11.yyzw, v1
+    mul r2.xyz, r2, c11.yyzw
+    mad o2.xyz, r1, c10.x, r2
+    mov o1.zw, r0

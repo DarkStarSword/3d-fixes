@@ -1,0 +1,61 @@
+// CRC32: 9C3C8C1A | Matched 2 variants of 2 shaders: Hidden/Highlighted/StencilTransparent, Hidden/Highlighted/StencilTransparentZ
+// 
+//    Unity headers extracted from HighlightingStencilTransparent.shader
+//    Shader "Hidden/Highlighted/StencilTransparent" {
+//      Properties {
+//       _MainTex ("", 2D) = "" {}
+//       _Cutoff ("", Float) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Vector 0 [_Outline]
+//              Float 1 [_Cutoff]
+//              SetTexture 0 [_MainTex] 2D 0
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from HighlightingStencilTransparentZ.shader
+//    Shader "Hidden/Highlighted/StencilTransparentZ" {
+//      Properties {
+//       _MainTex ("", 2D) = "" {}
+//       _Cutoff ("", Float) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          Fog { Mode Off }
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Vector 0 [_Outline]
+//              Float 1 [_Cutoff]
+//              SetTexture 0 [_MainTex] 2D 0
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    dcl_2d s0
+    def c2, 0, 1, 0, 0
+    dcl_texcoord v0.xy
+    texld r0, v0, s0
+    add r0.x, r0.w, -c1
+    cmp r0.x, r0, c2, c2.y
+    mov_pp r0, -r0.x
+    mov_pp oC0, c0
+    texkill r0
+
+// approximately 6 instruction slots used (1 texture, 5 arithmetic)

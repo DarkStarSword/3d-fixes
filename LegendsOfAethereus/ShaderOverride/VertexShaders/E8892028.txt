@@ -1,0 +1,51 @@
+// CRC32: E8892028 | Unity headers extracted from Camera-DepthTexture.shader
+// Shader "Hidden/Camera-DepthTexture" {
+//   Properties {
+//    _MainTex ("", 2D) = "white" {}
+//    _Cutoff ("", Float) = 0.5
+//    _Color ("", Color) = (1,1,1,1)
+//   }
+//   Fallback Off
+//   SubShader 1/9 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="Opaque" }
+//       Fog { Mode Off }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Matrix 0 [glstate_matrix_mvp]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+
+dcl_texcoord o0
+dcl_position o1
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mov o1, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed E8892028.txt
+texldl r1, c220.z, s0
+add r1.w, r0.w, -r1.y
+mad r0.x, r1.w, r1.x, r0.x
+
+    mov o0.xy, r0.zwzw
+
+// approximately 6 instruction slots used

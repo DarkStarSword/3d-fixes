@@ -1,0 +1,115 @@
+// CRC32: B3EE2FE2 | Matched 2 variants of 1 shaders: Hidden/Skin Composite
+// 
+//    Unity headers extracted from Skin Composite.shader
+//    Shader "Hidden/Skin Composite" {
+//      Properties {
+//       _Color ("RGB Translucency A F0", Color) = (1,0.2,0,1)
+//       _MainTex ("Albedo", 2D) = "white" { }
+//       AOsaturation ("AO Saturation", Float) = 2
+//       _NormalMap ("NormalMap", 2D) = "bump" { }
+//       _Microstructure ("Microstructure", 2D) = "bump" { }
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//       _SpecularMap ("SpecularMap (R=F0 G=Thickness B=AO A=Roughness", 2D) = "white" { }
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       beckmannTex ("Beckman", 2D) = "white" { }
+//       Roughness ("Roughness", Range(0.0001,0.99)) = 0.5
+//       mRoughness ("Detail Roughness", Range(0.0001,0.99)) = 0.5
+//       Albedo ("Albedo", Range(0,1)) = 1
+//       IBL ("Irradiance CubeMap", CUBE) = "black" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 500
+//        Tags { "QUEUE"="Background" "RenderType"="Opaque" "OnlySkin"="true" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Background" "RenderType"="Opaque" "OnlySkin"="true" }
+//          GpuProgramID 46927
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "KELEMEN_KALOS_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "KELEMEN_KALOS_ON" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6.xyz
+    dcl_texcoord6 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c12, c12.zwzw
+    dp4 o2.w, c4, v0
+    dp4 o3.w, c5, v0
+    dp4 o4.w, c6, v0
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Hidden_Skin Composite/vp/B3EE2FE2.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c13.x
+    mul r1.y, r0.y, c10.x
+    mul r1.w, r1.y, c13.x
+    mad r0.xy, r1.z, c11.zwzw, r1.xwzw
+    dp3 r1.z, c4, v1
+    dp3 r1.x, c5, v1
+    dp3 r1.y, c6, v1
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mul r1.xyz, r1.w, r1
+    mov o2.x, r1.z
+    mul r2.xyz, c8.zxyw, v2.y
+    mad r2.xyz, c7.zxyw, v2.x, r2
+    mad r2.xyz, c9.zxyw, v2.z, r2
+    dp3 r1.w, r2, r2
+    rsq r1.w, r1.w
+    mul r2.xyz, r1.w, r2
+    mul r3.xyz, r1, r2
+    mad r3.xyz, r2.zxyw, r1.yzxw, -r3
+    mul r3.xyz, r3, v1.w
+    mov o2.y, r3.x
+    mov o2.z, r2.y
+    mov o3.x, r1.x
+    mov o4.x, r1.y
+    mov o3.y, r3.y
+    mov o4.y, r3.z
+    mov o3.z, r2.z
+    mov o4.z, r2.x
+    mov o5, r0
+    mov o7, r0
+    mov o6.xyz, c13.y

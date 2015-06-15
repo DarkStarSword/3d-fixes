@@ -1,0 +1,92 @@
+// Shader replaced with Unity original Internal-PrePassCollectShadows and extra inputs passed to Pixel shader
+
+//- CRC32: 17875287 | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassCollectShadows
+//+ CRC32: BAEDDED5 | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassCollectShadows
+//  
+//     Unity headers extracted from Internal-PrePassCollectShadows.shader
+//     Shader "Hidden/Internal-PrePassCollectShadows" {
+//       Properties {
+//        _ShadowMapTexture ("", any) = "" {}
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Pass 1/1 {
+//           ZTest Always
+//           ZWrite Off
+//           Cull Off
+//           Fog { Mode Off }
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+//  8:           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+//  2:           Keywords { "SHADOWS_NATIVE" }
+//  4:           Keywords { "SHADOWS_NONATIVE" "SHADOWS_SPLIT_SPHERES" }
+//  1:           Keywords { "SHADOWS_NONATIVE" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 0 [glstate_matrix_mvp]   | Input does not change
+//-              Matrix 4 [unity_World2Shadow0]  | Pass to PS via Helix Mod GetMatrix1
+//-              Matrix 8 [unity_World2Shadow1]  | Pass to PS via texcoord8 & Helix Mod GetConst2-3FromReg
+//-              Matrix 12 [unity_World2Shadow2] | Pass to PS as texcoord2-4
+//-              Matrix 16 [unity_World2Shadow3] | Pass to PS as texcoord5-7
+//-              Matrix 20 [_CameraToWorld]      | Pixel shader already has this input
+//             }
+//           }
+//         }
+//       }
+//     }
+//  
+//  Headers extracted with DarkStarSword's extract_unity_shaders.py
+//  https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_normal0 v2
+
+dcl_position o0
+dcl_texcoord o1
+dcl_texcoord1 o2
+
+// Additional outputs being passed to pixel shaders:
+dcl_texcoord2 o3 // unity_World2Shadow2[0]
+dcl_texcoord3 o4 // unity_World2Shadow2[1]
+dcl_texcoord4 o5 // unity_World2Shadow2[2]
+dcl_texcoord5 o6 // unity_World2Shadow3[0]
+dcl_texcoord6 o7 // unity_World2Shadow3[1]
+dcl_texcoord7 o8 // unity_World2Shadow3[2]
+dcl_texcoord8 o9 // unity_World2Shadow1[0]
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov o2.xyz, v2
+    mov o1.xy, v1
+    dp4 o0.w, v0, c3
+    dp4 o0.z, v0, c2
+    dp4 o0.y, v0, c1
+    dp4 o0.x, v0, c0
+
+mov o3, c12 // unity_World2Shadow2[0]
+mov o4, c13 // unity_World2Shadow2[1]
+mov o5, c14 // unity_World2Shadow2[2]
+mov o6, c16 // unity_World2Shadow3[0]
+mov o7, c17 // unity_World2Shadow3[1]
+mov o8, c18 // unity_World2Shadow3[2]
+mov o9, c8 // unity_World2Shadow1[0]
+
+// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+// Assumes the game is storing matrix columns in registers (highly likely)
+// c180-c183 is the inverse of the MV matrix (From DX9Settings.ini)
+// c190 is the first column of the MVP matrix (can't use the one passed in to this VS - needs to match the MV.I)
+
+// Transpose first component of the MV.I matrix regs into r30:
+mov r30.x, c180.x
+mov r30.y, c181.x
+mov r30.z, c182.x
+mov r30.w, c183.x
+dp4 r30.x, r30, c190 // Calculate P[0,0]
+rcp r30.x, r30.x // Calculate P.I[0,0]
+
+// Store P.I[0,0] in an unused component of one of the outputs:
+mov o2.w, r30.x

@@ -1,0 +1,40 @@
+// CRC32: 72A0509F (FOG + 18831D8D) | Unity headers extracted from Vapor.shader
+// Shader "JAW/FX/Vapor" {
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Matrix 0 [glstate_matrix_mvp]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9
+    dcl_position o0
+    dcl_texcoord o1
+    def c4, 0.5, 0, 0, 0
+    dcl_position v0
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+    mul r1.xyz, r0.xyww, c4.x
+    mov r1.y, -r1
+    add o1.xy, r1, r1.z
+    mov o0, r0
+    mov o9, r0.z
+    mov o1.zw, r0
+
+// approximately 10 instruction slots used

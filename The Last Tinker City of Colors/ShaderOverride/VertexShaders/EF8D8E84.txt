@@ -1,0 +1,28 @@
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_color v0
+    dcl_position v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov o2, v0
+    mad o0.zw, v2.xyxy, c5.xyxy, c5
+    mad o0.xy, v2, c4, c4.zwzw
+    dp4 r0.w, v1, c3
+    dp4 r0.z, v1, c2
+    dp4 r0.y, v1, c1
+    dp4 r0.x, v1, c0
+
+// approximately 7 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --ui=c200.z VertexShader_80_CRC32_EF8D8E84.txt
+texldl r31, c220.z, s0
+mad r0.x, r31.x, c200.z, r0.x
+mov o1, r0

@@ -1,0 +1,120 @@
+// CRC32: 92F283B6 | Unity headers extracted from WavingGrass.shader
+// Shader "Hidden/TerrainEngine/Details/WavingDoublePass" {
+//   Properties {
+//    _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//    _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//    _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//    _Cutoff ("Cutoff", Float) = 0.5
+//   }
+//   Fallback Off
+//   SubShader 1/2 {
+//     LOD 200
+//     Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="Grass" }
+//     Pass 5/6 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="Grass" }
+//       Cull Off
+//       Fog { Mode Off }
+//       ColorMask RGB
+//       Offset 1, 1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [unity_LightShadowBias]
+//           Vector 5 [_WavingTint]
+//           Vector 6 [_WaveAndDistance]
+//           Vector 7 [_CameraPosition]
+//           Vector 8 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c9, 0.00600000005, 0.0199999996, 0.0500000007, -0.161616161
+    def c10, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
+    def c11, 1.20000005, 2, 1.60000002, 4.80000019
+    def c12, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c13, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c14, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c15, 0, 0.471939921, 0.188775957, 0.0943879783
+    def c16, -0.5, 0.5, 1, 0
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.x, v0.z, c6.y
+    mul r1.xyz, r0.x, c9
+    mul r0.x, v0, c6.y
+    mad r1, r0.x, c10, r1.xyyz
+    mov r0.x, c6
+    mad r0, c11, r0.x, r1
+    frc r0, r0
+    mad r0, r0, c12.x, c12.y
+    mul r1, r0, r0
+    mul r2, r1, r0
+    mad r0, r2, c9.w, r0
+    mul r2, r2, r1
+    mul r1, r2, r1
+    mad r0, r2, c12.z, r0
+    mad r0, r1, c12.w, r0
+    mul r0, r0, r0
+    mov r2.yw, v0
+    mul r1, r0, r0
+    mul r2.x, v5.w, c6.z
+    mul r0, r1, r2.x
+    dp4 r3.y, r0, c13
+    dp4 r3.x, r0, c14
+    mad r2.xz, -r3.xyyw, c6.z, v0
+    dp4 r0.x, r2, c2
+    add r0.x, r0, c4
+    max r0.y, r0.x, c15.x
+    add r0.y, r0, -r0.x
+    mad r0.z, r0.y, c4.y, r0.x
+    add r3.xyz, r2, -c7
+    dp4 r0.w, r2, c3
+    dp4 r0.x, r2, c0
+    dp4 r0.y, r2, c1
+    dp3 r3.x, r3, r3
+    mov o2, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i -f --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update 92F283B6.txt
+texldl r4, c220.z, s0
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0, r0
+    add r2.x, -r3, c6.w
+    mul r0.w, r2.x, c7
+    mul r2.x, r0.w, c11.y
+    mov r0.xyz, c5
+    dp4 r0.w, r1, c15.yyzw
+    add r0.xyz, c16.x, r0
+    mad r0.xyz, r0.w, r0, c16.y
+    min r0.w, r2.x, c16.z
+    mul r0.xyz, v5, r0
+    max o3.w, r0, c15.x
+    mul o3.xyz, r0, c11.y
+    mad o1.xy, v3, c8, c8.zwzw
+
+// approximately 47 instruction slots used

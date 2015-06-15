@@ -1,0 +1,104 @@
+// CRC32: BAEDDED5 | Matched 4 variants of 1 shaders: Hidden/Internal-PrePassCollectShadows
+// 
+//    Unity headers extracted from Internal-PrePassCollectShadows.shader
+//    Shader "Hidden/Internal-PrePassCollectShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 8:           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+// 2:           Keywords { "SHADOWS_NATIVE" }
+// 4:           Keywords { "SHADOWS_NONATIVE" "SHADOWS_SPLIT_SPHERES" }
+// 1:           Keywords { "SHADOWS_NONATIVE" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+    dcl_normal0 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+def c220, 0, 1, 0.0625, 0.5
+def c221, 1.025, 0.58, 0, 0 // 1.025 = FOV without phone, 0.58 = FOV on phone
+
+// Extra output to pass the FOV to pixel shaders:
+dcl_texcoord5 o5.x
+
+    mov o1.xyz, v2
+    mov o0.xy, v1
+    dp4 o2.w, v0, c3
+    dp4 o2.z, v0, c2
+    dp4 o2.y, v0, c1
+    dp4 o2.x, v0, c0
+
+
+// This is a simplified version of the maths to find P.I[0,0] from MV.I and MVP
+// For a detailed explanation of what we are doing here, see this thread:
+// https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters/post/4352670/#4352670
+
+// Use matrices from PrePassLighting, which seem more reliable than the above,
+// especially when the phone camera is active (prior to Act 2). Only use the
+// matrix if it is not the identity matrix. We test the MVP matrix to determine
+// if it is the identity or not as the MV matrix has been inverted and will
+// have rounding errors. We specifically check MVP[3,3] which I'm pretty sure
+// will only be equal to 1 when it is the identity matrix, though we could
+// check more cells as well.
+mov r19, c197
+if_ne r19.w, c220.y
+	// MVP matrix is not an identity matrix - use it.
+	mov r30.x, c184.x
+	mov r30.y, c185.x
+	mov r30.z, c186.x
+	mov r30.w, c187.x
+	dp4 r30.x, r30, c194 // Calculate P[0,0]
+	rcp r30.x, r30.x // Calculate P.I[0,0]
+else
+	// MVP matrix is an identity, so we can't use it as an FOV source :(
+	// When the camera is inactive we can use the FOV source copied from
+	// other shaders, it doesn't work when the camera is active and the
+	// only option seems to be to use a hardcoded correction factor.
+	// This is a new problem in Act 2 that I did not see in Act 1.
+	mov r20, c200
+	if_eq r20.x, c220.y
+		// Phone active, use FOV correction factor 0.58
+		mov r30.x, c221.y
+	else
+		// Phone inactive - FOV copied from other shaders works better
+		// in cutscenes where FOV may vary (e.g. early in Act 2 when
+		// phone is stolen). If it turns out there is still some
+		// situation where this is unreliable (would not surprise me at
+		// all) I'll have to test if this is an identity matrix and use
+		// hard coded correction factor 1.025 as a last resort
+		mov r30.x, c180.x
+		mov r30.y, c181.x
+		mov r30.z, c182.x
+		mov r30.w, c183.x
+		dp4 r30.x, r30, c190 // Calculate P[0,0]
+		rcp r30.x, r30.x // Calculate P.I[0,0]
+	endif
+endif
+
+// Copy calculated FOV to pixel shaders:
+mov o5.x, r30.x

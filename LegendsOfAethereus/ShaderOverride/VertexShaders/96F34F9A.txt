@@ -1,0 +1,160 @@
+// CRC32: 96F34F9A | Matched 3 variants of 3 shaders: Final/Enemy/EnemyAliveMaterialAlpha, Final/Enemy/EnemyAliveMaterialCutoff, Final/Ghalia/Ghalia_Regular
+// 
+//    Unity headers extracted from S_EnemyAliveMaterialAlpha_Shader.shader
+//    Shader "Final/Enemy/EnemyAliveMaterialAlpha" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _Alpha ("Alpha Amount", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/2 {
+//        LOD 400
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_Scale]
+//              Vector 15 [unity_LightmapST]
+//              Vector 16 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_EnemyAliveMaterialCutoff_Shader .shader
+//    Shader "Final/Enemy/EnemyAliveMaterialCutoff" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/3 {
+//        LOD 400
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Cull Off
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_Scale]
+//              Vector 15 [unity_LightmapST]
+//              Vector 16 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_Ghalia_Regular_Shader.shader
+//    Shader "Final/Ghalia/Ghalia_Regular" {
+//      Properties {
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 2/5 {
+//        LOD 500
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_Scale]
+//              Vector 15 [unity_LightmapST]
+//              Vector 16 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c17, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 20 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 96F34F9A.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c17.x
+    mul r1.y, r1, c12.x
+    mad o4.xy, r1.z, c13.zwzw, r1
+    mul r1.xyz, v2, c14.w
+
+//     mov o0, r0 // Relocated to line 16 with shadertool.py
+    mov o4.zw, r0
+    dp3 o2.z, r1, c6
+    dp3 o2.y, r1, c5
+    dp3 o2.x, r1, c4
+    mad o1.xy, v3, c16, c16.zwzw
+    mad o3.xy, v4, c15, c15.zwzw
+    dp4 o2.w, v0, c5
+
+// approximately 16 instruction slots used

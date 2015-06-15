@@ -1,0 +1,77 @@
+// CRC32: 6ED04F18 | Matched 3 variants of 3 shaders: Hidden/Highlighted/StencilOpaque, Hidden/Highlighted/StencilOpaqueZ, Hidden/InternalErrorShader
+// 
+//    Unity headers extracted from HighlightingStencilOpaque.shader
+//    Shader "Hidden/Highlighted/StencilOpaque" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from HighlightingStencilOpaqueZ.shader
+//    Shader "Hidden/Highlighted/StencilOpaqueZ" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Internal-ErrorShader.shader
+//    Shader "Hidden/InternalErrorShader" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+
+dcl_position o0
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp4 r1.y, v0, c1
+    dp4 r1.x, v0, c0
+
+// approximately 4 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --lookup-header-json /home/dss/3d-fixes/__unity__/Pineview Drive/ShaderHeaders.json -f --adjust=position --git VertexShader_18_CRC32_6ED04F18.txt
+texldl r0, c220.z, s0
+add r0.w, r1.w, -r0.y
+mad r1.x, r0.w, r0.x, r1.x
+mov o0, r1

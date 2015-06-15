@@ -1,0 +1,265 @@
+// CRC32: 9539117F | Matched 4 variants of 1 shaders: Beam Team/Skylight/Foliage/Translucent - Touch Bending
+// 
+//    Unity headers extracted from Foliage - Translucent Touch Bending.shader
+//    Shader "Beam Team/Skylight/Foliage/Translucent - Touch Bending" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//       _MainTex ("Diffuse Albedo (RGB) Alpha(A)", 2D) = "white" {}
+//       _BumpTransSpecMap ("Translucency (R) Normal X (G) Gloss (B) Normal Y (A)", 2D) = "white" {}
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "ForceNoShadowCasting"="true" "IGNOREPROJECTOR"="true" "RenderType"="AtsFoliage" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "ForceNoShadowCasting"="true" "IGNOREPROJECTOR"="true" "RenderType"="AtsFoliage" }
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_HARD" "VERTEXLIGHT_ON" }
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_2x2" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_3x3" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_4x4" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 8 [_Object2World]
+//              Matrix 12 [_World2Object]
+//              Matrix 16 [_RotMatrix]
+//              Matrix 20 [sunshine_CameraVToSunVP]
+//              Vector 24 [_Time]
+//              Vector 25 [_WorldSpaceCameraPos]
+//              Vector 26 [_ProjectionParams]
+//              Vector 27 [_ScreenParams]
+//              Vector 28 [_WorldSpaceLightPos0]
+//              Vector 29 [unity_4LightPosX0]
+//              Vector 30 [unity_4LightPosY0]
+//              Vector 31 [unity_4LightPosZ0]
+//              Vector 32 [unity_4LightAtten0]
+//              Vector 33 [unity_LightColor0]
+//              Vector 34 [unity_LightColor1]
+//              Vector 35 [unity_LightColor2]
+//              Vector 36 [unity_LightColor3]
+//              Vector 37 [unity_SHAr]
+//              Vector 38 [unity_SHAg]
+//              Vector 39 [unity_SHAb]
+//              Vector 40 [unity_SHBr]
+//              Vector 41 [unity_SHBg]
+//              Vector 42 [unity_SHBb]
+//              Vector 43 [unity_SHC]
+//              Vector 44 [unity_Scale]
+//              Float 45 [_AfsWaveSize]
+//              Vector 46 [_TouchBendingPosition]
+//              Vector 47 [_TouchBendingForce]
+//              Vector 48 [_Wind]
+//              Vector 49 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_color0 o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    dcl_texcoord5 o7
+    dcl_texcoord6 o8
+    def c50, 1.00000000, 6.40884876, -3.14159274, -0.00019841
+    def c51, 0.00833330, -0.16161616, 0.25000000, 0.15000001
+    def c52, 1.97500002, 0.79299998, 0.37500000, 0.28500000
+    def c53, 2.00000000, -0.50000000, -1.00000000, 3.00000000
+    def c54, 0.10000000, 0.00000000, 10.00000000, 0.50000000
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.y, v0, c10
+    dp4 r0.x, v0, c8
+    add r0.z, r0.x, r0.y
+    add r0.w, r0.z, c24.y
+    mul r0.w, r0, c45.x
+    mul r0.z, r0, c45.x
+    dp3 r5.x, v2, v2
+    frc r0.w, r0
+    frc r0.z, r0
+    mad r0.zw, r0, c50.y, c50.z
+    mul r1.xy, r0.zwzw, r0.zwzw
+    mul r1.zw, r1.xyxy, r0
+    mad r2.xy, r1.zwzw, c51.y, r0.zwzw
+    mul r0.zw, r1, r1.xyxy
+    mad r1.zw, r0, c51.x, r2.xyxy
+    mul r0.zw, r0, r1.xyxy
+    mad r0.zw, r0, c50.w, r1
+    add r0.z, v5.x, r0
+    mov r1.y, r0.z
+    add r1.x, v5.y, r0.z
+    mov r0.z, r0.y
+    dp4 r0.y, v0, c9
+    dp3 r1.x, r0, r1.x
+    add r0.xy, r1, c24.y
+    mul r1, r0.xxyy, c52
+    frc r1, r1
+    mad r1, r1, c53.x, c53.y
+    frc r1, r1
+    mad r1, r1, c53.x, c53.z
+    abs r2, r1
+    mad r1, -r2, c53.x, c53.w
+    mul r2, r2, r2
+    mul r1, r2, r1
+    add r1.xy, r1.xzzw, r1.ywzw
+    mul r0.xyz, r1.y, c48
+    mul r1.z, v5.y, c54.x
+    mul r1.zw, r1.z, v2.xyxz
+    slt r2.zw, v2.xyxz, -v2.xyxz
+    slt r2.xy, -v2.xzzw, v2.xzzw
+    sub r2.xy, r2, r2.zwzw
+    mul r2.xz, r1.zyww, r2.xyyw
+    mov r2.w, c54.y
+    mul r2.y, v5.z, c51.w
+    mul r0.xyz, v5.z, r0
+    mad r0.xyz, r1.xyxw, r2, r0
+    mad r1.xyz, r0, c48.w, v0
+    mul r0.xyz, v5.z, c48
+    add r0.w, r0, c51.z
+    mul r0.xyz, r0, c48.w
+    mad r1.xyz, r0, r0.w, r1
+    mul r0.xyz, v5.z, c47
+    mad r0.xyz, r0, c47.w, r1
+    add r2.xyz, r0, -c46
+    add r0.w, v5.x, c50.x
+    dp4 r1.z, r2, c18
+    dp4 r1.x, r2, c16
+    dp4 r1.y, r2, c17
+    add r1.xyz, r1, c46
+    mov r2.w, v0
+    add r1.xyz, r1, -r0
+    mul r0.w, v5.z, r0
+    mul r1.xyz, r0.w, r1
+    mad r2.xyz, r1, c54.z, r0
+    dp4 r0.y, r2, c9
+    dp4 r0.x, r2, c8
+    add r3, -r0.y, c30
+    add r1, -r0.x, c29
+    mul r0, r3, r3
+    mad r4, r1, r1, r0
+    rsq r0.x, r5.x
+    mul r7.xyz, r0.x, v2
+    mul r8.xyz, r7, c44.w
+    dp3 r6.w, r8, c9
+    dp4 r0.y, r2, c10
+    add r0, -r0.y, c31
+    mad r4, r0, r0, r4
+    dp3 r8.w, r8, c8
+    mul r3, r6.w, r3
+    mad r1, r8.w, r1, r3
+    dp3 r3.w, r8, c10
+    mad r0, r3.w, r0, r1
+    mul r5, r4, c32
+    mov r8.x, r6.w
+    mov r8.y, r3.w
+    mov r8.z, c50.x
+    rsq r1.x, r4.x
+    rsq r1.y, r4.y
+    rsq r1.z, r4.z
+    rsq r1.w, r4.w
+    mul r0, r0, r1
+    add r1, r5, c50.x
+    dp4 r5.z, r8.wxyz, c39
+    dp4 r5.y, r8.wxyz, c38
+    dp4 r5.x, r8.wxyz, c37
+    rcp r1.x, r1.x
+    rcp r1.y, r1.y
+    rcp r1.w, r1.w
+    rcp r1.z, r1.z
+    max r0, r0, c54.y
+    mul r0, r0, r1
+    mul r1.xyz, r0.y, c34
+    mad r1.xyz, r0.x, c33, r1
+    mad r0.xyz, r0.z, c35, r1
+    mad r4.xyz, r0.w, c36, r0
+    mul r0, r8.wxyy, r8.xyyw
+    mul r1.z, r6.w, r6.w
+    dp4 r1.w, r2, c7
+    dp4 r1.x, r2, c4
+    dp4 r1.y, r2, c5
+
+mov o0, r1 // Relocated from line 207 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/Stranded Deep --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Beam Team_Skylight_Foliage_Translucent - Touch Bending/vp/9539117F.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r3.xyz, r1.xyww, c54.w
+    dp4 r8.z, r0, c42
+    dp4 r8.y, r0, c41
+    dp4 r8.x, r0, c40
+    mad r1.z, r8.w, r8.w, -r1
+    mul r0.xyz, r1.z, c43
+    dp4 r1.z, r2, c6
+
+//     mov o0, r1 // Relocated to line 200 with shadertool.py
+mov o0.z, r1 // Inserted by shadertool.py
+
+    add r5.xyz, r5, r8
+    add r0.xyz, r5, r0
+    add o6.xyz, r0, r4
+    dp3 r1.x, v1, v1
+    dp4 r0.w, r2, c3
+    dp4 r0.z, r2, c2
+    mov r0.x, r3
+    mul r0.y, r3, c26.x
+    mad o8.xy, r3.z, c27.zwzw, r0
+    rsq r1.x, r1.x
+    dp4 r0.x, r2, c0
+    dp4 r0.y, r2, c1
+    mul r3.xyz, r1.x, v1
+    dp4 o4.w, r0, c23
+    dp4 o4.z, r0, c22
+    dp4 o4.y, r0, c21
+    dp4 o4.x, r0, c20
+    mov r0.w, c50.x
+    mul r0.xyz, r7.zxyw, r3.yzxw
+    mov o8.zw, r1
+    mad r1.xyz, r7.yzxw, r3.zxyw, -r0
+    mov r0.xyz, c25
+    dp4 r4.z, r0, c14
+    dp4 r4.x, r0, c12
+    dp4 r4.y, r0, c13
+    mad r4.xyz, r4, c44.w, -r2
+    mul r2.xyz, r1, v1.w
+    dp3 o7.z, r7, r4
+    dp3 o7.y, r2, r4
+    dp3 o7.x, r3, r4
+    mov r0, c14
+    dp4 r4.z, c28, r0
+    mov r1, c12
+    mov r0, c13
+    dp4 r4.x, c28, r1
+    dp4 r4.y, c28, r0
+    dp3 o5.y, r4, r2
+    dp3 o5.z, r7, r4
+    dp3 o5.x, r4, r3
+    mov o2, v5
+    mov o3.xyz, r6
+    mad o1.xy, v3, c49, c49.zwzw

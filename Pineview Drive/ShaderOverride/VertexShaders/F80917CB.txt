@@ -1,0 +1,132 @@
+    vs_3_0
+    dcl_fog o9
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    dcl_texcoord7 o8
+    def c29, 0.00999999978, 0.159154907, 0.5, 1
+    def c30, 6.28318501, -3.14159298, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xy, c25, c25
+    add r0.x, r0, r0.y
+    rsq r0.x, r0.x
+    mul r0.xy, r0.x, c25
+    mul r0.zw, r0.xyxy, c25.z
+    mul r0.zw, r0, c12.y
+    mad r8.xy, r0.zwzw, c29.x, v3
+    mul r0.z, r8.x, c12.y
+    mul r0.w, r8.y, c12.y
+    mul r0.y, r0, r0.w
+    mul r0.x, r0.z, r0
+    mul r0.x, r0, c26
+    mul r0.y, r0, c26
+    mad r0.x, r0, c29.y, c29.z
+    mad r0.y, r0, c29, c29.z
+    frc r0.y, r0
+    frc r0.x, r0
+    mad r0.x, r0, c30, c30.y
+    sincos r1.xy, r0.x
+    mad r2.x, r0.y, c30, c30.y
+    sincos r0.xy, r2.x
+    mov r2.xyz, v1
+    add r0.x, r1.y, r0
+    mad r0.y, r0.x, c26.z, v0
+    mov r0.xzw, v0
+    dp4 r4.w, r0, c3
+    mov r2.w, c29
+    mul r2.xyz, v2.zxyw, r2.yzxw
+    mov r1.xyz, v1
+    mad r1.xyz, v2.yzxw, r1.zxyw, -r2
+    mov r2.xyz, c13
+    mul r5.xyz, v1.w, r1
+    mov r1, c10
+    dp4 r7.z, c16, r1
+    mov r1, c9
+    dp4 r7.y, c16, r1
+    dp4 r3.z, r2, c10
+    dp4 r3.y, r2, c9
+    dp4 r3.x, r2, c8
+    mad r6.xyz, r3, c24.w, -r0
+    dp3 r4.y, r5, r6
+    dp3 r4.x, v1, r6
+    dp3 r4.z, v2, r6
+    dp3 r2.x, r4, r4
+    rsq r3.w, r2.x
+    mov r2, c8
+    dp4 r7.x, c16, r2
+    dp3 r3.y, r5, r7
+    dp3 r3.x, v1, r7
+    dp3 r3.z, v2, r7
+    mad r2.xyz, r3.w, r4, r3
+    dp4 r4.z, r0, c2
+    dp3 r1.x, r2, r2
+    rsq r1.w, r1.x
+    mul o8.xyz, r1.w, r2
+    mul r2.xyz, v2, c24.w
+    dp4 r4.x, r0, c0
+    dp4 r4.y, r0, c1
+
+mov o0, r4 // Relocated from line 111 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed F80917CB.txt
+texldl r9, c220.z, s0
+add r9.w, r4.w, -r9.y
+mad r4.x, r9.w, r9.x, r4.x
+
+    mul r1.xyz, r4.xyww, c29.z
+    mul r1.y, r1, c14.x
+    mad o2.xy, r1.z, c15.zwzw, r1
+    dp3 r3.w, r2, c5
+    dp3 r1.x, r2, c4
+    dp3 r1.z, r2, c6
+    mov r1.y, r3.w
+    mov r1.w, c29
+    mul r2, r1.xyzz, r1.yzzx
+    dp4 r7.z, r1, c19
+    dp4 r7.y, r1, c18
+    dp4 r7.x, r1, c17
+    mul r1.w, r3, r3
+    mad r1.w, r1.x, r1.x, -r1
+    dp4 r1.z, r2, c22
+    dp4 r1.y, r2, c21
+    dp4 r1.x, r2, c20
+    dp3 r0.w, -r6, c4
+    dp3 r0.y, r5, c4
+    dp3 r0.x, v1, c4
+    dp3 r0.z, v2, c4
+    mul o3, r0, c24.w
+    dp3 r0.w, -r6, c5
+    dp3 r0.y, r5, c5
+    dp3 r0.x, v1, c5
+    dp3 r0.z, v2, c5
+    mul o4, r0, c24.w
+    mul r2.xyz, r1.w, c23
+    add r1.xyz, r7, r1
+    dp3 r0.w, -r6, c6
+    dp3 r0.y, r5, c6
+    dp3 r0.x, v1, c6
+    dp3 r0.z, v2, c6
+    add o7.xyz, r1, r2
+    mov o6.xyz, r3
+
+//     mov o0, r4 // Relocated to line 76 with shadertool.py
+    mov o9, r4.z
+    mov o2.zw, r4
+    mul o5, r0, c24.w
+    mad o1.zw, r8.xyxy, c28.xyxy, c28
+    mad o1.xy, r8, c27, c27.zwzw
+
+// approximately 113 instruction slots used

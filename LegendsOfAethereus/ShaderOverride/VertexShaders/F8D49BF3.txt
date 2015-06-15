@@ -1,0 +1,147 @@
+// CRC32: F8D49BF3 | Matched 4 variants of 2 shaders: Final/Enemy/EnemyAliveMaterial, Final/Enemy/EnemyDeadMaterial
+// 
+//    Unity headers extracted from S_EnemyAliveMaterial_Shader.shader
+//    Shader "Final/Enemy/EnemyAliveMaterial" {
+//      Properties {
+//       _GlowControl ("Glow Amount", Float) = 20
+//       _ElementalColor ("_ElementalColor", Color) = (1,1,1,0.1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/3 {
+//        LOD 400
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [unity_Scale]
+//              Vector 16 [unity_LightmapST]
+//              Vector 17 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from S_EnemyDeadMaterial_Shader.shader
+//    Shader "Final/Enemy/EnemyDeadMaterial" {
+//      Properties {
+//       _bloodTiling ("Blood Tiling", Float) = 2
+//       _ElementalColor ("Blood Color", Color) = (0.1,0,0.02,1)
+//       _MainTex ("_MainTex", 2D) = "white" {}
+//       _BumpMap ("_BumpMap", 2D) = "black" {}
+//       _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/2 {
+//        LOD 300
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [unity_Scale]
+//              Vector 16 [unity_LightmapST]
+//              Vector 17 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c18, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r1.xyz, c12
+    mov r1.w, c18.y
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c15.w, -v0
+    mul r3.xyz, r0, v1.w
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp3 o5.y, r2, r3
+    dp3 o5.z, v2, r2
+    dp3 o5.x, r2, v1
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+
+mov o0, r1 // Relocated from line 40 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed F8D49BF3.txt
+texldl r4, c220.z, s0
+add r4.w, r1.w, -r4.y
+mad r1.x, r4.w, r4.x, r1.x
+
+    mul r0.xyz, r1.xyww, c18.x
+    mul r0.y, r0, c13.x
+    mad o3.xy, r0.z, c14.zwzw, r0
+    mul r0.xyz, v2, c15.w
+    dp3 r2.z, r0, c6
+    dp3 r2.y, r0, c5
+    dp3 r2.x, r0, c4
+    mov o2.xyz, r2
+
+//     mov o0, r1 // Relocated to line 32 with shadertool.py
+    mov o3.zw, r1
+    mad o1.xy, v3, c17, c17.zwzw
+    mad o4.xy, v4, c16, c16.zwzw
+    dp4 o2.w, v0, c5
+
+// approximately 31 instruction slots used

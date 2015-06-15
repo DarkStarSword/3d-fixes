@@ -1,0 +1,80 @@
+// CRC32: 86814049 | Unity headers extracted from Camera-DepthTexture.shader
+// Shader "Hidden/Camera-DepthTexture" {
+//   Properties {
+//    _MainTex ("", 2D) = "white" {}
+//    _Cutoff ("", Float) = 0.5
+//    _Color ("", Color) = (1,1,1,1)
+//   }
+//   Fallback Off
+//   SubShader 7/9 {
+//     Tags { "RenderType"="TreeBillboard" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="TreeBillboard" }
+//       Cull Off
+//       Fog { Mode Off }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [_TreeBillboardCameraRight]
+//           Vector 5 [_TreeBillboardCameraUp]
+//           Vector 6 [_TreeBillboardCameraFront]
+//           Vector 7 [_TreeBillboardCameraPos]
+//           Vector 8 [_TreeBillboardDistances]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c9, 0, 1, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_texcoord1 v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    add r0.xyz, v0, -c7
+    dp3 r0.x, r0, r0
+    slt r0.x, c8, r0
+    max r0.x, -r0, r0
+    slt r0.x, c9, r0
+    add r0.z, -r0.x, c9.y
+    mul r0.xy, r0.z, v2
+    mad r0.z, r0, v1.y, -r0.y
+    mad r1.xyz, r0.x, c4, v0
+    mad r0.y, r0.z, c7.w, r0
+    mov r1.w, v0
+    mad r1.xyz, r0.y, c5, r1
+    abs r0.x, r0
+    mul r0.xyz, r0.x, c6
+    mad r1.xyz, r0, c5.w, r1
+    dp4 r0.w, r1, c3
+    dp4 r0.z, r1, c2
+    dp4 r0.x, r1, c0
+    dp4 r0.y, r1, c1
+    mov o2, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 86814049.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mov o1.xy, r0.zwzw
+    slt o0.y, c9.x, v1
+    mov o0.x, v1
+
+// approximately 23 instruction slots used

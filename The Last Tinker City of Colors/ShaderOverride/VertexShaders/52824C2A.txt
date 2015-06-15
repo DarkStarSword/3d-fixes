@@ -1,0 +1,95 @@
+// CRC32: 52824C2A | Matched 2 variants of 1 shaders: Mimimi/FX/Custom/Container
+// 
+//    Unity headers extracted from FX-Container.shader
+//    Shader "Mimimi/FX/Custom/Container" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base", 2D) = "white" {}
+//       _NoiseTex ("_NoiseTex (RGB) Gloss (A)", 2D) = "white" {}
+//       _Anim ("red.x, red.y, green.x, green.y", Vector) = (2,3.49,0.3,6)
+//       _RimColor ("Rim Color", Color) = (0.26,0.19,0.16,0)
+//       _RimPower ("Rim Power", Range(0.5,8)) = 3
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [unity_LightmapST]
+//              Vector 13 [_MainTex_ST]
+//              Vector 14 [_NoiseTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    ; 21 ALU
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    def c15, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+    dcl_texcoord0 v2
+    dcl_texcoord1 v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 66 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_FX_Custom_Container/vp/52824C2A.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c15.x
+
+//     mov o0, r0 // Relocated to line 65 with shadertool.py
+    mul r1.y, r1, c9.x
+    mad o6.xy, r1.z, c10.zwzw, r1
+    mul r1.xyz, v1, c11.w
+    mov o6.zw, r0
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    add o2.xyz, -r0, c8
+    dp3 o4.z, r1, c6
+    dp3 o4.y, r1, c5
+    dp3 o4.x, r1, c4
+    mad o1.zw, v2.xyxy, c14.xyxy, c14
+    mad o1.xy, v2, c13, c13.zwzw
+    mad o5.xy, v3, c12, c12.zwzw
+    mov o3.x, v0

@@ -1,0 +1,139 @@
+// 3DMigoto: 3f9324116cce2bd9 | Unity headers extracted from DepthOfFieldDX11.shader
+// Shader "Hidden/Dof/DX11Dof" {
+//   Properties {
+//    _MainTex ("", 2D) = "white" { }
+//    _BlurredColor ("", 2D) = "white" { }
+//    _FgCocMask ("", 2D) = "white" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/3 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 32027
+//       Program "fp" {
+//         SubProgram "d3d11 " {
+//           SetTexture 0 [_MainTex] 2D 1
+//           SetTexture 1 [_BlurredColor] 2D 0
+//           SetTexture 2 [_FgCocMask] 2D 2
+//           ConstBuffer "$Globals" 144
+//           Vector 0 [_BokehParams]
+//           Float 44 [_SpawnHeuristic]
+//           Vector 96 [unity_ColorSpaceLuminance]
+//           BindCB "$Globals" 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_5_0
+
+//           ConstBuffer "$Globals" 144
+//           BindCB "$Globals" 0
+cbuffer Globals : register(b0)
+{
+//           Vector 0 [_BokehParams]
+  float4 _BokehParams : packoffset(c0);
+
+//           Float 44 [_SpawnHeuristic]
+  float _SpawnHeuristic : packoffset(c2.x);
+
+//           Vector 96 [unity_ColorSpaceLuminance]
+  float4 unity_ColorSpaceLuminance : packoffset(c6);
+}
+
+struct appendStruct {
+	float3 pos;
+	float4 color;
+};
+
+AppendStructuredBuffer<struct appendStruct> pointBufferOutput : register(u1);
+
+//           SetTexture 0 [_MainTex] 2D 1
+SamplerState _MainTex : register(s1);
+Texture2D<float4> _MainTex_tex2D : register(t0);
+
+//           SetTexture 1 [_BlurredColor] 2D 0
+SamplerState _BlurredColor : register(s0);
+Texture2D<float4> _BlurredColor_tex2D : register(t1);
+
+//           SetTexture 2 [_FgCocMask] 2D 2
+SamplerState _FgCocMask : register(s2);
+Texture2D<float4> _FgCocMask_tex2D : register(t2);
+
+inline half Luminance( half3 c )
+{
+//#if defined (USE_INCONSISTENT_LIGHTING_FOR_BACKWARDS_COMPATIBILITY)
+//	return dot( c, fixed3(0.22, 0.707, 0.071) );
+//#endif
+
+//	#if defined(UNITY_NO_LINEAR_COLORSPACE)
+//		// In Gamma space equation is simple
+//		return dot(c, unity_ColorSpaceLuminance.rgb);
+//	#else
+
+		// However if we need to support both Linear and Gamma modes,
+		// it is not enough to just have Luminance constant and color defined in Linear space, because (a+b+c)^n != a^n + b^n + c^n
+		// so in Linear space we need additional fixup to compensate this discrepancy.
+		// 1) Correct approach in Linear would be: dot(c^.4545, Luma^.4545)^2.2, but we want cheaper one!
+		// 2) Let's approximate Gamma curve with 2 instead of 2.2 which gives:
+		//    dot(c^.5, Luma^.5)^2, let A=c.x*L.x, B=c.y*L.y, C=c.z*L.z
+		//    (A^.5 + B^.5 + C^.5)^2 => A+B+C + 2(A*B)^.5 + 2(B*C)^.5 + 2(A*C)^.5
+		// 3) A*C is actually very small (L.x*L.z ~ 0.015), so we can safely neglect it
+		// 4) it seems that (A*B)^.5 + (B*C)^.5 can be reasonably approximated with just (A*B + B*C)^.5
+		// Final:
+		//    A+B+C + 2*sqrt(A*B+C*B) => A+B+C + 2*sqrt(B*(A+C))
+		//     where: A=c.x*L.x, B=c.y*L.y, C=c.z*L.z
+		// NOTE: unity_ColorSpaceLuminance.w == 1 when in Linear space, otherwise == 0
+		c *= unity_ColorSpaceLuminance.rgb;
+		half requiresLinearFixup = unity_ColorSpaceLuminance.w;
+		return c.x + c.y + c.z + 2 * sqrt(c.y * (c.x + c.z)) * requiresLinearFixup;
+//	#endif
+}
+
+struct v2f {
+	float4 pos : SV_POSITION;
+	float2 uv_flip : TEXCOORD0;
+	float2 uv : TEXCOORD1;
+};
+
+Texture2D<float4> StereoParams : register(t125);
+
+float4 main (v2f i) : SV_Target
+{
+	//float4 c = tex2D (_MainTex, i.uv_flip);
+	float4 c = _MainTex_tex2D.Sample(_MainTex, i.uv_flip);
+	float lumc = Luminance (c.rgb);
+
+	//float4 cblurred = tex2D (_BlurredColor, i.uv);
+	float4 cblurred = _BlurredColor_tex2D.Sample(_BlurredColor, i.uv);
+	float lumblurred = Luminance (cblurred.rgb);
+
+	//float fgCoc = tex2D(_FgCocMask, i.uv).a;
+	float fgCoc = _FgCocMask_tex2D.Sample(_FgCocMask, i.uv).a;
+
+	[branch]
+	if (c.a * _BokehParams.w > 1 && cblurred.a > 0.1 && lumc > _BokehParams.z && abs(lumc-lumblurred) > _SpawnHeuristic)
+	{
+		appendStruct append;
+		append.pos = float3(i.uv, fgCoc);
+
+// Attach eye information to buffer that can be checked from a2d7f336b9c0abdf.
+// For the right eye we negate pos.z and subtract 1 (to ensure it will
+// definitely be negative):
+float4 stereo = StereoParams.Load(0);
+if (stereo.z == -1)
+	append.pos.z = -append.pos.z - 1;
+
+		append.color.rgba = float4(c.rgb * saturate(c.a*4), c.a);
+		pointBufferOutput.Append (append);
+		return float4(c.rgb * saturate(1-c.a*4), c.a);
+	}
+
+	return c;
+}

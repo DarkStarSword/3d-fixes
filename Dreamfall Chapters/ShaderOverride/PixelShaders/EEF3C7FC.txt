@@ -1,0 +1,121 @@
+// CRC32: EEF3C7FC | Matched 2 variants of 1 shaders: Dreamfall/FX/Wet Fresnel Glass
+// 
+//    Unity headers extracted from Glass-Wet-Fresnel-Distort.shader
+//    Shader "Dreamfall/FX/Wet Fresnel Glass" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Distortion ("_Distortion", Float) = 0.163212
+//       _DistortSpeed ("DistortSpeed", Float) = 1
+//       _Offset ("_Offset", 2D) = "black" {}
+//       _DistortMap ("DistortMap", 2D) = "bump" {}
+//       _Cube ("Reflection Cubemap", CUBE) = "" { TexGen CubeReflect }
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="false" "RenderType"="Opaque" }
+//        GrabPass {
+//          "_GrabTexture"
+//          Tags { "QUEUE"="Background" }
+//         }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="false" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_OFF" }
+//              Vector 0 [_Time]
+//              Float 1 [_Distortion]
+//              Float 2 [_DistortSpeed]
+//              Float 3 [_Fresnel]
+//              Vector 4 [_Color]
+//              SetTexture 0 [_Offset] 2D 0
+//              SetTexture 1 [_DistortMap] 2D 1
+//              SetTexture 2 [_GrabTexture] 2D 2
+//              SetTexture 3 [_Cube] CUBE 3
+//              SetTexture 4 [unity_Lightmap] 2D 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+    dcl_2d s4
+    def c5, 2, -1, 1, 8
+    dcl_texcoord v0
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2 // screen pos - this will be wrong in mono or stereo depending on what we did in the VS
+    dcl_texcoord3 v3.xyz
+    dcl_color v4.x
+    dcl_texcoord4 v5.xyz
+    dcl_texcoord5 v6.xy
+
+// This shader can be rendered to a stereo render target (the screen), or a
+// mono target (a reflection). If we use the corrected screen position on a
+// mono render target we will end up sampling from the wrong location.
+// Instead, we use vPos, which will be correct for both mono and stereo.
+
+// We can't use the DefPSViewSizeConst from Helix mod, because that will only
+// be correct when rendering to the screen. Instead, we pass _ScreenParams in
+// from the vertex shader, which will reflect the size of whichever render
+// target is in use.
+
+dcl_texcoord6 v7 // _ScreenParams passed in from vertex shader
+def c220, 256, 1, 0.0625, 0.5
+dcl_2d s13
+dcl vPos.xy
+
+// Compute XY from the vPos and render target size:
+mov r11.xy, vPos.xy
+rcp r11.z, v7.x
+rcp r11.w, v7.y
+mul r12.xy, r11.xy, r11.zw
+
+// Multiply XY by W to undo the perspective divide:
+mul r12.xy, r12.xy, v2.ww
+
+    mov r0.y, c0.x
+    dp3 r0.z, v3, v3
+    mov r0.x, v0
+    mad r0.y, c2.x, r0, v0
+    texld r1.yw, r0, s0
+    texld r0.yw, v0.zwzw, s1
+    mad_pp r0.xy, r0.wyzw, c5.x, c5.y
+    rcp r0.w, v2.w
+    mad_pp r1.xy, r1.wyzw, c5.x, c5.y
+    add r0.xy, r0, r1
+    mul r0.xy, r0, c1.x
+    mul r0.xy, r0, v4.x
+    mad r0.xy, r12, r0.w, r0
+    texld r1, r0, s2
+    rsq r0.z, r0.z
+    mul r2.xy, r12, r0.w
+    mul r0.xyz, r0.z, v3
+    dp3 r0.w, r0, v5
+    texld r0.xyz, r2, s2
+    add r2.xyz, -r1, r0
+    mad r2.xyz, r1.w, r2, r1
+    add r2.w, -r0, c5.z
+    pow r0, r2.w, c3.x
+    mov r0.w, r0.x
+    texld r1, v6, s4
+    texld r0.xyz, v1, s3
+    mul_pp r0.xyz, r0, r0.w
+    mul_pp r1.xyz, r1.w, r1
+    add r0.xyz, r2, r0
+    mul_pp r1.xyz, r1, c4
+    mad_pp oC0.xyz, r1, c5.w, r0
+    mov_pp oC0.w, c5.z
+
+// approximately 34 instruction slots used (6 texture, 28 arithmetic)

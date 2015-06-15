@@ -1,0 +1,135 @@
+// CRC32: CE8530FB | Unity headers extracted from EasyRoads3D Marker.shader
+// Shader "EasyRoads3D/EasyRoads3DMarker" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="Overlay+150" }
+//     Pass 1/5 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Overlay+150" }
+//       ZTest Always
+//       GpuProgramID 6727
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Matrix 8 [_Object2World] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 4 [glstate_matrix_mvp]
+//           Vector 14 [_ProjectionParams]
+//           Vector 15 [_ScreenParams]
+//           Vector 19 [unity_4LightAtten0]
+//           Vector 16 [unity_4LightPosX0]
+//           Vector 17 [unity_4LightPosY0]
+//           Vector 18 [unity_4LightPosZ0]
+//           Vector 0 [unity_LightColor0]
+//           Vector 1 [unity_LightColor1]
+//           Vector 2 [unity_LightColor2]
+//           Vector 3 [unity_LightColor3]
+//           Vector 22 [unity_SHAb]
+//           Vector 21 [unity_SHAg]
+//           Vector 20 [unity_SHAr]
+//           Vector 25 [unity_SHBb]
+//           Vector 24 [unity_SHBg]
+//           Vector 23 [unity_SHBr]
+//           Vector 26 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c27, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_normal v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, v1.y, c12
+    mad r0.xyz, c11, v1.x, r0
+    mad r0.xyz, c13, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c23, r2
+    dp4 r3.y, c24, r2
+    dp4 r3.z, c25, r2
+    mad r0.xyz, c26, r0.x, r3
+    mov r1.w, c27.x
+    dp4 r2.x, c20, r1
+    dp4 r2.y, c21, r1
+    dp4 r2.z, c22, r1
+    add r0.xyz, r0, r2
+    dp4 r2.y, c9, v0
+    add r3, -r2.y, c17
+    mul r4, r1.y, r3
+    mul r3, r3, r3
+    dp4 r2.x, c8, v0
+    add r5, -r2.x, c16
+    mad r4, r5, r1.x, r4
+    mad r3, r5, r5, r3
+    dp4 r2.z, c10, v0
+    add r5, -r2.z, c18
+    mov o1.xyz, r2
+    mad r2, r5, r1.z, r4
+    mov o0.xyz, r1
+    mad r1, r5, r5, r3
+    rsq r3.x, r1.x
+    rsq r3.y, r1.y
+    rsq r3.z, r1.z
+    rsq r3.w, r1.w
+    mov r4.x, c27.x
+    mad r1, r1, c19, r4.x
+    mul r2, r2, r3
+    max r2, r2, c27.y
+    rcp r3.x, r1.x
+    rcp r3.y, r1.y
+    rcp r3.z, r1.z
+    rcp r3.w, r1.w
+    mul r1, r2, r3
+    mul r2.xyz, r1.y, c1
+    mad r2.xyz, c0, r1.x, r2
+    mad r1.xyz, c2, r1.z, r2
+    mad r1.xyz, c3, r1.w, r1
+    add o2.xyz, r0, r1
+    dp4 r0.y, c5, v0
+    mul r1.x, r0.y, c14.x
+    mul r1.w, r1.x, c27.z
+    dp4 r0.x, c4, v0
+    dp4 r0.w, c7, v0
+
+mov o4, r0 // Relocated from line 117 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/ian/3d-fixes/TheLongDark/ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update EasyRoads3D_EasyRoads3DMarker/vp/CE8530FB.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c27.z
+    mad o3.xy, r1.z, c15.zwzw, r1.xwzw
+    dp4 r0.z, c6, v0
+
+//     mov o4, r0 // Relocated to line 114 with shadertool.py
+mov o4.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o3.zw, r0

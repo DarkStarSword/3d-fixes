@@ -1,0 +1,88 @@
+// CRC32: 1C4E38E6 | Matched 2 variants of 1 shaders: DreadOut/DreadOut Bumped Diffuse Detail
+// 
+//    Unity headers extracted from DreadOut-Bumped Diffuse Detail.shader
+//    Shader "DreadOut/DreadOut Bumped Diffuse Detail" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//       _Detail ("Detail (RGB)", 2D) = "gray" {}
+//       _MainTexBumpMap ("MainTexBumpMap", 2D) = "bump" {}
+//       _DetailTexBumpMap ("DetailTexBumpMap", 2D) = "bump" {}
+//       _AlphaDistance ("AlphaDistance", Range(0,100)) = 0
+//      }
+//      Fallback "Diffuse Detail"
+//      SubShader 1/1 {
+//        LOD 250
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Vector 12 [_ProjectionParams]
+//              Vector 13 [_ScreenParams]
+//              Vector 14 [unity_LightmapST]
+//              Vector 15 [_MainTex_ST]
+//              Vector 16 [_Detail_ST]
+//              Vector 17 [_MainTexBumpMap_ST]
+//              Vector 18 [_DetailTexBumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c19, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 19 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed 1C4E38E6.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c19.x
+    mul r1.y, r1, c12.x
+    mad o5.xy, r1.z, c13.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 16 with shadertool.py
+    mov o5.zw, r0
+    mad o1.zw, v3.xyxy, c16.xyxy, c16
+    mad o1.xy, v3, c15, c15.zwzw
+    mad o2.zw, v3.xyxy, c18.xyxy, c18
+    mad o2.xy, v3, c17, c17.zwzw
+    mad o4.xy, v4, c14, c14.zwzw
+    dp4 o3.z, v0, c6
+    dp4 o3.y, v0, c5
+    dp4 o3.x, v0, c4
+
+// approximately 17 instruction slots used

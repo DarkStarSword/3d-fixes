@@ -1,0 +1,88 @@
+// CRC32: 91999055 | Unity headers extracted from Terrain Tests.shader
+// Shader "Custom/Terrain Tests" {
+//   Properties {
+//    _MainTex0 ("Base (RGB)", 2D) = "white" {}
+//    _MainTex1 ("Base (RGB)", 2D) = "white" {}
+//    _MainTex2 ("Base (RGB)", 2D) = "white" {}
+//    _MainTex3 ("Base (RGB)", 2D) = "white" {}
+//    _Normal0 ("Normal (RGB)", 2D) = "bump" {}
+//    _Normal1 ("Normal (RGB)", 2D) = "bump" {}
+//    _Height0 ("Height 0", Range(0.005,0.108)) = 0.02
+//    _Height1 ("Height 1", Range(0.005,0.108)) = 0.02
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 8 [_World2Object]
+//           Vector 12 [_WorldSpaceCameraPos]
+//           Vector 13 [_ProjectionParams]
+//           Vector 14 [_ScreenParams]
+//           Vector 15 [unity_Scale]
+//           Vector 16 [unity_LightmapST]
+//           Vector 17 [_MainTex0_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c18, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r1.xyz, c12
+    mov r1.w, c18.x
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r3.z, r1, c10
+    dp4 r3.x, r1, c8
+    dp4 r3.y, r1, c9
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 70 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/Stranded Deep --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_Terrain Tests/vp/91999055.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xyz, r0.xyww, c18.y
+    mov r1.x, r2
+    mul r1.y, r2, c13.x
+    mad o2.xyz, r3, c15.w, -v0
+    mad o5.xy, r2.z, c14.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 65 with shadertool.py
+    mov o5.zw, r0
+    mov o3.xyz, v2
+    mad o1.xy, v3, c17, c17.zwzw
+    mad o4.xy, v4, c16, c16.zwzw

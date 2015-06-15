@@ -1,0 +1,84 @@
+// CRC32: 767A6956 | Unity headers extracted from FX-Outline.shader
+// Shader "Mimimi/FX/Custom/Outline" {
+//   Properties {
+//    _Color ("Outline Color", Color) = (0,0,0,1)
+//    _OverlayTex ("_OverlayTex", 2D) = "white" {}
+//    _Outline ("Outline width", Range(0.002,0.03)) = 0.005
+//    _Settings ("Texture Tiling, Speed, Strength, Player Dis", Vector) = (2,3.49,0.3,6)
+//   }
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "OUTLINE"
+//       Tags { "LIGHTMODE"="Always" "ForceNoShadowCasting"="True" "IGNOREPROJECTOR"="True" "RenderType"="Transparent" }
+//       Cull Front
+//       Stencil {
+//          Ref 3
+//          Comp NotEqual
+//         }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Offset -1, -1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Matrix 0 [glstate_matrix_projection]
+//           Matrix 4 [glstate_matrix_mvp]
+//           Matrix 8 [glstate_matrix_invtrans_modelview0]
+//           Vector 12 [_ProjectionParams]
+//           Vector 13 [_ScreenParams]
+//           Float 14 [_Outline]
+//           Vector 15 [_Color]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    ; 18 ALU
+    def c16, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp3 r0.x, v1, c8
+    dp3 r0.y, v1, c9
+    dp4 r0.z, v0, c6
+    dp4 r0.w, v0, c7
+    mul r0.x, r0, c0
+    mul r0.y, r0, c1
+    mul r1.xy, r0, r0.z
+    mov r1.zw, r0
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+    mad r1.xy, r1, c14.x, r0
+
+mov o1, r1 // Relocated from line 68 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I .. ShaderCRCs/Mimimi_FX_Custom_Outline/vp/767A6956.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xyz, r1.xyww, c16.x
+    mul r0.y, r2, c12.x
+    mov r0.x, r2
+    mad r0.xy, r2.z, c13.zwzw, r0
+    mov o0, r0
+
+//     mov o1, r1 // Relocated to line 63 with shadertool.py
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o2, c15

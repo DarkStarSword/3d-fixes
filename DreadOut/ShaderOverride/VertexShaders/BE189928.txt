@@ -1,0 +1,342 @@
+// CRC32: BE189928 | Matched 4 variants of 4 shaders: DreadOut/Diffuse_Rim_noSpec, DreadOut/DreadOut-Hair, Example/Rim, Example/RimEmission
+// 
+//    Unity headers extracted from rimShader_simple.shader
+//    Shader "DreadOut/Diffuse_Rim_noSpec" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _BumpMap ("Bumpmap", 2D) = "bump" {}
+//       _RimColor ("Rim Color", Color) = (0.26,0.19,0.16,0)
+//       _RimPower ("Rim Power", Range(0.5,8)) = 3
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          ColorMask RGB
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_4LightPosX0]
+//              Vector 17 [unity_4LightPosY0]
+//              Vector 18 [unity_4LightPosZ0]
+//              Vector 19 [unity_4LightAtten0]
+//              Vector 20 [unity_LightColor0]
+//              Vector 21 [unity_LightColor1]
+//              Vector 22 [unity_LightColor2]
+//              Vector 23 [unity_LightColor3]
+//              Vector 24 [unity_SHAr]
+//              Vector 25 [unity_SHAg]
+//              Vector 26 [unity_SHAb]
+//              Vector 27 [unity_SHBr]
+//              Vector 28 [unity_SHBg]
+//              Vector 29 [unity_SHBb]
+//              Vector 30 [unity_SHC]
+//              Vector 31 [unity_Scale]
+//              Vector 32 [_MainTex_ST]
+//              Vector 33 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from DreadOut-Hair.shader
+//    Shader "DreadOut/DreadOut-Hair" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _RimColor ("Rim Color", Color) = (1,1,1,1)
+//       _MainTex ("Diffuse (RGB) Alpha (A)", 2D) = "white" {}
+//       _SpecularTex ("Specular (R) Gloss (G) Anisotropic Mask (B)", 2D) = "gray" {}
+//       _BumpMap ("Normal (Normal)", 2D) = "bump" {}
+//       _AnisoTex ("Anisotropic Direction (Normal)", 2D) = "bump" {}
+//       _AnisoOffset ("Anisotropic Highlight Offset", Range(-1,1)) = -0.2
+//       _Cutoff ("Alpha Cut-Off Threshold", Range(0,1)) = 0.5
+//       _RimPower ("Rim size", Range(0.3,8)) = 3.5
+//      }
+//      Fallback "Transparent/Cutout/Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_4LightPosX0]
+//              Vector 17 [unity_4LightPosY0]
+//              Vector 18 [unity_4LightPosZ0]
+//              Vector 19 [unity_4LightAtten0]
+//              Vector 20 [unity_LightColor0]
+//              Vector 21 [unity_LightColor1]
+//              Vector 22 [unity_LightColor2]
+//              Vector 23 [unity_LightColor3]
+//              Vector 24 [unity_SHAr]
+//              Vector 25 [unity_SHAg]
+//              Vector 26 [unity_SHAb]
+//              Vector 27 [unity_SHBr]
+//              Vector 28 [unity_SHBg]
+//              Vector 29 [unity_SHBb]
+//              Vector 30 [unity_SHC]
+//              Vector 31 [unity_Scale]
+//              Vector 32 [_MainTex_ST]
+//              Vector 33 [_AnisoTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from rimShader_specular.shader
+//    Shader "Example/Rim" {
+//      Properties {
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _RimColor ("Rim Color", Color) = (0.26,0.19,0.16,0)
+//       _RimPower ("Rim Power", Range(0.5,8)) = 3
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_4LightPosX0]
+//              Vector 17 [unity_4LightPosY0]
+//              Vector 18 [unity_4LightPosZ0]
+//              Vector 19 [unity_4LightAtten0]
+//              Vector 20 [unity_LightColor0]
+//              Vector 21 [unity_LightColor1]
+//              Vector 22 [unity_LightColor2]
+//              Vector 23 [unity_LightColor3]
+//              Vector 24 [unity_SHAr]
+//              Vector 25 [unity_SHAg]
+//              Vector 26 [unity_SHAb]
+//              Vector 27 [unity_SHBr]
+//              Vector 28 [unity_SHBg]
+//              Vector 29 [unity_SHBb]
+//              Vector 30 [unity_SHC]
+//              Vector 31 [unity_Scale]
+//              Vector 32 [_MainTex_ST]
+//              Vector 33 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from rimShaderSpecEmi.shader
+//    Shader "Example/RimEmission" {
+//      Properties {
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _EmissionMap ("Emission Map", 2D) = "white" {}
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _RimColor ("Rim Color", Color) = (0.26,0.19,0.16,0)
+//       _EmColor ("Emission Color", Color) = (0.26,0.19,0.16,0)
+//       _RimPower ("Rim Power", Range(0.5,8)) = 3
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Vector 12 [_WorldSpaceCameraPos]
+//              Vector 13 [_ProjectionParams]
+//              Vector 14 [_ScreenParams]
+//              Vector 15 [_WorldSpaceLightPos0]
+//              Vector 16 [unity_4LightPosX0]
+//              Vector 17 [unity_4LightPosY0]
+//              Vector 18 [unity_4LightPosZ0]
+//              Vector 19 [unity_4LightAtten0]
+//              Vector 20 [unity_LightColor0]
+//              Vector 21 [unity_LightColor1]
+//              Vector 22 [unity_LightColor2]
+//              Vector 23 [unity_LightColor3]
+//              Vector 24 [unity_SHAr]
+//              Vector 25 [unity_SHAg]
+//              Vector 26 [unity_SHAb]
+//              Vector 27 [unity_SHBr]
+//              Vector 28 [unity_SHBg]
+//              Vector 29 [unity_SHBb]
+//              Vector 30 [unity_SHC]
+//              Vector 31 [unity_Scale]
+//              Vector 32 [_MainTex_ST]
+//              Vector 33 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c34, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r3.xyz, v2, c31.w
+    dp4 r0.x, v0, c5
+    add r1, -r0.x, c17
+    dp3 r3.w, r3, c5
+    dp3 r4.x, r3, c4
+    dp3 r3.x, r3, c6
+    mul r2, r3.w, r1
+    dp4 r0.x, v0, c4
+    add r0, -r0.x, c16
+    mul r1, r1, r1
+    mov r4.z, r3.x
+    mad r2, r4.x, r0, r2
+    mov r4.w, c34.x
+    dp4 r4.y, v0, c6
+    mad r1, r0, r0, r1
+    add r0, -r4.y, c18
+    mad r1, r0, r0, r1
+    mad r0, r3.x, r0, r2
+    mul r2, r1, c19
+    mov r4.y, r3.w
+    rsq r1.x, r1.x
+    rsq r1.y, r1.y
+    rsq r1.w, r1.w
+    rsq r1.z, r1.z
+    mul r0, r0, r1
+    add r1, r2, c34.x
+    dp4 r2.z, r4, c26
+    dp4 r2.y, r4, c25
+    dp4 r2.x, r4, c24
+    rcp r1.x, r1.x
+    rcp r1.y, r1.y
+    rcp r1.w, r1.w
+    rcp r1.z, r1.z
+    max r0, r0, c34.y
+    mul r0, r0, r1
+    mul r1.xyz, r0.y, c21
+    mad r1.xyz, r0.x, c20, r1
+    mad r0.xyz, r0.z, c22, r1
+    mad r1.xyz, r0.w, c23, r0
+    mul r0, r4.xyzz, r4.yzzx
+    mul r1.w, r3, r3
+    dp4 r3.z, r0, c29
+    dp4 r3.y, r0, c28
+    dp4 r3.x, r0, c27
+    mad r1.w, r4.x, r4.x, -r1
+    mul r0.xyz, r1.w, c30
+    add r2.xyz, r2, r3
+    add r2.xyz, r2, r0
+    add o4.xyz, r2, r1
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r3.xyz, r0, v1.w
+    mov r0, c10
+    dp4 r4.z, c15, r0
+    mov r0, c9
+    dp4 r4.y, c15, r0
+    mov r1.w, c34.x
+    mov r1.xyz, c12
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c31.w, -v0
+    mov r1, c8
+    dp4 r4.x, c15, r1
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 92 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed BE189928.txt
+texldl r5, c220.z, s0
+add r5.w, r0.w, -r5.y
+mad r0.x, r5.w, r5.x, r0.x
+
+    mul r1.xyz, r0.xyww, c34.z
+    mul r1.y, r1, c13.x
+    dp3 o2.y, r2, r3
+    dp3 o3.y, r3, r4
+    dp3 o2.z, v2, r2
+    dp3 o2.x, r2, v1
+    dp3 o3.z, v2, r4
+    dp3 o3.x, v1, r4
+    mad o5.xy, r1.z, c14.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 83 with shadertool.py
+    mov o5.zw, r0
+    mad o1.zw, v3.xyxy, c33.xyxy, c33
+    mad o1.xy, v3, c32, c32.zwzw
+
+// approximately 83 instruction slots used

@@ -1,0 +1,90 @@
+// CRC32: FFD58DEE | Unity headers extracted from S_Ghalia_VertexBlend_UV2_Shader.shader
+// Shader "Final/Ghalia/Ghalia_VertexBlend_UV2" {
+//   Properties {
+//    _MainTex ("_MainTex", 2D) = "white" {}
+//    _BumpMap ("_BumpMap", 2D) = "black" {}
+//    _AmbientTex ("_AmbientTex", 2D) = "black" {}
+//    _MainTex2 ("_MainTex2", 2D) = "white" {}
+//    _DirtTex ("_DirtTex", 2D) = "white" {}
+//   }
+//   Fallback "Diffuse"
+//   SubShader 3/5 {
+//     LOD 400
+//     Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_ProjectionParams]
+//           Vector 9 [_ScreenParams]
+//           Vector 10 [unity_Scale]
+//           Vector 11 [unity_LightmapST]
+//           Vector 12 [_MainTex_ST]
+//           Vector 13 [_BumpMap_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    def c14, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_color v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 23 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --auto-fix-vertex-halo --only-autofixed FFD58DEE.txt
+texldl r2, c220.z, s0
+add r2.w, r0.w, -r2.y
+mad r0.x, r2.w, r2.x, r0.x
+
+    mul r1.xyz, r0.xyww, c14.x
+    mul r1.y, r1, c8.x
+    mad o6.xy, r1.z, c9.zwzw, r1
+    mul r1.xyz, v1, c10.w
+
+//     mov o0, r0 // Relocated to line 19 with shadertool.py
+    mov o6.zw, r0
+    dp3 o2.z, r1, c6
+    dp3 o2.y, r1, c5
+    dp3 o2.x, r1, c4
+    mad o1.zw, v3.xyxy, c13.xyxy, c13
+    mad o1.xy, v2, c12, c12.zwzw
+    mad o5.xy, v3, c11, c11.zwzw
+    dp4 o2.w, v0, c5
+    mov o3.x, v4
+    mov o4.x, v4.y
+
+// approximately 19 instruction slots used

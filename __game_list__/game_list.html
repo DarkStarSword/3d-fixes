@@ -4,7 +4,9 @@
   font-size: small;
 }
 </style>
-<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.</i>
+<p><i>This is a new version of the game list that updates automatically <a href="/2013/10/instructions-for-automatically-updated.html">(info for posters)</a>. Please report any issues to <a href="mailto:darkstarsword+helixmod@gmail.com">DarkStarSword</a>.
+<br />
+If you know of other tweak guides or would like to write one, please post in <a href="https://forums.geforce.com/default/topic/820445/3d-vision/games-that-require-config-registry-or-profile-changes-to-work-with-nvidias-stereoscopic-drivers-/">this thread</a>.</i></p>
 <br/>
 <input id="show_authors" type="checkbox" onclick="show_authors();">Show Authors</input> <span class="modauthor"><em>(May be innacurate in some cases - check the individual posts for details)</em></span>
 </p>
@@ -13,7 +15,9 @@
 <p><h1>This page requires javascript to display the game list!</h1></p>
 </noscript>
 
-<div id="gamelist_content"><em>Loading...</em></div>
+<div id="loading_content"><p><em>Loading...</em></p></div>
+
+<div id="gamelist_content"></div>
 <br/>
 <h3>Guides, Tools, etc.</h3>
 <div id="guides_content"><em>Loading...</em></div>
@@ -29,7 +33,6 @@
 var hidden_posts = [
   "2010/12/how-to-guides.html",
   "2013/07/installation-known-issues.html",
-  "2013/07/game-list-full.html",
   "2013/10/game-list-automatically-updated.html",
   "2013/10/instructions-for-automatically-updated.html",
 ];
@@ -40,8 +43,9 @@ var title_overrides = {
 
 var title_translations = [
   [ /[\(\[]?D(irect)?X ?(9|10|11)( only)?[\)\]]?/gi, "[DX$2]" ],
-  [ /[ \:-]*3D( nVidia)?( Vision)? (Fix|Patch)/gi , "" ],
-  [ /[ \:-]*[\(\[]?(PATCH )?UPD(ATE|\.)D?( \d+\/\d+)?( BETA)?(.*PATCH)?( v\d+\..*)?[\)\]]?$/gi, "" ],
+  [ / 3DMigoto/gi , "" ],
+  [ /[ \:-]*3D( nVidia)?( Vision)?( \[DX(9|10|11)\])? (Fix|Patch)/gi , "" ],
+  [ /[ \:-]*[\(\[]?(PATCH )?(Major )?UPD(ATE|\.)D?( \d+\/\d+)?( BETA)?(.*PATCH)?( v\d+\..*)?[\)\]]?$/gi, "" ],
   [ /[ \:-]*[\(\[]?(NEW|FINAL) (VERSION|PATCH)[\)\]]?/i, "" ],
   [ /[\(\[]?(patch )?complete[\)\]]?/i, ""],
   [ /[\[ ]BY .*$/i, "" ],
@@ -58,7 +62,7 @@ var equivalent_titles = [
   [ /Dead Space 1/i, "Dead Space" ],
   [ /I Am Alive( \(Alternative\))?/i, "I Am Alive" ],
   [ /Mass Effect (\d+) .*/i, "Mass Effect $1" ],
-  [ /SERIOUS SAM 3: BFE .*/, "Serious Sam 3: BFE" ],
+  [ /SERIOUS SAM 3:? BFE .*/, "Serious Sam 3: BFE" ],
   [ /Splinter Cell Conviction/, "Splinter Cell: Conviction" ],
   [ /FAR ?CRY ?3[^:].*/i, "Far Cry 3" ],
 ];
@@ -112,6 +116,9 @@ function title_game(title)
 
 function post_extra(post)
 {
+  if (post.tag) {
+    return '<span title="' + post.description + '"><small> ' + post.tag + '</small></span>';
+  }
   if (jQuery.inArray("disabled", post.labels) != -1) {
     return '<span title="Fix is limited to disabling broken effects"><small> [Disabled Effects]</small></span>';
   }
@@ -139,12 +146,87 @@ function add_link(parent, prefix, url, title, text, postfix, author)
   parent.appendChild(document.createElement('br'));
 }
 
-function handle_response(response)
+var games = {};
+var games_list = [];
+var guides = [];
+var misc = [];
+var game_list_shown = false;
+
+function published_sort(a, b)
 {
-  var games = {};
-  var games_list = [];
-  var guides = [];
-  var misc = [];
+        var a_date = new Date(a.published);
+        var b_date = new Date(b.published);
+
+        if (!a.published)
+          return 1;
+        if (!b.published)
+          return -1;
+
+        return b_date - a_date;
+}
+
+function show_game_list()
+{
+  var gamelist_elem = document.getElementById("gamelist_content");
+  gamelist_elem.innerHTML = "";
+  games_list = games_list.sort();
+  for (var idx in games_list) {
+    title = games_list[idx];
+    if (games[title].length == 1) {
+      post = games[title][0];
+      add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post), post.author);
+    } else {
+      games[title].sort(published_sort);
+      add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":", null);
+      for (j in games[title]) {
+        post = games[title][j];
+        var date = new Date(post.published);
+        add_link(gamelist_elem, "&nbsp;&nbsp;" + date.toLocaleDateString(), post.url, null, post.title, post_extra(post), post.author);
+      }
+    }
+  }
+
+  var guides_elem = document.getElementById("guides_content");
+  guides.sort(published_sort);
+  guides_elem.innerHTML = "";
+  for (var idx in guides) {
+    var post = guides[idx];
+    var date = new Date(post.published);
+    add_link(guides_elem, date.toLocaleDateString(), post.url, null, post_title(post), null, post.author);
+  }
+
+  var misc_elem = document.getElementById("misc_posts_content");
+  misc.sort(published_sort);
+  misc_elem.innerHTML = "";
+  for (var idx in misc) {
+    var post = misc[idx];
+    var date = new Date(post.published);
+    add_link(misc_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
+  }
+
+  game_list_shown = true;
+}
+
+function add_game(post)
+{
+  post.clean_title = post_title(post);
+  var game_title = title_game(post.clean_title).toLowerCase();
+  if (game_title in games) {
+    games[game_title].push(post);
+  } else {
+    games[game_title] = [post];
+    games_list.push(game_title);
+  }
+}
+
+function collate_responses(response)
+{
+  if (response.nextPageToken) {
+    jQuery.ajax({
+      url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&key=GET_YOUR_OWN_API_KEY&pageToken=" + response.nextPageToken,
+      success : collate_responses
+    });
+  }
 
   for (var idx in response.items) {
     var post = response.items[idx];
@@ -157,57 +239,51 @@ function handle_response(response)
       guides.push(post);
     else if (is_misc(post))
       misc.push(post);
-    else {
-      post.clean_title = post_title(post);
-      var game_title = title_game(post.clean_title).toLowerCase();
-      if (game_title in games) {
-        games[game_title].push(post);
-      } else {
-        games[game_title] = [post];
-        games_list.push(game_title);
-      }
-    }
+    else
+      add_game(post);
   }
 
-  var gamelist_elem = document.getElementById("gamelist_content");
-  gamelist_elem.innerHTML = "";
-  games_list = games_list.sort();
-  for (var idx in games_list) {
-    title = games_list[idx];
-    if (games[title].length == 1) {
-      post = games[title][0];
-      add_link(gamelist_elem, null, post.url, post.title, post.clean_title, post_extra(post), post.author);
-    } else {
-      add_link(gamelist_elem, null, games[title][0].url, null, title_game(games[title][0].clean_title), ":", null);
-      for (j in games[title]) {
-        post = games[title][j];
-        var date = new Date(post.published);
-        add_link(gamelist_elem, "&nbsp;&nbsp;" + date.toLocaleDateString(), post.url, null, post.title, post_extra(post), post.author);
-      }
-    }
-  }
+  show_game_list();
 
-  var guides_elem = document.getElementById("guides_content");
-  guides_elem.innerHTML = "";
-  for (var idx in guides) {
-    var post = guides[idx];
-    var date = new Date(post.published);
-    add_link(guides_elem, date.toLocaleDateString(), post.url, null, post_title(post), null, post.author);
+  if (!response.nextPageToken) {
+    var loading_elem = document.getElementById("loading_content");
+    loading_elem.innerHTML = "";
   }
-
-  var misc_elem = document.getElementById("misc_posts_content");
-  misc_elem.innerHTML = "";
-  for (var idx in misc) {
-    var post = misc[idx];
-    var date = new Date(post.published);
-    add_link(misc_elem, date.toLocaleDateString(), post.url, null, post_title(post), null);
-  }
-
-  setTimeout(function() {
-    $(".blogger-clickTrap").remove(); /* So links work while previewing page */
-  }, 500);
 }
+
+function collate_extra_list(response)
+{
+  for (var idx in response.items) {
+    var post = response.items[idx];
+    post.path = get_path(post.url);
+    post.tag = response.tag;
+    post.description = response.description;
+
+    if (response.class == 'guide')
+      guides.push(post);
+    else if (response.class == 'misc')
+      misc.push(post);
+    else
+      add_game(post);
+  }
+
+  if (game_list_shown)
+    show_game_list();
+}
+
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/game_list_extra.json",
+  success : collate_extra_list
+});
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/opengl.json",
+  success : collate_extra_list
+});
+jQuery.ajax({
+  url : "https://ian.ozlabs.org/game_list/guides.json",
+  success : collate_extra_list
+});
 // @license end
 //--></script>
-<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)&orderBy=published&maxResults=1000000000&callback=handle_response&key=GET_YOUR_OWN_API_KEY"></script>
+<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&orderBy=published&maxResults=500&callback=collate_responses&key=GET_YOUR_OWN_API_KEY"></script>
 <!-- vi:se et sw=2 ts=2 ai:-->

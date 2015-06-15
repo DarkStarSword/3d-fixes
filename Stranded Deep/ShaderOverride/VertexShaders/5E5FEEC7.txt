@@ -1,0 +1,251 @@
+// CRC32: 5E5FEEC7 | Unity headers extracted from Foliage - Translucent Touch Bending.shader
+// Shader "Beam Team/Skylight/Foliage/Translucent - Touch Bending" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//    _MainTex ("Diffuse Albedo (RGB) Alpha(A)", 2D) = "white" {}
+//    _BumpTransSpecMap ("Translucency (R) Normal X (G) Gloss (B) Normal Y (A)", 2D) = "white" {}
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "ForceNoShadowCasting"="true" "IGNOREPROJECTOR"="true" "RenderType"="AtsFoliage" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "ForceNoShadowCasting"="true" "IGNOREPROJECTOR"="true" "RenderType"="AtsFoliage" }
+//       ColorMask RGB
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_DISABLED" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord2
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Matrix 8 [_World2Object]
+//           Matrix 12 [_RotMatrix]
+//           Vector 16 [_Time]
+//           Vector 17 [_WorldSpaceCameraPos]
+//           Vector 18 [_ProjectionParams]
+//           Vector 19 [_ScreenParams]
+//           Vector 20 [_WorldSpaceLightPos0]
+//           Vector 21 [unity_4LightPosX0]
+//           Vector 22 [unity_4LightPosY0]
+//           Vector 23 [unity_4LightPosZ0]
+//           Vector 24 [unity_4LightAtten0]
+//           Vector 25 [unity_LightColor0]
+//           Vector 26 [unity_LightColor1]
+//           Vector 27 [unity_LightColor2]
+//           Vector 28 [unity_LightColor3]
+//           Vector 29 [unity_SHAr]
+//           Vector 30 [unity_SHAg]
+//           Vector 31 [unity_SHAb]
+//           Vector 32 [unity_SHBr]
+//           Vector 33 [unity_SHBg]
+//           Vector 34 [unity_SHBb]
+//           Vector 35 [unity_SHC]
+//           Vector 36 [unity_Scale]
+//           Float 37 [_AfsWaveSize]
+//           Vector 38 [_TouchBendingPosition]
+//           Vector 39 [_TouchBendingForce]
+//           Vector 40 [_Wind]
+//           Vector 41 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_color0 o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    dcl_texcoord5 o7
+    dcl_texcoord6 o8
+    def c42, 1.00000000, 6.40884876, -3.14159274, -0.00019841
+    def c43, 0.00833330, -0.16161616, 0.25000000, 0.15000001
+    def c44, 1.97500002, 0.79299998, 0.37500000, 0.28500000
+    def c45, 2.00000000, -0.50000000, -1.00000000, 3.00000000
+    def c46, 0.10000000, 0.00000000, 10.00000000, 0.50000000
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.y, v0, c6
+    dp4 r0.x, v0, c4
+    add r0.z, r0.x, r0.y
+    add r0.w, r0.z, c16.y
+    mul r0.w, r0, c37.x
+    mul r0.z, r0, c37.x
+    mov r9.w, c42.x
+    mul r4.y, v5.z, c43.w
+    dp3 r6.x, v2, v2
+    frc r0.w, r0
+    frc r0.z, r0
+    mad r0.zw, r0, c42.y, c42.z
+    mul r2.xy, r0.zwzw, r0.zwzw
+    mul r2.zw, r2.xyxy, r0
+    mad r3.xy, r2.zwzw, c43.y, r0.zwzw
+    mul r0.zw, r2, r2.xyxy
+    mad r2.zw, r0, c43.x, r3.xyxy
+    mul r0.zw, r0, r2.xyxy
+    mad r3.xy, r0.zwzw, c42.w, r2.zwzw
+    add r0.z, v5.x, r3.x
+    mov r0.w, r0.z
+    add r2.x, v5.y, r0.z
+    mov r0.z, r0.y
+    dp4 r0.y, v0, c5
+    dp3 r0.z, r0, r2.x
+    add r0.xy, r0.zwzw, c16.y
+    mul r0, r0.xxyy, c44
+    frc r0, r0
+    mad r0, r0, c45.x, c45.y
+    frc r0, r0
+    mad r0, r0, c45.x, c45.z
+    abs r0, r0
+    mad r2, -r0, c45.x, c45.w
+    mul r0, r0, r0
+    mul r0, r0, r2
+    add r2.xy, r0.xzzw, r0.ywzw
+    mul r0.xyz, r2.y, c40
+    slt r2.zw, -v2.xyxz, v2.xyxz
+    slt r3.zw, v2.xyxz, -v2.xyxz
+    sub r3.zw, r2, r3
+    mul r0.w, v5.y, c46.x
+    mul r2.zw, r0.w, v2.xyxz
+    mul r4.xz, r2.zyww, r3.zyww
+    mul r0.xyz, v5.z, r0
+    mad r0.xyz, r2.xyxw, r4, r0
+    mul r2.xyz, v5.z, c40
+    mov r2.w, v0
+    add r0.w, r3.y, c43.z
+    mad r0.xyz, r0, c40.w, v0
+    mul r2.xyz, r2, c40.w
+    mad r2.xyz, r2, r0.w, r0
+    mul r0.xyz, v5.z, c39
+    mad r2.xyz, r0, c39.w, r2
+    add r0.xyz, r2, -c38
+    mov r0.w, c46.y
+    dp4 r3.z, r0, c14
+    dp4 r3.x, r0, c12
+    dp4 r3.y, r0, c13
+    add r3.xyz, r3, c38
+    add r0.x, v5, c42
+    add r3.xyz, r3, -r2
+    mul r0.x, v5.z, r0
+    mul r0.xyz, r0.x, r3
+    mad r2.xyz, r0, c46.z, r2
+    dp4 r0.y, r2, c5
+    dp4 r0.x, r2, c4
+    add r4, -r0.y, c22
+    add r3, -r0.x, c21
+    mul r0, r4, r4
+    mad r5, r3, r3, r0
+    rsq r0.x, r6.x
+    mul r7.xyz, r0.x, v2
+    mul r8.xyz, r7, c36.w
+    dp3 r7.w, r8, c5
+    dp4 r0.y, r2, c6
+    add r0, -r0.y, c23
+    mad r5, r0, r0, r5
+    dp3 r9.x, r8, c4
+    mul r4, r7.w, r4
+    mad r3, r9.x, r3, r4
+    dp3 r4.w, r8, c6
+    mad r0, r4.w, r0, r3
+    mul r6, r5, c24
+    mov r9.y, r7.w
+    mov r9.z, r4.w
+    rsq r3.x, r5.x
+    rsq r3.y, r5.y
+    rsq r3.z, r5.z
+    rsq r3.w, r5.w
+    mul r0, r0, r3
+    add r3, r6, c42.x
+    rcp r3.x, r3.x
+    rcp r3.y, r3.y
+    rcp r3.w, r3.w
+    rcp r3.z, r3.z
+    max r0, r0, c46.y
+    mul r0, r0, r3
+    mul r3.xyz, r0.y, c26
+    mad r3.xyz, r0.x, c25, r3
+    mad r0.xyz, r0.z, c27, r3
+    mad r4.xyz, r0.w, c28, r0
+    mul r0, r9.xyzz, r9.yzzx
+    mul r3.z, r7.w, r7.w
+    dp4 r3.w, r2, c3
+    dp4 r3.x, r2, c0
+    dp4 r3.y, r2, c1
+
+mov o0, r3 // Relocated from line 197 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I /home/dss/Stranded Deep --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Beam Team_Skylight_Foliage_Translucent - Touch Bending/vp/5E5FEEC7.txt
+texldl r31, c220.z, s0
+add r31.w, r3.w, -r31.y
+mad r3.x, r31.w, r31.x, r3.x
+
+    mul r5.xyz, r3.xyww, c46.w
+    dp4 r8.z, r0, c34
+    dp4 r8.y, r0, c33
+    mad r3.z, r9.x, r9.x, -r3
+    dp4 r8.x, r0, c32
+    mul r0.xyz, r3.z, c35
+    dp4 r3.z, r2, c2
+
+//     mov o0, r3 // Relocated to line 190 with shadertool.py
+mov o0.z, r3 // Inserted by shadertool.py
+
+    mov o8.zw, r3
+    mov r3.w, c42.x
+    mov r3.xyz, c17
+    dp4 r6.z, r9, c31
+    dp4 r6.y, r9, c30
+    dp4 r6.x, r9, c29
+    add r6.xyz, r6, r8
+    add r0.xyz, r6, r0
+    add o6.xyz, r0, r4
+    mov r0.x, r5
+    mul r0.y, r5, c18.x
+    mad o8.xy, r5.z, c19.zwzw, r0
+    dp3 r0.z, v1, v1
+    rsq r0.x, r0.z
+    mul r0.xyz, r0.x, v1
+    mul r4.xyz, r7.zxyw, r0.yzxw
+    mad r4.xyz, r7.yzxw, r0.zxyw, -r4
+    dp4 r5.z, r3, c10
+    dp4 r5.x, r3, c8
+    dp4 r5.y, r3, c9
+    mad r3.xyz, r5, c36.w, -r2
+    mul r4.xyz, r4, v1.w
+    mov r2, c10
+    dp4 r5.z, c20, r2
+    mov r2, c9
+    dp4 r5.y, c20, r2
+    dp3 o7.z, r7, r3
+    dp3 o7.y, r4, r3
+    dp3 o7.x, r0, r3
+    mov r3, c8
+    dp4 r5.x, c20, r3
+    dp3 o5.y, r5, r4
+    dp3 o5.z, r7, r5
+    dp3 o5.x, r5, r0
+    mov o2, v5
+    mov o4, r1
+    mov o3.xyz, r1
+    mad o1.xy, v3, c41, c41.zwzw
