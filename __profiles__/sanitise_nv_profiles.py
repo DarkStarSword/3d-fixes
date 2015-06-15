@@ -79,8 +79,8 @@ def sort_settings(profile):
 	# ProfileType. Might be better to just sort settings and executables?
 	lines = profile.split('\r\n')
 	start = '\r\n'.join(lines[:4]) + '\r\n'
-	middle = lines[4:-3]
-	end = '\r\n'.join(lines[-3:])
+	middle = lines[4:-2]
+	end = '\r\n'.join(lines[-2:])
 	if middle:
 		end = '\r\n' + end
 	return start + '\r\n'.join(sorted(middle)) + end
