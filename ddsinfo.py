@@ -47,6 +47,8 @@ class DDSPixelFormat(object):
 			a_bit_mask
 		) = struct.unpack('<2I 4s 5I', fp.read(32))
 
+		self.format = self.four_cc = None
+
 		assert(size == 32)
 		if self.flags & self.Flags.ALPHAPIXELS: # uncompressed
 			self.a_bit_mask = a_bit_mask
@@ -66,15 +68,42 @@ class DDSPixelFormat(object):
 	def __str__(self):
 		ret = []
 		ret.append('Pixel Format Flags: 0x%x' % self.flags)
-		if self.flags & self.Flags.ALPHAPIXELS:
-			ret.append('Alpha Bit Mask: 0x%x' % self.a_bit_mask)
 		if self.flags & self.Flags.FOURCC:
-			ret.append('FourCC: 0x%.2x%.2x%.2x%.2x %i "%s"' % ((tuple(self.four_cc)) + (self.format, self.four_cc.decode('ascii'),)) )
+			four_cc_str = ''.join(map(chr, filter(None, list(self.four_cc))))
+			ret.append('FourCC: 0x%.2x%.2x%.2x%.2x %i "%s"' % ((tuple(self.four_cc)) + (self.format, four_cc_str,)) )
 		if self.flags & self.Flags.RGB:
 			ret.append('RGB Bit Count: %i' % self.rgb_bit_count)
-			ret.append('Red Bit Mask: 0x%x' % self.r_bit_mask)
-			ret.append('Green Bit Mask: 0x%x' % self.g_bit_mask)
-			ret.append('Blue Bit Mask: 0x%x' % self.b_bit_mask)
+			ret.append('  Red Bit Mask: 0x%08x' % self.r_bit_mask)
+			ret.append('Green Bit Mask: 0x%08x' % self.g_bit_mask)
+			ret.append(' Blue Bit Mask: 0x%08x' % self.b_bit_mask)
+		if self.flags & self.Flags.ALPHAPIXELS:
+			ret.append('Alpha Bit Mask: 0x%x' % self.a_bit_mask)
+		return '\n'.join(ret)
+
+class DDSHeaderDXT10(object):
+	# https://msdn.microsoft.com/en-us/library/windows/desktop/bb943983(v=vs.85).aspx
+	RESOURCE_DIMENSION = {
+		2: 'Texture1D',
+		3: 'Texture2D',
+		4: 'Texture3D',
+	}
+
+	def __init__(self, fp):
+		(
+			self.dxgi_format,
+			self.dimension,
+			self.misc_flags,
+			self.array_size,
+			self.misc_flags2
+		) = struct.unpack('<5I', fp.read(20))
+
+	def __str__(self):
+		ret = []
+		ret.append('DXGI Format: %i' % self.dxgi_format)
+		ret.append('Resource Dimension: %s' % self.RESOURCE_DIMENSION[self.dimension])
+		ret.append('Array Size: %i' % self.array_size)
+		ret.append('Misc Flags 1: 0x%x' % self.misc_flags)
+		ret.append('Misc Flags 2: 0x%x' % self.misc_flags2)
 		return '\n'.join(ret)
 
 class DDSHeader(object):
@@ -110,6 +139,9 @@ class DDSHeader(object):
 			self.caps3,
 			self.caps4
 		) = struct.unpack('<4I4x', fp.read(20))
+		self.dx10_header = None
+		if self.pixel_format.four_cc == b'DX10':
+			self.dx10_header = DDSHeaderDXT10(fp)
 		assert(size==124)
 		assert(self.flags & self.Flags.REQUIRED == self.Flags.REQUIRED)
 
@@ -126,7 +158,10 @@ class DDSHeader(object):
 		ret.append('Caps3: 0x%x' % self.caps3)
 		ret.append('Caps4: 0x%x' % self.caps4)
 
-		return '%s\n\n%s' % ('\n'.join(ret), str(self.pixel_format))
+		ret = '%s\n\n%s' % ('\n'.join(ret), str(self.pixel_format))
+		if self.dx10_header is not None:
+			ret += '\n\n%s' % str(self.dx10_header)
+		return ret
 
 def val_to_rainbow(val, min, max):
 	segments = (
@@ -163,9 +198,20 @@ def val_to_rainbow(val, min, max):
 def scale_pixel(val):
 	return math.sqrt(val)
 
+def parse_args():
+	import argparse
+	parser = argparse.ArgumentParser(description = 'DDS info & conversion script')
+	parser.add_argument('files', nargs='+',
+			help='List of DDS files to process')
+	parser.add_argument('--convert', action='store_true',
+			help='Convert supported DDS files to PNG')
+	return parser.parse_args()
+
 if __name__ == '__main__':
+	args = parse_args()
+
 	print_line = False
-	for file in sys.argv[1:]:
+	for file in args.files:
 		print_line = print_line and print('\n' + '-'*30 + '\n') or True
 		fp = open(file, 'rb')
 		header = DDSHeader(fp)
@@ -174,7 +220,7 @@ if __name__ == '__main__':
 		if Image is None: # PIL not installed
 			continue
 
-		if header.pixel_format.format in d3d9_pixel_formats:
+		if args.convert and header.pixel_format.format in d3d9_pixel_formats:
 			dtype = d3d9_pixel_formats[header.pixel_format.format]
 			buf = np.fromfile(fp, dtype, count=header.width * header.height)
 
