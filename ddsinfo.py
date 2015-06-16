@@ -164,7 +164,9 @@ def scale_pixel(val):
 	return math.sqrt(val)
 
 if __name__ == '__main__':
+	print_line = False
 	for file in sys.argv[1:]:
+		print_line = print_line and print('\n' + '-'*30 + '\n') or True
 		fp = open(file, 'rb')
 		header = DDSHeader(fp)
 		print(header)
