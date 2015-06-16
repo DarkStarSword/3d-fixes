@@ -170,7 +170,7 @@ if __name__ == '__main__':
 		print(header)
 
 		if Image is None: # PIL not installed
-			sys.exit(0)
+			continue
 
 		if header.pixel_format.format in d3d9_pixel_formats:
 			dtype = d3d9_pixel_formats[header.pixel_format.format]
