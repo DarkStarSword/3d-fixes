@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
 # Most of this code is from the imag.py module in my miasmata-fixes repository.
-# The original has a full S3 decompressor and can export PNG files, which I've
-# removed from this version. I'll probably add it back in at some point and add
-# support for non-compressed DDS files, which would be useful to convert DDS
-# files dumped with Helix mod, but right now all I want is to pull out info
-# from the header to match surface properties.
+# The original has a full S3 decompressor, which has been removed from this
+# version (TODO: Add it back), but can't handle other formats that this one can.
 
 import sys, os
 import struct
@@ -497,6 +494,13 @@ def val_to_rainbow(val, min, max):
 	return segments[-1]
 
 def convert(fp, header, dtype):
+	filename = '%s.png' % os.path.splitext(fp.name)[0]
+
+	if os.path.exists(filename):
+		print('\n%s already exists' % filename)
+		return
+	print('\nConverting to %s...' % filename)
+
 	(fmt_name, np_dtype, img_type, converter) = dtype
 
 	buf = np.fromfile(fp, np_dtype, count=header.width * header.height)
@@ -509,7 +513,6 @@ def convert(fp, header, dtype):
 	else:
 		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
 
-	filename = '%s.png' % os.path.splitext(fp.name)[0]
 	image.save(filename)
 
 def convert_dx10(fp, header):
@@ -566,8 +569,8 @@ def parse_args():
 	parser = argparse.ArgumentParser(description = 'DDS info & conversion script')
 	parser.add_argument('files', nargs='+',
 			help='List of DDS files to process')
-	parser.add_argument('--convert', action='store_true',
-			help='Convert supported DDS files to PNG')
+	parser.add_argument('--no-convert', action='store_true',
+			help='Do not convert the image to a PNG, just list info from headers')
 	parser.add_argument('--gamma', type=float, default=2.2,
 			help='Gamma correction to apply')
 	args = parser.parse_args()
@@ -586,7 +589,7 @@ def main():
 		if Image is None: # PIL not installed
 			continue
 
-		if args.convert:
+		if not args.no_convert:
 			if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
 				if header.dx10_header is not None:
 					convert_dx10(fp, header)
