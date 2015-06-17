@@ -37,6 +37,21 @@ def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
 	return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
 
+def convert_R11G11B10_FLOAT(buf):
+	# Extract the channels with shifts and masks, add the implicit 1 bit to
+	# the mantissas and unbias the exponents:
+	rm = np.int8   (((buf >>  0) & 0x3f) | 0x40)
+	re = np.float16(((buf >>  6) & 0x1f)) - 15
+	gm = np.int8   (((buf >> 11) & 0x3f) | 0x40)
+	ge = np.float16(((buf >> 17) & 0x1f)) - 15
+	bm = np.int8   (((buf >> 22) & 0x1f) | 0x20)
+	be = np.float16(((buf >> 27) & 0x1f)) - 15
+	# Calculate floating point values and scale:
+	r = scale_float(rm * (2**re))
+	g = scale_float(gm * (2**ge))
+	b = scale_float(bm * (2**be))
+	return np.uint8(np.column_stack((r, g, b)))
+
 def convert_R24G8_UINT(buf):
 	r = scale8bit(buf, 3)
 	g = buf >> 24
@@ -145,7 +160,7 @@ d3d9_pixel_formats = {
 
 dxgi_formats = {
 	# https://msdn.microsoft.com/en-us/library/windows/desktop/bb173059(v=vs.85).aspx
-	# 26: ('DXGI_FORMAT_R11G11B10_FLOAT', np.dtype('u4'), 'RGB')
+	26: ('DXGI_FORMAT_R11G11B10_FLOAT', np.dtype('<u4'), 'RGB', convert_R11G11B10_FLOAT),
 	44: ('DXGI_FORMAT_R24G8_TYPELESS', np.dtype('<u4'), 'RGB', convert_R24G8_UINT),
 
 #   DXGI_FORMAT_R32G32B32A32_TYPELESS       = 1,
