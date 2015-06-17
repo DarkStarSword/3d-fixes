@@ -16,19 +16,45 @@ except ImportError:
 	print('PIL for Python 3 not installed - will not be able to save images')
 	Image = None
 import math
+import itertools
 
 # Documentation:
 # https://en.wikipedia.org/wiki/S3_Texture_Compression
 # http://msdn.microsoft.com/en-us/library/windows/desktop/bb943991(v=vs.85).aspx
 
+def gamma(buf):
+	return buf**(1/args.gamma)
+
+def gamma_uint8(buf):
+	return (buf / 255.0)**(1/args.gamma) * 255.0
+
+def scale8bit(buf, bytes):
+	''' Returns the most significant byte only '''
+	return np.uint8(gamma_uint8(buf >> ((bytes-1)*8)))
+
+def scale_float(buf):
+	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
+	return np.clip(gamma(buf) * 255.0, 0, 255.0)
+
+def convert_R24G8_UINT(buf):
+	r = scale8bit(buf, 3)
+	g = buf >> 24
+	return np.uint8(np.column_stack((r, g, [0]*len(r))))
+
+def convert_4x16f(buf):
+	r = scale_float(buf['f0'])
+	g = scale_float(buf['f1'])
+	b = scale_float(buf['f2'])
+	a = scale_float(buf['f3'])
+	return np.uint8(np.column_stack((r, g, b, a)))
+
 d3d9_pixel_formats = {
-	113: (np.dtype([('R', '<f2'), ('G', '<f2'), ('B', '<f2'), ('A', '<f2')]), 'RGBA'), # D3DFMT_A16B16G16R16F
+	113: ('D3DFMT_A16B16G16R16F', np.dtype('<f2, <f2, <f2, <f2'), 'RGBA', convert_4x16f),
 }
 
 dxgi_formats = {
-# https://msdn.microsoft.com/en-us/library/windows/desktop/bb173059(v=vs.85).aspx
-	# FIXME: 24bit R, 8bit G... Probably need to do my own making & extraction?
-	# 44: (np.dtype([('R', '<f4')]), 'RGB'), #   DXGI_FORMAT_R24G8_TYPELESS
+	# https://msdn.microsoft.com/en-us/library/windows/desktop/bb173059(v=vs.85).aspx
+	44: ('DXGI_FORMAT_R24G8_TYPELESS', np.dtype('<u4'), 'RGB', convert_R24G8_UINT),
 
 #   DXGI_FORMAT_R32G32B32A32_TYPELESS       = 1,
 #   DXGI_FORMAT_R32G32B32A32_FLOAT          = 2,
@@ -362,38 +388,21 @@ def val_to_rainbow(val, min, max):
 
 	return segments[-1]
 
-def parse_args():
-	import argparse
-	parser = argparse.ArgumentParser(description = 'DDS info & conversion script')
-	parser.add_argument('files', nargs='+',
-			help='List of DDS files to process')
-	parser.add_argument('--convert', action='store_true',
-			help='Convert supported DDS files to PNG')
-	return parser.parse_args()
-
 def convert(fp, header, dtype):
-	(np_dtype, img_type) = dtype
+	(fmt_name, np_dtype, img_type, converter) = dtype
 
 	buf = np.fromfile(fp, np_dtype, count=header.width * header.height)
-	out = Image.new(img_type, (header.width, header.height))
-	pixels = out.load()
 
-	# TODO
-	# # FIXME: This will be *slow*, use numpy methods to speed this up:
-	# for y in range(header.height):
-	# 	for x in range(header.width):
-	# 		px = buf[y * header.width + x]
-	# 		if px[0]:
-	# 			print(px * 3)
-	# 		# pixels[x, y] = int(val * 8) # FIXME: Hardcoded scaling
-	# 		# pixels[x, y] = val_to_rainbow(val, 0.0, 32.0) # FIXME: Hardcoded scaling
-	# 		# pixels[x, y] = val_to_rainbow(scale_pixel(val), 0.0, scale_pixel(32.0)) # FIXME: Hardcoded scaling
-	# 		#pixels[x, y] = int(scale_pixel(val) * (256 / scale_pixel(32.0))) # FIXME: Hardcoded scaling
-	# 	print('.', end='')
-	# 	sys.stdout.flush()
+	if converter:
+		buf = converter(buf)
 
-	# filename = '%s.png' % os.path.splitext(fp.name)[0]
-	# out.save(filename)
+	if img_type == 'RGB':
+		image = Image.fromstring(img_type, (header.width, header.height), buf.tostring(), 'raw', img_type, 0, 1)
+	else:
+		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
+
+	filename = '%s.png' % os.path.splitext(fp.name)[0]
+	image.save(filename)
 
 def convert_dx10(fp, header):
 	if header.dx10_header.dxgi_format not in dxgi_formats:
@@ -413,8 +422,21 @@ def convert_dx9(fp, header):
 
 	convert(fp, header, dtype)
 
+def parse_args():
+	import argparse
+	global args
+
+	parser = argparse.ArgumentParser(description = 'DDS info & conversion script')
+	parser.add_argument('files', nargs='+',
+			help='List of DDS files to process')
+	parser.add_argument('--convert', action='store_true',
+			help='Convert supported DDS files to PNG')
+	parser.add_argument('--gamma', type=float, default=2.2,
+			help='Gamma correction to apply')
+	args = parser.parse_args()
+
 def main():
-	args = parse_args()
+	parse_args()
 
 	print_line = False
 	for file in args.files:
