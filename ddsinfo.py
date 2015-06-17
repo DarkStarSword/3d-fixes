@@ -415,13 +415,37 @@ def convert_dx10(fp, header):
 
 	convert(fp, header, dtype)
 
-def convert_dx9(fp, header):
+def convert_fourcc(fp, header):
 	if header.pixel_format.format not in d3d9_pixel_formats:
 		return
 
 	dtype = d3d9_pixel_formats[header.pixel_format.format]
 
 	convert(fp, header, dtype)
+
+def convert_pixelformat(fp, header):
+	# If these fail I will need a converter:
+	assert(header.pixel_format.flags & DDSPixelFormat.Flags.RGB)
+	assert(header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS)
+	assert(header.pixel_format.rgb_bit_count == 32)
+	assert(header.pixel_format.r_bit_mask == 0x000000ff)
+	assert(header.pixel_format.g_bit_mask == 0x0000ff00)
+	assert(header.pixel_format.b_bit_mask == 0x00ff0000)
+	assert(header.pixel_format.a_bit_mask == 0xff000000)
+
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
+		img_type = 'RGBA'
+	else:
+		img_type = 'RGB'
+
+	np_dtype = {
+		8: np.uint8,
+		16: np.uint16,
+		32: np.uint32,
+		64: np.uint64,
+	}[header.pixel_format.rgb_bit_count]
+
+	convert(fp, header, (None, np_dtype, img_type, None))
 
 def parse_args():
 	import argparse
@@ -451,10 +475,13 @@ def main():
 			continue
 
 		if args.convert:
-			if header.dx10_header is not None:
-				convert_dx10(fp, header)
+			if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
+				if header.dx10_header is not None:
+					convert_dx10(fp, header)
+				else:
+					convert_fourcc(fp, header)
 			else:
-				convert_dx9(fp, header)
+				convert_pixelformat(fp, header)
 
 if __name__ == '__main__':
 	main()
