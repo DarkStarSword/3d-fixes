@@ -513,6 +513,9 @@ def convert(fp, header, dtype):
 	else:
 		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
 
+	if args.flip:
+		image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
 	image.save(filename)
 
 def convert_dx10(fp, header):
@@ -571,6 +574,8 @@ def parse_args():
 			help='List of DDS files to process')
 	parser.add_argument('--no-convert', action='store_true',
 			help='Do not convert the image to a PNG, just list info from headers')
+	parser.add_argument('--flip', action='store_true',
+			help='Flip image upside down')
 	parser.add_argument('--gamma', type=float, default=2.2,
 			help='Gamma correction to apply')
 	args = parser.parse_args()
