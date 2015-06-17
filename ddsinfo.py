@@ -25,12 +25,13 @@ import itertools
 def gamma(buf):
 	return buf**(1/args.gamma)
 
-def gamma_uint8(buf):
-	return (buf / 255.0)**(1/args.gamma) * 255.0
-
 def scale8bit(buf, bytes):
 	''' Returns the most significant byte only '''
-	return np.uint8(gamma_uint8(buf >> ((bytes-1)*8)))
+	tmp = buf & (2**(bytes*8)-1)
+	tmp = np.float32(tmp) / (2**24)
+	tmp = gamma(tmp)
+	tmp = np.clip(tmp * 255, 0, 255)
+	return np.uint8(tmp)
 
 def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
