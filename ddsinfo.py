@@ -22,10 +22,10 @@ import itertools
 def gamma(buf):
 	return buf**(1/args.gamma)
 
-def scale8bit(buf, bytes):
+def scale8bit(buf, bits):
 	''' Returns the most significant byte only '''
-	tmp = buf & (2**(bytes*8)-1)
-	tmp = np.float32(tmp) / (2**24)
+	tmp = buf & (2**bits-1)
+	tmp = np.float32(tmp) / (2**bits)
 	tmp = gamma(tmp)
 	tmp = np.clip(tmp * 255, 0, 255)
 	return np.uint8(tmp)
@@ -33,6 +33,13 @@ def scale8bit(buf, bytes):
 def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
 	return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
+
+def convert_R10G10B10A2_UINT(buf):
+	r = scale8bit(buf >>  0, 10)
+	g = scale8bit(buf >> 10, 10)
+	b = scale8bit(buf >> 20, 10)
+	a = scale8bit(buf >> 30,  2)
+	return np.uint8(np.column_stack((r, g, b, a)))
 
 def convert_R11G11B10_FLOAT(buf):
 	# Extract the channels with shifts and masks, add the implicit 1 bit to
@@ -50,8 +57,8 @@ def convert_R11G11B10_FLOAT(buf):
 	return np.uint8(np.column_stack((r, g, b)))
 
 def convert_R24G8_UINT(buf):
-	r = scale8bit(buf, 3)
-	g = buf >> 24
+	r = scale8bit(buf >>  0, 24)
+	g = scale8bit(buf >> 24,  8)
 	return np.uint8(np.column_stack((r, g, [0]*len(r))))
 
 def convert_2x16f(buf):
@@ -157,7 +164,9 @@ d3d9_pixel_formats = {
 
 dxgi_formats = {
 	# https://msdn.microsoft.com/en-us/library/windows/desktop/bb173059(v=vs.85).aspx
+	23: ('DXGI_FORMAT_R10G10B10A2_TYPELESS', np.dtype('<u4'), 'RGBA', convert_R10G10B10A2_UINT),
 	26: ('DXGI_FORMAT_R11G11B10_FLOAT', np.dtype('<u4'), 'RGB', convert_R11G11B10_FLOAT),
+	27: ('DXGI_FORMAT_R8G8B8A8_TYPELESS', np.dtype('u1, u1, u1, u1'), 'RGBA', None),
 	44: ('DXGI_FORMAT_R24G8_TYPELESS', np.dtype('<u4'), 'RGB', convert_R24G8_UINT),
 
 #   DXGI_FORMAT_R32G32B32A32_TYPELESS       = 1,
@@ -182,10 +191,8 @@ dxgi_formats = {
 #   DXGI_FORMAT_D32_FLOAT_S8X24_UINT        = 20,
 #   DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS    = 21,
 #   DXGI_FORMAT_X32_TYPELESS_G8X24_UINT     = 22,
-#   DXGI_FORMAT_R10G10B10A2_TYPELESS        = 23,
 #   DXGI_FORMAT_R10G10B10A2_UNORM           = 24,
 #   DXGI_FORMAT_R10G10B10A2_UINT            = 25,
-#   DXGI_FORMAT_R8G8B8A8_TYPELESS           = 27,
 #   DXGI_FORMAT_R8G8B8A8_UNORM              = 28,
 #   DXGI_FORMAT_R8G8B8A8_UNORM_SRGB         = 29,
 #   DXGI_FORMAT_R8G8B8A8_UINT               = 30,
