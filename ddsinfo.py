@@ -164,10 +164,14 @@ d3d9_pixel_formats = {
 
 dxgi_formats = {
 	# https://msdn.microsoft.com/en-us/library/windows/desktop/bb173059(v=vs.85).aspx
+	# XXX: Some of the TYPELESS formats can be ambiguous as to whether they
+	# should be interpreted as a float or an int. I've picked the most
+	# likely option.
 	23: ('DXGI_FORMAT_R10G10B10A2_TYPELESS', np.dtype('<u4'), 'RGBA', convert_R10G10B10A2_UINT),
 	26: ('DXGI_FORMAT_R11G11B10_FLOAT', np.dtype('<u4'), 'RGB', convert_R11G11B10_FLOAT),
 	27: ('DXGI_FORMAT_R8G8B8A8_TYPELESS', np.dtype('u1, u1, u1, u1'), 'RGBA', None),
 	44: ('DXGI_FORMAT_R24G8_TYPELESS', np.dtype('<u4'), 'RGB', convert_R24G8_UINT),
+	53: ('DXGI_FORMAT_R16_TYPELESS', np.dtype('<u2'), 'L', lambda x: scale8bit(x, 16))
 
 #   DXGI_FORMAT_R32G32B32A32_TYPELESS       = 1,
 #   DXGI_FORMAT_R32G32B32A32_FLOAT          = 2,
@@ -217,7 +221,6 @@ dxgi_formats = {
 #   DXGI_FORMAT_R8G8_UINT                   = 50,
 #   DXGI_FORMAT_R8G8_SNORM                  = 51,
 #   DXGI_FORMAT_R8G8_SINT                   = 52,
-#   DXGI_FORMAT_R16_TYPELESS                = 53,
 #   DXGI_FORMAT_R16_FLOAT                   = 54,
 #   DXGI_FORMAT_D16_UNORM                   = 55,
 #   DXGI_FORMAT_R16_UNORM                   = 56,
@@ -503,9 +506,10 @@ def val_to_rainbow(val, min, max):
 def convert(fp, header, dtype):
 	filename = '%s.png' % os.path.splitext(fp.name)[0]
 
-	if os.path.exists(filename):
-		print('\n%s already exists' % filename)
-		return
+	if not args.force:
+		if os.path.exists(filename):
+			print('\n%s already exists' % filename)
+			return
 	print('\nConverting to %s...' % filename)
 
 	(fmt_name, np_dtype, img_type, converter) = dtype
@@ -585,6 +589,8 @@ def parse_args():
 			help='Flip image upside down')
 	parser.add_argument('--gamma', type=float, default=2.2,
 			help='Gamma correction to apply')
+	parser.add_argument('--force', action='store_true',
+			help='Overwrite destination files')
 	args = parser.parse_args()
 
 def main():
