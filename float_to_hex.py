@@ -14,11 +14,17 @@
 
 import struct
 
+def _float_to_hex(val):
+	return struct.unpack('I', struct.pack('f', val))[0]
+
+def _double_to_hex(val):
+	return struct.unpack('Q', struct.pack('d', val))[0]
+
 def float_to_hex(val):
-	return '0x%.8x' % struct.unpack('I', struct.pack('f', val))[0]
+	return '0x%.8x' % _float_to_hex(val)
 
 def double_to_hex(val):
-	return '0x%.16x' % struct.unpack('Q', struct.pack('d', val))[0]
+	return '0x%.16x' % _double_to_hex(val)
 
 def _hex_to_float(val):
 	return struct.unpack('f', struct.pack('I', val))[0]
@@ -32,6 +38,37 @@ def hex_to_float(val):
 def hex_to_double(val):
 	return _hex_to_double(int(val, 16))
 
+def test_precision(val, precision):
+	s = '%.*f' % (precision, val)
+	return (float(s) == val, s)
+
+def best_precision(val, ):
+	for precision in range(50):
+		print(test_precision(val, precision))
+	return '%.*f' % (2, val)
+
+def _hex_to_best_str(val, hex_to, to_hex):
+	'''
+	Find the smallest precision that will parse back to the original value, prefers to a
+	without using scientific notation.
+	'''
+	f = hex_to(val)
+	# There's probably some field of maths dedicated to finding and proving
+	# the correct number to use here...
+	for precision in range(32):
+		string = '%.*f' % (precision, f)
+		redecoded = to_hex(float(string))
+		if val == redecoded:
+			return string
+	# Fine, just use scientific notation
+	return str(f)
+
+def hex_to_best_float_str(val):
+	return _hex_to_best_str(val, _hex_to_float, _float_to_hex)
+
+def hex_to_best_double_str(val):
+	return _hex_to_best_str(val, _hex_to_double, _double_to_hex)
+
 def process_vals(vals):
 	yield ('from', 'float', 'double')
 	yield ('----', '-----', '------')
@@ -40,8 +77,8 @@ def process_vals(vals):
 			val = int(val_str, 16)
 			f = 'N/A'
 			if (val & 0xffffffff) == val:
-				f = str(_hex_to_float(val))
-			yield (val_str, f, str(_hex_to_double(val)))
+				f = hex_to_best_float_str(val)
+			yield (val_str, f, hex_to_best_double_str(val))
 		else:
 			val = float(val_str)
 			yield (val_str, float_to_hex(val), double_to_hex(val))
