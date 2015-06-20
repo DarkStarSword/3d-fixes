@@ -393,9 +393,9 @@ class DDSHeaderDXT10(object):
 
 	def __str__(self):
 		ret = []
-		if self.dxg_format in dxgi_formats:
-			name = dxgi_formats[self.dxg_format][0]
-			ret.append('DXGI Format: %s (%i)' % (name, self.dxg_format))
+		if self.dxgi_format in dxgi_formats:
+			name = dxgi_formats[self.dxgi_format][0]
+			ret.append('DXGI Format: %s (%i)' % (name, self.dxgi_format))
 		else:
 			ret.append('DXGI Format: %i' % self.dxgi_format)
 		ret.append('Resource Dimension: %s' % self.RESOURCE_DIMENSION[self.dimension])
