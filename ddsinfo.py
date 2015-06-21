@@ -32,7 +32,12 @@ def scale8bit(buf, bits):
 
 def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
-	return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
+	if args.hdr:
+		m = max(1.0, max(buf))
+		print('Scaling to', m)
+		return np.uint8(np.clip(gamma(buf / m) * 255.0, 0, 255.0))
+	else:
+		return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
 
 def convert_R10G10B10A2_UINT(buf):
 	r = scale8bit(buf >>  0, 10)
@@ -521,6 +526,9 @@ def convert(fp, header, dtype):
 	else:
 		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
 
+	if img_type == 'RGBA' and args.no_alpha:
+		image = image.convert('RGB')
+
 	if args.flip:
 		image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -586,6 +594,10 @@ def parse_args():
 			help='Flip image upside down')
 	parser.add_argument('--gamma', type=float, default=2.2,
 			help='Gamma correction to apply')
+	parser.add_argument('--hdr', action='store_true',
+			help='Scale output to show full dynamic range')
+	parser.add_argument('--no-alpha', action='store_true',
+			help='Drop the alpha channel during conversion')
 	parser.add_argument('--force', action='store_true',
 			help='Overwrite destination files')
 	args = parser.parse_args()
