@@ -44,11 +44,6 @@ def test_precision(val, precision):
 	s = '%.*f' % (precision, val)
 	return (float(s) == val, s)
 
-def best_precision(val, ):
-	for precision in range(50):
-		print(test_precision(val, precision))
-	return '%.*f' % (2, val)
-
 def _hex_to_best_str(val, hex_to, to_hex):
 	'''
 	Find the smallest precision that will parse back to the original value, prefers to a
@@ -57,7 +52,7 @@ def _hex_to_best_str(val, hex_to, to_hex):
 	f = hex_to(val)
 	# There's probably some field of maths dedicated to finding and proving
 	# the correct number to use here...
-	for precision in range(32):
+	for precision in range(1, 32):
 		string = '%.*f' % (precision, f)
 		redecoded = to_hex(float(string))
 		if val == redecoded:
