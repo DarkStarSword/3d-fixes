@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 # Useful for calculating depth values for helixmod.blogspot.com.au to fix
 # objects/UI being rendered at the wrong depth in 3D Vision.
 
@@ -92,10 +94,10 @@ def align_output(input):
 def main():
 	import sys
 	if len(sys.argv) == 1:
-		print 'usage: %s {float | hex}...' % sys.argv[0]
+		print('usage: %s {float | hex}...' % sys.argv[0])
 		sys.exit(1)
 
-	print align_output(list(process_vals(sys.argv[1:])))
+	print(align_output(list(process_vals(sys.argv[1:]))))
 
 if __name__ == '__main__':
 	main()
