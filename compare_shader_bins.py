@@ -6,27 +6,32 @@
 
 import float_to_hex
 import sys, struct
+import argparse
 
 def main():
-	orig = open(sys.argv[1], 'rb')
-	diss = open(sys.argv[2], 'rb')
-	try:
-		assembly = open(sys.argv[3], 'rb').read().decode('ascii')
-		out = open(sys.argv[4], 'wb')
-	except:
-		assembly = None
-		out = None
+	parser = argparse.ArgumentParser()
+	parser.add_argument('original', type=argparse.FileType('rb'))
+	parser.add_argument('disassembled', type=argparse.FileType('rb'))
+	parser.add_argument('assembly', type=argparse.FileType('rb+'), nargs='?')
+	args = parser.parse_args();
+
+	if args.assembly:
+		text = args.assembly.read().decode('ascii')
+		args.assembly.seek(0)
+		args.assembly.truncate()
+	else:
+		text = None
 
 	# Skip checksum in header
-	orig.read(0x20)
-	diss.read(0x20)
+	args.original.read(0x20)
+	args.disassembled.read(0x20)
 
 	while True:
-		dbytes = diss.read(4)
-		obytes = orig.read(4)
+		dbytes = args.disassembled.read(4)
+		obytes = args.original.read(4)
 
 		if not obytes and not dbytes:
-			out.write(assembly.encode('ascii'))
+			args.assembly.write(text.encode('ascii'))
 			return
 
 		dbytes = struct.unpack('<I', dbytes)[0]
@@ -36,13 +41,13 @@ def main():
 			dstr = '%f' % struct.unpack('<f', struct.pack('<I', dbytes))[0]
 			bstr = float_to_hex.hex_to_best_float_str(dbytes)
 			ostr = float_to_hex.hex_to_best_float_str(obytes)
-			print('0x%08X:' % orig.tell())
+			print('0x%08X:' % args.original.tell())
 			print('Disassembled: 0x%08x %s %s' % (dbytes, dstr, bstr))
 			print('    Original: 0x%08x %s' % (obytes, ostr))
 			print()
-			if assembly is not None:
-				(before, garbage, assembly) = assembly.partition(dstr)
-				out.write((before + ostr).encode('ascii'))
+			if text is not None:
+				(before, garbage, text) = text.partition(dstr)
+				args.assembly.write((before + ostr).encode('ascii'))
 
 
 if __name__ == '__main__':
