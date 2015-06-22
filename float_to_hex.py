@@ -50,35 +50,60 @@ def _hex_to_best_str(val, hex_to, to_hex):
 	without using scientific notation.
 	'''
 	f = hex_to(val)
-	# There's probably some field of maths dedicated to finding and proving
-	# the correct number to use here...
-	for precision in range(1, 32):
+	for precision in range(1, 16):
 		string = '%.*f' % (precision, f)
 		redecoded = to_hex(float(string))
 		if val == redecoded:
 			return string
-	# Fine, just use scientific notation
+	# Try again, but this time with scientific notation:
+	for precision in range(1, 16):
+		string = '%.*e' % (precision, f)
+		redecoded = to_hex(float(string))
+		if val == redecoded:
+			return string
+	# Fine, just use python's str(), which uses lots of precision by default:
 	return str(f)
 
 def hex_to_best_float_str(val):
+	# After some testing, I think this will always reproduce a 32bit float
+	# exactly:
+	# return '%.9g' % _hex_to_float(val)
+
+	# While this will not:
+	# return '%.8g' % _hex_to_float(val)
+
+	# And this will eliminate redundant digits for clearer results:
 	return _hex_to_best_str(val, _hex_to_float, _float_to_hex)
 
 def hex_to_best_double_str(val):
 	return _hex_to_best_str(val, _hex_to_double, _double_to_hex)
 
 def process_vals(vals):
-	yield ('from', 'float', 'double')
-	yield ('----', '-----', '------')
+	yield ('from', 'float', 'check', 'double', 'check')
+	yield ('----', '-----', '-----', '------', '-----')
 	for val_str in vals:
 		if val_str.startswith('0x'):
 			val = int(val_str, 16)
-			f = 'N/A'
+			f = fm = 'N/A'
 			if (val & 0xffffffff) == val:
 				f = hex_to_best_float_str(val)
-			yield (val_str, f, hex_to_best_double_str(val))
+				fc = float_to_hex(float(f))
+				fm = int(fc,16) == int(val_str,16)
+				if not fm:
+					fm = '%s (%s)' % (str(fm), fc)
+			d = hex_to_best_double_str(val)
+			dc = double_to_hex(float(d))
+			dm = int(dc,16) == int(val_str,16)
+			if not dm:
+					dm = '%s (%s)' % (str(dm), dc)
+			yield (val_str, f, str(fm), hex_to_best_double_str(val), str(dm))
 		else:
 			val = float(val_str)
-			yield (val_str, float_to_hex(val), double_to_hex(val))
+			f = float_to_hex(val)
+			fm = hex_to_best_float_str(int(f, 16))
+			d = double_to_hex(val)
+			dm = hex_to_best_double_str(int(d, 16))
+			yield (val_str, f, fm, d, dm)
 
 def align_output(input):
 	lengths = [ map(len, x) for x in input ]
@@ -86,13 +111,39 @@ def align_output(input):
 	format = '   '.join([ '%%%is' % l for l in lengths ])
 	return '\n'.join([format % line for line in input])
 
+def run_tests():
+	worst_case_e0_float = '0x3f800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is 0
+	worst_case_neg_e0_float = '0xbf800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is 0, sign bit set
+	worst_case_normal_float = '0x00800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is -126
+	worst_case_subnormal_float = '0x00000001' # mantissa has explicit low bit set, unbiased exponent is -127
+	worst_case_random = '0x3dfb630e' # Random number found to fail with only 8 precision digits
+
+	tests = [worst_case_e0_float, worst_case_neg_e0_float, worst_case_normal_float, worst_case_subnormal_float, worst_case_random]
+
+	print(align_output(list(process_vals(tests))))
+
+	tests = []
+	for i in range(10000):
+		import random
+		# mantissa = 0x007fffff
+		# exponent = 0x7f800000, 0 is special
+		# sign     = 0x80000000
+		f = random.randint(0, 0xffffffff)
+		tests.append('0x%08x' % f)
+	print(align_output(list(process_vals(tests))))
+
 def main():
 	import sys
 	if len(sys.argv) == 1:
 		print('usage: %s {float | hex}...' % sys.argv[0])
 		sys.exit(1)
 
+	if sys.argv[1] == 'test':
+		return run_tests()
+
 	print(align_output(list(process_vals(sys.argv[1:]))))
 
 if __name__ == '__main__':
 	main()
+
+# vi: noet ts=4:sw=4
