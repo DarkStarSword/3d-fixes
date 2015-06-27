@@ -320,6 +320,8 @@ dxgi_formats = {
 	0xffffffff: ("DXGI_FORMAT_FORCE_UINT",                 ),
 }
 
+class UnsupportedFile(Exception): pass
+
 class DDSPixelFormat(object):
 	# http://msdn.microsoft.com/en-us/library/windows/desktop/bb943984(v=vs.85).aspx
 	class Flags(object):
@@ -347,7 +349,8 @@ class DDSPixelFormat(object):
 		assert(size == 32)
 		if self.flags & self.Flags.ALPHAPIXELS: # uncompressed
 			self.a_bit_mask = a_bit_mask
-		assert(not self.flags & self.Flags.ALPHA) # old file
+		if self.flags & self.Flags.ALPHA:
+			raise UnsupportedFile()
 		if self.flags & self.Flags.FOURCC:
 			self.four_cc = four_cc
 			self.format = struct.unpack('<I', self.four_cc)[0]
@@ -356,8 +359,10 @@ class DDSPixelFormat(object):
 			self.r_bit_mask = r_bit_mask
 			self.g_bit_mask = g_bit_mask
 			self.b_bit_mask = b_bit_mask
-		assert(not self.flags & self.Flags.YUV) # old file
-		assert(not self.flags & self.Flags.LUMINANCE) # old file
+		if self.flags & self.Flags.YUV:
+			raise UnsupportedFile()
+		if self.flags & self.Flags.LUMINANCE:
+			raise UnsupportedFile()
 
 
 	def __str__(self):
@@ -610,7 +615,12 @@ def main():
 		print_line = print_line and print('\n' + '-'*79 + '\n') or True
 		print(file + ':')
 		fp = open(file, 'rb')
-		header = DDSHeader(fp)
+		try:
+			header = DDSHeader(fp)
+		except UnsupportedFile as e:
+			print('Unsupported file!')
+			continue
+
 		print(header)
 
 		if Image is None: # PIL not installed
