@@ -1,0 +1,89 @@
+// CRC32: F4DFEB71 (FOG + 6C99180C) | Unity headers extracted from DiffuseSpecBumpWorldOverlay.shader
+// Shader "Dreamfall/WorldProject/Diffuse Specular Bump Detail" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" {}
+//    _BumpMap ("Normalmap", 2D) = "bump" {}
+//    _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" {}
+//    _DetailBump ("Detail Normalmap", 2D) = "bump" {}
+//    _DetailAmt ("Detail Amount", Float) = 0
+//    _UVScale ("UV Scale", Float) = 1
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 12 [_ProjectionParams]
+//           Vector 13 [_ScreenParams]
+//           Vector 14 [unity_LightmapST]
+//           Vector 15 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c16, 0.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    mov r1.w, c16.x
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 65 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Dreamfall_WorldProject_Diffuse Specular Bump Detail/vp/F4DFEB71.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c16.y
+    mul r1.y, r1, c12.x
+    mad o5.xy, r1.z, c13.zwzw, r1
+    mov r1.xyz, v2
+
+//     mov o0, r0 // Relocated to line 61 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    dp4 o3.z, r1, c6
+    dp4 o3.y, r1, c5
+    dp4 o3.x, r1, c4
+    mov o5.zw, r0
+    mad o1.xy, v3, c15, c15.zwzw
+    mad o4.xy, v4, c14, c14.zwzw
+    dp4 o2.z, v0, c6
+    dp4 o2.y, v0, c5
+    dp4 o2.x, v0, c4

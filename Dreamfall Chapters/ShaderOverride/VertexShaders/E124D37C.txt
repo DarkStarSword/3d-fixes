@@ -1,0 +1,103 @@
+// CRC32: E124D37C (FOG + 45CD1312) | Matched 2 variants of 1 shaders: Dreamfall/RainDrop
+// 
+//    Unity headers extracted from ParticleDistort.shader
+//    Shader "Dreamfall/RainDrop" {
+//      Properties {
+//       _Distortion ("_Distortion", Float) = 0.163212
+//       _Offset ("_Offset", 2D) = "black" {}
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//        GrabPass {
+//          "_GrabTexture"
+//          Tags { "QUEUE"="Background" }
+//         }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry+999" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_World2Object]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [unity_LightmapST]
+//              Vector 13 [_Offset_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    def c14, 0.50000000, 1.00000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r1.xyz, c8
+    mov r1.w, c14.y
+    dp4 r2.z, r1, c6
+    dp4 r2.x, r1, c4
+    dp4 r2.y, r1, c5
+    mad r2.xyz, r2, c11.w, -v0
+    mul r3.xyz, r0, v1.w
+    dp4 r1.w, v0, c3
+    dp4 r1.x, v0, c0
+    dp4 r1.y, v0, c1
+
+mov o0, r1 // Relocated from line 84 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Dreamfall_RainDrop/vp/E124D37C.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r0.xyz, r1.xyww, c14.x
+    dp4 r1.z, v0, c2
+    mul r0.y, r0, c9.x
+    mad r0.xy, r0.z, c10.zwzw, r0
+    mov r0.zw, r1
+    dp3 o5.y, r2, r3
+    mov o2, r0
+    mov o3, r0
+    dp3 o5.z, v2, r2
+    dp3 o5.x, r2, v1
+
+//     mov o0, r1 // Relocated to line 74 with shadertool.py
+mov o0.z, r1 // Inserted by shadertool.py
+
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mad o1.xy, v3, c13, c13.zwzw
+    mad o4.xy, v4, c12, c12.zwzw

@@ -1,0 +1,71 @@
+// CRC32: 436E59C1 (FOG + 0B64A246) | Matched 8 variants of 1 shaders: Hidden/Final Interpolation
+// 
+//     Unity headers extracted from FinalInterpolation.shader
+//     Shader "Hidden/Final Interpolation" {
+//       Properties {
+//        _ZTest ("", Float) = 8
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Pass 1/1 {
+//           ZTest [_ZTest]
+//           ZWrite Off
+//           Fog { Mode Off }
+//           Blend One SrcAlpha
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 10:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_OFF" }
+// 40:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_ON" }
+// 01:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_OFF" }
+// 04:           Keywords { "DIRECTIONAL_SHAFTS" "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_ON" }
+// 20:           Keywords { "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 80:           Keywords { "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_OFF_SCREEN" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+// 02:           Keywords { "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 08:           Keywords { "FLIP_WORKAROUND_OFF" "FRUSTUM_SHAFTS" "LIGHT_ON_SCREEN" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+//               Bind "vertex" Vertex
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 4 [_ProjectionParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    def c5, 0.00000000, 0, 0, 0
+    dcl_position0 v0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r2.x, v0, c1
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp4 r1.x, v0, c0
+    mov r1.y, r2.x
+    mov r0, r1
+    mov r1.z, c5.x
+    mov r1.xy, r1.xwzw
+    if_lt c4.x, r1.z
+
+mov o0, r0 // Relocated from line 54 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Hidden_Final Interpolation/vp/436E59C1.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mov r2.x, -r0.y
+    endif
+
+//     mov o0, r0 // Relocated to line 52 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o1.xz, r1.xyyw
+    mov o1.y, r2.x

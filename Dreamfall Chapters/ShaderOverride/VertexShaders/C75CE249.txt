@@ -1,0 +1,115 @@
+// CRC32: C75CE249 (FOG + FB725375) | Matched 2 variants of 1 shaders: Decal/Colored/Shadow/Transparent Bumped Diffuse Colored Shadow
+// 
+//    Unity headers extracted from Decal-Alpha-Bumped-Colored-Receive-Shadow.shader
+//    Shader "Decal/Colored/Shadow/Transparent Bumped Diffuse Colored Shadow" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//      }
+//      Fallback "Decal/Transparent Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Offset -1, -1
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_ON" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 8 [_Object2World]
+//              Matrix 12 [_World2Object]
+//              Vector 16 [_ProjectionParams]
+//              Vector 17 [_ScreenParams]
+//              Vector 18 [_WorldSpaceLightPos0]
+//              Vector 19 [unity_ShadowFadeCenterAndType]
+//              Vector 20 [unity_LightmapST]
+//              Vector 21 [_MainTex_ST]
+//              Vector 22 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_color0 o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    def c23, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+    dcl_color0 v5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r1.xyz, v2.yzxw, r0.zxyw, -r1
+    mov r0, c14
+    dp4 r3.z, c18, r0
+    mov r0, c13
+    dp4 r3.y, c18, r0
+    mul r2.xyz, r1, v1.w
+    mov r1, c12
+    dp4 r3.x, c18, r1
+    dp4 r0.w, v0, c7
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+
+mov o0, r0 // Relocated from line 83 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Decal_Colored_Shadow_Transparent Bumped Diffuse Colored Shadow/vp/C75CE249.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c23.y
+    mul r1.y, r1, c16.x
+    mad o6.xy, r1.z, c17.zwzw, r1
+
+//     mov o0, r0 // Relocated to line 80 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov r0.x, c19.w
+    add r0.y, c23.x, -r0.x
+    dp4 r0.x, v0, c2
+    dp4 r1.z, v0, c10
+    dp4 r1.x, v0, c8
+    dp4 r1.y, v0, c9
+    add r1.xyz, r1, -c19
+    dp3 o5.y, r3, r2
+    dp3 o5.z, v2, r3
+    dp3 o5.x, r3, v1
+    mov o2, v5
+    mov o6.zw, r0
+    mul o3.xyz, r1, c19.w
+    mad o1.zw, v3.xyxy, c22.xyxy, c22
+    mad o1.xy, v3, c21, c21.zwzw
+    mul o3.w, -r0.x, r0.y
+    mad o4.xy, v4, c20, c20.zwzw
