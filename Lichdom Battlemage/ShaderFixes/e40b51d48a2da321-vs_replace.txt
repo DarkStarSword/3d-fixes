@@ -1,3 +1,4 @@
+// Fast travel decal
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -12,11 +13,20 @@ void main(
   float4 v0 : POSITION0,
   float2 v1 : TEXCOORD0,
   float4 v2 : COLOR0,
-  out float4 o0 : SV_Position0)
+  out float4 o0 : SV_Position0,
+
+out float4 vp0 : TEXCOORD0,
+out float4 vp1 : TEXCOORD1,
+out float4 vp2 : TEXCOORD2,
+out float4 vp3 : TEXCOORD3
+
+  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
   float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
 
   r0.x = dot(g_mInvLightProj._m00_m01_m02_m03, v0.xyzw);
   r0.y = dot(g_mInvLightProj._m10_m11_m12_m13, v0.xyzw);
@@ -28,6 +38,12 @@ void main(
   o0.y = dot(g_mViewProj._m10_m11_m12_m13, r0.xyzw);
   o0.z = dot(g_mViewProj._m20_m21_m22_m23, r0.xyzw);
   o0.w = dot(g_mViewProj._m30_m31_m32_m33, r0.xyzw);
+
+vp0 = g_mViewProj[0];
+vp1 = g_mViewProj[1];
+vp2 = g_mViewProj[2];
+vp3 = g_mViewProj[3];
+
   return;
 }
 
