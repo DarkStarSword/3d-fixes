@@ -1,5 +1,4 @@
-// Snow surface with broken noise sampler (DISABLED)
-// To make noise easier to see, disable output of 8d9899a4415a7fb1
+// Snow surface with broken noise & occlusion
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -35,7 +34,12 @@ void main(
   float4 v2 : TEXCOORD1,
   out float4 o0 : SV_Target0,
   out float4 o1 : SV_Target1,
-  out float4 o2 : SV_Target2)
+  out float4 o2 : SV_Target2,
+
+row_major matrix vp : TEXCOORD2,
+row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7;
   uint4 bitmask, uiDest;
@@ -54,11 +58,13 @@ float4 params = IniParams.Load(0);
   r2.xyz = saturate(float3(-2.500000e-001,-2.500000e-001,-2.500000e-001) + abs(r1.yzw));
   r2.w = sceneDepthMapSampler.Sample(sceneDepthMapSampler_s, v1.xy).x;
 
-// v2 seems to be already in world coords at this point... We will probably
-// need the view-projection matrix to fix this.
-//v2.x += stereo.x * (r2.w * params.x - stereo.y);
-
   r3.xyz = r2.www * v2.xyz + g_WorldViewPos.xyz;
+
+// Adjust world space coordinates to fix snow noise & occlusion:
+float4 tmp = mul(vp, float4(r3.xyz, 1));
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+tmp = mul(ivp, tmp);
+r3.xyz = tmp / tmp.w;
 
   r4.xyz = float3(1.000000e+001,1.000000e+001,1.000000e+001) * r3.xyz;
   r2.w = snowSpatterMapSampler.Sample(snowSpatterMapSampler_s, r4.zx).w;
@@ -70,19 +76,13 @@ float4 params = IniParams.Load(0);
   r2.w = 1.000000015e-001 * r2.w;
   r0.x = r2.w * r0.x;
   r4.xyz = float3(1.250000e-001,1.250000e-001,1.250000e-001) * r3.xyz;
-
-// volumeNoiseSampler needs to be stereo adjusted
-// For now, kill the effect
   r2.w = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
-r2.w = 1;
   r4.xyz = r3.xyz * float3(2.500000e-001,2.500000e-001,2.500000e-001) + r2.www;
   r4.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
-r4.x = 1;
   r2.w = dot(r4.xx, r2.ww);
   r4.xyz = r3.xyz * float3(6.250000e-001,6.250000e-001,6.250000e-001) + r2.www;
   r4.xyz = -r0.xxx * r2.www + r4.xyz;
   r0.x = volumeNoiseSampler.Sample(volumeNoiseSampler_s, r4.xyz).w;
-r0.x = 1;
   r0.x = r0.x * r2.w;
   r0.x = r0.x * 4.000000000e+000 + -2.500000000e-001;
   r0.x = saturate(5.000000000e-001 * r0.x);
@@ -112,23 +112,16 @@ r0.x = 1;
   r2.w = -9.960937500e-001 + r2.w;
   r4.x = g_SnowOcc_WindOffs.x + r2.z;
   r5.xy = float2(9.765625e-004,1.000977e+000) + r4.xw;
-
-// snowOcclusionMapSampler needs to be stereo adjusted
-// For now, just kill the effect
   r5.xw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r5.xy).yx;
-r5.xw = 1;
   r6.w = r5.x;
   r4.y = 1.000000000e+000 + r4.w;
   r7.xyzw = float4(9.765625e-004,1.000000e+000,0.000000e+000,1.000977e+000) + r4.xwxw;
   r5.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r4.xy).xy;
-r5.xy = 1;
   r4.xy = float2(1.024004e+003,1.024004e+003) * r4.xy;
   r4.xy = frac(r4.xy);
   r6.x = r5.y;
   r4.zw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.xy).xy;
-r4.zw = 1;
   r7.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.zw).xy;
-r7.xy = 1;
   r6.y = r4.w;
   r5.y = r4.z;
   r6.z = r7.y;
