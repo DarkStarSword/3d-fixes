@@ -42,6 +42,7 @@ void main(
   float4 fDest;
 
 float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
 
   r0.x = saturate(1.000000015e-001 * g_SnowMultipliers.x);
   r0.x = 1.000000000e+000 + -r0.x;
@@ -52,7 +53,13 @@ float4 stereo = StereoParams.Load(0);
   r1.yzw = r1.xxx * r0.yzw;
   r2.xyz = saturate(float3(-2.500000e-001,-2.500000e-001,-2.500000e-001) + abs(r1.yzw));
   r2.w = sceneDepthMapSampler.Sample(sceneDepthMapSampler_s, v1.xy).x;
+
+// v2 seems to be already in world coords at this point... We will probably
+// need the view-projection matrix to fix this.
+//v2.x += stereo.x * (r2.w * params.x - stereo.y);
+
   r3.xyz = r2.www * v2.xyz + g_WorldViewPos.xyz;
+
   r4.xyz = float3(1.000000e+001,1.000000e+001,1.000000e+001) * r3.xyz;
   r2.w = snowSpatterMapSampler.Sample(snowSpatterMapSampler_s, r4.zx).w;
   r2.w = r2.w * r2.y;
@@ -105,16 +112,23 @@ r0.x = 1;
   r2.w = -9.960937500e-001 + r2.w;
   r4.x = g_SnowOcc_WindOffs.x + r2.z;
   r5.xy = float2(9.765625e-004,1.000977e+000) + r4.xw;
+
+// snowOcclusionMapSampler needs to be stereo adjusted
+// For now, just kill the effect
   r5.xw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r5.xy).yx;
+r5.xw = 1;
   r6.w = r5.x;
   r4.y = 1.000000000e+000 + r4.w;
   r7.xyzw = float4(9.765625e-004,1.000000e+000,0.000000e+000,1.000977e+000) + r4.xwxw;
   r5.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r4.xy).xy;
+r5.xy = 1;
   r4.xy = float2(1.024004e+003,1.024004e+003) * r4.xy;
   r4.xy = frac(r4.xy);
   r6.x = r5.y;
   r4.zw = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.xy).xy;
+r4.zw = 1;
   r7.xy = snowOcclusionMapSampler.Sample(snowOcclusionMapSampler_s, r7.zw).xy;
+r7.xy = 1;
   r6.y = r4.w;
   r5.y = r4.z;
   r6.z = r7.y;
@@ -669,3 +683,4 @@ ret
 // Approximately 149 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 
