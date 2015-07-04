@@ -1,7 +1,20 @@
+// Blue light at fast travel point (from distance)
 
 cbuffer PER_BATCH : register(b0)
 {
   row_major float4x4 g_mViewProj : packoffset(c0);
+}
+
+// frame_analysis was used to determine that g_mViewProj does NOT always match
+// g_VS_ViewProjMatr (perhaps the former can be from the perspective of the
+// light?), so add the definition of PER_FRAME to get the later, which we need
+// to fix shadows:
+cbuffer PER_FRAME : register(b3)
+{
+  row_major float4x4 g_VS_ViewProjMatr : packoffset(c0);
+  float4 g_VS_WorldViewPos : packoffset(c6);
+  float4 g_VS_AnimGenParams : packoffset(c8);
+  row_major float4x4 g_VS_ViewProjZeroMatr : packoffset(c10);
 }
 
 Texture2D<float4> StereoParams : register(t125);
@@ -11,7 +24,12 @@ void main(
   float4 v0 : POSITION0,
   float2 v1 : TEXCOORD0,
   float4 v2 : COLOR0,
-  out float4 o0 : SV_Position0)
+  out float4 o0 : SV_Position0,
+
+out row_major matrix vp : TEXCOORD0,
+out row_major matrix ivp : TEXCOORD4
+
+  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
@@ -21,6 +39,29 @@ void main(
   r0.xyzw = v0.xxxx * g_mViewProj._m00_m01_m02_m03 + r0.xyzw;
   r0.xyzw = v0.zzzz * g_mViewProj._m20_m21_m22_m23 + r0.xyzw;
   o0.xyzw = v0.wwww * g_mViewProj._m30_m31_m32_m33 + r0.xyzw;
+
+vp = g_VS_ViewProjMatr;
+
+// Work out inverse view projection matrix
+float det = determinant(vp);
+ivp[0].x = vp[1].y*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[1].z*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[1].w*(vp[2].y*vp[3].z - vp[2].z*vp[3].y);
+ivp[0].y = vp[0].y*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[0].z*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[0].w*(vp[2].z*vp[3].y - vp[2].y*vp[3].z);
+ivp[0].z = vp[0].y*(vp[1].z*vp[3].w - vp[1].w*vp[3].z) + vp[0].z*(vp[1].w*vp[3].y - vp[1].y*vp[3].w) + vp[0].w*(vp[1].y*vp[3].z - vp[1].z*vp[3].y);
+ivp[0].w = vp[0].y*(vp[1].w*vp[2].z - vp[1].z*vp[2].w) + vp[0].z*(vp[1].y*vp[2].w - vp[1].w*vp[2].y) + vp[0].w*(vp[1].z*vp[2].y - vp[1].y*vp[2].z);
+ivp[1].x = vp[1].x*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[1].z*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[1].w*(vp[2].z*vp[3].x - vp[2].x*vp[3].z);
+ivp[1].y = vp[0].x*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[0].z*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[0].w*(vp[2].x*vp[3].z - vp[2].z*vp[3].x);
+ivp[1].z = vp[0].x*(vp[1].w*vp[3].z - vp[1].z*vp[3].w) + vp[0].z*(vp[1].x*vp[3].w - vp[1].w*vp[3].x) + vp[0].w*(vp[1].z*vp[3].x - vp[1].x*vp[3].z);
+ivp[1].w = vp[0].x*(vp[1].z*vp[2].w - vp[1].w*vp[2].z) + vp[0].z*(vp[1].w*vp[2].x - vp[1].x*vp[2].w) + vp[0].w*(vp[1].x*vp[2].z - vp[1].z*vp[2].x);
+ivp[2].x = vp[1].x*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[1].y*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[1].w*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[2].y = vp[0].x*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[0].y*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[0].w*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[2].z = vp[0].x*(vp[1].y*vp[3].w - vp[1].w*vp[3].y) + vp[0].y*(vp[1].w*vp[3].x - vp[1].x*vp[3].w) + vp[0].w*(vp[1].x*vp[3].y - vp[1].y*vp[3].x);
+ivp[2].w = vp[0].x*(vp[1].w*vp[2].y - vp[1].y*vp[2].w) + vp[0].y*(vp[1].x*vp[2].w - vp[1].w*vp[2].x) + vp[0].w*(vp[1].y*vp[2].x - vp[1].x*vp[2].y);
+ivp[3].x = vp[1].x*(vp[2].z*vp[3].y - vp[2].y*vp[3].z) + vp[1].y*(vp[2].x*vp[3].z - vp[2].z*vp[3].x) + vp[1].z*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[3].y = vp[0].x*(vp[2].y*vp[3].z - vp[2].z*vp[3].y) + vp[0].y*(vp[2].z*vp[3].x - vp[2].x*vp[3].z) + vp[0].z*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[3].z = vp[0].x*(vp[1].z*vp[3].y - vp[1].y*vp[3].z) + vp[0].y*(vp[1].x*vp[3].z - vp[1].z*vp[3].x) + vp[0].z*(vp[1].y*vp[3].x - vp[1].x*vp[3].y);
+ivp[3].w = vp[0].x*(vp[1].y*vp[2].z - vp[1].z*vp[2].y) + vp[0].y*(vp[1].z*vp[2].x - vp[1].x*vp[2].z) + vp[0].z*(vp[1].x*vp[2].y - vp[1].y*vp[2].x);
+ivp /= det;
+
   return;
 }
 
