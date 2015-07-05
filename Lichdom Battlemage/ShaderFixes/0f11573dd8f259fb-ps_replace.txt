@@ -1,3 +1,4 @@
+// Unverified light fix
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -26,13 +27,24 @@ void main(
   float4 v1 : TEXCOORD0,
   float4 v2 : TEXCOORD1,
   out float4 o0 : SV_Target0,
-  out float4 o1 : SV_Target1)
+  out float4 o1 : SV_Target1,
+
+row_major matrix vp : TEXCOORD2,
+row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1;
   uint4 bitmask, uiDest;
   float4 fDest;
 
   r0.x = _tex0.Sample(_tex0_s, v1.xy).x;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(vp, v2 * r0.x);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+v2 = mul(ivp, tmp) / r0.x;
+
   r0.xyz = -r0.xxx * v2.xyz + g_LightPos.xyz;
   r0.xyz = g_LightPos.www * r0.xyz;
   r0.x = dot(r0.xyz, r0.xyz);

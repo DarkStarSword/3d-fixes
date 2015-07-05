@@ -1,3 +1,5 @@
+// Unverified light fix
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[3];
@@ -37,7 +39,12 @@ void main(
   float4 v0 : SV_Position0,
   float4 v1 : TEXCOORD0,
   float4 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+
+row_major matrix vp : TEXCOORD2,
+row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
@@ -45,6 +52,13 @@ void main(
 
   r0.x = sceneDepthMapSampler.Sample(sceneDepthMapSampler_s, v1.xy).x;
   r0.xyzw = r0.xxxx * v2.zxyz + PS_WorldViewPos.zxyz;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(vp, float4(r0.yzw, 1));
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+tmp = mul(ivp, tmp);
+r0.yzw = tmp / tmp.w;
+
   r1.x = dot(mLightView._m00_m01_m02, r0.yzw);
   r1.y = dot(mLightView._m10_m11_m12, r0.yzw);
   r1.xyzw = CausticParams.wwww * r1.xyxy;
