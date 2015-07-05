@@ -36,6 +36,11 @@ def scale_float(buf):
 		m = max(1.0, max(buf))
 		print('Scaling to', m)
 		return np.uint8(np.clip(gamma(buf / m) * 255.0, 0, 255.0))
+	elif args.auto_scale:
+		mn = min(buf)
+		mx = max(buf)
+		print('Scaling to {} : {}'.format(mn, mx))
+		return np.uint8(np.clip(gamma((buf - mn) / (mx - mn)) * 255.0, 0, 255.0))
 	else:
 		return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
 
@@ -64,6 +69,21 @@ def convert_R11G11B10_FLOAT(buf):
 def convert_R24G8_UINT(buf):
 	r = scale8bit(buf >>  0, 24)
 	g = scale8bit(buf >> 24,  8)
+	return np.uint8(np.column_stack((r, g, [0]*len(r))))
+
+def convert_2x16_snorm(buf):
+	# r = buf['f0'] / 0x7fff * 255
+	# g = buf['f1'] / 0x7fff * 255
+	# Scale to an unsigned range:
+	#r = buf['f0'] / 0xffff * 255 + 0x80
+	#g = buf['f1'] / 0xffff * 255 + 0x80
+	# Texture I'm working on seems garbage - hard to verify this
+	# r = scale8bit(buf['f0'], 16)
+	# g = scale8bit(buf['f1'], 16)
+	print(min(r))
+	print(max(r))
+	print(min(g))
+	print(max(g))
 	return np.uint8(np.column_stack((r, g, [0]*len(r))))
 
 def convert_2x16f(buf):
@@ -194,9 +214,9 @@ dxgi_formats = {
 	34:         ("DXGI_FORMAT_R16G16_FLOAT",               ),
 	35:         ("DXGI_FORMAT_R16G16_UNORM",               ),
 	36:         ("DXGI_FORMAT_R16G16_UINT",                ),
-	37:         ("DXGI_FORMAT_R16G16_SNORM",               ),
+	37:         ("DXGI_FORMAT_R16G16_SNORM",               ), #np.dtype("<i2, <i2"),        "RGB", convert_2x16_snorm),
 	38:         ("DXGI_FORMAT_R16G16_SINT",                ),
-	39:         ("DXGI_FORMAT_R32_TYPELESS",               ),
+	39:         ("DXGI_FORMAT_R32_TYPELESS",               np.dtype("<f4"),            "L",    scale_float),
 	40:         ("DXGI_FORMAT_D32_FLOAT",                  ),
 	41:         ("DXGI_FORMAT_R32_FLOAT",                  ),
 	42:         ("DXGI_FORMAT_R32_UINT",                   ),
@@ -600,7 +620,9 @@ def parse_args():
 	parser.add_argument('--gamma', type=float, default=2.2,
 			help='Gamma correction to apply')
 	parser.add_argument('--hdr', action='store_true',
-			help='Scale output to show full dynamic range')
+			help='Scale output to squash high dynamic range')
+	parser.add_argument('--auto-scale', action='store_true',
+			help='Scale output to maximise range')
 	parser.add_argument('--no-alpha', action='store_true',
 			help='Drop the alpha channel during conversion')
 	parser.add_argument('--force', action='store_true',
