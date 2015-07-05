@@ -98,6 +98,90 @@ def convert_4x16f(buf):
 	a = scale_float(buf['f3'])
 	return np.uint8(np.column_stack((r, g, b, a)))
 
+def convert_dxt5(buf, header):
+	''' From my Miasmata-fixes imag.py, could probably be optimised & DXT1 support easily added back '''
+	block_size = 16
+
+	(width, height) = (header.width, header.height)
+
+	def rgb565(c):
+		r = (c & 0xf800) >> 8
+		g = (c & 0x07e0) >> 3
+		b = (c & 0x001f) << 3
+		return np.dstack((r, g, b))
+
+	c = [None]*4
+	c[0] = buf['c0'].reshape([height / 4, width / 4])
+	c[1] = buf['c1'].reshape([height / 4, width / 4])
+	ct = (c[0] <= c[1]).reshape([height / 4, width / 4, 1])
+	c[0] = rgb565(c[0])
+	c[1] = rgb565(c[1])
+	c[2] = np.choose(ct, ((2*c[0] + c[1]) / 3, (c[0] + c[1]) / 2))
+	c[3] = np.choose(ct, ((c[0] + 2*c[1]) / 3, np.zeros_like(c[0])))
+	del ct
+	cl = buf['clookup'].reshape([height / 4, width / 4, 1]).copy()
+
+	# Alpha:
+	channels = 4
+	alpha = buf['alpha'].reshape(height / 4, width / 4)
+	a = [None]*8
+	aa = [None]*8
+	ab = [None]*8
+	# Byte swapped due to reading in LE
+	al = ((alpha & 0xffffffffffff0000) >> 16)
+	a[0] = alpha & 0xff
+	a[1] = (alpha & 0xff00) >> 8
+	at = a[0] <= a[1]
+	for i in range(1, 7):
+		aa[i+1] = ((7-i)*a[0] + i*a[1]) / 7
+	for i in range(1, 5):
+		ab[i+1] = ((5-i)*a[0] + i*a[1]) / 5
+	ab[6] = np.zeros_like(a[0])
+	ab[7] = np.empty_like(a[0])
+	ab[7].fill(255)
+	for i in range(2, 8):
+		a[i] = np.choose(at, [aa[i], ab[i]])
+	del aa, ab, at
+
+	out = np.empty([height, width, channels], np.uint16)
+	for y in range(4):
+		for x in range(4):
+			# print(y, x)
+
+			# I feel like there's probably a more efficient way to do this...
+
+			# Look up the value
+			l = np.int32(cl & 0x3)
+			cl >>= 2
+
+			# Lookup the value of each of the pixels we are working on:
+			o = np.choose(l, c)
+			o = np.uint16(o) # Added this when moving from miasmata-fixes to ddsinfo
+
+			if channels == 4:
+				l = np.uint8(al & 0x7)
+				al >>= 3
+
+				oa = np.choose(l, a)
+				o = np.insert(o, 3, oa, 2)
+
+			# Enlarge that 4x in both directions:
+			o = o.repeat(4, 0).repeat(4, 1)
+
+			# Construct a mask of the pixels in the final image we are working on:
+			m = np.zeros([4, 4, channels], dtype=np.uint16) # Added dtype= when moving from miasmata-fixes to ddsinfo
+			m[y,  x] = [1] * channels
+			m = np.tile(m, [height / 4, width / 4, 1])
+
+			# Copy these pixels to the output image - this is the slowest operation:
+			np.putmask(out, m, o)
+
+	# Finally cast to uint8 here - too early causes overflows in the DXT
+	# calculations and any time after that actually slows things down
+	image = Image.fromarray(np.array(out, np.uint8))
+
+	return image
+
 def fourcc(code):
 	return struct.unpack('<I', struct.pack('4s', code.encode('ascii')))[0]
 
@@ -166,7 +250,7 @@ d3d9_pixel_formats = {
 	fourcc("DXT2"): ("D3DFMT_DXT2",                ),
 	fourcc("DXT3"): ("D3DFMT_DXT3",                ),
 	fourcc("DXT4"): ("D3DFMT_DXT4",                ),
-	fourcc("DXT5"): ("D3DFMT_DXT5",                ),
+	fourcc("DXT5"): ("D3DFMT_DXT5",                np.dtype([('alpha', '<u8'), ('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGBA", convert_dxt5),
 	fourcc("MET1"): ("D3DFMT_MULTI2_ARGB8",        ),
 	0x7fffffff:     ("D3DFMT_FORCE_DWORD",         ),
 	fourcc("DX10"): ("Refer to extended header",   ),
@@ -544,9 +628,14 @@ def convert(fp, header, dtype):
 	buf = np.fromfile(fp, np_dtype, count=header.width * header.height)
 
 	if converter:
-		buf = converter(buf)
+		try:
+			buf = converter(buf, header)
+		except TypeError:
+			buf = converter(buf)
 
-	if img_type == 'RGB':
+	if isinstance(buf, Image.Image):
+		image = buf
+	elif img_type == 'RGB':
 		image = Image.fromstring(img_type, (header.width, header.height), buf.tostring(), 'raw', img_type, 0, 1)
 	else:
 		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
