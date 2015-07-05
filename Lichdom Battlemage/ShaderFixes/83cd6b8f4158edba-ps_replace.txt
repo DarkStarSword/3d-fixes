@@ -1,4 +1,4 @@
-// shadow pixel shader
+// directional lighting / shadow pixel shader
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -28,15 +28,32 @@ Texture1D<float4> IniParams : register(t120);
 
 void main(
   float4 v0 : SV_POSITION0,
-  float4 v1 : TEXCOORD0,
-  float4 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  float4 v1 : TEXCOORD0, // xy = rotated view pos, zw = relative to something
+  float4 v2 : TEXCOORD1, // xy = screen, zw = scaled by resolution
+  out float4 o0 : SV_Target0,
+
+float4 g_VS_NearFarClipDist : TEXCOORD2,
+float4 g_VS_ScreenSize : TEXCOORD3
+
+  )
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
+
   r0.x = sceneDepthSampler.Sample(sceneDepthSampler_s, v2.xy).x;
+
+// Align shadows with ground. Scale the z buffer to get the depth and subtract
+// the stereo correction formula. We have to take the perspective divide into
+// account and multiply by the horizontal resolution since v0 is in pixels.
+float depth = r0.x * g_VS_NearFarClipDist.y;
+v0.x -= stereo.x * (depth - stereo.y) / depth * g_VS_ScreenSize.x / 2;
+
+// *Basis* is already the start of the transformation from screen space into
+// shadow map space, so we have to fix the coordinate before this point:
   r0.yzw = vBasisMagnitudes.xyz * r0.xxx;
   r1.xy = v1.zw * r0.xx + v1.xy;
   r0.xy = v0.xy * r0.yz;
@@ -110,10 +127,6 @@ void main(
   r0.y = r0.w + r0.y;
   r0.y = -r0.y * r0.y + 1.000000000e+000;
   o0.xyzw = r0.yyyy * r0.xxxx;
-
-// Disable shadows:
-o0 = 0;
-
   return;
 }
 

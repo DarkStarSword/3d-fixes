@@ -1,9 +1,3 @@
-cbuffer cb3 : register(b3)
-{
-  float4 cb3[8];
-}
-
-
 cbuffer PER_BATCH : register(b0)
 {
   row_major float4x4 TexGen0 : packoffset(c0);
@@ -19,9 +13,16 @@ cbuffer PER_INSTANCE : register(b1)
   row_major float4x4 CompMatrix : packoffset(c0);
 }
 
+// Filled in some missing declarations from other shaders:
 cbuffer PER_FRAME : register(b3)
 {
+  row_major float4x4 g_VS_ViewProjMatr : packoffset(c0);
+  float4 g_VS_SunLightDir : packoffset(c4);
+  float4 g_VS_WorldViewPos : packoffset(c6);
   float4 g_VS_ScreenSize : packoffset(c7);
+  float4 g_VS_AnimGenParams : packoffset(c8);
+  float4 g_VS_NearFarClipDist : packoffset(c9);
+  row_major float4x4 g_VS_ViewProjZeroMatr : packoffset(c10);
 }
 
 Texture2D<float4> StereoParams : register(t125);
@@ -33,7 +34,12 @@ void main(
   float3 v2 : TEXCOORD1,
   out float4 o0 : SV_Position0,
   out float4 o1 : TEXCOORD0,
-  out float4 o2 : TEXCOORD1)
+  out float4 o2 : TEXCOORD1,
+
+out float4 nearfar : TEXCOORD2,
+out float4 res : TEXCOORD3
+
+  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
@@ -52,9 +58,15 @@ void main(
   r0.zw = g_vViewPos.zz * RotMatrix._m20_m21 + r0.zw;
   o1.zw = r0.xy + -r0.zw;
   o1.xy = r0.zw;
-  r0.xy = cb3[7].xy * v1.xy;
+// For whatever reason the decompiler used cb3[7].xy here:
+  r0.xy = g_VS_ScreenSize.xy * v1.xy;
   o2.zw = float2(2.500000e-001,2.500000e-001) * r0.xy;
   o2.xy = v1.xy;
+
+// Pass far clipping plane and screen resolution through to pixel shader:
+nearfar = g_VS_NearFarClipDist;
+res = g_VS_ScreenSize;
+
   return;
 }
 
