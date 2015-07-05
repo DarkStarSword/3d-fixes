@@ -42,12 +42,19 @@ row_major matrix ivp : TEXCOORD6
 
 // Adjust located _tex0 is sampled to remove subtle halo in sky. Can't just
 // adjust v1 - doing so breaks snow:
+// NO - this breaks other things as well (e.g. Fence near start of snow level)
+//float4 stereo = StereoParams.Load(0);
+//float4 adj = v1;
+//adj.x += stereo.x * (adj.w - stereo.y) / 2;
 
+  r0.x = _tex0.Sample(_tex0_s, v1.xy).x;
+
+// Fix specular:
 float4 stereo = StereoParams.Load(0);
-float4 adj = v1;
-adj.x += stereo.x * (adj.w - stereo.y) / 2;
+float4 tmp = mul(vp, v2 * r0.x);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+v2 = mul(ivp, tmp) / r0.x;
 
-  r0.x = _tex0.Sample(_tex0_s, adj.xy).x;
   r0.yzw = v2.xyz * r0.xxx;
   r1.xyz = -r0.xxx * v2.xyz + g_LightPos.xyz;
   r2.xyz = g_LightPos.www * r1.xyz;
