@@ -33,12 +33,12 @@ def scale8bit(buf, bits):
 def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
 	if args.hdr:
-		m = max(1.0, max(buf))
+		m = max(1.0, np.max(buf))
 		print('Scaling to', m)
 		return np.uint8(np.clip(gamma(buf / m) * 255.0, 0, 255.0))
 	elif args.auto_scale:
-		mn = min(buf)
-		mx = max(buf)
+		mn = np.min(buf)
+		mx = np.max(buf)
 		print('Scaling to {} : {}'.format(mn, mx))
 		return np.uint8(np.clip(gamma((buf - mn) / (mx - mn)) * 255.0, 0, 255.0))
 	else:
