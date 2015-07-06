@@ -1,3 +1,5 @@
+// Specular highlights on ground in tutorial area
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[3];
@@ -70,20 +72,39 @@ void main(
   float4 v0 : SV_Position0,
   float4 v1 : TEXCOORD0,
   float4 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+
+row_major matrix vp : TEXCOORD2,
+row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10;
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.x = dot(v2.xyzw, v2.xyzw);
-  r0.x = rsqrt(r0.x);
-  r0.xyz = v2.xyz * r0.xxx;
+// This section moved down:
+  // r0.x = dot(v2.xyzw, v2.xyzw);
+  // r0.x = rsqrt(r0.x);
+  // r0.xyz = v2.xyz * r0.xxx;
+
   r1.xy = PS_ScreenSize.zw * v0.xy;
   r1.xy = v0.ww * r1.xy;
   r1.xy = r1.xy + r1.xy;
   r1.xy = r1.xy / v0.ww;
   r0.w = sceneDepthSampler.Sample(sceneDepthSampler_s, r1.xy).x;
+
+// Fix specular highlights:
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(vp, v2 * r0.w);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+v2 = mul(ivp, tmp) / r0.w;
+
+// This was moved from above:
+  r0.x = dot(v2.xyzw, v2.xyzw);
+  r0.x = rsqrt(r0.x);
+  r0.xyz = v2.xyz * r0.xxx;
+
   r0.w = PS_NearFarClipDist.y * r0.w;
   r2.xyz = sceneNormalsSampler.Sample(sceneNormalsSampler_s, r1.xy).xyz;
   r2.xyz = r2.xyz * float3(2.000000e+000,2.000000e+000,2.000000e+000) + float3(-1.000000e+000,-1.000000e+000,-1.000000e+000);
@@ -628,3 +649,4 @@ ret
 // Approximately 98 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 
