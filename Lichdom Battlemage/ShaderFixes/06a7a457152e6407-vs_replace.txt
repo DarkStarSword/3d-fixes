@@ -1,4 +1,4 @@
-// Halo on snow
+// Halo on snow, several other lighting effects
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -48,6 +48,29 @@ void main(
   r0.xyzw = g_mCamera._m30_m31_m32_m33 + r0.xyzw;
   o0.xyzw = r0.xyzw;
 
+// For accurate results on lighting where this shader is used, o2 needs to be
+// derived from the original coordinates, o1 needs to be from adjusted
+// coordinates. Copy this last chunk of code and perform it twice to find each
+// output.
+
+float4 orig_r0 = r0;
+float4 orig_r1 = r1;
+float4 orig_r2 = r2;
+
+  orig_r0.xy = orig_r0.xy / orig_r0.ww;
+  orig_r1.yz = orig_r0.xy * float2(5.000000e-001,5.000000e-001) + float2(5.000000e-001,5.000000e-001);
+  orig_r1.xw = float2(1.000000e+000,1.000000e+000) + -orig_r1.zz;
+  orig_r0.xyz = g_vFrustrumRB.xyz + -g_vFrustrumLB.xyz;
+  orig_r0.xyz = orig_r1.yyy * orig_r0.xyz + g_vFrustrumLB.xyz;
+  orig_r2.xyz = g_vFrustrumRT.xyz + -g_vFrustrumLT.xyz;
+  orig_r1.yzw = orig_r1.yyy * orig_r2.xyz + g_vFrustrumLT.xyz;
+  orig_r0.xyz = -orig_r1.yzw + orig_r0.xyz;
+  orig_r0.xyz = orig_r1.xxx * orig_r0.xyz + orig_r1.yzw;
+  orig_r1.x = dot(g_gridMatrix._m00_m01_m02, orig_r0.xyz);
+  orig_r1.y = dot(g_gridMatrix._m10_m11_m12, orig_r0.xyz);
+  orig_r1.z = dot(g_gridMatrix._m20_m21_m22, orig_r0.xyz);
+  o2.xyz = orig_r1.xyz * orig_r0.www;
+
 float4 stereo = StereoParams.Load(0);
 r0.x += stereo.x * (r0.w - stereo.y);
 
@@ -66,7 +89,7 @@ r0.x += stereo.x * (r0.w - stereo.y);
   r1.y = dot(g_gridMatrix._m10_m11_m12, r0.xyz);
   r1.z = dot(g_gridMatrix._m20_m21_m22, r0.xyz);
   o3.xyz = r0.xyz * r0.www;
-  o2.xyz = r1.xyz * r0.www;
+  //o2.xyz = r1.xyz * r0.www;
   return;
 }
 
