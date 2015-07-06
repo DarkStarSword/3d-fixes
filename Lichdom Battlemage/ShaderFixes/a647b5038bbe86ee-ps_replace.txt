@@ -1,3 +1,4 @@
+// Glow around moon / fog
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -24,13 +25,25 @@ void main(
   float4 v0 : SV_Position0,
   float2 v1 : TEXCOORD0,
   float3 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+
+row_major matrix vp : TEXCOORD2,
+row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2;
   uint4 bitmask, uiDest;
   float4 fDest;
 
   r0.x = zMap.Sample(zMap_s, v1.xy).x;
+
+// Fixes glow around moon:
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(vp, v2 * r0.x);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+v2 = mul(ivp, tmp) / r0.x;
+
   r0.y = r0.x * v2.z + vfViewPos.z;
   r0.xzw = v2.xyz * r0.xxx;
   r0.y = saturate(r0.y * vfColGradParams.x + vfColGradParams.y);
