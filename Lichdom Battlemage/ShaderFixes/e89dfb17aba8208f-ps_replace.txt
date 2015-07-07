@@ -1,3 +1,5 @@
+// Waterfall splashes
+
 cbuffer cb4 : register(b4)
 {
   float4 cb4[5];
@@ -66,6 +68,14 @@ void main(
   r0.yz = r0.yz * r0.xx + r1.xy;
   o0.w = saturate(r0.x);
   r0.xyz = envMapSamplerRefr.Sample(envMapSamplerRefr_s, r0.yz).xyz;
+
+// Another shader using the broken envMapSamplerRefr :(
+// Disable this effect until I find a solution to this problem
+float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
+if (stereo.x && params.y == 0)
+	discard;
+
   o0.xyz = r0.xyz;
   return;
 }
