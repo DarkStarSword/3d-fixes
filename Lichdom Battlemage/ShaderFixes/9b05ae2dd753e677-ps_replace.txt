@@ -1,3 +1,5 @@
+// Roth / dragon ghost distortion
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[4];
@@ -158,6 +160,18 @@ void main(
   r3.xy = v5.xy / v5.ww;
   r1.xy = r1.xy * float2(2.000000e-001,2.000000e-001) + r3.xy;
   r1.xyw = envMapSamplerRefr.Sample(envMapSamplerRefr_s, r1.xy).xyz;
+
+// envMapSamplerRefr does not cover enough of the screen to be usable in
+// stereo... Instead, we just have to kill the transparency in 3D :(
+
+// If I can work out where the texture comes from I might be able to do
+// something better... e.g. if it's a subresource region copy I could possibly
+// get 3DMigoto to adjust the coordinates.
+
+float4 stereo = StereoParams.Load(0);
+if (stereo.x)
+	r1.xyw=0;
+
   r1.xyw = r1.xyw / cb3[2].www;
   r0.xyz = -r1.xyw + r0.xyz;
   r0.xyz = __0Opacity__1GlowFresnelPower__2GlowFresnelBias__3DiffuseContribution.www * r0.xyz + r1.xyw;
