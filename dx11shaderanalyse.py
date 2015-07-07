@@ -111,15 +111,27 @@ chunks = {
     # TODO: 'SHEX' / 'SHDR', maybe 'STAT', etc.
 }
 
-def decode_chunk_at(stream, offset):
+def get_chunk_info(stream, offset):
     stream.seek(offset)
     (signature, size) = struct.unpack('<4sI', stream.read(8))
+    return (signature, size)
+
+def decode_chunk_at(stream, offset):
+    (signature, size) = get_chunk_info(stream, offset)
     if verbosity >= 1:
         print("{} chunk at 0x{:08x} size {}".format(signature.decode('ASCII'), offset, size))
     elif verbosity >= 0:
         print(signature.decode('ASCII'))
     if signature in chunks:
         chunks[signature](stream.read(size))
+
+def get_chunk(stream, name):
+    header = parse_dxbc_header(stream)
+    chunk_offsets = get_chunk_offsets(stream, header)
+    for idx in range(header.chunks):
+        (signature, size) = get_chunk_info(stream, chunk_offsets[idx])
+        if signature == name:
+            return stream.read(size)
 
 def brute_hash(stream):
     # Try MD5 on every possible subset of the file to see if it matches anything
@@ -165,3 +177,5 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+# vi: et sw=4:ts=4

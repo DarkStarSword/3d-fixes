@@ -7,31 +7,38 @@
 import float_to_hex
 import sys, struct
 import argparse
+from io import StringIO
+
+import dx11shaderanalyse
 
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('original', type=argparse.FileType('rb'))
 	parser.add_argument('disassembled', type=argparse.FileType('rb'))
 	parser.add_argument('assembly', type=argparse.FileType('rb+'), nargs='?')
+	parser.add_argument('new_assembly', type=argparse.FileType('wb'), nargs='?')
 	args = parser.parse_args();
 
 	if args.assembly:
 		text = args.assembly.read().decode('ascii')
-		args.assembly.seek(0)
-		args.assembly.truncate()
+		if args.new_assembly:
+			args.assembly = args.new_assembly
+		else:
+			args.assembly.seek(0)
+			args.assembly.truncate()
 	else:
 		text = None
 
-	# Skip checksum in header
-	args.original.read(0x20)
-	args.disassembled.read(0x20)
+	oshex = StringIO(dx11shaderanalyse.get_chunk(args.original, 'SHEX'))
+	dshex = StringIO(dx11shaderanalyse.get_chunk(args.disassembled, 'SHEX'))
 
 	while True:
 		dbytes = args.disassembled.read(4)
 		obytes = args.original.read(4)
 
 		if not obytes and not dbytes:
-			args.assembly.write(text.encode('ascii'))
+			if args.assembly:
+				args.assembly.write(text.encode('ascii'))
 			return
 
 		dbytes = struct.unpack('<I', dbytes)[0]
