@@ -1,3 +1,5 @@
+// Distortion on fast travel
+
 cbuffer cb4 : register(b4)
 {
   float4 cb4[5];
@@ -63,7 +65,18 @@ void main(
   r1.xy = v5.xy / v5.ww;
   r0.yz = r0.yz * r0.xx + r1.xy;
   o0.w = saturate(r0.x);
+
+// For some unknown reason, this environment map sampler pulsates bright and
+// dark from a distance in stereo, but I haven't managed to track down where
+// this originates yet.
   r0.xyz = envMapSamplerRefr.Sample(envMapSamplerRefr_s, r0.yz).xyz;
+
+// For now, kill the distortion when far away from the camera. That way we
+// still get the effect up close where it matters, but side step the issue from
+// a distance.
+if (v5.w > 5)
+	discard;
+
   o0.xyz = r0.xyz;
   return;
 }
@@ -276,3 +289,4 @@ ret
 // Approximately 14 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 
