@@ -14,6 +14,13 @@ except ImportError:
 	Image = None
 import math
 import itertools
+import multiprocessing
+
+pool = None
+
+def pr_single_threaded(*args, **kwargs):
+	if multiprocessing.current_process().name == 'MainProcess':
+		return print(*args, **kwargs)
 
 # Documentation:
 # https://en.wikipedia.org/wiki/S3_Texture_Compression
@@ -34,12 +41,12 @@ def scale_float(buf):
 	# TODO: Make clipping & scaling configurable (e.g. for HDR rendering like Witcher 3)
 	if args.hdr:
 		m = max(1.0, np.max(buf))
-		print('Scaling to', m)
+		pr_single_threaded('Scaling to', m)
 		return np.uint8(np.clip(gamma(buf / m) * 255.0, 0, 255.0))
 	elif args.auto_scale:
 		mn = np.min(buf)
 		mx = np.max(buf)
-		print('Scaling to {} : {}'.format(mn, mx))
+		pr_single_threaded('Scaling to {} : {}'.format(mn, mx))
 		return np.uint8(np.clip(gamma((buf - mn) / (mx - mn)) * 255.0, 0, 255.0))
 	else:
 		return np.uint8(np.clip(gamma(buf) * 255.0, 0, 255.0))
@@ -610,20 +617,9 @@ def val_to_rainbow(val, min, max):
 
 	return segments[-1]
 
-def convert(fp, header, dtype):
-	try:
-		(fmt_name, np_dtype, img_type, converter) = dtype
-	except ValueError:
-		print('\nFormat not supported for conversion to PNG')
-		return
-
-	filename = '%s.png' % os.path.splitext(fp.name)[0]
-
-	if not args.force:
-		if os.path.exists(filename):
-			print('\n%s already exists' % filename)
-			return
-	print('\nConverting to %s...' % filename)
+def _convert(src_filename, pos, header, dest_filename, np_dtype, img_type, converter):
+	fp = open(src_filename, 'rb')
+	fp.seek(pos)
 
 	buf = np.fromfile(fp, np_dtype, count=header.width * header.height)
 
@@ -646,7 +642,29 @@ def convert(fp, header, dtype):
 	if args.flip:
 		image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
-	image.save(filename)
+	image.save(dest_filename)
+
+def convert(fp, header, dtype):
+	try:
+		(fmt_name, np_dtype, img_type, converter) = dtype
+	except ValueError:
+		print('\nFormat not supported for conversion to PNG')
+		return
+
+	filename = '%s.png' % os.path.splitext(fp.name)[0]
+
+	if not args.force:
+		if os.path.exists(filename):
+			print('\n%s already exists' % filename)
+			return
+	print('\nConverting to %s...' % filename)
+	if pool:
+		result = pool.apply_async(_convert, (fp.name, fp.tell(), header, filename, np_dtype, img_type, converter))
+		# For debugging:
+		# print(result.get())
+	else:
+		_convert(fp.name, fp.tell(), header, filename, np_dtype, img_type, converter)
+
 
 def convert_dx10(fp, header):
 	if header.dx10_header.dxgi_format not in dxgi_formats:
@@ -716,10 +734,17 @@ def parse_args():
 			help='Drop the alpha channel during conversion')
 	parser.add_argument('--force', action='store_true',
 			help='Overwrite destination files')
+	parser.add_argument('--single-process', '--single-threaded', action='store_true',
+			help='Only process one file at a time')
 	args = parser.parse_args()
 
 def main():
+	global pool
+
 	parse_args()
+
+	if not args.single_process and Image is not None and not args.no_convert:
+		pool = multiprocessing.Pool()
 
 	print_line = False
 	for file in args.files:
@@ -734,19 +759,24 @@ def main():
 
 		print(header)
 
-		if Image is None: # PIL not installed
+		if Image is None or args.no_convert: # PIL not installed
 			continue
 
-		if not args.no_convert:
-			if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
-				if header.dx10_header is not None:
-					convert_dx10(fp, header)
-				else:
-					convert_fourcc(fp, header)
+		if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
+			if header.dx10_header is not None:
+				convert_dx10(fp, header)
 			else:
-				convert_pixelformat(fp, header)
+				convert_fourcc(fp, header)
+		else:
+			convert_pixelformat(fp, header)
+
+	if pool:
+		pool.close()
+		print('\nWaiting for worker processes to finish...')
+		pool.join()
 
 if __name__ == '__main__':
+	multiprocessing.freeze_support()
 	main()
 
 # vi:noexpandtab:sw=8:ts=8
