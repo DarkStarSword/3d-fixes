@@ -74,7 +74,12 @@ void main(
   r1.xyzw = _WaveVtxPhases.xyzw * r0.wwww;
   r1.xyzw = r1.xyzw * v2.yyyy + _WaveFreq.xyzw;
   r1.xyzw = v2.zzzz + r1.xyzw;
-  r1.xyzw = float4(3.141593e+000,3.141593e+000,3.141593e+000,3.141593e+000) * r1.xyzw;
+
+// This line had some precison errors causing flickering. Identified with
+// assembly versions using compare_shader_bins.py and copied back here:
+//r1.xyzw = float4(3.141593e+000,3.141593e+000,3.141593e+000,3.141593e+000) * r1.xyzw;
+  r1.xyzw = float4(3.1415925, 3.1415925, 3.1415925, 3.1415925) * r1.xyzw;
+
   r1.xyzw = sin(r1.xyzw);
   r1.xyzw = r1.xyzw * _WaveAmp.xyzw + _WaveLevels.xyzw;
   r0.w = dot(r1.xyzw, float4(1.000000e+000,1.000000e+000,1.000000e+000,1.000000e+000));
