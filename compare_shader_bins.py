@@ -7,7 +7,7 @@
 import float_to_hex
 import sys, struct
 import argparse
-from io import StringIO
+from io import BytesIO
 
 import dx11shaderanalyse
 
@@ -29,12 +29,12 @@ def main():
 	else:
 		text = None
 
-	oshex = StringIO(dx11shaderanalyse.get_chunk(args.original, 'SHEX'))
-	dshex = StringIO(dx11shaderanalyse.get_chunk(args.disassembled, 'SHEX'))
+	oshex = BytesIO(dx11shaderanalyse.get_chunk(args.original, b'SHEX'))
+	dshex = BytesIO(dx11shaderanalyse.get_chunk(args.disassembled, b'SHEX'))
 
 	while True:
-		dbytes = args.disassembled.read(4)
-		obytes = args.original.read(4)
+		dbytes = dshex.read(4)
+		obytes = oshex.read(4)
 
 		if not obytes and not dbytes:
 			if args.assembly:
