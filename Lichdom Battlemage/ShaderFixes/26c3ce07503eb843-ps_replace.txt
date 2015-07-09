@@ -1,4 +1,4 @@
-// Snow surface with broken noise & occlusion
+// Snow surface with broken noise & occlusion (visual quality = low - high)
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -45,9 +45,6 @@ row_major matrix ivp : TEXCOORD6
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-float4 params = IniParams.Load(0);
-
   r0.x = saturate(1.000000015e-001 * g_SnowMultipliers.x);
   r0.x = 1.000000000e+000 + -r0.x;
   r0.yzw = sceneNormalsSampler.Sample(sceneNormalsSampler_s, v1.xy).xyz;
@@ -61,6 +58,7 @@ float4 params = IniParams.Load(0);
   r3.xyz = r2.www * v2.xyz + g_WorldViewPos.xyz;
 
 // Adjust world space coordinates to fix snow noise & occlusion:
+float4 stereo = StereoParams.Load(0);
 float4 tmp = mul(vp, float4(r3.xyz, 1));
 tmp.x -= stereo.x * (tmp.w - stereo.y);
 tmp = mul(ivp, tmp);
