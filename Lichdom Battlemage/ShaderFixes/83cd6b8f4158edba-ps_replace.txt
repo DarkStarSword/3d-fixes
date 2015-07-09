@@ -1,4 +1,8 @@
-// directional lighting / shadow pixel shader
+// directional lighting / shadow pixel shader, visual quality = high
+// VS 89472c0d62104dc8
+// PS 0c1451431fe3deab - visual quality = low, medium
+// PS 83cd6b8f4158edba - visual quality = high
+// PS a48a878e8e146089 - visual quality = very high
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -41,14 +45,12 @@ float4 g_VS_ScreenSize : TEXCOORD3
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-float4 params = IniParams.Load(0);
-
   r0.x = sceneDepthSampler.Sample(sceneDepthSampler_s, v2.xy).x;
 
 // Align shadows with ground. Scale the z buffer to get the depth and subtract
 // the stereo correction formula. We have to take the perspective divide into
 // account and multiply by the horizontal resolution since v0 is in pixels.
+float4 stereo = StereoParams.Load(0);
 float depth = r0.x * g_VS_NearFarClipDist.y;
 v0.x -= stereo.x * (depth - stereo.y) / depth * g_VS_ScreenSize.x / 2;
 
