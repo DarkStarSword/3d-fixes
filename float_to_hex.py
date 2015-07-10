@@ -116,10 +116,20 @@ def run_tests():
 	worst_case_neg_e0_float = '0xbf800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is 0, sign bit set
 	worst_case_normal_float = '0x00800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is -126
 	worst_case_subnormal_float = '0x00000001' # mantissa has explicit low bit set, unbiased exponent is -127
+	worst_case_9_precision = '0x447fffff' # 1023.99994 - example of case that requires 9 precision digits
 	worst_case_random = '0x3dfb630e' # Random number found to fail with only 8 precision digits
 
-	tests = [worst_case_e0_float, worst_case_neg_e0_float, worst_case_normal_float, worst_case_subnormal_float, worst_case_random]
+	tests = [worst_case_e0_float, worst_case_neg_e0_float,
+			worst_case_normal_float, worst_case_subnormal_float,
+			worst_case_random, worst_case_9_precision]
 
+	print(align_output(list(process_vals(tests))))
+
+	# Try worst case scenario mantissas with all possible exponents and sign bits:
+	tests = []
+	for i in range(512):
+		tests.append('0x%.8x' % (0x00000001 | i << 23))
+		tests.append('0x%.8x' % (0x007fffff | i << 23))
 	print(align_output(list(process_vals(tests))))
 
 	tests = []
