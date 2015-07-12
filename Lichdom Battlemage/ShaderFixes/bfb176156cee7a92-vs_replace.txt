@@ -1,5 +1,5 @@
 // Subtle shadow on wall at start of ice level
-// Pixel shader bfb176156cee7a92
+// Matches vertex shader b0dc312087a4d1ab
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -35,22 +35,16 @@ void main(
   out float3 o2 : TEXCOORD1,
 
 out row_major matrix vp : TEXCOORD2,
-out row_major matrix ivp : TEXCOORD6
+out row_major matrix ivp : TEXCOORD6,
+
+// Added vertex ID to adjust bounding box:
+uint id : SV_VertexID
 
   )
 {
   float4 r0;
   uint4 bitmask, uiDest;
   float4 fDest;
-
-  o0.x = dot(CompMatrix._m00_m01_m02_m03, v0.xyzw);
-  o0.y = dot(CompMatrix._m10_m11_m12_m13, v0.xyzw);
-  o0.z = dot(CompMatrix._m20_m21_m22_m23, v0.xyzw);
-  o0.w = dot(CompMatrix._m30_m31_m32_m33, v0.xyzw);
-  r0.xy = g_ScreenSize.xy * v1.xy;
-  o1.zw = float2(2.500000e-001,2.500000e-001) * r0.xy;
-  o1.xy = v1.xy;
-  o2.xyz = v2.xyz;
 
 vp = g_VS_ViewProjMatr;
 
@@ -73,6 +67,34 @@ ivp[3].y = vp[0].x*(vp[2].y*vp[3].z - vp[2].z*vp[3].y) + vp[0].y*(vp[2].z*vp[3].
 ivp[3].z = vp[0].x*(vp[1].z*vp[3].y - vp[1].y*vp[3].z) + vp[0].y*(vp[1].x*vp[3].z - vp[1].z*vp[3].x) + vp[0].z*(vp[1].y*vp[3].x - vp[1].x*vp[3].y);
 ivp[3].w = vp[0].x*(vp[1].y*vp[2].z - vp[1].z*vp[2].y) + vp[0].y*(vp[1].z*vp[2].x - vp[1].x*vp[2].z) + vp[0].z*(vp[1].x*vp[2].y - vp[1].y*vp[2].x);
 ivp /= det;
+
+  o0.x = dot(CompMatrix._m00_m01_m02_m03, v0.xyzw);
+  o0.y = dot(CompMatrix._m10_m11_m12_m13, v0.xyzw);
+  o0.z = dot(CompMatrix._m20_m21_m22_m23, v0.xyzw);
+  o0.w = dot(CompMatrix._m30_m31_m32_m33, v0.xyzw);
+
+// Adjust bounding box to prevent clipping from certain angles along the very
+// edges of the shadow maps:
+float4 stereo = StereoParams.Load(0);
+if ((stereo.z == 1 && (id == 0 || id == 2)) ||  // Left side in left eye
+    (stereo.z == -1 && (id == 1 || id == 3))) { // Right side in right eye
+	// Adjust bounding box:
+	o0.x += stereo.x;
+
+	// Compensate by adjusting texcoord:
+	v1.x += stereo.x / 2;
+
+	// And world position. Had to multiply by the far clipping plane for
+	// this to be accurate:
+	float4 tmp = mul(vp, v2);
+	tmp.x += stereo.x * g_VS_NearFarClipDist.y;
+	v2 = mul(ivp, tmp);
+}
+
+  r0.xy = g_ScreenSize.xy * v1.xy;
+  o1.zw = float2(2.500000e-001,2.500000e-001) * r0.xy;
+  o1.xy = v1.xy;
+  o2.xyz = v2.xyz;
 
   return;
 }
