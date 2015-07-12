@@ -1,4 +1,4 @@
-// Decal while targetting ice AOE
+// Decal while targeting ice AOE
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -46,7 +46,9 @@ void main(
   out float4 o4 : SV_Target4,
 
 row_major matrix vp : TEXCOORD0,
-row_major matrix ivp : TEXCOORD4
+row_major matrix ivp : TEXCOORD4,
+float4 g_VS_NearFarClipDist : TEXCOORD9,
+float4 g_VS_ScreenSize : TEXCOORD10
 
   )
 {
@@ -56,16 +58,26 @@ row_major matrix ivp : TEXCOORD4
 
   r0.xy = v0.xy * g_ScreenScale.xy + g_ScreenScale.zw;
   r0.z = _tex0.Sample(_tex0_s, r0.xy).x;
+
+// Use same pattern as lighting shaders to fix this decal placement + lighting:
+float4 stereo = StereoParams.Load(0);
+float depth = r0.z * g_VS_NearFarClipDist.y;
+v0.x -= stereo.x * (depth - stereo.y) / depth * g_VS_ScreenSize.x / 2;
+
   r1.xyz = vWBasisX.xyz * v0.xxx + vWBasisZ.xyz;
   r1.xyz = vWBasisY.xyz * v0.yyy + r1.xyz;
   r2.xyz = r1.xyz * r0.zzz;
   r1.xyz = r1.xyz * r0.zzz + g_WorldViewPos.xyz;
   r1.w = 1.000000000e+000;
 
-float4 stereo = StereoParams.Load(0);
-float4 tmp = mul(vp, r1);
-tmp.x -= stereo.x * (tmp.w - stereo.y);
-r1 = mul(ivp, tmp);
+// First attempt at fixing this. Worked fine for the ice AOE targeting decal,
+// but I found it wasn't accurate for some decals on a wall in the village at
+// the end of the ice level - placement was fine, but lighting was out from
+// certain angles.
+//float4 stereo = StereoParams.Load(0);
+//float4 tmp = mul(vp, r1);
+//tmp.x -= stereo.x * (tmp.w - stereo.y);
+//r1 = mul(ivp, tmp);
 
   r3.x = dot(g_mLightProj._m00_m01_m02_m03, r1.xyzw);
   r3.y = dot(g_mLightProj._m10_m11_m12_m13, r1.xyzw);
