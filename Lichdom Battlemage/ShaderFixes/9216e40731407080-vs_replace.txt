@@ -1,3 +1,4 @@
+// UI - some of the spell symbols (in loot icons at top of screen)
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -27,6 +28,18 @@ void main(
   o0.w = dot(cCompositeMat._m30_m31_m33, r0.xyz);
   o1.xyzw = v1.xyzw;
   o2.xyzw = v2.xyzw;
+
+// Adjust UI depth, but exclude the lower part of the screen which has UI in
+// front of the hands we don't want to adjust. This is not an ideal solution -
+// texture filtering might help here to distinguish between fonts (need to
+// check if they even have unique textures first)
+float2 center = mul(cCompositeMat, float4(0,0,0,1)).xy / o0.w;
+if (center.y > -0.1) {
+	float4 stereo = StereoParams.Load(0);
+	float4 params = IniParams.Load(0);
+	o0.x += stereo.x * params.x;
+}
+
   return;
 }
 
