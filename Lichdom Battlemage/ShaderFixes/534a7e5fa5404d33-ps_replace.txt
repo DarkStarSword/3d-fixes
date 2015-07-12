@@ -36,11 +36,26 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.x = 1 / v1.z;
+  // DRIVER BUG WORKAROUND
+  // Sometimes depthMapSamplerBorder starts only getting sampled for the right
+  // eye. Frame analysis proves that it contains stereo information for both
+  // eyes, and it is trivial to prove that this shader is run for both eyes.
+  // So, the only explanation here is that a driver bug causes the left eye to
+  // stop being able to read from the texture. Add a toggle on F3 to kill this
+  // effect if it breaks.
+  float4 params = IniParams.Load(0);
+  if (params.y) {
+    o0 = 0.0;
+    o1 = 0.0;
+	  return;
+  }
+
+  r0.x = 1.000000e+000 / v1.z;
   r0.yzw = v2.xyz * r0.xxx;
   r1.xy = v1.xy * r0.xx;
   r2.xyz = v3.xyz * r0.xxx;
   r0.x = depthMapSamplerBorder.Sample(depthMapSamplerBorder_s, r1.xy).x;
+
   r1.xyz = normalsMapSampler.Sample(normalsMapSampler_s, r1.xy).xyz;
   r1.xyz = r1.yzx * float3(2,2,2) + float3(-1,-1,-1);
   r3.yzw = r0.xxx * r0.yzw + g_gridSpaceCamPos.xyz;

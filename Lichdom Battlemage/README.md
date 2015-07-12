@@ -14,6 +14,12 @@ Installation
 
 2. Launch the game. If 3D does not engage, press alt+enter to change full screen modes
 
+Known Issues
+------------
+- Sometimes a driver bug will cause certain parts of the scene to be brighter
+  in the right eye than the left. If this happens press F3 to kill the effect
+  until you can save and restart the game.
+
 Troubleshooting
 ---------------
 - If the 3D does not engage, try pressing alt+enter. If that doesn't work,
