@@ -33,19 +33,12 @@ void main(
   o2.xyzw = v1.xyzw;
   o3.xyzw = v2.xyzw;
 
-// Blacklist specific UI elements that are drawn to an offscreen buffer we
-// don't want to adjust:
-if (cCompositeMat[0][3] == -0.82242215) // First bar on left
-  return;
-if (cCompositeMat[0][3] == -1.0000001) // Second bar on left
-  return;
-if (cCompositeMat[0][3] == -1.0) // Third bar on left
-  return;
-if (cCompositeMat[0][3] == -3.3501434) // Top flame on right triangle
-  return;
-if (cCompositeMat[0][3] == -0.24148273) // Left flame on right triangle
-  return;
-if (cCompositeMat[0][3] == 2.6849575) // Right flame on right triangle
+// This shader is used to render UI elements to an offscreen buffer that is
+// then copied to the screen. We want to avoid adjusting them on the offscreen
+// buffer, so only adjust them if the render target dimensions match the
+// resolution:
+float4 rt_filter = IniParams.Load(int2(1,0));
+if (rt_filter.x != rt_filter.z || rt_filter.y != rt_filter.w)
   return;
 
 // Adjust text depth, but exclude the lower part of the screen which has UI in
