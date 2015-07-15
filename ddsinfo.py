@@ -461,7 +461,10 @@ class DDSPixelFormat(object):
 		if self.flags & self.Flags.ALPHAPIXELS: # uncompressed
 			self.a_bit_mask = a_bit_mask
 		if self.flags & self.Flags.ALPHA:
-			raise UnsupportedFile()
+			# File only contains alpha channel only
+			self.rgb_bit_count = rgb_bit_count
+			self.a_bit_mask = a_bit_mask
+			assert(not self.flags & (self.Flags.RGB | self.Flags.ALPHAPIXELS))
 		if self.flags & self.Flags.FOURCC:
 			self.four_cc = four_cc
 			self.format = struct.unpack('<I', self.four_cc)[0]
@@ -471,9 +474,9 @@ class DDSPixelFormat(object):
 			self.g_bit_mask = g_bit_mask
 			self.b_bit_mask = b_bit_mask
 		if self.flags & self.Flags.YUV:
-			raise UnsupportedFile()
+			raise UnsupportedFile("YUV")
 		if self.flags & self.Flags.LUMINANCE:
-			raise UnsupportedFile()
+			raise UnsupportedFile("LUMINANCE")
 
 
 	def __str__(self):
@@ -486,12 +489,13 @@ class DDSPixelFormat(object):
 			else:
 				four_cc_str = ''.join(map(chr, filter(None, list(self.four_cc))))
 				ret.append('FourCC: 0x%.2x%.2x%.2x%.2x %i "%s"' % ((tuple(self.four_cc)) + (self.format, four_cc_str,)) )
+		if self.flags & (self.Flags.RGB | self.Flags.ALPHA):
+			ret.append('Bit Count: %i' % self.rgb_bit_count)
 		if self.flags & self.Flags.RGB:
-			ret.append('RGB Bit Count: %i' % self.rgb_bit_count)
 			ret.append('  Red Bit Mask: 0x%08x' % self.r_bit_mask)
 			ret.append('Green Bit Mask: 0x%08x' % self.g_bit_mask)
 			ret.append(' Blue Bit Mask: 0x%08x' % self.b_bit_mask)
-		if self.flags & self.Flags.ALPHAPIXELS:
+		if self.flags & (self.Flags.ALPHAPIXELS | self.Flags.ALPHA):
 			ret.append('Alpha Bit Mask: 0x%x' % self.a_bit_mask)
 		return '\n'.join(ret)
 
@@ -689,7 +693,19 @@ def convert_fourcc(fp, header):
 
 	convert(fp, header, dtype)
 
+def convert_pixelformat_alpha(fp, header):
+	assert(header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA)
+	assert(not header.pixel_format.flags & DDSPixelFormat.Flags.RGB)
+	assert(not header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS)
+	assert(header.pixel_format.rgb_bit_count == 8)
+	assert(header.pixel_format.a_bit_mask == 0xff)
+
+	convert(fp, header, (None, np.uint8, 'L', None))
+
 def convert_pixelformat(fp, header):
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA:
+		return convert_pixelformat_alpha(fp, header)
+
 	# If these fail I will need a converter:
 	assert(header.pixel_format.flags & DDSPixelFormat.Flags.RGB)
 	assert(header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS)
@@ -754,7 +770,7 @@ def main():
 		try:
 			header = DDSHeader(fp)
 		except UnsupportedFile as e:
-			print('Unsupported file!')
+			print('Unsupported file (%s)!' % str(e))
 			continue
 
 		print(header)
