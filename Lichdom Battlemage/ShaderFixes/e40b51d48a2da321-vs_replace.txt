@@ -1,4 +1,10 @@
 // Fast travel decal
+//
+// Pixel shders
+// 1079ffdde22d7933
+// 6f40f49445e70982
+// 822d08981f91998c
+// b3684e7b1dbf9748
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -38,8 +44,6 @@ out float4 res : TEXCOORD10
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-
   r0.x = dot(g_mInvLightProj._m00_m01_m02_m03, v0.xyzw);
   r0.y = dot(g_mInvLightProj._m10_m11_m12_m13, v0.xyzw);
   r0.z = dot(g_mInvLightProj._m20_m21_m22_m23, v0.xyzw);
@@ -50,6 +54,10 @@ float4 stereo = StereoParams.Load(0);
   o0.y = dot(g_mViewProj._m10_m11_m12_m13, r0.xyzw);
   o0.z = dot(g_mViewProj._m20_m21_m22_m23, r0.xyzw);
   o0.w = dot(g_mViewProj._m30_m31_m32_m33, r0.xyzw);
+
+// Apply stereo correction to prevent wet rocks clipping around desert waterfall:
+float4 stereo = StereoParams.Load(0);
+o0.x += stereo.x * (o0.w - stereo.y);
 
 // Pass far clipping plane and screen resolution through to pixel shader:
 nearfar = g_VS_NearFarClipDist;
