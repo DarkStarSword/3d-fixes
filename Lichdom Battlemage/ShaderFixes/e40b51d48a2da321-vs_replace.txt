@@ -1,4 +1,4 @@
-// Fast travel decal
+// Fast travel decal, wet rocks
 //
 // Pixel shders
 // 1079ffdde22d7933
@@ -55,9 +55,15 @@ out float4 res : TEXCOORD10
   o0.z = dot(g_mViewProj._m20_m21_m22_m23, r0.xyzw);
   o0.w = dot(g_mViewProj._m30_m31_m32_m33, r0.xyzw);
 
-// Apply stereo correction to prevent wet rocks clipping around desert waterfall:
-float4 stereo = StereoParams.Load(0);
-o0.x += stereo.x * (o0.w - stereo.y);
+// Need to apply the stereo correction when this shader is used for wet rocks
+// to stop them clipping, but don't want to apply it when the shader is used
+// for decals. y2 is set to 1 only when the wet rocks pixel shader is active:
+float4 wet_rocks = IniParams.Load(int2(2,0));
+if (wet_rocks.y) {
+	// Apply stereo correction to prevent wet rocks clipping around desert waterfall:
+	float4 stereo = StereoParams.Load(0);
+	o0.x += stereo.x * (o0.w - stereo.y);
+}
 
 // Pass far clipping plane and screen resolution through to pixel shader:
 nearfar = g_VS_NearFarClipDist;
