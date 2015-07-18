@@ -1,3 +1,4 @@
+// dust with halo
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -56,6 +57,10 @@ void main(
   r2.w = dot(g_VS_ViewProjMatr._m30_m31_m32_m33, r1.xyzw);
   o0.z = dot(g_VS_ViewProjMatr._m20_m21_m22_m23, r1.xyzw);
   o0.xyw = r2.xyw;
+
+float4 stereo = StereoParams.Load(0);
+r2.x += stereo.x * (r2.w - stereo.y);
+
   r2.xy = r2.xy * float2(1,-1) + r2.ww;
   o5.w = r2.w;
   o5.xy = float2(0.5,0.5) * r2.xy;
