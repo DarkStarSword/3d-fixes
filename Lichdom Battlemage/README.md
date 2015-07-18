@@ -61,5 +61,5 @@ Troubleshooting
 
 - If you find a broken effect please let me know where to find it. Be sure to
   mention what graphics settings you are using (especially water and "visual
-  quality"). For reference, I has most settings set to either High or Very
+  quality"). For reference, I have most settings set to either High or Very
   High.
