@@ -44,5 +44,7 @@ Troubleshooting
 - If the 3D does not engage, try pressing alt+enter. If that doesn't work,
   change the screen mode to windowed then back to full screen.
 
-- If the images on the loading screens are slightly cut off (can happen after
-  using windowed mode), change the resolution and then change it back.
+- If you notice the UI adjustment only partially works (i.e. text pushed back,
+  but the background remains at screen depth, which can sometimes happen after
+  using windowed mode) or the framerate is abnormally low, change the
+  resolution and then change it back.
