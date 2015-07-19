@@ -1,3 +1,4 @@
+// Lights - unverified
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -30,7 +31,12 @@ Texture1D<float4> IniParams : register(t120);
 void main( 
   float4 v0 : SV_POSITION0,
   out float4 o0 : SV_Target0,
-  out float4 o1 : SV_Target1)
+  out float4 o1 : SV_Target1,
+
+  float4 g_VS_NearFarClipDist : TEXCOORD0,
+  float4 g_VS_ScreenSize : TEXCOORD1
+
+  )
 {
   float4 r0,r1,r2,r3,r4;
   uint4 bitmask, uiDest;
@@ -39,6 +45,11 @@ void main(
   r0.xy = v0.xy * g_ScreenScale.xy + g_ScreenScale.zw;
   r1.xyz = _tex1.Sample(_tex1_s, r0.xy).xyz;
   r0.x = _tex0.Sample(_tex0_s, r0.xy).x;
+
+float4 stereo = StereoParams.Load(0);
+float depth = r0.x * g_VS_NearFarClipDist.y;
+v0.x -= stereo.x * (depth - stereo.y) / depth * g_VS_ScreenSize.x / 2;
+
   r1.yzw = r1.xyz * float3(2,2,2) + float3(-1,-1,-1);
   r0.y = dot(r1.yz, r1.yz);
   r0.y = min(1, r0.y);

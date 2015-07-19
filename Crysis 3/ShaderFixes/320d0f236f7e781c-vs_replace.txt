@@ -1,11 +1,18 @@
-cbuffer cb2 : register(b2)
-{
-  float4 cb2[22];
-}
+// Lights
+//<CalledPixelShaders>
+// 285b59b6c098e4cf 32eef44484881f91 41f5596d5c767196
+// 47c2421cfc074d4b 945d3cd591f619cb
 
-
+// Filled out extra fields in PER_FRAME
 cbuffer PER_FRAME : register(b2)
 {
+  row_major float4x4 g_VS_ViewProjMatr : packoffset(c0);
+  float4 g_VS_SunLightDir : packoffset(c4);
+  float4 g_VS_WorldViewPos : packoffset(c6);
+  float4 g_VS_ScreenSize : packoffset(c7);
+  float4 g_VS_AnimGenParams : packoffset(c8);
+  float4 g_VS_NearFarClipDist : packoffset(c9);
+  row_major float4x4 g_VS_ViewProjZeroMatr : packoffset(c10);
   float4 g_VS_HPosScale : packoffset(c21);
 }
 
@@ -18,7 +25,12 @@ void main(
   float3 v2 : TEXCOORD1,
   out float4 o0 : SV_Position0,
   out float4 o1 : TEXCOORD0,
-  out float4 o2 : TEXCOORD1)
+  out float4 o2 : TEXCOORD1,
+
+out row_major matrix vp : TEXCOORD2,
+out row_major matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
@@ -30,11 +42,36 @@ void main(
   r0.w = 1;
   o0.xyzw = r0.xyzw;
   r0.xy = r0.xy * float2(1,-1) + float2(1,1);
-  r0.xy = cb2[21].xy * r0.xy;
+// Compiler defined cb2, but used the offset anyway:
+  //r0.xy = cb2[21].xy * r0.xy;
+  r0.xy = g_VS_HPosScale.xy * r0.xy;
   o1.xy = float2(0.5,0.5) * r0.xy;
   o1.zw = r0.zw;
   o2.xyz = v2.xyz;
   o2.w = 0;
+
+vp = g_VS_ViewProjMatr;
+
+// Work out Inverse
+float det = determinant(vp);
+ivp[0].x = vp[1].y*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[1].z*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[1].w*(vp[2].y*vp[3].z - vp[2].z*vp[3].y);
+ivp[0].y = vp[0].y*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[0].z*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[0].w*(vp[2].z*vp[3].y - vp[2].y*vp[3].z);
+ivp[0].z = vp[0].y*(vp[1].z*vp[3].w - vp[1].w*vp[3].z) + vp[0].z*(vp[1].w*vp[3].y - vp[1].y*vp[3].w) + vp[0].w*(vp[1].y*vp[3].z - vp[1].z*vp[3].y);
+ivp[0].w = vp[0].y*(vp[1].w*vp[2].z - vp[1].z*vp[2].w) + vp[0].z*(vp[1].y*vp[2].w - vp[1].w*vp[2].y) + vp[0].w*(vp[1].z*vp[2].y - vp[1].y*vp[2].z);
+ivp[1].x = vp[1].x*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[1].z*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[1].w*(vp[2].z*vp[3].x - vp[2].x*vp[3].z);
+ivp[1].y = vp[0].x*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[0].z*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[0].w*(vp[2].x*vp[3].z - vp[2].z*vp[3].x);
+ivp[1].z = vp[0].x*(vp[1].w*vp[3].z - vp[1].z*vp[3].w) + vp[0].z*(vp[1].x*vp[3].w - vp[1].w*vp[3].x) + vp[0].w*(vp[1].z*vp[3].x - vp[1].x*vp[3].z);
+ivp[1].w = vp[0].x*(vp[1].z*vp[2].w - vp[1].w*vp[2].z) + vp[0].z*(vp[1].w*vp[2].x - vp[1].x*vp[2].w) + vp[0].w*(vp[1].x*vp[2].z - vp[1].z*vp[2].x);
+ivp[2].x = vp[1].x*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[1].y*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[1].w*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[2].y = vp[0].x*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[0].y*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[0].w*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[2].z = vp[0].x*(vp[1].y*vp[3].w - vp[1].w*vp[3].y) + vp[0].y*(vp[1].w*vp[3].x - vp[1].x*vp[3].w) + vp[0].w*(vp[1].x*vp[3].y - vp[1].y*vp[3].x);
+ivp[2].w = vp[0].x*(vp[1].w*vp[2].y - vp[1].y*vp[2].w) + vp[0].y*(vp[1].x*vp[2].w - vp[1].w*vp[2].x) + vp[0].w*(vp[1].y*vp[2].x - vp[1].x*vp[2].y);
+ivp[3].x = vp[1].x*(vp[2].z*vp[3].y - vp[2].y*vp[3].z) + vp[1].y*(vp[2].x*vp[3].z - vp[2].z*vp[3].x) + vp[1].z*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[3].y = vp[0].x*(vp[2].y*vp[3].z - vp[2].z*vp[3].y) + vp[0].y*(vp[2].z*vp[3].x - vp[2].x*vp[3].z) + vp[0].z*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[3].z = vp[0].x*(vp[1].z*vp[3].y - vp[1].y*vp[3].z) + vp[0].y*(vp[1].x*vp[3].z - vp[1].z*vp[3].x) + vp[0].z*(vp[1].y*vp[3].x - vp[1].x*vp[3].y);
+ivp[3].w = vp[0].x*(vp[1].y*vp[2].z - vp[1].z*vp[2].y) + vp[0].y*(vp[1].z*vp[2].x - vp[1].x*vp[2].z) + vp[0].z*(vp[1].x*vp[2].y - vp[1].y*vp[2].x);
+ivp /= det;
+
   return;
 }
 

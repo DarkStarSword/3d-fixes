@@ -1,3 +1,4 @@
+// Lights
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -36,16 +37,32 @@ Texture1D<float4> IniParams : register(t120);
 void main( 
   float4 v0 : SV_POSITION0,
   out float4 o0 : SV_Target0,
-  out float4 o1 : SV_Target1)
+  out float4 o1 : SV_Target1,
+
+  float4 g_VS_NearFarClipDist : TEXCOORD0,
+  float4 g_VS_ScreenSize : TEXCOORD1
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6;
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyz = vWBasisX.xyz * v0.xxx + vWBasisZ.xyz;
-  r0.xyz = vWBasisY.xyz * v0.yyy + r0.xyz;
+// Moved up:
   r1.xy = v0.xy * g_ScreenScale.xy + g_ScreenScale.zw;
   r0.w = _tex0.Sample(_tex0_s, r1.xy).x;
+
+float4 stereo = StereoParams.Load(0);
+float depth = r0.w * g_VS_NearFarClipDist.y;
+v0.x -= stereo.x * (depth - stereo.y) / depth * g_VS_ScreenSize.x / 2;
+
+  r0.xyz = vWBasisX.xyz * v0.xxx + vWBasisZ.xyz;
+  r0.xyz = vWBasisY.xyz * v0.yyy + r0.xyz;
+
+// Moved up:
+  // r1.xy = v0.xy * g_ScreenScale.xy + g_ScreenScale.zw;
+  // r0.w = _tex0.Sample(_tex0_s, r1.xy).x;
+
   r2.xyz = r0.xyz * r0.www;
   r0.xyz = -r0.xyz * r0.www + g_LightPos.xyz;
   r2.w = 1;
