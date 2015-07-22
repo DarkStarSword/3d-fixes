@@ -1,26 +1,41 @@
-// CRC32: B8C7EDC5 | Unity headers extracted from Font.shader
-// Shader "GUI/Text Shader" {
+// CRC32: 7BFE637D | Unity headers extracted from UI-DefaultFont.shader
+// Shader "UI/Default Font" {
 //   Properties {
 //    _MainTex ("Font Texture", 2D) = "white" { }
 //    _Color ("Text Color", Color) = (1,1,1,1)
+//    _StencilComp ("Stencil Comparison", Float) = 8
+//    _Stencil ("Stencil ID", Float) = 0
+//    _StencilOp ("Stencil Operation", Float) = 0
+//    _StencilWriteMask ("Stencil Write Mask", Float) = 255
+//    _StencilReadMask ("Stencil Read Mask", Float) = 255
+//    _ColorMask ("Color Mask", Float) = 15
 //   }
 //   SubShader 1/1 {
-//     Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType"="Plane" }
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" "PreviewType"="Plane" }
 //     Pass 1/1 {
-//       Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType"="Plane" }
-//       ZTest Always
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" "PreviewType"="Plane" }
+//       ZTest [unity_GUIZTestMode]
 //       ZWrite Off
 //       Cull Off
+//       Stencil {
+//          Ref [_Stencil]
+//          ReadMask [_StencilReadMask]
+//          WriteMask [_StencilWriteMask]
+//          Comp [_StencilComp]
+//          Pass [_StencilOp]
+//         }
 //       Blend SrcAlpha OneMinusSrcAlpha
-//       GpuProgramID 16679
+//       ColorMask [_ColorMask]
+//       GpuProgramID 35093
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Bind "vertex" Vertex
 //           Bind "color" Color
 //           Bind "texcoord" TexCoord0
 //           Matrix 0 [glstate_matrix_mvp]
-//           Vector 5 [_Color]
-//           Vector 4 [_MainTex_ST]
+//           Vector 6 [_Color]
+//           Vector 5 [_MainTex_ST]
+//           Vector 4 [_ScreenParams]
 //         }
 //       }
 //     }
@@ -31,6 +46,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c7, -1, 1, 0, 0
     dcl_position v0
     dcl_color v1
     dcl_texcoord v2
@@ -47,12 +63,15 @@ dcl_2d s3 // Copy of _CameraDepthTexture
 defi i0, 255, 0, 0, 0
 def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
+    dp4 r10.z, c2, v0
+    dp4 r10.w, c3, v0
+    mul o2, v1, c6
+    mad o0.xy, v2, c5, c5.zwzw
     dp4 r0.x, c0, v0
     dp4 r0.y, c1, v0
-    dp4 r0.z, c2, v0
-    dp4 r0.w, c3, v0
-    mul o2, v1, c5
-    mad o0.xy, v2, c4, c4.zwzw
+    mov r1.x, c7.x
+    add r0.zw, r1.x, c4
+    mad r10.xy, r0.zwzw, c7, r0
 
 texldl r31, c220.z, s0
 
@@ -102,6 +121,6 @@ if_ne r20.w, c220.x
 	endrep
 
 	// Finally adjust the X coordinate:
-	add r0.x, r0.x, r20.z
+	add r10.x, r10.x, r20.z
 endif
-mov o1, r0
+mov o1, r10

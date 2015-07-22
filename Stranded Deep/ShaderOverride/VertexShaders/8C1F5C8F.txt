@@ -1,69 +1,54 @@
-// CRC32: 2FC2E74B | Matched 2 variants of 2 shaders: Unlit/Premultiplied Colored, Unlit/Transparent Colored
-// 
-//    Unity headers extracted from Unlit - Premultiplied Colored.shader
-//    Shader "Unlit/Premultiplied Colored" {
-//      Properties {
-//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
-//      }
-//      SubShader 1/2 {
-//        LOD 200
-//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//        Pass 1/1 {
-//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//          ZWrite Off
-//          Cull Off
-//          Fog { Mode Off }
-//          Blend One OneMinusSrcAlpha
-//          ColorMask RGB
-//          Offset -1, -1
-//          GpuProgramID 56854
-//          Program "vp" {
-//            SubProgram "d3d9 " {
-//              Bind "vertex" Vertex
-//              Bind "color" Color
-//              Bind "texcoord" TexCoord0
-//              Matrix 0 [glstate_matrix_mvp]
-//            }
-//          }
-//        }
-//      }
-//    }
-// 
-//    Unity headers extracted from Unlit - Transparent Colored.shader
-//    Shader "Unlit/Transparent Colored" {
-//      Properties {
-//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
-//      }
-//      SubShader 1/2 {
-//        LOD 200
-//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//        Pass 1/1 {
-//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//          ZWrite Off
-//          Cull Off
-//          Fog { Mode Off }
-//          Blend SrcAlpha OneMinusSrcAlpha
-//          Offset -1, -1
-//          GpuProgramID 63385
-//          Program "vp" {
-//            SubProgram "d3d9 " {
-//              Bind "vertex" Vertex
-//              Bind "color" Color
-//              Bind "texcoord" TexCoord0
-//              Matrix 0 [glstate_matrix_mvp]
-//            }
-//          }
-//        }
-//      }
-//    }
+// CRC32: 8C1F5C8F | Unity headers extracted from UI-Default.shader
+// Shader "UI/Default" {
+//   Properties {
+//   [PerRendererData]  _MainTex ("Sprite Texture", 2D) = "white" { }
+//    _Color ("Tint", Color) = (1,1,1,1)
+//    _StencilComp ("Stencil Comparison", Float) = 8
+//    _Stencil ("Stencil ID", Float) = 0
+//    _StencilOp ("Stencil Operation", Float) = 0
+//    _StencilWriteMask ("Stencil Write Mask", Float) = 255
+//    _StencilReadMask ("Stencil Read Mask", Float) = 255
+//    _ColorMask ("Color Mask", Float) = 15
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" "PreviewType"="Plane" "CanUseSpriteAtlas"="true" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" "PreviewType"="Plane" "CanUseSpriteAtlas"="true" }
+//       ZTest [unity_GUIZTestMode]
+//       ZWrite Off
+//       Cull Off
+//       Stencil {
+//          Ref [_Stencil]
+//          ReadMask [_StencilReadMask]
+//          WriteMask [_StencilWriteMask]
+//          Comp [_StencilComp]
+//          Pass [_StencilOp]
+//         }
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       ColorMask [_ColorMask]
+//       GpuProgramID 53140
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 5 [_Color]
+//           Vector 4 [_ScreenParams]
+//         }
+//       }
+//     }
+//   }
+// }
 // 
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c6, -1, 1, 0, 0
     dcl_position v0
-    dcl_texcoord v1
-    dcl_color v2
+    dcl_color v1
+    dcl_texcoord v2
 
 dcl_texcoord o0
 dcl_position o1
@@ -71,9 +56,10 @@ dcl_color o2
 
 def c220, 0, 1, 0.0625, 0.5
 def c221, -0.999, 0.999, 0, 0 // Full screen fade to black coordinates
-def c222, 0.25, 0.32, 0.50, 0.63 // Crosshair texture coordinates
+//def c222, 0.25, 0.32, 0.50, 0.63 // Crosshair texture coordinates
+def c222, 0, 1.0, 0.07, 0.08 // Crosshair texture coordinates
 def c223, -0.01, 0.01, -0.01, 0.01 // Crosshair X+Y bounds
-def c224, 0.216, 0, 0, 0 // Crosshair fade threshold
+def c224, 0.216, 0, 0, 0.5 // Crosshair fade threshold
 dcl_2d s0
 dcl_2d s3 // Copy of _CameraDepthTexture
 
@@ -81,12 +67,16 @@ dcl_2d s3 // Copy of _CameraDepthTexture
 defi i0, 255, 0, 0, 0
 def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
+
+    dp4 r10.z, c2, v0
+    dp4 r10.w, c3, v0
     dp4 r0.x, c0, v0
     dp4 r0.y, c1, v0
-    dp4 r0.z, c2, v0
-    dp4 r0.w, c3, v0
-    mov o0.xy, v1
-    mov o2, v2
+    mov r1.x, c6.x
+    add r0.zw, r1.x, c4
+    mad r10.xy, r0.zwzw, c6, r0
+    mul o2, v1, c5
+    mov o0.xy, v2
 
 // Texture blacklist unusable - crosshair, fade to black, inventory, menus, etc. use the same texture
 //mov r25.x, c251.x
@@ -94,38 +84,38 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
 // Blacklist full screen fade to black based on coordinate near corner of screen:
 mov r30.x, c220.w // Auto-crosshair depth
-if_le r0.x, c221.x
-	if_le r0.y, c221.x
+if_le r10.x, c221.x
+	if_le r10.y, c221.x
 		mov r30.x, c220.x
 	endif
-	if_ge r0.y, c221.y
+	if_ge r10.y, c221.y
 		mov r30.x, c220.x
 	endif
 endif
-if_ge r0.x, c221.y
-	if_le r0.y, c221.x
+if_ge r10.x, c221.y
+	if_le r10.y, c221.x
 		mov r30.x, c220.x
 	endif
-	if_ge r0.y, c221.y
+	if_ge r10.y, c221.y
 		mov r30.x, c220.x
 	endif
 endif
 
 // Detect crosshair based on texture coordinates:
-if_ge v1.x, c222.x
-if_le v1.x, c222.y
-if_ge v1.y, c222.z
-if_le v1.y, c222.w
+if_ge v2.x, c222.x
+if_le v2.x, c222.y
+if_ge v2.y, c222.z
+if_le v2.y, c222.w
 	// Confirm vertex is in center of screen:
-	if_ge r0.x, c223.x
-	if_le r0.x, c223.y
-	if_ge r0.y, c223.z
-	if_le r0.y, c223.w
+	if_ge r10.x, c223.x
+	if_le r10.x, c223.y
+	if_ge r10.y, c223.z
+	if_le r10.y, c223.w
 		// Check crosshair mode
 		mov r20, c200
 		if_eq r20.x, c220.x // Automatic crosshair
 			// Remove crosshair when it is faded out:
-			if_le v2.x, c224.x
+			if_le v1.w, c224.w
 				mov r30.x, -c220.y
 			endif
 		else
@@ -145,7 +135,7 @@ endif
 texldl r31, c220.z, s0
 
 if_eq r30.x, c220.y
-	mad r0.x, r31.x, c200.z, r0.x
+	mad r10.x, r31.x, c200.z, r10.x
 endif
 if_eq r30.x, c220.w
 mov r20.w, c150.w // Check if _ZBufferParams is valid
@@ -194,10 +184,10 @@ if_ne r20.w, c220.x
 	endrep
 
 	// Finally adjust the X coordinate:
-	add r0.x, r0.x, r20.z
+	add r10.x, r10.x, r20.z
 endif
 endif
-mov o1, r0
+mov o1, r10
 
 if_eq r30.x, -c220.y
 	mov o1, c220.xxxx
