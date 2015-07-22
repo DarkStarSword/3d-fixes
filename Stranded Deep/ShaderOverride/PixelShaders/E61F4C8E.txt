@@ -1,0 +1,42 @@
+// CRC32: E61F4C8E | Unity headers extracted from SunShaftsComposite.shader
+// Shader "Beam Team/Post Effects/Sun Shafts" {
+//   Properties {
+//    _MainTex ("Base", 2D) = "" { }
+//    _ColorBuffer ("Color", 2D) = "" { }
+//    _Skybox ("Skybox", 2D) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/5 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       GpuProgramID 38522
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Vector 0 [_SunColor]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_ColorBuffer] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_2_0
+    def c1, 1, 0, 0, 0
+    dcl t0.xy
+    dcl t1.xy
+    dcl_2d s0
+    dcl_2d s1
+    texld_pp r0, t1, s1
+    texld_pp r1, t0, s0
+    mul_sat_pp r0, r0, c0
+    add r0, -r0, c1.x
+    add r1, -r1, c1.x
+    mad_pp r0, r1, -r0, c1.x
+    mov_pp oC0, r0
