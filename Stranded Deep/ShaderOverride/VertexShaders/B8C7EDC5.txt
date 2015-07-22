@@ -1,0 +1,107 @@
+// CRC32: B8C7EDC5 | Unity headers extracted from Font.shader
+// Shader "GUI/Text Shader" {
+//   Properties {
+//    _MainTex ("Font Texture", 2D) = "white" { }
+//    _Color ("Text Color", Color) = (1,1,1,1)
+//   }
+//   SubShader 1/1 {
+//     Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType"="Plane" }
+//     Pass 1/1 {
+//       Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "PreviewType"="Plane" }
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       GpuProgramID 16679
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 5 [_Color]
+//           Vector 4 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+dcl_2d s3 // Copy of _CameraDepthTexture
+
+// For loop to improve stereo cursor accuracy:
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
+
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mul o2, v1, c5
+    mad o0.xy, v2, c4, c4.zwzw
+
+texldl r31, c220.z, s0
+
+mov r20.w, c150.w // Check if _ZBufferParams is valid
+if_ne r20.w, c220.x
+	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
+	// near clipping plane and work our way towards center + separation (ideally
+	// we would loop one pixel at a time, but as the loop counts must be constant
+	// we can't do that here, so we just choose a granuality in i0 and c227.
+	// Alternatively we could loop one pixel at a time with a hardcoded maximum
+	// number of pixels)
+
+	rcp r20.w, c150.w		// W = starting depth = near clipping plane
+	add r31.w, r20.w, -r31.y	// near - convergence
+	mad r20.x, r31.w, r31.x, c220.w	// X sample coord = center + separation * (near - convergence)
+	mov r20.y, c220.w		// Y sample coord = center
+	add r20.z, r20.x, -c220.w	// Z = X offset from center
+	add r31.z, r31.x, -r20.z	// Total distance to cover (separation - starting X offset)
+
+	mov r21, r20			// Working copy
+	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
+	rep i0
+		mad r21.z, r31.z, c227.x, r21.z	// adjustment += (total distance to cover) / i0.x (granuality)
+
+		// Calculate W for this adjustment amount:
+		add r21.w, r31.x, -r21.z	// separation - adjustment
+		rcp r21.w, r21.w
+		mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
+
+		// Read depth texture at this pixel (divide by 2 for texture coordinates):
+		mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
+		texldl r5, r21.xy, s3
+
+		// scale depth buffer to world Z (game dependent - look for scaling applied to
+		// the depth buffer wherever else it is used. In the case of Unity we use
+		// _ZBufferParams):
+		mad r5.x, r5.x, c150.x, c150.y
+		add r5.y, c150.z, c150.w // Derive 1/far from _ZBufferParams
+		mul r5.x, r5.x, r5.y
+		rcp r5.x, r5.x
+
+		// If the sampled depth is closer than the calculated depth, exit the loop:
+		break_ge r21.w, r5.x
+
+		// Set the output depth to this pixel
+		mov r20, r21
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r0.x, r0.x, r20.z
+endif
+mov o1, r0

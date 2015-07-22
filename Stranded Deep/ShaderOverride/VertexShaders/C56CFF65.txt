@@ -1,0 +1,215 @@
+// CRC32: C56CFF65 | Matched 4 variants of 1 shaders: AFS/Grass Shader v4
+// 
+//    Unity headers extracted from AfsGrassShader v4.shader
+//    Shader "AFS/Grass Shader v4" {
+//      Properties {
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//      }
+//      Fallback "Legacy Shaders/Transparent/Cutout/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="AFSGrass" "AfsMode"="Grass" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "RenderType"="AFSGrass" "AfsMode"="Grass" }
+//          Cull Off
+//          GpuProgramID 49344
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "IN_EDITMODE" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_HARD" "VERTEXLIGHT_ON" }
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "IN_EDITMODE" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_2x2" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "IN_EDITMODE" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_3x3" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "IN_EDITMODE" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_4x4" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 12 [_Object2World]
+//              Matrix 20 [_World2Object] 3
+//              Matrix 8 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 16 [sunshine_CameraVToSunVP]
+//              Vector 37 [_AfsGrassWind]
+//              Vector 35 [_AfsWaveAndDistance]
+//              Float 36 [_AfsWindJitterScale]
+//              Vector 38 [_MainTex_ST]
+//              Vector 24 [_ProjectionParams]
+//              Vector 25 [_ScreenParams]
+//              Vector 34 [_Wind]
+//              Vector 23 [_WorldSpaceCameraPos]
+//              Vector 29 [unity_4LightAtten0]
+//              Vector 26 [unity_4LightPosX0]
+//              Vector 27 [unity_4LightPosY0]
+//              Vector 28 [unity_4LightPosZ0]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 32 [unity_SHBb]
+//              Vector 31 [unity_SHBg]
+//              Vector 30 [unity_SHBr]
+//              Vector 33 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c39, 0.00600000005, 0.0199999996, 0.0500000007, 0.0175000001
+    def c40, 2.4000001, 4, 3.20000005, 9.60000038
+    def c41, 6.40884876, -3.14159274, -0.161616161, 0.00833330024
+    def c42, -0.000198409994, -0.5, 1, 0.0416666642
+    def c43, -0.00138888892, 2.48015876e-005, 0.699999988, 0
+    def c44, 0.674199879, 0.269679934, 0.134839967, 0
+    def c45, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c46, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
+    def c47, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_color v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_color o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    dcl_texcoord5 o7.xyz
+    dcl_texcoord6 o8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c12, v0
+    dp4 r0.z, c14, v0
+    add r0.y, r0.z, r0.x
+    mul r0.y, r0.y, c39.w
+    frc r0.y, r0.y
+    add r0.y, r0.y, c35.x
+    mul r1.xy, r0.xzzw, c35.y
+    mul r2, r1.y, c39.xyyz
+    mad r1, r1.x, c46, r2
+    mad r1, r0.y, c40, r1
+    frc r1, r1
+    mad r1, r1, c41.x, c41.y
+    mul r2, r1, r1
+    mul r3, r1, r2
+    mad r1, r3, c41.z, r1
+    mul r3, r2, r3
+    mad r1, r3, c41.w, r1
+    mul r3, r2, r3
+    mad r1, r3, c42.x, r1
+    mul r1, r1, r1
+    mul r1, r1, r1
+    mul r0.y, c35.z, v2.w
+    mul r3, r0.y, r1
+    dp4 r0.y, r1, c44.xxyz
+    mul r0.y, r0.y, c43.z
+    mad r1, r2, c42.y, c42.z
+    mul r4, r2, r2
+    mul r2, r2, r4
+    mad r1, r4, c42.w, r1
+    mad r1, r2, c43.x, r1
+    mad r1, r2, c43.y, r1
+    mul r1, r1, r3
+    mov r2.xz, c34
+    mul r3, r2.x, c47
+    dp4 r3.x, r1, r3
+    mul r2, r2.z, c45
+    dp4 r3.z, r1, r2
+    mul r1.xy, r3.xzzw, c36.x
+    mul r1.xy, r1, c35.z
+    mul r1.zw, c37.xyxz, v2.w
+    mad r0.yw, r1.xzzw, r0.y, r1.xxzy
+    add r0.xz, r0.yyww, r0
+    dp4 r0.y, c13, v0
+    add r1.xyz, r0, -c23
+    dp3 r1.x, r1, r1
+    add r1.x, -r1.x, c35.w
+    add r1.x, r1.x, r1.x
+    rcp r1.y, c35.w
+    mul_sat o4.w, r1.y, r1.x
+    dp4 r0.w, c15, v0
+    dp4 r1.x, c20, r0
+    dp4 r1.z, c22, r0
+    mov r1.yw, v0
+    dp4 r0.x, c8, r1
+    dp4 r0.y, c9, r1
+    dp4 r0.z, c10, r1
+    dp4 r0.w, c11, r1
+    dp4 o6.x, c16, r0
+    dp4 o6.y, c17, r0
+    dp4 o6.z, c18, r0
+    dp4 o6.w, c19, r0
+    mad o1.xy, v1, c38, c38.zwzw
+    dp4 r0.x, c12, r1
+    add r2, -r0.x, c26
+    dp4 r0.y, c13, r1
+    add r3, -r0.y, c27
+    nrm r4.xyz, c21
+    mul r5.xyz, r4.y, c21
+    mad r4.xyw, c20.xyzz, r4.x, r5.xyzz
+    mad r4.xyz, c22, r4.z, r4.xyww
+    nrm r5.xyz, r4
+    mul r4, r3, r5.y
+    mul r3, r3, r3
+    mad r3, r2, r2, r3
+    mad r2, r2, r5.x, r4
+    dp4 r0.z, c14, r1
+    add r4, -r0.z, c28
+    mov o3.xyz, r0
+    mad r0, r4, r5.z, r2
+    mad r2, r4, r4, r3
+    rsq r3.x, r2.x
+    rsq r3.y, r2.y
+    rsq r3.z, r2.z
+    rsq r3.w, r2.w
+    mov r4.z, c42.z
+    mad r2, r2, c29, r4.z
+    mul r0, r0, r3
+    max r0, r0, c43.w
+    rcp r3.x, r2.x
+    rcp r3.y, r2.y
+    rcp r3.z, r2.z
+    rcp r3.w, r2.w
+    mul r0, r0, r3
+    mul r2.xyz, r0.y, c1
+    mad r2.xyz, c0, r0.x, r2
+    mad r0.xyz, c2, r0.z, r2
+    mad r0.xyz, c3, r0.w, r0
+    mul r0.w, r5.y, r5.y
+    mad r0.w, r5.x, r5.x, -r0.w
+    mul r2, r5.yzzx, r5.xyzz
+    mov o2.xyz, r5
+    dp4 r3.x, c30, r2
+    dp4 r3.y, c31, r2
+    dp4 r3.z, c32, r2
+    mad r2.xyz, c33, r0.w, r3
+    add o7.xyz, r0, r2
+    dp4 r0.x, c4, r1
+    dp4 r0.w, c7, r1
+
+mov o0, r0 // Relocated from line 194 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors AFS_Grass Shader v4/vp/C56CFF65.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xz, r0.xyww, -c42.y
+    dp4 r0.y, c5, r1
+    dp4 r0.z, c6, r1
+    mul r1.x, r0.y, c24.x
+
+//     mov o0, r0 // Relocated to line 190 with shadertool.py
+mov o0.yz, r0 // Inserted by shadertool.py
+
+    mov o8.zw, r0
+    mul r2.w, r1.x, -c42.y
+    mad o8.xy, r2.z, c25.zwzw, r2.xwzw
+    mov o4.xyz, c42.z
+    mov o5, c43.w
