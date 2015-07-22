@@ -60,8 +60,8 @@ def c221, -0.999, 0.999, 0, 0 // Full screen fade to black coordinates
 def c222, 0, 1.0, 0.07, 0.08 // Crosshair texture coordinates
 def c223, -0.01, 0.01, -0.01, 0.01 // Crosshair X+Y bounds
 def c224, 0.216, 0, 0, 0.5 // Crosshair fade threshold
-dcl_2d s0
-dcl_2d s3 // Copy of _CameraDepthTexture
+dcl_2d s3
+dcl_2d s2 // Copy of _CameraDepthTexture
 
 // For loop to improve stereo cursor accuracy:
 defi i0, 255, 0, 0, 0
@@ -132,7 +132,7 @@ endif
 endif
 endif
 
-texldl r31, c220.z, s0
+texldl r31, c220.z, s3
 
 if_eq r30.x, c220.y
 	mad r10.x, r31.x, c200.z, r10.x
@@ -166,7 +166,7 @@ if_ne r20.w, c220.x
 
 		// Read depth texture at this pixel (divide by 2 for texture coordinates):
 		mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
-		texldl r5, r21.xy, s3
+		texldl r5, r21.xy, s2
 
 		// scale depth buffer to world Z (game dependent - look for scaling applied to
 		// the depth buffer wherever else it is used. In the case of Unity we use
