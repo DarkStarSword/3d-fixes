@@ -1,4 +1,4 @@
-// CRC32: F1897C41 | Matched 4 variants of 1 shaders: Hidden/Internal-DeferredShading
+// CRC32: F1897C41 | Matched 6 variants of 2 shaders: Hidden/Internal-DeferredShading, Hidden/Sunshine-DeferredShading
 // 
 //    Unity headers extracted from Internal-DeferredShading.shader
 //    Shader "Hidden/Internal-DeferredShading" {
@@ -15,13 +15,10 @@
 //          Tags { "SHADOWSUPPORT"="true" }
 //          ZWrite Off
 //          Blend [_SrcBlend] [_DstBlend]
-//          GpuProgramID 24801
+//          GpuProgramID 36028
 //          Program "fp" {
 //            SubProgram "d3d9 " {
-// 1:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_DISABLED" "UNITY_HDR_ON" }
-// 8:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" "UNITY_HDR_ON" }
-// 4:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" "UNITY_HDR_ON" }
-// 2:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_3x3" "UNITY_HDR_ON" }
+//              Keywords { "POINT_COOKIE" "SHADOWS_OFF" "UNITY_HDR_ON" }
 //              Matrix 0 [_CameraToWorld] 3
 //              Matrix 3 [_LightMatrix0] 3
 //              Vector 10 [_LightColor]
@@ -41,6 +38,49 @@
 //        }
 //      }
 //    }
+// 
+//     Unity headers extracted from Sunshine-DeferredShading.shader
+//     Shader "Hidden/Sunshine-DeferredShading" {
+//       Properties {
+//        _LightTexture0 ("", any) = "" { }
+//        _LightTextureB0 ("", 2D) = "" { }
+//        _ShadowMapTexture ("", any) = "" { }
+//        _SrcBlend ("", Float) = 1
+//        _DstBlend ("", Float) = 1
+//       }
+//       Fallback "Hidden/Internal-DeferredShading"
+//       SubShader 1/1 {
+//         Pass 1/2 {
+//           Tags { "SHADOWSUPPORT"="true" }
+//           ZWrite Off
+//           Blend [_SrcBlend] [_DstBlend]
+//           GpuProgramID 60668
+//           Program "fp" {
+//             SubProgram "d3d9 " {
+// 01:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_DISABLED" "UNITY_HDR_ON" }
+// 10:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" "UNITY_HDR_ON" }
+// 08:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" "UNITY_HDR_ON" }
+// 04:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_3x3" "UNITY_HDR_ON" }
+// 02:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_4x4" "UNITY_HDR_ON" }
+//               Matrix 0 [_CameraToWorld] 3
+//               Matrix 3 [_LightMatrix0] 3
+//               Vector 10 [_LightColor]
+//               Vector 9 [_LightPos]
+//               Vector 7 [_ProjectionParams]
+//               Vector 6 [_WorldSpaceCameraPos]
+//               Vector 8 [_ZBufferParams]
+//               Vector 11 [unity_LightGammaCorrectionConsts]
+//               SetTexture 0 [_CameraDepthTexture] 2D 0
+//               SetTexture 1 [_LightTextureB0] 2D 1
+//               SetTexture 2 [_LightTexture0] CUBE 2
+//               SetTexture 3 [_CameraGBufferTexture0] 2D 3
+//               SetTexture 4 [_CameraGBufferTexture1] 2D 4
+//               SetTexture 5 [_CameraGBufferTexture2] 2D 5
+//             }
+//           }
+//         }
+//       }
+//     }
 // 
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
@@ -75,7 +115,7 @@ dcl_2d s15
     mov r0.w, c12.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed Hidden_Internal-DeferredShading/fp/F1897C41.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps Hidden_Sunshine-DeferredShading/fp/F1897C41.txt
 texldl r31, c220.z, s15
 add r31.w, r0.z, -r31.y
 mul r31.w, r31.w, r31.x

@@ -1,0 +1,130 @@
+// CRC32: F7254120 | Unity headers extracted from Camera-CustomDepthNormalTexture.shader
+// Shader "Hidden/Camera-DepthNormalTexture" {
+//   Properties {
+//    _MainTex ("", 2D) = "white" { }
+//    _Cutoff ("", Float) = 0.5
+//    _Color ("", Color) = (1,1,1,1)
+//   }
+//   Fallback Off
+//   SubShader 9/11 {
+//     Tags { "RenderType"="SpeedTree" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="SpeedTree" }
+//       Cull Off
+//       GpuProgramID 592896
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "GEOM_TYPE_MESH" "LOD_FADE_CROSSFADE" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 13 [_Object2World] 2
+//           Matrix 10 [_World2Object] 3
+//           Matrix 7 [glstate_matrix_invtrans_modelview0] 3
+//           Matrix 4 [glstate_matrix_modelview0] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 15 [_ProjectionParams]
+//           Vector 21 [_ST_WindBranchAdherences]
+//           Vector 20 [_ST_WindGlobal]
+//           Vector 19 [_ST_WindVector]
+//           Vector 16 [_ScreenParams]
+//           Float 18 [_WindEnabled]
+//           Float 17 [_WindQuality]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c22, 0, 0.25, 0.800000012, 0.5
+    def c23, 2, -1, 3, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.x, c20.x
+    add r1.x, r0.x, c13.w
+    mov r0.yz, c22
+    mad r1.y, r0.x, r0.z, c14.w
+    add r0.xz, r1.xyyw, c22.w
+    frc r0.xz, r0
+    mad r0.xz, r0, c23.x, c23.y
+    mul r1.xy, r0_abs.xzzw, r0_abs.xzzw
+    mad r0.xz, r0_abs, -c23.x, c23.z
+    mad r0.xz, r1.xyyw, r0, -c22.w
+    add r0.xz, r0, r0
+    mad r0.x, r0.z, r0.z, r0.x
+    rcp r0.z, c20.z
+    mul r0.w, r0.z, c21.x
+    mad r0.z, r0.z, -c22.y, v0.y
+    max r0.z, r0.z, c22.x
+    mad r0.x, c20.y, r0.x, r0.w
+    mul r0.w, r0.z, c20.z
+    pow r1.x, r0.w, c20.w
+    mad r0.z, r0.z, -c20.z, r1.x
+    slt r1.x, -r0_abs.w, r0_abs.w
+    mad r0.z, r1.x, r0.z, r0.w
+    mul r0.x, r0.z, r0.x
+    mov r1.xyz, c19
+    dp3 r2.y, c11, r1
+    dp3 r2.x, c10, r1
+    dp3 r2.z, c12, r1
+    dp3 r0.z, r2, r2
+    rsq r0.z, r0.z
+    mul r0.zw, r0.z, r2.xyxz
+    mov r1.x, c17.x
+    mul r1.x, r1.x, c18.x
+    slt r1.x, c22.x, r1.x
+    mul r0.zw, r0, r1.x
+    mad r2.xz, r0.zyww, r0.x, v0
+    mov r2.y, v0.y
+    nrm r3.xyz, r2
+    dp3 r0.x, v0, v0
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mad r0.xzw, r3.xyyz, r0.x, -v0.xyyz
+    mad r1.xyz, r1.x, r0.xzww, v0
+    mov r1.w, v0.w
+    dp4 o0.z, c2, r1
+    dp3 r2.x, c7, v1
+    dp3 r2.y, c8, v1
+    dp3 r2.z, c9, v1
+    dp3 r0.x, r2, r2
+    rsq r0.x, r0.x
+    mul o2.xyz, r0.x, r2
+    dp4 r0.x, c6, r1
+    mul r0.x, r0.x, c15.w
+    mov o2.w, -r0.x
+    dp4 r2.x, c0, r1
+    dp4 r2.w, c3, r1
+    dp4 r2.y, c1, r1
+
+mov o0.xyw, r2 // Relocated from line 109 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Hidden_Camera-DepthNormalTexture/vp/F7254120.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    mul r0.xz, r2.xyww, c22.w
+
+//     mov o0.xyw, r2 // Relocated to line 108 with shadertool.py
+    mul r1.x, r2.y, c15.x
+    mul r0.w, r1.x, c22.w
+    mad r0.xz, r0.z, c16.zyww, r0.xyww
+    mov o3.z, r2.w
+    mul r0.yw, r0.y, c16.xxzy
+    mul o3.xy, r0.ywzw, r0.xzzw
+    mov o1.xy, v2
