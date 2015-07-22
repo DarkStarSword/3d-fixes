@@ -33,7 +33,18 @@
     dcl_texcoord1 v1.xy
     dcl_2d s0
     dcl_2d s1
-    texld_pp r0, v1, s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Correct sun shafts origin:
+mov r21.xy, v1
+mul r31.w, r31.x, -c220.w // Adjust by -1/2 separation
+add r21.x, r21.x, r31.w
+
+    texld_pp r0, r21, s1
     texld_pp r1, v0, s0
     mul_sat_pp r0, r0, c0
     add r0, -r0, c1.x

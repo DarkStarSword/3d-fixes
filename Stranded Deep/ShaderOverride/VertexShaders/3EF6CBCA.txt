@@ -86,13 +86,32 @@
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
-    vs_2_0
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
     dcl_position v0
     dcl_texcoord v1
-    dp4 oPos.x, c0, v0
-    dp4 oPos.y, c1, v0
-    dp4 oPos.z, c2, v0
-    dp4 oPos.w, c3, v0
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_texcoord2 o5 // Extra output for stereoised version of texcoord1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+// Stereoise _SunPosition - this fix is necessary for the underwater
+// Crepuscular Rays, but breaks the sun shafts, so use an extra output for the
+// corrected version
+
+texldl r31, c220.z, s3
+mov r30, c5
+mad r30.x, r31.x, c220.w, r30.x
+add r0.xy, -v1, r30
+mul o5.xy, r0, c4
+
+    dp4 o2.x, c0, v0
+    dp4 o2.y, c1, v0
+    dp4 o2.z, c2, v0
+    dp4 o2.w, c3, v0
     add r0.xy, -v1, c5
-    mul oT1.xy, r0, c4
-    mov oT0.xy, v1
+    mul o1.xy, r0, c4
+    mov o0.xy, v1
