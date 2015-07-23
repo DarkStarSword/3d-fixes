@@ -1,3 +1,5 @@
+// High quality water, reflection pass, with ripple
+
 cbuffer cb3 : register(b3)
 {
   float4 cb3[9];
@@ -58,6 +60,10 @@ void main(
   float4 v4 : TEXCOORD3,
   float4 v5 : TEXCOORD4,
   float4 v6 : TEXCOORD5,
+
+  row_major matrix vp : TEXCOORD6,
+  row_major matrix ivp : TEXCOORD10,
+
   out float4 o0 : SV_Target0)
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14;
@@ -70,7 +76,16 @@ void main(
   r1.x = -v2.w * PS_NearFarClipDist.w + r1.x;
   r1.x = r1.x < 0;
   if (r1.x != 0) discard;
-  r1.xyz = PS_WorldViewPos.xyz + -v5.xyz;
+
+float4 adj_v5, iadj_v5;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(vp, float4(v5.xyz, 1));
+float adj = stereo.x * (tmp.w - stereo.y);
+adj_v5.xyz = v5 - mul(ivp, float4(adj, 0, 0, 0));
+iadj_v5.xyz = v5 + mul(ivp, float4(adj, 0, 0, 0));
+
+  r1.xyz = PS_WorldViewPos.xyz + -adj_v5.xyz;
   r1.xyz = r1.zzz * float3(-0,-0,-2) + r1.xyz;
   r1.w = dot(r1.xyz, r1.xyz);
   r1.w = rsqrt(r1.w);
@@ -89,7 +104,7 @@ void main(
   r3.xyz = r5.xyz ? r3.xyz : r4.xyz;
   r1.w = min(r3.x, r3.y);
   r1.w = min(r1.w, r3.z);
-  r1.xyz = r1.xyz * r1.www + v5.xyz;
+  r1.xyz = r1.xyz * r1.www + adj_v5.xyz;
   r1.xyz = -r2.xyz * float3(0.5,0.5,0.5) + r1.xyz;
   r1.w = -cb3[1].w * 6 + 6;
   r1.xyzw = envMapSamplerCUBE.SampleLevel(envMapSamplerCUBE_s, r1.xyz, r1.w).xyzw;
@@ -98,7 +113,7 @@ void main(
   r1.xyz = r1.xyz * r1.www;
   r1.xyz = cb3[1].xyz * r1.xyz;
   r1.w = 0.150000006 * PS_HPosScale.y;
-  r2.xyz = -PS_WorldViewPos.xyz + v5.xyz;
+  r2.xyz = -PS_WorldViewPos.xyz + adj_v5.xyz;
   r2.w = dot(r2.xyz, r2.xyz);
   r2.w = rsqrt(r2.w);
   r2.xyz = r2.xyz * r2.www;
@@ -129,7 +144,7 @@ void main(
   r2.w = saturate(r2.w / r1.w);
   r6.w = r3.w ? 1 : r2.w;
   r2.w = 3.1875 / PS_NearFarClipDist.y;
-  r7.xyz = r3.xyz * float3(17,17,17) + v5.xyz;
+  r7.xyz = r3.xyz * float3(17,17,17) + iadj_v5.xyz;
   r7.w = 1;
   r8.x = dot(mViewProj._m00_m01_m02_m03, r7.xyzw);
   r8.y = dot(mViewProj._m10_m11_m12_m13, r7.xyzw);
