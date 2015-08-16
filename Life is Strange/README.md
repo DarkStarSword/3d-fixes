@@ -1,6 +1,10 @@
 Life is Strange (Episode 1)
 ===========================
 
+Update 2015-08-16
+-----------------
+- Fixed Chapter 4
+
 Update 2015-05-24
 -----------------
 - Fixed Chapter 3
