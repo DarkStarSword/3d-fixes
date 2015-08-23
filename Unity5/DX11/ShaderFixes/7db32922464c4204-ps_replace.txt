@@ -1,3 +1,47 @@
+// 3DMigoto: 7db32922464c4204 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/2 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 58189
+//       Program "fp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "SHADOWS_NATIVE" }
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 112 [_ZBufferParams]
+//           Vector 128 [unity_OrthoParams]
+//           ConstBuffer "UnityShadows" 416
+//           Matrix 128 [unity_World2Shadow0]
+//           Matrix 192 [unity_World2Shadow1]
+//           Matrix 256 [unity_World2Shadow2]
+//           Matrix 320 [unity_World2Shadow3]
+//           Vector 96 [_LightSplitsNear]
+//           Vector 112 [_LightSplitsFar]
+//           Vector 384 [_LightShadowData]
+//           ConstBuffer "UnityPerCamera2" 64
+//           Matrix 0 [_CameraToWorld]
+//           BindCB "UnityPerCamera" 0
+//           BindCB "UnityShadows" 1
+//           BindCB "UnityPerCamera2" 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_4_0
+
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -30,7 +74,8 @@ void main(
   float3 v1 : TEXCOORD1,
   float4 v2 : TEXCOORD2,
   float4 v3 : SV_POSITION0,
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+  float fov : TEXCOORD3) // New input from pixel shader with UNITY_MATRIX_IT_MV[0].x
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
@@ -52,6 +97,13 @@ void main(
   r2.xyzw = r0.zzzz < cb1[7].xyzw;
   r2.xyzw = r2.xyzw ? 1.000000 : 0;
   r1.xyzw = r2.xyzw * r1.xyzw;
+
+float depth = r0.z;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x; float convergence = stereo.y;
+r0.x -= separation * (depth - convergence) * fov;
+
   r2.xyzw = cb2[1].xyzw * r0.yyyy;
   r2.xyzw = cb2[0].xyzw * r0.xxxx + r2.xyzw;
   r2.xyzw = cb2[2].xyzw * r0.zzzz + r2.xyzw;
