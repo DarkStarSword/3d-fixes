@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, re, math, copy
-import json, hashlib, collections
+import json, hashlib, collections, struct
 
 shader_idx_filename = 'ShaderHeaders.json'
 
@@ -639,13 +639,15 @@ def add_vanity_tag(headers):
     headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
     headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
 
-def decode_unity_d3d11_shader(asm):
-    # Pretty straight forward encoding - each byte is split in half and offset
-    # from the letter 'a'.
+def decode_unity_byte(upper, lower):
+        upper = ord(upper) - ord('a')
+        lower = ord(lower) - ord('a')
+        assert(upper & 0xffff == upper)
+        assert(lower & 0xffff == lower)
+        return (upper << 4) | lower
 
-    # Strip off first line, which is the shader model and not part of the
-    # binary file:
-    asm = list(asm[asm.find('\n'):])
+def _decode_unity_d3d11_shader(asm):
+    asm = list(asm)
 
     def next_char():
         char = ' '
@@ -655,12 +657,25 @@ def decode_unity_d3d11_shader(asm):
 
     ret = []
     while len(asm):
-        upper = ord(next_char()) - ord('a')
-        lower = ord(next_char()) - ord('a')
-        assert(upper & 0xffff == upper)
-        assert(lower & 0xffff == lower)
-        ret.append((upper << 4) | lower)
+        ret.append(decode_unity_byte(next_char(), next_char()))
     return bytes(ret)
+
+def decode_unity_d3d11_shader(asm):
+    # Pretty straight forward encoding - each byte is split in half and offset
+    # from the letter 'a'.
+
+    # Strip off first line, which is the shader model and not part of the
+    # binary file:
+    asm = asm[asm.find('\n')+1:]
+
+    # Newer versions of Unity (5.1.1?) add a line like 'root12:aaabaaaa'.
+    # Not sure what it is (flags? checksum?), don't really care either.
+    if asm.startswith('root12:'):
+        root12 = _decode_unity_d3d11_shader(asm[7:15])
+        print('root12: 0x%08x' % struct.unpack('<I', root12)[0])
+        asm = asm[asm.find('\n')+1:]
+
+    return _decode_unity_d3d11_shader(asm)
 
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
