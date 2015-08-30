@@ -1,0 +1,1233 @@
+
+cbuffer PER_BATCH : register(b0)
+{
+  row_major float3x4 SSDO_CameraMatrix : packoffset(c0);
+  row_major float3x4 SSDO_CameraMatrixInv : packoffset(c3);
+  float4 PS_NearFarClipDist : packoffset(c6);
+  float4 SSDOParams : packoffset(c7);
+}
+SamplerState _tex0_s : register(s0);
+SamplerState _tex1_s : register(s1);
+SamplerState _tex3_s : register(s3);
+SamplerState _tex5_s : register(s5);
+Texture2D<float4> _tex0 : register(t0);
+Texture2D<float4> _tex1 : register(t1);
+Texture2D<float4> _tex3 : register(t3);
+Texture2D<float4> _tex5 : register(t5);
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main( 
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = _tex1.Sample(_tex1_s, v1.xy).x;
+  r0.yzw = _tex0.Sample(_tex0_s, v1.xy).xyz;
+  r0.yzw = r0.yzw * float3(2,2,2) + float3(-1,-1,-1);
+  r1.x = dot(r0.yz, r0.yz);
+  r1.x = min(1, r1.x);
+  r1.x = 1 + r1.x;
+  r1.x = 2 / r1.x;
+  r1.y = -1 + r1.x;
+  r2.xy = r1.xx * r0.yz;
+  r0.y = 0 < r0.w;
+  r2.z = r0.y ? r1.y : -r1.y;
+  r1.x = dot(SSDO_CameraMatrix._m00_m01_m02, r2.xyz);
+  r1.y = dot(SSDO_CameraMatrix._m10_m11_m12, r2.xyz);
+  r1.z = dot(SSDO_CameraMatrix._m20_m21_m22, r2.xyz);
+  r0.y = dot(r1.xyz, r1.xyz);
+  r0.y = rsqrt(r0.y);
+  r0.yzw = r1.xyz * r0.yyy;
+  r1.xyz = _tex3.Sample(_tex3_s, v1.zw).xyz;
+  r1.xyz = r1.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r1.w = dot(float3(0.00195299997,0.0820309967,-0.0605470017), r1.xyz);
+  r1.w = r1.w + r1.w;
+  r3.xyz = r1.xyz * -r1.www + float3(0.00195299997,0.0820309967,-0.0605470017);
+  r1.w = dot(r0.yzw, r3.xyz);
+  r1.w = r1.w >= 0;
+  r3.xyz = r1.www ? r3.xyz : -r3.xyz;
+  r1.w = SSDOParams.x / r0.x;
+  r1.w = max(SSDOParams.y, r1.w);
+  r1.w = min(SSDOParams.z, r1.w);
+  r4.xy = r3.xy * r1.ww + v1.xy;
+  r4.x = _tex5.Sample(_tex5_s, r4.xy).x;
+  r2.w = dot(float3(0.105469003,-0.0390629992,-0.0195310004), r1.xyz);
+  r2.w = r2.w + r2.w;
+  r5.xyz = r1.xyz * -r2.www + float3(0.105469003,-0.0390629992,-0.0195310004);
+  r2.w = dot(r0.yzw, r5.xyz);
+  r2.w = r2.w >= 0;
+  r5.xyz = r2.www ? r5.xyz : -r5.xyz;
+  r6.xy = r5.xy * r1.ww + v1.xy;
+  r4.y = _tex5.Sample(_tex5_s, r6.xy).x;
+  r2.w = dot(float3(-0.119140998,-0.00390599994,-0.0664059967), r1.xyz);
+  r2.w = r2.w + r2.w;
+  r6.xyz = r1.xyz * -r2.www + float3(-0.119140998,-0.00390599994,-0.0664059967);
+  r2.w = dot(r0.yzw, r6.xyz);
+  r2.w = r2.w >= 0;
+  r6.xyz = r2.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r4.z = _tex5.Sample(_tex5_s, r7.xy).x;
+  r2.w = dot(float3(0.0703129992,-0.0253909994,0.148438007), r1.xyz);
+  r2.w = r2.w + r2.w;
+  r7.xyz = r1.xyz * -r2.www + float3(0.0703129992,-0.0253909994,0.148438007);
+  r2.w = dot(r0.yzw, r7.xyz);
+  r2.w = r2.w >= 0;
+  r7.xyz = r2.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r4.w = _tex5.Sample(_tex5_s, r8.xy).x;
+  r4.xyzw = r4.xyzw / r0.xxxx;
+  r8.x = r3.z;
+  r8.y = r5.z;
+  r8.z = r6.z;
+  r8.w = r7.z;
+  r8.xyzw = r8.xyzw * r1.wwww;
+  r8.xyzw = r8.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r4.xyzw = r8.xyzw + -r4.xyzw;
+  r4.xyzw = r4.xyzw / r1.wwww;
+  r4.xyzw = float4(1,1,1,1) / r4.xyzw;
+  r4.xyzw = saturate(r4.xyzw);
+  r2.w = dot(r3.xyz, r3.xyz);
+  r2.w = rsqrt(r2.w);
+  r3.xyz = r3.xyz * r2.www;
+  r8.x = saturate(dot(r3.xyz, r0.yzw));
+  r2.w = dot(r5.xyz, r5.xyz);
+  r2.w = rsqrt(r2.w);
+  r5.xyz = r5.xyz * r2.www;
+  r8.y = saturate(dot(r5.xyz, r0.yzw));
+  r2.w = dot(r6.xyz, r6.xyz);
+  r2.w = rsqrt(r2.w);
+  r6.xyz = r6.xyz * r2.www;
+  r8.z = saturate(dot(r6.xyz, r0.yzw));
+  r2.w = dot(r7.xyz, r7.xyz);
+  r2.w = rsqrt(r2.w);
+  r7.xyz = r7.xyz * r2.www;
+  r8.w = saturate(dot(r7.xyz, r0.yzw));
+  r4.xyzw = r8.xyzw * r4.xyzw;
+  r5.xyz = r5.xyz * r4.yyy;
+  r3.xyz = r3.xyz * r4.xxx + r5.xyz;
+  r3.xyz = r6.xyz * r4.zzz + r3.xyz;
+  r3.xyz = r7.xyz * r4.www + r3.xyz;
+  r2.w = dot(float4(1,1,1,1), r4.xyzw);
+  r3.w = dot(float3(0.078125,0.113280997,-0.126953006), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(0.078125,0.113280997,-0.126953006);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(0.179688007,-0.0449220017,0.046875), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(0.179688007,-0.0449220017,0.046875);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(-0.152344003,-0.0195310004,0.142578006), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(-0.152344003,-0.0195310004,0.142578006);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(0.173828006,0.111327998,0.0644529983), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(0.173828006,0.111327998,0.0644529983);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(0.173828006,-0.140625,0.03125), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(0.173828006,-0.140625,0.03125);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(-0.146484002,-0.201171994,-0.0292969998), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(-0.146484002,-0.201171994,-0.0292969998);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(0.113280997,-0.0917970017,0.212890998), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(0.113280997,-0.0917970017,0.212890998);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(0.117187999,-0.140625,-0.199219003), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(0.117187999,-0.140625,-0.199219003);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(-0.0292969998,-0.259766012,0.0898440033), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(-0.0292969998,-0.259766012,0.0898440033);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(-0.240234002,0.146484002,-0.0683590025), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(-0.240234002,0.146484002,-0.0683590025);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(0.228515998,0.154296994,-0.119140998), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(0.228515998,0.154296994,-0.119140998);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(-0.078125,0.0136719998,-0.314453006), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(-0.078125,0.0136719998,-0.314453006);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(-0.214844003,-0.175780997,0.191405997), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(-0.214844003,-0.175780997,0.191405997);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(0.0214840006,0.326171994,0.115234002), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(0.0214840006,0.326171994,0.115234002);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(0.242188007,0.126953006,-0.25), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(0.242188007,0.126953006,-0.25);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(-0.21875,0.214844003,-0.25), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(-0.21875,0.214844003,-0.25);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(-0.115234002,-0.287108988,-0.259766012), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(-0.115234002,-0.287108988,-0.259766012);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(0.220703006,-0.359375,-0.0625), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(0.220703006,-0.359375,-0.0625);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(-0.0585939996,-0.111327998,0.457031012), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(-0.0585939996,-0.111327998,0.457031012);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(0.308593988,0.193359002,0.324218988), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(0.308593988,0.193359002,0.324218988);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(0.353516012,0.208984002,-0.294921994), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(0.353516012,0.208984002,-0.294921994);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(-0.296875,0.410156012,-0.291016012), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(-0.296875,0.410156012,-0.291016012);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(-0.251953006,-0.558593988,0.0820309967), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(-0.251953006,-0.558593988,0.0820309967);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(-0.300781012,0.234375,0.539062977), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r8.xyz = r1.xyz * -r3.www + float3(-0.300781012,0.234375,0.539062977);
+  r3.w = dot(r0.yzw, r8.xyz);
+  r3.w = r3.w >= 0;
+  r8.xyz = r3.www ? r8.xyz : -r8.xyz;
+  r9.xy = r8.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r9.x = r4.z;
+  r9.y = r6.z;
+  r9.z = r7.z;
+  r9.w = r8.z;
+  r9.xyzw = r9.xyzw * r1.wwww;
+  r9.xyzw = r9.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r9.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r9.x = saturate(dot(r4.xyz, r0.yzw));
+  r3.w = dot(r6.xyz, r6.xyz);
+  r3.w = rsqrt(r3.w);
+  r6.xyz = r6.xyz * r3.www;
+  r9.y = saturate(dot(r6.xyz, r0.yzw));
+  r3.w = dot(r7.xyz, r7.xyz);
+  r3.w = rsqrt(r3.w);
+  r7.xyz = r7.xyz * r3.www;
+  r9.z = saturate(dot(r7.xyz, r0.yzw));
+  r3.w = dot(r8.xyz, r8.xyz);
+  r3.w = rsqrt(r3.w);
+  r8.xyz = r8.xyz * r3.www;
+  r9.w = saturate(dot(r8.xyz, r0.yzw));
+  r5.xyzw = r9.xyzw * r5.xyzw;
+  r6.xyz = r6.xyz * r5.yyy;
+  r4.xyz = r4.xyz * r5.xxx + r6.xyz;
+  r4.xyz = r7.xyz * r5.zzz + r4.xyz;
+  r4.xyz = r8.xyz * r5.www + r4.xyz;
+  r3.w = dot(float4(1,1,1,1), r5.xyzw);
+  r2.w = r3.w + r2.w;
+  r3.xyz = r4.xyz + r3.xyz;
+  r3.w = dot(float3(-0.705078006,-0.0605470017,0.0234379992), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r4.xyz = r1.xyz * -r3.www + float3(-0.705078006,-0.0605470017,0.0234379992);
+  r3.w = dot(r0.yzw, r4.xyz);
+  r3.w = r3.w >= 0;
+  r4.xyz = r3.www ? r4.xyz : -r4.xyz;
+  r5.xy = r4.xy * r1.ww + v1.xy;
+  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r3.w = dot(float3(0.134765998,0.414063007,-0.707031012), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r6.xyz = r1.xyz * -r3.www + float3(0.134765998,0.414063007,-0.707031012);
+  r3.w = dot(r0.yzw, r6.xyz);
+  r3.w = r3.w >= 0;
+  r6.xyz = r3.www ? r6.xyz : -r6.xyz;
+  r7.xy = r6.xy * r1.ww + v1.xy;
+  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r3.w = dot(float3(-0.556640983,-0.0371089987,-0.654296994), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r7.xyz = r1.xyz * -r3.www + float3(-0.556640983,-0.0371089987,-0.654296994);
+  r3.w = dot(r0.yzw, r7.xyz);
+  r3.w = r3.w >= 0;
+  r7.xyz = r3.www ? r7.xyz : -r7.xyz;
+  r8.xy = r7.xy * r1.ww + v1.xy;
+  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r3.w = dot(float3(0.291016012,-0.833984017,-0.183594003), r1.xyz);
+  r3.w = r3.w + r3.w;
+  r1.xyz = r1.xyz * -r3.www + float3(0.291016012,-0.833984017,-0.183594003);
+  r3.w = dot(r0.yzw, r1.xyz);
+  r3.w = r3.w >= 0;
+  r1.xyz = r3.www ? r1.xyz : -r1.xyz;
+  r8.xy = r1.xy * r1.ww + v1.xy;
+  r5.w = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.xyzw = r5.xyzw / r0.xxxx;
+  r8.xyz = v2.xyz * r0.xxx;
+  r0.x = dot(r8.xyz, r2.xyz);
+  r0.x = r0.x < 0;
+  r0.x = r0.x ? 1.000000 : 0;
+  r8.x = r4.z;
+  r8.y = r6.z;
+  r8.z = r7.z;
+  r8.w = r1.z;
+  r8.xyzw = r8.xyzw * r1.wwww;
+  r8.xyzw = r8.xyzw * float4(2,2,2,2) + float4(1,1,1,1);
+  r5.xyzw = r8.xyzw + -r5.xyzw;
+  r5.xyzw = r5.xyzw / r1.wwww;
+  r5.xyzw = float4(1,1,1,1) / r5.xyzw;
+  r5.xyzw = saturate(r5.xyzw);
+  r1.w = dot(r4.xyz, r4.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r4.xyz * r1.www;
+  r4.x = saturate(dot(r2.xyz, r0.yzw));
+  r1.w = dot(r6.xyz, r6.xyz);
+  r1.w = rsqrt(r1.w);
+  r6.xyz = r6.xyz * r1.www;
+  r4.y = saturate(dot(r6.xyz, r0.yzw));
+  r1.w = dot(r7.xyz, r7.xyz);
+  r1.w = rsqrt(r1.w);
+  r7.xyz = r7.xyz * r1.www;
+  r4.z = saturate(dot(r7.xyz, r0.yzw));
+  r1.w = dot(r1.xyz, r1.xyz);
+  r1.w = rsqrt(r1.w);
+  r1.xyz = r1.xyz * r1.www;
+  r4.w = saturate(dot(r1.xyz, r0.yzw));
+  r4.xyzw = r5.xyzw * r4.xyzw;
+  r0.yzw = r6.xyz * r4.yyy;
+  r0.yzw = r2.xyz * r4.xxx + r0.yzw;
+  r0.yzw = r7.xyz * r4.zzz + r0.yzw;
+  r0.yzw = r1.xyz * r4.www + r0.yzw;
+  r1.x = dot(float4(1,1,1,1), r4.xyzw);
+  r1.w = r2.w + r1.x;
+  r0.yzw = r3.xyz + r0.yzw;
+  r1.x = dot(SSDO_CameraMatrixInv._m00_m01_m02, r0.yzw);
+  r1.y = dot(SSDO_CameraMatrixInv._m10_m11_m12, r0.yzw);
+  r1.z = dot(SSDO_CameraMatrixInv._m20_m21_m22, r0.yzw);
+  r0.xyzw = r1.xyzw * r0.xxxx;
+  o0.xyz = r0.xyz * float3(0.125,0.125,0.125) + float3(0.5,0.5,0.5);
+  o0.w = 0.09375 * r0.w;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.30.960.8229
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer PER_BATCH
+// {
+//
+//   row_major float3x4 SSDO_CameraMatrix;// Offset:    0 Size:    48
+//   row_major float3x4 SSDO_CameraMatrixInv;// Offset:   48 Size:    48
+//   float4 PS_NearFarClipDist;         // Offset:   96 Size:    16 [unused]
+//   float4 SSDOParams;                 // Offset:  112 Size:    16
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// _tex0                             sampler      NA          NA    0        1
+// _tex1                             sampler      NA          NA    1        1
+// _tex3                             sampler      NA          NA    3        1
+// _tex5                             sampler      NA          NA    5        1
+// _tex0                             texture  float4          2d    0        1
+// _tex1                             texture  float4          2d    1        1
+// _tex3                             texture  float4          2d    3        1
+// _tex5                             texture  float4          2d    5        1
+// PER_BATCH                         cbuffer      NA          NA    0        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xyzw
+// TEXCOORD                 1   xyzw        2     NONE   float   xyz 
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb0[8], immediateIndexed
+dcl_sampler s0, mode_default
+dcl_sampler s1, mode_default
+dcl_sampler s3, mode_default
+dcl_sampler s5, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture2d (float,float,float,float) t3
+dcl_resource_texture2d (float,float,float,float) t5
+dcl_input_ps linear v1.xyzw
+dcl_input_ps linear v2.xyz
+dcl_output o0.xyzw
+dcl_temps 10
+sample_indexable(texture2d)(float,float,float,float) r0.x, v1.xyxx, t1.xyzw, s1
+sample_indexable(texture2d)(float,float,float,float) r0.yzw, v1.xyxx, t0.wxyz, s0
+mad r0.yzw, r0.yyzw, l(0.000000, 2.000000, 2.000000, 2.000000), l(0.000000, -1.000000, -1.000000, -1.000000)
+dp2 r1.x, r0.yzyy, r0.yzyy
+min r1.x, r1.x, l(1.000000)
+add r1.x, r1.x, l(1.000000)
+div r1.x, l(2.000000), r1.x
+add r1.y, r1.x, l(-1.000000)
+mul r2.xy, r0.yzyy, r1.xxxx
+lt r0.y, l(0.000000), r0.w
+movc r2.z, r0.y, r1.y, -r1.y
+dp3 r1.x, cb0[0].xyzx, r2.xyzx
+dp3 r1.y, cb0[1].xyzx, r2.xyzx
+dp3 r1.z, cb0[2].xyzx, r2.xyzx
+dp3 r0.y, r1.xyzx, r1.xyzx
+rsq r0.y, r0.y
+mul r0.yzw, r0.yyyy, r1.xxyz
+sample_indexable(texture2d)(float,float,float,float) r1.xyz, v1.zwzz, t3.xyzw, s3
+mad r1.xyz, r1.xyzx, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
+dp3 r1.w, l(0.001953, 0.082031, -0.060547, 0.000000), r1.xyzx
+add r1.w, r1.w, r1.w
+mad r3.xyz, r1.xyzx, -r1.wwww, l(0.001953, 0.082031, -0.060547, 0.000000)
+dp3 r1.w, r0.yzwy, r3.xyzx
+ge r1.w, r1.w, l(0.000000)
+movc r3.xyz, r1.wwww, r3.xyzx, -r3.xyzx
+div r1.w, cb0[7].x, r0.x
+max r1.w, r1.w, cb0[7].y
+min r1.w, r1.w, cb0[7].z
+mad r4.xy, r3.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r4.x, r4.xyxx, t5.xyzw, s5
+dp3 r2.w, l(0.105469, -0.039063, -0.019531, 0.000000), r1.xyzx
+add r2.w, r2.w, r2.w
+mad r5.xyz, r1.xyzx, -r2.wwww, l(0.105469, -0.039063, -0.019531, 0.000000)
+dp3 r2.w, r0.yzwy, r5.xyzx
+ge r2.w, r2.w, l(0.000000)
+movc r5.xyz, r2.wwww, r5.xyzx, -r5.xyzx
+mad r6.xy, r5.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r4.y, r6.xyxx, t5.yxzw, s5
+dp3 r2.w, l(-0.119141, -0.003906, -0.066406, 0.000000), r1.xyzx
+add r2.w, r2.w, r2.w
+mad r6.xyz, r1.xyzx, -r2.wwww, l(-0.119141, -0.003906, -0.066406, 0.000000)
+dp3 r2.w, r0.yzwy, r6.xyzx
+ge r2.w, r2.w, l(0.000000)
+movc r6.xyz, r2.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r4.z, r7.xyxx, t5.yzxw, s5
+dp3 r2.w, l(0.070313, -0.025391, 0.148438, 0.000000), r1.xyzx
+add r2.w, r2.w, r2.w
+mad r7.xyz, r1.xyzx, -r2.wwww, l(0.070313, -0.025391, 0.148438, 0.000000)
+dp3 r2.w, r0.yzwy, r7.xyzx
+ge r2.w, r2.w, l(0.000000)
+movc r7.xyz, r2.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r4.w, r8.xyxx, t5.yzwx, s5
+div r4.xyzw, r4.xyzw, r0.xxxx
+mov r8.x, r3.z
+mov r8.y, r5.z
+mov r8.z, r6.z
+mov r8.w, r7.z
+mul r8.xyzw, r1.wwww, r8.xyzw
+mad r8.xyzw, r8.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r4.xyzw, -r4.xyzw, r8.xyzw
+div r4.xyzw, r4.xyzw, r1.wwww
+div r4.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r4.xyzw
+mov_sat r4.xyzw, r4.xyzw
+dp3 r2.w, r3.xyzx, r3.xyzx
+rsq r2.w, r2.w
+mul r3.xyz, r2.wwww, r3.xyzx
+dp3_sat r8.x, r3.xyzx, r0.yzwy
+dp3 r2.w, r5.xyzx, r5.xyzx
+rsq r2.w, r2.w
+mul r5.xyz, r2.wwww, r5.xyzx
+dp3_sat r8.y, r5.xyzx, r0.yzwy
+dp3 r2.w, r6.xyzx, r6.xyzx
+rsq r2.w, r2.w
+mul r6.xyz, r2.wwww, r6.xyzx
+dp3_sat r8.z, r6.xyzx, r0.yzwy
+dp3 r2.w, r7.xyzx, r7.xyzx
+rsq r2.w, r2.w
+mul r7.xyz, r2.wwww, r7.xyzx
+dp3_sat r8.w, r7.xyzx, r0.yzwy
+mul r4.xyzw, r4.xyzw, r8.xyzw
+mul r5.xyz, r4.yyyy, r5.xyzx
+mad r3.xyz, r3.xyzx, r4.xxxx, r5.xyzx
+mad r3.xyz, r6.xyzx, r4.zzzz, r3.xyzx
+mad r3.xyz, r7.xyzx, r4.wwww, r3.xyzx
+dp4 r2.w, l(1.000000, 1.000000, 1.000000, 1.000000), r4.xyzw
+dp3 r3.w, l(0.078125, 0.113281, -0.126953, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(0.078125, 0.113281, -0.126953, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(0.179688, -0.044922, 0.046875, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(0.179688, -0.044922, 0.046875, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(-0.152344, -0.019531, 0.142578, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(-0.152344, -0.019531, 0.142578, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(0.173828, 0.111328, 0.064453, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(0.173828, 0.111328, 0.064453, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(0.173828, -0.140625, 0.031250, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(0.173828, -0.140625, 0.031250, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(-0.146484, -0.201172, -0.029297, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(-0.146484, -0.201172, -0.029297, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(0.113281, -0.091797, 0.212891, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(0.113281, -0.091797, 0.212891, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(0.117188, -0.140625, -0.199219, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(0.117188, -0.140625, -0.199219, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(-0.029297, -0.259766, 0.089844, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(-0.029297, -0.259766, 0.089844, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(-0.240234, 0.146484, -0.068359, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(-0.240234, 0.146484, -0.068359, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(0.228516, 0.154297, -0.119141, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(0.228516, 0.154297, -0.119141, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(-0.078125, 0.013672, -0.314453, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(-0.078125, 0.013672, -0.314453, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(-0.214844, -0.175781, 0.191406, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(-0.214844, -0.175781, 0.191406, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(0.021484, 0.326172, 0.115234, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(0.021484, 0.326172, 0.115234, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(0.242188, 0.126953, -0.250000, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(0.242188, 0.126953, -0.250000, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(-0.218750, 0.214844, -0.250000, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(-0.218750, 0.214844, -0.250000, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(-0.115234, -0.287109, -0.259766, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(-0.115234, -0.287109, -0.259766, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(0.220703, -0.359375, -0.062500, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(0.220703, -0.359375, -0.062500, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(-0.058594, -0.111328, 0.457031, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(-0.058594, -0.111328, 0.457031, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(0.308594, 0.193359, 0.324219, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(0.308594, 0.193359, 0.324219, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(0.353516, 0.208984, -0.294922, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(0.353516, 0.208984, -0.294922, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(-0.296875, 0.410156, -0.291016, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(-0.296875, 0.410156, -0.291016, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(-0.251953, -0.558594, 0.082031, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(-0.251953, -0.558594, 0.082031, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(-0.300781, 0.234375, 0.539063, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r8.xyz, r1.xyzx, -r3.wwww, l(-0.300781, 0.234375, 0.539063, 0.000000)
+dp3 r3.w, r0.yzwy, r8.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r8.xyz, r3.wwww, r8.xyzx, -r8.xyzx
+mad r9.xy, r8.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r9.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mov r9.x, r4.z
+mov r9.y, r6.z
+mov r9.z, r7.z
+mov r9.w, r8.z
+mul r9.xyzw, r1.wwww, r9.xyzw
+mad r9.xyzw, r9.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r9.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r3.w, r4.xyzx, r4.xyzx
+rsq r3.w, r3.w
+mul r4.xyz, r3.wwww, r4.xyzx
+dp3_sat r9.x, r4.xyzx, r0.yzwy
+dp3 r3.w, r6.xyzx, r6.xyzx
+rsq r3.w, r3.w
+mul r6.xyz, r3.wwww, r6.xyzx
+dp3_sat r9.y, r6.xyzx, r0.yzwy
+dp3 r3.w, r7.xyzx, r7.xyzx
+rsq r3.w, r3.w
+mul r7.xyz, r3.wwww, r7.xyzx
+dp3_sat r9.z, r7.xyzx, r0.yzwy
+dp3 r3.w, r8.xyzx, r8.xyzx
+rsq r3.w, r3.w
+mul r8.xyz, r3.wwww, r8.xyzx
+dp3_sat r9.w, r8.xyzx, r0.yzwy
+mul r5.xyzw, r5.xyzw, r9.xyzw
+mul r6.xyz, r5.yyyy, r6.xyzx
+mad r4.xyz, r4.xyzx, r5.xxxx, r6.xyzx
+mad r4.xyz, r7.xyzx, r5.zzzz, r4.xyzx
+mad r4.xyz, r8.xyzx, r5.wwww, r4.xyzx
+dp4 r3.w, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+add r2.w, r2.w, r3.w
+add r3.xyz, r3.xyzx, r4.xyzx
+dp3 r3.w, l(-0.705078, -0.060547, 0.023438, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r4.xyz, r1.xyzx, -r3.wwww, l(-0.705078, -0.060547, 0.023438, 0.000000)
+dp3 r3.w, r0.yzwy, r4.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r4.xyz, r3.wwww, r4.xyzx, -r4.xyzx
+mad r5.xy, r4.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.x, r5.xyxx, t5.xyzw, s5
+dp3 r3.w, l(0.134766, 0.414063, -0.707031, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r6.xyz, r1.xyzx, -r3.wwww, l(0.134766, 0.414063, -0.707031, 0.000000)
+dp3 r3.w, r0.yzwy, r6.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r6.xyz, r3.wwww, r6.xyzx, -r6.xyzx
+mad r7.xy, r6.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.y, r7.xyxx, t5.yxzw, s5
+dp3 r3.w, l(-0.556641, -0.037109, -0.654297, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r7.xyz, r1.xyzx, -r3.wwww, l(-0.556641, -0.037109, -0.654297, 0.000000)
+dp3 r3.w, r0.yzwy, r7.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r7.xyz, r3.wwww, r7.xyzx, -r7.xyzx
+mad r8.xy, r7.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.z, r8.xyxx, t5.yzxw, s5
+dp3 r3.w, l(0.291016, -0.833984, -0.183594, 0.000000), r1.xyzx
+add r3.w, r3.w, r3.w
+mad r1.xyz, r1.xyzx, -r3.wwww, l(0.291016, -0.833984, -0.183594, 0.000000)
+dp3 r3.w, r0.yzwy, r1.xyzx
+ge r3.w, r3.w, l(0.000000)
+movc r1.xyz, r3.wwww, r1.xyzx, -r1.xyzx
+mad r8.xy, r1.xyxx, r1.wwww, v1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r5.w, r8.xyxx, t5.yzwx, s5
+div r5.xyzw, r5.xyzw, r0.xxxx
+mul r8.xyz, r0.xxxx, v2.xyzx
+dp3 r0.x, r8.xyzx, r2.xyzx
+lt r0.x, r0.x, l(0.000000)
+and r0.x, r0.x, l(0x3f800000)
+mov r8.x, r4.z
+mov r8.y, r6.z
+mov r8.z, r7.z
+mov r8.w, r1.z
+mul r8.xyzw, r1.wwww, r8.xyzw
+mad r8.xyzw, r8.xyzw, l(2.000000, 2.000000, 2.000000, 2.000000), l(1.000000, 1.000000, 1.000000, 1.000000)
+add r5.xyzw, -r5.xyzw, r8.xyzw
+div r5.xyzw, r5.xyzw, r1.wwww
+div r5.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r5.xyzw
+mov_sat r5.xyzw, r5.xyzw
+dp3 r1.w, r4.xyzx, r4.xyzx
+rsq r1.w, r1.w
+mul r2.xyz, r1.wwww, r4.xyzx
+dp3_sat r4.x, r2.xyzx, r0.yzwy
+dp3 r1.w, r6.xyzx, r6.xyzx
+rsq r1.w, r1.w
+mul r6.xyz, r1.wwww, r6.xyzx
+dp3_sat r4.y, r6.xyzx, r0.yzwy
+dp3 r1.w, r7.xyzx, r7.xyzx
+rsq r1.w, r1.w
+mul r7.xyz, r1.wwww, r7.xyzx
+dp3_sat r4.z, r7.xyzx, r0.yzwy
+dp3 r1.w, r1.xyzx, r1.xyzx
+rsq r1.w, r1.w
+mul r1.xyz, r1.wwww, r1.xyzx
+dp3_sat r4.w, r1.xyzx, r0.yzwy
+mul r4.xyzw, r4.xyzw, r5.xyzw
+mul r0.yzw, r4.yyyy, r6.xxyz
+mad r0.yzw, r2.xxyz, r4.xxxx, r0.yyzw
+mad r0.yzw, r7.xxyz, r4.zzzz, r0.yyzw
+mad r0.yzw, r1.xxyz, r4.wwww, r0.yyzw
+dp4 r1.x, l(1.000000, 1.000000, 1.000000, 1.000000), r4.xyzw
+add r1.w, r1.x, r2.w
+add r0.yzw, r0.yyzw, r3.xxyz
+dp3 r1.x, cb0[3].xyzx, r0.yzwy
+dp3 r1.y, cb0[4].xyzx, r0.yzwy
+dp3 r1.z, cb0[5].xyzx, r0.yzwy
+mul r0.xyzw, r0.xxxx, r1.xyzw
+mad o0.xyz, r0.xyzx, l(0.125000, 0.125000, 0.125000, 0.000000), l(0.500000, 0.500000, 0.500000, 0.000000)
+mul o0.w, r0.w, l(0.093750)
+ret 
+// Approximately 567 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

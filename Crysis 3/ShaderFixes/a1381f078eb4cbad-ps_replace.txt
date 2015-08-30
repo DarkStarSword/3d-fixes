@@ -1,0 +1,346 @@
+
+cbuffer PER_BATCH : register(b0)
+{
+  float4 g_LightPos : packoffset(c0);
+  float4 g_LightDiffuse : packoffset(c1);
+  float4 vWBasisX : packoffset(c2);
+  float4 vWBasisY : packoffset(c3);
+  float4 vWBasisZ : packoffset(c4);
+  row_major float4x4 g_AreaLightParams : packoffset(c5);
+  float4 SSDOParams : packoffset(c9);
+  float4 PS_ScreenSize : packoffset(c10);
+  float4 pFadeOrigin : packoffset(c11);
+  float4 PS_NearFarClipDist : packoffset(c12);
+  float4 g_AreaLightTexParams : packoffset(c13);
+  float4 irreg_kernel_2d[8] : packoffset(c14);
+  float4 vFadeParams[6] : packoffset(c22);
+}
+SamplerState _tex0_s : register(s0);
+SamplerState _tex1_s : register(s1);
+SamplerState _tex6_s : register(s6);
+SamplerState _tex8_s : register(s8);
+Texture2D<float4> _tex0 : register(t0);
+Texture2D<float4> _tex1 : register(t1);
+Texture2D<float4> _tex6 : register(t6);
+Texture2D<float4> _tex8 : register(t8);
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = _tex0.Sample(_tex0_s, v1.xy).x;
+  r0.yzw = v2.xyz * r0.xxx;
+  r1.xyz = -r0.xxx * v2.xyz + g_LightPos.xyz;
+  r0.x = dot(g_AreaLightParams._m00_m01_m02, r1.xyz);
+  r2.xyz = g_AreaLightParams._m00_m01_m02 * r0.xxx;
+  r3.xyz = r0.xxx * g_AreaLightParams._m00_m01_m02 + -r1.xyz;
+  r4.x = dot(r3.xyz, g_AreaLightParams._m10_m11_m12);
+  r4.y = dot(r3.xyz, g_AreaLightParams._m20_m21_m22);
+  r3.xy = max(-g_AreaLightParams._m30_m31, r4.xy);
+  r3.xy = min(g_AreaLightParams._m30_m31, r3.xy);
+  r3.yzw = g_AreaLightParams._m20_m21_m22 * r3.yyy;
+  r3.xyz = g_AreaLightParams._m10_m11_m12 * r3.xxx + r3.yzw;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = sqrt(r1.w);
+  r2.xy = r1.ww * g_AreaLightParams._m32_m33 + g_AreaLightParams._m13_m13;
+  r2.xy = g_AreaLightParams._m13_m13 / r2.xy;
+  r1.w = max(r2.x, r2.y);
+  r1.w = -r1.w * g_AreaLightTexParams.y + g_AreaLightTexParams.y;
+  r2.zw = float2(-1,1) * g_AreaLightParams._m32_m33;
+  r4.xy = r4.xy * r2.zw;
+  r2.xy = -r4.xy * r2.xy + float2(0.5,0.5);
+  r4.xyz = _tex6.SampleLevel(_tex6_s, r2.xy, r1.w).xyz;
+  r3.xyz = r3.xyz + r1.xyz;
+  r1.w = dot(r3.xyz, r3.xyz);
+  r1.w = rsqrt(r1.w);
+  r5.xyz = r3.xyz * r1.www;
+  r1.w = dot(-r5.xyz, g_AreaLightParams._m00_m01_m02);
+  r3.xyz = g_LightPos.www * r3.xyz;
+  r2.x = dot(r3.xyz, -r3.xyz);
+  r2.x = saturate(1 + r2.x);
+  r2.y = 9.99999997e-007 + r1.w;
+  r2.y = saturate(g_AreaLightParams._m03 / r2.y);
+  r2.y = log2(r2.y);
+  r2.y = g_AreaLightParams._m23 * r2.y;
+  r2.y = exp2(r2.y);
+  r2.y = 1 + -r2.y;
+  r2.x = r2.x * r2.y;
+  r2.x = r2.x * r2.x;
+  r3.xyzw = _tex1.Sample(_tex1_s, v1.xy).xyzw;
+  r6.yzw = r3.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r2.y = dot(r6.yz, r6.yz);
+  r2.y = min(1, r2.y);
+  r2.y = 1 + r2.y;
+  r2.y = 2 / r2.y;
+  r7.xy = r6.yz * r2.yy;
+  r6.x = -1 + r2.y;
+  r2.y = 0 < r6.w;
+  r7.zw = r2.yy ? r6.xw : -r6.xw;
+  r2.y = 4 * r3.w;
+  r3.x = saturate(dot(r5.xyz, r7.xyz));
+  r1.w = saturate(r1.w);
+  r1.w = r3.x * r1.w;
+  r3.x = dot(r0.yzw, r0.yzw);
+  r3.x = rsqrt(r3.x);
+  r0.yzw = r3.xxx * r0.yzw;
+  r3.x = dot(-r7.xyz, r5.xyz);
+  r3.x = saturate(r3.x * 0.600000024 + 0.400000006);
+  r3.yzw = g_LightDiffuse.xyz * r4.xyz;
+  r3.yzw = r3.yzw * r2.xxx;
+  r2.x = r3.x * r2.y + r1.w;
+  r4.xyz = r2.xxx * r3.yzw;
+  r6.xyzw = _tex8.Sample(_tex8_s, v1.xy).xyzw;
+  r5.w = 0.282090008;
+  r6.xyzw = r6.xyzw * float4(0.977199972,0.977199972,0.977199972,1) + float4(-0.488599986,-0.488599986,-0.488599986,0);
+  r2.x = dot(r5.xyzw, r6.xyzw);
+  r2.x = saturate(SSDOParams.x * r2.x);
+  r2.x = 1 + -r2.x;
+  o0.xyz = r4.xyz * r2.xxx;
+  r2.x = dot(-r0.yzw, r7.xyz);
+  r2.x = r2.x + r2.x;
+  r0.yzw = r7.xyz * -r2.xxx + -r0.yzw;
+  r2.x = dot(r0.yzw, g_AreaLightParams._m00_m01_m02);
+  r2.y = saturate(r2.x);
+  r0.x = r0.x / r2.x;
+  r4.xyz = r0.yzw * r0.xxx;
+  r2.x = dot(r4.xyz, r4.xyz);
+  r2.x = sqrt(r2.x);
+  r0.xyz = r0.yzw * r0.xxx + -r1.xyz;
+  r0.w = r7.w * 10 + 1;
+  r0.w = exp2(r0.w);
+  r1.x = 0.00048828125 * r0.w;
+  r1.y = r0.w * 0.125 + 0.25;
+  r1.z = -r0.w * 0.00048828125 + 1;
+  r1.z = r2.x * r1.z + 1;
+  r0.xyz = r0.xyz / r1.zzz;
+  r4.x = dot(r0.xyz, g_AreaLightParams._m10_m11_m12);
+  r4.y = dot(r0.xyz, g_AreaLightParams._m20_m21_m22);
+  r0.xy = max(-g_AreaLightParams._m30_m31, r4.xy);
+  r0.xy = min(g_AreaLightParams._m30_m31, r0.xy);
+  r0.xy = r0.xy + -r4.xy;
+  r0.x = dot(r0.xy, r0.xy);
+  r0.x = min(1, r0.x);
+  r0.x = 1 + -r0.x;
+  r0.x = log2(r0.x);
+  r0.x = r0.w * r0.x;
+  r0.x = exp2(r0.x);
+  r0.x = r0.x * r1.y;
+  r0.xyz = r0.xxx * r2.yyy;
+  r0.w = 0 != g_AreaLightTexParams.x;
+  if (r0.w != 0) {
+    r0.w = -r1.x * g_AreaLightTexParams.z + g_AreaLightTexParams.z;
+    r1.xy = -r4.xy * r2.zw + float2(0.5,0.5);
+    r1.xyz = _tex6.SampleLevel(_tex6_s, r1.xy, r0.w).xyz;
+    r0.xyz = r1.xyz * r0.zzz;
+  }
+  r1.xyz = r3.yzw * r1.www;
+  r1.xyz = g_LightDiffuse.www * r1.xyz;
+  o1.xyz = r1.xyz * r0.xyz;
+  o0.w = 0;
+  o1.w = 0;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.30.960.8229
+//
+//
+// Note: shader requires additional functionality:
+//       Early depth-stencil
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer PER_BATCH
+// {
+//
+//   float4 g_LightPos;                 // Offset:    0 Size:    16
+//   float4 g_LightDiffuse;             // Offset:   16 Size:    16
+//   float4 vWBasisX;                   // Offset:   32 Size:    16 [unused]
+//   float4 vWBasisY;                   // Offset:   48 Size:    16 [unused]
+//   float4 vWBasisZ;                   // Offset:   64 Size:    16 [unused]
+//   row_major float4x4 g_AreaLightParams;// Offset:   80 Size:    64
+//   float4 SSDOParams;                 // Offset:  144 Size:    16
+//   float4 PS_ScreenSize;              // Offset:  160 Size:    16 [unused]
+//   float4 pFadeOrigin;                // Offset:  176 Size:    16 [unused]
+//   float4 PS_NearFarClipDist;         // Offset:  192 Size:    16 [unused]
+//   float4 g_AreaLightTexParams;       // Offset:  208 Size:    16
+//   float4 irreg_kernel_2d[8];         // Offset:  224 Size:   128 [unused]
+//   float4 vFadeParams[6];             // Offset:  352 Size:    96 [unused]
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// _tex0                             sampler      NA          NA    0        1
+// _tex1                             sampler      NA          NA    1        1
+// _tex6                             sampler      NA          NA    6        1
+// _tex8                             sampler      NA          NA    8        1
+// _tex0                             texture  float4          2d    0        1
+// _tex1                             texture  float4          2d    1        1
+// _tex6                             texture  float4          2d    6        1
+// _tex8                             texture  float4          2d    8        1
+// PER_BATCH                         cbuffer      NA          NA    0        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_POSITION              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xy  
+// TEXCOORD                 1   xyzw        2     NONE   float   xyz 
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed | forceEarlyDepthStencil
+dcl_constantbuffer cb0[14], immediateIndexed
+dcl_sampler s0, mode_default
+dcl_sampler s1, mode_default
+dcl_sampler s6, mode_default
+dcl_sampler s8, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture2d (float,float,float,float) t6
+dcl_resource_texture2d (float,float,float,float) t8
+dcl_input_ps linear v1.xy
+dcl_input_ps linear v2.xyz
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_temps 8
+sample_indexable(texture2d)(float,float,float,float) r0.x, v1.xyxx, t0.xyzw, s0
+mul r0.yzw, r0.xxxx, v2.xxyz
+mad r1.xyz, -r0.xxxx, v2.xyzx, cb0[0].xyzx
+dp3 r0.x, cb0[5].xyzx, r1.xyzx
+mul r2.xyz, r0.xxxx, cb0[5].xyzx
+mad r3.xyz, r0.xxxx, cb0[5].xyzx, -r1.xyzx
+dp3 r4.x, r3.xyzx, cb0[6].xyzx
+dp3 r4.y, r3.xyzx, cb0[7].xyzx
+max r3.xy, r4.xyxx, -cb0[8].xyxx
+min r3.xy, r3.xyxx, cb0[8].xyxx
+mul r3.yzw, r3.yyyy, cb0[7].xxyz
+mad r3.xyz, cb0[6].xyzx, r3.xxxx, r3.yzwy
+dp3 r1.w, r2.xyzx, r2.xyzx
+sqrt r1.w, r1.w
+mad r2.xy, r1.wwww, cb0[8].zwzz, cb0[6].wwww
+div r2.xy, cb0[6].wwww, r2.xyxx
+max r1.w, r2.y, r2.x
+mad r1.w, -r1.w, cb0[13].y, cb0[13].y
+mul r2.zw, cb0[8].zzzw, l(0.000000, 0.000000, -1.000000, 1.000000)
+mul r4.xy, r2.zwzz, r4.xyxx
+mad r2.xy, -r4.xyxx, r2.xyxx, l(0.500000, 0.500000, 0.000000, 0.000000)
+sample_l_indexable(texture2d)(float,float,float,float) r4.xyz, r2.xyxx, t6.xyzw, s6, r1.w
+add r3.xyz, r1.xyzx, r3.xyzx
+dp3 r1.w, r3.xyzx, r3.xyzx
+rsq r1.w, r1.w
+mul r5.xyz, r1.wwww, r3.xyzx
+dp3 r1.w, -r5.xyzx, cb0[5].xyzx
+mul r3.xyz, r3.xyzx, cb0[0].wwww
+dp3 r2.x, r3.xyzx, -r3.xyzx
+add_sat r2.x, r2.x, l(1.000000)
+add r2.y, r1.w, l(0.000001)
+div_sat r2.y, cb0[5].w, r2.y
+log r2.y, r2.y
+mul r2.y, r2.y, cb0[7].w
+exp r2.y, r2.y
+add r2.y, -r2.y, l(1.000000)
+mul r2.x, r2.y, r2.x
+mul r2.x, r2.x, r2.x
+sample_indexable(texture2d)(float,float,float,float) r3.xyzw, v1.xyxx, t1.xyzw, s1
+mad r6.yzw, r3.xxyz, l(0.000000, 2.000000, 2.000000, 2.000000), l(0.000000, -1.000000, -1.000000, -1.000000)
+dp2 r2.y, r6.yzyy, r6.yzyy
+min r2.y, r2.y, l(1.000000)
+add r2.y, r2.y, l(1.000000)
+div r2.y, l(2.000000), r2.y
+mul r7.xy, r2.yyyy, r6.yzyy
+add r6.x, r2.y, l(-1.000000)
+lt r2.y, l(0.000000), r6.w
+movc r7.zw, r2.yyyy, r6.xxxw, -r6.xxxw
+mul r2.y, r3.w, l(4.000000)
+dp3_sat r3.x, r5.xyzx, r7.xyzx
+mov_sat r1.w, r1.w
+mul r1.w, r1.w, r3.x
+dp3 r3.x, r0.yzwy, r0.yzwy
+rsq r3.x, r3.x
+mul r0.yzw, r0.yyzw, r3.xxxx
+dp3 r3.x, -r7.xyzx, r5.xyzx
+mad_sat r3.x, r3.x, l(0.600000), l(0.400000)
+mul r3.yzw, r4.xxyz, cb0[1].xxyz
+mul r3.yzw, r2.xxxx, r3.yyzw
+mad r2.x, r3.x, r2.y, r1.w
+mul r4.xyz, r3.yzwy, r2.xxxx
+sample_indexable(texture2d)(float,float,float,float) r6.xyzw, v1.xyxx, t8.xyzw, s8
+mov r5.w, l(0.282090)
+mad r6.xyzw, r6.xyzw, l(0.977200, 0.977200, 0.977200, 1.000000), l(-0.488600, -0.488600, -0.488600, 0.000000)
+dp4 r2.x, r5.xyzw, r6.xyzw
+mul_sat r2.x, r2.x, cb0[9].x
+add r2.x, -r2.x, l(1.000000)
+mul o0.xyz, r2.xxxx, r4.xyzx
+dp3 r2.x, -r0.yzwy, r7.xyzx
+add r2.x, r2.x, r2.x
+mad r0.yzw, r7.xxyz, -r2.xxxx, -r0.yyzw
+dp3 r2.x, r0.yzwy, cb0[5].xyzx
+mov_sat r2.y, r2.x
+div r0.x, r0.x, r2.x
+mul r4.xyz, r0.xxxx, r0.yzwy
+dp3 r2.x, r4.xyzx, r4.xyzx
+sqrt r2.x, r2.x
+mad r0.xyz, r0.yzwy, r0.xxxx, -r1.xyzx
+mad r0.w, r7.w, l(10.000000), l(1.000000)
+exp r0.w, r0.w
+mul r1.x, r0.w, l(0.000488)
+mad r1.y, r0.w, l(0.125000), l(0.250000)
+mad r1.z, -r0.w, l(0.000488), l(1.000000)
+mad r1.z, r2.x, r1.z, l(1.000000)
+div r0.xyz, r0.xyzx, r1.zzzz
+dp3 r4.x, r0.xyzx, cb0[6].xyzx
+dp3 r4.y, r0.xyzx, cb0[7].xyzx
+max r0.xy, r4.xyxx, -cb0[8].xyxx
+min r0.xy, r0.xyxx, cb0[8].xyxx
+add r0.xy, -r4.xyxx, r0.xyxx
+dp2 r0.x, r0.xyxx, r0.xyxx
+min r0.x, r0.x, l(1.000000)
+add r0.x, -r0.x, l(1.000000)
+log r0.x, r0.x
+mul r0.x, r0.x, r0.w
+exp r0.x, r0.x
+mul r0.x, r1.y, r0.x
+mul r0.xyz, r2.yyyy, r0.xxxx
+ne r0.w, l(0.000000, 0.000000, 0.000000, 0.000000), cb0[13].x
+if_nz r0.w
+  mad r0.w, -r1.x, cb0[13].z, cb0[13].z
+  mad r1.xy, -r4.xyxx, r2.zwzz, l(0.500000, 0.500000, 0.000000, 0.000000)
+  sample_l_indexable(texture2d)(float,float,float,float) r1.xyz, r1.xyxx, t6.xyzw, s6, r0.w
+  mul r0.xyz, r0.zzzz, r1.xyzx
+endif 
+mul r1.xyz, r1.wwww, r3.yzwy
+mul r1.xyz, r1.xyzx, cb0[1].wwww
+mul o1.xyz, r0.xyzx, r1.xyzx
+mov o0.w, l(0)
+mov o1.w, l(0)
+ret 
+// Approximately 111 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

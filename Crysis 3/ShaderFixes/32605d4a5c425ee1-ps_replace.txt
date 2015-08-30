@@ -1,0 +1,157 @@
+
+cbuffer PER_BATCH : register(b0)
+{
+  float4 g_LightPos : packoffset(c0);
+  float4 g_LightDiffuse : packoffset(c1);
+  float4 g_GeneralParams : packoffset(c2);
+  float4 vWBasisX : packoffset(c3);
+  float4 vWBasisY : packoffset(c4);
+  float4 vWBasisZ : packoffset(c5);
+  row_major float4x4 g_mLightShadowProj : packoffset(c6);
+  float4 SSDOParams : packoffset(c10);
+  float4 PS_ScreenSize : packoffset(c11);
+  float4 pFadeOrigin : packoffset(c12);
+  float4 PS_NearFarClipDist : packoffset(c13);
+  float4 irreg_kernel_2d[8] : packoffset(c14);
+  float4 vFadeParams[6] : packoffset(c22);
+}
+SamplerState _tex0_s : register(s0);
+SamplerState _tex1_s : register(s1);
+SamplerState _tex7_s : register(s7);
+SamplerState _tex8_s : register(s8);
+SamplerComparisonState SAMPLER_STATE_depthMapSampler_s : register(s3);
+Texture2D<float4> _tex0 : register(t0);
+Texture2D<float4> _tex1 : register(t1);
+Texture2D<float4> _tex3_d3d10 : register(t3);
+Texture2D<float4> _tex7 : register(t7);
+Texture2D<float4> _tex8 : register(t8);
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.w = 1;
+  r1.x = _tex0.Sample(_tex0_s, v1.xy).x;
+  r0.xyz = v2.xyz * r1.xxx;
+  r1.xyz = -r1.xxx * v2.xyz + g_LightPos.xyz;
+  r2.x = dot(g_mLightShadowProj._m00_m01_m02_m03, r0.xyzw);
+  r2.y = dot(g_mLightShadowProj._m10_m11_m12_m13, r0.xyzw);
+  r1.w = dot(g_mLightShadowProj._m30_m31_m32_m33, r0.xyzw);
+  r0.w = dot(g_mLightShadowProj._m20_m21_m22_m23, r0.xyzw);
+  r0.w = -g_GeneralParams.w + r0.w;
+  r2.xyzw = r2.xyxy / r1.wwww;
+  r3.xy = float2(1000,0.001953125) * g_GeneralParams.xx;
+  r3.xz = r3.xx * r2.zw;
+  r3.xz = _tex7.Sample(_tex7_s, r3.xz).xy;
+  r3.xyz = r3.zxx * r3.yyy;
+  r3.w = -r3.x;
+  r4.xyzw = irreg_kernel_2d[0].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[0].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.x = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.y = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.xyzw = irreg_kernel_2d[1].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[1].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.z = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.w = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r1.w = dot(r5.xyzw, float4(0.0625,0.0625,0.0625,0.0625));
+  r4.xyzw = irreg_kernel_2d[2].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[2].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.x = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.y = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.xyzw = irreg_kernel_2d[3].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[3].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.z = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.w = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.x = dot(r5.xyzw, float4(0.0625,0.0625,0.0625,0.0625));
+  r1.w = r4.x + r1.w;
+  r4.xyzw = irreg_kernel_2d[4].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[4].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.x = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.y = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.xyzw = irreg_kernel_2d[5].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[5].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.z = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.w = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.x = dot(r5.xyzw, float4(0.0625,0.0625,0.0625,0.0625));
+  r1.w = r4.x + r1.w;
+  r4.xyzw = irreg_kernel_2d[6].yyzz * r3.xzzw;
+  r4.xyzw = r3.zwxz * irreg_kernel_2d[6].xxww + r4.xyzw;
+  r4.xyzw = r4.xyzw + r2.zwzw;
+  r5.x = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.xy, r0.w).x;
+  r5.y = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r4.zw, r0.w).x;
+  r4.xyzw = irreg_kernel_2d[7].yyzz * r3.xyzw;
+  r3.xyzw = r3.zwxz * irreg_kernel_2d[7].xxww + r4.xyzw;
+  r2.xyzw = r3.xyzw + r2.xyzw;
+  r5.z = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r2.xy, r0.w).x;
+  r5.w = _tex3_d3d10.SampleCmp(SAMPLER_STATE_depthMapSampler_s, r2.zw, r0.w).x;
+  r0.w = dot(r5.xyzw, float4(0.0625,0.0625,0.0625,0.0625));
+  r0.w = r1.w + r0.w;
+  r2.xyz = g_LightDiffuse.xyz * r0.www;
+  r3.xyz = g_LightPos.www * r1.xyz;
+  r0.w = dot(r3.xyz, -r3.xyz);
+  r0.w = saturate(1 + r0.w);
+  r0.w = r0.w * r0.w;
+  r2.xyz = r2.xyz * r0.www;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+  r3.xyzw = _tex1.Sample(_tex1_s, v1.xy).xyzw;
+  r4.yzw = r3.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = 4 * r3.w;
+  r2.w = dot(r4.yz, r4.yz);
+  r2.w = min(1, r2.w);
+  r2.w = 1 + r2.w;
+  r2.w = 2 / r2.w;
+  r4.x = -1 + r2.w;
+  r3.xy = r4.yz * r2.ww;
+  r2.w = 0 < r4.w;
+  r3.zw = r2.ww ? r4.xw : -r4.xw;
+  r2.w = dot(-r3.xyz, r1.xyz);
+  r2.w = saturate(r2.w * 0.600000024 + 0.400000006);
+  r4.x = saturate(dot(r1.xyz, r3.xyz));
+  r0.w = r2.w * r0.w + r4.x;
+  r4.xyz = r4.xxx * r2.xyz;
+  r2.xyz = r0.www * r2.xyz;
+  r4.xyz = g_LightDiffuse.www * r4.xyz;
+  r5.xyzw = _tex8.Sample(_tex8_s, v1.xy).xyzw;
+  r5.xyzw = r5.xyzw * float4(0.977199972,0.977199972,0.977199972,1) + float4(-0.488599986,-0.488599986,-0.488599986,0);
+  r1.w = 0.282090008;
+  r0.w = dot(r1.xyzw, r5.xyzw);
+  r0.w = saturate(SSDOParams.x * r0.w);
+  r0.w = 1 + -r0.w;
+  o0.xyz = r2.xyz * r0.www;
+  o0.w = 0;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = -r0.xyz * r0.www + r1.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r0.x = saturate(dot(r3.xyz, r0.xyz));
+  r0.y = r3.w * 10 + 1;
+  r0.y = exp2(r0.y);
+  r0.x = log2(r0.x);
+  r0.x = r0.y * r0.x;
+  r0.y = r0.y * 0.125 + 0.25;
+  r0.x = exp2(r0.x);
+  r0.x = r0.y * r0.x;
+  o1.xyz = r4.xyz * r0.xxx;
+  o1.w = 0;
+  return;
+}
