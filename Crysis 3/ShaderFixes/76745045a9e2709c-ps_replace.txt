@@ -101,15 +101,15 @@ adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
   r4.xyz = cb3[8].www * r4.xyz + r3.xyz;
   r5.xyz = -r2.xyz * float3(0.5,0.5,0.5) + vBBoxMin.xyz;
   r3.xyz = cb3[8].www * r5.xyz + r3.xyz;
-  r4.xyz = -v5.xyz + r4.xyz;
+  r4.xyz = -adj_inf_v5.xyz + r4.xyz; // No apparent effect
   r4.xyz = r4.xyz / r1.xyz;
-  r3.xyz = -v5.xyz + r3.xyz;
+  r3.xyz = -adj_inf_v5.xyz + r3.xyz; // No apparent effect
   r3.xyz = r3.xyz / r1.xyz;
   r5.xyz = float3(0,0,0) < r1.xyz;
   r3.xyz = r5.xyz ? r3.xyz : r4.xyz;
   r1.w = min(r3.x, r3.y);
   r1.w = min(r1.w, r3.z);
-  r1.xyz = r1.xyz * r1.www + adj_v5.xyz;
+  r1.xyz = r1.xyz * r1.www + adj_inf_v5.xyz; // environment map 2/2
   r1.xyz = -r2.xyz * float3(0.5,0.5,0.5) + r1.xyz;
   r1.w = -cb3[1].w * 6 + 6;
   r1.xyzw = envMapSamplerCUBE.SampleLevel(envMapSamplerCUBE_s, r1.xyz, r1.w).xyzw;
@@ -120,7 +120,7 @@ adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
   r1.w = 0.150000006 * PS_HPosScale.y;
 
 // Adjusts screen space reflections:
-  r2.xyz = -PS_WorldViewPos.xyz + adj_v5.xyz;
+  r2.xyz = -PS_WorldViewPos.xyz + v5.xyz;
 
   r2.w = dot(r2.xyz, r2.xyz);
   r2.w = rsqrt(r2.w);
@@ -134,12 +134,12 @@ adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
   r5.x = dot(mViewProj._m00_m01_m02_m03, r4.xyzw);
   r5.y = dot(mViewProj._m10_m11_m12_m13, r4.xyzw);
   r0.w = dot(mViewProj._m30_m31_m32_m33, r4.xyzw);
-
-//r5.x -= stereo.x * (r0.w - stereo.y) * params.z / 2;
-
   r2.w = 0.5 * r0.w;
   r5.xy = r5.xy * float2(0.5,-0.5) + r2.ww;
   r0.xy = PS_HPosScale.xy * r5.xy;
+
+r0.x -= stereo.x * (r0.w - stereo.y) / r0.w / 2;
+
   r5.xyz = r3.xyz * float3(129,129,129) + v5.xyz;
   r5.w = 1;
   r6.x = dot(mViewProj._m00_m01_m02_m03, r5.xyzw);
@@ -155,15 +155,12 @@ adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
   r2.w = saturate(r2.w / r1.w);
   r6.w = r3.w ? 1 : r2.w;
   r2.w = 3.1875 / PS_NearFarClipDist.y;
-  r7.xyz = r3.xyz * float3(17,17,17) + adj_add_v5.xyz;
+  r7.xyz = r3.xyz * float3(17,17,17) + v5.xyz;
   r7.w = 1;
   r8.x = dot(mViewProj._m00_m01_m02_m03, r7.xyzw);
   r8.y = dot(mViewProj._m10_m11_m12_m13, r7.xyzw);
   r3.w = dot(mViewProj._m20_m21_m22_m23, r7.xyzw);
   r7.w = dot(mViewProj._m30_m31_m32_m33, r7.xyzw);
-
-//r8.x -= stereo.x * (r7.w - stereo.y) * params.z / 2;
-
   r3.w = r3.w / r7.w;
   r3.w = -cb2[223].x + r3.w;
   r7.z = cb2[223].y / r3.w;
@@ -277,7 +274,6 @@ adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
   r0.w = 1 + -r1.y;
   r2.y = -r0.w * PS_HPosScale.w + 1;
   r1.xyzw = ReflSamplerPrev.Sample(ReflSamplerPrev_s, r2.xy).xyzw;
-//r1=0;
   r0.w = r1.w * r1.w;
   r0.w = 32 * r0.w;
   r1.xyz = r1.xyz * r0.www;
