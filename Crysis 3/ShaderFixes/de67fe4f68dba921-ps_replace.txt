@@ -79,14 +79,16 @@ float4 params = IniParams.Load(0);
   r1.x = r1.x < 0;
   if (r1.x != 0) discard;
 
-float4 adj_v5, iadj_v5;
+float4 adj_v5, adj_add_v5, adj_inf_v5;
 
 float4 tmp = mul(vp, float4(v5.xyz, 1));
 float adj = stereo.x * (tmp.w - stereo.y);
 adj_v5.xyz = v5 - mul(ivp, float4(adj, 0, 0, 0));
-iadj_v5.xyz = v5 + mul(ivp, float4(adj, 0, 0, 0));
+adj_add_v5.xyz = v5 + mul(ivp, float4(adj, 0, 0, 0));
 
-  r1.xyz = PS_WorldViewPos.xyz + -adj_v5.xyz; // environment map 1/2
+adj_inf_v5.xyz = v5 - mul(ivp, float4(stereo.x * tmp.w, 0, 0, 0));
+
+  r1.xyz = PS_WorldViewPos.xyz + -adj_inf_v5.xyz; // environment map 1/2
 
   r1.xyz = r1.zzz * float3(-0,-0,-2) + r1.xyz;
   r1.w = dot(r1.xyz, r1.xyz);
@@ -152,7 +154,7 @@ iadj_v5.xyz = v5 + mul(ivp, float4(adj, 0, 0, 0));
   r2.w = saturate(r2.w / r1.w);
   r6.w = r3.w ? 1 : r2.w;
   r2.w = 3.1875 / PS_NearFarClipDist.y;
-  r7.xyz = r3.xyz * float3(17,17,17) + iadj_v5.xyz;
+  r7.xyz = r3.xyz * float3(17,17,17) + adj_add_v5.xyz;
   r7.w = 1;
   r8.x = dot(mViewProj._m00_m01_m02_m03, r7.xyzw);
   r8.y = dot(mViewProj._m10_m11_m12_m13, r7.xyzw);
