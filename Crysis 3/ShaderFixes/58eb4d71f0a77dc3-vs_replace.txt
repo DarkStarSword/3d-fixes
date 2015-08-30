@@ -1,4 +1,53 @@
 //HUD Crosshair
+//<PixelShader hash="7ff9e9526ba34616">
+//  <ParentVertexShaders>58eb4d71f0a77dc3 </ParentVertexShaders>
+//  <Register id=0 handle=18870C90>713b30ee2f686ce5</Register> blue icon in map
+//  <Register id=0 handle=188E5110>09a07adfa246f434</Register> gun icon in hud
+//  <Register id=1 handle=1884A510>4b95ceca040a2593</Register> no
+//  <Register id=1 handle=1884AF50>7e2a5a247d60f6e1</Register> no
+//  <Register id=2 handle=187E1E10>e19d2d8058ec32b4</Register> crosshair and hexagon icon target
+//  <Register id=2 handle=1884B690>6ba08ac31b67d7ab</Register> no
+//  <Register id=3 handle=15E10250>8d9a5fd41ecd4ea4</Register> no
+//  <Register id=4 handle=5703BC10>713b30ee2f686ce5</Register> no
+//  <Register id=5 handle=18870B10>b338c87979e9b177</Register> no
+//  <Register id=120 handle=15C39AD0>0000000000000000</Register> no
+//  <Register id=125 handle=003DD350>24a83fdae0465bcc</Register> no
+
+// <PixelShader hash="7ff9e9526ba34616">
+//   <ParentVertexShaders>58eb4d71f0a77dc3 </ParentVertexShaders>
+//   <Register id=0 handle=15E6FED0>09a07adfa246f434</Register> no
+//   <Register id=0 handle=174D4410>713b30ee2f686ce5</Register> no 
+//   <Register id=0 handle=174ECCD0>713b30ee2f686ce5</Register> no
+//   <Register id=0 handle=53843150>5d2c8a572e9fcab9</Register> no
+//   <Register id=1 handle=15DA2690>015707c77102903f</Register> no
+//   <Register id=1 handle=1731AE10>cfc01fb2ceb6bb21</Register> crosshair and hexagon icon target
+//   <Register id=1 handle=174D4850>4b95ceca040a2593</Register>
+//   <Register id=1 handle=174E4490>7e2a5a247d60f6e1</Register>
+//   <Register id=1 handle=174ED410>6304d5feaf7dbf74</Register>
+//   <Register id=2 handle=17464F90>e19d2d8058ec32b4</Register>  yes
+//   <Register id=2 handle=174E4BD0>6ba08ac31b67d7ab</Register> No
+//   <Register id=2 handle=5383FC50>5d2c8a572e9fcab9</Register> No
+//   <Register id=3 handle=15DDDA90>8d9a5fd41ecd4ea4</Register>
+//  <Register id=3 handle=174ECCD0>713b30ee2f686ce5</Register>
+//   <Register id=4 handle=17319B10>2bc785aaa191d311</Register>
+//   <Register id=4 handle=538400D0>0000000000000000</Register>
+//   <Register id=4 handle=555A2050>713b30ee2f686ce5</Register>
+//   <Register id=5 handle=174ECB50>b338c87979e9b177</Register>
+//   <Register id=5 handle=174ECE50>cec2a887d6b9b737</Register>
+//   <Register id=6 handle=174ED710>c3eb08eb92bea353</Register>
+//   <Register id=7 handle=174ED110>713b30ee2f686ce5</Register>
+//   <Register id=8 handle=174ECCD0>713b30ee2f686ce5</Register>
+//   <Register id=9 handle=5559B690>8096f587aa6390a4</Register>
+//   <Register id=10 handle=174ED410>6304d5feaf7dbf74</Register>
+//   <Register id=12 handle=174ECFD0>ae80adee524afb42</Register>
+//   <Register id=13 handle=174ED290>6304d5feaf7dbf74</Register>
+//   <Register id=14 handle=174ED110>713b30ee2f686ce5</Register>
+
+
+//  <Register id=0 handle=15CF93D0>4fc6543fdf4e66af</Register> crosshair
+
+
+
 cbuffer PER_BATCH : register(b0)
 {
   row_major float4x4 cCompositeMat : packoffset(c0);
@@ -24,9 +73,20 @@ void main(
   o0.z = dot(cCompositeMat._m20_m21_m23, r0.xyz);
   o0.w = dot(cCompositeMat._m30_m31_m33, r0.xyz);
   
+  //float4 stereo = StereoParams.Load(0);
+  //float4 iniParams = IniParams.Load(0);
+  //o0.x -= stereo.x * (iniParams.x * o0.w - stereo.y);
+    
   float4 stereo = StereoParams.Load(0);
   float4 iniParams = IniParams.Load(0);
-  o0.x -= stereo.x * (iniParams.x * o0.w - stereo.y);
+  float4 tex_filter = IniParams.Load(int2(2,0));
+  if (tex_filter.x == 2 || tex_filter.y == 2){
+  o0.x -= stereo.x * (o0.w - stereo.y) * iniParams.x;
+  }
+  else
+  {
+  o0.x -= stereo.x * (o0.w - stereo.y) * iniParams.y;
+  }
   
   o1.xyzw = v1.xyzw;
   return;
@@ -89,3 +149,4 @@ ret
 // Approximately 8 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+     

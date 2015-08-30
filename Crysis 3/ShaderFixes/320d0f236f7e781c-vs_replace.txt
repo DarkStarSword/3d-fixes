@@ -1,7 +1,10 @@
-// Lights
-//<CalledPixelShaders>
-// 285b59b6c098e4cf 32eef44484881f91 41f5596d5c767196
-// 47c2421cfc074d4b 945d3cd591f619cb
+//Lights 2 Main VS 
+// 21e4892f9a5e6860 *2562b3a1d88b70e5 32eef44484881f91
+// 41f5596d5c767196 *47c2421cfc074d4b 4bca2fa40c62c18c
+// 53897d8c9e9815d8 58ce950a7bb26652 *60d36f44535008dc
+// dec676c7dbf43fff e4f878147f4c7a1a
+
+//<CalledPixelShaders>21e4892f9a5e6860 2562b3a1d88b70e5 32eef44484881f91 39f7e50d01e0c42d 41f5596d5c767196 47c2421cfc074d4b e4f878147f4c7a1a </CalledPixelShaders>
 
 // Filled out extra fields in PER_FRAME
 cbuffer PER_FRAME : register(b2)
@@ -28,9 +31,8 @@ void main(
   out float4 o2 : TEXCOORD1,
 
 out row_major matrix vp : TEXCOORD2,
-out row_major matrix ivp : TEXCOORD6
+out row_major matrix ivp : TEXCOORD6)
 
-  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
@@ -42,13 +44,22 @@ out row_major matrix ivp : TEXCOORD6
   r0.w = 1;
   o0.xyzw = r0.xyzw;
   r0.xy = r0.xy * float2(1,-1) + float2(1,1);
-// Compiler defined cb2, but used the offset anyway:
+  // Compiler defined cb2, but used the offset anyway:
   //r0.xy = cb2[21].xy * r0.xy;
   r0.xy = g_VS_HPosScale.xy * r0.xy;
   o1.xy = float2(0.5,0.5) * r0.xy;
   o1.zw = r0.zw;
+  
+  //Try to fix Water Shine Reflection
+  //float4 stereo = StereoParams.Load(0);
+  //v2.x -= stereo.x * (v2.z - stereo.y) * r0.x;
+  
   o2.xyz = v2.xyz;
   o2.w = 0;
+  
+
+  
+    
 
 vp = g_VS_ViewProjMatr;
 
@@ -139,3 +150,4 @@ ret
 // Approximately 12 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 

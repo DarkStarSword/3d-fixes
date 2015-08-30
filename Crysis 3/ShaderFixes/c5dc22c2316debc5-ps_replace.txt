@@ -1,3 +1,5 @@
+//Lights Other pattern
+//  VS 8dbfc7a976b1169c
 
 cbuffer PER_BATCH : register(b0)
 {
@@ -6,10 +8,10 @@ cbuffer PER_BATCH : register(b0)
   float4 PS_NearFarClipDist : packoffset(c6);
   float4 SSDOParams : packoffset(c7);
 }
-SamplerState _tex0_s : register(s0);
-SamplerState _tex1_s : register(s1);
-SamplerState _tex3_s : register(s3);
-SamplerState _tex5_s : register(s5);
+SamplerState _tex0_s_s_s : register(s0);
+SamplerState _tex1_s_s_s : register(s1);
+SamplerState _tex3_s_s_s : register(s3);
+SamplerState _tex5_s_s_s : register(s5);
 Texture2D<float4> _tex0 : register(t0);
 Texture2D<float4> _tex1 : register(t1);
 Texture2D<float4> _tex3 : register(t3);
@@ -28,8 +30,8 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.x = _tex1.Sample(_tex1_s, v1.xy).x;
-  r0.yzw = _tex0.Sample(_tex0_s, v1.xy).xyz;
+  r0.x = _tex1.Sample(_tex1_s_s_s, v1.xy).x;
+  r0.yzw = _tex0.Sample(_tex0_s_s_s, v1.xy).xyz;
   r0.yzw = r0.yzw * float3(2,2,2) + float3(-1,-1,-1);
   r1.x = dot(r0.yz, r0.yz);
   r1.x = min(1, r1.x);
@@ -45,7 +47,7 @@ void main(
   r0.y = dot(r1.xyz, r1.xyz);
   r0.y = rsqrt(r0.y);
   r0.yzw = r1.xyz * r0.yyy;
-  r1.xyz = _tex3.Sample(_tex3_s, v1.zw).xyz;
+  r1.xyz = _tex3.Sample(_tex3_s_s_s, v1.zw).xyz;
   r1.xyz = r1.xyz * float3(2,2,2) + float3(-1,-1,-1);
   r1.w = dot(float3(0.00195299997,0.0820309967,-0.0605470017), r1.xyz);
   r1.w = r1.w + r1.w;
@@ -57,7 +59,7 @@ void main(
   r1.w = max(SSDOParams.y, r1.w);
   r1.w = min(SSDOParams.z, r1.w);
   r4.xy = r3.xy * r1.ww + v1.xy;
-  r4.x = _tex5.Sample(_tex5_s, r4.xy).x;
+  r4.x = _tex5.Sample(_tex5_s_s_s, r4.xy).x;
   r2.w = dot(float3(0.105469003,-0.0390629992,-0.0195310004), r1.xyz);
   r2.w = r2.w + r2.w;
   r5.xyz = r1.xyz * -r2.www + float3(0.105469003,-0.0390629992,-0.0195310004);
@@ -65,7 +67,7 @@ void main(
   r2.w = r2.w >= 0;
   r5.xyz = r2.www ? r5.xyz : -r5.xyz;
   r6.xy = r5.xy * r1.ww + v1.xy;
-  r4.y = _tex5.Sample(_tex5_s, r6.xy).x;
+  r4.y = _tex5.Sample(_tex5_s_s_s, r6.xy).x;
   r2.w = dot(float3(-0.119140998,-0.00390599994,-0.0664059967), r1.xyz);
   r2.w = r2.w + r2.w;
   r6.xyz = r1.xyz * -r2.www + float3(-0.119140998,-0.00390599994,-0.0664059967);
@@ -73,7 +75,7 @@ void main(
   r2.w = r2.w >= 0;
   r6.xyz = r2.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r4.z = _tex5.Sample(_tex5_s, r7.xy).x;
+  r4.z = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r2.w = dot(float3(0.0703129992,-0.0253909994,0.148438007), r1.xyz);
   r2.w = r2.w + r2.w;
   r7.xyz = r1.xyz * -r2.www + float3(0.0703129992,-0.0253909994,0.148438007);
@@ -81,7 +83,7 @@ void main(
   r2.w = r2.w >= 0;
   r7.xyz = r2.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r4.w = _tex5.Sample(_tex5_s, r8.xy).x;
+  r4.w = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r4.xyzw = r4.xyzw / r0.xxxx;
   r8.x = r3.z;
   r8.y = r5.z;
@@ -122,7 +124,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(0.179688007,-0.0449220017,0.046875), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(0.179688007,-0.0449220017,0.046875);
@@ -130,7 +132,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(-0.152344003,-0.0195310004,0.142578006), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(-0.152344003,-0.0195310004,0.142578006);
@@ -138,7 +140,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(0.173828006,0.111327998,0.0644529983), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(0.173828006,0.111327998,0.0644529983);
@@ -146,7 +148,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -189,7 +191,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(-0.146484002,-0.201171994,-0.0292969998), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(-0.146484002,-0.201171994,-0.0292969998);
@@ -197,7 +199,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(0.113280997,-0.0917970017,0.212890998), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(0.113280997,-0.0917970017,0.212890998);
@@ -205,7 +207,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(0.117187999,-0.140625,-0.199219003), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(0.117187999,-0.140625,-0.199219003);
@@ -213,7 +215,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -256,7 +258,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(-0.240234002,0.146484002,-0.0683590025), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(-0.240234002,0.146484002,-0.0683590025);
@@ -264,7 +266,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(0.228515998,0.154296994,-0.119140998), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(0.228515998,0.154296994,-0.119140998);
@@ -272,7 +274,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(-0.078125,0.0136719998,-0.314453006), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(-0.078125,0.0136719998,-0.314453006);
@@ -280,7 +282,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -323,7 +325,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(0.0214840006,0.326171994,0.115234002), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(0.0214840006,0.326171994,0.115234002);
@@ -331,7 +333,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(0.242188007,0.126953006,-0.25), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(0.242188007,0.126953006,-0.25);
@@ -339,7 +341,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(-0.21875,0.214844003,-0.25), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(-0.21875,0.214844003,-0.25);
@@ -347,7 +349,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -390,7 +392,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(0.220703006,-0.359375,-0.0625), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(0.220703006,-0.359375,-0.0625);
@@ -398,7 +400,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(-0.0585939996,-0.111327998,0.457031012), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(-0.0585939996,-0.111327998,0.457031012);
@@ -406,7 +408,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(0.308593988,0.193359002,0.324218988), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(0.308593988,0.193359002,0.324218988);
@@ -414,7 +416,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -457,7 +459,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(-0.296875,0.410156012,-0.291016012), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(-0.296875,0.410156012,-0.291016012);
@@ -465,7 +467,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(-0.251953006,-0.558593988,0.0820309967), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(-0.251953006,-0.558593988,0.0820309967);
@@ -473,7 +475,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(-0.300781012,0.234375,0.539062977), r1.xyz);
   r3.w = r3.w + r3.w;
   r8.xyz = r1.xyz * -r3.www + float3(-0.300781012,0.234375,0.539062977);
@@ -481,7 +483,7 @@ void main(
   r3.w = r3.w >= 0;
   r8.xyz = r3.www ? r8.xyz : -r8.xyz;
   r9.xy = r8.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r9.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r9.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r9.x = r4.z;
   r9.y = r6.z;
@@ -524,7 +526,7 @@ void main(
   r3.w = r3.w >= 0;
   r4.xyz = r3.www ? r4.xyz : -r4.xyz;
   r5.xy = r4.xy * r1.ww + v1.xy;
-  r5.x = _tex5.Sample(_tex5_s, r5.xy).x;
+  r5.x = _tex5.Sample(_tex5_s_s_s, r5.xy).x;
   r3.w = dot(float3(0.134765998,0.414063007,-0.707031012), r1.xyz);
   r3.w = r3.w + r3.w;
   r6.xyz = r1.xyz * -r3.www + float3(0.134765998,0.414063007,-0.707031012);
@@ -532,7 +534,7 @@ void main(
   r3.w = r3.w >= 0;
   r6.xyz = r3.www ? r6.xyz : -r6.xyz;
   r7.xy = r6.xy * r1.ww + v1.xy;
-  r5.y = _tex5.Sample(_tex5_s, r7.xy).x;
+  r5.y = _tex5.Sample(_tex5_s_s_s, r7.xy).x;
   r3.w = dot(float3(-0.556640983,-0.0371089987,-0.654296994), r1.xyz);
   r3.w = r3.w + r3.w;
   r7.xyz = r1.xyz * -r3.www + float3(-0.556640983,-0.0371089987,-0.654296994);
@@ -540,7 +542,7 @@ void main(
   r3.w = r3.w >= 0;
   r7.xyz = r3.www ? r7.xyz : -r7.xyz;
   r8.xy = r7.xy * r1.ww + v1.xy;
-  r5.z = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.z = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r3.w = dot(float3(0.291016012,-0.833984017,-0.183594003), r1.xyz);
   r3.w = r3.w + r3.w;
   r1.xyz = r1.xyz * -r3.www + float3(0.291016012,-0.833984017,-0.183594003);
@@ -548,7 +550,7 @@ void main(
   r3.w = r3.w >= 0;
   r1.xyz = r3.www ? r1.xyz : -r1.xyz;
   r8.xy = r1.xy * r1.ww + v1.xy;
-  r5.w = _tex5.Sample(_tex5_s, r8.xy).x;
+  r5.w = _tex5.Sample(_tex5_s_s_s, r8.xy).x;
   r5.xyzw = r5.xyzw / r0.xxxx;
   r8.xyz = v2.xyz * r0.xxx;
   r0.x = dot(r8.xyz, r2.xyz);
@@ -597,9 +599,11 @@ void main(
   return;
 }
 
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Generated by Microsoft (R) HLSL Shader Compiler 9.30.960.8229
+// Generated by Microsoft (R) HLSL Shader Compiler 9.30.9200.20789
+//
+//   using 3Dmigoto v1.1.34 on Wed Jul 29 21:33:40 2015
 //
 //
 // Buffer Definitions: 
@@ -619,10 +623,10 @@ void main(
 //
 // Name                                 Type  Format         Dim Slot Elements
 // ------------------------------ ---------- ------- ----------- ---- --------
-// _tex0                             sampler      NA          NA    0        1
-// _tex1                             sampler      NA          NA    1        1
-// _tex3                             sampler      NA          NA    3        1
-// _tex5                             sampler      NA          NA    5        1
+// _tex0_s_s                         sampler      NA          NA    0        1
+// _tex1_s_s                         sampler      NA          NA    1        1
+// _tex3_s_s                         sampler      NA          NA    3        1
+// _tex5_s_s                         sampler      NA          NA    5        1
 // _tex0                             texture  float4          2d    0        1
 // _tex1                             texture  float4          2d    1        1
 // _tex3                             texture  float4          2d    3        1
