@@ -1,4 +1,4 @@
-// CRC32: 8C1F5C8F | Unity headers extracted from UI-Default.shader
+// CRC32: FE267E35 | Unity headers extracted from UI-Default.shader
 // Shader "UI/Default" {
 //   Properties {
 //   [PerRendererData]  _MainTex ("Sprite Texture", 2D) = "white" { }
@@ -26,7 +26,7 @@
 //         }
 //       Blend SrcAlpha OneMinusSrcAlpha
 //       ColorMask [_ColorMask]
-//       GpuProgramID 53140
+//       GpuProgramID 29864
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Bind "vertex" Vertex
@@ -51,8 +51,9 @@
     dcl_texcoord v2
 
 dcl_texcoord o0
-dcl_position o1
-dcl_color o2
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
 
 def c220, 0, 1, 0.0625, 0.5
 def c221, -0.999, 0.999, 0, 0 // Full screen fade to black coordinates
@@ -75,8 +76,9 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
     mov r1.x, c6.x
     add r0.zw, r1.x, c4
     mad r10.xy, r0.zwzw, c6, r0
-    mul o2, v1, c5
+    mul o3, v1, c5
     mov o0.xy, v2
+    mov o1, v0
 
 // Texture blacklist unusable - crosshair, fade to black, inventory, menus, etc. use the same texture
 //mov r25.x, c251.x
@@ -187,8 +189,8 @@ if_ne r20.w, c220.x
 	add r10.x, r10.x, r20.z
 endif
 endif
-mov o1, r10
+mov o2, r10
 
 if_eq r30.x, -c220.y
-	mov o1, c220.xxxx
+	mov o2, c220.xxxx
 endif
