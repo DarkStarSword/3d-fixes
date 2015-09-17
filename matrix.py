@@ -99,15 +99,28 @@ def projection_nv_equiv(near, far, fov_horiz, fov_vert, separation, convergence)
 
 def nv_equiv_multiplier(near, far, sep, conv):
     '''
-    Returns a matrix that a projection matrix can be multiplied by in order to
-    add a stereo correction to it.
+    Returns a matrix that a projection matrix, including a composite MVP or VP
+    matrix can be multiplied by in order to add a stereo correction to it.
     '''
     q = far / (far - near)
     return np.matrix([
-        [                         1, 0, 0, 0 ],
-        [                         0, 1, 0, 0 ],
-        [ 1/(-q*near) * (-sep*conv), 0, 1, 0 ],
-        [    sep + (-sep*conv)/near, 0, 0, 1 ]
+        [                     1, 0, 0, 0 ],
+        [                     0, 1, 0, 0 ],
+        [ (sep*conv) / (q*near), 0, 1, 0 ],
+        [ sep - (sep*conv)/near, 0, 0, 1 ]
+    ])
+
+def nv_equiv_multiplier_inv(near, far, sep, conv):
+    '''
+    The inverse of the above, for removing a stereo correction from an inverted
+    MV or MVP matrix. Simplifies down to a negation of the above.
+    '''
+    q = far / (far - near)
+    return np.matrix([
+        [                      1, 0, 0, 0 ],
+        [                      0, 1, 0, 0 ],
+        [ -(sep*conv) / (q*near), 0, 1, 0 ],
+        [ -sep + (sep*conv)/near, 0, 0, 1 ]
     ])
 
 def fov_w(matrix):
