@@ -4,7 +4,9 @@ import numpy as np
 from math import *
 import pyasm
 
-def translate(x, y, z):
+def translate(x, y, z, verbose=False):
+    if verbose:
+        print('''TRANSLATE:  %-8f   %-8f   %-8f''' % (x, y, z))
     return np.matrix([
         [1, 0, 0, 0],
         [0, 1, 0, 0],
@@ -12,7 +14,9 @@ def translate(x, y, z):
         [x, y, z, 1],
     ])
 
-def scale(x, y, z):
+def scale(x, y, z, verbose=False):
+    if verbose:
+        print('''    SCALE:  %-8f   %-8f   %-8f''' % (x, y, z))
     return np.matrix([
         [x, 0, 0, 0],
         [0, y, 0, 0],
@@ -20,7 +24,9 @@ def scale(x, y, z):
         [0, 0, 0, 1],
     ])
 
-def rotate_x(angle):
+def rotate_x(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE X:  %-8f   %8s   %8s  ''' % (angle, '', ''))
     a = radians(angle)
     return np.matrix([
         [1,       0,      0, 0],
@@ -29,7 +35,9 @@ def rotate_x(angle):
         [0,       0,      0, 1],
     ])
 
-def rotate_y(angle):
+def rotate_y(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE Y:  %8s   %-8f   %8s  ''' % ('', angle, ''))
     a = radians(angle)
     return np.matrix([
         [cos(a), 0, -sin(a), 0],
@@ -38,7 +46,9 @@ def rotate_y(angle):
         [     0, 0,       0, 1],
     ])
 
-def rotate_z(angle):
+def rotate_z(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE Z:  %8s   %8s   %-8f  ''' % ('', '', angle))
     a = radians(angle)
     return np.matrix([
         [ cos(a), sin(a), 0, 0],
@@ -47,7 +57,9 @@ def rotate_z(angle):
         [      0,      0, 0, 1],
     ])
 
-def projection(near, far, fov_horiz, fov_vert):
+def projection(near, far, fov_horiz, fov_vert, verbose=False):
+    if verbose:
+        print('''PROJECTION: near: %g far: %g H FOV: %g V FOV: %g''' % (near, far, fov_horiz, fov_vert))
     w = 1 / tan(radians(fov_horiz) / 2)
     h = 1 / tan(radians(fov_vert)  / 2)
     q = far / (far - near)
@@ -389,11 +401,28 @@ def random_euclidean_matrix(multiplier=1):
     m = np.identity(4)
     steps = random.randint(1,10)
     for i in range(steps):
-        m = m * random.choice((
-            translate(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier),
-            scale(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier),
-            rotate_x(random.random() * 180),
-            rotate_y(random.random() * 180),
-            rotate_z(random.random() * 180)
-        ))
+        choice = random.randrange(5)
+        if choice == 0:
+            m = m * translate(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier, verbose=True)
+        if choice == 1:
+            m = m * scale(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier, verbose=True)
+        if choice == 2:
+            m = m * rotate_x(random.random() * 180, verbose=True)
+        if choice == 3:
+            m = m * rotate_y(random.random() * 180, verbose=True)
+        if choice == 4:
+            m = m * rotate_z(random.random() * 180, verbose=True)
     return m
+
+def random_projection_matrix():
+    import random
+    near = random.random() * 10 + 1e-45 # Near cannot be 0, so add the minimum non-zero value a 32bit float can hold
+    far = near + random.random() * 1000
+    fov_h = random.uniform(60,110)
+    fov_v = random.uniform(60,90)
+    return projection(near, far, fov_h, fov_v, verbose=True)
+
+def random_mvp():
+    mv = random_euclidean_matrix()
+    p = random_projection_matrix()
+    return mv * p
