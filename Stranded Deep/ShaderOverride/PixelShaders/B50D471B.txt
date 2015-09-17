@@ -107,6 +107,17 @@
     dcl_2d s10
     dcl_2d s11
     dcl_2d s12
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../../.. --stereo-sampler-ps=s15 --adjust-input=texcoord5 -f B50D471B.txt
+mov r30, v4
+texldl r31, c220.z, s15
+add r31.w, r30.w, -r31.y
+mad r30.x, r31.w, r31.x, r30.x
+
     mad r0.xzw, v3.xyzx, c47.xyxy, c47.yyyx
     mov r0.y, c23.x
     dp4_pp r1.x, c7, r0
@@ -211,18 +222,18 @@
     mad_pp r1.yzw, r0.y, r1, r3.xxyz
     nrm_pp r3.xyz, r1.yzww
     mul r1.yz, r3.xxzw, c31.x
-    mul r0.z, c10.x, v4.y
+    mul r0.z, c10.x, r30.y
     mul r9.w, r0.z, c47.z
-    mul r9.xz, c47.z, v4.xyww
+    mul r9.xz, c47.z, r30.xyww
     mad r11.xy, r9.z, c11.zwzw, r9.xwzw
-    mad r9.xy, v4, c40.yzzw, r9.z
-    mov r11.zw, v4
+    mad r9.xy, r30, c40.yzzw, r9.z
+    mov r11.zw, r30
     texldp r11, r11, s9
-    mad r0.z, r11.z, c10.z, -v4.w
+    mad r0.z, r11.z, c10.z, -r30.w
     mul_sat r0.z, r0.z, c47.z
     mul_pp r11.xy, r0.z, r1.yzzw
     mov_pp r11.zw, c47.y
-    mov r9.zw, v4
+    mov r9.zw, r30
     add r12, r9, r11
     texldp r12, r12, s9
     add r1.y, c40.w, v3.w
@@ -253,7 +264,7 @@
     texldp_pp r11, r11, s10
     mad r2.x, c12.z, r12.x, c12.w
     rcp r2.x, r2.x
-    add r2.x, -r2.x, v4.z
+    add r2.x, -r2.x, r30.z
     cmp_pp r9.xyz, r2.x, r9, r11
     mad r1.yzw, r9.xxyz, r1, -r9.xxyz
     mad_pp r1.yzw, r0.z, r1, r9.xxyz
