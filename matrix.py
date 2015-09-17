@@ -97,6 +97,19 @@ def projection_nv_equiv(near, far, fov_horiz, fov_vert, separation, convergence)
 
     return (left, right)
 
+def nv_equiv_multiplier(near, far, sep, conv):
+    '''
+    Returns a matrix that a projection matrix can be multiplied by in order to
+    add a stereo correction to it.
+    '''
+    q = far / (far - near)
+    return np.matrix([
+        [                         1, 0, 0, 0 ],
+        [                         0, 1, 0, 0 ],
+        [ 1/(-q*near) * (-sep*conv), 0, 1, 0 ],
+        [    sep + (-sep*conv)/near, 0, 0, 1 ]
+    ])
+
 def fov_w(matrix):
     return degrees(2 * atan(1/matrix[0, 0]))
 
