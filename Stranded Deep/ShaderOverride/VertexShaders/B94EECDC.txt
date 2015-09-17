@@ -1,4 +1,4 @@
-// CRC32: 4138E179 | Matched 3 variants of 1 shaders: Beam Team/Standard/Skin/Skin
+// CRC32: B94EECDC | Matched 3 variants of 1 shaders: Beam Team/Standard/Skin/Skin
 // 
 //    Unity headers extracted from Skin.shader
 //    Shader "Beam Team/Standard/Skin/Skin" {
@@ -25,11 +25,11 @@
 //       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.3
 //      }
 //      SubShader 1/2 {
-//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" }
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
 //        Pass 1/2 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//          GpuProgramID 25113
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 31062
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" }
@@ -44,7 +44,7 @@
 //              Matrix 8 [glstate_matrix_modelview0] 3
 //              Matrix 0 [glstate_matrix_mvp]
 //              Matrix 4 [sunshine_CameraVToSunVP]
-//              Vector 24 [_MainTex_ST]
+//              Vector 25 [_MainTex_ST]
 //              Vector 19 [unity_SHAb]
 //              Vector 18 [unity_SHAg]
 //              Vector 17 [unity_SHAr]
@@ -52,6 +52,7 @@
 //              Vector 21 [unity_SHBg]
 //              Vector 20 [unity_SHBr]
 //              Vector 23 [unity_SHC]
+//              Vector 24 [unity_WorldTransformParams]
 //            }
 //          }
 //        }
@@ -62,7 +63,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0
-    def c25, 1, 0, 0, 0
+    def c26, 1, 0, 0, 0
     dcl_position v0
     dcl_tangent v1
     dcl_normal v2
@@ -77,7 +78,7 @@
     dp4 r0.x, c8, v0
     dp4 r0.y, c9, v0
     dp4 r0.z, c10, v0
-    mov r0.w, c25.x
+    mov r0.w, c26.x
     dp4 o5.x, c4, r0
     dp4 o5.y, c5, r0
     dp4 o5.z, c6, r0
@@ -86,7 +87,7 @@
     dp4 o0.y, c1, v0
     dp4 o0.z, c2, v0
     dp4 o0.w, c3, v0
-    mad o1.xy, v3, c24, c24.zwzw
+    mad o1.xy, v3, c25, c25.zwzw
     dp4 o2.w, c11, v0
     dp4 o3.w, c12, v0
     dp4 o4.w, c13, v0
@@ -101,7 +102,7 @@
     dp4 r3.y, c21, r2
     dp4 r3.z, c22, r2
     mad r0.xyz, c23, r0.x, r3
-    mov r1.w, c25.x
+    mov r1.w, c26.x
     dp4 r2.x, c17, r1
     dp4 r2.y, c18, r1
     dp4 r2.z, c19, r1
@@ -115,7 +116,8 @@
     mov o2.x, r0.z
     mul r2.xyz, r0, r1.zxyw
     mad r2.xyz, r1.yzxw, r0.yzxw, -r2
-    mul r2.xyz, r2, v1.w
+    mul r0.z, c24.w, v1.w
+    mul r2.xyz, r0.z, r2
     mov o2.y, r2.x
     mov o2.z, r1.x
     mov o3.x, r0.x
@@ -124,5 +126,3 @@
     mov o4.y, r2.z
     mov o3.z, r1.y
     mov o4.z, r1.z
-
-// approximately 52 instruction slots used
