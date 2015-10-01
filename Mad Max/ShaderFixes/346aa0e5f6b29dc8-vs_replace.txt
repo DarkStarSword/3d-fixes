@@ -1,3 +1,6 @@
+// Shadows
+// VS: 346aa0e5f6b29dc8
+// PS: d09b2165321f05cf
 
 cbuffer cbConstants : register(b1)
 {
@@ -21,10 +24,17 @@ void main(
   o0.zw = float2(0,1);
   r0.xy = v0.xy * float2(0.5,-0.5) + float2(0.5,0.5);
   o1.xy = Constants[0].zw * r0.xy;
+
+// This is calculating the coordinates on the frustrum at the far clipping
+// plane, centered on the camera:
   r0.xyzw = Constants[2].xyzw * v0.yyyy;
   r0.xyzw = v0.xxxx * Constants[1].xyzw + r0.xyzw;
   r0.xyzw = Constants[4].xyzw + r0.xyzw;
+
+// Normalising:
   r0.xyz = r0.xyz / r0.www;
+
+// Scaling by 0.000025 (found through frame analysis):
   o2.xyz = Constants[0].xxx * r0.xyz;
   return;
 }

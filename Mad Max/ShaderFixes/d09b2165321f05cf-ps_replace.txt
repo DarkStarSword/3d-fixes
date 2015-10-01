@@ -1,3 +1,6 @@
+// Shadows
+// VS: 346aa0e5f6b29dc8
+// PS: d09b2165321f05cf
 
 cbuffer GlobalConstants : register(b0)
 {
@@ -40,21 +43,62 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+// Sample depth buffer for this pixel:
   r0.x = Depth.Sample(SamplerStateRegular_s, v1.xy).x;
+
+// irrelevant
   r0.y = 0 < r0.x;
+
+// Scale value read from depth buffer to the world scale.
+// From frame analysis we know the values of these constants
+// Constants[0].x = 9.9999752
+// Constants[0].y = 2.49999994e-005
+// So this is doing r0.x = 1/(Z_buffer[x,y] * 9.9999752 + 0.000025)
   r0.x = r0.x * Constants[0].x + Constants[0].y;
   r0.x = 1 / r0.x;
+
+// v2 is the point on the far clipping plane relative to the camera in 3D
+// view-space coordinates. This scales it based on the depth buffer so r1 will
+// be the stereo corrected view-space coordinates, relative to the camera.
   r1.xyz = v2.xyz * r0.xxx;
+
+// This is similar to the above line, but it is ALSO adding a 3 dimensional
+// coordinate, which we know from frame analysis is:
+// Globals[4].x: 1820.52966
+// Globals[4].y: 482.899902
+// Globals[4].z: 6202.82471
+// Which is almost certainly the camera position in the world.
+// So, r2 will be the world coordinates of this pixel.
   r2.xyz = r0.xxx * v2.xyz + Globals[4].xyz;
+
+// We don't know exactly what this, but it is transforming the view coordinate
+// into something else. From frame analysis, this matrix is:
+// Constants[1]: -0.00733394176 | -0.0118318712 | 0.000754032517 | 0
+// Constants[2]: 0 | -0.039895393 | -0.000230774851 | 0
+// Constants[3]: 0.041016154 | -0.00211561192 | 0.000134825677 | 0
+// Constants[4]: 0.529752791 | 0.488492578 | 0.572143137 | 1
+// - Based on the 4th column, this matrix does *not* include a projection
+// - Based on the 4th row, this matrix *does* include a translation
+// This matrix includes some rotations. IMO this is likely a transformation
+// of view-space coordinates to directional lighting coordinates.
   r3.xyz = Constants[1].xyz * r1.xxx + Constants[4].xyz;
   r1.xyw = Constants[2].xyz * r1.yyy + r3.xyz;
   r1.xyz = Constants[3].xyz * r1.zzz + r1.xyw;
+
+// This appears to be performing some kind of scaling:
+// r3.xyz = float3(r1.xy * 0.199999973, r1.z) +
+// float3(0.601756692, 0.323284715, 0.0245652795)
   r3.x = Constants[21].w;
   r3.z = 1;
   r3.xyz = r1.xyz * r3.xxz + Constants[21].xyz;
+
+// This is similar - cascaded shadows?
+// r4.xyz = float3(r1.xy * 0.0149999959, r1.z) +
+// float3(0.687856495, 0.417885959, 0.317040324)
   r4.x = Constants[22].w;
   r4.z = 1;
   r4.xyz = r1.xyz * r4.xxz + Constants[22].xyz;
+
   r0.zw = r1.xy * float2(10,10) + float2(-5,-5);
   r5.xy = r3.xy * float2(10,10) + float2(-5,-5);
   r0.z = max(abs(r0.z), abs(r0.w));
