@@ -1,3 +1,4 @@
+// Decals on walls
 
 cbuffer cbInstanceConsts : register(b1)
 {
@@ -20,10 +21,16 @@ Texture1D<float4> IniParams : register(t120);
 void main( 
   float4 v0 : SV_Position0,
   float4 v1 : TEXCOORD0,
-  float3 v2 : TEXCOORD1,
+  noperspective float3 v2 : TEXCOORD1, // Decompiler bug
   out float4 o0 : SV_Target0,
   out float4 o1 : SV_Target1,
-  out float4 o2 : SV_Target2)
+  out float4 o2 : SV_Target2,
+
+// Extra inputs from VS:
+matrix m : TEXCOORD2,
+matrix im : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
@@ -33,7 +40,18 @@ void main(
   r0.x = DepthMap.Sample(DepthMap_s, r0.xy).x;
   r0.x = r0.x * InstanceConsts[8].z + InstanceConsts[8].w;
   r0.x = 1 / r0.x;
-  r0.xyz = v2.xyz * r0.xxx + -InstanceConsts[4].xyz;
+
+// Multiplying by depth for view space coords?
+// Need to adjust before subtracting InstanceConsts[4]
+  // r0.xyz = v2.xyz * r0.xxx + -InstanceConsts[4].xyz;
+r0.xyz = v2.xyz * r0.xxx;
+
+// Correct decal placement:
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(float4(r0.xyz, 1), im);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r0.xyz = mul(tmp, m) - InstanceConsts[4].xyz;
+
   r1.x = dot(InstanceConsts[13].xyz, r0.xyz);
   r1.y = dot(-InstanceConsts[11].xyz, r0.xyz);
   r1.z = dot(InstanceConsts[12].xyz, r0.xyz);

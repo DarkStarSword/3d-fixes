@@ -1,3 +1,4 @@
+// Decals
 
 cbuffer cbInstanceConsts : register(b1)
 {
@@ -17,7 +18,13 @@ void main(
   float2 v1 : TEXCOORD0,
   out float4 o0 : SV_Position0,
   out float4 o1 : TEXCOORD0,
-  out float3 o2 : TEXCOORD1)
+  out float3 o2 : TEXCOORD1,
+
+// Extra outputs to PS:
+out matrix m : TEXCOORD2,
+out matrix im : TEXCOORD6
+
+  )
 {
   float4 r0,r1;
   uint4 bitmask, uiDest;
@@ -28,6 +35,11 @@ void main(
   r0.xyzw = v0.zzzz * InstanceConsts[2].xyzw + r0.xyzw;
   r0.xyzw = InstanceConsts[3].xyzw + r0.xyzw;
   o0.xyzw = r0.xyzw;
+
+// VS part of decal fix:
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.w - stereo.y);
+
   r1.xyz = float3(0.5,-0.5,0.5) * r0.xyw;
   r1.xy = r1.xy + r1.zz;
   o1.xy = InstanceConsts[8].xy * r1.xy;
@@ -37,6 +49,28 @@ void main(
   r0.xyzw = r0.wwww * TypeConsts[3].xyzw + r1.xyzw;
   r0.xyz = r0.xyz / r0.www;
   o2.xyz = TypeConsts[4].xxx * r0.xyz;
+
+m = matrix(TypeConsts[0], TypeConsts[1], TypeConsts[2], TypeConsts[3]);
+
+// Work out Inverse:
+im[0].x = m[1].y*(m[2].z*m[3].w - m[2].w*m[3].z) + m[1].z*(m[2].w*m[3].y - m[2].y*m[3].w) + m[1].w*(m[2].y*m[3].z - m[2].z*m[3].y);
+im[0].y = m[0].y*(m[2].w*m[3].z - m[2].z*m[3].w) + m[0].z*(m[2].y*m[3].w - m[2].w*m[3].y) + m[0].w*(m[2].z*m[3].y - m[2].y*m[3].z);
+im[0].z = m[0].y*(m[1].z*m[3].w - m[1].w*m[3].z) + m[0].z*(m[1].w*m[3].y - m[1].y*m[3].w) + m[0].w*(m[1].y*m[3].z - m[1].z*m[3].y);
+im[0].w = m[0].y*(m[1].w*m[2].z - m[1].z*m[2].w) + m[0].z*(m[1].y*m[2].w - m[1].w*m[2].y) + m[0].w*(m[1].z*m[2].y - m[1].y*m[2].z);
+im[1].x = m[1].x*(m[2].w*m[3].z - m[2].z*m[3].w) + m[1].z*(m[2].x*m[3].w - m[2].w*m[3].x) + m[1].w*(m[2].z*m[3].x - m[2].x*m[3].z);
+im[1].y = m[0].x*(m[2].z*m[3].w - m[2].w*m[3].z) + m[0].z*(m[2].w*m[3].x - m[2].x*m[3].w) + m[0].w*(m[2].x*m[3].z - m[2].z*m[3].x);
+im[1].z = m[0].x*(m[1].w*m[3].z - m[1].z*m[3].w) + m[0].z*(m[1].x*m[3].w - m[1].w*m[3].x) + m[0].w*(m[1].z*m[3].x - m[1].x*m[3].z);
+im[1].w = m[0].x*(m[1].z*m[2].w - m[1].w*m[2].z) + m[0].z*(m[1].w*m[2].x - m[1].x*m[2].w) + m[0].w*(m[1].x*m[2].z - m[1].z*m[2].x);
+im[2].x = m[1].x*(m[2].y*m[3].w - m[2].w*m[3].y) + m[1].y*(m[2].w*m[3].x - m[2].x*m[3].w) + m[1].w*(m[2].x*m[3].y - m[2].y*m[3].x);
+im[2].y = m[0].x*(m[2].w*m[3].y - m[2].y*m[3].w) + m[0].y*(m[2].x*m[3].w - m[2].w*m[3].x) + m[0].w*(m[2].y*m[3].x - m[2].x*m[3].y);
+im[2].z = m[0].x*(m[1].y*m[3].w - m[1].w*m[3].y) + m[0].y*(m[1].w*m[3].x - m[1].x*m[3].w) + m[0].w*(m[1].x*m[3].y - m[1].y*m[3].x);
+im[2].w = m[0].x*(m[1].w*m[2].y - m[1].y*m[2].w) + m[0].y*(m[1].x*m[2].w - m[1].w*m[2].x) + m[0].w*(m[1].y*m[2].x - m[1].x*m[2].y);
+im[3].x = m[1].x*(m[2].z*m[3].y - m[2].y*m[3].z) + m[1].y*(m[2].x*m[3].z - m[2].z*m[3].x) + m[1].z*(m[2].y*m[3].x - m[2].x*m[3].y);
+im[3].y = m[0].x*(m[2].y*m[3].z - m[2].z*m[3].y) + m[0].y*(m[2].z*m[3].x - m[2].x*m[3].z) + m[0].z*(m[2].x*m[3].y - m[2].y*m[3].x);
+im[3].z = m[0].x*(m[1].z*m[3].y - m[1].y*m[3].z) + m[0].y*(m[1].x*m[3].z - m[1].z*m[3].x) + m[0].z*(m[1].y*m[3].x - m[1].x*m[3].y);
+im[3].w = m[0].x*(m[1].y*m[2].z - m[1].z*m[2].y) + m[0].y*(m[1].z*m[2].x - m[1].x*m[2].z) + m[0].z*(m[1].x*m[2].y - m[1].y*m[2].x);
+im /= determinant(m);
+
   return;
 }
 
