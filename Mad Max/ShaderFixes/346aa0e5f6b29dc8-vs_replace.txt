@@ -43,27 +43,26 @@ out matrix ivp : TEXCOORD6
 // Scaling by 0.000025 (found through frame analysis):
   o2.xyz = Constants[0].xxx * r0.xyz;
 
-vp = matrix(Constants[1], Constants[2], Constants[3], Constants[4]);
+ivp = matrix(Constants[1], Constants[2], Constants[3], Constants[4]);
 
-// Work out Inverse
-float det = determinant(vp);
-ivp[0].x = vp[1].y*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[1].z*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[1].w*(vp[2].y*vp[3].z - vp[2].z*vp[3].y);
-ivp[0].y = vp[0].y*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[0].z*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[0].w*(vp[2].z*vp[3].y - vp[2].y*vp[3].z);
-ivp[0].z = vp[0].y*(vp[1].z*vp[3].w - vp[1].w*vp[3].z) + vp[0].z*(vp[1].w*vp[3].y - vp[1].y*vp[3].w) + vp[0].w*(vp[1].y*vp[3].z - vp[1].z*vp[3].y);
-ivp[0].w = vp[0].y*(vp[1].w*vp[2].z - vp[1].z*vp[2].w) + vp[0].z*(vp[1].y*vp[2].w - vp[1].w*vp[2].y) + vp[0].w*(vp[1].z*vp[2].y - vp[1].y*vp[2].z);
-ivp[1].x = vp[1].x*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[1].z*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[1].w*(vp[2].z*vp[3].x - vp[2].x*vp[3].z);
-ivp[1].y = vp[0].x*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[0].z*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[0].w*(vp[2].x*vp[3].z - vp[2].z*vp[3].x);
-ivp[1].z = vp[0].x*(vp[1].w*vp[3].z - vp[1].z*vp[3].w) + vp[0].z*(vp[1].x*vp[3].w - vp[1].w*vp[3].x) + vp[0].w*(vp[1].z*vp[3].x - vp[1].x*vp[3].z);
-ivp[1].w = vp[0].x*(vp[1].z*vp[2].w - vp[1].w*vp[2].z) + vp[0].z*(vp[1].w*vp[2].x - vp[1].x*vp[2].w) + vp[0].w*(vp[1].x*vp[2].z - vp[1].z*vp[2].x);
-ivp[2].x = vp[1].x*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[1].y*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[1].w*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
-ivp[2].y = vp[0].x*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[0].y*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[0].w*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
-ivp[2].z = vp[0].x*(vp[1].y*vp[3].w - vp[1].w*vp[3].y) + vp[0].y*(vp[1].w*vp[3].x - vp[1].x*vp[3].w) + vp[0].w*(vp[1].x*vp[3].y - vp[1].y*vp[3].x);
-ivp[2].w = vp[0].x*(vp[1].w*vp[2].y - vp[1].y*vp[2].w) + vp[0].y*(vp[1].x*vp[2].w - vp[1].w*vp[2].x) + vp[0].w*(vp[1].y*vp[2].x - vp[1].x*vp[2].y);
-ivp[3].x = vp[1].x*(vp[2].z*vp[3].y - vp[2].y*vp[3].z) + vp[1].y*(vp[2].x*vp[3].z - vp[2].z*vp[3].x) + vp[1].z*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
-ivp[3].y = vp[0].x*(vp[2].y*vp[3].z - vp[2].z*vp[3].y) + vp[0].y*(vp[2].z*vp[3].x - vp[2].x*vp[3].z) + vp[0].z*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
-ivp[3].z = vp[0].x*(vp[1].z*vp[3].y - vp[1].y*vp[3].z) + vp[0].y*(vp[1].x*vp[3].z - vp[1].z*vp[3].x) + vp[0].z*(vp[1].y*vp[3].x - vp[1].x*vp[3].y);
-ivp[3].w = vp[0].x*(vp[1].y*vp[2].z - vp[1].z*vp[2].y) + vp[0].y*(vp[1].z*vp[2].x - vp[1].x*vp[2].z) + vp[0].z*(vp[1].x*vp[2].y - vp[1].y*vp[2].x);
-ivp /= det;
+// Work out Inverse (which will be the forwards variant since the original was already inversed):
+vp[0].x = ivp[1].y*(ivp[2].z*ivp[3].w - ivp[2].w*ivp[3].z) + ivp[1].z*(ivp[2].w*ivp[3].y - ivp[2].y*ivp[3].w) + ivp[1].w*(ivp[2].y*ivp[3].z - ivp[2].z*ivp[3].y);
+vp[0].y = ivp[0].y*(ivp[2].w*ivp[3].z - ivp[2].z*ivp[3].w) + ivp[0].z*(ivp[2].y*ivp[3].w - ivp[2].w*ivp[3].y) + ivp[0].w*(ivp[2].z*ivp[3].y - ivp[2].y*ivp[3].z);
+vp[0].z = ivp[0].y*(ivp[1].z*ivp[3].w - ivp[1].w*ivp[3].z) + ivp[0].z*(ivp[1].w*ivp[3].y - ivp[1].y*ivp[3].w) + ivp[0].w*(ivp[1].y*ivp[3].z - ivp[1].z*ivp[3].y);
+vp[0].w = ivp[0].y*(ivp[1].w*ivp[2].z - ivp[1].z*ivp[2].w) + ivp[0].z*(ivp[1].y*ivp[2].w - ivp[1].w*ivp[2].y) + ivp[0].w*(ivp[1].z*ivp[2].y - ivp[1].y*ivp[2].z);
+vp[1].x = ivp[1].x*(ivp[2].w*ivp[3].z - ivp[2].z*ivp[3].w) + ivp[1].z*(ivp[2].x*ivp[3].w - ivp[2].w*ivp[3].x) + ivp[1].w*(ivp[2].z*ivp[3].x - ivp[2].x*ivp[3].z);
+vp[1].y = ivp[0].x*(ivp[2].z*ivp[3].w - ivp[2].w*ivp[3].z) + ivp[0].z*(ivp[2].w*ivp[3].x - ivp[2].x*ivp[3].w) + ivp[0].w*(ivp[2].x*ivp[3].z - ivp[2].z*ivp[3].x);
+vp[1].z = ivp[0].x*(ivp[1].w*ivp[3].z - ivp[1].z*ivp[3].w) + ivp[0].z*(ivp[1].x*ivp[3].w - ivp[1].w*ivp[3].x) + ivp[0].w*(ivp[1].z*ivp[3].x - ivp[1].x*ivp[3].z);
+vp[1].w = ivp[0].x*(ivp[1].z*ivp[2].w - ivp[1].w*ivp[2].z) + ivp[0].z*(ivp[1].w*ivp[2].x - ivp[1].x*ivp[2].w) + ivp[0].w*(ivp[1].x*ivp[2].z - ivp[1].z*ivp[2].x);
+vp[2].x = ivp[1].x*(ivp[2].y*ivp[3].w - ivp[2].w*ivp[3].y) + ivp[1].y*(ivp[2].w*ivp[3].x - ivp[2].x*ivp[3].w) + ivp[1].w*(ivp[2].x*ivp[3].y - ivp[2].y*ivp[3].x);
+vp[2].y = ivp[0].x*(ivp[2].w*ivp[3].y - ivp[2].y*ivp[3].w) + ivp[0].y*(ivp[2].x*ivp[3].w - ivp[2].w*ivp[3].x) + ivp[0].w*(ivp[2].y*ivp[3].x - ivp[2].x*ivp[3].y);
+vp[2].z = ivp[0].x*(ivp[1].y*ivp[3].w - ivp[1].w*ivp[3].y) + ivp[0].y*(ivp[1].w*ivp[3].x - ivp[1].x*ivp[3].w) + ivp[0].w*(ivp[1].x*ivp[3].y - ivp[1].y*ivp[3].x);
+vp[2].w = ivp[0].x*(ivp[1].w*ivp[2].y - ivp[1].y*ivp[2].w) + ivp[0].y*(ivp[1].x*ivp[2].w - ivp[1].w*ivp[2].x) + ivp[0].w*(ivp[1].y*ivp[2].x - ivp[1].x*ivp[2].y);
+vp[3].x = ivp[1].x*(ivp[2].z*ivp[3].y - ivp[2].y*ivp[3].z) + ivp[1].y*(ivp[2].x*ivp[3].z - ivp[2].z*ivp[3].x) + ivp[1].z*(ivp[2].y*ivp[3].x - ivp[2].x*ivp[3].y);
+vp[3].y = ivp[0].x*(ivp[2].y*ivp[3].z - ivp[2].z*ivp[3].y) + ivp[0].y*(ivp[2].z*ivp[3].x - ivp[2].x*ivp[3].z) + ivp[0].z*(ivp[2].x*ivp[3].y - ivp[2].y*ivp[3].x);
+vp[3].z = ivp[0].x*(ivp[1].z*ivp[3].y - ivp[1].y*ivp[3].z) + ivp[0].y*(ivp[1].x*ivp[3].z - ivp[1].z*ivp[3].x) + ivp[0].z*(ivp[1].y*ivp[3].x - ivp[1].x*ivp[3].y);
+vp[3].w = ivp[0].x*(ivp[1].y*ivp[2].z - ivp[1].z*ivp[2].y) + ivp[0].y*(ivp[1].z*ivp[2].x - ivp[1].x*ivp[2].z) + ivp[0].z*(ivp[1].x*ivp[2].y - ivp[1].y*ivp[2].x);
+vp /= determinant(ivp);
 
   return;
 }
