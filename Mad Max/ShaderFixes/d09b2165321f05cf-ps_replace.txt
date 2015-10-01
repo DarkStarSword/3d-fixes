@@ -37,11 +37,19 @@ void main(
   float4 v0 : SV_Position0,
   float4 v1 : TEXCOORD0,
   float3 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+
+// Extra input from vertex shader:
+matrix vp : TEXCOORD2,
+matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,r20,r21;
   uint4 bitmask, uiDest;
   float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
 
 // Sample depth buffer for this pixel:
   r0.x = Depth.Sample(SamplerStateRegular_s, v1.xy).x;
@@ -62,6 +70,11 @@ void main(
 // be the stereo corrected view-space coordinates, relative to the camera.
   r1.xyz = v2.xyz * r0.xxx;
 
+// Correct shadow placement:
+float4 tmp = mul(float4(r1.xyz, 1), ivp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r1.xyz = mul(tmp, vp).xyz;
+
 // This is similar to the above line, but it is ALSO adding a 3 dimensional
 // coordinate, which we know from frame analysis is:
 // Globals[4].x: 1820.52966
@@ -70,6 +83,10 @@ void main(
 // Which is almost certainly the camera position in the world.
 // So, r2 will be the world coordinates of this pixel.
   r2.xyz = r0.xxx * v2.xyz + Globals[4].xyz;
+
+// Replaces r2.xyz with a corrected version as well (unconfirmed if this makes
+// things better or worse - it's subtle):
+r2.xyz = r1.xyz + Globals[4].xyz;
 
 // We don't know exactly what this, but it is transforming the view coordinate
 // into something else. From frame analysis, this matrix is:

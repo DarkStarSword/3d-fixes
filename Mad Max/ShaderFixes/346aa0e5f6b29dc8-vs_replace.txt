@@ -14,7 +14,13 @@ void main(
   float2 v0 : POSITION0,
   out float4 o0 : SV_Position0,
   out float4 o1 : TEXCOORD0,
-  out float3 o2 : TEXCOORD1)
+  out float3 o2 : TEXCOORD1,
+
+// Extra output added to copy view-projection matrix
+out matrix vp : TEXCOORD2,
+out matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0;
   uint4 bitmask, uiDest;
@@ -36,6 +42,29 @@ void main(
 
 // Scaling by 0.000025 (found through frame analysis):
   o2.xyz = Constants[0].xxx * r0.xyz;
+
+vp = matrix(Constants[1], Constants[2], Constants[3], Constants[4]);
+
+// Work out Inverse
+float det = determinant(vp);
+ivp[0].x = vp[1].y*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[1].z*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[1].w*(vp[2].y*vp[3].z - vp[2].z*vp[3].y);
+ivp[0].y = vp[0].y*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[0].z*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[0].w*(vp[2].z*vp[3].y - vp[2].y*vp[3].z);
+ivp[0].z = vp[0].y*(vp[1].z*vp[3].w - vp[1].w*vp[3].z) + vp[0].z*(vp[1].w*vp[3].y - vp[1].y*vp[3].w) + vp[0].w*(vp[1].y*vp[3].z - vp[1].z*vp[3].y);
+ivp[0].w = vp[0].y*(vp[1].w*vp[2].z - vp[1].z*vp[2].w) + vp[0].z*(vp[1].y*vp[2].w - vp[1].w*vp[2].y) + vp[0].w*(vp[1].z*vp[2].y - vp[1].y*vp[2].z);
+ivp[1].x = vp[1].x*(vp[2].w*vp[3].z - vp[2].z*vp[3].w) + vp[1].z*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[1].w*(vp[2].z*vp[3].x - vp[2].x*vp[3].z);
+ivp[1].y = vp[0].x*(vp[2].z*vp[3].w - vp[2].w*vp[3].z) + vp[0].z*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[0].w*(vp[2].x*vp[3].z - vp[2].z*vp[3].x);
+ivp[1].z = vp[0].x*(vp[1].w*vp[3].z - vp[1].z*vp[3].w) + vp[0].z*(vp[1].x*vp[3].w - vp[1].w*vp[3].x) + vp[0].w*(vp[1].z*vp[3].x - vp[1].x*vp[3].z);
+ivp[1].w = vp[0].x*(vp[1].z*vp[2].w - vp[1].w*vp[2].z) + vp[0].z*(vp[1].w*vp[2].x - vp[1].x*vp[2].w) + vp[0].w*(vp[1].x*vp[2].z - vp[1].z*vp[2].x);
+ivp[2].x = vp[1].x*(vp[2].y*vp[3].w - vp[2].w*vp[3].y) + vp[1].y*(vp[2].w*vp[3].x - vp[2].x*vp[3].w) + vp[1].w*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[2].y = vp[0].x*(vp[2].w*vp[3].y - vp[2].y*vp[3].w) + vp[0].y*(vp[2].x*vp[3].w - vp[2].w*vp[3].x) + vp[0].w*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[2].z = vp[0].x*(vp[1].y*vp[3].w - vp[1].w*vp[3].y) + vp[0].y*(vp[1].w*vp[3].x - vp[1].x*vp[3].w) + vp[0].w*(vp[1].x*vp[3].y - vp[1].y*vp[3].x);
+ivp[2].w = vp[0].x*(vp[1].w*vp[2].y - vp[1].y*vp[2].w) + vp[0].y*(vp[1].x*vp[2].w - vp[1].w*vp[2].x) + vp[0].w*(vp[1].y*vp[2].x - vp[1].x*vp[2].y);
+ivp[3].x = vp[1].x*(vp[2].z*vp[3].y - vp[2].y*vp[3].z) + vp[1].y*(vp[2].x*vp[3].z - vp[2].z*vp[3].x) + vp[1].z*(vp[2].y*vp[3].x - vp[2].x*vp[3].y);
+ivp[3].y = vp[0].x*(vp[2].y*vp[3].z - vp[2].z*vp[3].y) + vp[0].y*(vp[2].z*vp[3].x - vp[2].x*vp[3].z) + vp[0].z*(vp[2].x*vp[3].y - vp[2].y*vp[3].x);
+ivp[3].z = vp[0].x*(vp[1].z*vp[3].y - vp[1].y*vp[3].z) + vp[0].y*(vp[1].x*vp[3].z - vp[1].z*vp[3].x) + vp[0].z*(vp[1].y*vp[3].x - vp[1].x*vp[3].y);
+ivp[3].w = vp[0].x*(vp[1].y*vp[2].z - vp[1].z*vp[2].y) + vp[0].y*(vp[1].z*vp[2].x - vp[1].x*vp[2].z) + vp[0].z*(vp[1].x*vp[2].y - vp[1].y*vp[2].x);
+ivp /= det;
+
   return;
 }
 
