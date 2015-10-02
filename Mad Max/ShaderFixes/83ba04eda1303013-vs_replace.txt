@@ -1,3 +1,4 @@
+// Heat distortion from campfire
 
 cbuffer cbInstanceConsts : register(b1)
 {
@@ -32,6 +33,10 @@ void main(
   r1.xyzw = v0.zzzz * InstanceConsts[2].xyzw + r1.xyzw;
   r1.xyzw = InstanceConsts[3].xyzw + r1.xyzw;
   o0.xyzw = r0.xxxx ? float4(-1,-1,-1,1) : r1.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r1.x += stereo.x * (r1.w - stereo.y);
+
   o1.xy = float2(1.99993896,1.99993896) * v4.xy;
   o1.w = v3.z;
   r0.xyz = float3(0.5,-0.5,0.5) * r1.xyw;

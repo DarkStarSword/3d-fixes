@@ -1,3 +1,4 @@
+// Misaligned light near campfire
 
 cbuffer cbInstanceConsts : register(b1)
 {
@@ -27,6 +28,10 @@ void main(
   r0.xyzw = v0.zzzz * InstanceConsts[2].xyzw + r0.xyzw;
   r0.xyzw = InstanceConsts[3].xyzw + r0.xyzw;
   o0.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.w - stereo.y);
+
   r1.xy = r0.xy / r0.ww;
   r1.xy = r1.xy * float2(0.5,-0.5) + float2(0.5,0.5);
   o1.xy = TypeConsts[0].zw * r1.xy;
