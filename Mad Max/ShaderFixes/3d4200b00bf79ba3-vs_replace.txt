@@ -1,4 +1,6 @@
-// Misaligned light near campfire
+// Misaligned light near campfire, light around torch in Chum's place
+// Pixel shaders
+// edb415f0725247f9
 
 cbuffer cbInstanceConsts : register(b1)
 {
@@ -17,12 +19,19 @@ void main(
   float3 v0 : POSITION0,
   out float4 o0 : SV_Position0,
   out float4 o1 : TEXCOORD0,
-  out float3 o2 : TEXCOORD1)
+  out float3 o2 : TEXCOORD1,
+
+// Extra output added to copy view-projection matrix
+out matrix vp : TEXCOORD2,
+out matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1;
   uint4 bitmask, uiDest;
   float4 fDest;
 
+// Full MVP matrix:
   r0.xyzw = InstanceConsts[1].xyzw * v0.yyyy;
   r0.xyzw = v0.xxxx * InstanceConsts[0].xyzw + r0.xyzw;
   r0.xyzw = v0.zzzz * InstanceConsts[2].xyzw + r0.xyzw;
@@ -35,11 +44,36 @@ r0.x += stereo.x * (r0.w - stereo.y);
   r1.xy = r0.xy / r0.ww;
   r1.xy = r1.xy * float2(0.5,-0.5) + float2(0.5,0.5);
   o1.xy = TypeConsts[0].zw * r1.xy;
+
+// Inverse view-projection:
   r1.xyzw = TypeConsts[2].xyzw * r0.yyyy;
   r1.xyzw = r0.xxxx * TypeConsts[1].xyzw + r1.xyzw;
   r0.xyzw = r0.wwww * TypeConsts[4].xyzw + r1.xyzw;
   r0.xyz = r0.xyz / r0.www;
   o2.xyz = TypeConsts[0].xxx * r0.xyz;
+
+ivp = matrix(TypeConsts[1], TypeConsts[2], TypeConsts[3], TypeConsts[4]);
+
+// Work out Inverse (which will be the forwards variant since the original was already inversed):
+vp[0].x = ivp[1].y*(ivp[2].z*ivp[3].w - ivp[2].w*ivp[3].z) + ivp[1].z*(ivp[2].w*ivp[3].y - ivp[2].y*ivp[3].w) + ivp[1].w*(ivp[2].y*ivp[3].z - ivp[2].z*ivp[3].y);
+vp[0].y = ivp[0].y*(ivp[2].w*ivp[3].z - ivp[2].z*ivp[3].w) + ivp[0].z*(ivp[2].y*ivp[3].w - ivp[2].w*ivp[3].y) + ivp[0].w*(ivp[2].z*ivp[3].y - ivp[2].y*ivp[3].z);
+vp[0].z = ivp[0].y*(ivp[1].z*ivp[3].w - ivp[1].w*ivp[3].z) + ivp[0].z*(ivp[1].w*ivp[3].y - ivp[1].y*ivp[3].w) + ivp[0].w*(ivp[1].y*ivp[3].z - ivp[1].z*ivp[3].y);
+vp[0].w = ivp[0].y*(ivp[1].w*ivp[2].z - ivp[1].z*ivp[2].w) + ivp[0].z*(ivp[1].y*ivp[2].w - ivp[1].w*ivp[2].y) + ivp[0].w*(ivp[1].z*ivp[2].y - ivp[1].y*ivp[2].z);
+vp[1].x = ivp[1].x*(ivp[2].w*ivp[3].z - ivp[2].z*ivp[3].w) + ivp[1].z*(ivp[2].x*ivp[3].w - ivp[2].w*ivp[3].x) + ivp[1].w*(ivp[2].z*ivp[3].x - ivp[2].x*ivp[3].z);
+vp[1].y = ivp[0].x*(ivp[2].z*ivp[3].w - ivp[2].w*ivp[3].z) + ivp[0].z*(ivp[2].w*ivp[3].x - ivp[2].x*ivp[3].w) + ivp[0].w*(ivp[2].x*ivp[3].z - ivp[2].z*ivp[3].x);
+vp[1].z = ivp[0].x*(ivp[1].w*ivp[3].z - ivp[1].z*ivp[3].w) + ivp[0].z*(ivp[1].x*ivp[3].w - ivp[1].w*ivp[3].x) + ivp[0].w*(ivp[1].z*ivp[3].x - ivp[1].x*ivp[3].z);
+vp[1].w = ivp[0].x*(ivp[1].z*ivp[2].w - ivp[1].w*ivp[2].z) + ivp[0].z*(ivp[1].w*ivp[2].x - ivp[1].x*ivp[2].w) + ivp[0].w*(ivp[1].x*ivp[2].z - ivp[1].z*ivp[2].x);
+vp[2].x = ivp[1].x*(ivp[2].y*ivp[3].w - ivp[2].w*ivp[3].y) + ivp[1].y*(ivp[2].w*ivp[3].x - ivp[2].x*ivp[3].w) + ivp[1].w*(ivp[2].x*ivp[3].y - ivp[2].y*ivp[3].x);
+vp[2].y = ivp[0].x*(ivp[2].w*ivp[3].y - ivp[2].y*ivp[3].w) + ivp[0].y*(ivp[2].x*ivp[3].w - ivp[2].w*ivp[3].x) + ivp[0].w*(ivp[2].y*ivp[3].x - ivp[2].x*ivp[3].y);
+vp[2].z = ivp[0].x*(ivp[1].y*ivp[3].w - ivp[1].w*ivp[3].y) + ivp[0].y*(ivp[1].w*ivp[3].x - ivp[1].x*ivp[3].w) + ivp[0].w*(ivp[1].x*ivp[3].y - ivp[1].y*ivp[3].x);
+vp[2].w = ivp[0].x*(ivp[1].w*ivp[2].y - ivp[1].y*ivp[2].w) + ivp[0].y*(ivp[1].x*ivp[2].w - ivp[1].w*ivp[2].x) + ivp[0].w*(ivp[1].y*ivp[2].x - ivp[1].x*ivp[2].y);
+vp[3].x = ivp[1].x*(ivp[2].z*ivp[3].y - ivp[2].y*ivp[3].z) + ivp[1].y*(ivp[2].x*ivp[3].z - ivp[2].z*ivp[3].x) + ivp[1].z*(ivp[2].y*ivp[3].x - ivp[2].x*ivp[3].y);
+vp[3].y = ivp[0].x*(ivp[2].y*ivp[3].z - ivp[2].z*ivp[3].y) + ivp[0].y*(ivp[2].z*ivp[3].x - ivp[2].x*ivp[3].z) + ivp[0].z*(ivp[2].x*ivp[3].y - ivp[2].y*ivp[3].x);
+vp[3].z = ivp[0].x*(ivp[1].z*ivp[3].y - ivp[1].y*ivp[3].z) + ivp[0].y*(ivp[1].x*ivp[3].z - ivp[1].z*ivp[3].x) + ivp[0].z*(ivp[1].y*ivp[3].x - ivp[1].x*ivp[3].y);
+vp[3].w = ivp[0].x*(ivp[1].y*ivp[2].z - ivp[1].z*ivp[2].y) + ivp[0].y*(ivp[1].z*ivp[2].x - ivp[1].x*ivp[2].z) + ivp[0].z*(ivp[1].x*ivp[2].y - ivp[1].y*ivp[2].x);
+vp /= determinant(ivp);
+
+
   return;
 }
 
