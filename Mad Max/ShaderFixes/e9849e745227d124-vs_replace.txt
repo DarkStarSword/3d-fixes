@@ -1,0 +1,364 @@
+
+cbuffer GlobalConstants : register(b0)
+{
+  float4 Globals[20] : packoffset(c0);
+  row_major float4x4 ShadowTransform[3] : packoffset(c20);
+}
+
+cbuffer cbInstanceConsts : register(b1)
+{
+  float4 InstanceConsts[22] : packoffset(c0);
+}
+
+cbuffer cbLightingConsts : register(b2)
+{
+  float4 LightingConsts[4] : packoffset(c0);
+}
+
+Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
+
+void main( 
+  float3 v0 : POSITION0,
+  float4 v1 : COLOR0,
+  float4 v2 : COLOR1,
+  float4 v3 : TEXCOORD0,
+  float2 v4 : TEXCOORD1,
+  out float4 o0 : SV_Position0,
+  out float2 o1 : TEXCOORD0,
+  out float4 o2 : COLOR0)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = InstanceConsts[0].xy * v0.xy;
+  r0.zw = float2(0,1);
+  r1.xyzw = InstanceConsts[17].xyzw * v1.xyzw;
+  r2.x = r1.w < 0.00999999978;
+  o0.xyzw = r2.xxxx ? float4(-1,-1,-1,1) : r0.xyzw;
+  o1.xy = float2(1.99993896,1.99993896) * v4.xy;
+  r0.xyz = InstanceConsts[7].xyz + -Globals[4].xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r2.x = rsqrt(r0.w);
+  r0.w = sqrt(r0.w);
+  r0.w = -InstanceConsts[8].w + r0.w;
+  r0.xyz = r2.xxx * r0.xyz;
+  r2.x = dot(-r0.xyz, InstanceConsts[9].xyz);
+  r2.x = saturate(InstanceConsts[9].w + r2.x);
+  r2.x = r2.x * r2.x;
+  r2.y = -InstanceConsts[8].w + InstanceConsts[7].w;
+  r2.y = max(9.99999997e-007, r2.y);
+  r0.w = saturate(r0.w / r2.y);
+  r0.w = -1 + r0.w;
+  r0.w = -r0.w * r0.w + 1;
+  r0.w = sqrt(r0.w);
+  r2.y = 0 < InstanceConsts[16].x;
+  r2.z = InstanceConsts[16].x < 0;
+  r2.y = ((int)r2.z ? -1 : 0) + ((int)r2.y ? 1 : 0);
+  r2.y = (int)r2.y;
+  r2.z = InstanceConsts[16].x == 0.000000;
+  r2.y = r2.z ? 1 : r2.y;
+  r2.yzw = Globals[5].xyz * r2.yyy;
+  r0.x = dot(r0.xyz, r2.yzw);
+  r3.xyz = float3(-0.5,-0.5,-0.5) + v2.xyz;
+  r3.xyz = r3.xyz + r3.xyz;
+  r0.y = dot(r3.xyz, r3.xyz);
+  r0.y = sqrt(r0.y);
+  r0.yzw = float3(1,2,1) + -r0.yyw;
+  r0.x = max(r0.x, r0.y);
+  r0.z = 1 / r0.z;
+  r0.x = saturate(r0.x * r0.z);
+  r0.x = r0.w * r0.x;
+  r0.x = r0.x * r2.x;
+  r3.xyz = InstanceConsts[8].xyz * r0.xxx;
+  r0.x = -InstanceConsts[5].w + InstanceConsts[4].w;
+  r0.x = max(9.99999997e-007, r0.x);
+  r4.xyz = InstanceConsts[4].xyz + -Globals[4].xyz;
+  r0.w = dot(r4.xyz, r4.xyz);
+  r2.x = sqrt(r0.w);
+  r0.w = rsqrt(r0.w);
+  r4.xyz = r4.xyz * r0.www;
+  r0.w = -InstanceConsts[5].w + r2.x;
+  r0.x = saturate(r0.w / r0.x);
+  r0.x = -1 + r0.x;
+  r0.x = -r0.x * r0.x + 1;
+  r0.x = sqrt(r0.x);
+  r0.x = 1 + -r0.x;
+  r0.w = dot(r4.xyz, r2.yzw);
+  r2.x = dot(-r4.xyz, InstanceConsts[6].xyz);
+  r2.x = saturate(InstanceConsts[6].w + r2.x);
+  r2.x = r2.x * r2.x;
+  r0.w = max(r0.w, r0.y);
+  r0.w = saturate(r0.w * r0.z);
+  r0.x = r0.x * r0.w;
+  r0.x = r0.x * r2.x;
+  r3.xyz = r0.xxx * InstanceConsts[5].xyz + r3.xyz;
+  r0.x = -InstanceConsts[11].w + InstanceConsts[10].w;
+  r0.x = max(9.99999997e-007, r0.x);
+  r4.xyz = InstanceConsts[10].xyz + -Globals[4].xyz;
+  r0.w = dot(r4.xyz, r4.xyz);
+  r2.x = sqrt(r0.w);
+  r0.w = rsqrt(r0.w);
+  r4.xyz = r4.xyz * r0.www;
+  r0.w = -InstanceConsts[11].w + r2.x;
+  r0.x = saturate(r0.w / r0.x);
+  r0.x = -1 + r0.x;
+  r0.x = -r0.x * r0.x + 1;
+  r0.x = sqrt(r0.x);
+  r0.x = 1 + -r0.x;
+  r0.w = dot(r4.xyz, r2.yzw);
+  r2.x = dot(-r4.xyz, InstanceConsts[12].xyz);
+  r2.x = saturate(InstanceConsts[12].w + r2.x);
+  r2.x = r2.x * r2.x;
+  r0.w = max(r0.w, r0.y);
+  r0.w = saturate(r0.w * r0.z);
+  r0.x = r0.x * r0.w;
+  r0.x = r0.x * r2.x;
+  r3.xyz = r0.xxx * InstanceConsts[11].xyz + r3.xyz;
+  r4.xyz = InstanceConsts[13].xyz + -Globals[4].xyz;
+  r0.x = dot(r4.xyz, r4.xyz);
+  r0.w = rsqrt(r0.x);
+  r0.x = sqrt(r0.x);
+  r0.x = -InstanceConsts[14].w + r0.x;
+  r4.xyz = r4.xyz * r0.www;
+  r0.w = dot(r4.xyz, r2.yzw);
+  r2.x = saturate(dot(r2.yzw, -Globals[8].xyz));
+  r2.x = r2.x + r0.y;
+  r2.x = saturate(r2.x * r0.z);
+  r2.xyz = LightingConsts[2].xyz * r2.xxx;
+  r2.w = dot(-r4.xyz, InstanceConsts[15].xyz);
+  r2.w = saturate(InstanceConsts[15].w + r2.w);
+  r2.w = r2.w * r2.w;
+  r0.w = max(r0.w, r0.y);
+  r0.z = saturate(r0.w * r0.z);
+  r0.w = -InstanceConsts[14].w + InstanceConsts[13].w;
+  r0.w = max(9.99999997e-007, r0.w);
+  r0.x = saturate(r0.x / r0.w);
+  r0.x = -1 + r0.x;
+  r0.x = -r0.x * r0.x + 1;
+  r0.x = sqrt(r0.x);
+  r0.xy = float2(1,1) + -r0.xy;
+  r0.x = r0.x * r0.z;
+  r0.x = r0.x * r2.w;
+  r0.xzw = r0.xxx * InstanceConsts[14].xyz + r3.xyz;
+  r2.w = 0.100000001 + -Globals[5].y;
+  r2.w = r2.w + r2.w;
+  r0.y = saturate(r2.w * r0.y);
+  r3.xyz = -LightingConsts[1].xyz + LightingConsts[0].xyz;
+  r3.xyz = r0.yyy * r3.xyz + LightingConsts[1].xyz;
+  r0.y = 8 * v3.x;
+  r2.xyz = r2.xyz * r0.yyy;
+  r2.xyz = r3.xyz * InstanceConsts[16].www + r2.xyz;
+  r0.xyz = r0.xzw * InstanceConsts[16].yyy + r2.xyz;
+  r0.xyz = v2.www * float3(32,32,32) + r0.xyz;
+  r0.w = dot(r0.xzy, float3(0.300000012,0.300000012,0.400000006));
+  r0.xyz = r0.xyz + -r0.www;
+  r0.xyz = InstanceConsts[16].zzz * r0.xyz + r0.www;
+  o2.xyz = r1.xyz * r0.xyz;
+  o2.w = r1.w;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer GlobalConstants
+// {
+//
+//   float4 Globals[20];                // Offset:    0 Size:   320
+//   row_major float4x4 ShadowTransform[3];// Offset:  320 Size:   192 [unused]
+//
+// }
+//
+// cbuffer cbInstanceConsts
+// {
+//
+//   float4 InstanceConsts[22];         // Offset:    0 Size:   352
+//
+// }
+//
+// cbuffer cbLightingConsts
+// {
+//
+//   float4 LightingConsts[4];          // Offset:    0 Size:    64
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// GlobalConstants                   cbuffer      NA          NA    0        1
+// cbInstanceConsts                  cbuffer      NA          NA    1        1
+// cbLightingConsts                  cbuffer      NA          NA    2        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// POSITION                 0   xyz         0     NONE   float   xy  
+// COLOR                    0   xyzw        1     NONE   float   xyzw
+// COLOR                    1   xyzw        2     NONE   float   xyzw
+// TEXCOORD                 0   xyzw        3     NONE   float   x   
+// TEXCOORD                 1   xy          4     NONE   float   xy  
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float   xyzw
+// TEXCOORD                 0   xy          1     NONE   float   xy  
+// COLOR                    0   xyzw        2     NONE   float   xyzw
+//
+vs_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb0[9], immediateIndexed
+dcl_constantbuffer cb1[18], immediateIndexed
+dcl_constantbuffer cb2[3], immediateIndexed
+dcl_input v0.xy
+dcl_input v1.xyzw
+dcl_input v2.xyzw
+dcl_input v3.x
+dcl_input v4.xy
+dcl_output_siv o0.xyzw, position
+dcl_output o1.xy
+dcl_output o2.xyzw
+dcl_temps 5
+mul r0.xy, v0.xyxx, cb1[0].xyxx
+mov r0.zw, l(0,0,0,1.000000)
+mul r1.xyzw, v1.xyzw, cb1[17].xyzw
+lt r2.x, r1.w, l(0.010000)
+movc o0.xyzw, r2.xxxx, l(-1.000000,-1.000000,-1.000000,1.000000), r0.xyzw
+mul o1.xy, v4.xyxx, l(1.999939, 1.999939, 0.000000, 0.000000)
+add r0.xyz, -cb0[4].xyzx, cb1[7].xyzx
+dp3 r0.w, r0.xyzx, r0.xyzx
+rsq r2.x, r0.w
+sqrt r0.w, r0.w
+add r0.w, r0.w, -cb1[8].w
+mul r0.xyz, r0.xyzx, r2.xxxx
+dp3 r2.x, -r0.xyzx, cb1[9].xyzx
+add_sat r2.x, r2.x, cb1[9].w
+mul r2.x, r2.x, r2.x
+add r2.y, cb1[7].w, -cb1[8].w
+max r2.y, r2.y, l(0.000001)
+div_sat r0.w, r0.w, r2.y
+add r0.w, r0.w, l(-1.000000)
+mad r0.w, -r0.w, r0.w, l(1.000000)
+sqrt r0.w, r0.w
+lt r2.y, l(0.000000), cb1[16].x
+lt r2.z, cb1[16].x, l(0.000000)
+iadd r2.y, r2.z, -r2.y
+itof r2.y, r2.y
+eq r2.z, cb1[16].x, l(0.000000)
+movc r2.y, r2.z, l(1.000000), r2.y
+mul r2.yzw, r2.yyyy, cb0[5].xxyz
+dp3 r0.x, r0.xyzx, r2.yzwy
+add r3.xyz, v2.xyzx, l(-0.500000, -0.500000, -0.500000, 0.000000)
+add r3.xyz, r3.xyzx, r3.xyzx
+dp3 r0.y, r3.xyzx, r3.xyzx
+sqrt r0.y, r0.y
+add r0.yzw, -r0.yyyw, l(0.000000, 1.000000, 2.000000, 1.000000)
+max r0.x, r0.y, r0.x
+div r0.z, l(1.000000, 1.000000, 1.000000, 1.000000), r0.z
+mul_sat r0.x, r0.z, r0.x
+mul r0.x, r0.x, r0.w
+mul r0.x, r2.x, r0.x
+mul r3.xyz, r0.xxxx, cb1[8].xyzx
+add r0.x, cb1[4].w, -cb1[5].w
+max r0.x, r0.x, l(0.000001)
+add r4.xyz, -cb0[4].xyzx, cb1[4].xyzx
+dp3 r0.w, r4.xyzx, r4.xyzx
+sqrt r2.x, r0.w
+rsq r0.w, r0.w
+mul r4.xyz, r0.wwww, r4.xyzx
+add r0.w, r2.x, -cb1[5].w
+div_sat r0.x, r0.w, r0.x
+add r0.x, r0.x, l(-1.000000)
+mad r0.x, -r0.x, r0.x, l(1.000000)
+sqrt r0.x, r0.x
+add r0.x, -r0.x, l(1.000000)
+dp3 r0.w, r4.xyzx, r2.yzwy
+dp3 r2.x, -r4.xyzx, cb1[6].xyzx
+add_sat r2.x, r2.x, cb1[6].w
+mul r2.x, r2.x, r2.x
+max r0.w, r0.y, r0.w
+mul_sat r0.w, r0.z, r0.w
+mul r0.x, r0.w, r0.x
+mul r0.x, r2.x, r0.x
+mad r3.xyz, r0.xxxx, cb1[5].xyzx, r3.xyzx
+add r0.x, cb1[10].w, -cb1[11].w
+max r0.x, r0.x, l(0.000001)
+add r4.xyz, -cb0[4].xyzx, cb1[10].xyzx
+dp3 r0.w, r4.xyzx, r4.xyzx
+sqrt r2.x, r0.w
+rsq r0.w, r0.w
+mul r4.xyz, r0.wwww, r4.xyzx
+add r0.w, r2.x, -cb1[11].w
+div_sat r0.x, r0.w, r0.x
+add r0.x, r0.x, l(-1.000000)
+mad r0.x, -r0.x, r0.x, l(1.000000)
+sqrt r0.x, r0.x
+add r0.x, -r0.x, l(1.000000)
+dp3 r0.w, r4.xyzx, r2.yzwy
+dp3 r2.x, -r4.xyzx, cb1[12].xyzx
+add_sat r2.x, r2.x, cb1[12].w
+mul r2.x, r2.x, r2.x
+max r0.w, r0.y, r0.w
+mul_sat r0.w, r0.z, r0.w
+mul r0.x, r0.w, r0.x
+mul r0.x, r2.x, r0.x
+mad r3.xyz, r0.xxxx, cb1[11].xyzx, r3.xyzx
+add r4.xyz, -cb0[4].xyzx, cb1[13].xyzx
+dp3 r0.x, r4.xyzx, r4.xyzx
+rsq r0.w, r0.x
+sqrt r0.x, r0.x
+add r0.x, r0.x, -cb1[14].w
+mul r4.xyz, r0.wwww, r4.xyzx
+dp3 r0.w, r4.xyzx, r2.yzwy
+dp3_sat r2.x, r2.yzwy, -cb0[8].xyzx
+add r2.x, r0.y, r2.x
+mul_sat r2.x, r0.z, r2.x
+mul r2.xyz, r2.xxxx, cb2[2].xyzx
+dp3 r2.w, -r4.xyzx, cb1[15].xyzx
+add_sat r2.w, r2.w, cb1[15].w
+mul r2.w, r2.w, r2.w
+max r0.w, r0.y, r0.w
+mul_sat r0.z, r0.z, r0.w
+add r0.w, cb1[13].w, -cb1[14].w
+max r0.w, r0.w, l(0.000001)
+div_sat r0.x, r0.x, r0.w
+add r0.x, r0.x, l(-1.000000)
+mad r0.x, -r0.x, r0.x, l(1.000000)
+sqrt r0.x, r0.x
+add r0.xy, -r0.xyxx, l(1.000000, 1.000000, 0.000000, 0.000000)
+mul r0.x, r0.z, r0.x
+mul r0.x, r2.w, r0.x
+mad r0.xzw, r0.xxxx, cb1[14].xxyz, r3.xxyz
+add r2.w, -cb0[5].y, l(0.100000)
+add r2.w, r2.w, r2.w
+mul_sat r0.y, r0.y, r2.w
+add r3.xyz, cb2[0].xyzx, -cb2[1].xyzx
+mad r3.xyz, r0.yyyy, r3.xyzx, cb2[1].xyzx
+mul r0.y, v3.x, l(8.000000)
+mul r2.xyz, r0.yyyy, r2.xyzx
+mad r2.xyz, r3.xyzx, cb1[16].wwww, r2.xyzx
+mad r0.xyz, r0.xzwx, cb1[16].yyyy, r2.xyzx
+mad r0.xyz, v2.wwww, l(32.000000, 32.000000, 32.000000, 0.000000), r0.xyzx
+dp3 r0.w, r0.xzyx, l(0.300000, 0.300000, 0.400000, 0.000000)
+add r0.xyz, -r0.wwww, r0.xyzx
+mad r0.xyz, cb1[16].zzzz, r0.xyzx, r0.wwww
+mul o2.xyz, r0.xyzx, r1.xyzx
+mov o2.w, r1.w
+ret 
+// Approximately 126 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
