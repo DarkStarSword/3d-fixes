@@ -1,4 +1,5 @@
-//Sun
+//Sun glare and blue light in races
+// Little lights bloom
 cbuffer GlobalConstants : register(b0)
 {
   float4 Globals[20] : packoffset(c0);
@@ -39,7 +40,10 @@ void main(
   o0.xyzw = r2.xxxx ? float4(-1,-1,-1,1) : r0.xyzw;
   
   float4 stereo = StereoParams.Load(0);
-  o0.x += stereo.x * 0.3;
+  //if (o0.w != 1)
+  //{
+  o0.x -= stereo.x * (o0.w - stereo.y)/2;  //good fix
+  //}
   
   o1.xy = float2(1.99993896,1.99993896) * v4.xy;
   r0.xyz = InstanceConsts[7].xyz + -Globals[4].xyz;
@@ -368,3 +372,4 @@ ret
 // Approximately 126 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+   

@@ -29,18 +29,21 @@ void main(
     
   if (o0.w != 1)
   {
-  o0.x -= stereo.x * (o0.w - stereo.y) * iniParams.y;
+  o0.x -= stereo.x * (o0.w - stereo.y) * (1-iniParams.y); //Fix water, food, junk icons
   }
   
   float4 tex_filter = IniParams.Load(int2(2,0));
   if (tex_filter.x == 2)
-  { 
-   if (o0.x > -0.60)
-    //(o0.x > -0.6 && o0.y > -0.58) --> Minimap and top left text exluded
-    {
-	 o0.x += stereo.x * iniParams.y;
-    }
+  {
+   //if (o0.x > -0.6) //big square to the right
+   //{
+   //o0.x += stereo.x * iniParams.y; //Fix Target icons
+   //}
 	
+	if (o0.x < 1 && o0.x > -1 && o0.y > -0.46 && o0.y < 0.76) //square to the left excluding minimap and top left text
+	{
+	o0.x += stereo.x * iniParams.y; //Fix Target icons
+	}
    }
 	
   return;
@@ -103,4 +106,4 @@ ret
 // Approximately 6 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-      
+       
