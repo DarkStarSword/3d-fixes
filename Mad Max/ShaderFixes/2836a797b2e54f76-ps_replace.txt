@@ -1,4 +1,4 @@
-//Lights PS 2
+//Lights PS 2 + environment map reflections on water + specular highlights from sun
 //VS 346aa0e5f6b29dc8
 //PS d09b2165321f05cf
 cbuffer GlobalConstants : register(b0)
@@ -130,10 +130,30 @@ void main(
     r2.z = 0;
     r18.z = 0;
     r18.xzw = saturate(r0.yyy ? r2.xzz : r18.zxx);
+
+// The rest of the uses of v2 in this shader are for effects that should be
+// moved to infinity, like environment map reflections and reflections of the
+// sun. It's important we do it at this point so that r0.y will be correct,
+// otherwise the reflections of the sun & other lights will be out as the
+// camera is rotated.
+
+// There's a few places where v2 is used that I'm not sure about as nothing
+// seemed to change. Need to keep an eye out for anything that might break by
+// adjusting them to infinity.
+
+tmp = mul(float4(v2.xyz, 1), vp);
+tmp.x -= stereo.x * tmp.w;
+v2.xyz = mul(tmp, ivp).xyz;
+
     r0.y = dot(-v2.xyz, -v2.xyz);
     r0.y = rsqrt(r0.y);
+
+// r19.xyz controlls environment map reflections:
     r19.xyz = -v2.xyz * r0.yyy;
+
+// No apparent change when correcting r20.xyz:
     r20.xyz = -v2.xyz * r0.yyy + -r15.xyz;
+
     r15.xyz = r17.xxx * r20.xyz + r15.xyz;
     r2.x = dot(r15.xyz, r15.xyz);
     r2.x = rsqrt(r2.x);
@@ -150,7 +170,10 @@ void main(
     r21.y = min(0.400000006, r21.x);
     r17.xz = r4.ww ? r21.xy : 0;
     r4.w = r18.y * 4 + 9.99999975e-005;
+
+// r21.xyz controls sun reflection:
     r21.xyz = -v2.xyz * r0.yyy + -Globals[3].xyz;
+
     r5.w = dot(r21.xyz, r21.xyz);
     r5.w = rsqrt(r5.w);
     r21.xyz = r21.xyz * r5.www;
@@ -303,7 +326,11 @@ void main(
     r3.w = 0.25 + r2.w;
     r3.w = 0.800000012 * r3.w;
     r2.w = saturate(r4.y ? r3.w : r2.w);
+
+// r4.xyw is another reflection similar to the sun... not entirely sure what is
+// being reflected though.
     r4.xyw = -v2.xyz * r0.yyy + Constants[18].xyz;
+
     r3.w = dot(r4.xyw, r4.xyw);
     r3.w = rsqrt(r3.w);
     r4.xyw = r4.xyw * r3.www;
@@ -341,7 +368,10 @@ void main(
       r2.zw = Constants[31].xy * r2.zw;
       r1.w = r2.z + r2.w;
       r10.xyz = r13.xyz * r1.www;
+
+// No apparent change when correcting r11.xyz:
       r11.xyz = -v2.xyz * r0.yyy + Constants[28].xyz;
+
       r0.y = dot(r11.xyz, r11.xyz);
       r0.y = rsqrt(r0.y);
       r11.xyz = r11.xyz * r0.yyy;
