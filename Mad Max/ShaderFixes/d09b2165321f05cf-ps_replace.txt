@@ -49,8 +49,6 @@ matrix ivp : TEXCOORD6
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-
 // Sample depth buffer for this pixel:
   r0.x = Depth.Sample(SamplerStateRegular_s, v1.xy).x;
 
@@ -71,6 +69,7 @@ float4 stereo = StereoParams.Load(0);
   r1.xyz = v2.xyz * r0.xxx;
 
 // Correct shadow placement:
+float4 stereo = StereoParams.Load(0);
 float4 tmp = mul(float4(r1.xyz, 1), vp);
 tmp.x -= stereo.x * (tmp.w - stereo.y);
 r1.xyz = mul(tmp, ivp).xyz;
@@ -177,6 +176,12 @@ r2.xyz = r1.xyz + Globals[4].xyz;
     r18.z = 0;
     r19.z = 0;
     r18.xyz = saturate(r0.yyy ? r18.xzz : r19.zxx);
+	
+	//Only this part is new for reflections
+   tmp = mul(float4(v2.xyz, 1), vp);
+   tmp.x -= stereo.x * tmp.w;
+   v2.xyz = mul(tmp, ivp).xyz;
+
     r0.y = dot(-v2.xyz, -v2.xyz);
     r0.y = rsqrt(r0.y);
     r19.xzw = -v2.xyz * r0.yyy;
@@ -997,3 +1002,4 @@ ret
 // Approximately 401 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 
