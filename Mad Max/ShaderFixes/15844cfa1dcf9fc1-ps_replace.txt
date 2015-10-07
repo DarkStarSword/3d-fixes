@@ -34,7 +34,13 @@ void main(
   noperspective float4 v0 : SV_Position0, // Decompiler bug
   float4 v1 : TEXCOORD0,
   noperspective float3 v2 : TEXCOORD1, // Decompiler bug
-  out float4 o0 : SV_Target0)
+  out float4 o0 : SV_Target0,
+
+// Extra input from vertex shader:
+matrix vp : TEXCOORD2,
+matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10;
   uint4 bitmask, uiDest;
@@ -47,6 +53,12 @@ void main(
   r1.y = 1 / r1.y;
 
 float depth = r1.y;
+
+// Correct v2 to fix some lights:
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(float4(v2.xyz * depth, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+v2.xyz = mul(tmp, ivp).xyz / depth;
 
   r1.yzw = -r1.yyy * v2.xyz + InstanceConsts[0].xyz;
   r2.x = dot(r1.yzw, r1.yzw);
@@ -145,7 +157,6 @@ float depth = r1.y;
 // Correct shadow placement. Slight variation of the nvidia formula - we are
 // doing the perspective divide ourselves and dividing by 2 (presumably to
 // account for texture coordinates).
-float4 stereo = StereoParams.Load(0);
 r0.x -= stereo.x * (depth - stereo.y) / depth / 2;
 
   r8.xyzw = InstanceConsts[9].xyzw * r0.xxxx + InstanceConsts[12].xyzw;
