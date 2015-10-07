@@ -1,3 +1,5 @@
+// Point lights on roof/wall with shadow in second stronghold
+// VS 7c59508583f977c3
 
 cbuffer GlobalConstants : register(b0)
 {
@@ -28,10 +30,16 @@ Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
 void main( 
-  float4 v0 : SV_Position0,
+  noperspective float4 v0 : SV_Position0,
   float4 v1 : TEXCOORD0,
-  float3 v2 : TEXCOORD1,
-  out float4 o0 : SV_Target0)
+  noperspective float3 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+
+// Extra input from vertex shader:
+matrix vp : TEXCOORD2,
+matrix ivp : TEXCOORD6
+
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6;
   uint4 bitmask, uiDest;
@@ -44,7 +52,16 @@ void main(
   r0.w = Depth.Sample(SamplerStateRegular_s, r0.yz).x;
   r0.w = r0.w * TypeConsts[0].x + TypeConsts[0].y;
   r0.w = 1 / r0.w;
-  r1.xyz = -r0.www * v2.xyz + InstanceConsts[0].xyz;
+
+// Fix shadow placement:
+  //r1.xyz = -r0.www * v2.xyz + InstanceConsts[0].xyz;
+  r1.xyz = r0.www * v2.xyz;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(float4(r1.xyz, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r1.xyz = -mul(tmp, ivp).xyz + InstanceConsts[0].xyz;
+
   r0.w = dot(r1.xyz, r1.xyz);
   r1.w = rsqrt(r0.w);
   r0.w = sqrt(r0.w);
