@@ -52,14 +52,14 @@ matrix im : TEXCOORD6
 
 // Multiplying by depth for view space coords?
 // Need to adjust before subtracting InstanceConsts[4]
-  // r0.xyz = v2.xyz * r0.xxx + -InstanceConsts[4].xyz;
-r0.xyz = v2.xyz * r0.xxx;
+  // r0.yzw = v2.xyz * r0.xxx + -InstanceConsts[4].xyz;
+r0.yzw = v2.xyz * r0.xxx;
 
 // Correct decal placement:
 float4 stereo = StereoParams.Load(0);
 float4 tmp = mul(float4(r0.xyz, 1), im);
 tmp.x -= stereo.x * (tmp.w - stereo.y);
-r0.xyz = mul(tmp, m) - InstanceConsts[4].xyz;
+r0.yzw = mul(tmp, m) - InstanceConsts[4].xyz;
 
   r1.xy = v2.xz * r0.xx + Globals[4].xz;
   r1.xy = r1.xy * float2(3.05175781e-005,3.05175781e-005) + float2(0.5,0.5);
