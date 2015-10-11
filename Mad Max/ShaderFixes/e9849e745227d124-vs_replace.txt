@@ -16,6 +16,12 @@ cbuffer cbLightingConsts : register(b2)
   float4 LightingConsts[4] : packoffset(c0);
 }
 
+// Copied from pixel shader using 3DMigoto to get depth information:
+cbuffer cbInstanceConsts : register(b13)
+{
+  float4 PSInstanceConsts[2] : packoffset(c0);
+}
+
 Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
@@ -38,13 +44,22 @@ void main(
   r1.xyzw = InstanceConsts[17].xyzw * v1.xyzw;
   r2.x = r1.w < 0.00999999978;
   o0.xyzw = r2.xxxx ? float4(-1,-1,-1,1) : r0.xyzw;
-  
-  float4 stereo = StereoParams.Load(0);
-  //if (o0.w != 1)
-  //{
-  o0.x -= stereo.x * (o0.w - stereo.y)/2;  //good fix
-  //}
-  
+
+// The vertex shader does not normally have access to the depth of the light,
+// making it impossible to fix accurately. However, the pixel shader does have
+// access to the depth which it compares to the the depth buffer to determine
+// the opacity of the bloom/flare. We can use 3DMigoto (starting from version
+// 1.2.4) to copy the constant buffer from the pixel shader to the vertex
+// shader to get the depth so we can now position it accurately.
+//
+// The scale is from the depth buffer, so we multiply and add constant values
+// obtained from other shaders using frame analysis. Ideally we should copy
+// these from elsewhere as well (in case they can change), but for now...
+
+float4 stereo = StereoParams.Load(0);
+float depth = 1 / (PSInstanceConsts[0].z * 9.9999752 + 0.000025);
+o0.x += stereo.x * (depth - stereo.y) / depth;
+
   o1.xy = float2(1.99993896,1.99993896) * v4.xy;
   r0.xyz = InstanceConsts[7].xyz + -Globals[4].xyz;
   r0.w = dot(r0.xyz, r0.xyz);
