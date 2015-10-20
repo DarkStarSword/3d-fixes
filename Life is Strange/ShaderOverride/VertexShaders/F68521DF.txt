@@ -55,11 +55,13 @@
     dcl_position o6
 
 def c220, 0, 1, 0.0625, 0.5
+def c221, 50, 0, 0, 0
 dcl_2d s3
 
 dcl_2d s2 // Copy of SceneColorTexture, depth is in w
 defi i0, 255, 0, 0, 0
 def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
+def c40, 0.0625, 0, 9.99999975e-006, 100000
 
     mul r0, c7, v0.y
     mad r0, c6, v0.x, r0
@@ -204,13 +206,19 @@ if_eq r30.x, c220.y
 	rcp r22.w, r3.w
 	mul r22.xy, r3.xy, r22.w
 
-	// near = -MinZ_MaxZRatio.x / MinZ_MaxZRatio.y
-	rcp r31.w, c150.y
-	mul r20.w, -c150.x, r31.w
+	// near clipping plane
+	//mov r20.w, c221.x // start at 50.0
+	mov r31.w, c40.z
+	add r31.w, r31.w, -c220.y
+	add r31.w, r31.w, c150.y
+	rcp r31.w, r31.w
+	mul r20.w, r31.w, -c150.x
 
-	// offset = (near - convergence * separation)
+	// offset = separation * (near - convergence) / near
 	add r31.w, r20.w, -r31.y
 	mul r20.x, r31.w, r31.x
+	rcp r31.w, r20.w
+	mul r20.x, r20.x, r31.w
 
 	// Total distance to cover
 	// distance = separation - starting X offset:
@@ -247,12 +255,12 @@ if_eq r30.x, c220.y
 		if_ne r5.w, c220.y
 			// scale depth buffer to world Z (game dependent - look for scaling applied to
 			// the depth buffer wherever else it is used. In the case of UE3 we use
-			// MinZ_MaxZRatio):
-			mov r5.y, c220.y
-			add r5.x, r5.y, -c150.y
-			add r5.x, -r5.x, r5.w
+			// MinZ_MaxZRatio, but seems to vary per game):
+			add r5.x, r5.w, -c150.y
+			add r5.y, -r5.x, c40.z
 			rcp r5.x, r5.x
-			mul r5.x, r5.x, -c150.x
+			//cmp r5.x, r5.y, c40.w, r5.x
+			mul r5.x, r5.x, c150.x
 
 			// If the sampled depth is closer than the calculated depth, exit the loop:
 			break_ge r20.w, r5.x
