@@ -9,7 +9,7 @@ Fixed
 - Shadows
 - Light shafts
 - Decals
-- Bloom
+- Bloom (using depth buffer - press H for alternate infinity adjustment)
 - Fog
 
 Installation
