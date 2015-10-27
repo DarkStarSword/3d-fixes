@@ -1,6 +1,19 @@
 Viscera Cleanup Detail (including Santa's Rampage & Shadow Warrior)
 ===================================================================
 
+Update 2015-10-28
+-----------------
+Since the game has now left early access I've polished off a few things in the
+fix to celebrate:
+
+- Better approximate fix for bloom by using the depth buffer
+- Fixed bloom transparency in some places
+- More accurate fix for multi-pass fog volume density (e.g. Zero-G level)
+- Fixed trapdoor in office
+- Added a toggle key for the Personal Identification Device' text depth (X)
+- Added ] key to disable object highlight correction (in case it causes
+  problems for anyone)
+
 Fixed
 -----
 - UI menus and in-game screens
