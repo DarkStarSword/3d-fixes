@@ -101,6 +101,116 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
     mad r3, c0, r0.x, r3
     mad r3, c2, r0.z, r3
     mad r3, c3, r0.w, r3
+
+// We do the adjustment at this point so we fix both the position and texcoord
+// to fix opacity based on the depth buffer.
+
+// Some halos are ok, some are broken. Broken ones have a constant W value of
+// approximately 11.11, so check the depth is around that value.
+mov r30.x, c220.x
+if_ge r3.w, c221.x
+	if_le r3.w, c221.y
+		// Broken halo
+		mov r20, c200
+		if_eq r20.y, c220.x
+			// move based on depth buffer:
+			mov r30.x, c220.y
+		else
+			// move to infintiy buffer:
+			mov r30.x, c220.w
+		endif
+	endif
+endif
+
+texldl r31, c220.z, s3
+
+if_eq r30.x, c220.w
+	mad r3.x, r31.x, r31.y, r3.x
+endif
+if_eq r30.x, c220.y
+	// Auto depth: sample a number of points on the depth buffer to
+	// determine an appropriate depth for this object, starting at the near
+	// clipping plane and working towards original x + separation.
+	//
+	// You can think of this as a line in three dimensional space that
+	// starts at each eye and stretches out towards infinity. We sample 255
+	// points along this line (evenly spaced in the X axis) and compare
+	// with the depth buffer to find where the line is first intersected.
+	//
+	// Based on DarkStarSword's stereo crosshair code originally developed
+	// for Miasmata, adapted to HLSL and made to use coordinates other than
+	// (0,0), then adapted back to assembly for UE3.
+
+	// Screen depth coordinates to sample around - Just using current
+	// vertex for now. Would be better to use the center, but we can't look
+	// up other vertices and the matrices don't seem to help find it:
+	rcp r22.w, r3.w
+	mul r22.xy, r3.xy, r22.w
+
+	// near = -MinZ_MaxZRatio.x / MinZ_MaxZRatio.y
+	rcp r31.w, c150.y
+	mul r20.w, -c150.x, r31.w
+
+	// offset = (near - convergence * separation)
+	add r31.w, r20.w, -r31.y
+	mul r20.x, r31.w, r31.x
+
+	// Total distance to cover
+	// distance = separation - starting X offset:
+	add r20.y, r31.x, -r20.x
+
+	// old_offset = offset
+	mov r21.x, r20.x
+
+	// Precompute some constants:
+	// separation * convergence:
+	mul r31.w, r31.x, r31.y
+	// distance / 255:
+	mul r20.z, r20.y, c227.x
+
+	rep i0
+		// offset += distance / 255:
+		add r20.x, r20.x, r20.z
+
+		// Calculate W for this adjustment amount:
+		// w = (separation * convergence) / (separation - offset):
+		add r20.w, r31.x, -r20.x
+		rcp r20.w, r20.w
+		mul r20.w, r31.w, r20.w
+
+		// sample_x = x + offset, sample_y = -y
+		mov r23.y, -r22.y
+		add r23.x, r22.x, r20.x
+		// Convert to texture coordinates (coords / 2 + 0.5):
+		mad r23.xy, r23.xy, c220.w, c220.w
+		// Sample depth buffer:
+		texldl r5, r23.xy, s2
+
+		// Ignore reads of 1.0:
+		if_ne r5.w, c220.y
+			// scale depth buffer to world Z (game dependent - look for scaling applied to
+			// the depth buffer wherever else it is used. In the case of UE3 we use
+			// MinZ_MaxZRatio):
+			mov r5.y, c220.y
+			add r5.x, r5.y, -c150.y
+			add r5.x, -r5.x, r5.w
+			rcp r5.x, r5.x
+			mul r5.x, r5.x, -c150.x
+
+			// If the sampled depth is closer than the calculated depth, exit the loop:
+			break_ge r20.w, r5.x
+		endif
+
+		// old_offset = offset
+		mov r21.x, r20.x
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r31.w, r3.w, -r31.y
+	mad r3.x, -r31.w, r31.x, r3.x
+	mad r3.x, r21.x, r3.w, r3.x
+endif
+
     add r0.w, r3.z, c28.x
     add r1.w, r0.w, c6.x
     log r1.w, r1.w
@@ -119,7 +229,7 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
     mul r0.w, r0.w, c6.w
     mad r3.x, r0.w, c29.x, r3.x
     mul r0.w, r3.w, c15.z
-    mad r10.xy, r0.w, c15, r3
+    mad o6.xy, r0.w, c15, r3
     mad r5.xyw, r0.xyzz, -c4.w, c4.xyzz
     dp3 o4.x, r1, r5.xyww
     dp3 o4.y, r2, r5.xyww
@@ -238,111 +348,4 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
     mov o2, v5
     mov o4.w, c28.z
     mov o5, r3
-    mov r10.zw, r3
-
-// Some halos are ok, some are broken. Broken ones have a constant W value of
-// approximately 11.11, so check the depth is around that value.
-mov r30.x, c220.x
-if_ge r10.w, c221.x
-	if_le r10.w, c221.y
-		// Broken halo
-		mov r20, c200
-		if_eq r20.y, c220.x
-			// move based on depth buffer:
-			mov r30.x, c220.y
-		else
-			// move to infintiy buffer:
-			mov r30.x, c220.w
-		endif
-	endif
-endif
-
-texldl r31, c220.z, s3
-
-if_eq r30.x, c220.w
-	mad r10.x, r31.x, r31.y, r10.x
-endif
-if_eq r30.x, c220.y
-	// Auto depth: sample a number of points on the depth buffer to
-	// determine an appropriate depth for this object, starting at the near
-	// clipping plane and working towards original x + separation.
-	//
-	// You can think of this as a line in three dimensional space that
-	// starts at each eye and stretches out towards infinity. We sample 255
-	// points along this line (evenly spaced in the X axis) and compare
-	// with the depth buffer to find where the line is first intersected.
-	//
-	// Based on DarkStarSword's stereo crosshair code originally developed
-	// for Miasmata, adapted to HLSL and made to use coordinates other than
-	// (0,0), then adapted back to assembly for UE3.
-
-	// Screen depth coordinates to sample around - Just using current
-	// vertex for now. Would be better to use the center, but we can't look
-	// up other vertices and the matrices don't seem to help find it:
-	rcp r22.w, r10.w
-	mul r22.xy, r10.xy, r22.w
-
-	// near = -MinZ_MaxZRatio.x / MinZ_MaxZRatio.y
-	rcp r31.w, c150.y
-	mul r20.w, -c150.x, r31.w
-
-	// offset = (near - convergence * separation)
-	add r31.w, r20.w, -r31.y
-	mul r20.x, r31.w, r31.x
-
-	// Total distance to cover
-	// distance = separation - starting X offset:
-	add r20.y, r31.x, -r20.x
-
-	// old_offset = offset
-	mov r21.x, r20.x
-
-	// Precompute some constants:
-	// separation * convergence:
-	mul r31.w, r31.x, r31.y
-	// distance / 255:
-	mul r20.z, r20.y, c227.x
-
-	rep i0
-		// offset += distance / 255:
-		add r20.x, r20.x, r20.z
-
-		// Calculate W for this adjustment amount:
-		// w = (separation * convergence) / (separation - offset):
-		add r20.w, r31.x, -r20.x
-		rcp r20.w, r20.w
-		mul r20.w, r31.w, r20.w
-
-		// sample_x = x + offset, sample_y = -y
-		mov r23.y, -r22.y
-		add r23.x, r22.x, r20.x
-		// Convert to texture coordinates (coords / 2 + 0.5):
-		mad r23.xy, r23.xy, c220.w, c220.w
-		// Sample depth buffer:
-		texldl r5, r23.xy, s2
-
-		// Ignore reads of 1.0:
-		if_ne r5.w, c220.y
-			// scale depth buffer to world Z (game dependent - look for scaling applied to
-			// the depth buffer wherever else it is used. In the case of UE3 we use
-			// MinZ_MaxZRatio):
-			mov r5.y, c220.y
-			add r5.x, r5.y, -c150.y
-			add r5.x, -r5.x, r5.w
-			rcp r5.x, r5.x
-			mul r5.x, r5.x, -c150.x
-
-			// If the sampled depth is closer than the calculated depth, exit the loop:
-			break_ge r20.w, r5.x
-		endif
-
-		// old_offset = offset
-		mov r21.x, r20.x
-	endrep
-
-	// Finally adjust the X coordinate:
-	add r31.w, r10.w, -r31.y
-	mad r10.x, -r31.w, r31.x, r10.x
-	mad r10.x, r21.x, r10.w, r10.x
-endif
-mov o6, r10
+    mov o6.zw, r3
