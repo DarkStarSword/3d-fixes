@@ -24,12 +24,16 @@ Do not manually adjust the separation - doing so will cause object highlights
 and Molotov cocktails to become misaligned! Four separation presets are
 provided on the backslash key as an alternative.
 
+If the object highlights are still misaligned after pressing backslash, try
+pressing ] to disable the correction. If neither way works, let me know.
+
 Known Issues
 ------------
-Some object highlights and Molotov cocktails are misaligned (to the right) when
-3D is disabled. This appears to be a driver issue as it happens whenever 3D is
-enabled in the control panel and the fix will counter this problem, but only
-while 3D is enabled and using the provided separation presets.
+- Some object highlights and Molotov cocktails are misaligned (to the right)
+  when 3D is disabled. This appears to be a driver issue as it happens whenever
+  3D is enabled in the control panel and the fix will counter this problem, but
+  only while 3D is enabled and using the provided separation presets.
 
-If you instead notice this misalignment happening to the left while 3D is
-enabled, please let me know.
+- Some of the default nvidia key bindings affect this game, e.g. adjusting
+  separation with Ctrl+F4 will freeze the physics (press F4 a second time to
+  fix)
