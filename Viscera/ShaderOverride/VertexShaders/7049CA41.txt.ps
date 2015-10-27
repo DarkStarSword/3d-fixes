@@ -56,11 +56,17 @@ mul r2, r2, r10.wwww
 mov r31, c251
 if_eq r31.x, c220.y
 	// Matched whitelisted font used for personal identification tags -
-	// only part of the UI we want to adjust, but we want to adjust this to
-	// a fixed depth in the scene to roughly match the tag instead of the
-	// usual UI depth adjustment we do, so multiply the whole coordinate by
-	// the desired depth:
-	mul r2, r2, c220.w
+	// only part of the UI we want to adjust, but even with texture
+	// filtering and pixel shader filtering this still matches some things
+	// we want to leave alone, so use a keybinding to enable it:
+	mov r30, c200
+	if_eq r30.w, c220.y
+		// We want to adjust this to a fixed depth in the scene to
+		// roughly match the tag instead of the usual UI depth
+		// adjustment we do, so multiply the whole coordinate by the
+		// desired depth:
+		mul r2, r2, c220.w
+	endif
 else
 	texldl r31, c220.z, s3
 	mad r2.x, r31.x, c200.z, r2.x

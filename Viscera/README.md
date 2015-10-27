@@ -4,7 +4,8 @@ Viscera Cleanup Detail (including Santa's Rampage & Shadow Warrior)
 Fixed
 -----
 - UI menus and in-game screens
-- Text on personal identification tags moved to depth
+- Text on personal identification tags can be moved to depth by pressing X
+  (breaks some displays, such as the one in the office)
 - Object highlights
 - Molotov Cocktails (in Santa's Rampage)
 - Shadows
