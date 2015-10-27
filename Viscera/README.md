@@ -6,6 +6,9 @@ Update 2015-10-28
 Since the game has now left early access I've polished off a few things in the
 fix to celebrate:
 
+- Moved environmental reflections to infinity. Makes a dramatic visual
+  improvement to some of the more shiny levels, particularly Revolutionary
+  Robotics and Paintenance Tunnels.
 - Better approximate fix for bloom by using the depth buffer
 - Fixed bloom transparency in some places
 - More accurate fix for multi-pass fog volume density (e.g. Zero-G level)
@@ -24,6 +27,7 @@ Fixed
 - Decals
 - Bloom (using depth buffer - press H for alternate infinity adjustment)
 - Fog
+- Environmental reflections
 
 Installation
 ------------
