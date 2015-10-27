@@ -10,7 +10,7 @@ fix to celebrate:
 - Fixed bloom transparency in some places
 - More accurate fix for multi-pass fog volume density (e.g. Zero-G level)
 - Fixed trapdoor in office
-- Added a toggle key for the Personal Identification Device' text depth (X)
+- Adjusted Personal Identification Device' text depth (toggle with X)
 - Added ] key to disable object highlight correction (in case it causes
   problems for anyone)
 
@@ -36,12 +36,6 @@ Use the 32bit version of Viscera cleanup detail.
 Do not manually adjust the separation - doing so will cause object highlights
 and Molotov cocktails to become misaligned! Four separation presets are
 provided on the backslash key as an alternative.
-
-Personal Identification Device Text Depth
------------------------------------------
-Text on personal identification tags can be moved to depth by pressing X,
-however this will break some displays, such as the BitterMan 500 in the office.
-To fix this, move the cursor over the broken display and press X again.
 
 Known Issues
 ------------
