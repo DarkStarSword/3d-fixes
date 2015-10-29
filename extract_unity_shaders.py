@@ -787,7 +787,7 @@ def main():
         if digest in processed:
             continue
         processed.add(digest)
-        tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
+        tree = list(tokenise(data.decode('utf-8'))) # Wasn't sure of the encoding until I found a utf8 character in The Forest
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
 
