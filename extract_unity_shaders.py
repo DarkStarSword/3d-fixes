@@ -614,7 +614,8 @@ def add_shader_hash_fnv(sub_program):
 
 def add_shader_hash_gl_crc(sub_program):
     import zlib
-    sub_program.hash = zlib.crc32(sub_program.shader_asm.encode('utf-8'))
+    glsl = strip_glsl_tag(sub_program.shader_asm)
+    sub_program.hash = zlib.crc32(glsl.encode('utf-8'))
     sub_program.hash_type = 'gl_crc32'
     # Looks like the OpenGL wrapper does not pad these in the filenames:
     sub_program.hash_fmt = '%x'
@@ -710,6 +711,17 @@ def decode_unity_d3d11_shader(asm):
 
     return _decode_unity_d3d11_shader(asm)
 
+def strip_glsl_tag(glsl):
+    if glsl.startswith("!!GLES3"): # "gles3"
+        return glsl[7:]
+    if glsl.startswith("!!GLES"): # "gles"
+        return glsl[6:]
+    if glsl.startswith("!!GLSL"): # "opengl"
+        return glsl[6:]
+    if glsl.startswith("!!GL2x"): # "glcore"
+        return glsl[6:]
+    return glsl
+
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
@@ -731,7 +743,7 @@ def _export_shader(sub_program, headers, path_components):
         with open('%s.glsl' % dest, 'w') as f:
             f.write(headers)
             f.write('\n\n')
-            f.write(sub_program.shader_asm) # Don't indent_like_helix
+            f.write(strip_glsl_tag(sub_program.shader_asm))
     else:
         print('Extracting %s.txt...' % dest)
         with open('%s.txt' % dest, 'w') as f:
