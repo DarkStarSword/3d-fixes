@@ -209,8 +209,11 @@ def handle_shader_asm(token, parent, asm):
         parent.hash_type = shader_index[token][0].hash_type
         parent.hash_fmt = shader_index[token][0].hash_fmt
     else:
+        try:
+            add_shader_hash(parent)
+        except BogusShader:
+            return
         shader_index[token] = []
-        add_shader_hash(parent)
         if parent.hash:
             if parent.hash in hash_list:
                 if parent.hash_type == 'asm_crc32':
@@ -614,7 +617,7 @@ def add_shader_hash_fnv(sub_program):
 
 def add_shader_hash_gl_crc(sub_program):
     import zlib
-    glsl = strip_glsl_tag(sub_program.shader_asm)
+    glsl = fixup_glsl_like_unity(sub_program)
     sub_program.hash = zlib.crc32(glsl.encode('utf-8'))
     sub_program.hash_type = 'gl_crc32'
     # Looks like the OpenGL wrapper does not pad these in the filenames:
@@ -722,6 +725,27 @@ def strip_glsl_tag(glsl):
         return glsl[6:]
     return glsl
 
+class BogusShader(Exception): pass
+
+def fixup_glsl_like_unity(sub_program):
+    glsl = strip_glsl_tag(sub_program.shader_asm)
+    if not glsl:
+        # Fragment shaders appear to be bogus empty placeholders since they are
+        # really combined with vertex shaders. If this shader is empty raise an
+        # exception so we will throw it away. We will duplicate the vertex
+        # shaders elsewhere and rehash them to get pixel shaders.
+        raise BogusShader()
+    if sub_program.parent.name == 'vp':
+        define = '#define VERTEX'
+    elif sub_program.parent.name == 'fp':
+        define = '#define FRAGMENT'
+    else:
+        raise Exception("Unknown program type: %s" % shader.program.name)
+    if glsl.startswith("#version"):
+        version, glsl = glsl.split('\n', 1)
+        return '\n'.join((version, define, glsl))
+    return '\n'.join((define, glsl))
+
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
@@ -743,7 +767,7 @@ def _export_shader(sub_program, headers, path_components):
         with open('%s.glsl' % dest, 'w') as f:
             f.write(headers)
             f.write('\n\n')
-            f.write(strip_glsl_tag(sub_program.shader_asm))
+            f.write(fixup_glsl_like_unity(sub_program))
     else:
         print('Extracting %s.txt...' % dest)
         with open('%s.txt' % dest, 'w') as f:
@@ -863,6 +887,18 @@ def main():
                     traceback.print_exc()
                     time.sleep(0.1)
                     continue
+
+    for shaders in list(shader_index.values()):
+        for shader in shaders:
+            if not is_opengl_shader(shader):
+                continue
+            # Not a full deep copy, but we do need to copy the parent to change it to a fragment shader:
+            parent_shader = copy.copy(shader.parent)
+            frag_shader = copy.copy(shader)
+            frag_shader.parent = parent_shader
+            del frag_shader.hash
+            frag_shader.parent.name = 'fp'
+            handle_shader_asm(frag_shader.shader_asm, frag_shader, frag_shader.shader_asm)
 
     for shaders in shader_index.values():
         if len(shaders) == 1:
