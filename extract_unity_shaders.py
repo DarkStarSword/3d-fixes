@@ -626,7 +626,10 @@ def add_shader_hash_gl_crc(sub_program):
 
 def is_opengl_shader(sub_program):
     # XXX: Not clear on the significance of each of these:
-    return sub_program.name in ('opengl', 'glcore', 'gles', 'gles3')
+    # Removed "gles" and "gles3" which are for mobile devices and not relevant
+    # on PC (and if they ever are I'll need to work out how to transform them
+    # properly to match the wrapper's hash).
+    return sub_program.name in ('opengl', 'glcore')
 
 def add_shader_hash(sub_program):
     sub_program.hash = None
