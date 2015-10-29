@@ -213,7 +213,7 @@ def handle_shader_asm(token, parent, asm):
         add_shader_hash(parent)
         if parent.hash:
             if parent.hash in hash_list:
-                if parent.hash_type == 'crc32':
+                if parent.hash_type == 'asm_crc32':
                     print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.hash, '-'*17))
                 elif parent.hash_type == '3Dmigoto':
                     print('%s WARNING: 3DMigoto HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
@@ -331,7 +331,7 @@ def compress_keywords(keywords):
     return ' '.join(sorted(ret))
 
 def get_hash_filename_base(shader):
-    if shader.sub_program.hash_type == 'crc32':
+    if shader.sub_program.hash_type == 'asm_crc32':
         return shader.sub_program.hash_fmt % shader.sub_program.hash
 
     if shader.sub_program.hash_type == '3Dmigoto':
@@ -350,6 +350,15 @@ def get_hash_filename_base(shader):
         else:
             raise Exception("Unknown program type: %s" % shader.program.name)
         return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
+
+    if shader.sub_program.hash_type == 'gl_crc32':
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
+            shader_type = 'Pixel'
+        elif shader.program.name == 'vp': # Vertex Shader
+            shader_type = 'Vertex'
+        else:
+            raise Exception("Unknown program type: %s" % shader.program.name)
+        return ('%s_' + shader.sub_program.hash_fmt) % (shader_type, shader.sub_program.hash)
 
     assert(False)
 
@@ -400,7 +409,7 @@ def export_filename_combined_short(shader, args):
     if not shader.sub_program.hash:
         return None
 
-    if shader.sub_program.hash_type == 'crc32':
+    if shader.sub_program.hash_type == 'asm_crc32':
         return (
             'ShaderCRCs',
             shader.shader.name,
@@ -412,6 +421,14 @@ def export_filename_combined_short(shader, args):
         return (
             'ShaderFNVs',
             shader.shader.name,
+            get_hash_filename_base(shader),
+        )
+
+    if shader.sub_program.hash_type == 'gl_crc32':
+        return (
+            'ShaderGL',
+            shader.shader.name,
+            shader.sub_program.name,
             get_hash_filename_base(shader),
         )
 
@@ -527,7 +544,7 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
-def calc_shader_crc(shader_asm):
+def calc_shader_asm_crc(shader_asm):
     # FUTURE: Use ctypes to call into d3dx.dll directly to remove need for
     # shaderasm.exe helper (may require native windows python - cygwin python
     # is missing some function calling conventions). Can always try both
@@ -552,10 +569,10 @@ def calc_shader_crc(shader_asm):
 
     return zlib.crc32(blob)
 
-def add_shader_hash_crc(sub_program):
+def add_shader_hash_asm_crc(sub_program):
     try:
-        sub_program.hash = calc_shader_crc(sub_program.shader_asm)
-        sub_program.hash_type = 'crc32'
+        sub_program.hash = calc_shader_asm_crc(sub_program.shader_asm)
+        sub_program.hash_type = 'asm_crc32'
         sub_program.hash_fmt = '%.8X'
     except:
         pass
@@ -595,18 +612,32 @@ def add_shader_hash_fnv(sub_program):
 
     sub_program.hash_fmt = '%.16x'
 
+def add_shader_hash_gl_crc(sub_program):
+    import zlib
+    sub_program.hash = zlib.crc32(sub_program.shader_asm.encode('utf-8'))
+    sub_program.hash_type = 'gl_crc32'
+    # Looks like the OpenGL wrapper does not pad these in the filenames:
+    sub_program.hash_fmt = '%x'
+
+
+def is_opengl_shader(sub_program):
+    # XXX: Not clear on the significance of each of these:
+    return sub_program.name in ('opengl', 'glcore', 'gles', 'gles3')
+
 def add_shader_hash(sub_program):
     sub_program.hash = None
     sub_program.hash_type = None
     sub_program.hash_fmt = None
     if sub_program.name == 'd3d9':
-        return add_shader_hash_crc(sub_program)
+        return add_shader_hash_asm_crc(sub_program)
     if sub_program.name.startswith('d3d11'):
         return add_shader_hash_fnv(sub_program)
+    if is_opengl_shader(sub_program):
+        return add_shader_hash_gl_crc(sub_program)
 
 def add_header_hash(headers, sub_program):
     if sub_program.hash:
-        if sub_program.hash_type == 'crc32':
+        if sub_program.hash_type == 'asm_crc32':
             if sub_program.fog:
                 headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
             else:
@@ -615,13 +646,15 @@ def add_header_hash(headers, sub_program):
         #     headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
         elif sub_program.hash_type == '3Dmigoto':
             headers[0] = '3DMigoto: %.16x | %s' % (sub_program.hash, headers[0])
+        elif is_opengl_shader(sub_program):
+            headers[0] = 'CRC32: %.8x | %s' % (sub_program.hash, headers[0])
         else:
             raise Exception("Unknown hash type: %s" % sub_program.hash_type)
 
 def index_headers(headers, sub_program):
-    # TODO: Also store d3d11 hashes, but no point until there is a tool to look
-    # them up
-    if sub_program.hash and sub_program.hash_type == 'crc32':
+    # TODO: Also store d3d11 + opengl hashes, but no point until there is a
+    # tool to look them up
+    if sub_program.hash and sub_program.hash_type == 'asm_crc32':
         hash_headers['%.8X' % sub_program.hash] = headers
 
 def save_header_index():
@@ -693,6 +726,12 @@ def _export_shader(sub_program, headers, path_components):
         print('Extracting %s_original.bin...' % dest)
         with open('%s_original.bin' % dest, 'wb') as f:
             f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
+    elif is_opengl_shader(sub_program):
+        print('Extracting %s.glsl...' % dest)
+        with open('%s.glsl' % dest, 'w') as f:
+            f.write(headers)
+            f.write('\n\n')
+            f.write(sub_program.shader_asm) # Don't indent_like_helix
     else:
         print('Extracting %s.txt...' % dest)
         with open('%s.txt' % dest, 'w') as f:
