@@ -1,0 +1,144 @@
+// CRC32: 84965AE6 (FOG + 7A715C0C) | Matched 6 variants of 2 shaders: Dreamfall/Transparent/Bumped Colored Specular SoftCutout, Enviro/2-sided Bumped Specular
+// 
+//    Unity headers extracted from AlphaTest-Soft-BumpSpecFresnel.shader
+//    Shader "Dreamfall/Transparent/Bumped Colored Specular SoftCutout" {
+//      Properties {
+//       _MainTex ("Texture", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//        Pass 8/8 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_World2Object]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [unity_LightmapST]
+//              Vector 13 [_MainTex_ST]
+//              Vector 14 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from 2-sided Alpha Cutout.shader
+//    Shader "Enviro/2-sided Bumped Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,0)
+//       _Shininess ("Shininess", Range(0.01,10)) = 0.078125
+//       _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+// 3:     Pass 4/8 {
+// c:     Pass 8/8 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+// c:       Cull Front
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 5:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// a:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_World2Object]
+//              Vector 8 [_WorldSpaceCameraPos]
+//              Vector 9 [_ProjectionParams]
+//              Vector 10 [_ScreenParams]
+//              Vector 11 [unity_Scale]
+//              Vector 12 [unity_LightmapST]
+//              Vector 13 [_MainTex_ST]
+//              Vector 14 [_BumpMap_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    def c15, 0.50000000, 1.00000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r3.xyz, r0, v1.w
+    mov r1.xyz, c8
+    mov r1.w, c15.y
+    dp4 r2.z, r1, c6
+    dp4 r2.x, r1, c4
+    dp4 r2.y, r1, c5
+    mad r1.xyz, r2, c11.w, -v0
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 125 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Dreamfall_Transparent_Bumped Colored Specular SoftCutout/vp/84965AE6.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xyz, r0.xyww, c15.x
+    mul r2.y, r2, c9.x
+    dp3 o4.y, r1, r3
+    mad o2.xy, r2.z, c10.zwzw, r2
+    dp3 o4.z, v2, r1
+    dp3 o4.x, r1, v1
+
+//     mov o0, r0 // Relocated to line 119 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o2.zw, r0
+    mad o1.zw, v3.xyxy, c14.xyxy, c14
+    mad o1.xy, v3, c13, c13.zwzw
+    mad o3.xy, v4, c12, c12.zwzw

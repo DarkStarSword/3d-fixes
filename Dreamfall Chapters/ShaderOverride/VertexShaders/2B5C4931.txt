@@ -1,0 +1,69 @@
+// CRC32: 2B5C4931 (FOG + 0F8FE2AA) | Unity headers extracted from DepthOfFieldScatter.shader
+// Shader "Hidden/Dof/DepthOfFieldHdr" {
+//   Properties {
+//    _MainTex ("-", 2D) = "black" {}
+//    _FgOverlap ("-", 2D) = "black" {}
+//    _LowRez ("-", 2D) = "black" {}
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 22/23 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       Blend DstAlpha OneMinusDstAlpha, Zero One
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 4 [_MainTex_TexelSize]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    def c5, 0.00000000, 1.00000000, 0, 0
+    dcl_position0 v0
+    dcl_texcoord0 v1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xy, v1
+    mov r2.x, c5
+    mov r0.zw, v1.xyxy
+    dp4 r1.w, v0, c3
+    dp4 r1.z, v0, c2
+    dp4 r1.y, v0, c1
+    dp4 r1.x, v0, c0
+    if_lt c4.y, r2.x
+    add r0.w, -v1.y, c5.y
+    mov r0.z, v1.x
+    endif
+    mov r2.x, c5
+    if_lt c4.y, r2.x
+    add r0.y, -v1, c5
+    mov r0.x, v1
+    endif
+    mov o0, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Hidden_Dof_DepthOfFieldHdr/vp/2B5C4931.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mov o1.xy, r0.zwzw
+    mov o2.xy, r0

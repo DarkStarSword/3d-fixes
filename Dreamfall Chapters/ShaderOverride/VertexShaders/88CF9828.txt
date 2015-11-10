@@ -1,0 +1,148 @@
+// CRC32: 88CF9828 | Matched 2 variants of 1 shaders: Dreamfall/Terrain/Reflective Bumped Specular
+// 
+//    Unity headers extracted from ReflectiveFresnelTerrainFirstPass.shader
+//    Shader "Dreamfall/Terrain/Reflective Bumped Specular" {
+//      Properties {
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,10)) = 0.078125
+//       _Fresnel ("FresnelPow", Vector) = (1,1,1,1)
+//       _FresnelMul ("FresnelMulti", Vector) = (1,1,1,1)
+//       _FresnelCol1 ("Fresnel Color 1", Color) = (0,0,0,0)
+//       _FresnelCol2 ("Fresnel Color 2", Color) = (0,0,0,0)
+//       _FresnelCol3 ("Fresnel Color 3", Color) = (0,0,0,0)
+//       _FresnelCol4 ("Fresnel Color 4", Color) = (0,0,0,0)
+//       _RefMask ("Reflection Mask (R)", 2D) = "black" {}
+//       _RefMaskOffsetTile ("RefMask Offset(RB), Tile(G), WetDarkening(A) ", Vector) = (0,0,10,0)
+//       _Cube ("Reflection Cubemap", CUBE) = "" {}
+//       _FresnelRef ("Reflection Fresnel Exponent", Float) = 1
+//       _RZero ("Fresnel Zero", Float) = 0
+//       _RefMaskMultiplier ("Reflection Multiplier(0-1 for each ground layer)", Vector) = (0,0,0,0)
+//      [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" {}
+//      [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" {}
+//      [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" {}
+//      [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" {}
+//      [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" {}
+//      [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" {}
+//      [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" {}
+//      [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" {}
+//      [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" {}
+//      [HideInInspector]  _MainTex ("BaseMap (RGB)", 2D) = "white" {}
+//      [HideInInspector]  _Color ("Main Color", Color) = (1,1,1,1)
+//      }
+//      Dependency "AddPassShader" = "Dreamfall/Terrain/Bumped Specular AddPass"
+//      Dependency "BaseMapShader" = "Specular"
+//      Fallback "Nature/Terrain/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 0 [glstate_matrix_modelview0]
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 8 [_Object2World]
+//              Matrix 12 [_World2Object]
+//              Vector 16 [_WorldSpaceCameraPos]
+//              Vector 17 [_ProjectionParams]
+//              Vector 18 [_ScreenParams]
+//              Vector 19 [unity_ShadowFadeCenterAndType]
+//              Vector 20 [unity_Scale]
+//              Vector 21 [unity_LightmapST]
+//              Vector 22 [_Control_ST]
+//              Vector 23 [_Splat0_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    dcl_texcoord7 o8
+    def c24, 1.00000000, 0.00000000, 0.50000000, 0
+    dcl_position0 v0
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_texcoord1 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, -v2.zxyw, c24.yxyw
+    mad r2.xyz, v2.yzxw, c24.xyyw, r0
+    mul r0.xyz, v2.zxyw, r2.yzxw
+    mad r3.xyz, v2.yzxw, r2.zxyw, -r0
+    mov r0.xyz, c16
+    mov r0.w, c24.x
+    dp4 r1.z, r0, c14
+    dp4 r1.x, r0, c12
+    dp4 r1.y, r0, c13
+    mad r1.xyz, r1, c20.w, -v0
+    dp3 r0.w, -r1, c8
+    dp3 o2.y, r1, -r3
+    dp3 r0.y, -r3, c8
+    dp3 o2.z, v2, r1
+    dp3 o2.x, r1, r2
+    dp3 r0.x, r2, c8
+    dp3 r0.z, v2, c8
+    mul o4, r0, c20.w
+    dp3 r0.w, -r1, c9
+    dp3 r0.y, -r3, c9
+    dp3 r0.x, r2, c9
+    dp3 r0.z, v2, c9
+    mul o5, r0, c20.w
+    dp3 r0.w, -r1, c10
+    dp3 r0.y, -r3, c10
+    dp3 r0.x, r2, c10
+    dp3 r0.z, v2, c10
+    mul o6, r0, c20.w
+    dp4 r0.w, v0, c7
+    dp4 r0.z, v0, c6
+    dp4 r0.x, v0, c4
+    dp4 r0.y, v0, c5
+
+mov o0, r0 // Relocated from line 118 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Dreamfall_Terrain_Reflective Bumped Specular/vp/88CF9828.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r3.xyz, r0.xyww, c24.z
+
+//     mov o0, r0 // Relocated to line 117 with shadertool.py
+    mov r0.x, c19.w
+    add r0.y, c24.x, -r0.x
+    dp4 r0.x, v0, c2
+    mov r1.x, r3
+    mul r1.y, r3, c17.x
+    mad o3.xy, r3.z, c18.zwzw, r1
+    dp4 r1.z, v0, c10
+    dp4 r1.x, v0, c8
+    dp4 r1.y, v0, c9
+    add r1.xyz, r1, -c19
+    mov o3.zw, r0
+    mul o8.xyz, r1, c19.w
+    mad o1.zw, v3.xyxy, c23.xyxy, c23
+    mad o1.xy, v3, c22, c22.zwzw
+    mad o7.xy, v4, c21, c21.zwzw
+    mul o8.w, -r0.x, r0.y

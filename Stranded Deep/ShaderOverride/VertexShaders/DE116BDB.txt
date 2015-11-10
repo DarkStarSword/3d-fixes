@@ -1,0 +1,140 @@
+// CRC32: DE116BDB | Unity headers extracted from Skin.shader
+// Shader "Beam Team/Standard/Skin/Skin" {
+//   Properties {
+//    _Color ("Diffuse Albedo", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//    _SpecInt ("Specular Intensity", Float) = 1
+//    _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//    _Fresnel ("Specular Fresnel", Range(0,1)) = 0
+//    _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//    _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//    _BumpTex ("Normal Map", 2D) = "bump" { }
+//    _SubdermisColor ("Subdermis Color", Color) = (1,1,1,1)
+//    _Subdermis ("Subdermis", Range(0,1)) = 1
+//    _SubdermisTex ("Subdermis(RGB) Skin Mask(A)", 2D) = "white" { }
+//    _TranslucencyColor ("Translucency Color", Color) = (1,0.5,0.4,1)
+//    _Translucency ("Translucency", Range(0,1)) = 0
+//    _TranslucencySky ("Sky Translucency", Range(0,1)) = 0
+//    _TranslucencyMap ("Translucency Map", 2D) = "white" { }
+//    _FuzzColor ("Fuzz Color", Color) = (1,1,1,1)
+//    _Fuzz ("Fuzz", Range(0,1)) = 0
+//    _FuzzScatter ("Fuzz Scatter", Range(0,1)) = 1
+//    _FuzzOcc ("Fuzz Occlusion", Range(0.5,1)) = 0.5
+//    _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.3
+//   }
+//   SubShader 1/2 {
+//     Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "RenderType"="Opaque" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="False" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 31062
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_DISABLED" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 20 [_MainTex_ST]
+//           Vector 10 [_ProjectionParams]
+//           Vector 11 [_ScreenParams]
+//           Vector 14 [unity_SHAb]
+//           Vector 13 [unity_SHAg]
+//           Vector 12 [unity_SHAr]
+//           Vector 17 [unity_SHBb]
+//           Vector 16 [unity_SHBg]
+//           Vector 15 [unity_SHBr]
+//           Vector 18 [unity_SHC]
+//           Vector 19 [unity_WorldTransformParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c21, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6.xyz
+    dcl_texcoord6 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mad o1.xy, v3, c20, c20.zwzw
+    dp4 o2.w, c4, v0
+    dp4 o3.w, c5, v0
+    dp4 o4.w, c6, v0
+    mul r0.xyz, c8, v2.y
+    mad r0.xyz, c7, v2.x, r0
+    mad r0.xyz, c9, v2.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c15, r2
+    dp4 r3.y, c16, r2
+    dp4 r3.z, c17, r2
+    mad r0.xyz, c18, r0.x, r3
+    mov r1.w, c21.x
+    dp4 r2.x, c12, r1
+    dp4 r2.y, c13, r1
+    dp4 r2.z, c14, r1
+    add o6.xyz, r0, r2
+    dp4 r0.y, c1, v0
+    mul r1.w, r0.y, c10.x
+    mul r2.w, r1.w, c21.y
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 103 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Standard_Skin_Skin/vp/DE116BDB.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xz, r0.xyww, c21.y
+    mad o7.xy, r2.z, c11.zwzw, r2.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 100 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o7.zw, r0
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r2.xyz, r0, r1.zxyw
+    mad r2.xyz, r1.yzxw, r0.yzxw, -r2
+    mul r0.z, c19.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o2.y, r2.x
+    mov o2.z, r1.x
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.y
+    mov o4.z, r1.z
+    mov o5, c21.z

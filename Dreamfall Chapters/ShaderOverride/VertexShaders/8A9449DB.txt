@@ -1,0 +1,85 @@
+// CRC32: 8A9449DB (FOG + 7BA0FE5C) | Unity headers extracted from Decal-Alpha-Diffuse-Colored-Receive-Shadow.shader
+// Shader "Decal/Colored/Shadow/Transparent Diffuse Colored Shadow" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//   }
+//   Fallback "Decal/Transparent VertexLit"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Fog {
+//          Color (0,0,0,0)
+//         }
+//       Blend SrcAlpha One
+//       Offset -1, -1
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [_Object2World]
+//           Vector 8 [_ProjectionParams]
+//           Vector 9 [_ScreenParams]
+//           Vector 10 [_WorldSpaceLightPos0]
+//           Vector 11 [unity_Scale]
+//           Vector 12 [_MainTex_ST]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_color0 o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    def c13, 0.50000000, 0, 0, 0
+    dcl_position0 v0
+    dcl_normal0 v1
+    dcl_texcoord0 v2
+    dcl_color0 v3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 63 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Decal_Colored_Shadow_Transparent Diffuse Colored Shadow/vp/8A9449DB.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c13.x
+    mul r1.y, r1, c8.x
+    mad o5.xy, r1.z, c9.zwzw, r1
+    mul r1.xyz, v1, c11.w
+
+//     mov o0, r0 // Relocated to line 59 with shadertool.py
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o2, v3
+    mov o5.zw, r0
+    dp3 o3.z, r1, c6
+    dp3 o3.y, r1, c5
+    dp3 o3.x, r1, c4
+    mov o4.xyz, c10
+    mad o1.xy, v2, c12, c12.zwzw

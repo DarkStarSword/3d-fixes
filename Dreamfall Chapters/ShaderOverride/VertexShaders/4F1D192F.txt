@@ -1,0 +1,131 @@
+// CRC32: 4F1D192F | Matched 2 variants of 1 shaders: Hidden/Marmoset/RGBM Replacement
+// 
+//    Unity headers extracted from Marmoset RGBM Replacement.shader
+//    Shader "Hidden/Marmoset/RGBM Replacement" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//       _SpecInt ("Specular Intensity", Float) = 0
+//       _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//       _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 1
+//       _OccStrength ("Occlusion Strength", Range(0,1)) = 1
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" {}
+//       _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _GlowColor ("Glow Color", Color) = (0,0,0,0)
+//       _GlowStrength ("Glow Strength", Float) = 0
+//       _EmissionLM ("Diffuse Emission Strength", Float) = 0
+//       _Illum ("Glow(RGB) Diffuse Emission(A)", 2D) = "white" {}
+//       _OccTex ("Occlusion Diff(R) Spec(G)", 2D) = "white" {}
+//       _DiffCubeIBL ("Custom Diffuse Cube", CUBE) = "black" {}
+//       _SpecCubeIBL ("Custom Specular Cube", CUBE) = "black" {}
+//      }
+//      Fallback "Hidden/Marmoset/RGBM Terrain"
+//      SubShader 3/5 {
+//        LOD 400
+//        Tags { "QUEUE"="Geometry" "RenderType"="MarmoVertexColor" }
+//        Pass 2/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "QUEUE"="Geometry" "RenderType"="MarmoVertexColor" }
+//          ZWrite Off
+//          Fog {
+//             Color (0,0,0,0)
+//            }
+//          Blend One One
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "MARMO_GAMMA" "SHADOWS_SCREEN" }
+// 1:           Keywords { "DIRECTIONAL_COOKIE" "MARMO_LINEAR" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord2
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object]
+//              Matrix 12 [_LightMatrix0]
+//              Vector 16 [_WorldSpaceCameraPos]
+//              Vector 17 [_ProjectionParams]
+//              Vector 18 [_ScreenParams]
+//              Vector 19 [_WorldSpaceLightPos0]
+//              Vector 20 [unity_Scale]
+//              Vector 21 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position o0
+    dcl_texcoord0 o1
+    dcl_texcoord1 o2
+    dcl_color0 o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6
+    def c22, 1.00000000, 0.50000000, 0, 0
+    dcl_position0 v0
+    dcl_tangent0 v1
+    dcl_normal0 v2
+    dcl_texcoord0 v3
+    dcl_color0 v4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.xyz, v1
+    mul r1.xyz, v2.zxyw, r0.yzxw
+    mov r0.xyz, v1
+    mad r0.xyz, v2.yzxw, r0.zxyw, -r1
+    mul r3.xyz, r0, v1.w
+    mov r0, c10
+    dp4 r4.z, c19, r0
+    mov r0, c9
+    dp4 r4.y, c19, r0
+    mov r1.w, c22.x
+    mov r1.xyz, c16
+    dp4 r0.w, v0, c3
+    dp4 r0.z, v0, c2
+    dp4 r2.z, r1, c10
+    dp4 r2.x, r1, c8
+    dp4 r2.y, r1, c9
+    mad r2.xyz, r2, c20.w, -v0
+    mov r1, c8
+    dp4 r4.x, c19, r1
+    dp4 r0.x, v0, c0
+    dp4 r0.y, v0, c1
+
+mov o0, r0 // Relocated from line 112 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../../ Hidden_Marmoset_RGBM Replacement/vp/4F1D192F.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xyww, c22.y
+    mul r1.y, r1, c17.x
+    mad o6.xy, r1.z, c18.zwzw, r1
+    dp4 r1.w, v0, c7
+    dp4 r1.z, v0, c6
+    dp4 r1.x, v0, c4
+    dp4 r1.y, v0, c5
+    dp3 o2.y, r2, r3
+    dp3 o4.y, r3, r4
+    dp3 o2.z, v2, r2
+    dp3 o2.x, r2, v1
+    dp3 o4.z, v2, r4
+    dp3 o4.x, v1, r4
+
+//     mov o0, r0 // Relocated to line 99 with shadertool.py
+    mov o3, v4
+    dp4 o5.y, r1, c13
+    dp4 o5.x, r1, c12
+    mov o6.zw, r0
+    mad o1.xy, v3, c21, c21.zwzw

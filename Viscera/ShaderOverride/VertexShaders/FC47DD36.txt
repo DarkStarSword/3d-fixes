@@ -238,31 +238,33 @@ dcl_2d s3
 
 // approximately 167 instruction slots used
 
-// Output adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i -f --stereo-sampler-vs=s3 --adjust=position Dumps/SingleShaders/VertexShader/VertexShader_59_CRC32_FC47DD36.txt
-texldl r31, c220.z, s3
-add r31.w, r10.w, -r31.y
-mul r31.w, r31.w, r31.x
-add r10.x, r10.x, r31.w
-
-// Molotov Cocktails are misaligned even in 2D. Move bottles to the left to
-// realign them. Separation preset keys also pass the separation in on Const1,
-// which we can use to determine the amount to adjust this by (except in 2D) -
-// ideally we would need the raw eye separation value instead.
-
-// Get 1 / separation percentage:
 mov r30, c200
-mul r30.x, r30.x, c221.x
-rcp r30.x, r30.x
-
-abs r31.z, r31.x // r31.z = abs(separation)
 if_ne r30.x, c220.x
+
+	// Output adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py -i -f --stereo-sampler-vs=s3 --adjust=position Dumps/SingleShaders/VertexShader/VertexShader_59_CRC32_FC47DD36.txt
+	texldl r31, c220.z, s3
+	add r31.w, r10.w, -r31.y
+	mul r31.w, r31.w, r31.x
+	add r10.x, r10.x, r31.w
+
+	// Molotov Cocktails are misaligned even in 2D. Move bottles to the left to
+	// realign them. Separation preset keys also pass the separation in on Const1,
+	// which we can use to determine the amount to adjust this by (except in 2D) -
+	// ideally we would need the raw eye separation value instead.
+
+	// Get 1 / separation percentage:
+	mul r30.x, r30.x, c221.x
+	rcp r30.x, r30.x
+
+	abs r31.z, r31.x // r31.z = abs(separation)
 	mul r31.z, r31.z, r30.x // r31.z = eye separation (or 0 if 2D - can't fix)
+
+	mul r31.z, r31.z, r10.w // Scale by W
+	mul r31.z, r31.z, c220.w // Multiply by 3 for some reason
+
+	add r10.x, r10.x, -r31.z // Move 3 * eye separation to the left
+
 endif
-
-mul r31.z, r31.z, r10.w // Scale by W
-mul r31.z, r31.z, c220.w // Multiply by 3 for some reason
-
-add r10.x, r10.x, -r31.z // Move 3 * eye separation to the left
 
 mov o8, r10

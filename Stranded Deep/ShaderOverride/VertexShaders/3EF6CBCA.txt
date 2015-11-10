@@ -1,0 +1,117 @@
+// CRC32: 3EF6CBCA | Matched 3 variants of 3 shaders: Beam Team/Post Effects/God Rays, Beam Team/Post Effects/Sun Shafts, Hidden/SunShaftsComposite
+// 
+//    Unity headers extracted from BeamTeamGodRays.shader
+//    Shader "Beam Team/Post Effects/God Rays" {
+//      Properties {
+//       _MainTex ("Base", 2D) = "" { }
+//       _ColorBuffer ("Color", 2D) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 2/3 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          GpuProgramID 109448
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_BlurRadius4]
+//              Vector 5 [_SunPosition]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from SunShaftsComposite.shader
+//    Shader "Beam Team/Post Effects/Sun Shafts" {
+//      Properties {
+//       _MainTex ("Base", 2D) = "" { }
+//       _ColorBuffer ("Color", 2D) = "" { }
+//       _Skybox ("Skybox", 2D) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 2/5 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          GpuProgramID 116010
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_BlurRadius4]
+//              Vector 5 [_SunPosition]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from NewSunshafts.shader
+//    Shader "Hidden/SunShaftsComposite" {
+//      Properties {
+//       _MainTex ("Base", 2D) = "" { }
+//       _ColorBuffer ("Color", 2D) = "" { }
+//       _Skybox ("Skybox", 2D) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 2/5 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          GpuProgramID 129903
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_BlurRadius4]
+//              Vector 5 [_SunPosition]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_texcoord2 o5 // Extra output for stereoised version of texcoord1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+// Stereoise _SunPosition - this fix is necessary for the underwater
+// Crepuscular Rays, but breaks the sun shafts, so use an extra output for the
+// corrected version
+
+texldl r31, c220.z, s3
+mov r30, c5
+mad r30.x, r31.x, c220.w, r30.x
+add r0.xy, -v1, r30
+mul o5.xy, r0, c4
+
+    dp4 o2.x, c0, v0
+    dp4 o2.y, c1, v0
+    dp4 o2.z, c2, v0
+    dp4 o2.w, c3, v0
+    add r0.xy, -v1, c5
+    mul o1.xy, r0, c4
+    mov o0.xy, v1

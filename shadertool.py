@@ -51,7 +51,7 @@ class Token(str):
 #     pattern = re.compile(r'-')
 
 class Identifier(Token):
-    pattern = re.compile(r'[a-zA-Z_\-!][a-zA-Z_0-9\.]*(\[a0(\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
+    pattern = re.compile(r'[a-zA-Z_\-!][a-zA-Z_0-9\.]*(\[a[0L](\.[abcdxyzw]{1,4})?(\s*\+\s*\d+)?\](\.[abcdxyzw]{1,4})?)?')
 
 class Comma(Token):
     pattern = re.compile(r',')
@@ -204,7 +204,7 @@ class Register(str):
         (?P<num>\d*)
         (?P<absolute>_abs)?
         (?P<address_reg>
-            \[a0
+            \[a[0L]
                 (?:\.[abcdxyzw]{1,4})?
                 (?:\s*\+\s*\d+)?
             \]
