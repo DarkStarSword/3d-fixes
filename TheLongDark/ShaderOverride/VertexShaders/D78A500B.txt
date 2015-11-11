@@ -1,0 +1,97 @@
+// CRC32: D78A500B | Unity headers extracted from TLD_MoonAndStars.shader
+// Shader "_LongDark/Stars" {
+//   Properties {
+//    _MainTex ("Stars Texture", 2D) = "white" { }
+//    _MoonTex ("Moon Texture", 2D) = "white" { }
+//    _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//    _MoonColor ("Moon Color", Color) = (0.5,0.5,0.5,0.5)
+//    _MoonX ("Moon X", Vector) = (1,0,0,0)
+//    _MoonY ("Moon Y", Vector) = (1,0,0,0)
+//    _MoonZ ("Moon Z", Vector) = (1,0,0,0)
+//    _MoonClipThreshold ("Moon Window Threshold", Float) = 0.1
+//    _MoonUVScalar ("Moon UV Scalar", Float) = 0.1
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha One
+//       ColorMask RGB
+//       GpuProgramID 41532
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 12 [_MainTex_ST]
+//           Vector 10 [_ProjectionParams]
+//           Vector 11 [_ScreenParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c13, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v2, c12, c12.zwzw
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o1.xyz, r0.w, r0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c13.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o5, r0 // Relocated from line 78 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update _LongDark_Stars/vp/D78A500B.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c13.x
+    mad o4.xy, r1.z, c11.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o5, r0 // Relocated to line 75 with shadertool.py
+mov o5.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4.zw, r0
+    mov o3.xyz, c13.y

@@ -1,0 +1,130 @@
+// CRC32: DB9E06C7 | Unity headers extracted from TLD_MoonAndStars.shader
+// Shader "_LongDark/Stars" {
+//   Properties {
+//    _MainTex ("Stars Texture", 2D) = "white" { }
+//    _MoonTex ("Moon Texture", 2D) = "white" { }
+//    _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//    _MoonColor ("Moon Color", Color) = (0.5,0.5,0.5,0.5)
+//    _MoonX ("Moon X", Vector) = (1,0,0,0)
+//    _MoonY ("Moon Y", Vector) = (1,0,0,0)
+//    _MoonZ ("Moon Z", Vector) = (1,0,0,0)
+//    _MoonClipThreshold ("Moon Window Threshold", Float) = 0.1
+//    _MoonUVScalar ("Moon UV Scalar", Float) = 0.1
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Transparent-401" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha One
+//       ColorMask RGB
+//       GpuProgramID 41532
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 8 [_Object2World] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 4 [glstate_matrix_mvp]
+//           Vector 20 [_MainTex_ST]
+//           Vector 14 [_ProjectionParams]
+//           Vector 15 [_ScreenParams]
+//           Vector 19 [unity_4LightAtten0]
+//           Vector 16 [unity_4LightPosX0]
+//           Vector 17 [unity_4LightPosY0]
+//           Vector 18 [unity_4LightPosZ0]
+//           Vector 0 [unity_LightColor0]
+//           Vector 1 [unity_LightColor1]
+//           Vector 2 [unity_LightColor2]
+//           Vector 3 [unity_LightColor3]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c21, 0, 1, 0.5, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v2, c20, c20.zwzw
+    mul r0.xyz, v1.y, c12
+    mad r0.xyz, c11, v1.x, r0
+    mad r0.xyz, c13, v1.z, r0
+    nrm r1.xyz, r0
+    dp4 r0.y, c9, v0
+    add r2, -r0.y, c17
+    mul r3, r1.y, r2
+    mul r2, r2, r2
+    dp4 r0.x, c8, v0
+    add r4, -r0.x, c16
+    mad r3, r4, r1.x, r3
+    mad r2, r4, r4, r2
+    dp4 r0.z, c10, v0
+    add r4, -r0.z, c18
+    mov o2.xyz, r0
+    mad r0, r4, r1.z, r3
+    mov o1.xyz, r1
+    mad r1, r4, r4, r2
+    rsq r2.x, r1.x
+    rsq r2.y, r1.y
+    rsq r2.z, r1.z
+    rsq r2.w, r1.w
+    mov r3.y, c21.y
+    mad r1, r1, c19, r3.y
+    mul r0, r0, r2
+    max r0, r0, c21.x
+    rcp r2.x, r1.x
+    rcp r2.y, r1.y
+    rcp r2.z, r1.z
+    rcp r2.w, r1.w
+    mul r0, r0, r2
+    mul r1.xyz, r0.y, c1
+    mad r1.xyz, c0, r0.x, r1
+    mad r0.xyz, c2, r0.z, r1
+    mad o3.xyz, c3, r0.w, r0
+    dp4 r0.y, c5, v0
+    mul r1.x, r0.y, c14.x
+    mul r1.w, r1.x, c21.z
+    dp4 r0.x, c4, v0
+    dp4 r0.w, c7, v0
+
+mov o5, r0 // Relocated from line 112 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update _LongDark_Stars/vp/DB9E06C7.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c21.z
+    mad o4.xy, r1.z, c15.zwzw, r1.xwzw
+    dp4 r0.z, c6, v0
+
+//     mov o5, r0 // Relocated to line 109 with shadertool.py
+mov o5.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4.zw, r0
