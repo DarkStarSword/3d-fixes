@@ -1,0 +1,165 @@
+// CRC32: FB3D9992 | Matched 2 variants of 1 shaders: Standard (Specular setup)
+// 
+//    Unity headers extracted from StandardSpecular.shader
+//    Shader "Standard (Specular setup)" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo", 2D) = "white" { }
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//       _SpecColor ("Specular", Color) = (0.2,0.2,0.2,1)
+//       _SpecGlossMap ("Specular", 2D) = "white" { }
+//       _BumpScale ("Scale", Float) = 1
+//       _BumpMap ("Normal Map", 2D) = "bump" { }
+//       _Parallax ("Height Scale", Range(0.005,0.08)) = 0.02
+//       _ParallaxMap ("Height Map", 2D) = "black" { }
+//       _OcclusionStrength ("Strength", Range(0,1)) = 1
+//       _OcclusionMap ("Occlusion", 2D) = "white" { }
+//       _EmissionColor ("Color", Color) = (0,0,0,1)
+//       _EmissionMap ("Emission", 2D) = "white" { }
+//       _DetailMask ("Detail Mask", 2D) = "white" { }
+//       _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//       _DetailNormalMapScale ("Scale", Float) = 1
+//       _DetailNormalMap ("Normal Map", 2D) = "bump" { }
+//      [Enum(UV0,0,UV1,1)]  _UVSec ("UV Set for secondary textures", Float) = 0
+//      [HideInInspector]  _Mode ("__mode", Float) = 0
+//      [HideInInspector]  _SrcBlend ("__src", Float) = 1
+//      [HideInInspector]  _DstBlend ("__dst", Float) = 0
+//      [HideInInspector]  _ZWrite ("__zw", Float) = 1
+//      }
+//      Fallback "VertexLit"
+//      SubShader 2/2 {
+//        LOD 150
+//        Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          ZWrite [_ZWrite]
+//          Blend [_SrcBlend] [_DstBlend]
+//          GpuProgramID 329204
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "_ALPHABLEND_ON" "_NORMALMAP" "_SPECGLOSSMAP" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "_ALPHATEST_ON" "_NORMALMAP" "_SPECGLOSSMAP" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 23 [_DetailAlbedoMap_ST]
+//              Vector 22 [_MainTex_ST]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//              Float 24 [_UVSec]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 21 [unity_FogParams]
+//              Vector 15 [unity_SHAb]
+//              Vector 14 [unity_SHAg]
+//              Vector 13 [unity_SHAr]
+//              Vector 18 [unity_SHBb]
+//              Vector 17 [unity_SHBg]
+//              Vector 16 [unity_SHBr]
+//              Vector 19 [unity_SHC]
+//              Vector 20 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c25, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_tangent v4
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_texcoord6 o6
+dcl_texcoord7 o7
+dcl_position o8
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v2, c22, c22.zwzw
+    mul r0.x, c24.x, c24.x
+    sge r0.x, -r0.x, r0.x
+    mov r1.xy, v2
+    lrp r2.xy, r0.x, r1, v3
+    mad o0.zw, r2.xyxy, c23.xyxy, c23
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r0.xyz, r0, -c10
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o1.xyz, r0.w, r0
+    mul r0.x, v4.w, c20.w
+    dp3 r1.x, c4, v4
+    dp3 r1.y, c5, v4
+    dp3 r1.z, c6, v4
+    nrm r2.xyz, r1
+    mul r0.yzw, v1.y, c8.xxyz
+    mad r0.yzw, c7.xxyz, v1.x, r0
+    mad r0.yzw, c9.xxyz, v1.z, r0
+    nrm r1.xyz, r0.yzww
+    mul r0.yzw, r2.xyzx, r1.xzxy
+    mad r0.yzw, r1.xyzx, r2.xzxy, -r0
+    mov o2.xyz, r2
+    mul o3.xyz, r0.x, r0.yzww
+    dp4 r0.y, c1, v0
+    mul r2.x, r0.y, c11.x
+    mul r2.w, r2.x, c25.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o8, r0 // Relocated from line 143 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Standard (Specular setup)/vp/FB3D9992.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xz, r0.xyww, c25.x
+    mad o6.xy, r2.z, c12.zwzw, r2.xwzw
+    mul r2.x, r1.y, r1.y
+    mad r2.x, r1.x, r1.x, -r2.x
+    mul r3, r1.yzzx, r1.xyzz
+    dp4 r4.x, c16, r3
+    dp4 r4.y, c17, r3
+    dp4 r4.z, c18, r3
+    mad r2.xyz, c19, r2.x, r4
+    mov r1.w, c25.y
+    dp4 r3.x, c13, r1
+    dp4 r3.y, c14, r1
+    dp4 r3.z, c15, r1
+    mov o4.xyz, r1
+    add o5.xyz, r2, r3
+    dp4 r0.z, c2, v0
+    mad o7.x, r0.z, c21.z, c21.w
+
+//     mov o8, r0 // Relocated to line 126 with shadertool.py
+mov o8.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o6.zw, r0
+    mov o2.w, c25.z
+    mov o3.w, c25.z
+    mov o4.w, c25.z
+    mov o5.w, c25.z

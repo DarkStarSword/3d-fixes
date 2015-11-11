@@ -1,0 +1,184 @@
+// CRC32: E9ECD481 | Unity headers extracted from atsv2 vertexlit.shader
+// Shader "Hidden/TerrainEngine/Details/Vertexlit" {
+//   Properties {
+//    _Color ("Main Color r:ampl g:speed b:time", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "IGNOREPROJECTOR"="true" "RenderType"="TreeLeaf" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TreeLeaf" }
+//       ColorMask RGB
+//       GpuProgramID 26545
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 8 [_Object2World] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 4 [glstate_matrix_mvp]
+//           Vector 29 [_Color]
+//           Vector 30 [_MainTex_ST]
+//           Vector 15 [_ProjectionParams]
+//           Vector 16 [_ScreenParams]
+//           Vector 14 [_Time]
+//           Vector 20 [unity_4LightAtten0]
+//           Vector 17 [unity_4LightPosX0]
+//           Vector 18 [unity_4LightPosY0]
+//           Vector 19 [unity_4LightPosZ0]
+//           Vector 28 [unity_FogParams]
+//           Vector 0 [unity_LightColor0]
+//           Vector 1 [unity_LightColor1]
+//           Vector 2 [unity_LightColor2]
+//           Vector 3 [unity_LightColor3]
+//           Vector 23 [unity_SHAb]
+//           Vector 22 [unity_SHAg]
+//           Vector 21 [unity_SHAr]
+//           Vector 26 [unity_SHBb]
+//           Vector 25 [unity_SHBg]
+//           Vector 24 [unity_SHBr]
+//           Vector 27 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c31, 0.0480000004, 0.0599999987, 0.239999995, 0.0960000008
+    def c32, 0.0240000002, 0.0799999982, 0.200000003, -0.161616161
+    def c33, 1.20000005, 2, 1.60000002, 4.80000019
+    def c34, 2, 1, 6.40884876, -3.14159274
+    def c35, 0.00833330024, -0.000198409994, 0, 0.5
+    def c36, 0.215387449, 0.358979076, 0.287183255, 0.861549795
+    def c37, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c38, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_color v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_position o6
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v2, c30, c30.zwzw
+    mul r0.xyz, v1.y, c12
+    mad r0.xyz, c11, v1.x, r0
+    mad r0.xyz, c13, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c24, r2
+    dp4 r3.y, c25, r2
+    dp4 r3.z, c26, r2
+    mad r0.xyz, c27, r0.x, r3
+    mov r1.w, c34.y
+    dp4 r2.x, c21, r1
+    dp4 r2.y, c22, r1
+    dp4 r2.z, c23, r1
+    add r0.xyz, r0, r2
+    mul r2, v0.z, c32.xyyz
+    mad r2, v0.x, c31, r2
+    mov r3.xy, c34
+    mad r0.w, c29.z, -r3.x, r3.y
+    add r0.w, r0.w, -v3.z
+    mul r0.w, r0.w, c14.x
+    add r3.xz, v3.yyww, c29.yyww
+    mul r0.w, r0.w, r3.x
+    mul r1.w, r3.z, v2.y
+    mad r2, r0.w, c33, r2
+    frc r2, r2
+    mad r2, r2, c34.z, c34.w
+    mul r4, r2, r2
+    mul r5, r2, r4
+    mad r2, r5, c32.w, r2
+    mul r5, r4, r5
+    mul r4, r4, r5
+    mad r2, r5, c35.x, r2
+    mad r2, r4, c35.y, r2
+    mul r2, r1.w, r2
+    mul r2, r2, c36
+    mul r2, r2, r2
+    mul r2, r2, r2
+    dp4 r4.x, r2, c37
+    dp4 r4.z, r2, c38
+    mov r4.y, c35.z
+    dp3 r2.x, c11, r4
+    dp3 r2.z, c13, r4
+    add r2.xz, -r2, v0
+    mov r2.yw, v0
+    dp4 r4.y, c9, r2
+    add r5, -r4.y, c18
+    mul r6, r1.y, r5
+    mul r5, r5, r5
+    dp4 r4.x, c8, r2
+    add r7, -r4.x, c17
+    mad r6, r7, r1.x, r6
+    mad r5, r7, r7, r5
+    dp4 r4.z, c10, r2
+    add r7, -r4.z, c19
+    mov o2.xyz, r4
+    mad r4, r7, r1.z, r6
+    mad r5, r7, r7, r5
+    mov o1.xyz, r1
+    rsq r1.x, r5.x
+    rsq r1.y, r5.y
+    rsq r1.z, r5.z
+    rsq r1.w, r5.w
+    mad r3, r5, c20, r3.y
+    mul r1, r1, r4
+    max r1, r1, c35.z
+    rcp r4.x, r3.x
+    rcp r4.y, r3.y
+    rcp r4.z, r3.z
+    rcp r4.w, r3.w
+    mul r1, r1, r4
+    mul r3.xyz, r1.y, c1
+    mad r3.xyz, c0, r1.x, r3
+    mad r1.xyz, c2, r1.z, r3
+    mad r1.xyz, c3, r1.w, r1
+    add o3.xyz, r0, r1
+    dp4 r0.x, c4, r2
+    dp4 r0.w, c7, r2
+
+mov o6, r0 // Relocated from line 163 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_TerrainEngine_Details_Vertexlit/vp/E9ECD481.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c35.w
+    dp4 r0.y, c5, r2
+    dp4 r0.z, c6, r2
+    mul r1.y, r0.y, c15.x
+
+//     mov o6, r0 // Relocated to line 159 with shadertool.py
+mov o6.yz, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4.zw, r0
+    mad o5.x, r0.z, c28.z, c28.w
+    mul r1.w, r1.y, c35.w
+    mad o4.xy, r1.z, c16.zwzw, r1.xwzw

@@ -1,0 +1,163 @@
+// CRC32: 651CFCBD | Matched 2 variants of 2 shaders: Hidden/Internal-PrePassLighting, Hidden/ShadowSoftener-PrePassLighting
+// 
+//    Unity headers extracted from Internal-PrePassLighting.shader
+//    Shader "Hidden/Internal-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 3/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 155461
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Matrix 3 [_LightMatrix0] 3
+//              Vector 12 [_LightColor]
+//              Vector 11 [_LightPos]
+//              Vector 7 [_ProjectionParams]
+//              Vector 6 [_WorldSpaceCameraPos]
+//              Vector 8 [_ZBufferParams]
+//              Vector 10 [unity_ColorSpaceLuminance]
+//              Vector 13 [unity_LightmapFade]
+//              Vector 9 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_LightTexture0] CUBE 2
+//              SetTexture 3 [_CameraNormalsTexture] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ShadowSoftener-PrePassLighting.shader
+//    Shader "Hidden/ShadowSoftener-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback "Hidden/Internal-PrePassLighting"
+//      SubShader 1/1 {
+//        Pass 3/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 161130
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Matrix 3 [_LightMatrix0] 3
+//              Vector 12 [_LightColor]
+//              Vector 11 [_LightPos]
+//              Vector 7 [_ProjectionParams]
+//              Vector 6 [_WorldSpaceCameraPos]
+//              Vector 8 [_ZBufferParams]
+//              Vector 10 [unity_ColorSpaceLuminance]
+//              Vector 13 [unity_LightmapFade]
+//              Vector 9 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_LightTexture0] CUBE 2
+//              SetTexture 3 [_CameraNormalsTexture] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c14, 1, 2, -1, 0
+    def c15, 128, 0, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+    dcl_2d s3
+
+dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+    mov r0.xyz, c12
+    mul_pp r0.xyw, r0.xyzz, c10.xyzz
+    add_pp r0.xw, r0.yyzw, r0.x
+    mul_pp r0.y, r0.w, r0.y
+    mad_pp r0.x, r0.z, c10.z, r0.x
+    rsq_pp r0.y, r0.y
+    rcp_pp r0.y, r0.y
+    dp2add_pp r0.x, c10.w, r0.y, r0.x
+    rcp r0.y, v1.z
+    mul r0.y, r0.y, c7.z
+    mul r0.yzw, r0.y, v1.xxyz
+    rcp r1.x, v0.w
+    mul r1.xy, r1.x, v0
+    texld r2, r1, s0
+    texld_pp r1, r1, s3
+    mad r2.x, c8.x, r2.x, c8.y
+    rcp r2.x, r2.x
+    mul r3.xyz, r0.yzww, r2.x // depth in r3.z
+    mov r3.w, c14.x
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --fix-unity-lighting-ps --only-autofixed Hidden_Internal-PrePassLighting/fp/651CFCBD.txt
+texldl r31, c220.z, s13
+add r31.w, r3.z, -r31.y
+mul r31.w, r31.w, r31.x
+mad r3.x, -r31.w, v5.x, r3.x
+
+    dp4 r4.x, c0, r3
+    dp4 r4.y, c1, r3
+    dp4 r4.z, c2, r3
+    mov r4.w, c14.x
+    dp4 r5.x, c3, r4
+    dp4 r5.y, c4, r4
+    dp4 r5.z, c5, r4
+    texld r5, r5, s2
+    add r2.yzw, r4.xxyz, -c11.xxyz
+    dp3 r0.y, r2.yzww, r2.yzww
+    mul r0.z, r0.y, c11.w
+    rsq r0.y, r0.y
+    mul_pp r2.yzw, r0.y, r2
+    texld r6, r0.z, s1
+    mul r0.y, r5.w, r6.x
+    mov_sat r0.z, r0.y
+    add r3.xyw, r4.xyzz, -c6.xyzz
+    add r4.xyz, r4, -c9
+    dp3 r4.x, r4, r4
+    rsq r4.x, r4.x
+    rcp r4.x, r4.x
+    mad r0.w, r0.w, -r2.x, r4.x
+    mad r0.w, c9.w, r0.w, r3.z
+    mad r0.w, r0.w, c13.z, c13.w
+    add_sat r0.w, -r0.w, c14.x
+    dp3 r2.x, r3.xyww, r3.xyww
+    rsq r2.x, r2.x
+    mad r3.xyz, r3.xyww, -r2.x, -r2.yzww
+    nrm_pp r4.xyz, r3
+    mad_pp r1.xyz, r1, c14.y, c14.z
+    mul_pp r1.w, r1.w, c15.x
+    nrm_pp r3.xyz, r1
+    dp3_pp r1.x, r4, r3
+    dp3_pp r1.y, -r2.yzww, r3
+    max_pp r2.x, r1.y, c14.w
+    mul r0.y, r0.y, r2.x
+    mul_pp r2.yzw, r0.y, c12.xxyz
+    max_pp r0.y, r1.x, c14.w
+    pow r3.x, r0.y, r1.w
+    mul r0.y, r0.z, r3.x
+    mul_pp r2.x, r0.x, r0.y
+    mul_pp oC0, r0.w, r2

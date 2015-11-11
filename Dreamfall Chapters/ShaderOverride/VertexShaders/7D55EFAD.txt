@@ -1,0 +1,267 @@
+// CRC32: 7D55EFAD | Matched 6 variants of 1 shaders: Dreamfall/Bumped Specular Cloth
+// 
+//     Unity headers extracted from Normal-Bump-Cloth.shader
+//     Shader "Dreamfall/Bumped Specular Cloth" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//        _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _MeshOffsetR ("Offset (R)", Float) = 1
+//        _MeshOffsetG ("Offset (G)", Float) = 1
+//        _MeshOffsetB ("Offset (B)", Float) = 1
+//        _WindDirection ("Wind", Vector) = (0,0,0,0)
+//        _Speed1 ("Speed 1", Float) = 1
+//        _Scale1 ("Scale 1", Float) = 1
+//        _Scale2 ("Scale 2", Float) = 1
+//        _Strength1 ("Strength 1", Float) = 1
+//        _Strength2 ("Strength 2", Float) = 1
+//       }
+//       Fallback "Specular"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 1/7 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//           GpuProgramID 51619
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 08:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 04:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 20:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 10:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+// 02:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 01:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//               Bind "vertex" Vertex
+//               Bind "color" Color
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 25 [_BumpMap_ST]
+//               Vector 24 [_MainTex_ST]
+//               Float 17 [_MeshOffsetB]
+//               Float 16 [_MeshOffsetG]
+//               Float 15 [_MeshOffsetR]
+//               Vector 11 [_ProjectionParams]
+//               Float 19 [_Scale1]
+//               Float 20 [_Scale2]
+//               Vector 12 [_ScreenParams]
+//               Float 18 [_Speed1]
+//               Float 21 [_Strength1]
+//               Float 22 [_Strength2]
+//               Vector 10 [_Time]
+//               Vector 23 [_WindDirection]
+//               Vector 14 [unity_DynamicLightmapST]
+//               Vector 13 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c26, -0.5, 1, 1.20000005, 1.10000002
+    def c27, 0.349999994, 0.0350000001, 0.449999988, 0.0450000018
+    def c28, 0.159154937, 0.25, 6.28318548, -3.14159274
+    def c29, -2.52398507e-007, 2.47609005e-005, -0.00138883968, 0.0416666418
+    def c30, 1.29999995, 0.150000006, 0.0149999997, 1.14999998
+    def c31, 1.04999995, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord2 v4
+    dcl_color v5
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord5 o5
+    dcl_texcoord6 o6.x
+    dcl_texcoord7 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c24, c24.zwzw
+    mad o1.zw, v3.xyxy, c25.xyxy, c25
+    dp4 r0.z, c5, v0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c6, v0
+    mul r1.xy, r0, c19.x
+    mov r2.x, c10.x
+    mad r2.yzw, r2.x, c18.x, r1.xxyx
+    mad r2.yzw, r0.xzxy, c19.x, r2
+    mad r2.yzw, r2, c28.x, c28.y
+    frc r2.yzw, r2
+    mad r2.yzw, r2, c28.z, c28.w
+    mul r2.yzw, r2, r2
+    mad r3.xyz, r2.yzww, c29.x, c29.y
+    mad r3.xyz, r2.yzww, r3, c29.z
+    mad r3.xyz, r2.yzww, r3, c29.w
+    mad r3.xyz, r2.yzww, r3, c26.x
+    mad r2.yzw, r2, r3.xxyz, c26.y
+    mul r2.yzw, r2, v5.xxyz
+    mul r0.w, r2.y, c15.x
+    mad r0.w, r0.w, c21.x, v0.z
+    mul r1.z, r2.x, c18.x
+    mad r3, r1.z, c27, r1.xxyy
+    mad r1.xy, r1.z, c30.yzzw, r1.x
+    mad r1.xy, r0.y, c19.x, r1
+    mad r1.xy, r1, c28.x, c28.y
+    frc r1.xy, r1
+    mad r1.xy, r1, c28.z, c28.w
+    mad r3, r0.zzxx, c19.x, r3
+    mad r3, r3, c28.x, c28.y
+    frc r3, r3
+    mad r3, r3, c28.z, c28.w
+    mul r3, r3, r3
+    mad r4, r3, c29.x, c29.y
+    mad r4, r3, r4, c29.z
+    mad r4, r3, r4, c29.w
+    mad r4, r3, r4, c26.x
+    mad r3, r3, r4, c26.y
+    mul r3, r3, v5.xxyy
+    mul r3.xy, r3, c15.x
+    mul r3.zw, r3, c16.x
+    mul r3, r3, c21.x
+    mad r0.w, r3.x, c26.z, r0.w
+    mad r0.w, r3.y, c26.w, r0.w
+    mul r3.xy, r0, c20.x
+    mad r4.xyz, r2.x, c18.x, r3.yxxw
+    mad r4.xyz, r0, c20.x, r4
+    mad r4.xyz, r4, c28.x, c28.y
+    frc r4.xyz, r4
+    mad r4.xyz, r4, c28.z, c28.w
+    mul r4.xyz, r4, r4
+    mad r5.xyz, r4, c29.x, c29.y
+    mad r5.xyz, r4, r5, c29.z
+    mad r5.xyz, r4, r5, c29.w
+    mad r5.xyz, r4, r5, c26.x
+    mad r4.xyz, r4, r5, c26.y
+    mul r4.xyz, r4, v5.yzxw
+    mul r1.w, r4.z, c15.x
+    mad r0.w, r1.w, c22.x, r0.w
+    mad r5, r1.z, c27.zwxy, r3.yyxx
+    mad r1.zw, r1.z, c30.xyyz, r3.x
+    mad r1.zw, r0.y, c20.x, r1
+    mad r1.zw, r1, c28.x, c28.y
+    frc r1.zw, r1
+    mad r1.zw, r1, c28.z, c28.w
+    mul r1, r1, r1
+    mad r5, r0.xxzz, c20.x, r5
+    mad r5, r5, c28.x, c28.y
+    frc r5, r5
+    mad r5, r5, c28.z, c28.w
+    mul r5, r5, r5
+    mad r6, r5, c29.x, c29.y
+    mad r6, r5, r6, c29.z
+    mad r6, r5, r6, c29.w
+    mad r6, r5, r6, c26.x
+    mad r5, r5, r6, c26.y
+    mul r5, r5, v5.yyxx
+    mul r0.xy, r5.zwzw, c15.x
+    mul r2.xy, r5, c16.x
+    mul r2.xy, r2, c22.x
+    mul r0.xy, r0, c22.x
+    mad r0.x, r0.x, c26.z, r0.w
+    mad r0.x, r0.y, c26.w, r0.x
+    mad r0.z, c23.x, v5.x, r0.x
+    mul r2.z, r2.z, c16.x
+    mul r2.w, r2.w, c17.x
+    mad r2.w, r2.w, c21.x, v0.y
+    mad r2.z, r2.z, c21.x, v0.x
+    mad r2.z, r3.z, c30.x, r2.z
+    mad r2.z, r3.w, c26.z, r2.z
+    mul r3.x, r4.x, c16.x
+    mul r3.y, r4.y, c17.x
+    mad r2.z, r3.x, c22.x, r2.z
+    mad r2.x, r2.x, c30.x, r2.z
+    mad r2.x, r2.y, c26.z, r2.x
+    mad r0.x, c23.y, v5.y, r2.x
+    mad r2.xy, r1.zwzw, c29.x, c29.y
+    mad r2.xy, r1.zwzw, r2, c29.z
+    mad r2.xy, r1.zwzw, r2, c29.w
+    mad r2.xy, r1.zwzw, r2, c26.x
+    mad r1.zw, r1, r2.xyxy, c26.y
+    mul r1.zw, r1, v5.z
+    mul r1.zw, r1, c17.x
+    mul r1.zw, r1, c22.x
+    mad r2.xy, r1, c29.x, c29.y
+    mad r2.xy, r1, r2, c29.z
+    mad r2.xy, r1, r2, c29.w
+    mad r2.xy, r1, r2, c26.x
+    mad r1.xy, r1, r2, c26.y
+    mul r1.xy, r1, v5.z
+    mul r1.xy, r1, c17.x
+    mul r1.xy, r1, c21.x
+    mad r1.x, r1.x, c30.w, r2.w
+    mad r1.x, r1.y, c31.x, r1.x
+    mad r1.x, r3.y, c22.x, r1.x
+    mad r1.x, r1.z, c30.w, r1.x
+    mad r1.x, r1.w, c31.x, r1.x
+    mad r0.y, c23.z, v5.z, r1.x
+    mov r0.w, v0.w
+    dp4 o2.w, c4, r0
+    dp4 o3.w, c5, r0
+    dp4 o4.w, c6, r0
+    mad o7.zw, v4.xyxy, c14.xyxy, c14
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 221 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Bumped Specular Cloth/vp/7D55EFAD.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, -c26.x
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c11.x
+
+//     mov o0, r1 // Relocated to line 217 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o5.zw, r1
+    mov o6.x, r1.z
+    mul r2.w, r0.x, -c26.x
+    mad o5.xy, r2.z, c12.zwzw, r2.xwzw
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r1.xyz, c8.zxyw, v2.y
+    mad r1.xyz, c7.zxyw, v2.x, r1
+    mad r1.xyz, c9.zxyw, v2.z, r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r1.zxyw, r0.yzxw, -r2
+    mul r0.z, c13.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o2.y, r2.x
+    mov o2.z, r1.y
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.z
+    mov o4.z, r1.x
+    mov o7.xy, c31.y

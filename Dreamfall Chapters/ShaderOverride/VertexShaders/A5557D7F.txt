@@ -1,0 +1,184 @@
+// CRC32: A5557D7F | Unity headers extracted from SpeedTree.shader
+// Shader "Nature/SpeedTree" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0,0,0,0)
+//    _HueVariation ("Hue Variation", Color) = (1,0.5,0,0.1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.1
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//    _DetailTex ("Detail", 2D) = "black" { }
+//    _BumpMap ("Normal Map", 2D) = "bump" { }
+//    _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.333
+//   [MaterialEnum(Off,0,Front,1,Back,2)]  _Cull ("Cull", Float) = 2
+//   [MaterialEnum(None,0,Fastest,1,Fast,2,Better,3,Best,4,Palm,5)]  _WindQuality ("Wind Quality", Range(0,5)) = 0
+//   }
+//   Fallback "Transparent/Cutout/VertexLit"
+//   SubShader 2/2 {
+//     LOD 400
+//     Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//     Pass 1/7 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//       Cull [_Cull]
+//       GpuProgramID 493832
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "GEOM_TYPE_LEAF" "LIGHTMAP_OFF" "LOD_FADE_PERCENTAGE" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Bind "texcoord3" TexCoord3
+//           Matrix 11 [_Object2World] 3
+//           Matrix 14 [_World2Object] 3
+//           Matrix 8 [glstate_matrix_invtrans_modelview0] 3
+//           Matrix 4 [glstate_matrix_mvp]
+//           Vector 32 [_Color]
+//           Vector 17 [_ProjectionParams]
+//           Vector 18 [_ScreenParams]
+//           Vector 22 [unity_4LightAtten0]
+//           Vector 19 [unity_4LightPosX0]
+//           Vector 20 [unity_4LightPosY0]
+//           Vector 21 [unity_4LightPosZ0]
+//           Vector 31 [unity_FogParams]
+//           Vector 30 [unity_LODFade]
+//           Vector 0 [unity_LightColor0]
+//           Vector 1 [unity_LightColor1]
+//           Vector 2 [unity_LightColor2]
+//           Vector 3 [unity_LightColor3]
+//           Vector 25 [unity_SHAb]
+//           Vector 24 [unity_SHAg]
+//           Vector 23 [unity_SHAr]
+//           Vector 28 [unity_SHBb]
+//           Vector 27 [unity_SHBg]
+//           Vector 26 [unity_SHBr]
+//           Vector 29 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c33, -1, 1, 0, 0.5
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_texcoord3 v4
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_texcoord6 o6
+dcl_position o7
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul o2.xyz, v5.x, c32
+    mul r0.xyz, v1.y, c15
+    mad r0.xyz, c14, v1.x, r0
+    mad r0.xyz, c16, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c26, r2
+    dp4 r3.y, c27, r2
+    dp4 r3.z, c28, r2
+    mad r0.xyz, c29, r0.x, r3
+    mov r1.w, c33.y
+    dp4 r2.x, c23, r1
+    dp4 r2.y, c24, r1
+    dp4 r2.z, c25, r1
+    add r0.xyz, r0, r2
+    add r0.w, v3.w, c33.x
+    mov r2.y, c33.y
+    mad r0.w, c30.x, r0.w, r2.y
+    mov r3.xyz, v3
+    add r2.xzw, -r3.xyyz, v0.xyyz
+    mul r3.xyz, r0.w, r2.xzww
+    mul r4.xyz, r3.y, c9
+    mad r4.xyz, r3.x, c8, r4
+    mad r4.xyz, r3.z, c10, r4
+    dp3 r0.w, r3, r3
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    nrm r3.xyz, r4
+    mov r4.x, v3.w
+    mov r4.yz, v4.xxyw
+    lrp r5.xyz, c30.x, r4, r2.xzww
+    mad r2.xzw, r3.xyyz, r0.w, -r5.xyyz
+    mul r0.w, v5.w, v5.w
+    sge r0.w, -r0.w, r0.w
+    mad r2.xzw, r0.w, r2, r5.xyyz
+    add r3.xyz, r2.xzww, v3
+    mov r3.w, v0.w
+    dp4 r4.y, c12, r3
+    add r5, -r4.y, c20
+    mul r6, r1.y, r5
+    mul r5, r5, r5
+    dp4 r4.x, c11, r3
+    add r7, -r4.x, c19
+    mad r6, r7, r1.x, r6
+    mad r5, r7, r7, r5
+    dp4 r4.z, c13, r3
+    add r7, -r4.z, c21
+    mov o1.xyz, r4
+    mad r4, r7, r1.z, r6
+    mad r5, r7, r7, r5
+    mov o0.xyz, r1
+    rsq r1.x, r5.x
+    rsq r1.y, r5.y
+    rsq r1.z, r5.z
+    rsq r1.w, r5.w
+    mad r2, r5, c22, r2.y
+    mul r1, r1, r4
+    max r1, r1, c33.z
+    rcp r4.x, r2.x
+    rcp r4.y, r2.y
+    rcp r4.z, r2.z
+    rcp r4.w, r2.w
+    mul r1, r1, r4
+    mul r2.xyz, r1.y, c1
+    mad r2.xyz, c0, r1.x, r2
+    mad r1.xyz, c2, r1.z, r2
+    mad r1.xyz, c3, r1.w, r1
+    add o4.xyz, r0, r1
+    dp4 r0.x, c4, r3
+    dp4 r0.w, c7, r3
+
+mov o7, r0 // Relocated from line 161 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Nature_SpeedTree/vp/A5557D7F.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c33.w
+    dp4 r0.y, c5, r3
+    dp4 r0.z, c6, r3
+    mul r1.y, r0.y, c17.x
+
+//     mov o7, r0 // Relocated to line 157 with shadertool.py
+mov o7.yz, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o5.zw, r0
+    mad o6.x, r0.z, c31.z, c31.w
+    mul r1.w, r1.y, c33.w
+    mad o5.xy, r1.z, c18.zwzw, r1.xwzw
+    mov o2.w, c32.w
+    mul o3.xyz, v2.xyxw, c33.yyzw

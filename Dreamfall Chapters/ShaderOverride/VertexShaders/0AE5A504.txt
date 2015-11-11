@@ -1,0 +1,521 @@
+// CRC32: 0AE5A504 | Matched 3 variants of 1 shaders: Nature/SpeedTree
+// 
+//    Unity headers extracted from SpeedTree.shader
+//    Shader "Nature/SpeedTree" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0,0,0,0)
+//       _HueVariation ("Hue Variation", Color) = (1,0.5,0,0.1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.1
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//       _DetailTex ("Detail", 2D) = "black" { }
+//       _BumpMap ("Normal Map", 2D) = "bump" { }
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.333
+//      [MaterialEnum(Off,0,Front,1,Back,2)]  _Cull ("Cull", Float) = 2
+//      [MaterialEnum(None,0,Fastest,1,Fast,2,Better,3,Best,4,Palm,5)]  _WindQuality ("Wind Quality", Range(0,5)) = 0
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 1/2 {
+//        LOD 400
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//        Pass 7/7 {
+//          Tags { "LIGHTMODE"="Vertex" "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//          Cull [_Cull]
+//          GpuProgramID 434308
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "EFFECT_HUE_VARIATION" "FOG_EXP" "GEOM_TYPE_LEAF" "LOD_FADE_CROSSFADE" }
+// 4:           Keywords { "EFFECT_HUE_VARIATION" "FOG_EXP2" "GEOM_TYPE_LEAF" "LOD_FADE_CROSSFADE" }
+// 1:           Keywords { "EFFECT_HUE_VARIATION" "FOG_LINEAR" "GEOM_TYPE_LEAF" "LOD_FADE_CROSSFADE" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "texcoord2" TexCoord2
+//              Matrix 26 [_Object2World] 3
+//              Matrix 29 [_World2Object] 3
+//              Matrix 23 [glstate_matrix_invtrans_modelview0] 3
+//              Matrix 20 [glstate_matrix_modelview0] 3
+//              Matrix 16 [glstate_matrix_mvp]
+//              Vector 53 [_Color]
+//              Vector 52 [_HueVariation]
+//              Vector 32 [_ProjectionParams]
+//              Vector 51 [_ST_WindAnimation]
+//              Vector 39 [_ST_WindBranch]
+//              Vector 43 [_ST_WindBranchAdherences]
+//              Vector 42 [_ST_WindBranchAnchor]
+//              Vector 40 [_ST_WindBranchTwitch]
+//              Vector 41 [_ST_WindBranchWhip]
+//              Vector 38 [_ST_WindGlobal]
+//              Vector 45 [_ST_WindLeaf1Ripple]
+//              Vector 46 [_ST_WindLeaf1Tumble]
+//              Vector 47 [_ST_WindLeaf1Twitch]
+//              Vector 48 [_ST_WindLeaf2Ripple]
+//              Vector 49 [_ST_WindLeaf2Tumble]
+//              Vector 50 [_ST_WindLeaf2Twitch]
+//              Vector 44 [_ST_WindTurbulences]
+//              Vector 37 [_ST_WindVector]
+//              Vector 33 [_ScreenParams]
+//              Float 36 [_WindEnabled]
+//              Float 35 [_WindQuality]
+//              Vector 34 [glstate_lightmodel_ambient]
+//              Vector 8 [unity_LightAtten0]
+//              Vector 9 [unity_LightAtten1]
+//              Vector 10 [unity_LightAtten2]
+//              Vector 11 [unity_LightAtten3]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 4 [unity_LightPosition0]
+//              Vector 5 [unity_LightPosition1]
+//              Vector 6 [unity_LightPosition2]
+//              Vector 7 [unity_LightPosition3]
+//              Vector 12 [unity_SpotDirection0]
+//              Vector 13 [unity_SpotDirection1]
+//              Vector 14 [unity_SpotDirection2]
+//              Vector 15 [unity_SpotDirection3]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c54, 0.5, -0.300000012, 0, 1
+    def c55, 5, -4, 2, -1
+    def c56, 0.0625, 1, 16, 30.2999992
+    def c57, 2, 3, 0.75, -0.212114394
+    def c58, 0.159154937, 0.5, 6.28318548, -3.14159274
+    def c59, -0.0187292993, 0.0742610022, 1.57072878, 0.870000005
+    def c60, -2, 3.14159274, 0.5, 1.5
+    def c61, 0.100000001, 0.25, 0.800000012, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_texcoord2 v4
+    dcl_color v5
+    dcl_position o0
+    dcl_texcoord o1.x
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, c53, v5.x
+    mov r0.w, c26.w
+    add r1.x, r0.w, c27.w
+    add r1.y, r1.x, c28.w
+    mov r2.y, v1.y
+    add r1.z, r2.y, v0.x
+    add r1.z, r1.z, v1.x
+    frc r1.yz, r1
+    mad r1.y, r1.z, c54.x, r1.y
+    add r1.y, r1.y, c54.y
+    mul_sat o3.z, r1.y, c52.w
+    mov r2.x, c35.x
+    mul r1.y, r2.x, c36.x
+    slt r1.zw, c54, r1.y
+    mov r3, c37
+    dp3 r4.x, c29, r3
+    dp3 r4.y, c30, r3
+    dp3 r4.z, c31, r3
+    nrm r3.xyz, r4
+    mul r2.yzw, r1.z, r3.xxyz
+    mov r3.xyz, v3
+    add r3.xyz, -r3, v0
+    sge r4.x, -v5_abs.w, v5_abs.w
+    dp3 r4.y, r3, r3
+    rsq r4.y, r4.y
+    rcp r4.y, r4.y
+    mul r5.xyz, r3.y, c24
+    mad r5.xyz, r3.x, c23, r5
+    mad r5.xyz, r3.z, c25, r5
+    nrm r6.xyz, r5
+    mad r4.yzw, r6.xxyz, r4.y, -r3.xxyz
+    mad r3.xyz, r4.x, r4.yzww, r3
+    slt r4.x, r1.y, c55.x
+    mul r1.w, r1.w, r4.x
+    if_ne r1.w, -r1.w
+    add r1.w, v3.y, v3.x
+    mov r4.y, c55.y
+    mad r4.x, r2.x, c36.x, r4.y
+    slt r4.y, c54.z, v4.w
+    mov r5.xy, c45
+    add r4.zw, -r5.xyxy, c48.xyxy
+    mad r4.zw, r4.y, r4, c45.xyxy
+    add r1.w, r1.w, r4.z
+    add r1.w, r1.w, c54.x
+    frc r1.w, r1.w
+    mad r1.w, r1.w, c55.z, c55.w
+    mul r4.z, r1_abs.w, r1_abs.w
+    mad r1.w, r1_abs.w, -c57.x, c57.y
+    mad r1.w, r4.z, r1.w, -c54.x
+    mul r1.w, r4.w, r1.w
+    add r1.w, r1.w, r1.w
+    mul r5.xyz, c56, v4.z
+    frc r5.xyz, r5
+    mad r5.xyz, r5, c55.z, c55.w
+    mul r5.xyz, r1.w, r5
+    mad r3.xyz, r5, v4.x, r3
+    if_ge -r4_abs.x, r4_abs.x
+    mul r5, c56, v4.y
+    frc r5, r5
+    mad r4.xzw, r5.xyyz, c55.z, c55.w
+    mov r6, c46
+    add r6, -r6, c49
+    mad r6, r4.y, r6, c46
+    mov r5.xyz, c47
+    add r5.xyz, -r5, c50
+    mad r5.xyz, r4.y, r5, c47
+    mul r1.w, r5.w, c57.y
+    mad r7.y, r5.w, c57.y, r6.x
+    mad r7.x, r6.x, c57.z, -r1.w
+    add r7.xy, r7, c54.x
+    frc r7.xy, r7
+    mad r7.xy, r7, c55.z, c55.w
+    mul r7.zw, r7_abs.xyxy, r7_abs.xyxy
+    mad r7.xy, r7_abs, -c57.x, c57.y
+    mad r7.xy, r7.zwzw, r7, -c54.x
+    add r7.xy, r7, r7
+    dp3 r1.w, r3, r3
+    rsq r1.w, r1.w
+    rcp r1.w, r1.w
+    mad r4.y, r7.x, r7.x, r7.y
+    mul r6.x, r6.z, v4.x
+    mul r4.y, r4.y, r6.x
+    mad r4.y, r4.y, c58.x, c58.y
+    frc r4.y, r4.y
+    mad r4.y, r4.y, c58.z, c58.w
+    sincos r8.xy, r4.y
+    add r4.y, -r8.x, c54.w
+    mul r9, r4.xxxz, r4.y
+    mul r8.yzw, r4.xwxz, r8.y
+    mad r10.xy, r9.zyzw, r4.wzzw, r8.wyzw
+    mad r11.xy, r9.xwzw, r4.xzzw, r8.x
+    mad r10.z, r9.w, r4.w, -r8.z
+    mad r12.xy, r9.yzzw, r4.zwzw, -r8.ywzw
+    mad r12.z, r9.w, r4.w, r8.z
+    mul r4.y, r4.w, r4.w
+    lrp r12.w, r4.y, c54.w, r8.x
+    mul r8.xyz, r2.zwyw, r4.wxzw
+    mad r8.xyz, r4.zwxw, r2.wyzw, -r8
+    dp3 r2.z, r2.yzww, r4.xzww
+    max r2.z, r2.z, -c54.w
+    min r2.z, r2.z, c54.w
+    add r8.w, r2.z, r8.y
+    dp3 r4.x, r8.xzww, r8.xzww
+    rsq r4.x, r4.x
+    mul r4.xyz, r4.x, r8.zxww
+    add r4.w, -r2_abs.z, c54.w
+    rsq r4.w, r4.w
+    rcp r4.w, r4.w
+    mad r6.x, r2_abs.z, c59.x, c59.y
+    mad r6.x, r6.x, r2_abs.z, c57.w
+    mad r6.x, r6.x, r2_abs.z, c59.z
+    mul r4.w, r4.w, r6.x
+    mad r6.x, r4.w, c60.x, c60.y
+    slt r2.z, r2.z, -r2.z
+    mad r2.z, r6.x, r2.z, r4.w
+    mad r4.w, r7.y, -r7.y, r7.x
+    mad r7.x, r5.w, c57.y, r5.z
+    mul r7.y, r7.x, c59.w
+    add r5.zw, r7.xyxy, c54.x
+    frc r5.zw, r5
+    mad r5.zw, r5, c55.z, c55.w
+    mul r6.xz, r5_abs.zyww, r5_abs.zyww
+    mad r5.zw, r5_abs, -c57.x, c57.y
+    mad r5.zw, r6.xyxz, r5, -c54.x
+    add r5.zw, r5, r5
+    mul r5.w, r5.w, r5.w
+    mad r5.z, r5.w, r5.z, c54.w
+    mul_sat r5.z, r5.z, c54.x
+    pow r6.x, r5.z, r5.y
+    mul r4.w, r6.y, r4.w
+    mad r2.z, r2.z, r6.w, r4.w
+    mad r2.z, r5.x, r6.x, r2.z
+    mul r2.z, r2.z, v4.x
+    mad r2.z, r2.z, c58.x, c58.y
+    frc r2.z, r2.z
+    mad r2.z, r2.z, c58.z, c58.w
+    sincos r5.xy, r2.z
+    add r2.z, -r5.x, c54.w
+    mul r6, r4.yyyz, r2.z
+    mul r5.yzw, r4.xxyz, r5.y
+    mad r7.xy, r6.zyzw, r4.xzzw, r5.wyzw
+    mad r8.xy, r6.xwzw, r4.yzzw, r5.x
+    mad r7.z, r6.w, r4.x, -r5.z
+    mad r9.xy, r6.yzzw, r4.zxzw, -r5.ywzw
+    mad r9.z, r6.w, r4.x, r5.z
+    mul r2.z, r4.x, r4.x
+    lrp r7.w, r2.z, c54.w, r5.x
+    mov r11.z, r12.x
+    mov r11.w, r10.x
+    mov r8.z, r7.y
+    mov r8.w, r9.y
+    dp3 r4.x, r11.xzww, r8.xzww
+    mov r9.w, r8.y
+    dp3 r4.y, r11.xwzw, r9.xzww
+    dp3 r4.z, r11.xzww, r7.xzww
+    mov r10.w, r11.y
+    dp3 r5.x, r10.ywzw, r8.xzww
+    dp3 r5.y, r10.yzww, r9.xzww
+    dp3 r5.z, r10.ywzw, r7.xzww
+    dp3 r6.x, r12.yzww, r8.xzww
+    dp3 r6.y, r12.ywzw, r9.xzww
+    dp3 r6.z, r12.yzww, r7.xzww
+    dp3 r7.x, r4, v1
+    dp3 r7.y, r5, v1
+    dp3 r7.z, r6, v1
+    dp3 r4.x, r4, r3
+    dp3 r4.y, r5, r3
+    dp3 r4.z, r6, r3
+    nrm r5.xyz, r4
+    mul r3.xyz, r1.w, r5
+    else
+    mov r7.xyz, v1
+    endif
+    else
+    mov r7.xyz, v1
+    endif
+    add r3.xyz, r3, v3
+    if_ge r1.y, c57.y
+    mov r4.x, c55.x
+    mad r1.y, r2.x, c36.x, -r4.x
+    if_ge -r1_abs.y, r1_abs.y
+    mov r4.xyz, c42
+    dp3 r5.x, c29, r4
+    dp3 r5.y, c30, r4
+    dp3 r5.z, c31, r4
+    nrm r4.xyz, r5
+    mul r4.xyz, r4, c42.w
+    mul r5.xyz, c56, v2.w
+    frc r5.xyz, r5
+    mad r5.xyz, r5, c55.z, c55.w
+    mul r5.xyz, r5, v2.z
+    add r1.y, r1.x, c39.x
+    add r6.x, r1.y, v2.w
+    mad r6.y, r1.y, c40.y, v2.w
+    mul r1.w, r6.x, c40.y
+    mul r6.z, r1.w, c54.x
+    add r6.w, r6.x, -v2.z
+    add r6, r6, c60.zzzw
+    frc r6, r6
+    mad r6, r6, c55.z, c55.w
+    mul r8, r6_abs, r6_abs
+    mad r6, r6_abs, -c57.x, c57.y
+    mad r6, r8, r6, -c54.x
+    add r6, r6, r6
+    mul r8.y, r6.z, r6.y
+    slt r1.w, r8.y, c54.z
+    mov r8.x, c54.w
+    mov r9.xy, -r8
+    mov r9.z, -c54.w
+    add r2.xz, r9.xyyw, r9.zyyw
+    mad r2.xz, r1.w, r2, r8.xyyw
+    mad r1.w, r6.y, -r6.z, r2.x
+    mad r1.w, r2.z, r1.w, r8.y
+    lrp r4.w, r2.z, r2.x, r1.w
+    mul r1.w, r4.w, c40.x
+    add r2.x, -r3.w, c54.w
+    mov r4.w, c54.w
+    add r2.z, r4.w, -c40.x
+    mul r2.z, r2.z, r6.x
+    mad r1.w, r1.w, r2.x, r2.z
+    mad r2.x, r6.w, c41.x, r4.w
+    mul r1.w, r1.w, r2.x
+    mul r5.xyz, r1.w, r5
+    mad r5.xyz, r5, c39.y, r3
+    mad r6.x, r1.y, c61.x, v2.w
+    mov r2.x, c44.x
+    mul r1.y, r2.x, c51.x
+    mad r6.y, r1.y, c61.x, v2.w
+    add r1.yw, r6.xxzy, c54.x
+    frc r1.yw, r1
+    mad r1.yw, r1, c55.z, c55.w
+    mul r2.xz, r1_abs.yyww, r1_abs.yyww
+    mad r1.yw, r1_abs, -c57.x, c57.y
+    mad r1.yw, r2.xxzz, r1, -c54.x
+    add r1.yw, r1, r1
+    mul r1.yw, r1, r1
+    mul r1.y, r1.y, r1.w
+    mad r1.y, r1.y, -c44.x, r4.w
+    mul r1.w, r6.w, c37.w
+    mad r1.y, r1.w, c41.x, r1.y
+    mad r4.xyz, r1.z, r4, -r5
+    mul r4.xyz, r4, c43.y
+    mul r4.xyz, r1.y, r4
+    mad r3.xyz, r4, v2.z, r5
+    else
+    mul r4.xyz, c56, v2.w
+    frc r4.xyz, r4
+    mad r4.xyz, r4, c55.z, c55.w
+    mul r4.xyz, r4, v2.z
+    add r1.x, r1.x, c39.x
+    add r5.x, r1.x, v2.w
+    mad r5.y, r1.x, c40.y, v2.w
+    mul r1.x, r5.x, c40.y
+    mul r5.z, r1.x, c54.x
+    add r1.xyw, r5.xyzz, c54.x
+    frc r1.xyw, r1
+    mad r1.xyw, r1, c55.z, c55.w
+    mul r5.xyz, r1_abs.xyww, r1_abs.xyww
+    mad r1.xyw, r1_abs, -c57.x, c57.y
+    mad r1.xyw, r5.xyzz, r1, -c54.x
+    add r1.xyw, r1, r1
+    mul r5.y, r1.w, r1.y
+    slt r2.x, r5.y, c54.z
+    mov r5.x, c54.w
+    mov r6.xy, -r5
+    mov r6.z, -c54.w
+    add r5.zw, r6.xyxy, r6.xyzy
+    mad r2.xz, r2.x, r5.zyww, r5.xyyw
+    mad r1.y, r1.y, -r1.w, r2.x
+    mad r1.y, r2.z, r1.y, r5.y
+    lrp r4.w, r2.z, r2.x, r1.y
+    mul r1.y, r4.w, c40.x
+    add r1.w, -r3.w, c54.w
+    mov r3.w, c54.w
+    add r2.x, r3.w, -c40.x
+    mul r1.x, r1.x, r2.x
+    mad r1.x, r1.y, r1.w, r1.x
+    mul r1.xyw, r1.x, r4.xyzz
+    mad r3.xyz, r1.xyww, c39.y, r3
+    endif
+    endif
+    dp3 r1.x, r3, r3
+    rsq r1.x, r1.x
+    rcp r1.x, r1.x
+    rcp r1.y, c38.z
+    mad r1.w, r1.y, -c61.y, r3.y
+    max r1.w, r1.w, c54.z
+    mul r2.x, r1.w, c38.z
+    slt r2.z, -r2_abs.x, r2_abs.x
+    pow r3.w, r2.x, c38.w
+    mad r1.w, r1.w, -c38.z, r3.w
+    mad r1.w, r2.z, r1.w, r2.x
+    add r4.x, r0.w, c38.x
+    mov r2.x, c38.x
+    mov r5.yz, c61
+    mad r4.y, r2.x, r5.z, c27.w
+    add r2.xz, r4.xyyw, c54.x
+    frc r2.xz, r2
+    mad r2.xz, r2, c55.z, c55.w
+    mul r4.xy, r2_abs.xzzw, r2_abs.xzzw
+    mad r2.xz, r2_abs, -c57.x, c57.y
+    mad r2.xz, r4.xyyw, r2, -c54.x
+    add r2.xz, r2, r2
+    mad r0.w, r2.z, r2.z, r2.x
+    mul r1.y, r1.y, c43.x
+    mad r0.w, c38.y, r0.w, r1.y
+    mul r0.w, r1.w, r0.w
+    mad r2.xz, r2.yyww, r0.w, r3
+    mov r2.y, r3.y
+    nrm r4.xyz, r2
+    mad r1.xyw, r4.xyzz, r1.x, -r3.xyzz
+    mad r1.xyz, r1.z, r1.xyww, r3
+    mov r1.w, v0.w
+    dp4 r2.x, c16, r1
+    dp4 r2.y, c17, r1
+    dp4 r2.w, c19, r1
+
+mov o0, r2 // Relocated from line 501 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Nature_SpeedTree/vp/0AE5A504.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    mul r3.xz, r2.xyww, c54.x
+    mul r0.w, r2.y, c32.x
+    mul r3.w, r0.w, c54.x
+    mad r3.xy, r3.z, c33.zwzw, r3.xwzw
+    mul r3.zw, r5.y, c33.xyxy
+    mul o4.xy, r3.zwzw, r3
+    dp4 r3.x, c20, r1
+    dp4 r3.y, c21, r1
+    dp4 r3.z, c22, r1
+    dp3 r4.x, c23, r7
+    dp3 r4.y, c24, r7
+    dp3 r4.z, c25, r7
+    nrm r5.xyz, r4
+    add r4.xyz, c34, c34
+    mad r6.xyz, r3, -c4.w, c4
+    dp3 r0.w, r6, r6
+    rsq r3.w, r0.w
+    mul r6.xyz, r3.w, r6
+    mov r3.w, c54.w
+    mad r0.w, r0.w, c8.z, r3.w
+    rcp r0.w, r0.w
+    dp3 r4.w, r6, c12
+    max r4.w, r4.w, c54.z
+    add r4.w, r4.w, -c8.x
+    mul_sat r4.w, r4.w, c8.y
+    mul r0.w, r0.w, r4.w
+    dp3 r4.w, r5, r6
+    max r4.w, r4.w, c54.z
+    mul r0.w, r0.w, r4.w
+    mad r4.xyz, c0, r0.w, r4
+    mad r6.xyz, r3, -c5.w, c5
+    dp3 r0.w, r6, r6
+    rsq r4.w, r0.w
+    mul r6.xyz, r4.w, r6
+    mad r0.w, r0.w, c9.z, r3.w
+    rcp r0.w, r0.w
+    dp3 r4.w, r6, c13
+    max r4.w, r4.w, c54.z
+    add r4.w, r4.w, -c9.x
+    mul_sat r4.w, r4.w, c9.y
+    mul r0.w, r0.w, r4.w
+    dp3 r4.w, r5, r6
+    max r4.w, r4.w, c54.z
+    mul r0.w, r0.w, r4.w
+    mad r4.xyz, c1, r0.w, r4
+    mad r6.xyz, r3, -c6.w, c6
+    dp3 r0.w, r6, r6
+    rsq r4.w, r0.w
+    mul r6.xyz, r4.w, r6
+    mad r0.w, r0.w, c10.z, r3.w
+    rcp r0.w, r0.w
+    dp3 r4.w, r6, c14
+    max r4.w, r4.w, c54.z
+    add r4.w, r4.w, -c10.x
+    mul_sat r4.w, r4.w, c10.y
+    mul r0.w, r0.w, r4.w
+    dp3 r4.w, r5, r6
+    max r4.w, r4.w, c54.z
+    mul r0.w, r0.w, r4.w
+    mad r4.xyz, c2, r0.w, r4
+    mad r3.xyz, r3, -c7.w, c7
+    dp3 r0.w, r3, r3
+    rsq r4.w, r0.w
+    mul r3.xyz, r3, r4.w
+    mad r0.w, r0.w, c11.z, r3.w
+    rcp r0.w, r0.w
+    dp3 r3.w, r3, c15
+    max r3.w, r3.w, c54.z
+    add r3.w, r3.w, -c11.x
+    mul_sat r3.w, r3.w, c11.y
+    mul r0.w, r0.w, r3.w
+    dp3 r3.x, r5, r3
+    max r3.x, r3.x, c54.z
+    mul r0.w, r0.w, r3.x
+    mad r3.xyz, c3, r0.w, r4
+    mul o2.xyz, r0, r3
+    dp4 r2.z, c18, r1
+
+//     mov o0, r2 // Relocated to line 424 with shadertool.py
+mov o0.z, r2 // Inserted by shadertool.py
+
+    mov o1.x, r2.z
+    mov o2.w, c53.w
+    mov o3.xy, v2
+    mov o4.z, r2.w

@@ -1,0 +1,137 @@
+// CRC32: 9D37C905 | Matched 6 variants of 1 shaders: Dreamfall/FX/Water (Supports Shadows)
+// 
+//     Unity headers extracted from MirrorWater.shader
+//     Shader "Dreamfall/FX/Water (Supports Shadows)" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Maintex (RGB)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Fresnel ("Reflection Fresnel Exponent", Float) = 2
+//        _ReflAmount ("Reflection amount", Float) = 2
+//        _ReflPow ("Reflection pow", Float) = 1
+//        _ReflDistort ("Reflection distort", Float) = 0.1
+//        _ReflectionTex ("Reflection", 2D) = "white" { }
+//        _WaterSpeed ("Water Speed", Float) = 1
+//       }
+//       Fallback "Diffuse"
+//       SubShader 1/1 {
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 204202
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 23 [_BumpMap_ST]
+//               Vector 22 [_MainTex_ST]
+//               Vector 11 [_ProjectionParams]
+//               Vector 12 [_ScreenParams]
+//               Vector 10 [_WorldSpaceCameraPos]
+//               Vector 21 [unity_DynamicLightmapST]
+//               Vector 15 [unity_SHAb]
+//               Vector 14 [unity_SHAg]
+//               Vector 13 [unity_SHAr]
+//               Vector 18 [unity_SHBb]
+//               Vector 17 [unity_SHBg]
+//               Vector 16 [unity_SHBr]
+//               Vector 19 [unity_SHC]
+//               Vector 20 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c24, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord2 v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7.xyz
+    dcl_texcoord7 o8.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c22, c22.zwzw
+    mad o1.zw, v3.xyxy, c23.xyxy, c23
+    dp3 r0.x, c4, v1
+    dp3 r0.y, c5, v1
+    dp3 r0.z, c6, v1
+    nrm r1.xyz, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r2.xyz, -r0, c10
+    mov o2.xyz, r0
+    dp3 o4.x, r2, r1
+    mul r0.x, c20.w, v1.w
+    mul r0.yzw, c8.xxyz, v2.y
+    mad r0.yzw, c7.xxyz, v2.x, r0
+    mad r0.yzw, c9.xxyz, v2.z, r0
+    nrm r3.xyz, r0.yzww
+    mul r0.yzw, r1.xyzx, r3.xzxy
+    mad r0.yzw, r3.xyzx, r1.xzxy, -r0
+    mul r0.xyz, r0.x, r0.yzww
+    dp3 o4.y, r2, r0
+    dp3 o4.z, r2, r3
+    mad o6.zw, v4.xyxy, c21.xyxy, c21
+    mul r0.x, r3.y, r3.y
+    mad r0.x, r3.x, r3.x, -r0.x
+    mul r1, r3.yzzx, r3.xyzz
+    dp4 r2.x, c16, r1
+    dp4 r2.y, c17, r1
+    dp4 r2.z, c18, r1
+    mad r0.xyz, c19, r0.x, r2
+    mov r3.w, c24.y
+    dp4 r1.x, c13, r3
+    dp4 r1.y, c14, r3
+    dp4 r1.z, c15, r3
+    add o7.xyz, r0, r1
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_FX_Water (Supports Shadows)/vp/9D37C905.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c24.x
+    mov o8.x, r0.z
+    mul r1.y, r0.y, c11.x
+    mul r1.w, r1.y, c24.x
+    mad r0.xy, r1.z, c12.zwzw, r1.xwzw
+    mov o3, r0
+    mov o5, r0
+    mov o6.xy, c24.z

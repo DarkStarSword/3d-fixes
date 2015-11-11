@@ -1,0 +1,141 @@
+// CRC32: A4599A06 | Matched 2 variants of 1 shaders: Hidden/TerrainEngine/Details/BillboardWavingDoublePass
+// 
+//    Unity headers extracted from WavingGrassBillboard.shader
+//    Shader "Hidden/TerrainEngine/Details/BillboardWavingDoublePass" {
+//      Properties {
+//       _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//       _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//       _Cutoff ("Cutoff", Float) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="GrassBillboard" }
+//        Pass 4/6 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="GrassBillboard" }
+//          ZWrite Off
+//          Cull Off
+//          ColorMask RGB
+//          GpuProgramID 228808
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_CameraPosition]
+//              Vector 13 [_CameraRight]
+//              Vector 14 [_CameraUp]
+//              Vector 15 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [_WaveAndDistance]
+//              Vector 10 [_WavingTint]
+//              Vector 9 [unity_LightmapST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c16, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
+    def c17, 1.20000005, 2, 1.60000002, 4.80000019
+    def c18, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c19, 0.00600000005, 0.0199999996, 0.0500000007, -0.161616161
+    def c20, 0.674199879, 0.269679934, 0.134839967, 0.699999988
+    def c21, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c22, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c23, -0.5, 0.5, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_color o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    add r0.xyz, -c12, v0
+    dp3 r0.x, r0, r0
+    slt r0.x, c11.w, r0.x
+    mad r0.xy, r0.x, -v1, v1
+    mad r0.xzw, r0.x, c13.xyyz, v0.xyyz
+    mad r0.xyz, r0.y, c14, r0.xzww
+    mul r1.xy, r0.xzzw, c11.y
+    mul r2, r1.y, c19.xyyz
+    mad r1, r1.x, c16, r2
+    mov r2.x, c11.x
+    mad r1, r2.x, c17, r1
+    frc r1, r1
+    mad r1, r1, c18.x, c18.y
+    mul r2, r1, r1
+    mul r3, r1, r2
+    mad r1, r3, c19.w, r1
+    mul r3, r2, r3
+    mul r2, r2, r3
+    mad r1, r3, c18.z, r1
+    mad r1, r2, c18.w, r1
+    mul r1, r1, r1
+    mul r1, r1, r1
+    mul r2, r1, v1.y
+    dp4 r1.x, r1, c20.xxyz
+    mul r1.x, r1.x, c20.w
+    dp4 r3.x, r2, c21
+    dp4 r3.z, r2, c22
+    mad r0.xz, r3, -c11.z, r0
+    add r1.yzw, r0.xxyz, -c12.xxyz
+    dp3 r1.y, r1.yzww, r1.yzww
+    add r1.y, -r1.y, c11.w
+    add r1.y, r1.y, r1.y
+    mul_sat o3.w, r1.y, c12.w
+    mov r2.x, c23.x
+    add r1.yzw, r2.x, c10.xxyz
+    mad r1.xyz, r1.x, r1.yzww, c23.y
+    mul r1.xyz, r1, v4
+    add o3.xyz, r1, r1
+    mad o1.xy, v2, c15, c15.zwzw
+    mov r0.w, v0.w
+    dp4 o2.x, c4, r0
+    dp4 o2.y, c5, r0
+    dp4 o2.z, c6, r0
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 120 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_TerrainEngine_Details_BillboardWavingDoublePass/vp/A4599A06.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c23.y
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c7.x
+
+//     mov o0, r1 // Relocated to line 116 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o4.zw, r1
+    mul r2.w, r0.x, c23.y
+    mad o4.xy, r2.z, c8.zwzw, r2.xwzw
+    mad o5.xy, v3, c9, c9.zwzw
+    mov o5.zw, c23.z
