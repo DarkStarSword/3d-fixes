@@ -277,7 +277,7 @@ dxgi_formats = {
 	6:          ("DXGI_FORMAT_R32G32B32_FLOAT",            ),
 	7:          ("DXGI_FORMAT_R32G32B32_UINT",             ),
 	8:          ("DXGI_FORMAT_R32G32B32_SINT",             ),
-	9:          ("DXGI_FORMAT_R16G16B16A16_TYPELESS",      ),
+	9:          ("DXGI_FORMAT_R16G16B16A16_TYPELESS",      np.dtype("<f2, <f2, <f2, <f2"), "RGBA", convert_4x16f),
 	10:         ("DXGI_FORMAT_R16G16B16A16_FLOAT",         ),
 	11:         ("DXGI_FORMAT_R16G16B16A16_UNORM",         ),
 	12:         ("DXGI_FORMAT_R16G16B16A16_UINT",          ),
@@ -328,7 +328,7 @@ dxgi_formats = {
 	57:         ("DXGI_FORMAT_R16_UINT",                   ),
 	58:         ("DXGI_FORMAT_R16_SNORM",                  ),
 	59:         ("DXGI_FORMAT_R16_SINT",                   ),
-	60:         ("DXGI_FORMAT_R8_TYPELESS",                ),
+	60:         ("DXGI_FORMAT_R8_TYPELESS",                np.dtype("u1"),             "L",    None),
 	61:         ("DXGI_FORMAT_R8_UNORM",                   ),
 	62:         ("DXGI_FORMAT_R8_UINT",                    ),
 	63:         ("DXGI_FORMAT_R8_SNORM",                   ),
@@ -358,7 +358,7 @@ dxgi_formats = {
 	87:         ("DXGI_FORMAT_B8G8R8A8_UNORM",             ),
 	88:         ("DXGI_FORMAT_B8G8R8X8_UNORM",             ),
 	89:         ("DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM", ),
-	90:         ("DXGI_FORMAT_B8G8R8A8_TYPELESS",          ),
+	90:         ("DXGI_FORMAT_B8G8R8A8_TYPELESS",          np.dtype("u1, u1, u1, u1"), "BGRA", None),
 	91:         ("DXGI_FORMAT_B8G8R8A8_UNORM_SRGB",        ),
 	92:         ("DXGI_FORMAT_B8G8R8X8_TYPELESS",          ),
 	93:         ("DXGI_FORMAT_B8G8R8X8_UNORM_SRGB",        ),
@@ -632,6 +632,15 @@ def _convert(src_filename, pos, header, dest_filename, np_dtype, img_type, conve
 			buf = converter(buf, header)
 		except TypeError:
 			buf = converter(buf)
+
+	if img_type == 'BGRA':
+		b = buf['f0']; g = buf['f1']; r = buf['f2']; a = buf['f3']
+		buf = np.column_stack((r, g, b, a))
+		img_type = 'RGBA'
+	elif img_type == 'BGR':
+		b = buf['f0']; g = buf['f1']; r = buf['f2']
+		buf = np.column_stack((r, g, b))
+		img_type = 'RGB'
 
 	if isinstance(buf, Image.Image):
 		image = buf
