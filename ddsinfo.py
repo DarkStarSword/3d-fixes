@@ -83,6 +83,9 @@ def convert_D32_FLOAT_S8X24_UINT(buf):
 	s = scale8bit(buf['f1'] & 0xff,  8)
 	return np.uint8(np.column_stack((d, s, [0]*len(d))))
 
+def convert_D32_FLOAT_X8X24_UINT(buf):
+	return np.uint8(scale_float(buf['f0']))
+
 def convert_rg_to_rgb(buf):
 	r = buf['f0']
 	g = buf['f1']
@@ -322,7 +325,7 @@ dxgi_formats = {
 
 	19:         ("DXGI_FORMAT_R32G8X24_TYPELESS",          np.dtype("<u4, <u4"),       "RGB",  convert_D32_FLOAT_S8X24_UINT),
 	20:         ("DXGI_FORMAT_D32_FLOAT_S8X24_UINT",       ),
-	21:         ("DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS",   ),
+	21:         ("DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS",   np.dtype("<u4, <u4"),       "L",    convert_D32_FLOAT_X8X24_UINT),
 	22:         ("DXGI_FORMAT_X32_TYPELESS_G8X24_UINT",    ),
 
 	23:         ("DXGI_FORMAT_R10G10B10A2_TYPELESS",       np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
