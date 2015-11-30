@@ -7,11 +7,21 @@ dcl_texcoord o0
 dcl_position o1
 dcl_color o2
 
-    dp4 o1.x, c0, v0
-    dp4 o1.y, c1, v0
-    dp4 o1.z, c2, v0
-    dp4 o1.w, c3, v0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
     mov o0.xy, v1
     mov o2, v2
 
 // approximately 6 instruction slots used
+
+// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py --ui=c200.z -i VertexShader_59_CRC32_2FC2E74B.txt
+texldl r31, c220.z, s0
+mad r0.x, r31.x, c200.z, r0.x
+mov o1, r0
