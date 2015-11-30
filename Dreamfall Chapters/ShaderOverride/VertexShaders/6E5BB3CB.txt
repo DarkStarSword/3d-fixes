@@ -1,0 +1,256 @@
+// CRC32: 6E5BB3CB (FOG + 7EC572CA) | Matched 2 variants of 1 shaders: Dreamfall/Bumped Specular Cloth
+// 
+//    Unity headers extracted from Normal-Bump-Cloth.shader
+//    Shader "Dreamfall/Bumped Specular Cloth" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _MeshOffsetR ("Offset (R)", Float) = 1
+//       _MeshOffsetG ("Offset (G)", Float) = 1
+//       _MeshOffsetB ("Offset (B)", Float) = 1
+//       _WindDirection ("Wind", Vector) = (0,0,0,0)
+//       _Speed1 ("Speed 1", Float) = 1
+//       _Scale1 ("Scale 1", Float) = 1
+//       _Scale2 ("Scale 2", Float) = 1
+//       _Strength1 ("Strength 1", Float) = 1
+//       _Strength2 ("Strength 2", Float) = 1
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/7 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          GpuProgramID 211294
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord2" TexCoord2
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 30 [_MainTex_ST]
+//              Float 23 [_MeshOffsetB]
+//              Float 22 [_MeshOffsetG]
+//              Float 21 [_MeshOffsetR]
+//              Vector 11 [_ProjectionParams]
+//              Float 25 [_Scale1]
+//              Float 26 [_Scale2]
+//              Vector 12 [_ScreenParams]
+//              Float 24 [_Speed1]
+//              Float 27 [_Strength1]
+//              Float 28 [_Strength2]
+//              Vector 10 [_Time]
+//              Vector 29 [_WindDirection]
+//              Vector 20 [unity_DynamicLightmapST]
+//              Vector 15 [unity_SHAb]
+//              Vector 14 [unity_SHAg]
+//              Vector 13 [unity_SHAr]
+//              Vector 18 [unity_SHBb]
+//              Vector 17 [unity_SHBg]
+//              Vector 16 [unity_SHBr]
+//              Vector 19 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c31, 0.349999994, 0.0350000001, 0.449999988, 0.0450000018
+    def c32, 0.159154937, 0.25, 6.28318548, -3.14159274
+    def c33, -0.5, 1, 1.20000005, 1.10000002
+    def c34, -2.52398507e-007, 2.47609005e-005, -0.00138883968, 0.0416666418
+    def c35, 1.29999995, 0.150000006, 0.0149999997, 1.14999998
+    def c36, 1.04999995, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord2 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v2, c30, c30.zwzw
+    dp4 r0.z, c5, v0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c6, v0
+    mul r1.xy, r0, c25.x
+    mov r2.x, c10.x
+    mad r2.yzw, r2.x, c24.x, r1.xxyx
+    mad r2.yzw, r0.xzxy, c25.x, r2
+    mad r2.yzw, r2, c32.x, c32.y
+    frc r2.yzw, r2
+    mad r2.yzw, r2, c32.z, c32.w
+    mul r2.yzw, r2, r2
+    mad r3.xyz, r2.yzww, c34.x, c34.y
+    mad r3.xyz, r2.yzww, r3, c34.z
+    mad r3.xyz, r2.yzww, r3, c34.w
+    mad r3.xyz, r2.yzww, r3, c33.x
+    mad r2.yzw, r2, r3.xxyz, c33.y
+    mul r2.yzw, r2, v4.xxyz
+    mul r0.w, r2.y, c21.x
+    mad r0.w, r0.w, c27.x, v0.z
+    mul r1.z, r2.x, c24.x
+    mad r3, r1.z, c31, r1.xxyy
+    mad r1.xy, r1.z, c35.yzzw, r1.x
+    mad r1.xy, r0.y, c25.x, r1
+    mad r1.xy, r1, c32.x, c32.y
+    frc r1.xy, r1
+    mad r1.xy, r1, c32.z, c32.w
+    mad r3, r0.zzxx, c25.x, r3
+    mad r3, r3, c32.x, c32.y
+    frc r3, r3
+    mad r3, r3, c32.z, c32.w
+    mul r3, r3, r3
+    mad r4, r3, c34.x, c34.y
+    mad r4, r3, r4, c34.z
+    mad r4, r3, r4, c34.w
+    mad r4, r3, r4, c33.x
+    mad r3, r3, r4, c33.y
+    mul r3, r3, v4.xxyy
+    mul r3.xy, r3, c21.x
+    mul r3.zw, r3, c22.x
+    mul r3, r3, c27.x
+    mad r0.w, r3.x, c33.z, r0.w
+    mad r0.w, r3.y, c33.w, r0.w
+    mul r3.xy, r0, c26.x
+    mad r4.xyz, r2.x, c24.x, r3.yxxw
+    mad r4.xyz, r0, c26.x, r4
+    mad r4.xyz, r4, c32.x, c32.y
+    frc r4.xyz, r4
+    mad r4.xyz, r4, c32.z, c32.w
+    mul r4.xyz, r4, r4
+    mad r5.xyz, r4, c34.x, c34.y
+    mad r5.xyz, r4, r5, c34.z
+    mad r5.xyz, r4, r5, c34.w
+    mad r5.xyz, r4, r5, c33.x
+    mad r4.xyz, r4, r5, c33.y
+    mul r4.xyz, r4, v4.yzxw
+    mul r1.w, r4.z, c21.x
+    mad r0.w, r1.w, c28.x, r0.w
+    mad r5, r1.z, c31.zwxy, r3.yyxx
+    mad r1.zw, r1.z, c35.xyyz, r3.x
+    mad r1.zw, r0.y, c26.x, r1
+    mad r1.zw, r1, c32.x, c32.y
+    frc r1.zw, r1
+    mad r1.zw, r1, c32.z, c32.w
+    mul r1, r1, r1
+    mad r5, r0.xxzz, c26.x, r5
+    mad r5, r5, c32.x, c32.y
+    frc r5, r5
+    mad r5, r5, c32.z, c32.w
+    mul r5, r5, r5
+    mad r6, r5, c34.x, c34.y
+    mad r6, r5, r6, c34.z
+    mad r6, r5, r6, c34.w
+    mad r6, r5, r6, c33.x
+    mad r5, r5, r6, c33.y
+    mul r5, r5, v4.yyxx
+    mul r0.xy, r5.zwzw, c21.x
+    mul r2.xy, r5, c22.x
+    mul r2.xy, r2, c28.x
+    mul r0.xy, r0, c28.x
+    mad r0.x, r0.x, c33.z, r0.w
+    mad r0.x, r0.y, c33.w, r0.x
+    mad r0.z, c29.x, v4.x, r0.x
+    mul r2.z, r2.z, c22.x
+    mul r2.w, r2.w, c23.x
+    mad r2.w, r2.w, c27.x, v0.y
+    mad r2.z, r2.z, c27.x, v0.x
+    mad r2.z, r3.z, c35.x, r2.z
+    mad r2.z, r3.w, c33.z, r2.z
+    mul r3.x, r4.x, c22.x
+    mul r3.y, r4.y, c23.x
+    mad r2.z, r3.x, c28.x, r2.z
+    mad r2.x, r2.x, c35.x, r2.z
+    mad r2.x, r2.y, c33.z, r2.x
+    mad r0.x, c29.y, v4.y, r2.x
+    mad r2.xy, r1.zwzw, c34.x, c34.y
+    mad r2.xy, r1.zwzw, r2, c34.z
+    mad r2.xy, r1.zwzw, r2, c34.w
+    mad r2.xy, r1.zwzw, r2, c33.x
+    mad r1.zw, r1, r2.xyxy, c33.y
+    mul r1.zw, r1, v4.z
+    mul r1.zw, r1, c23.x
+    mul r1.zw, r1, c28.x
+    mad r2.xy, r1, c34.x, c34.y
+    mad r2.xy, r1, r2, c34.z
+    mad r2.xy, r1, r2, c34.w
+    mad r2.xy, r1, r2, c33.x
+    mad r1.xy, r1, r2, c33.y
+    mul r1.xy, r1, v4.z
+    mul r1.xy, r1, c23.x
+    mul r1.xy, r1, c27.x
+    mad r1.x, r1.x, c35.w, r2.w
+    mad r1.x, r1.y, c36.x, r1.x
+    mad r1.x, r3.y, c28.x, r1.x
+    mad r1.x, r1.z, c35.w, r1.x
+    mad r1.x, r1.w, c36.x, r1.x
+    mad r0.y, c29.z, v4.z, r1.x
+    mov r0.w, v0.w
+    dp4 o2.x, c4, r0
+    dp4 o2.y, c5, r0
+    dp4 o2.z, c6, r0
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 218 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Bumped Specular Cloth/vp/6E5BB3CB.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, -c33.x
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c11.x
+
+//     mov o0, r1 // Relocated to line 214 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mov o3.zw, r1
+    mul r2.w, r0.x, -c33.x
+    mad o3.xy, r2.z, c12.zwzw, r2.xwzw
+    mad o4.zw, v3.xyxy, c20.xyxy, c20
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c16, r2
+    dp4 r3.y, c17, r2
+    dp4 r3.z, c18, r2
+    mad r0.xyz, c19, r0.x, r3
+    mov r1.w, c33.y
+    dp4 r2.x, c13, r1
+    dp4 r2.y, c14, r1
+    dp4 r2.z, c15, r1
+    add o5.xyz, r0, r2
+    mov o4.xy, c36.y

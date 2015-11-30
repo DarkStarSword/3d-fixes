@@ -1,0 +1,175 @@
+// CRC32: BA810C2D (FOG + 11C704E3) | Matched 4 variants of 1 shaders: Hidden/Marmoset/RGBM Replacement
+// 
+//    Unity headers extracted from Marmoset RGBM Replacement.shader
+//    Shader "Hidden/Marmoset/RGBM Replacement" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//       _SpecInt ("Specular Intensity", Float) = 0
+//       _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//       _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 1
+//       _OccStrength ("Occlusion Strength", Range(0,1)) = 1
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _GlowColor ("Glow Color", Color) = (0,0,0,0)
+//       _GlowStrength ("Glow Strength", Float) = 0
+//       _EmissionLM ("Diffuse Emission Strength", Float) = 0
+//       _Illum ("Glow(RGB) Diffuse Emission(A)", 2D) = "white" { }
+//       _OccTex ("Occlusion Diff(R) Spec(G)", 2D) = "white" { }
+//       _DiffCubeIBL ("Custom Diffuse Cube", CUBE) = "black" { }
+//       _SpecCubeIBL ("Custom Specular Cube", CUBE) = "black" { }
+//      }
+//      Fallback "Hidden/Marmoset/RGBM Terrain"
+// 3:   SubShader 1/5 {
+// c:   SubShader 2/5 {
+//        LOD 400
+// 3:     Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+// c:     Tags { "QUEUE"="Geometry" "RenderType"="TransparentCutout" }
+//        Pass 1/5 {
+//          Name "FORWARD"
+// 3:       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+// c:       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+// c:       GpuProgramID 356477
+// 3:       GpuProgramID 48161
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// a:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "MARMO_GAMMA" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 5:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "MARMO_LINEAR" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "texcoord2" TexCoord2
+//              Bind "tangent" TexCoord4
+//              Matrix 8 [_Object2World] 3
+//              Matrix 11 [_World2Object] 3
+//              Matrix 4 [glstate_matrix_mvp]
+//              Vector 22 [_MainTex_ST]
+//              Vector 14 [_ProjectionParams]
+//              Vector 15 [_ScreenParams]
+//              Vector 19 [unity_4LightAtten0]
+//              Vector 16 [unity_4LightPosX0]
+//              Vector 17 [unity_4LightPosY0]
+//              Vector 18 [unity_4LightPosZ0]
+//              Vector 21 [unity_DynamicLightmapST]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 20 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c23, 0, 1, 0.5, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_texcoord2 v5
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.xy
+    dcl_texcoord5 o6.xyz
+    dcl_texcoord6 o7
+    dcl_texcoord7 o8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c22, c22.zwzw
+    mad o8.zw, v5.xyxy, c21.xyxy, c21
+    dp4 r0.x, c8, v0
+    add r1, -r0.x, c16
+    mov o2.w, r0.x
+    dp4 r0.x, c9, v0
+    add r2, -r0.x, c17
+    mov o3.w, r0.x
+    mul r0.xyz, c12.zxyw, v2.y
+    mad r0.xyz, c11.zxyw, v2.x, r0
+    mad r0.xyz, c13.zxyw, v2.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mul r3, r0.z, r2
+    mul r2, r2, r2
+    mad r2, r1, r1, r2
+    mad r1, r1, r0.y, r3
+    dp4 r0.w, c10, v0
+    add r3, -r0.w, c18
+    mov o4.zw, r0.xyxw
+    mad r1, r3, r0.x, r1
+    mad r2, r3, r3, r2
+    rsq r3.x, r2.x
+    rsq r3.y, r2.y
+    rsq r3.z, r2.z
+    rsq r3.w, r2.w
+    mov r4.y, c23.y
+    mad r2, r2, c19, r4.y
+    mul r1, r1, r3
+    max r1, r1, c23.x
+    rcp r3.x, r2.x
+    rcp r3.y, r2.y
+    rcp r3.z, r2.z
+    rcp r3.w, r2.w
+    mul r1, r1, r3
+    mul r2.xyz, r1.y, c1
+    mad r2.xyz, c0, r1.x, r2
+    mad r1.xyz, c2, r1.z, r2
+    mad o6.xyz, c3, r1.w, r1
+    dp4 r1.y, c5, v0
+    mul r0.w, r1.y, c14.x
+    mul r2.w, r0.w, c23.z
+    dp4 r1.x, c4, v0
+    dp4 r1.w, c7, v0
+
+mov o0, r1 // Relocated from line 137 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_Marmoset_RGBM Replacement/vp/BA810C2D.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c23.z
+    mad o7.xy, r2.z, c15.zwzw, r2.xwzw
+    dp4 r1.z, c6, v0
+
+//     mov o0, r1 // Relocated to line 134 with shadertool.py
+mov o0.z, r1 // Inserted by shadertool.py
+
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mov o7.zw, r1
+    dp3 r1.z, c8, v1
+    dp3 r1.x, c9, v1
+    dp3 r1.y, c10, v1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mov o2.x, r1.z
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r0.zxyw, r1.yzxw, -r2
+    mul r0.w, c20.w, v1.w
+    mul r2.xyz, r0.w, r2
+    mov o2.y, r2.x
+    mov o2.z, r0.y
+    mov o3.x, r1.x
+    mov o4.x, r1.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r0.z
+    mov o5.xy, v4
+    mov o8.xy, c23.x

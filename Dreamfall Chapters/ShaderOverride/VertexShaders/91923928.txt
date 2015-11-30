@@ -1,0 +1,167 @@
+// CRC32: 91923928 (FOG + 86E0AC3A) | Matched 6 variants of 1 shaders: Hidden/TerrainEngine/Details/WavingDoublePass
+// 
+//     Unity headers extracted from atsV2WavingGrass.shader
+//     Shader "Hidden/TerrainEngine/Details/WavingDoublePass" {
+//       Properties {
+//        _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//        _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//        _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//        _Cutoff2 ("Cutoff", Float) = 0.5
+//       }
+//       Fallback Off
+//       SubShader 1/2 {
+//         LOD 200
+//         Tags { "QUEUE"="AlphaTest+200" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//         Pass 4/5 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest+200" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//           ZWrite Off
+//           Cull Off
+//           ColorMask RGB
+//           GpuProgramID 225353
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "color" Color
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [_WaveAndDistance]
+//               Vector 21 [_WavingTint]
+//               Vector 19 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c23, 0.0480000004, 0.0599999987, 0.239999995, 0.0960000008
+    def c24, 0.0240000002, 0.0799999982, 0.200000003, -0.161616161
+    def c25, 1.20000005, 2, 1.60000002, 4.80000019
+    def c26, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c27, 0.215387449, 0.358979076, 0.287183255, 0.861549795
+    def c28, 0.674199879, 0.269679934, 0.134839967, 0.699999988
+    def c29, -0.5, 0.5, 0, 1
+    def c30, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c31, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord2 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_color o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6.xyz
+    dcl_texcoord5 o7.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0, c24.xyyz, v0.z
+    mad r0, v0.x, c23, r0
+    mov r1.x, c20.x
+    mad r0, r1.x, c25, r0
+    frc r0, r0
+    mad r0, r0, c26.x, c26.y
+    mul r1, r0, r0
+    mul r2, r0, r1
+    mad r0, r2, c24.w, r0
+    mul r2, r1, r2
+    mul r1, r1, r2
+    mad r0, r2, c26.z, r0
+    mad r0, r1, c26.w, r0
+    mul r0, r0, c27
+    mul r0, r0, r0
+    dp4 r1.x, r0, c28.xxyz
+    mul r1.x, r1.x, c28.w
+    mov r2.x, c29.x
+    add r1.yzw, r2.x, c21.xxyz
+    mad r1.xyz, r1.x, r1.yzww, c29.y
+    mul r1.xyz, r1, v4
+    add o3.xyz, r1, r1
+    mad o1.xy, v2, c22, c22.zwzw
+    mov r1.w, v4.w
+    mul r1.x, r1.w, v2.y
+    mul r1.x, r1.x, c20.z
+    mul r0, r0, r1.x
+    dp4 r1.x, r0, c30
+    dp4 r1.z, r0, c31
+    mov r1.y, c29.z
+    dp3 r0.x, c7, r1
+    dp3 r0.z, c9, r1
+    add r0.xz, -r0, v0
+    mov r0.yw, v0
+    dp4 o2.x, c4, r0
+    dp4 o2.y, c5, r0
+    dp4 o2.z, c6, r0
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 127 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_TerrainEngine_Details_WavingDoublePass/vp/91923928.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c29.y
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c10.x
+
+//     mov o0, r1 // Relocated to line 123 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mov o4.zw, r1
+    mov o7.x, r1.z
+    mul r2.w, r0.x, c29.y
+    mad o4.xy, r2.z, c11.zwzw, r2.xwzw
+    mad o5.zw, v3.xyxy, c19.xyxy, c19
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c15, r2
+    dp4 r3.y, c16, r2
+    dp4 r3.z, c17, r2
+    mad r0.xyz, c18, r0.x, r3
+    mov r1.w, c29.w
+    dp4 r2.x, c12, r1
+    dp4 r2.y, c13, r1
+    dp4 r2.z, c14, r1
+    add o6.xyz, r0, r2
+    mov o3.w, v4.w
+    mov o5.xy, c29.z

@@ -1,0 +1,990 @@
+// CRC32: 90E34EC9 (FOG + 7A8FFE09) | Matched 90 variants of 15 shaders: Character/Disintegrate Bumped Diffuse Cubemap Lit, Chickenlord/Reflective/Fresnel/Bumped Specular, Dreamfall/BlurredReflective/Bumped Spec, Dreamfall/BlurredReflective/Bumped Spec Illum, Dreamfall/Reflective/Fresnel/Bumped Specular, Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump, Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump Sparkle, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBumpEmission, Dreamfall/Reflective/Fresnel/Bumped Specular Masked Tint, Dreamfall/Reflective/Fresnel/Bumped Specular Overlay, Dreamfall/Reflective/Fresnel/Bumped Specular RefColor, Legacy Shaders/Reflective/Bumped Diffuse, Self-Illumin/Dreamfall/Reflective/Fresnel/Bumped Specular Illum
+// 
+//     Unity headers extracted from disintegrate_nmp_cube_lit.shader
+//     Shader "Character/Disintegrate Bumped Diffuse Cubemap Lit" {
+//       Properties {
+//        _TintColor ("Tint Color", Color) = (1,1,1,1)
+//        _MainTex ("Texture (RGB)", 2D) = "white" { }
+//        _BumpMap ("Texture (RGB)", 2D) = "bump" { }
+//        _NoiseTex ("Effect Map (RGB)", 2D) = "white" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _DisintegrateAmount ("Effect Amount", Range(0,1.01)) = 0
+//        _DissolveColor ("Edge Color", Color) = (1,0.5,0.2,0)
+//        _EdgeEmission ("Edge Emission", Color) = (0,0,0,0)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _DissolveEdge ("Edge Range", Range(0,0.1)) = 0.01
+//        _TileFactor ("Tile Factor", Range(0,4)) = 1
+//        _EmissionFloat ("Emission Strength", Float) = 1
+//        _BumpStrength ("Bump Strength", Float) = 1
+//        _UVxSpeed ("UV X speed", Float) = 1
+//        _Fresnel ("Fresnel", Float) = 1
+//       }
+//       Fallback "Disintegrate"
+//       SubShader 1/1 {
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/7 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 245060
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-BumpSpec_Fresnel.shader
+//     Shader "Chickenlord/Reflective/Fresnel/Bumped Specular" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 199865
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from BlurredRef-BumpSpec.shader
+//     Shader "Dreamfall/BlurredReflective/Bumped Spec" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//        _RefMask ("Roughness(R)/Metalness(G)", 2D) = "black" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//        _Blur ("reflection blur", Range(0,10)) = 1
+//        _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//        _RZero ("Fresnel Zero", Float) = 0
+//        _RefMul ("Reflection Boost", Float) = 1
+//        _RefPow ("Reflection Power", Float) = 1
+//        _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//       }
+//       Fallback "Reflective/VertexLit"
+//       SubShader 1/1 {
+//         LOD 200
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 259408
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from BlurredRef-BumpSpec_Illum.shader
+//     Shader "Dreamfall/BlurredReflective/Bumped Spec Illum" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//        _RefMask ("Roughness(R)/Metalness(G)", 2D) = "black" { }
+//        _IllumMap ("Illumination Map(RGB)", 2D) = "black" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//        _Blur ("reflection blur", Range(0,10)) = 1
+//        _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//        _RZero ("Fresnel Zero", Float) = 0
+//        _RefMul ("Reflection Boost", Float) = 1
+//        _RefPow ("Reflection Power", Float) = 1
+//        _GlowMul ("Glow Boost", Float) = 1
+//        _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//       }
+//       Fallback "Reflective/VertexLit"
+//       SubShader 1/1 {
+//         LOD 200
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 254575
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnel.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _RefMul ("Reflection Boost", Float) = 1
+//        _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 1
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 239886
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-BumpDetail.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Fresnel", Float) = 1
+//        _DetailMulti ("Detail Strength", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 217818
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_DetailBumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-BumpDetailCutout2sided.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Fresnel", Float) = 1
+//        _DetailMulti ("Detail Strength", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//         Pass 4/7 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "RenderType"="TransparentCutout" }
+//           ZWrite Off
+//           Cull Off
+//           GpuProgramID 253372
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_DetailBumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnelDetailBump.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Fresnel", Float) = 1
+//        _DetailMulti ("Detail Strength", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 209315
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_DetailBumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnelDetailBumpSparkles.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump Sparkle" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _EmissiveColor ("Emissive Color", Color) = (1,1,1,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Fresnel", Float) = 1
+//        _DetailMulti ("Detail Strength", Float) = 1
+//        _EmissiveStrength ("Emissionstrength", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _SparkleMap1 ("Sparkle 1", 2D) = "black" { }
+//        _SparkleMap2 ("Sparkle 2", 2D) = "black" { }
+//        _TileFactor ("Tile Factor", Float) = 1
+//        _Effect1UvX ("Effect 1 UV X speed", Float) = 1
+//        _Effect1UvY ("Effect 1 UV Y speed", Float) = 1
+//        _Effect2UvX ("Effect 2 UV X speed", Float) = 1
+//        _Effect2UvY ("Effect 2 UV Y speed", Float) = 1
+//        _MasterSpeed ("Master Speed", Float) = 1
+//        _SparkleCutoff ("Sparkle Cutoff", Range(0,1)) = 0.5
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 241139
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_DetailBumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnelDetailBumpEmissive.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBumpEmission" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//        _EmissiveColor ("Emissive Color", Color) = (1,1,1,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Fresnel", Float) = 1
+//        _DetailMulti ("Detail Strength", Float) = 1
+//        _EmissiveStrength ("Emissionstrength", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _EmissiveMap ("Emissive", 2D) = "black" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 199346
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_DetailBumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnel_MaskedTint.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular Masked Tint" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _RefMul ("Reflection Boost", Float) = 1
+//        _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 1
+//        _TintMask ("Tint Mask (RGB)", 2D) = "Black" { }
+//        _TintColorR ("Tint Color - R", Color) = (1,1,1,1)
+//        _TintColorB ("Tint Color - G", Color) = (1,1,1,1)
+//        _TintColorG ("Tint Color - B", Color) = (1,1,1,1)
+//        _Color_Mul ("Tint Color Multiply", Float) = 2
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 212581
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnel_Overlay.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular Overlay" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _TintTex ("Tint (RGB)", 2D) = "grey" { }
+//        _TintMul ("Tint Amount", Range(0,1)) = 1
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 197592
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 22 [_TintTex_ST]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bump_SpecFresnelRefCol.shader
+//     Shader "Dreamfall/Reflective/Fresnel/Bumped Specular RefColor" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//        _RefColMult ("Reflect Map", Float) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _RefColMap ("Reflect Color (RGB", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 235722
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-Bumped.shader
+//     Shader "Legacy Shaders/Reflective/Bumped Diffuse" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//       }
+//       Fallback "Legacy Shaders/Reflective/VertexLit"
+//       SubShader 1/1 {
+//         LOD 300
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 239241
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Reflect-BumpSpec_Fresnel_Illum.shader
+//     Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Bumped Specular Illum" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Illum ("IllumMap (RGB)", 2D) = "black" { }
+//        _EmissionLM ("Emission (Lightmapper)", Float) = 1
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 209315
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord2" TexCoord2
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 20 [unity_DynamicLightmapST]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//               Vector 19 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c23, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord2 v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7.xyz
+    dcl_texcoord7 o8.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v3, c21, c21.zwzw
+    mad o1.zw, v3.xyxy, c22.xyxy, c22
+    dp4 o2.w, c4, v0
+    dp4 o3.w, c5, v0
+    dp4 o4.w, c6, v0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c23.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 951 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Character_Disintegrate Bumped Diffuse Cubemap Lit/vp/90E34EC9.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c23.x
+    mad o5.xy, r1.z, c11.zwzw, r1.xwzw
+    mad o6.zw, v4.xyxy, c20.xyxy, c20
+    mul r1.xyz, c8, v2.y
+    mad r1.xyz, c7, v2.x, r1
+    mad r1.xyz, c9, v2.z, r1
+    nrm r2.xyz, r1
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c15, r3
+    dp4 r4.y, c16, r3
+    dp4 r4.z, c17, r3
+    mad r1.xyz, c18, r1.x, r4
+    mov r2.w, c23.y
+    dp4 r3.x, c12, r2
+    dp4 r3.y, c13, r2
+    dp4 r3.z, c14, r2
+    add o7.xyz, r1, r3
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 931 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o5.zw, r0
+    mov o8.x, r0.z
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r1.xyz, r0, r2.zxyw
+    mad r1.xyz, r2.yzxw, r0.yzxw, -r1
+    mul r0.z, c19.w, v1.w
+    mul r1.xyz, r0.z, r1
+    mov o2.y, r1.x
+    mov o2.z, r2.x
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r1.y
+    mov o4.y, r1.z
+    mov o3.z, r2.y
+    mov o4.z, r2.z
+    mov o6.xy, c23.z

@@ -1,0 +1,299 @@
+// CRC32: 46F5201D (FOG + CB041ED7) | Unity headers extracted from SpeedTree.shader
+// Shader "Nature/SpeedTree" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0,0,0,0)
+//    _HueVariation ("Hue Variation", Color) = (1,0.5,0,0.1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.1
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//    _DetailTex ("Detail", 2D) = "black" { }
+//    _BumpMap ("Normal Map", 2D) = "bump" { }
+//    _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.333
+//   [MaterialEnum(Off,0,Front,1,Back,2)]  _Cull ("Cull", Float) = 2
+//   [MaterialEnum(None,0,Fastest,1,Fast,2,Better,3,Best,4,Palm,5)]  _WindQuality ("Wind Quality", Range(0,5)) = 0
+//   }
+//   Fallback "Transparent/Cutout/VertexLit"
+//   SubShader 1/2 {
+//     LOD 400
+//     Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//     Pass 1/7 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//       Cull [_Cull]
+//       GpuProgramID 35394
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "EFFECT_HUE_VARIATION" "GEOM_TYPE_FROND" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord2" TexCoord2
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 29 [_Color]
+//           Vector 28 [_HueVariation]
+//           Vector 10 [_ProjectionParams]
+//           Vector 27 [_ST_WindAnimation]
+//           Vector 20 [_ST_WindBranch]
+//           Vector 24 [_ST_WindBranchAdherences]
+//           Vector 23 [_ST_WindBranchAnchor]
+//           Vector 21 [_ST_WindBranchTwitch]
+//           Vector 22 [_ST_WindBranchWhip]
+//           Vector 26 [_ST_WindFrondRipple]
+//           Vector 19 [_ST_WindGlobal]
+//           Vector 25 [_ST_WindTurbulences]
+//           Vector 18 [_ST_WindVector]
+//           Vector 11 [_ScreenParams]
+//           Float 17 [_WindEnabled]
+//           Float 16 [_WindQuality]
+//           Vector 14 [unity_SHBb]
+//           Vector 13 [unity_SHBg]
+//           Vector 12 [unity_SHBr]
+//           Vector 15 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c30, 0.5, -0.300000012, 0, -5
+    def c31, 0.75, 2, -1, 3
+    def c32, 0.0625, 1, 16, 0.100000001
+    def c33, 0.5, 1.5, 0.25, 0.800000012
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord2 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul o3.xyz, c29, v4.x
+    mov r0.w, c4.w
+    add r0.x, r0.w, c5.w
+    add r0.y, r0.x, c6.w
+    mov r1.y, v1.y
+    add r0.z, r1.y, v0.x
+    add r0.z, r0.z, v1.x
+    frc r0.yz, r0
+    mad r0.y, r0.z, c30.x, r0.y
+    add r0.y, r0.y, c30.y
+    mul_sat o4.z, r0.y, c28.w
+    mov r1.x, c16.x
+    mul r0.y, r1.x, c17.x
+    sge r0.z, c30.z, r0.y
+    mov r2, c18
+    dp3 r3.x, c7, r2
+    dp3 r3.y, c8, r2
+    dp3 r3.z, c9, r2
+    dp3 r1.y, r3, r3
+    rsq r1.y, r1.y
+    mul r1.yz, r1.y, r3.xxzw
+    mad r1.yz, r0.z, -r1, r1
+    mov r1.w, c30.w
+    mad r1.x, r1.x, c17.x, r1.w
+    sge r1.w, -r1_abs.x, r1_abs.x
+    slt r2.x, v2.x, c30.x
+    mul r2.x, r2.x, c31.x
+    add r2.y, c26.x, v2.y
+    mad r2.x, r2.y, c26.z, r2.x
+    add r2.x, r2.x, c30.x
+    frc r2.x, r2.x
+    mad r2.x, r2.x, c31.y, c31.z
+    mul r2.y, r2_abs.x, r2_abs.x
+    mad r2.x, r2_abs.x, -c31.y, c31.w
+    mad r2.x, r2.y, r2.x, -c30.x
+    mul r2.x, r2.x, v3.y
+    mul r2.x, r2.x, c26.y
+    add r2.x, r2.x, r2.x
+    mul r2.xyz, r2.x, v1
+    mad r2.xyz, r1.w, r2, v0
+    if_ge r0.y, c31.w
+    if_ge -r1_abs.x, r1_abs.x
+    mov r3.xyz, c23
+    dp3 r4.x, c7, r3
+    dp3 r4.y, c8, r3
+    dp3 r4.z, c9, r3
+    nrm r3.xyz, r4
+    mul r3.xyz, r3, c23.w
+    mad r3.xyz, r0.z, -r3, r3
+    mul r4.xyz, c32, v2.w
+    frc r4.xyz, r4
+    mad r4.xyz, r4, c31.y, c31.z
+    mul r4.xyz, r4, v2.z
+    add r0.z, r0.x, c20.x
+    add r5.x, r0.z, v2.w
+    mad r5.y, r0.z, c21.y, v2.w
+    mul r1.x, r5.x, c21.y
+    mul r5.z, r1.x, c30.x
+    add r5.w, r5.x, -v2.z
+    add r5, r5, c33.xxxy
+    frc r5, r5
+    mad r5, r5, c31.y, c31.z
+    mul r6, r5_abs, r5_abs
+    mad r5, r5_abs, -c31.y, c31.w
+    mad r5, r6, r5, -c30.x
+    add r5, r5, r5
+    mul r6.y, r5.z, r5.y
+    slt r1.x, r6.y, c30.z
+    mov r6.x, -c31.z
+    mov r7.xy, -r6
+    mov r7.z, c31.z
+    add r6.zw, r7.xyxy, r7.xyzy
+    mad r1.xw, r1.x, r6.zyzw, r6.xyzy
+    mad r3.w, r5.y, -r5.z, r1.x
+    mad r3.w, r1.w, r3.w, r6.y
+    lrp r4.w, r1.w, r1.x, r3.w
+    mul r1.x, r4.w, c21.x
+    add r1.w, -r2.w, -c31.z
+    mov r5.z, c31.z
+    add r3.w, -r5.z, -c21.x
+    mul r3.w, r3.w, r5.x
+    mad r1.x, r1.x, r1.w, r3.w
+    mad r1.w, r5.w, c22.x, -r5.z
+    mul r1.x, r1.w, r1.x
+    mul r4.xyz, r1.x, r4
+    mad r4.xyz, r4, c20.y, r2
+    mad r5.x, r0.z, c32.w, v2.w
+    mov r1.x, c25.x
+    mul r0.z, r1.x, c27.x
+    mad r5.y, r0.z, c32.w, v2.w
+    add r1.xw, r5.xyzy, c30.x
+    frc r1.xw, r1
+    mad r1.xw, r1, c31.y, c31.z
+    mul r5.xy, r1_abs.xwzw, r1_abs.xwzw
+    mad r1.xw, r1_abs, -c31.y, c31.w
+    mad r1.xw, r5.xyzy, r1, -c30.x
+    add r1.xw, r1, r1
+    mul r1.xw, r1, r1
+    mul r0.z, r1.x, r1.w
+    mad r0.z, r0.z, -c25.x, -r5.z
+    mul r1.x, r5.w, c18.w
+    mad r0.z, r1.x, c22.x, r0.z
+    add r3.xyz, r3, -r4
+    mul r3.xyz, r3, c24.y
+    mul r3.xyz, r0.z, r3
+    mad r2.xyz, r3, v2.z, r4
+    else
+    mul r3.xyz, c32, v2.w
+    frc r3.xyz, r3
+    mad r3.xyz, r3, c31.y, c31.z
+    mul r3.xyz, r3, v2.z
+    add r0.x, r0.x, c20.x
+    add r4.x, r0.x, v2.w
+    mad r4.y, r0.x, c21.y, v2.w
+    mul r0.x, r4.x, c21.y
+    mul r4.z, r0.x, c30.x
+    add r4.xyz, r4, c30.x
+    frc r4.xyz, r4
+    mad r4.xyz, r4, c31.y, c31.z
+    mul r5.xyz, r4_abs, r4_abs
+    mad r4.xyz, r4_abs, -c31.y, c31.w
+    mad r4.xyz, r5, r4, -c30.x
+    add r4.xyz, r4, r4
+    mul r5.y, r4.z, r4.y
+    slt r0.x, r5.y, c30.z
+    mov r5.x, -c31.z
+    mov r6.xy, -r5
+    mov r6.z, c31.z
+    add r1.xw, r6.xyzy, r6.zyzy
+    mad r0.xz, r0.x, r1.xyww, r5.xyyw
+    mad r1.x, r4.y, -r4.z, r0.x
+    mad r1.x, r0.z, r1.x, r5.y
+    lrp r3.w, r0.z, r0.x, r1.x
+    mul r0.x, r3.w, c21.x
+    add r0.z, -r2.w, -c31.z
+    mov r4.z, c31.z
+    add r1.x, -r4.z, -c21.x
+    mul r1.x, r1.x, r4.x
+    mad r0.x, r0.x, r0.z, r1.x
+    mul r3.xyz, r0.x, r3
+    mad r2.xyz, r3, c20.y, r2
+    endif
+    endif
+    slt r0.x, c30.z, r0.y
+    dp3 r0.y, r2, r2
+    rsq r0.y, r0.y
+    rcp r0.y, r0.y
+    rcp r0.z, c19.z
+    mad r1.x, r0.z, -c33.z, r2.y
+    max r1.x, r1.x, c30.z
+    mul r1.w, r1.x, c19.z
+    slt r2.w, -r1_abs.w, r1_abs.w
+    pow r3.x, r1.w, c19.w
+    mad r1.x, r1.x, -c19.z, r3.x
+    mad r1.x, r2.w, r1.x, r1.w
+    add r3.x, r0.w, c19.x
+    mov r4.x, c19.x
+    mov r0.w, c33.w
+    mad r3.y, r4.x, r0.w, c5.w
+    add r3.xy, r3, c30.x
+    frc r3.xy, r3
+    mad r3.xy, r3, c31.y, c31.z
+    mul r3.zw, r3_abs.xyxy, r3_abs.xyxy
+    mad r3.xy, r3_abs, -c31.y, c31.w
+    mad r3.xy, r3.zwzw, r3, -c30.x
+    add r3.xy, r3, r3
+    mad r0.w, r3.y, r3.y, r3.x
+    mul r0.z, r0.z, c24.x
+    mad r0.z, c19.y, r0.w, r0.z
+    mul r0.z, r1.x, r0.z
+    mad r1.xz, r1.yyzw, r0.z, r2
+    mov r1.y, r2.y
+    nrm r3.xyz, r1
+    mad r0.yzw, r3.xxyz, r0.y, -r2.xxyz
+    mad r0.xyz, r0.x, r0.yzww, r2
+    mov r0.w, v0.w
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp4 r1.w, c3, r0
+    dp4 o2.x, c4, r0
+    dp4 o2.y, c5, r0
+    dp4 o2.z, c6, r0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r2.xyz, r0
+    mul r0, r2.yzzx, r2.xyzz
+    dp4 r3.x, c12, r0
+    dp4 r3.y, c13, r0
+    dp4 r3.z, c14, r0
+    mul r0.x, r2.y, r2.y
+    mad r0.x, r2.x, r2.x, -r0.x
+    mad o5.xyz, c15, r0.x, r3
+
+mov o0, r1 // Relocated from line 280 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Nature_SpeedTree/vp/46F5201D.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r0.xz, r1.xyww, c30.x
+    mul r0.y, r1.y, c10.x
+    mul r0.w, r0.y, c30.x
+    mad o6.xy, r0.z, c11.zwzw, r0.xwzw
+
+//     mov o0, r1 // Relocated to line 276 with shadertool.py
+    mov o9, r1.z // Inserted by shadertool.py to match Unity autofog
+    mov o1.xyz, r2
+    mov o3.w, c29.w
+    mov o4.xy, v2
+    mov o6.zw, r1

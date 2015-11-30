@@ -1,0 +1,114 @@
+// CRC32: CFF1718C (FOG + 8E443664) | Matched 2 variants of 1 shaders: Dreamfall/FX/Additive Cutout VertexColored
+// 
+//    Unity headers extracted from AdditiveCutoutVertexColored.shader
+//    Shader "Dreamfall/FX/Additive Cutout VertexColored" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       _Boost ("Boost", Float) = 1
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//        Pass 4/7 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One One
+//          GpuProgramID 261116
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 19 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_SHAb]
+//              Vector 13 [unity_SHAg]
+//              Vector 12 [unity_SHAr]
+//              Vector 17 [unity_SHBb]
+//              Vector 16 [unity_SHBg]
+//              Vector 15 [unity_SHBr]
+//              Vector 18 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_fog o9 // Inserted by shadertool.py to match Unity autofog
+    def c20, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_color v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_color o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o1.xy, v2, c19, c19.zwzw
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c20.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 94 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_FX_Additive Cutout VertexColored/vp/CFF1718C.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c20.x
+    mad o4.xy, r1.z, c11.zwzw, r1.xwzw
+    mul r1.xyz, c8, v1.y
+    mad r1.xyz, c7, v1.x, r1
+    mad r1.xyz, c9, v1.z, r1
+    nrm r2.xyz, r1
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c15, r3
+    dp4 r4.y, c16, r3
+    dp4 r4.z, c17, r3
+    mad r1.xyz, c18, r1.x, r4
+    mov r2.w, c20.y
+    dp4 r3.x, c12, r2
+    dp4 r3.y, c13, r2
+    dp4 r3.z, c14, r2
+    add o6.xyz, r1, r3
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 75 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o9, r0.z // Inserted by shadertool.py to match Unity autofog
+    mov o4.zw, r0
+    mov o3, v3
+    mov o5, c20.z
