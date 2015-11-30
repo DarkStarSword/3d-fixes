@@ -12,7 +12,7 @@
 //          ZTest Always
 //          ZWrite Off
 //          Blend [_SrcBlend] [_DstBlend]
-//          GpuProgramID 87529
+//          GpuProgramID 127983
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 2:           Keywords { "UNITY_HDR_ON" }
@@ -34,25 +34,16 @@
     dcl_position v0
     dcl_texcoord o0.xy
     dcl_position o1
-
-def c220, 0, 1, 0.0625, 0.5
-dcl_2d s0
-
     dp4 o1.z, c2, v0
     dp4 r0.y, c1, v0
     mul r0.z, r0.y, c4.x
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o1.xyw, r0 // Relocated from line 43 with shadertool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_Internal-DeferredReflections/vp/FEEEC45B.txt
-texldl r31, c220.z, s0
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
+// Do NOT attempt a halo fix here - it causes a new halo!
 
     mul r1.xzw, r0.xywz, c6.x
-
-//     mov o1.xyw, r0 // Relocated to line 42 with shadertool.py
+    mov o1.xyw, r0
     mad o0.xy, r1.z, c5.zwzw, r1.xwzw
+
+// approximately 8 instruction slots used
