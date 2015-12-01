@@ -54,7 +54,7 @@ dcl_2d s13
     lrp r2.w, c20.w, r0.x, r1.w
     lrp r1.z, r0.x, v2.w, v2.z
     mad r0.xyz, v1, -r2.w, r1
-    mul r1.xyz, r2.w, v1 // depth in r1.z
+    mul r1.xyz, r2.w, v1
     mad r0.xyz, c20.w, r0, r1
     add r1, r0.z, -c22
     cmp r1, r1, c24.y, c24.x
@@ -64,15 +64,15 @@ dcl_2d s13
     mov r0.w, c24.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --fix-unity-lighting-ps --only-autofixed Hidden_Internal-PrePassCollectShadows/fp/4F796B2B.txt
+// shadertool.py -I ../.. --fix-unity-lighting-ps -f ./Hidden_Internal-PrePassCollectShadows/fp/4F796B2B.txt
 texldl r31, c220.z, s13
-add r31.w, r1.z, -r31.y
+add r31.w, r0.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r0.x, -r31.w, v5.x, r0.x
 
     dp4 r3.x, c15, r0
     dp4 r3.y, c16, r0
-    dp4 r3.z, c17, r0
+    dp4 r3.z, c17, r0 // depth in r0.z
     dp4 r3.w, c18, r0
     dp4 r0.x, c4, r3
     dp4 r0.y, c5, r3
