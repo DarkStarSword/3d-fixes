@@ -55,21 +55,34 @@ dcl_texcoord2 o2
 dcl_texcoord3 o3
 dcl_position o4
 
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
     dp4 r0.y, c1, v0
     mov r1.y, -r0.y
     dp4 r1.x, c0, v0
     dp4 r0.w, c3, v0
     add r1.yz, r0.w, r1.xxyw
     mov o4.x, r1.x
-    mul o0.xy, r1.yzzw, c9.x
+    mul r2.xy, r1.yzzw, c9.x
     mad o1.xy, v1, c6, c6.zwzw
     mad o3.xy, v1, c8, c8.zwzw
     dp4 r0.z, c2, v0
     mov o4.yzw, r0
-    mov o0.zw, r0
+    mov r2.zw, r0
     mad r0.xy, v1, c7, c7.zwzw
     mov r1.x, c4.x
     mad r0.z, r1.x, c5.x, r0.y
     mov o2.xy, r0.xzzw
 
 // approximately 16 instruction slots used
+
+// Output adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --lookup-header-json ../../extracted/ShaderHeaders.json -f --adjust-output=texcoord --adjust-multiply=0.5 --git VertexShader/VertexShader_36_CRC32_1D7B3A90.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r2.x, r2.x, r31.w
+mov o0, r2
