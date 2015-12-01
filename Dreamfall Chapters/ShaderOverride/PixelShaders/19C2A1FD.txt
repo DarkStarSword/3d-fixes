@@ -106,11 +106,11 @@ dcl_2d s13
     texld r2, r1, s0
     mad r0.w, c5.x, r2.x, c5.y
     rcp r0.w, r0.w
-    mul r2.xyz, r0.w, r0 // depth in r2.z
+    mul r2.xyz, r0.w, r0
     mov_pp r2.w, c12.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --fix-unity-lighting-ps --only-autofixed Hidden_Internal-DeferredShading/fp/19C2A1FD.txt
+// shadertool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-DeferredShading/fp/19C2A1FD.txt
 texldl r31, c220.z, s13
 add r31.w, r2.z, -r31.y
 mul r31.w, r31.w, r31.x
@@ -118,7 +118,7 @@ mad r2.x, -r31.w, v5.x, r2.x
 
     dp4 r3.x, c0, r2
     dp4 r3.y, c1, r2
-    dp4 r3.z, c2, r2
+    dp4 r3.z, c2, r2 // depth in r2.z
     add r2.xyw, r3.xyzz, -c3.xyzz
     add r3.xyz, r3, -c7
     dp3 r0.x, r3, r3
