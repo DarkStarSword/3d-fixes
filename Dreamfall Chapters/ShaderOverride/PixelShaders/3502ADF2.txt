@@ -1,0 +1,163 @@
+// CRC32: 3502ADF2 | Unity headers extracted from Coord.shader
+// Shader "Hidden/Coord" {
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 18249
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "LIGHT_OFF_SCREEN" "SPOT_SHAFTS" }
+//           Matrix 0 [_FrustumRays]
+//           Vector 6 [_CameraPosLocal]
+//           Vector 8 [_CoordTexDim]
+//           Float 7 [_FrustumApex]
+//           Vector 5 [_LightPos]
+//           Vector 9 [_ScreenTexDim]
+//           Vector 4 [_ZBufferParams]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c10, 0.5, -1, 4, 2
+    def c11, -0, -1, -2, -3
+    def c12, 0, -1, 1, 9.99999975e-006
+    def c13, -0.00100000005, -39, -0.5, 0.5
+    def c14, 990000000, 0, 0, 0
+    def c15, 0, -1, -2, -3
+    def c16, -0, 0, -1, 1
+    dcl_texcoord v0.xy
+    dcl_2d s0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+    rcp r0.x, c8.y
+    mad_sat r0.x, r0.x, -c10.x, v0.y
+    mul r0.x, r0.x, c10.z
+    frc r0.y, r0.x
+    add r0.x, -r0.y, r0.x
+    mad r1.y, r0.y, c10.w, c10.y
+    add r2, r0.x, c11
+    cmp r0, r0.x, r2, c15
+    cmp r0, r0.w, c11.wzyx, -r0_abs
+    cmp r0, r0, -c11.y, -c11.x
+    mad r1.xzw, r1.y, c12.xyxy, c12.yyzx
+    dp4 r2.x, r1.wxyz, r0
+    dp4 r2.y, r1, r0
+    add r0.xy, -r2, -c5
+    dp2add r0.z, r0, r0, -c11.x
+    rsq r0.z, r0.z
+    mul r1.xy, r0.z, r0
+    add r3, -r1_abs.xyxy, c12.w
+    cmp r3, r3, c16.xxyy, c16.zzww
+    mad r0.xy, r0, r0.z, r3
+    rcp r0.z, r0.z
+    add r0.z, r0.z, c13.x
+    add r0.xy, r0, -c10.y
+    rcp r4.xz, r0.x
+    rcp r4.yw, r0.y
+    mov r5.yz, c12
+    add r5, r5.yyzz, -c5.xyxy
+    mad r0, r5, r4, -r0.z
+    mul r4, r4, r5
+    cmp r0, r0, -c11.x, r3.zwzw
+    lrp r3, r0, r4, c13.y
+    max r0.x, r3.x, -c11.x
+    max r1.z, r0.x, r3.y
+    max r0.x, r1.z, r3.z
+    max r1.z, r0.x, r3.w
+    mad r0.xy, r1, r1.z, c5
+    mov r1.xy, c10
+    add r0.z, r1.y, c8.x
+    rcp r0.z, r0.z
+    mul r0.z, r0.z, c8.x
+    rcp r0.w, c8.x
+    mad r0.w, r0.w, -c10.x, v0.x
+    mul_sat r0.z, r0.z, r0.w
+    lrp r1.yz, r0.z, -r2.xxyw, r0.xxyw
+    mad r0.xy, r1.yzzw, c10.x, c10.x
+    mov r2.xyz, c0
+    add r1.yzw, -r2.xxyz, c1.xxyz
+    mad r1.yzw, r0.x, r1, c0.xxyz
+    mov r2.xyz, c3
+    add r2.xyz, -r2, c2
+    mad r2.xyz, r0.x, r2, c3
+    lrp r3.xyz, r0.y, r2, r1.yzww
+    dp3 r0.z, r3, r3
+    rsq r0.z, r0.z
+    mul r1.yzw, r0.z, r3.xxyz
+    mul r0.w, r1.w, c10.x
+    add r1.x, r1.x, -c7.x
+    mad r2.xy, r1.x, r1.zyzw, r0.w
+    mad r1.yz, r1.x, r1.xzyw, -r0.w
+    mul r2.zw, r1.x, c6.xyyx
+    rcp r0.w, r2.x
+    rcp r1.x, r2.y
+    mov r3.z, c6.z
+    add r2.x, r3.z, -c7.x
+    mad r3.xy, r2.x, -c10.x, -r2.zwzw
+    mad r2.xy, r2.x, c10.x, -r2.zwzw
+    mul r4.y, r0.w, r3.x
+    mul r4.x, r1.x, r3.y
+    rcp r0.w, r1.y
+    rcp r1.x, r1.z
+    mul r4.z, r1.x, r2.y
+    mul r4.w, r0.w, r2.x
+    mad r2, r4, r1.w, c6.z
+    add r2, -r2, c7.x
+    cmp r0.w, -r1.w, -c11.x, -c11.y
+    cmp r1.x, r1.w, c11.x, c11.y
+    rcp r1.y, r1.w
+    add r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c14.x
+    cmp r2, r2.zwxy, r0.w, r4.zwxy
+    mov r4.zw, r2
+    add r1.xz, -r3.z, c13.zyww
+    mul r4.xy, r1.xzzw, r1.y
+    mov r2.z, r4.y
+    min r1.xyz, r4.zwxw, r2
+    max r3.xyz, r2, r4.zwxw
+    min r2.xy, r3.yzzw, r3.x
+    min r0.w, r2.y, r2.x
+    max r2.xy, r1.x, r1.yzzw
+    max r1.x, r2.x, r2.y
+    add r1.y, -r0.w, r1.x
+    cmp r1.z, -r0.w, c11.x, c11.y
+    mul r0.w, r0.z, r0.w
+    cmp r1.y, r1.y, -c11.x, r1.z
+    cmp r1.y, r1.y, -c11.y, -c11.x
+    mul r1.zw, r0.xyxy, c9.xyxy
+    mov oC0.xy, r0
+    frc r0.xy, r1.zwzw
+    add r0.xy, -r0, r1.zwzw
+    add r0.xy, r0, c10.x
+    mul r0.xy, r0, c9.zwzw
+    texld r2, r0, s0
+    mad r0.x, c4.x, r2.x, c4.y
+    rcp r0.x, r0.x
+    mad r0.y, r1.x, -r0.z, r0.x
+    cmp r0.y, r0.y, -c11.x, -c11.y
+    add r0.y, r0.y, r1.y
+    min r1.x, r0.w, r0.x
+    cmp oC1, -r0.y, r1.x, -r0.x
+    mov oC0.zw, -c11.x
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c200.x -f Hidden_Coord/fp/3502ADF2.txt
+texldl r31, c220.z, s13
+if_ne r31.x, -r31.x
+mov r31.w, c200.x
+if_eq r31.w, c220.x
+mov oC0.xyzw, c220.xxxx
+endif
+endif

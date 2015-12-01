@@ -1,0 +1,62 @@
+// CRC32: 2EF3FC7B | Matched 8 variants of 1 shaders: Hidden/Final Interpolation
+// 
+//     Unity headers extracted from FinalInterpolation.shader
+//     Shader "Hidden/Final Interpolation" {
+//       Properties {
+//        _ZTest ("", Float) = 8
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Pass 1/1 {
+//           ZTest [_ZTest]
+//           ZWrite Off
+//           Blend One SrcAlpha
+//           GpuProgramID 21222
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 10:           Keywords { "DIRECTIONAL_SHAFTS" "LIGHT_OFF_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" }
+// 40:           Keywords { "DIRECTIONAL_SHAFTS" "LIGHT_OFF_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_ON" }
+// 01:           Keywords { "DIRECTIONAL_SHAFTS" "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" }
+// 04:           Keywords { "DIRECTIONAL_SHAFTS" "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_ON" }
+// 20:           Keywords { "LIGHT_OFF_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 80:           Keywords { "LIGHT_OFF_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+// 02:           Keywords { "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_OFF" "SPOT_SHAFTS" }
+// 08:           Keywords { "LIGHT_ON_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+//               Bind "vertex" Vertex
+//               Bind "texcoord" TexCoord0
+//               Vector 0 [_ProjectionParams]
+//               Vector 1 [_ScreenTexDim]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c2, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_position o0
+    dcl_texcoord o1.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul o0.y, c0.x, v0.y
+    mov r0.x, c2.x
+    mad o1.xy, c1.zwzw, r0.x, v1
+    mov o0.xzw, v0
+    mov o1.z, c2.y
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c200.x -f Hidden_Final Interpolation/vp/2EF3FC7B.txt
+texldl r31, c220.z, s0
+if_ne r31.x, -r31.x
+mov r31.w, c200.x
+if_eq r31.w, c220.x
+mov o0.xyzw, c220.xxxx
+endif
+endif
