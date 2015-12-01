@@ -1511,6 +1511,7 @@ def fix_unity_lighting_ps(tree, args):
         debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
         return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
+    _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
 
     try:
         match = find_header(tree, unity_ZBufferParams)
@@ -1539,6 +1540,30 @@ def fix_unity_lighting_ps(tree, args):
         x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
     else:
         x_reg = Register('%s.x' % reg.reg)
+
+    # And once more to find register with Z to use as depth (new approach as of
+    # Dreamfall Chapters Unity 5, we still check some of the code flow to have
+    # a higher degree of confidence that this is a lighting shader):
+    results = scan_shader(tree, _CameraToWorld2, write=False, opcode='dp4')
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (line, linepos, instr) = results[0]
+
+    if instr.args[1] == _CameraToWorld2:
+        reg = instr.args[2]
+    elif instr.args[2] == _CameraToWorld2:
+        reg = instr.args[1]
+    else:
+        assert(False)
+    if reg.swizzle:
+        depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+    else:
+        depth = Register('%s.z' % reg.reg)
+
+    line = tree[line]
+    line.append(WhiteSpace(' '))
+    line.append(CPPStyleComment('// depth in %s' % depth))
 
     # Find _ZBufferParams usage to find where depth is sampled (could use
     # _CameraDepthTexture, but that takes an extra step and more can go wrong)
@@ -1571,37 +1596,11 @@ def fix_unity_lighting_ps(tree, args):
     (line, linepos, instr) = results[0]
     reg = instr.args[0]
 
-    # Some shader variants have a few extra intermediate steps:
-    if instr.opcode == 'lrp':
-        # Could potentially check if constant used in instrction is
-        # unity_OrthoParams for safety
-        results = scan_shader(tree, reg.reg, components=reg.swizzle,
-                write=False, start=line+1, end=_CameraToWorld_line-1)
-        if len(results) < 2:
-            debug_verbose(0, 'Could not find expected mad+mul instructions')
-            return
-        (line, linepos, instr) = results[0]
-        if instr.opcode != 'mad':
-            debug_verbose(0, 'Could not find expected mad instruction, found %s' % instr)
-            return
-        (line, linepos, instr) = results[1]
-        reg = instr.args[0]
+    # We used to trace the function forwards more here, but Dreamfall Chapters
+    # got complicated after the Unity 5 update. Now we find the depth from the
+    # matrix multiply instead, which hopefully should be more robust.
 
-    # Hopefully we have now found the mul instruction that scales the
-    # view-space ray and can determine which register has the depth:
-    if instr.opcode != 'mul':
-        debug_verbose(0, 'Could not find expected mul instruction, found %s' % instr)
-        return
-
-    if not reg.swizzle or len(reg.swizzle) != 3:
-        debug_verbose(0, 'Ray multiply had unexpected mask: %s' % instr)
-        return
-
-    depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
-
-    line = tree[line]
-    line.append(WhiteSpace(' '))
-    line.append(CPPStyleComment('// depth in %s' % depth))
+    # If we ever need the old procedure, it's in the git history.
 
     t = tree._find_free_reg('r', PS3, desired=31)
     texcoord = tree._find_free_reg('v', PS3, desired=5)
