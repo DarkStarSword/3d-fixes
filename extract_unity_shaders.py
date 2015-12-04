@@ -827,14 +827,16 @@ def parse_args():
             help='Name the files by the keywords of the shader (WARNING: May exceed Windows filename limit)')
     parser.add_argument('--deep-dir', action='store_true',
             help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
-    parser.add_argument('--fog', action='store_true',
-            help='Generate additional shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--vs-fog', action='store_true',
+            help='Generate additional vertex shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--ps-fog', action='store_true',
+            help='Generate additional pixel shader variants with fog instructions added to match those from Unity')
     parser.add_argument('--type', action='append',
             help='Filter types of shaders to process, useful to avoid unecessary slow hash calculations')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')
-    if args.fog:
+    if args.vs_fog or args.ps_fog:
         try:
             shadertool = __import__('shadertool')
         except ImportError:
@@ -869,12 +871,16 @@ def main():
         tree = curly_scope(tree)
         tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
 
-    if args.fog:
+    if args.vs_fog or args.ps_fog:
         for shaders in list(shader_index.values()):
             for shader in shaders:
                 if shader.name != 'd3d9':
                     continue
                 assert(not shader.fog)
+                if shader.parent.name == 'vp' and not args.vs_fog:
+                    continue
+                if shader.parent.name == 'fp' and not args.ps_fog:
+                    continue
                 try:
                     for fog_tree in create_fog_asm(shader.shader_asm):
                         fog_asm = str(fog_tree)
