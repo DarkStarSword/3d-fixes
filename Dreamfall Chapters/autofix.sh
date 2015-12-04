@@ -9,4 +9,4 @@ cd ShaderCRCs
 
 "$DIR/shadertool.py" -I ../.. --auto-fix-vertex-halo --only-autofixed */vp/*.txt
 "$DIR/shadertool.py" -I ../.. --fix-unity-lighting-ps --only-autofixed Hidden_Internal-Deferred*/fp/* Hidden_Internal-PrePass*/fp/* Hidden_ShadowSoftener-*/fp/*
-"$DIR/shadertool.py" -I ../.. --disable=0 Hidden_Coord/*/* Hidden_Depth/*/* Hidden_DepthBreaks/*/* Hidden_Final\ Interpolation/*/* Hidden_InterpolateAlongRays/*/* Hidden_Raymarch/*/*
+"$DIR/shadertool.py" -I ../.. --disable=0 --condition=c200.x Hidden_Coord/*/* Hidden_Depth/*/* Hidden_DepthBreaks/*/* Hidden_Final\ Interpolation/*/* Hidden_InterpolateAlongRays/*/* Hidden_Raymarch/*/*

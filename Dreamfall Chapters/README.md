@@ -1,22 +1,31 @@
-Dreamfall Chapters (Books 1-2)
-==============================
+Dreamfall Chapters (Books 1-4 Work In Progress)
+===============================================
+
+Update 2015-12-05
+-----------------
+This is an early release to make the Unity 5 and Book 4 updates playable.
+There are some known rendering issues that I have not re-fixed yet, and I have
+not completed Book 4 to fix further issues, so I would recommend waiting a few
+days for a more polished fix.
 
 Installation
 ------------
-Extract the contents of the zip file to the game directory.
+1. Extract the contents of the zip file to the game directory.
+
+2. If you are running a 32bit OS, replace the d3d9.dll with the one from the
+   32bit directory.
 
 Fixed
 -----
-- Lighting and shadows fixed with a new technique
+- Lighting and shadows
 - Halos on all surfaces, reflections, etc.
 - UI depth (except the mouse cursor) is adjustable with the keys on the number
   row and tilde to return to screen depth.
 
 Known Issues
 ------------
-- Volumetric ray-marched light shafts are disabled. You can re-enable them with
-  U and toggle them between no fix (at screen depth), and a partial inaccurate
-  fix that causes a halo around the character and other objects inside them.
+- Volumetric ray-marched light shafts are at screen depth and are disabled. You
+  can re-enable them with U.
 - Reflections are mono
 - The mouse cursor depth is not adjustable as it uses a hardware cursor.
 
