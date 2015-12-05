@@ -1,3 +1,94 @@
+// CRC32: 6AEB3DDF | Matched 3 variants of 3 shaders: Unlit/Premultiplied Colored, Unlit/Text, Unlit/Transparent Packed
+// 
+//    Unity headers extracted from Unlit - Premultiplied Colored.shader
+//    Shader "Unlit/Premultiplied Colored" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//      }
+//      SubShader 1/2 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One OneMinusSrcAlpha
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 15950
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit - Text.shader
+//    Shader "Unlit/Text" {
+//      Properties {
+//       _MainTex ("Alpha (A)", 2D) = "white" { }
+//      }
+//      SubShader 1/2 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          Offset -1, -1
+//          GpuProgramID 21815
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Unlit - Transparent Packed.shader
+//    Shader "Unlit/Transparent Packed" {
+//      Properties {
+//       _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          Offset -1, -1
+//          GpuProgramID 38330
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// UI - text
+
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
     dcl_position v0
     dcl_color v1
@@ -18,10 +109,14 @@ dcl_2d s0
     mov o2, v1
     mov o0.xy, v2
 
-// approximately 6 instruction slots used
+// Check W == 1 to prevent double adjusting choice text:
+if_eq r0.w, c220.y
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py --ui=c200.z -i VertexShader_58_CRC32_6AEB3DDF.txt
-texldl r31, c220.z, s0
-mad r0.x, r31.x, c200.z, r0.x
+	// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py --ui=c200.z -i VertexShader_58_CRC32_6AEB3DDF.txt
+	texldl r31, c220.z, s0
+	mad r0.x, r31.x, c200.z, r0.x
+
+endif
+
 mov o1, r0

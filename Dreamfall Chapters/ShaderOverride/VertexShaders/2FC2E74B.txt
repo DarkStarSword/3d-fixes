@@ -1,3 +1,35 @@
+// CRC32: 2FC2E74B | Unity headers extracted from Unlit - Transparent Colored.shader
+// Shader "Unlit/Transparent Colored" {
+//   Properties {
+//    _MainTex ("Base (RGB), Alpha (A)", 2D) = "black" { }
+//   }
+//   SubShader 1/2 {
+//     LOD 100
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       Offset -1, -1
+//       GpuProgramID 19577
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// UI - full screen fade to black and others
+
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
     dcl_position v0
     dcl_texcoord v1
@@ -9,6 +41,7 @@ dcl_color o2
 
 
 def c220, 0, 1, 0.0625, 0.5
+def c221, 1920, 1080, 0.0005208333333333333, 0.000925925925
 dcl_2d s0
 
     dp4 r0.x, c0, v0
@@ -18,10 +51,32 @@ dcl_2d s0
     mov o0.xy, v1
     mov o2, v2
 
-// approximately 6 instruction slots used
+// Determine an appropriate threshold coordinates near the corners for the
+// current resolution (1 - 2/resolution):
+rcp r30.z, c210.x		// Instruction can only operate on one component at a time
+rcp r30.w, c210.y		// And c210.zw doesn't seem to already be the reciprocal
+add r30.xy, r30.zwzw, r30.zwzw	// 2/resolution
+add r30.xy, c220.y, -r30.xy	// 1 - 2/resolution
 
-// UI depth adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py --ui=c200.z -i VertexShader_59_CRC32_2FC2E74B.txt
-texldl r31, c220.z, s0
-mad r0.x, r31.x, c200.z, r0.x
+// Blacklist full screen coordinates at/beyond the screen corners:
+abs r31.xy, r0.xy
+mov r31.w, c220.y
+if_ge r31.x, r30.x
+	if_ge r31.y, r30.y
+		mov r31.w, c220.x
+	endif
+endif
+
+// Check W == 1 to avoid double adjusting some icons (choice/balance icons)
+if_ne r0.w, c220.y
+	mov r31.w, c220.x
+endif
+
+if_eq r31.w, c220.y
+	// UI depth adjustment inserted with DarkStarSword's shadertool.py:
+	// shadertool.py --ui=c200.z -i VertexShader_59_CRC32_2FC2E74B.txt
+	texldl r31, c220.z, s0
+	mad r0.x, r31.x, c200.z, r0.x
+endif
+
 mov o1, r0
