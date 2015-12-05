@@ -1103,6 +1103,9 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
 
     Match = collections.namedtuple('Match', ['line', 'token', 'instruction'])
 
+    if opcode and not isinstance(opcode, (tuple, list)):
+        opcode = (opcode, )
+
     if direction == 1:
         if start is None:
             start = 0
@@ -1151,7 +1154,7 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
             if not instr.args:
                 continue
             # debug('scanning %s' % instr)
-            if opcode and instr.opcode != opcode:
+            if opcode and instr.opcode not in opcode:
                 continue
             if write:
                 dest = instr.args[0]
@@ -1524,7 +1527,7 @@ def fix_unity_lighting_ps(tree, args):
 
     # Find _CameraToWorld usage - adjustment must be above this point, and this
     # gives us the register with X that needs to be adjusted:
-    results = scan_shader(tree, _CameraToWorld0, write=False, opcode='dp4')
+    results = scan_shader(tree, _CameraToWorld0, write=False, opcode=('dp4', 'dp4_pp'))
     if len(results) != 1:
         debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
         return
@@ -1544,7 +1547,7 @@ def fix_unity_lighting_ps(tree, args):
     # And once more to find register with Z to use as depth (new approach as of
     # Dreamfall Chapters Unity 5, we still check some of the code flow to have
     # a higher degree of confidence that this is a lighting shader):
-    results = scan_shader(tree, _CameraToWorld2, write=False, opcode='dp4')
+    results = scan_shader(tree, _CameraToWorld2, write=False, opcode=('dp4', 'dp4_pp'))
     if len(results) != 1:
         debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
         return
