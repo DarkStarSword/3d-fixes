@@ -4,7 +4,7 @@ DIR=~/3d-fixes
 
 "$DIR/unity_asset_extractor.py" Dreamfall\ Chapters_Data/Resources/* Dreamfall\ Chapters_Data/*.assets
 cd extracted
-"$DIR/extract_unity_shaders.py" --vs-fog */*.shader --type=d3d9
+"$DIR/extract_unity_shaders.py" */*.shader --type=d3d9
 cd ShaderCRCs
 
 "$DIR/shadertool.py" -I ../.. --auto-fix-vertex-halo --only-autofixed */vp/*.txt
