@@ -1,0 +1,134 @@
+// CRC32: B7819B68 | Matched 4 variants of 1 shaders: Dreamfall/Unity5/Terrain/Standard_WetMask_Terrain
+// 
+//    Unity headers extracted from Standard_WetMask_Terrain.shader
+//    Shader "Dreamfall/Unity5/Terrain/Standard_WetMask_Terrain" {
+//      Properties {
+//       _GlossValues ("Gloss Values for each layer Min Value 0 Max Value 1", Vector) = (0,0,0,0)
+//       _GlossFactor ("Gloss Grayscale Factor", Range(0,1)) = 0
+//       _GlossTerrainMin ("Gloss Terrain min", Range(0,1)) = 0
+//       _GlossTerrainMax ("Gloss Terrain Max", Range(0,1)) = 1
+//       _GlossWet ("Gloss Wet Mask", Range(0,1)) = 1
+//       _RefMask ("Reflection Mask (R)", 2D) = "black" { }
+//       _RefMaskOffsetTile ("RefMask Offset(RB), Tile(G), WetDarkening(A) ", Vector) = (0,0,10,0)
+//       _RefMaskLayerControll ("Reflection Mask layer controll", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//      [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//      [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//      [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//      [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//      }
+//      Fallback "Nature/Terrain/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//        Pass 3/4 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//          GpuProgramID 195261
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 4:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 8:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 13 [_Control_ST]
+//              Vector 14 [_Splat0_ST]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 12 [unity_LightmapST]
+//              Vector 11 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c15, 0, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+
+dcl_texcoord8 o7 // New output with adjusted _WorldSpaceCameraPos
+
+def c220, 0, 1, 0.0625, 1337
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py --fix-unity-reflection --only-autofixed -I ../.. -f Dreamfall_Unity5_Terrain_Standard_WetMask_Terrain/vp/B7819B68.txt
+mov r4, c10
+mov r5, c220.x
+mul r5.x, r31.x, -r31.y
+dp4 r6.x, c180, r5
+dp4 r6.y, c181, r5
+dp4 r6.z, c182, r5
+dp4 r6.w, c183, r5
+dp4 r5.x, c4, r6
+dp4 r5.y, c5, r6
+dp4 r5.z, c6, r6
+add r4.xyz, r4, -r5
+mov o7, r4
+mov o7.w, c220.w
+
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mad o1.xy, v2, c13, c13.zwzw
+    mad o1.zw, v2.xyxy, c14.xyxy, c14
+    mul r0.xyz, c15.xyxw, v1.zxyw
+    mad r0.xyz, v1.yzxw, c15.yxxw, -r0
+    dp3 r1.x, c4, r0
+    dp3 r1.y, c5, r0
+    dp3 r1.z, c6, r0
+    nrm r0.xyz, r1
+    dp4 r1.x, c4, v0
+    dp4 r1.y, c5, v0
+    dp4 r1.z, c6, v0
+    add r2.xyz, -r1, r4
+    mov o2.w, r1.x
+    mov o3.w, r1.y
+    mov o4.w, r1.z
+    dp3 o5.x, r2, r0
+    mul r1.xyz, c8, v1.y
+    mad r1.xyz, c7, v1.x, r1
+    mad r1.xyz, c9, v1.z, r1
+    nrm r3.xyz, r1
+    mul r1.xyz, r0.yzxw, r3.zxyw
+    mad r1.xyz, r3.yzxw, r0.zxyw, -r1
+    mul r1.xyz, r1, -c11.w
+    dp3 o5.y, r2, r1
+    dp3 o5.z, r2, r3
+    mad o6.xy, v3, c12, c12.zwzw
+    mov o2.x, r0.x
+    mov o2.y, r1.x
+    mov o2.z, r3.x
+    mov o3.x, r0.y
+    mov o4.x, r0.z
+    mov o3.y, r1.y
+    mov o4.y, r1.z
+    mov o3.z, r3.y
+    mov o4.z, r3.z
+    mov o6.zw, c15.x
