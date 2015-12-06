@@ -267,6 +267,8 @@ class Register(str):
     def xxxx(self): return Register('%s.xxxx' % (self.reg))
     @property
     def yyyy(self): return Register('%s.yyyy' % (self.reg))
+    @property
+    def xyz(self): return Register('%s.xyz' % (self.reg))
 
 class Instruction(SyntaxTree):
     def is_declaration(self):
@@ -1498,6 +1500,7 @@ def auto_fix_unreal_lights(tree, args):
     return auto_fix_unreal_shadows(tree, args, unreal_ScreenToLight_pattern, matrix_name='ScreenToLight', name="light")
 
 unity_CameraToWorld = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+unity_WorldSpaceCameraPos = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
 # unity_CameraDepthTexture = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
 unity_ZBufferParams = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
 def fix_unity_lighting_ps(tree, args):
@@ -1514,7 +1517,16 @@ def fix_unity_lighting_ps(tree, args):
         debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
         return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
+    _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
+
+    try:
+        match = find_header(tree, unity_WorldSpaceCameraPos)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos - skipping environment/specular adjustment')
+        _WorldSpaceCameraPos = None
+    else:
+        _WorldSpaceCameraPos = Register('c' + match.group('constant'))
 
     try:
         match = find_header(tree, unity_ZBufferParams)
@@ -1610,13 +1622,39 @@ def fix_unity_lighting_ps(tree, args):
     offset = tree.insert_decl()
     offset += tree.insert_decl('dcl_texcoord5', ['%s.x' % texcoord], comment='New input from vertex shader with unity_CameraInvProjection[0].x')
     stereo_const, offset2 = insert_stereo_declarations(tree, args, w = 0.5)
+    offset += offset2
 
-    pos = _CameraToWorld_line + offset + offset2
+    pos = tree.decl_end
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+
+    # Apply a stereo correction to the world space camera position - this
+    # pushes environment reflections, specular highlights, etc to infinity in
+    # Unity 5. Skip adjustment for Unity 4 style shaders that don't use the
+    # world space camera position:
+    if _WorldSpaceCameraPos is not None:
+        repl_cam_pos = tree._find_free_reg('r', PS3, desired=30)
+        view_space_adj = tree._find_free_reg('r', PS3, desired=29)
+        world_space_adj = tree._find_free_reg('r', PS3, desired=28)
+        replace_regs = {_WorldSpaceCameraPos: repl_cam_pos}
+        tree.do_replacements(replace_regs, False)
+        pos += insert_vanity_comment(args, tree, pos, "Unity reflection/specular fix inserted with")
+        pos += tree.insert_instr(pos, NewInstruction('mov', [repl_cam_pos, _WorldSpaceCameraPos]))
+        pos += tree.insert_instr(pos, NewInstruction('mov', [view_space_adj, tree.stereo_const.x]))
+        pos += tree.insert_instr(pos, NewInstruction('mul', [view_space_adj.x, separation, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('mul', [view_space_adj.x, view_space_adj.x, texcoord.x]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.x, _CameraToWorld0, view_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _CameraToWorld1, view_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _CameraToWorld2, view_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [repl_cam_pos.xyz, repl_cam_pos, -world_space_adj]))
+
+    pos += tree.insert_instr(pos)
+    offset += pos - tree.decl_end
+
+    pos = _CameraToWorld_line + offset
     debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos_to_line(tree, pos), depth, x_reg))
     pos += insert_vanity_comment(args, tree, pos, "Unity light/shadow fix (pixel shader stage) inserted with")
 
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
     pos += tree.insert_instr(pos, NewInstruction('mul', [t.w, t.w, separation]))
     pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg.x, -t.w, texcoord.x, x_reg.x]))
