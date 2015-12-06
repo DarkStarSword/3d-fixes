@@ -1,3 +1,70 @@
+// Exhaust distortion from one of the ships that hovers near the sun
+
+// CRC32: 62FDEBDB | Matched 2 variants of 2 shaders: FX/Glass/Stained BumpDistort, FX/Glass/Stained BumpDistort NoFog
+// 
+//    Unity headers extracted from Glass-Stained-BumpDistort.shader
+//    Shader "FX/Glass/Stained BumpDistort" {
+//      Properties {
+//       _BumpAmt ("Distortion", Range(0,128)) = 10
+//       _MainTex ("Tint Color (RGB)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      SubShader 1/2 {
+//        Tags { "QUEUE"="Transparent" "RenderType"="Opaque" }
+//        GrabPass {
+//          Name "BASE"
+//          Tags { "LIGHTMODE"="Always" }
+//         }
+//        Pass 1/1 {
+//          Name "BASE"
+//          Tags { "LIGHTMODE"="Always" "QUEUE"="Transparent" "RenderType"="Opaque" }
+//          GpuProgramID 39173
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_BumpMap_ST]
+//              Vector 5 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Glass-Stained-BumpDistortNoFog.shader
+//    Shader "FX/Glass/Stained BumpDistort NoFog" {
+//      Properties {
+//       _BumpAmt ("Distortion", Range(0,128)) = 10
+//       _MainTex ("Tint Color (RGB)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      SubShader 1/2 {
+//        Tags { "QUEUE"="Transparent" "RenderType"="Opaque" }
+//        GrabPass {
+//          Name "BASE"
+//          Tags { "LIGHTMODE"="Always" }
+//         }
+//        Pass 1/1 {
+//          Name "BASE"
+//          Tags { "LIGHTMODE"="Always" "QUEUE"="Transparent" "RenderType"="Opaque" }
+//          GpuProgramID 39173
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_BumpMap_ST]
+//              Vector 5 [_MainTex_ST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
     def c6, 0.5, 0, 0, 0
     dcl_position v0
@@ -8,16 +75,28 @@ dcl_texcoord1 o1
 dcl_texcoord2 o2
 dcl_position o3
 
-    dp4 r0.y, c1, v0
-    mov r1.y, -r0.y
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+// Just a halo, but instructions were arranged in a strange manner.
+// Rearranged to move the MVP matrix multiply and output position to the top
+// then inserted the halo fix:
+
     dp4 r1.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
     dp4 r0.w, c3, v0
-    add r1.yz, r0.w, r1.xxyw
     mov o3.x, r1.x
+
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mov r1.y, -r0.y
+    add r1.yz, r0.w, r1.xxyw
     mul o0.xy, r1.yzzw, c6.x
     mad o1.xy, v1, c4, c4.zwzw
     mad o2.xy, v1, c5, c5.zwzw
-    dp4 r0.z, c2, v0
     mov o3.yzw, r0
     mov o0.zw, r0
 
