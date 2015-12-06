@@ -1,5 +1,3 @@
-// Environment map reflections
-
 // CRC32: B1717770 | Unity headers extracted from Internal-DeferredReflections.shader
 // Shader "Hidden/Internal-DeferredReflections" {
 //   Properties {
@@ -53,6 +51,19 @@ dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjectio
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-DeferredReflections/fp/B1717770.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+mul r29.x, r29.x, v5.x
+dp4 r28.x, c0, r29
+dp4 r28.y, c1, r29
+dp4 r28.z, c2, r29
+add r30.xyz, r30, -r28
+
     rcp r0.x, v1.z
     mul r0.x, r0.x, c4.z
     mul r0.xyz, r0.x, v1
@@ -65,8 +76,7 @@ dcl_2d s13
     mov_pp r0.w, c12.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. -f --fix-unity-lighting-ps Hidden_Internal-DeferredReflections/fp/B1717770.txt
-texldl r31, c220.z, s13
+// shadertool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-DeferredReflections/fp/B1717770.txt
 add r31.w, r0.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r0.x, -r31.w, v5.x, r0.x
@@ -79,30 +89,7 @@ mad r0.x, -r31.w, v5.x, r0.x
     texld_pp r1, r1, s4
     mad_pp r0.xyz, r1, c12.y, c12.z
     nrm_pp r1.xyz, r0
-
-// To move the reflection to infinity, we need to adjust the camera position -
-// trying to adjust anything else won't look quite right
-mov r30, c3
-
-// Use a coord with W = 0 to suppress position transformations in the
-// _CameraToWorld matrix since we only want the adjustment amount:
-mov r29, c220.xxxx
-
-// Amount to adjust camera position by. Camera can be thought of as being at
-// depth=0, so the formula would put it at separation * -convergence * fov:
-mul r29.x, r31.x, -r31.y
-mul r29.x, r29.x, v5.x
-
-// Convert to world coordinates:
-dp4_pp r28.x, c0, r29
-dp4_pp r28.y, c1, r29
-dp4_pp r28.z, c2, r29
-
-// And finally adjust camera position:
-add r30.xyz, r30, -r28
-
     add r0.xyz, r2, -r30
-
     nrm_pp r4.xyz, r0
     max_pp r0.x, r3.x, r3.y
     max_pp r1.w, r0.x, r3.z
@@ -136,10 +123,7 @@ add r30.xyz, r30, -r28
     add_pp r0.y, -r3.w, c12.x
     pow_pp r1.w, r0.y, c11.y
     mul_pp r5.w, r1.w, c11.z
-
-// Environment cube map reflections:
     texldl_pp r5, r5, s0
-
     pow_pp r0.y, r5.w, c9.y
     mul_pp r0.y, r0.y, c9.x
     mul_pp r5.xyz, r5, r0.y

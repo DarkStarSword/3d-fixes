@@ -55,6 +55,19 @@ dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjectio
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/135F6100.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+mul r29.x, r29.x, v5.x
+dp4 r28.x, c0, r29
+dp4 r28.y, c1, r29
+dp4 r28.z, c2, r29
+add r30.xyz, r30, -r28
+
     mov r0.xyz, c11
     mul_pp r0.xyw, r0.xyzz, c9.xyzz
     add_pp r0.xw, r0.yyzw, r0.x
@@ -77,7 +90,6 @@ dcl_2d s13
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/135F6100.txt
-texldl r31, c220.z, s13
 add r31.w, r3.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r3.x, -r31.w, v5.x, r3.x
@@ -110,7 +122,7 @@ mad r3.x, -r31.w, v5.x, r3.x
     dp4_pp r0.y, r5, c14.x
     mul r0.y, r0.y, r6.x
     mov_sat r0.z, r0.y
-    add r3.xyw, r4.xyzz, -c3.xyzz
+    add r3.xyw, r4.xyzz, -r30.xyzz
     add r4.xyz, r4, -c8
     dp3 r4.x, r4, r4
     rsq r4.x, r4.x
