@@ -1,3 +1,63 @@
+// Bathroom door in Zoe's appartment
+
+// CRC32: 898E1E30 | Unity headers extracted from Standard_BumpedDetail_Ilum.shader
+// Shader "Dreamfall/Unity5/Standard_BumpedDetail_Ilum" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//    _DetailBumpFactor ("Detail Bump Ammount", Range(0,1)) = 1
+//    _AlphaFactor ("Alpha Factor", Range(0,1)) = 1
+//    _GlossHigh ("Glossy High", Range(0,1)) = 0.8
+//    _GlossLow ("Glossy Low", Range(0,1)) = 0.2
+//    _Metallness ("Metallness", Range(0,1)) = 0
+//    _MetalNesAlphaFactor ("Metalness Alpha Factor", Range(0,1)) = 1
+//    _Illum ("IllumMap (RGB)", 2D) = "black" { }
+//    _EmissionLM ("Emission (Lightmapper)", Float) = 1
+//   }
+//   Fallback "Legacy Shaders/Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 3/4 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//       GpuProgramID 168573
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//           Float 8 [_AlphaFactor]
+//           Vector 5 [_Color]
+//           Float 7 [_DetailBumpFactor]
+//           Float 4 [_EmissionLM]
+//           Float 9 [_GlossHigh]
+//           Float 10 [_GlossLow]
+//           Vector 6 [_GlowColor]
+//           Float 11 [_MetalNesAlphaFactor]
+//           Float 12 [_Metallness]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [unity_ColorSpaceDielectricSpec]
+//           Vector 3 [unity_LightGammaCorrectionConsts]
+//           Vector 2 [unity_Lightmap_HDR]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_BumpMap] 2D 3
+//           SetTexture 4 [_Detail] 2D 4
+//           SetTexture 5 [_DetailBump] 2D 5
+//           SetTexture 6 [_Illum] 2D 6
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c13, 1.79999995, 0.100000001, 1, -2
     def c14, 0, 0.333333343, 0.00100000005, 0.5
@@ -16,6 +76,47 @@
     dcl_2d s4
     dcl_2d s5
     dcl_2d s6
+
+dcl_texcoord7 v6
+dcl_texcoord8 v7
+dcl_texcoord9 v8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Adjust _WorldSpaceCameraPos to correct the placement of specular highlights,
+// pushing them into the surface mirroring the light they are from (this may
+// reveal how game devs cheat when they place light sources - apparent in 2D
+// since the specular highlights are apparently from nothing, but in 3D we can
+// now pinpoint the light location in the reflection ;-)
+mov r30, c0
+// Take the camera as being at depth=0 and calculate the adjustment amount in
+// projection space. We use W=0 in this coordinate to suppress position
+// transformations in the matrices:
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+
+// Run the adjustment amount through the inverse MVP matrix:
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+
+// Seems to work fine if I stop here, but not certain if that is universal:
+//add r30.xyz, r30, -r28
+
+// We are now in local coordinates, but we need to make sure we are rotated
+// back to world coordinates, so multiply by the _ObjectToWorld matrix passed
+// from the pixel shader:
+dp4 r29.x, v6, r28
+dp4 r29.y, v7, r28
+dp4 r29.z, v8, r28
+
+// And finally adjust the camera position:
+add r30.xyz, r30, -r29
+
     texld_pp r0, v0.zwzw, s3
     mad_pp r0.xy, r0.wyzw, -c13.w, -c13.z
     dp2add_sat_pp r0.w, r0, r0, c14.x
@@ -37,7 +138,10 @@
     mov r1.x, v2.w
     mov r1.y, v3.w
     mov r1.z, v4.w
-    add r1.xyz, -r1, c0
+
+    //add r1.xyz, -r1, c0
+add r1.xyz, -r1, r30
+
     nrm_pp r2.xyz, r1
     texld_pp r1, v5, s1
     mad_pp r1.xyz, r1, -c13.w, -c13.z
