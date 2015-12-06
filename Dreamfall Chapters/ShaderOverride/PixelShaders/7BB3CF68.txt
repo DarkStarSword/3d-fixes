@@ -1,0 +1,77 @@
+    ps_3_0
+    def c12, 0.100000001, 32, 0.5, 0.419999987
+    def c13, 2, -1, 0, 1
+    def c14, 0.5, 1, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_color_pp v4.xyz
+    dcl_texcoord4_pp v5.xyz
+    dcl_texcoord6_pp v6.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+    dcl_2d s3
+    dcl_2d s4
+    dp3_pp r0.x, v5, v5
+    rsq_pp r0.x, r0.x
+    mad r0.y, v5.z, r0.x, c12.w
+    mul_pp r0.xzw, r0.x, v5.xyyz
+    rcp r0.y, r0.y
+    mul r1.xy, r0.y, r0.xzzw
+    mov r2.xz, c12
+    add_pp r0.y, -r2.z, c11.x
+    mad_pp r1.zw, r0.y, r1.xyxy, v0.xyxy
+    texld_pp r3, r1.zwzw, s4
+    mul_pp r0.y, r2.z, c6.x
+    mul r1.xy, r1, r0.y
+    mad r1.xy, r1, c8.x, v0
+    texld_pp r1, r1, s3
+    mul_pp r2.yzw, c9.xxyz, v4.xxyz
+    mul_pp r1.xyz, r1, r2.yzww
+    mul r1.xyz, r1, c10.x
+    texld_pp r4, v0, s0
+    mul r1.xyz, r1, r4.w
+    max_pp r0.y, c7.x, r2.x
+    min_pp r1.w, r0.y, c12.y
+    texld_pp r2, v0.zwzw, s1
+    mad_pp r2.xy, r2.wyzw, c13.x, c13.y
+    dp2add_sat_pp r0.y, r2, r2, c13.z
+    add_pp r0.y, -r0.y, c13.w
+    rsq_pp r0.y, r0.y
+    rcp_pp r2.z, r0.y
+    dp3 r0.x, r0.xzww, r2
+    add r0.x, -r0.x, c13.w
+    pow_sat r2.w, r0.x, r1.w
+    mov r0.x, v1.w
+    mov r0.y, v2.w
+    mov r0.z, v3.w
+    add r0.xyz, -r0, c0
+    nrm_pp r3.xyz, r0
+    dp3 r0.x, v1, r2
+    dp3 r0.y, v2, r2
+    dp3 r0.z, v3, r2
+    dp3 r1.w, -r3, r0
+    add r1.w, r1.w, r1.w
+    mad r2.xyz, r0, -r1.w, -r3
+    texld_pp r5, r2, s2
+    mul_pp r2.xyz, r4.w, r5
+    mul_pp r3.xyz, r4, c4
+    mul_pp r2.xyz, r2.w, r2
+    mul_pp r2.xyz, r2, c5
+    add r2.xyz, r2, r2
+    mad_pp r1.xyz, r1, r3.w, r2
+    mov r0.w, c13.w
+    dp4_pp r2.x, c1, r0
+    dp4_pp r2.y, c2, r0
+    dp4_pp r2.z, c3, r0
+    mad_pp oC2, r0, c14.xxxy, c14.xxxz
+    add_pp r0.xyz, r2, v6
+    mad_pp oC3.xyz, r3, r0, r1
+    mov_pp oC0.xyz, r3
+    mov_pp oC0.w, c13.w
+    mov_pp oC1, c13.z
+    mov_pp oC3.w, c13.w
+
+// approximately 64 instruction slots used (5 texture, 59 arithmetic)
