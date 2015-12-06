@@ -1,3 +1,53 @@
+// Windows in cars in Propast
+
+// CRC32: 5E09A13E | Unity headers extracted from Reflect-Bump_SpecFresnel.shader
+// Shader "Dreamfall/Reflective/Fresnel/Bumped Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//    _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "" { }
+//    _RefMul ("Reflection Boost", Float) = 1
+//    _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 1
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 5/6 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//       GpuProgramID 290955
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//           Float 10 [_AlbedoBlend]
+//           Vector 5 [_Color]
+//           Float 8 [_Fresnel]
+//           Float 9 [_RefMul]
+//           Vector 6 [_ReflectColor]
+//           Float 7 [_Shininess]
+//           Vector 4 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 3 [unity_SHAb]
+//           Vector 2 [unity_SHAg]
+//           Vector 1 [unity_SHAr]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_BumpMap] 2D 1
+//           SetTexture 2 [_Cube] CUBE 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c11, 0.100000001, 32, 2, -1
     def c12, 0, 0.5, 1, 0
@@ -10,6 +60,10 @@
     dcl_2d s0
     dcl_2d s1
     dcl_cube s2
+
+// Extra input from the vertex shader with the adjusted camera world position:
+dcl_texcoord8 v8
+
     mov r0.xw, c11
     max_pp r1.x, c8.x, r0.x
     min_pp r0.x, r1.x, c11.y
@@ -26,7 +80,7 @@
     mov r0.x, v1.w
     mov r0.y, v2.w
     mov r0.z, v3.w
-    add r0.xyz, -r0, c0
+    add r0.xyz, -r0, v8
     nrm_pp r3.xyz, r0
     dp3 r4.x, v1, r2
     dp3 r4.y, v2, r2
