@@ -29,6 +29,14 @@ verbosity = 0
 def debug(*args, **kwargs):
     print(file=sys.stderr, *args, **kwargs)
 
+def write_ini(*args, **kwargs):
+    if sys.stdout.isatty():
+        print(*args, **kwargs)
+    else:
+        # FIXME: Detect newline style from file instead of assuming
+        print(*args, end='\r\n', **kwargs)
+        debug(*args, **kwargs)
+
 def debug_verbose(level, *args, **kwargs):
     if verbosity >= level:
         return debug(*args, **kwargs)
@@ -2043,13 +2051,13 @@ def do_ini_updates():
     debug('!' * 79)
     debug()
     for section in dx9settings_ini:
-        debug('[%s]' % section)
+        write_ini('[%s]' % section)
         for line in dx9settings_ini[section]:
             if isinstance(line, tuple):
-                debug('%s = %s' % line)
+                write_ini('%s = %s' % line)
             else:
-                debug(line)
-        debug()
+                write_ini(line)
+        write_ini()
 
 def show_collected_errors():
     if not collected_errors:
