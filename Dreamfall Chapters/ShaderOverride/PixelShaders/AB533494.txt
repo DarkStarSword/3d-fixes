@@ -1,3 +1,58 @@
+// River in Propast
+
+// CRC32: AB533494 | Unity headers extracted from ReflectRiver.shader
+// Shader "Dreamfall/FX/River (Supports Shadows)" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Maintex (RGB)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _BumpAmt ("BumpAmount", Range(0,1)) = 1
+//    _Fresnel ("Reflection Fresnel Exponent", Float) = 2
+//    _ReflAmount ("Reflection amount", Float) = 2
+//    _ReflPow ("Reflection pow", Float) = 1
+//    _Cube1 ("Reflection Cubemap Red", CUBE) = "" { }
+//    _Cube2 ("Reflection Cubemap Green", CUBE) = "" { }
+//    _Cube3 ("Reflection Cubemap Blue", CUBE) = "" { }
+//    _WaterSpeed ("Water Speed1", Float) = 1
+//    _WaterSpeed2 ("Water Speed1", Float) = 1
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 5/6 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//       GpuProgramID 275652
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//           Float 7 [_BumpAmt]
+//           Vector 6 [_Color]
+//           Float 10 [_Fresnel]
+//           Float 8 [_ReflAmount]
+//           Float 9 [_ReflPow]
+//           Vector 5 [_SpecColor]
+//           Vector 0 [_Time]
+//           Float 11 [_WaterSpeed]
+//           Float 12 [_WaterSpeed2]
+//           Vector 1 [_WorldSpaceCameraPos]
+//           Vector 4 [unity_SHAb]
+//           Vector 3 [unity_SHAg]
+//           Vector 2 [unity_SHAr]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_BumpMap] 2D 1
+//           SetTexture 2 [_Cube1] CUBE 2
+//           SetTexture 3 [_Cube2] CUBE 3
+//           SetTexture 4 [_Cube3] CUBE 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c13, 0.5, -0, -1, -0.5
     def c14, 2, -1, 0, 1
@@ -13,6 +68,10 @@
     dcl_cube s2
     dcl_cube s3
     dcl_cube s4
+
+// Extra input from the vertex shader with the adjusted camera world position:
+dcl_texcoord8 v8
+
     mov r0.x, c0.x
     mad r1.y, r0.x, c11.x, v0.w
     mov r1.xz, v0.z
@@ -40,7 +99,7 @@
     mov r2.x, v1.w
     mov r2.y, v2.w
     mov r2.z, v3.w
-    add r1.yzw, -r2.xxyz, c1.xxyz
+    add r1.yzw, -r2.xxyz, v8.xxyz
     nrm_pp r2.xyz, r1.yzww
     dp3 r3.x, v1, r0
     dp3 r3.y, v2, r0
