@@ -75,49 +75,13 @@
     dcl_2d s5
     dcl_2d s6
 
-dcl_texcoord6 v6
-dcl_texcoord7 v7
+// Extra input from the vertex shader with the adjusted camera world position:
 dcl_texcoord8 v8
-
-def c220, 0, 1, 0.0625, 0.5
-dcl_2d s13
-
-texldl r31, c220.z, s13
-
-// Adjust _WorldSpaceCameraPos to correct the placement of specular highlights,
-// pushing them into the surface mirroring the light they are from (this may
-// reveal how game devs cheat when they place light sources - apparent in 2D
-// since the specular highlights are apparently from nothing, but in 3D we can
-// now pinpoint the light location in the reflection ;-)
-mov r30, c0
-// Take the camera as being at depth=0 and calculate the adjustment amount in
-// projection space. We use W=0 in this coordinate to suppress position
-// transformations in the matrices:
-mov r29, c220.x
-mul r29.x, r31.x, -r31.y
-
-// Run the adjustment amount through the inverse MVP matrix:
-dp4 r28.x, c180, r29
-dp4 r28.y, c181, r29
-dp4 r28.z, c182, r29
-dp4 r28.w, c183, r29
-
-// Confirmed that we cannot stop here - works for walls, but not for ground.
-
-// We are now in local coordinates, but we need to make sure we are rotated
-// back to world coordinates, so multiply by the _ObjectToWorld matrix passed
-// from the pixel shader:
-dp4 r29.x, v6, r28
-dp4 r29.y, v7, r28
-dp4 r29.z, v8, r28
-
-// And finally adjust the camera position:
-add r30.xyz, r30, -r29
 
     mov r0.x, v1.w
     mov r0.y, v2.w
     mov r0.z, v3.w
-    add r0.xyz, -r0, r30
+    add r0.xyz, -r0, v8 // Use adjusted world space camera position
     nrm_pp r1.xyz, r0
     texld_pp r0, v5, s1
     mad_pp r0.xyz, r0, c14.x, c14.y
