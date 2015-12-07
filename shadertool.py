@@ -4,6 +4,19 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
+# Regular expressions to match various shader headers:
+unity_CameraDepthTexture              = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
+unity_CameraToWorld                   = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+unity_glstate_matrix_mvp_pattern      = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
+unity_Object2World                    = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
+unity_WorldSpaceCameraPos             = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
+unity_ZBufferParams                   = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
+unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
+unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
+unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
+unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
+unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
+
 preferred_stereo_const = 220
 dx9settings_ini = {}
 collected_errors = []
@@ -1322,7 +1335,6 @@ def find_header(tree, comment_pattern):
                 return match
     raise KeyError()
 
-unreal_NvStereoEnabled_pattern = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 def disable_unreal_correction(tree, args, redundant_check):
     # In Life Is Strange I found a lot of Unreal Engine shaders are now using
     # the vPos semantic, and then applying a stereo correction on top of that,
@@ -1358,7 +1370,6 @@ def disable_unreal_correction(tree, args, redundant_check):
 
     return True
 
-unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 def auto_fix_unreal_light_shafts(tree, args):
     if not isinstance(tree, PS3):
         raise Exception('Unreal light shaft auto fix is only applicable to pixel shaders')
@@ -1396,7 +1407,6 @@ def auto_fix_unreal_light_shafts(tree, args):
     tree.autofixed = True
 
 # Not sure if this is a generic UE3 thing, or specific to Life Is Strange
-unreal_DNEReflectionTexture_pattern = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
 def auto_fix_unreal_dne_reflection(tree, args):
     if not isinstance(tree, PS3):
         raise Exception('Unreal DNE reflection fix is only applicable to pixel shaders')
@@ -1434,7 +1444,6 @@ def auto_fix_unreal_dne_reflection(tree, args):
 
         tree.autofixed = True
 
-unreal_ScreenToShadowMatrix_pattern = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_pattern, matrix_name='ScreenToShadowMatrix', name="shadow"):
     if not isinstance(tree, PS3):
         raise Exception('Unreal %s auto fix is only applicable to pixel shaders' % name)
@@ -1525,14 +1534,9 @@ def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_patt
 
     tree.autofixed = True
 
-unreal_ScreenToLight_pattern = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 def auto_fix_unreal_lights(tree, args):
     return auto_fix_unreal_shadows(tree, args, unreal_ScreenToLight_pattern, matrix_name='ScreenToLight', name="light")
 
-unity_CameraToWorld = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
-unity_WorldSpaceCameraPos = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
-# unity_CameraDepthTexture = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_ZBufferParams = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
 def fix_unity_lighting_ps(tree, args):
     if not isinstance(tree, PS3):
         # We could potentially fix the vertex shaders as well, but since there
@@ -1706,9 +1710,7 @@ def fix_unity_lighting_ps(tree, args):
 WorldSpaceCameraPosTexcoord = 'dcl_texcoord8'
 WorldSpaceCameraPosMagicW = 1337
 
-unity_WorldSpaceCameraPos = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
-unity_Object2World = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
-unity_glstate_matrix_mvp_re = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
+# FIXME: Refactor
 def fix_unity_reflection_vs(tree, args):
     try:
         match = find_header(tree, unity_WorldSpaceCameraPos)
@@ -1733,7 +1735,7 @@ def fix_unity_reflection_vs(tree, args):
     _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
 
     try:
-        match = find_header(tree, unity_glstate_matrix_mvp_re)
+        match = find_header(tree, unity_glstate_matrix_mvp_pattern)
     except KeyError:
         debug_verbose(0, 'Shader does not use glstate_matrix_mvp')
         return
@@ -1796,6 +1798,7 @@ def fix_unity_reflection_vs(tree, args):
 
     tree.autofixed = True
 
+# FIXME: Refactor
 def fix_unity_reflection_ps(tree, args):
     try:
         match = find_header(tree, unity_WorldSpaceCameraPos)
@@ -1835,12 +1838,171 @@ def fix_unity_reflection_ps(tree, args):
 
     tree.autofixed = True
 
+# FIXME: Refactor
+def fix_unity_reflection_ps_variant_vs(tree, args):
+    try:
+        match = find_header(tree, unity_Object2World)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _Object2World, or is missing headers (my other scripts can extract these)')
+        return
+    _Object2World0 = Register('c' + match.group('matrix'))
+    _Object2World1 = Register('c%i' % (_Object2World0.num + 1))
+    _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
+
+    try:
+        match = find_header(tree, unity_glstate_matrix_mvp_pattern)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use glstate_matrix_mvp')
+        return
+    unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
+
+    try:
+        d = find_declaration(tree, 'dcl_texcoord8')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord8')
+        raise NoFreeRegisters('texcoord8')
+    try:
+        d = find_declaration(tree, 'dcl_texcoord9')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord9')
+        raise NoFreeRegisters('texcoord9')
+    try:
+        d = find_declaration(tree, 'dcl_texcoord10')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord10')
+        raise NoFreeRegisters('texcoord10')
+
+    out_Object2World0 = tree._find_free_reg('o', VS3)
+    out_Object2World1 = tree._find_free_reg('o', VS3)
+    out_Object2World2 = tree._find_free_reg('o', VS3)
+    tree.insert_decl()
+    tree.insert_decl('dcl_texcoord8', ['%s' % out_Object2World0], comment='New output with _Object2World[0]')
+    tree.insert_decl('dcl_texcoord9', ['%s' % out_Object2World1], comment='New output with _Object2World[1]')
+    tree.insert_decl('dcl_texcoord10', ['%s' % out_Object2World2], comment='New output with _Object2World[2]')
+    tree.insert_decl()
+
+    pos = tree.decl_end
+    pos += tree.insert_instr(pos, NewInstruction('mov', [out_Object2World0, _Object2World0]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [out_Object2World1, _Object2World1]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [out_Object2World2, _Object2World2]))
+    pos += tree.insert_instr(pos)
+
+    if not hasattr(tree, 'ini'):
+        tree.ini = []
+    tree.ini.append(('GetMatrixFromReg1', str(unity_glstate_matrix_mvp.num),
+        'Inverse MVP matrix for _WorldSpaceCameraPos adjustment (pixel shader variant):'))
+    tree.ini.append(('InverseMatrix1', 'true', None))
+
+    tree.autofixed = True
+
+# FIXME: Refactor
+def fix_unity_reflection_ps_variant_ps(tree, args):
+    try:
+        match = find_header(tree, unity_WorldSpaceCameraPos)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos')
+        return
+    _WorldSpaceCameraPos = Register('c' + match.group('constant'))
+
+    inv_mvp0 = tree._find_free_reg('c', VS3, desired=180)
+    # FIXME: Confirm these are free too:
+    inv_mvp1 = Register('c%i' % (inv_mvp0.num + 1))
+    inv_mvp2 = Register('c%i' % (inv_mvp0.num + 2))
+    inv_mvp3 = Register('c%i' % (inv_mvp0.num + 3))
+
+    try:
+        d = find_declaration(tree, 'dcl_texcoord8')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord8')
+        raise NoFreeRegisters('texcoord8')
+    try:
+        d = find_declaration(tree, 'dcl_texcoord9')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord9')
+        raise NoFreeRegisters('texcoord9')
+    try:
+        d = find_declaration(tree, 'dcl_texcoord10')
+    except:
+        pass
+    else:
+        debug_verbose(0, 'Shader already uses %s' % 'texcoord10')
+        raise NoFreeRegisters('texcoord10')
+
+    t = tree._find_free_reg('r', PS3, desired=31)
+    _Object2World0 = tree._find_free_reg('v', PS3)
+    _Object2World1 = tree._find_free_reg('v', PS3)
+    _Object2World2 = tree._find_free_reg('v', PS3)
+    tree.insert_decl()
+    tree.insert_decl('dcl_texcoord8', ['%s' % _Object2World0], comment='New input with _Object2World[0]')
+    tree.insert_decl('dcl_texcoord9', ['%s' % _Object2World1], comment='New input with _Object2World[1]')
+    tree.insert_decl('dcl_texcoord10', ['%s' % _Object2World2], comment='New input with _Object2World[2]')
+    stereo_const, _ = insert_stereo_declarations(tree, args)
+
+    pos = tree.decl_end
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+
+    # This is similar to the _WorldSpaceCameraPos adjustment in the lighting
+    # shaders, but instead of adjusting the coordinate in view-space and
+    # transforming it to world-space (which would require matrices we don't
+    # have handy), we adjust the coordinate in projection space, then transform
+    # it to local-space using the inverse MVP matrix (inverted via Helix Mod),
+    # then finally to world-space
+    repl_cam_pos = tree._find_free_reg('r', PS3)
+    clip_space_adj = tree._find_free_reg('r', PS3)
+    local_space_adj = tree._find_free_reg('r', PS3)
+    world_space_adj = clip_space_adj # Reuse the same register
+    replace_regs = {_WorldSpaceCameraPos: repl_cam_pos}
+    tree.do_replacements(replace_regs, False)
+
+    pos += insert_vanity_comment(args, tree, pos, "Unity reflection/specular fix (object *pixel* shader variant) inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('mov', [repl_cam_pos, _WorldSpaceCameraPos]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
+    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.w, inv_mvp3, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.x, _Object2World0, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [repl_cam_pos.xyz, repl_cam_pos, -world_space_adj]))
+    pos += tree.insert_instr(pos)
+
+    if not hasattr(tree, 'ini'):
+        tree.ini = []
+    tree.ini.append(('UseMatrix1', 'true',
+        'Inverse MVP matrix for _WorldSpaceCameraPos adjustment (pixel shader variant):'))
+    tree.ini.append(('MatrixReg1', str(inv_mvp0.num), None))
+
+    tree.autofixed = True
+
+
 def fix_unity_reflection(tree, args):
     if isinstance(tree, VS3):
         return fix_unity_reflection_vs(tree, args)
     if isinstance(tree, PS3):
         return fix_unity_reflection_ps(tree, args)
     raise Exception('fix_unity_reflection called on something not shader model 3')
+
+# Similar to the above, but adjustment goes in the pixel shader
+# FIXME: Refactor these two to use common code
+def fix_unity_reflection_ps_variant(tree, args):
+    if isinstance(tree, VS3):
+        return fix_unity_reflection_ps_variant_vs(tree, args)
+    if isinstance(tree, PS3):
+        return fix_unity_reflection_ps_variant_ps(tree, args)
+    raise Exception('fix_unity_reflection_ps_variant called on something not shader model 3')
 
 def add_unity_autofog_VS3(tree, reason):
     try:
@@ -2153,6 +2315,8 @@ def parse_args():
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Must be applied to matching vertex AND pixel shaders AND requires a section in DX9Settings.ini for each adjusted vertex shader")
+    parser.add_argument('--fix-unity-reflection-ps', action='store_true',
+            help="Variant of the above that applies the fix in the pixel shader (use when VS does not use _WorldSpaceCameraPos). Still must be applied to both vertex + pixel shaders!")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -2237,7 +2401,8 @@ def args_require_reg_analysis(args):
                 args.auto_fix_unreal_shadows or \
                 args.auto_fix_unreal_lights or \
                 args.fix_unity_lighting_ps or \
-                args.fix_unity_reflection
+                args.fix_unity_reflection or \
+                args.fix_unity_reflection_ps
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -2354,6 +2519,8 @@ def main():
                 fix_unity_lighting_ps(tree, args)
             if args.fix_unity_reflection:
                 fix_unity_reflection(tree, args)
+            if args.fix_unity_reflection_ps:
+                fix_unity_reflection_ps_variant(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
