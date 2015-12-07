@@ -1,4 +1,4 @@
-// CRC32: DE65FF10 | Matched 6 variants of 1 shaders: Dreamfall/FX/Additive Cutout VertexColored
+// CRC32: DE65FF10 | Matched 12 variants of 2 shaders: Dreamfall/FX/Additive Cutout VertexColored, Dreamfall/FX/Multiply Cutout VertexColored
 // 
 //     Unity headers extracted from AdditiveCutoutVertexColored.shader
 //     Shader "Dreamfall/FX/Additive Cutout VertexColored" {
@@ -19,6 +19,55 @@
 //           Cull Off
 //           Blend One One
 //           GpuProgramID 261116
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "color" Color
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 19 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//               Vector 14 [unity_SHAb]
+//               Vector 13 [unity_SHAg]
+//               Vector 12 [unity_SHAr]
+//               Vector 17 [unity_SHBb]
+//               Vector 16 [unity_SHBg]
+//               Vector 15 [unity_SHBr]
+//               Vector 18 [unity_SHC]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from MultiplyCutoutVertexColored.shader
+//     Shader "Dreamfall/FX/Multiply Cutout VertexColored" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Base (RGB)", 2D) = "white" { }
+//        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       }
+//       Fallback "Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//           ZWrite Off
+//           Cull Off
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           GpuProgramID 235932
 //           Program "vp" {
 //             SubProgram "d3d9 " {
 // 04:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
@@ -81,7 +130,7 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 98 with shadertool.py
+mov o0, r0 // Relocated from line 147 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_FX_Additive Cutout VertexColored/vp/DE65FF10.txt
@@ -109,7 +158,7 @@ mad r0.x, r31.w, r31.x, r0.x
     add o6.xyz, r1, r3
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 79 with shadertool.py
+//     mov o0, r0 // Relocated to line 128 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o4.zw, r0

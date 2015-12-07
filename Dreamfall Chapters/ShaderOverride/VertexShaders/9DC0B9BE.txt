@@ -1,4 +1,49 @@
-// CRC32: 9DC0B9BE | Matched 4 variants of 2 shaders: Dreamfall/Unity5/Standard_BumpedDetail, Dreamfall/Unity5/Standard_BumpedDetail_Cutout2Sided
+// CRC32: 9DC0B9BE | Matched 6 variants of 3 shaders: Dreamfall/Unity5/Standard VertexColor, Dreamfall/Unity5/Standard_BumpedDetail, Dreamfall/Unity5/Standard_BumpedDetail_Cutout2Sided
+// 
+//    Unity headers extracted from StandardVertexColor.shader
+//    Shader "Dreamfall/Unity5/Standard VertexColor" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _NormalTex ("Normal (RGB)", 2D) = "bump" { }
+//       _NormalMul ("Normal Multiplier", Float) = 1
+//       _MetallicGlossTex ("Metallic(R)/Glossines(G)/Occlusion(B)", 2D) = "white" { }
+//       _GlossinessAdjust ("Smoothness Max", Range(0,1)) = 0.5
+//       _MetallicAdjust ("Metallic Max", Range(0,1)) = 0
+//      }
+//      Fallback "Legacy Shaders/Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 45046
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord2" TexCoord2
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 14 [_MainTex_ST]
+//              Vector 16 [_MetallicGlossTex_ST]
+//              Vector 15 [_NormalTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 13 [unity_DynamicLightmapST]
+//              Vector 12 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
 // 
 //    Unity headers extracted from Standard_BumpedDetail.shader
 //    Shader "Dreamfall/Unity5/Standard_BumpedDetail" {
@@ -142,10 +187,10 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 143 with shadertool.py
+mov o0, r0 // Relocated from line 188 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Unity5_Standard_BumpedDetail/vp/9DC0B9BE.txt
+// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Unity5_Standard VertexColor/vp/9DC0B9BE.txt
 texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -154,7 +199,7 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o7.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 140 with shadertool.py
+//     mov o0, r0 // Relocated to line 185 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o7.zw, r0

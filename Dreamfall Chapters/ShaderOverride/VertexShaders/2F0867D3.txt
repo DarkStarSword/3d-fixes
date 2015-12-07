@@ -1,4 +1,4 @@
-// CRC32: 2F0867D3 | Matched 18 variants of 3 shaders: Decal/Colored/Cutout Diffuse Colored, Dreamfall/FX/Additive Cutout VertexColored, ProBuilder/Diffuse Vertex Color
+// CRC32: 2F0867D3 | Matched 24 variants of 4 shaders: Decal/Colored/Cutout Diffuse Colored, Dreamfall/FX/Additive Cutout VertexColored, Dreamfall/FX/Multiply Cutout VertexColored, ProBuilder/Diffuse Vertex Color
 // 
 //     Unity headers extracted from Decal-AlphaTest-Diffuse-Colored.shader
 //     Shader "Decal/Colored/Cutout Diffuse Colored" {
@@ -59,6 +59,48 @@
 //           Cull Off
 //           Blend One One
 //           GpuProgramID 261116
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 08:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 20:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 02:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "color" Color
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord1" TexCoord1
+//               Matrix 4 [_Object2World] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_MainTex_ST]
+//               Vector 7 [_ProjectionParams]
+//               Vector 8 [_ScreenParams]
+//               Vector 9 [unity_LightmapST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from MultiplyCutoutVertexColored.shader
+//     Shader "Dreamfall/FX/Multiply Cutout VertexColored" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Base (RGB)", 2D) = "white" { }
+//        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//       }
+//       Fallback "Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Transparent" "RenderType"="TransparentCutout" }
+//           ZWrite Off
+//           Cull Off
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           GpuProgramID 235932
 //           Program "vp" {
 //             SubProgram "d3d9 " {
 // 04:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
@@ -151,7 +193,7 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 153 with shadertool.py
+mov o0, r0 // Relocated from line 195 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Decal_Colored_Cutout Diffuse Colored/vp/2F0867D3.txt
@@ -164,7 +206,7 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o5.xy, v2, c9, c9.zwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 149 with shadertool.py
+//     mov o0, r0 // Relocated to line 191 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o4.zw, r0

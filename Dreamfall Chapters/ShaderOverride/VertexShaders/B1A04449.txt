@@ -1,4 +1,4 @@
-// CRC32: B1A04449 | Matched 3 variants of 3 shaders: Dreamfall/Detail/Bumped Specular VertexColor, Dreamfall/Unity5/Standard_BumpedDetail, Dreamfall/Unity5/Standard_BumpedDetail_Cutout2Sided
+// CRC32: B1A04449 | Matched 4 variants of 4 shaders: Dreamfall/Detail/Bumped Specular VertexColor, Dreamfall/Unity5/Standard VertexColor, Dreamfall/Unity5/Standard_BumpedDetail, Dreamfall/Unity5/Standard_BumpedDetail_Cutout2Sided
 // 
 //    Unity headers extracted from Bumped_Detail_v2.shader
 //    Shader "Dreamfall/Detail/Bumped Specular VertexColor" {
@@ -34,6 +34,52 @@
 //              Vector 18 [_BumpMap_ST]
 //              Vector 19 [_Detail_ST]
 //              Vector 17 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_SHBb]
+//              Vector 13 [unity_SHBg]
+//              Vector 12 [unity_SHBr]
+//              Vector 15 [unity_SHC]
+//              Vector 16 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from StandardVertexColor.shader
+//    Shader "Dreamfall/Unity5/Standard VertexColor" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _NormalTex ("Normal (RGB)", 2D) = "bump" { }
+//       _NormalMul ("Normal Multiplier", Float) = 1
+//       _MetallicGlossTex ("Metallic(R)/Glossines(G)/Occlusion(B)", 2D) = "white" { }
+//       _GlossinessAdjust ("Smoothness Max", Range(0,1)) = 0.5
+//       _MetallicAdjust ("Metallic Max", Range(0,1)) = 0
+//      }
+//      Fallback "Legacy Shaders/Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 45046
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 17 [_MainTex_ST]
+//              Vector 19 [_MetallicGlossTex_ST]
+//              Vector 18 [_NormalTex_ST]
 //              Vector 10 [_ProjectionParams]
 //              Vector 11 [_ScreenParams]
 //              Vector 14 [unity_SHBb]
@@ -203,7 +249,7 @@ dcl_2d s0
     dp4 r1.x, c0, v0
     dp4 r1.w, c3, v0
 
-mov o0, r1 // Relocated from line 204 with shadertool.py
+mov o0, r1 // Relocated from line 250 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Detail_Bumped Specular VertexColor/vp/B1A04449.txt
@@ -215,7 +261,7 @@ mad r1.x, r31.w, r31.x, r1.x
     mad o8.xy, r2.z, c11.zwzw, r2.xwzw
     dp4 r1.z, c2, v0
 
-//     mov o0, r1 // Relocated to line 201 with shadertool.py
+//     mov o0, r1 // Relocated to line 247 with shadertool.py
 mov o0.z, r1 // Inserted by shadertool.py
 
     mov o8.zw, r1

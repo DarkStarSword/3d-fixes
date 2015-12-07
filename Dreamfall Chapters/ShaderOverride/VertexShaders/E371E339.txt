@@ -1,4 +1,4 @@
-// CRC32: E371E339 | Matched 10 variants of 5 shaders: Chickenlord/Detail/Bumped Specular, Dreamfall/FX/AdditiveGlowScroll, Dreamfall/FX/AdditiveGlowScroll_NoZwrite, Dreamfall/FX/GlowScroll, Dreamfall/FX/GlowSignScroll
+// CRC32: E371E339 | Matched 12 variants of 6 shaders: Chickenlord/Detail/Bumped Specular, Dreamfall/FX/AdditiveGlowScroll, Dreamfall/FX/AdditiveGlowScroll_NoZwrite, Dreamfall/FX/GlowScroll, Dreamfall/FX/GlowSignScroll, Enviro/BumpedDiffuseOverlaySM2
 // 
 //    Unity headers extracted from Bumped_Detail.shader
 //    Shader "Chickenlord/Detail/Bumped Specular" {
@@ -244,6 +244,52 @@
 //      }
 //    }
 // 
+//    Unity headers extracted from Blend SM2.shader
+//    Shader "Enviro/BumpedDiffuseOverlaySM2" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Opacity ("Color over opacity", Range(0,1)) = 1
+//       _MainTex ("Color over (RGBA)", 2D) = "white" { }
+//       _BumpMap ("Normalmap over", 2D) = "bump" { }
+//       _MainTex2 ("Color under (RGBA)", 2D) = "white" { }
+//       _BumpMap2 ("Normalmap under", 2D) = "bump" { }
+//      }
+//      Fallback "Bumped Diffuse"
+//      SubShader 1/2 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/6 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          GpuProgramID 198223
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 20 [_MainTex2_ST]
+//              Vector 19 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_SHAb]
+//              Vector 13 [unity_SHAg]
+//              Vector 12 [unity_SHAr]
+//              Vector 17 [unity_SHBb]
+//              Vector 16 [unity_SHBg]
+//              Vector 15 [unity_SHBr]
+//              Vector 18 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
@@ -273,7 +319,7 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 290 with shadertool.py
+mov o0, r0 // Relocated from line 336 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Chickenlord_Detail_Bumped Specular/vp/E371E339.txt
@@ -301,7 +347,7 @@ mad r0.x, r31.w, r31.x, r0.x
     add o5.xyz, r1, r3
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 271 with shadertool.py
+//     mov o0, r0 // Relocated to line 317 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o3.zw, r0

@@ -1,4 +1,4 @@
-// CRC32: E7E686A1 | Matched 42 variants of 7 shaders: Dreamfall/FX/AdditiveGlowScroll, Dreamfall/FX/AdditiveGlowScroll_NoZwrite, Dreamfall/FX/GlowScroll, Dreamfall/FX/GlowSignScroll, Legacy Shaders/Self-Illumin/Diffuse, Legacy Shaders/Self-Illumin/Specular, Sonic Ether/Emissive/Textured
+// CRC32: E7E686A1 | Matched 48 variants of 8 shaders: Dreamfall/FX/AdditiveGlowScroll, Dreamfall/FX/AdditiveGlowScroll_NoZwrite, Dreamfall/FX/GlowScroll, Dreamfall/FX/GlowSignScroll, Enviro/BumpedDiffuseOverlaySM2, Legacy Shaders/Self-Illumin/Diffuse, Legacy Shaders/Self-Illumin/Specular, Sonic Ether/Emissive/Textured
 // 
 //     Unity headers extracted from AdditiveGlowScroll.shader
 //     Shader "Dreamfall/FX/AdditiveGlowScroll" {
@@ -185,12 +185,56 @@
 //       }
 //     }
 // 
+//     Unity headers extracted from Blend SM2.shader
+//     Shader "Enviro/BumpedDiffuseOverlaySM2" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _Opacity ("Color over opacity", Range(0,1)) = 1
+//        _MainTex ("Color over (RGBA)", 2D) = "white" { }
+//        _BumpMap ("Normalmap over", 2D) = "bump" { }
+//        _MainTex2 ("Color under (RGBA)", 2D) = "white" { }
+//        _BumpMap2 ("Normalmap under", 2D) = "bump" { }
+//       }
+//       Fallback "Bumped Diffuse"
+//       SubShader 1/2 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 198223
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 08:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 20:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 02:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord1" TexCoord1
+//               Matrix 4 [_Object2World] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 11 [_MainTex2_ST]
+//               Vector 10 [_MainTex_ST]
+//               Vector 7 [_ProjectionParams]
+//               Vector 8 [_ScreenParams]
+//               Vector 9 [unity_LightmapST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
 //     Unity headers extracted from Illumin-Diffuse.shader
 //     Shader "Legacy Shaders/Self-Illumin/Diffuse" {
 //       Properties {
 //        _Color ("Main Color", Color) = (1,1,1,1)
 //        _MainTex ("Base (RGB)", 2D) = "white" { }
 //        _Illum ("Illumin (A)", 2D) = "white" { }
+//        _Emission ("Emission (Lightmapper)", Range(0,8)) = 1
 //       }
 //       Fallback "Legacy Shaders/Self-Illumin/VertexLit"
 //       SubShader 1/1 {
@@ -200,7 +244,7 @@
 //           Name "PREPASS"
 //           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
 //           ZWrite Off
-//           GpuProgramID 206139
+//           GpuProgramID 212221
 //           Program "vp" {
 //             SubProgram "d3d9 " {
 // 04:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
@@ -233,6 +277,7 @@
 //        _Shininess ("Shininess", Range(0.01,1)) = 0.078125
 //        _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
 //        _Illum ("Illumin (A)", 2D) = "white" { }
+//        _Emission ("Emission (Lightmapper)", Range(0,8)) = 1
 //       }
 //       Fallback "Legacy Shaders/Self-Illumin/Diffuse"
 //       SubShader 1/1 {
@@ -242,7 +287,7 @@
 //           Name "PREPASS"
 //           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
 //           ZWrite Off
-//           GpuProgramID 240571
+//           GpuProgramID 255620
 //           Program "vp" {
 //             SubProgram "d3d9 " {
 // 04:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
@@ -338,7 +383,7 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 340 with shadertool.py
+mov o0, r0 // Relocated from line 385 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
 // shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_FX_AdditiveGlowScroll/vp/E7E686A1.txt
@@ -351,7 +396,7 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o4.xy, v2, c9, c9.zwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 336 with shadertool.py
+//     mov o0, r0 // Relocated to line 381 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o3.zw, r0
