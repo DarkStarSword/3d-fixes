@@ -1696,6 +1696,171 @@ def fix_unity_lighting_ps(tree, args):
 
     tree.autofixed = True
 
+def fix_unity_lighting_ps_world(tree, args):
+    if not isinstance(tree, PS3):
+        # We could potentially fix the vertex shaders as well, but since there
+        # is only a few of them and they sometimes need custom adjustments,
+        # it's easier to just use a template (check my 3d-fixes repository) and
+        # tweak as necessary.
+        raise Exception('Unity lighting adjustment is only applicable to pixel shaders. Check my templates for the corresponding vertex shader & DX9Settings.ini!')
+
+    inv_mvp0 = tree._find_free_reg('c', PS3, desired=180)
+    # FIXME: Confirm these are free too:
+    inv_mvp1 = Register('c%i' % (inv_mvp0.num + 1))
+    inv_mvp2 = Register('c%i' % (inv_mvp0.num + 2))
+    inv_mvp3 = Register('c%i' % (inv_mvp0.num + 3))
+    _Object2World0 = tree._find_free_reg('c', PS3, desired=190)
+    # FIXME: Confirm these are free too:
+    _Object2World1 = Register('c%i' % (_Object2World0.num + 1))
+    _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
+
+    try:
+        match = find_header(tree, unity_CameraToWorld)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
+    _CameraToWorld0 = Register('c' + match.group('matrix'))
+    _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
+    _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
+
+    try:
+        match = find_header(tree, unity_WorldSpaceCameraPos)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos - skipping environment/specular adjustment')
+        _WorldSpaceCameraPos = None
+    else:
+        _WorldSpaceCameraPos = Register('c' + match.group('constant'))
+
+    try:
+        match = find_header(tree, unity_ZBufferParams)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams')
+        return
+    _ZBufferParams = Register('c' + match.group('constant'))
+
+    try:
+        match = find_header(tree, unity_CameraDepthTexture)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+        return
+    _CameraDepthTexture = Register('s' + match.group('sampler'))
+
+    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld0, _ZBufferParams))
+
+    # Find _CameraToWorld usage - adjustment must be below this point, and this
+    # gives us the register with X that needs to be adjusted:
+    results = scan_shader(tree, _CameraToWorld0, write=False, opcode=('dp4', 'dp4_pp'))
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (_CameraToWorld_line, linepos, instr) = results[0]
+
+    if instr.args[0].swizzle != 'x':
+        raise Exception('FIXME: Destination of _CameraToWorld[0] not in simple form')
+    world_coord = Register(instr.args[0].reg)
+
+    results = scan_shader(tree, _CameraToWorld1, write=False, opcode=('dp4', 'dp4_pp'))
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (line, linepos, instr) = results[0]
+    if  world_coord.reg != instr.args[0].reg or instr.args[0].swizzle != 'y':
+        raise Exception('FIXME: Destination of _CameraToWorld[1] not in simple form')
+    if (line > _CameraToWorld_line):
+        (_CameraToWorld_line, linepos, instr) = (line, linepos, instr)
+
+    # And once more to find register with Z to use as depth (new approach as of
+    # Dreamfall Chapters Unity 5, we still check some of the code flow to have
+    # a higher degree of confidence that this is a lighting shader):
+    results = scan_shader(tree, _CameraToWorld2, write=False, opcode=('dp4', 'dp4_pp'))
+    if len(results) != 1:
+        debug_verbose(0, '_CameraToWorld read from %i instructions (only exactly 1 read currently supported)' % len(results))
+        return
+    (line, linepos, instr) = results[0]
+    if  world_coord.reg != instr.args[0].reg or instr.args[0].swizzle != 'z':
+        raise Exception('FIXME: Destination of _CameraToWorld[2] not in simple form')
+    if (line > _CameraToWorld_line):
+        (_CameraToWorld_line, linepos, instr) = (line, linepos, instr)
+
+    if instr.args[1] == _CameraToWorld2:
+        reg = instr.args[2]
+    elif instr.args[2] == _CameraToWorld2:
+        reg = instr.args[1]
+    else:
+        assert(False)
+    if reg.swizzle:
+        depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+    else:
+        depth = Register('%s.z' % reg.reg)
+
+    line = tree[line]
+    line.append(WhiteSpace(' '))
+    line.append(CPPStyleComment('// depth in %s' % depth))
+
+    t = tree._find_free_reg('r', PS3, desired=31)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+
+    pos = tree.decl_end
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+
+    clip_space_adj = tree._find_free_reg('r', PS3, desired=29)
+    local_space_adj = tree._find_free_reg('r', PS3, desired=28)
+    world_space_adj = clip_space_adj # Reuse the same register
+
+    # Apply a stereo correction to the world space camera position - this
+    # pushes environment reflections, specular highlights, etc to infinity in
+    # Unity 5. Skip adjustment for Unity 4 style shaders that don't use the
+    # world space camera position:
+    if _WorldSpaceCameraPos is not None:
+        repl_cam_pos = tree._find_free_reg('r', PS3, desired=30)
+        replace_regs = {_WorldSpaceCameraPos: repl_cam_pos}
+        tree.do_replacements(replace_regs, False)
+        pos += insert_vanity_comment(args, tree, pos, "Unity reflection/specular fix inserted with")
+        pos += tree.insert_instr(pos, NewInstruction('mov', [repl_cam_pos, _WorldSpaceCameraPos]))
+        pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
+        pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.w, inv_mvp3, clip_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.x, _Object2World0, local_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [repl_cam_pos.xyz, repl_cam_pos, -world_space_adj]))
+
+    pos += tree.insert_instr(pos)
+    offset += pos - tree.decl_end
+
+    pos = _CameraToWorld_line + offset + 2
+    debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix (world-space variant). depth in %s, world_coord in %s' % (pos_to_line(tree, pos), depth, world_coord))
+    pos += insert_vanity_comment(args, tree, pos, "Unity light/shadow fix (pixel shader stage, world-space variant) inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, depth, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.w, inv_mvp3, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.x, _Object2World0, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [world_coord.xyz, world_coord, -world_space_adj]))
+    pos += tree.insert_instr(pos)
+
+    if not hasattr(tree, 'ini'):
+        tree.ini = []
+    tree.ini.append(('UseMatrix', 'true',
+        'Copy inversed MVP matrix and _Object2World matrix in for world-space variant of Unity lighting fix'))
+    tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
+    tree.ini.append(('UseMatrix1', 'true', None))
+    tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
+    tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
+        'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
+    tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+
+    tree.autofixed = True
+
 
 # FIXME: This is for the output to the pixel shaders, but there's no guarantee
 # it (or potentially any other) texcoord will be free.  For now just bail if
@@ -2313,6 +2478,8 @@ def parse_args():
             help="Attempt to automatically fix lights in Unreal games")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
+    parser.add_argument('--fix-unity-lighting-ps-world', action='store_true',
+            help="Apply a correction to Unity lighting pixel shaders using the world-space variation (goal is to reduce the number of matrices that need to be copied if world-space coordinates need adjusting elsewhere. As above, this also needs a fix in the vertex shader).")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Must be applied to matching vertex AND pixel shaders AND requires a section in DX9Settings.ini for each adjusted vertex shader")
     parser.add_argument('--fix-unity-reflection-ps', action='store_true',
@@ -2401,6 +2568,7 @@ def args_require_reg_analysis(args):
                 args.auto_fix_unreal_shadows or \
                 args.auto_fix_unreal_lights or \
                 args.fix_unity_lighting_ps or \
+                args.fix_unity_lighting_ps_world or \
                 args.fix_unity_reflection or \
                 args.fix_unity_reflection_ps
 
@@ -2517,6 +2685,8 @@ def main():
                 auto_fix_unreal_lights(tree, args)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(tree, args)
+            if args.fix_unity_lighting_ps_world:
+                fix_unity_lighting_ps_world(tree, args)
             if args.fix_unity_reflection:
                 fix_unity_reflection(tree, args)
             if args.fix_unity_reflection_ps:
