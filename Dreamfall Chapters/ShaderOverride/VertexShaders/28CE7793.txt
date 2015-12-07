@@ -1,0 +1,90 @@
+// CRC32: 28CE7793 | Matched 5 variants of 1 shaders: Dreamfall/FX/Cornea Reflections
+// 
+//     Unity headers extracted from Cornea Reflections.shader
+//     Shader "Dreamfall/FX/Cornea Reflections" {
+//       Properties {
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _Fresnel ("Reflection Fresnel Exponent", Range(0.1,6)) = 1
+//        _Cube ("Reflection Cubemap", CUBE) = "" { }
+//        _RefMult ("Reflect Amount", Float) = 1
+//       }
+//       SubShader 1/1 {
+//         Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         Pass 2/6 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 110029
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_WorldSpaceCameraPos]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+
+dcl_texcoord8 o4 // New output with adjusted _WorldSpaceCameraPos
+
+def c220, 0, 1, 0.0625, 1337
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -i --fix-unity-reflection --only-autofixed --git VertexShader/VertexShader_34_CRC32_28CE7793.txt
+mov r3, c10
+mov r4, c220.x
+mul r4.x, r31.x, -r31.y
+dp4 r5.x, c180, r4
+dp4 r5.y, c181, r4
+dp4 r5.z, c182, r4
+dp4 r5.w, c183, r4
+dp4 r4.x, c4, r5
+dp4 r4.y, c5, r5
+dp4 r4.z, c6, r5
+add r3.xyz, r3, -r4
+mov o4, r3
+mov o4.w, c220.w
+
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r2.xyz, -r0, r3
+    mov o3.xyz, r0
+    dp3 r0.x, -r2, r1
+    add r0.x, r0.x, r0.x
+    mad o1.xyz, r1, -r0.x, -r2
+    mov o2.xyz, r1
+
+// approximately 19 instruction slots used
