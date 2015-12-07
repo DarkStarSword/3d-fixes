@@ -1133,7 +1133,10 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
 
     tmp = reg
     if components:
-        tmp += '.%s' % components
+        if isinstance(components, str):
+            tmp += '.%s' % components
+        else:
+            tmp += '.%s' % component_set_to_string(components)
     debug_verbose(1, "Scanning shader %s from line %i to %i for %s %s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             pos_to_line(tree, start), pos_to_line(tree, end - direction),
@@ -1181,6 +1184,19 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
                         if stop:
                             return ret
 
+    return ret
+
+# Converts a set of components into a string, ensuring the order is consistently xyzw
+def component_set_to_string(components):
+    ret = ''
+    if 'x' in components:
+        ret += 'x'
+    if 'y' in components:
+        ret += 'y'
+    if 'z' in components:
+        ret += 'z'
+    if 'w' in components:
+        ret += 'w'
     return ret
 
 def auto_fix_vertex_halo(tree, args):
@@ -1235,10 +1251,16 @@ def auto_fix_vertex_halo(tree, args):
         # 6. Scan for any writes to other components of the temporary register
         #    that we may have just moved the output register past, and copy
         #    these to the output position at the original output location.
-        results = scan_shader(tree, temp_reg.reg, components='yzw', write=True, start=relocate_to + 1, end=output_line)
+        #    Bug fix - Only consider components that were originally output
+        #    (caused issue on Dreamfall Chapters Speedtree fadeout in fog).
+        output_components = set('yzw')
+        if output_instr.args[0].swizzle is not None:
+            output_components = set(output_instr.args[0].swizzle).intersection(output_components)
+
+        results = scan_shader(tree, temp_reg.reg, components=output_components, write=True, start=relocate_to + 1, end=output_line)
         if results:
             components = [ tuple(instr.args[0].swizzle) for (_, _, instr) in results ]
-            components = ''.join(set(itertools.chain(*components)))
+            components = component_set_to_string(set(itertools.chain(*components)).intersection(output_components))
             tree.insert_instr(next_line_pos(tree, output_line))
             # Only apply components to destination (as mask) to avoid bugs like this one: "mov o6.yz, r1.yz"
             instr = NewInstruction('mov', ['%s.%s' % (pos_out.reg, components), temp_reg.reg])
