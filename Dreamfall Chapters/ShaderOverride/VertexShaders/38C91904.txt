@@ -161,11 +161,27 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r5, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Nature_SpeedTree Billboard/vp/38C91904.txt
+mov r30, c54
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mov r0.x, c48.w
     mov r0.y, c49.w
     mov r0.z, c50.w
     add r0.xyz, r0, v0
-    add r1.xyz, -r0, c54
+    add r1.xyz, -r0, r30
     dp3 r0.w, r1, r1
     rsq r0.w, r0.w
     mul r1.xy, r0.w, r1.xzzw
@@ -272,7 +288,7 @@ dcl_2d s0
 mov o0.xyw, r2 // Relocated from line 270 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Nature_SpeedTree Billboard/vp/38C91904.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Nature_SpeedTree Billboard/vp/38C91904.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x

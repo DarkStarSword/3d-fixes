@@ -95,6 +95,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r3, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Chickenlord_Reflective_Fresnel_Diffuse/vp/612E91E8.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r3.x, -r3.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mad o1.xy, v2, c14, c14.zwzw
     mul r0.xyz, c8, v1.y
     mad r0.xyz, c7, v1.x, r0
@@ -103,7 +119,7 @@ dcl_2d s0
     dp4 r0.x, c4, v0
     dp4 r0.y, c5, v0
     dp4 r0.z, c6, v0
-    add r2.xyz, -r0, c10
+    add r2.xyz, -r0, r30
     mov o4.xyz, r0
     dp3 r0.x, -r2, r1
     add r0.x, r0.x, r0.x
@@ -119,7 +135,7 @@ dcl_2d s0
 mov o0, r0 // Relocated from line 117 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Chickenlord_Reflective_Fresnel_Diffuse/vp/612E91E8.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Chickenlord_Reflective_Fresnel_Diffuse/vp/612E91E8.txt
 texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x

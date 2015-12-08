@@ -108,6 +108,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r3, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_FogVolume/vp/1A9CA980.txt
+mov r30, c13
+mov r29, c220.x
+mul r29.x, r3.x, -r3.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mad r0, v0.xyzx, c17.xxxy, c17.yyyx
     dp4 o1.x, c7, r0
     dp4 o1.y, c8, r0
@@ -121,7 +137,7 @@ dcl_2d s0
 mov o0, r1 // Relocated from line 131 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Hidden_FogVolume/vp/1A9CA980.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_FogVolume/vp/1A9CA980.txt
 texldl r31, c220.z, s0
 add r31.w, r1.w, -r31.y
 mad r1.x, r31.w, r31.x, r1.x
@@ -132,7 +148,7 @@ mad r1.x, r31.w, r31.x, r1.x
     dp4 o4.y, c5, r0
     dp4 o4.z, c6, r0
     mov r0.xy, c17
-    mad r2, c13.xyzx, r0.xxxy, r0.yyyx
+    mad r2, r30.xyzx, r0.xxxy, r0.yyyx
     dp4 o5.x, c10, r2
     dp4 o5.y, c11, r2
     dp4 o5.z, c12, r2

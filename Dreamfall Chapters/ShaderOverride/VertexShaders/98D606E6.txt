@@ -73,11 +73,27 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r3, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Dreamfall_Unity5_Standard_WorldProject_Detail/vp/98D606E6.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r3.x, -r3.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     dp3 o6.x, c4, v2
     dp3 o6.y, c5, v2
     dp3 o6.z, c6, v2
     mov r0.xy, c17
-    mad r0, c10.xyzx, r0.xxxy, r0.yyyx
+    mad r0, r30.xyzx, r0.xxxy, r0.yyyx
     dp4 r1.x, c7, r0
     dp4 r1.y, c8, r0
     dp4 r1.z, c9, r0
@@ -99,7 +115,7 @@ dcl_2d s0
 mov o0, r0 // Relocated from line 97 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../../ --auto-fix-vertex-halo --only-autofixed --add-fog-on-sm3-update Dreamfall_Unity5_Standard_WorldProject_Detail/vp/98D606E6.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Dreamfall_Unity5_Standard_WorldProject_Detail/vp/98D606E6.txt
 texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
