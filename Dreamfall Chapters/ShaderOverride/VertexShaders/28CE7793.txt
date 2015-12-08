@@ -46,28 +46,24 @@
     dcl_texcoord1 o2.xyz
     dcl_texcoord2 o3.xyz
 
-dcl_texcoord8 o4 // New output with adjusted _WorldSpaceCameraPos
-
-def c220, 0, 1, 0.0625, 1337
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
 texldl r31, c220.z, s0
 
-// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --fix-unity-reflection --only-autofixed --git VertexShader/VertexShader_34_CRC32_28CE7793.txt
-mov r3, c10
-mov r4, c220.x
-mul r4.x, r31.x, -r31.y
-dp4 r5.x, c180, r4
-dp4 r5.y, c181, r4
-dp4 r5.z, c182, r4
-dp4 r5.w, c183, r4
-dp4 r4.x, c4, r5
-dp4 r4.y, c5, r5
-dp4 r4.z, c6, r5
-add r3.xyz, r3, -r4
-mov o4, r3
-mov o4.w, c220.w
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_FX_Cornea Reflections/vp/28CE7793.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
@@ -80,11 +76,9 @@ mov o4.w, c220.w
     dp4 r0.x, c4, v0
     dp4 r0.y, c5, v0
     dp4 r0.z, c6, v0
-    add r2.xyz, -r0, r3
+    add r2.xyz, -r0, r30
     mov o3.xyz, r0
     dp3 r0.x, -r2, r1
     add r0.x, r0.x, r0.x
     mad o1.xyz, r1, -r0.x, -r2
     mov o2.xyz, r1
-
-// approximately 19 instruction slots used

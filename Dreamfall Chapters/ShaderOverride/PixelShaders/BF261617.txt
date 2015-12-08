@@ -78,20 +78,24 @@
     dcl_2d s4
     dcl_cube s5
 
-dcl_texcoord8 v6 // New input with adjusted _WorldSpaceCameraPos
-
-def c220, 0, 1, 0.0625, 1337
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
+texldl r31, c220.z, s13
 
-// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --fix-unity-reflection --only-autofixed -f --git PixelShader/PixelShader_10_CRC32_BF261617.txt
-mov r30, v6
-add r30.w, r30.w, -c220.w
-abs r30.w, r30.w
-if_gt r30.w, c220.y
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_Unity5_Standard_River/fp/BF261617.txt
 mov r30, c1
-endif
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mov r0.x, c0.x
     mad r1.y, r0.x, c12.x, v0.w
@@ -283,5 +287,3 @@ endif
     mov_pp oC1.w, c10.x
     mov_pp oC2.w, -c17.w
     mov_pp oC3.w, -c17.w
-
-// approximately 205 instruction slots used (9 texture, 196 arithmetic)

@@ -75,13 +75,29 @@
     dcl_2d s5
     dcl_2d s6
 
-// Extra input from the vertex shader with the adjusted camera world position:
-dcl_texcoord8 v8
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_Unity5_VertexBlend_Standard_WetGround/fp/76D4D0C0.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mov r0.x, v1.w
     mov r0.y, v2.w
     mov r0.z, v3.w
-    add r0.xyz, -r0, v8 // Use adjusted world space camera position
+    add r0.xyz, -r0, r30
     nrm_pp r1.xyz, r0
     texld_pp r0, v5, s1
     mad_pp r0.xyz, r0, c14.x, c14.y
@@ -242,5 +258,3 @@ dcl_texcoord8 v8
     mov_pp oC0.w, c14.w
     mov_pp oC2.w, c14.w
     mov_pp oC3.w, c14.w
-
-// approximately 176 instruction slots used (9 texture, 167 arithmetic)

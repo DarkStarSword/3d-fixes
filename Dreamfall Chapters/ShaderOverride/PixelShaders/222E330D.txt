@@ -81,20 +81,24 @@
     dcl_2d s9
     dcl_2d s10
 
-dcl_texcoord8 v5 // New input with adjusted _WorldSpaceCameraPos
-
-def c220, 0, 1, 0.0625, 1337
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s13
 
+texldl r31, c220.z, s13
 
-// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
-// shadertool.py --fix-unity-reflection --only-autofixed -I ../.. -f Dreamfall_Unity5_Terrain_Standard_WetMask_Terrain/fp/222E330D.txt
-mov r30, v5
-add r30.w, r30.w, -c220.w
-abs r30.w, r30.w
-if_gt r30.w, c220.y
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_Unity5_Terrain_Standard_WetMask_Terrain/fp/222E330D.txt
 mov r30, c0
-endif
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     texld r0, v0.zwzw, s6
     texld r1, v0.zwzw, s5

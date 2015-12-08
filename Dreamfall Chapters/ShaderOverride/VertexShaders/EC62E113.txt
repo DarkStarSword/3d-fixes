@@ -1,5 +1,3 @@
-// River in Propast + windows in some cars
-
 // CRC32: EC62E113 | Matched 16 variants of 8 shaders: Dreamfall/BlurredReflective/Bumped Spec Vertex Color, Dreamfall/FX/River (Supports Shadows), Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided VertexColor, Dreamfall/VertexBlend/2Tex_Fresnel, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum MaskDistort, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum Window, Self-Illumin/Dreamfall/Robot Eyes
 // 
 //    Unity headers extracted from BlurredRef-BumpSpec_VColor.shader
@@ -466,36 +464,21 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
-// Extra output to pass the adjusted camera position to the pixel shader:
-dcl_texcoord8 o10
-
 texldl r31, c220.z, s0
 
-// Adjust _WorldSpaceCameraPos to correct the placement of reflection
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_BlurredReflective_Bumped Spec Vertex Color/vp/EC62E113.txt
 mov r30, c10
-// Take the camera as being at depth=0 and calculate the adjustment amount in
-// projection space. We use W=0 in this coordinate to suppress position
-// transformations in the matrices:
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
-
-// Run the adjustment amount through the inverse MVP matrix:
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
 dp4 r28.w, c183, r29
-
-// We are now in local coordinates, but we need to make sure we are rotated
-// back to world coordinates, so multiply by the _Object2World matrix:
-dp4 r29.x, c4, r28
-dp4 r29.y, c5, r28
-dp4 r29.z, c6, r28
-
-// Adjust the camera position:
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
 add r30.xyz, r30, -r29
-
-// Pass the adjusted coordinate through to the pixel shader:
-mov o10, r30
 
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
@@ -545,5 +528,3 @@ mov o10, r30
     mov o4.z, r3.w
     mov o5, v4
     mov o7, c18.x
-
-// approximately 50 instruction slots used

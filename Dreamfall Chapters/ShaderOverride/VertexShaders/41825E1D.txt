@@ -1,5 +1,3 @@
-// Windows in cars in Propast
-
 // CRC32: 41825E1D | Matched 42 variants of 21 shaders: Character/Disintegrate Bumped Diffuse Cubemap Lit, Chickenlord/Reflective/Fresnel/Bumped Specular, Dreamfall/BlurredReflective/Bumped Spec, Dreamfall/BlurredReflective/Bumped Spec Illum, Dreamfall/Fresnel/Bumped Colored Specular, Dreamfall/Fresnel/Diffuse Specular Bump, Dreamfall/Reflective/Fresnel/Bumped Specular, Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump, Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump Sparkle, Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBumpEmission, Dreamfall/Reflective/Fresnel/Bumped Specular Masked Tint, Dreamfall/Reflective/Fresnel/Bumped Specular Overlay, Dreamfall/Reflective/Fresnel/Bumped Specular RefColor, Dreamfall/Unity5/Standard_CubemapReflection, Dreamfall/Unity5/Standard_Moss, Dreamfall/Unity5/Standard_River, Dreamfall/Unity5/Standard_Sparkle, Legacy Shaders/Parallax Diffuse, Self-Illumin/Dreamfall/Reflective/Fresnel/Bumped Specular Illum
 // 
 //    Unity headers extracted from disintegrate_nmp_cube_lit.shader
@@ -1060,36 +1058,21 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
-// Extra output to pass the adjusted camera position to the pixel shader:
-dcl_texcoord8 o10
-
 texldl r31, c220.z, s0
 
-// Adjust _WorldSpaceCameraPos to correct the placement of reflection
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Character_Disintegrate Bumped Diffuse Cubemap Lit/vp/41825E1D.txt
 mov r30, c10
-// Take the camera as being at depth=0 and calculate the adjustment amount in
-// projection space. We use W=0 in this coordinate to suppress position
-// transformations in the matrices:
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
-
-// Run the adjustment amount through the inverse MVP matrix:
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
 dp4 r28.w, c183, r29
-
-// We are now in local coordinates, but we need to make sure we are rotated
-// back to world coordinates, so multiply by the _Object2World matrix:
-dp4 r29.x, c4, r28
-dp4 r29.y, c5, r28
-dp4 r29.z, c6, r28
-
-// Adjust the camera position:
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
 add r30.xyz, r30, -r29
-
-// Pass the adjusted coordinate through to the pixel shader:
-mov o10, r30
 
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
@@ -1138,5 +1121,3 @@ mov o10, r30
     mov o3.z, r3.y
     mov o4.z, r3.w
     mov o6, c18.x
-
-// approximately 49 instruction slots used

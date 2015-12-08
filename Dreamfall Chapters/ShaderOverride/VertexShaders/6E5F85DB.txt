@@ -1,5 +1,3 @@
-// Pavement in Propast
-
 // CRC32: 6E5F85DB | Matched 48 variants of 12 shaders: Dreamfall/BlurredReflective/Bumped Spec Vertex Color, Dreamfall/FX/River (Supports Shadows), Dreamfall/Reflective/Fresnel/Bumped Specular DetailBump Cutout 2sided VertexColor, Dreamfall/Unity5/Standard VertexColor_CheapGloss, Dreamfall/Unity5/Standard_VertexBlend_2Tex, Dreamfall/Unity5/Standard_VertexColor_Illum, Dreamfall/Unity5/VertexBlend/Standard_WetGround, Dreamfall/VertexBlend/2Tex_Fresnel, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum MaskDistort, Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum Window, Self-Illumin/Dreamfall/Robot Eyes
 // 
 //    Unity headers extracted from BlurredRef-BumpSpec_VColor.shader
@@ -668,40 +666,21 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
-// Extra output to pass the adjusted camera position to the pixel shader:
-dcl_texcoord8 o10
-
 texldl r31, c220.z, s0
 
-// Adjust _WorldSpaceCameraPos to correct the placement of specular highlights,
-// pushing them into the surface mirroring the light they are from (this may
-// reveal how game devs cheat when they place light sources - apparent in 2D
-// since the specular highlights are apparently from nothing, but in 3D we can
-// now pinpoint the light location in the reflection ;-)
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_BlurredReflective_Bumped Spec Vertex Color/vp/6E5F85DB.txt
 mov r30, c10
-// Take the camera as being at depth=0 and calculate the adjustment amount in
-// projection space. We use W=0 in this coordinate to suppress position
-// transformations in the matrices:
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
-
-// Run the adjustment amount through the inverse MVP matrix:
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
 dp4 r28.w, c183, r29
-
-// We are now in local coordinates, but we need to make sure we are rotated
-// back to world coordinates, so multiply by the _Object2World matrix:
-dp4 r29.x, c4, r28
-dp4 r29.y, c5, r28
-dp4 r29.z, c6, r28
-
-// Adjust the camera position:
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
 add r30.xyz, r30, -r29
-
-// Pass the adjusted coordinate through to the pixel shader:
-mov o10, r30
 
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
@@ -716,7 +695,7 @@ mov o10, r30
     dp4 r0.x, c4, v0
     dp4 r0.y, c5, v0
     dp4 r0.z, c6, v0
-    add r2.xyz, -r0, r30 // Fixes depth of texture placed behind window
+    add r2.xyz, -r0, r30
     mov o2.w, r0.x
     mov o3.w, r0.y
     mov o4.w, r0.z
@@ -743,5 +722,3 @@ mov o10, r30
     mov o4.z, r3.z
     mov o5, v5
     mov o7.zw, c15.x
-
-// approximately 44 instruction slots used

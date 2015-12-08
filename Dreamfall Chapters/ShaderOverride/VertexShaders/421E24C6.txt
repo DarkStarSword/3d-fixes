@@ -1404,28 +1404,24 @@
     dcl_texcoord4 o5.xyz
     dcl_texcoord5 o6
 
-dcl_texcoord8 o7 // New output with adjusted _WorldSpaceCameraPos
-
-def c220, 0, 1, 0.0625, 1337
+def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
 texldl r31, c220.z, s0
 
-// Unity reflection/specular fix (object shader variant) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -i --fix-unity-reflection --only-autofixed -f --git VertexShader/VertexShader_10_CRC32_421E24C6.txt
-mov r4, c10
-mov r5, c220.x
-mul r5.x, r31.x, -r31.y
-dp4 r6.x, c180, r5
-dp4 r6.y, c181, r5
-dp4 r6.z, c182, r5
-dp4 r6.w, c183, r5
-dp4 r5.x, c4, r6
-dp4 r5.y, c5, r6
-dp4 r5.z, c6, r6
-add r4.xyz, r4, -r5
-mov o7, r4
-mov o7.w, c220.w
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Character_Disintegrate Bumped Diffuse Cubemap Lit/vp/421E24C6.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
@@ -1440,7 +1436,7 @@ mov o7.w, c220.w
     dp4 r0.x, c4, v0
     dp4 r0.y, c5, v0
     dp4 r0.z, c6, v0
-    add r2.xyz, -r0, r4
+    add r2.xyz, -r0, r30
     mov o2.w, r0.x
     mov o3.w, r0.y
     mov o4.w, r0.z
@@ -1466,5 +1462,3 @@ mov o7.w, c220.w
     mov o3.z, r3.y
     mov o4.z, r3.z
     mov o6.zw, c15.x
-
-// approximately 43 instruction slots used
