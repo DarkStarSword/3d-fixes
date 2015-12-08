@@ -467,8 +467,19 @@ texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
 
-rcp r31.w, r0.w
-mul r0, r0, r31.w
-mul r0, r0, r31.y
+// Only normalise if depth is positive and convergence is non-zero -
+// normalising when this is behind the camera can break stuff (e.g. Seraph
+// Kavarna Neon Angel sign outside apartment from certain angles) and if we
+// normalise with stereo disabled it would disappear
+if_gt r0.w, c220.x
+	if_ne r31.y, c220.x
+		rcp r31.w, r0.w
+		mul r31.w, r31.y, r31.w
+		mul r0, r0, r31.w
+	endif
+endif
+
+//add r31.w, r0.w, -r31.y
+//mul r0, r0, r31.w
 
 mov o1, r0
