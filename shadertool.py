@@ -17,6 +17,8 @@ unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<co
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 
+unity_directional_lighting            = re.compile(r'//\s+Shader\s".*PrePassCollectShadows.*"\s{$')
+
 preferred_stereo_const = 220
 dx9settings_ini = {}
 collected_errors = []
@@ -1723,6 +1725,8 @@ def fix_unity_lighting_ps_world(tree, args):
     _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
 
+    debug_verbose(0, '_CameraToWorld in %s' % _CameraToWorld0)
+
     try:
         match = find_header(tree, unity_WorldSpaceCameraPos)
     except KeyError:
@@ -1731,21 +1735,25 @@ def fix_unity_lighting_ps_world(tree, args):
     else:
         _WorldSpaceCameraPos = Register('c' + match.group('constant'))
 
+    # XXX: Directional lighting shaders seem to have a bogus _ZBufferParams!
     try:
-        match = find_header(tree, unity_ZBufferParams)
+        match = find_header(tree, unity_directional_lighting)
     except KeyError:
-        debug_verbose(0, 'Shader does not use _ZBufferParams')
-        return
-    _ZBufferParams = Register('c' + match.group('constant'))
+        try:
+            match = find_header(tree, unity_ZBufferParams)
+        except KeyError:
+            debug_verbose(0, 'Shader does not use _ZBufferParams')
+            return
+        _ZBufferParams = Register('c' + match.group('constant'))
 
-    try:
-        match = find_header(tree, unity_CameraDepthTexture)
-    except KeyError:
-        debug_verbose(0, 'Shader does not use _CameraDepthTexture')
-        return
-    _CameraDepthTexture = Register('s' + match.group('sampler'))
-
-    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld0, _ZBufferParams))
+        try:
+            match = find_header(tree, unity_CameraDepthTexture)
+        except KeyError:
+            debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+            return
+        _CameraDepthTexture = Register('s' + match.group('sampler'))
+    else:
+        _CameraDepthTexture = _ZBufferParams = None
 
     # Find _CameraToWorld usage - adjustment must be below this point, and this
     # gives us the register with X that needs to be adjusted:
@@ -1855,9 +1863,12 @@ def fix_unity_lighting_ps_world(tree, args):
     tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
     tree.ini.append(('UseMatrix1', 'true', None))
     tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
-    tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
-        'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
-    tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+    if _CameraDepthTexture is not None:
+        tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
+            'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
+        tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+    else:
+        tree.ini.append((None, None, 'Directional lighting shader, _ZBufferParams may be bogus'))
 
     tree.autofixed = True
 
@@ -2385,7 +2396,8 @@ def update_ini(tree):
     for (k, v, comment) in tree.ini:
         if comment is not None:
             dx9settings_ini[section].append('; %s' % comment)
-        dx9settings_ini[section].append((k, v))
+        if k is not None:
+            dx9settings_ini[section].append((k, v))
 
 def do_ini_updates():
     if not dx9settings_ini:
