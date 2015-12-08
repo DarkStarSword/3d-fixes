@@ -1,0 +1,211 @@
+// CRC32: 2417D9FA | Unity headers extracted from Reflect-Bump_SpecFresnelDetailBumpSparkles.shader
+// Shader "Dreamfall/Reflective/Fresnel/Bumped Specular DetailCubeBump Sparkle" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflect Color", Color) = (1,1,1,1)
+//    _EmissiveColor ("Emissive Color", Color) = (1,1,1,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _Fresnel ("Fresnel", Float) = 1
+//    _DetailMulti ("Detail Strength", Float) = 1
+//    _EmissiveStrength ("Emissionstrength", Float) = 1
+//    _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _DetailBumpMap ("DetailMap", 2D) = "bump" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "" { }
+//    _SparkleMap1 ("Sparkle 1", 2D) = "black" { }
+//    _SparkleMap2 ("Sparkle 2", 2D) = "black" { }
+//    _TileFactor ("Tile Factor", Float) = 1
+//    _Effect1UvX ("Effect 1 UV X speed", Float) = 1
+//    _Effect1UvY ("Effect 1 UV Y speed", Float) = 1
+//    _Effect2UvX ("Effect 2 UV X speed", Float) = 1
+//    _Effect2UvY ("Effect 2 UV Y speed", Float) = 1
+//    _MasterSpeed ("Master Speed", Float) = 1
+//    _SparkleCutoff ("Sparkle Cutoff", Range(0,1)) = 0.5
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 125104
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "FOG_LINEAR" "SPOT" }
+//           Matrix 0 [_LightMatrix0]
+//           Vector 10 [_Color]
+//           Float 16 [_DetailMulti]
+//           Float 18 [_Effect1UvX]
+//           Float 19 [_Effect1UvY]
+//           Float 20 [_Effect2UvX]
+//           Float 21 [_Effect2UvY]
+//           Vector 12 [_EmissiveColor]
+//           Float 13 [_EmissiveStrength]
+//           Float 15 [_Fresnel]
+//           Vector 8 [_LightColor0]
+//           Float 22 [_MasterSpeed]
+//           Vector 11 [_ReflectColor]
+//           Float 14 [_Shininess]
+//           Float 23 [_SparkleCutoff]
+//           Vector 9 [_SpecColor]
+//           Float 17 [_TileFactor]
+//           Vector 4 [_Time]
+//           Vector 5 [_WorldSpaceCameraPos]
+//           Vector 6 [_WorldSpaceLightPos0]
+//           Vector 7 [unity_FogParams]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_LightTextureB0] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_BumpMap] 2D 3
+//           SetTexture 4 [_DetailBumpMap] 2D 4
+//           SetTexture 5 [_SparkleMap1] 2D 5
+//           SetTexture 6 [_SparkleMap2] 2D 6
+//           SetTexture 7 [_Cube] CUBE 7
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c24, 0.100000001, 32, 0.5, 0
+    def c25, 2, -1, 1, 0
+    def c26, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord6 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_cube s7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Reflective_Fresnel_Bumped Specular DetailCubeBump Sparkle/fp/2417D9FA.txt
+mov r30, c5
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0, v4.xyzx, c25.zzzw, c25.wwwz
+    dp4 r1.x, c3, r0
+    rcp r1.x, r1.x
+    dp4 r2.x, c0, r0
+    dp4 r2.y, c1, r0
+    dp4 r2.z, c2, r0
+    mad r0.xy, r2, r1.x, c24.z
+    dp3 r0.z, r2, r2
+    texld_pp r1, r0.z, s1
+    texld_pp r0, r0, s0
+    mul r0.x, r1.x, r0.w
+    mul_pp r0.xyz, r0.x, c8
+    cmp_pp r0.xyz, -r2.z, c24.w, r0
+    mov r1.z, c25.z
+    add r0.w, r1.z, c16.x
+    rcp r0.w, r0.w
+    texld_pp r1, v0.zwzw, s4
+    mad_pp r1.xy, r1.wyzw, c25.x, c25.y
+    dp2add_sat_pp r1.w, r1, r1, c24.w
+    add_pp r1.w, -r1.w, c25.z
+    rsq_pp r1.w, r1.w
+    rcp_pp r1.z, r1.w
+    texld_pp r2, v0, s3
+    mad_pp r2.xy, r2.wyzw, c25.x, c25.y
+    dp2add_sat_pp r1.w, r2, r2, c24.w
+    add_pp r1.w, -r1.w, c25.z
+    rsq_pp r1.w, r1.w
+    rcp_pp r2.z, r1.w
+    mad r1.xyz, r1, c16.x, r2
+    mul_pp r1.xyz, r0.w, r1
+    dp3 r3.x, v1, r1
+    dp3 r3.y, v2, r1
+    dp3 r3.z, v3, r1
+    add r1.xyz, r30, -v4
+    nrm_pp r4.xyz, r1
+    dp3 r0.w, -r4, r3
+    add r0.w, r0.w, r0.w
+    mad r1.xyz, r3, -r0.w, -r4
+    texld_pp r1, r1, s7
+    texld_pp r3, v0, s2
+    mul_pp r5.xyz, r1, r3.w
+    mul_pp r6.xyz, r4.y, v2
+    mad_pp r6.xyz, v1, r4.x, r6
+    mad_pp r6.xyz, v3, r4.z, r6
+    nrm r7.xyz, r6
+    dp3 r0.w, r7, r2
+    add r0.w, -r0.w, c25.z
+    mov r6.xz, c24
+    max_pp r1.w, c15.x, r6.x
+    min_pp r2.w, r1.w, c24.y
+    pow_pp r1.w, r0.w, r2.w
+    mul_pp r5.xyz, r1.w, r5
+    mul_pp r5.xyz, r5, c11
+    mad_pp r3.xyz, r3, c10, r5
+    mov r5.x, c4.x
+    mul r0.w, r5.x, c18.x
+    mad r6.x, r0.w, c22.x, v0.x
+    mul r0.w, r5.x, c19.x
+    mad r6.y, r0.w, c22.x, v0.y
+    mul r5.yz, r6.xxyw, c17.x
+    texld r7, r5.yzzw, s5
+    mul r0.w, r5.x, c20.x
+    mad r6.x, r0.w, c22.x, v0.x
+    mul r0.w, r5.x, c21.x
+    mad r6.y, r0.w, c22.x, v0.y
+    mul r5.xy, r6, c17.x
+    texld r5, r5, s6
+    add r0.w, r5.x, r7.x
+    mad_sat r0.w, r0.w, r6.z, -c23.x
+    mul r5.xyz, r0.w, c12
+    mul r5.xyz, r5, c13.x
+    mul r1.xyz, r1, r5
+    mad_pp r1.xyz, r1, r1.w, r3
+    mul_pp r1.xyz, r0, r1
+    mul r0.xyz, r0, c9
+    add r3.xyz, c6, -v4
+    dp3 r0.w, r3, r3
+    rsq r0.w, r0.w
+    mad_pp r4.xyz, r3, r0.w, r4
+    mul_pp r3.xyz, r0.w, r3
+    nrm_pp r5.xyz, r4
+    dp3_pp r4.x, v1, r2
+    dp3_pp r4.y, v2, r2
+    dp3_pp r4.z, v3, r2
+    dp3_pp r0.w, r4, r5
+    dp3_pp r1.w, r4, r3
+    max_pp r2.x, r1.w, c24.w
+    max r1.w, r0.w, c24.w
+    mov r3.x, c14.x
+    mul r0.w, r3.x, c26.x
+    pow r2.y, r1.w, r0.w
+    mul r0.w, r3.w, r2.y
+    mul r0.xyz, r0.w, r0
+    mad_pp r0.xyz, r1, r2.x, r0
+    mad_sat r0.w, v5.x, c7.z, c7.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, c25.z

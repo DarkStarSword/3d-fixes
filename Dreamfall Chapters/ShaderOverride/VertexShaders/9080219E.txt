@@ -1,0 +1,126 @@
+// CRC32: 9080219E | Matched 2 variants of 1 shaders: Dreamfall/WorldProject/Diffuse Specular Bump Detail
+// 
+//    Unity headers extracted from DiffuseSpecBumpWorldOverlay.shader
+//    Shader "Dreamfall/WorldProject/Diffuse Specular Bump Detail" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//       _DetailAmt ("Detail Amount", Float) = 0
+//       _UVScale ("UV Scale", Float) = 1
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 5/6 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//          GpuProgramID 319437
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "texcoord2" TexCoord2
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 14 [_MainTex_ST]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 13 [unity_DynamicLightmapST]
+//              Vector 12 [unity_LightmapST]
+//              Vector 11 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_texcoord2 v5
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6.xyz
+    dcl_texcoord6 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed Dreamfall_WorldProject_Diffuse Specular Bump Detail/vp/9080219E.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp3 o5.x, c4, v2
+    dp3 o5.y, c5, v2
+    dp3 o5.z, c6, v2
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mad o1.xy, v3, c14, c14.zwzw
+    dp3 r0.x, c4, v1
+    dp3 r0.y, c5, v1
+    dp3 r0.z, c6, v1
+    nrm r1.xyz, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r2.xyz, -r0, r30
+    mov o2.w, r0.x
+    mov o3.w, r0.y
+    mov o4.w, r0.z
+    dp3 o6.x, r2, r1
+    mul r0.x, c11.w, v1.w
+    mul r0.yzw, c8.xxyz, v2.y
+    mad r0.yzw, c7.xxyz, v2.x, r0
+    mad r0.yzw, c9.xxyz, v2.z, r0
+    nrm r3.xyz, r0.yzww
+    mul r0.yzw, r1.xyzx, r3.xzxy
+    mad r0.yzw, r3.xyzx, r1.xzxy, -r0
+    mul r0.xyz, r0.x, r0.yzww
+    dp3 o6.y, r2, r0
+    dp3 o6.z, r2, r3
+    mad o7.zw, v5.xyxy, c13.xyxy, c13
+    mad o7.xy, v4, c12, c12.zwzw
+    mov o2.x, r1.x
+    mov o2.y, r0.x
+    mov o2.z, r3.x
+    mov o3.x, r1.y
+    mov o4.x, r1.z
+    mov o3.y, r0.y
+    mov o4.y, r0.z
+    mov o3.z, r3.y
+    mov o4.z, r3.z

@@ -1,0 +1,208 @@
+// CRC32: CF1C81B2 | Unity headers extracted from Reflect-Parallax_Fresnel_Illum_MaskDistort.shader
+// Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Parallax Diffuse Illum MaskDistort" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _AddCol ("Addmap Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//    _Parallax ("Height", Float) = 0
+//    _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _IllumMap ("IllumMap (RGB)", 2D) = "black" { }
+//    _IllumMapTile ("Tile IllumMap", Float) = 1
+//    _IllumMapOffset ("Tile IllumMap", Vector) = (0,0,0,0)
+//    _IllumMask ("IllumMask (RGB)", 2D) = "white" { }
+//    _IllumDepth ("IllumDepth", Float) = 0.4
+//    _IllumColor ("Illum Color", Color) = (0.5,0.5,0.5,0.5)
+//    _IllumColorScale ("IllumColor Scale", Float) = 1
+//    _DistortMap ("DistortMap(Normalmap)", 2D) = "bump" { }
+//    _DistortMapTile ("Tile DistortMap", Vector) = (1,1,1,1)
+//    _DistortSpeed ("DistortSpeed", Float) = 0
+//    _Distortion ("Distortion Strength", Float) = 0
+//    _EmissionLM ("Emission (Lightmapper)", Float) = 0
+//    _AddMap ("AddMap", 2D) = "black" { }
+//    _AddMapBoost ("AddMapBoost", Float) = 1
+//    _AddMapTile ("Tile AddMap", Float) = 1
+//    _AddMapSpeed ("AddMap Speed", Float) = 0
+//    _AddMapDepth ("Addmap Depth", Float) = 0.4
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 500
+//     Tags { "RenderType"="Opaque" }
+//     Pass 4/6 {
+//       Name "PREPASS"
+//       Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//       ZWrite Off
+//       GpuProgramID 202871
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//           Vector 7 [_AddCol]
+//           Float 16 [_AddMapBoost]
+//           Float 21 [_AddMapDepth]
+//           Float 15 [_AddMapSpeed]
+//           Float 17 [_AddMapTile]
+//           Vector 5 [_Color]
+//           Vector 18 [_DistortMapTile]
+//           Float 13 [_DistortSpeed]
+//           Float 14 [_Distortion]
+//           Float 9 [_Fresnel]
+//           Vector 10 [_IllumColor]
+//           Float 11 [_IllumColorScale]
+//           Float 12 [_IllumDepth]
+//           Vector 20 [_IllumMapOffset]
+//           Float 19 [_IllumMapTile]
+//           Float 8 [_Parallax]
+//           Vector 6 [_ReflectColor]
+//           Vector 0 [_Time]
+//           Vector 1 [_WorldSpaceCameraPos]
+//           Vector 4 [unity_DynamicLightmap_HDR]
+//           Vector 2 [unity_FogColor]
+//           Vector 3 [unity_FogParams]
+//           SetTexture 0 [unity_DynamicLightmap] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_BumpMap] 2D 2
+//           SetTexture 3 [_DistortMap] 2D 3
+//           SetTexture 4 [_Cube] CUBE 4
+//           SetTexture 5 [_IllumMap] 2D 5
+//           SetTexture 6 [_IllumMask] 2D 6
+//           SetTexture 7 [_AddMap] 2D 7
+//           SetTexture 8 [_LightBuffer] 2D 8
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c22, 0.100000001, 32, 2, -1
+    def c23, 0.5, 0.419999987, -0.5, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_color_pp v4.xyz
+    dcl_texcoord4 v5
+    dcl_texcoord5 v6.zw
+    dcl_texcoord6 v7.xyz
+    dcl_texcoord7 v8.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_cube s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Self-Illumin_Dreamfall_Reflective_Fresnel_Parallax Diffuse Illum MaskDistort/fp/CF1C81B2.txt
+mov r30, c1
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, v1.w
+    mov r0.y, v2.w
+    mov r0.z, v3.w
+    add r0.xyz, -r0, r30
+    nrm_pp r1.xyz, r0
+    texld_pp r0, v0.zwzw, s2
+    mad_pp r0.xy, r0.wyzw, c22.z, c22.w
+    dp2add_sat_pp r0.w, r0, r0, c23.w
+    add_pp r0.w, -r0.w, -c22.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    dp3 r2.x, v1, r0
+    dp3 r2.y, v2, r0
+    dp3 r2.z, v3, r0
+    dp3 r0.w, -r1, r2
+    add r0.w, r0.w, r0.w
+    mad r2.xyz, r2, -r0.w, -r1
+    texld_pp r2, r2, s4
+    texld_pp r3, v0, s1
+    mul_pp r2.xyz, r2, r3.w
+    mul r4.xyz, r1.y, v2
+    mad r1.xyw, v1.xyzz, r1.x, r4.xyzz
+    mad_pp r1.xyz, v3, r1.z, r1.xyww
+    dp3_pp r0.w, r1, r1
+    rsq_pp r0.w, r0.w
+    mul r1.xyw, r0.w, r1.xyzz
+    mad r0.w, r1.z, r0.w, c23.y
+    rcp r0.w, r0.w
+    mul r4.xy, r0.w, r1
+    dp3 r0.x, r1.xyww, r0
+    add r0.x, -r0.x, -c22.w
+    mov r1.x, c22.x
+    max_pp r0.y, c9.x, r1.x
+    min_pp r1.x, r0.y, c22.y
+    pow_sat r2.w, r0.x, r1.x
+    mul_pp r0.xyz, r2.w, r2
+    mul_pp r0.xyz, r0, c6
+    add_pp r0.xyz, r0, r0
+    mul_pp r1.xy, c18, v0
+    mov r2.x, c0.x
+    mad_pp r1.z, r2.x, c13.x, r1.y
+    texld_pp r1, r1.xzzw, s3
+    mad_pp r1.xy, r1.wyzw, c22.z, c22.w
+    mul r1.xy, r1, c14.x
+    mov r5.xz, c23
+    add_pp r0.w, r5.z, c12.x
+    mad r1.zw, r0.w, r4.xyxy, r1.xyxy
+    add_pp r1.zw, r1, v0.xyxy
+    texld_pp r6, r1.zwzw, s6
+    mul_pp r0.w, r5.x, c8.x
+    mad_pp r1.zw, r0.w, r4.xyxy, v0.xyxy
+    mov r5.x, c19.x
+    mad_pp r1.zw, r1, r5.x, c20.xyxy
+    texld_pp r7, r1.zwzw, s5
+    mul_pp r2.yzw, c10.xxyz, v4.xxyz
+    mul_pp r2.yzw, r2, r7.xxyz
+    mul_pp r2.yzw, r2, c11.x
+    mul_pp r2.yzw, r3.w, r2
+    mad_pp r0.xyz, r2.yzww, r6.w, r0
+    texldp_pp r6, v5, s8
+    add_pp r2.yzw, r6.xxyz, v7.xxyz
+    texld_pp r6, v6.zwzw, s0
+    mul_pp r0.w, r6.w, c4.x
+    mul_pp r5.xyw, r6.xyzz, r0.w
+    log_pp r6.x, r5.x
+    log_pp r6.y, r5.y
+    log_pp r6.z, r5.w
+    mul_pp r5.xyw, r6.xyzz, c4.y
+    exp_pp r6.x, r5.x
+    exp_pp r6.y, r5.y
+    exp_pp r6.z, r5.w
+    add_pp r2.yzw, r2, r6.xxyz
+    add_pp r0.w, r5.z, c21.x
+    mad r1.xy, r0.w, r4, r1
+    add_pp r1.xy, r1, v0
+    mul_pp r1.xy, r1, c17.x
+    mad_pp r1.z, r2.x, c15.x, r1.y
+    texld r1, r1.xzzw, s7
+    mul r1.xyz, r1, c16.x
+    mul_pp r1.xyz, r1, c7
+    mad_pp r1.xyz, r3, c5, r1
+    mad_pp r0.xyz, r1, r2.yzww, r0
+    add r0.xyz, r0, -c2
+    mad_sat r0.w, v8.x, c3.z, c3.w
+    mad_pp oC0.xyz, r0.w, r0, c2
+    mov_pp oC0.w, -c22.w

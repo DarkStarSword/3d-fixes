@@ -1,0 +1,112 @@
+// CRC32: ED40D88A | Unity headers extracted from atsv2 vertexlit.shader
+// Shader "Hidden/TerrainEngine/Details/Vertexlit" {
+//   Properties {
+//    _Color ("Main Color r:ampl g:speed b:time", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "IGNOREPROJECTOR"="true" "RenderType"="TreeLeaf" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TreeLeaf" }
+//       ColorMask RGB
+//       GpuProgramID 26545
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Float 7 [_Cutoff]
+//           Vector 5 [_LightColor0]
+//           Vector 6 [_VertexLitTranslucencyColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 4 [unity_DynamicLightmap_HDR]
+//           Vector 2 [unity_FogColor]
+//           Vector 3 [unity_FogParams]
+//           SetTexture 0 [unity_DynamicLightmap] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 0.850000024, -0.100000001, 0.699999988, 0.300000012
+    def c9, 0, 4, 2, -2
+    def c10, 0.800000012, 2, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4
+    dcl_texcoord5 v5.x
+    dcl_texcoord6 v6.zw
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Details_Vertexlit/fp/ED40D88A.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s2
+    add_pp r1, r0.w, -c7.x
+    texkill r1
+    add r1.xyz, r30, -v2
+    nrm_pp r2.xyz, r1
+    dp3_sat_pp r1.x, r2, -c1
+    dp3_pp r1.y, v1, c1
+    mov_sat_pp r1.z, -r1.y
+    mad_pp r1.y, r1.y, c8.z, c8.w
+    max_pp r2.x, r1.y, c9.x
+    lrp_pp r2.y, c8.x, r1.x, r1.z
+    add_pp r1.x, r0.y, c8.y
+    mul_pp r1.x, r1.x, r2.y
+    mul_pp r1.xyz, r1.x, c6
+    mad_pp r1.xyz, r1, c9.y, r2.x
+    mul_pp r2.xyz, r0, c5
+    mul_pp r1.xyz, r1, r2
+    texldp_pp r2, v4, s1
+    mad_pp r1.w, r2.x, c9.z, c9.w
+    mad_pp r1.w, r1.w, c10.x, c10.y
+    mul_pp r1.xyz, r1.w, r1
+    mov_pp r2.w, c9.x
+    mul_pp r2.xyz, r0, v3
+    mov_pp r1.w, r0.w
+    add_pp r1, r1, r2
+    texld_pp r2, v6.zwzw, s0
+    mul_pp r0.w, r2.w, c4.x
+    mul_pp r2.xyz, r2, r0.w
+    log_pp r3.x, r2.x
+    log_pp r3.y, r2.y
+    log_pp r3.z, r2.z
+    mul_pp r2.xyz, r3, c4.y
+    exp_pp r3.x, r2.x
+    exp_pp r3.y, r2.y
+    exp_pp r3.z, r2.z
+    mad_pp r0.xyz, r0, r3, r1
+    mov_pp oC0.w, r1.w
+    add r0.xyz, r0, -c2
+    mad_sat r0.w, v5.x, c3.z, c3.w
+    mad_pp oC0.xyz, r0.w, r0, c2

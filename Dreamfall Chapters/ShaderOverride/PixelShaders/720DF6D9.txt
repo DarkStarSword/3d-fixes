@@ -1,0 +1,139 @@
+// CRC32: 720DF6D9 | Unity headers extracted from Reflect-BumpSpec_Fresnel.shader
+// Shader "Chickenlord/Reflective/Fresnel/Bumped Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//    _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 53645
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Vector 9 [_Color]
+//           Float 12 [_Fresnel]
+//           Vector 7 [_LightColor0]
+//           Vector 10 [_ReflectColor]
+//           Float 11 [_Shininess]
+//           Vector 8 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 5 [unity_FogColor]
+//           Vector 6 [unity_FogParams]
+//           Vector 4 [unity_SHAb]
+//           Vector 3 [unity_SHAg]
+//           Vector 2 [unity_SHAr]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_BumpMap] 2D 1
+//           SetTexture 2 [_Cube] CUBE 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c13, 2, -1, 0, 1
+    def c14, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord6 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Chickenlord_Reflective_Fresnel_Bumped Specular/fp/720DF6D9.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xyz, c7
+    mul r0.xyz, r0, c8
+    mov r1.x, c11.x
+    mul r0.w, r1.x, c14.x
+    mov r1.x, v1.w
+    mov r1.y, v2.w
+    mov r1.z, v3.w
+    add r1.xyz, -r1, r30
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mad_pp r2.xyz, r1, r1.w, c1
+    mul_pp r1.xyz, r1.w, r1
+    nrm_pp r3.xyz, r2
+    texld_pp r2, v0.zwzw, s1
+    mad_pp r2.xy, r2.wyzw, c13.x, c13.y
+    dp2add_sat_pp r1.w, r2, r2, c13.z
+    add_pp r1.w, -r1.w, c13.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r2.z, r1.w
+    dp3 r4.x, v1, r2
+    dp3 r4.y, v2, r2
+    dp3 r4.z, v3, r2
+    dp3_pp r1.w, r4, r3
+    max r2.w, r1.w, c13.z
+    pow r1.w, r2.w, r0.w
+    texld_pp r3, v0, s0
+    mul r0.w, r1.w, r3.w
+    mul r0.xyz, r0.w, r0
+    mul_pp r3.xyz, r3, c9
+    mul_pp r5.xyz, r3, c7
+    dp3_pp r0.w, r4, c1
+    max_pp r1.w, r0.w, c13.z
+    mad_pp r0.xyz, r5, r1.w, r0
+    mov r4.w, c13.w
+    dp4_pp r5.x, c2, r4
+    dp4_pp r5.y, c3, r4
+    dp4_pp r5.z, c4, r4
+    add_pp r5.xyz, r5, v4
+    mad_pp r0.xyz, r3, r5, r0
+    dp3 r0.w, -r1, r4
+    add r0.w, r0.w, r0.w
+    mad r3.xyz, r4, -r0.w, -r1
+    texld_pp r4, r3, s2
+    mul_pp r3.xyz, r3.w, r4
+    mul r4.xyz, r1.y, v2
+    mad r1.xyw, v1.xyzz, r1.x, r4.xyzz
+    mad_pp r1.xyz, v3, r1.z, r1.xyww
+    nrm r4.xyz, r1
+    dp3 r0.w, r4, r2
+    add r0.w, -r0.w, c13.w
+    pow r1.x, r0.w, c12.x
+    mul_pp r1.xyz, r1.x, r3
+    mad_pp r0.xyz, r1, c10, r0
+    add r0.xyz, r0, -c5
+    mul r0.w, c6.x, v5.x
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mad_pp oC0.xyz, r0.w, r0, c5
+    mov_pp oC0.w, c13.w

@@ -1,0 +1,111 @@
+// CRC32: C8D5BDEA | Matched 2 variants of 1 shaders: Legacy Shaders/Reflective/Diffuse
+// 
+//    Unity headers extracted from Reflect-Diffuse.shader
+//    Shader "Legacy Shaders/Reflective/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//      }
+//      Fallback "Legacy Shaders/Reflective/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 5/6 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//          GpuProgramID 269007
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 18 [_MainTex_ST]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 13 [unity_SHAb]
+//              Vector 12 [unity_SHAg]
+//              Vector 11 [unity_SHAr]
+//              Vector 16 [unity_SHBb]
+//              Vector 15 [unity_SHBg]
+//              Vector 14 [unity_SHBr]
+//              Vector 17 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c19, 1, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_position o6
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed Legacy Shaders_Reflective_Diffuse/vp/C8D5BDEA.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 o6.x, c0, v0
+    dp4 o6.y, c1, v0
+    dp4 o6.z, c2, v0
+    dp4 o6.w, c3, v0
+    mad o0.xy, v2, c18, c18.zwzw
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r1.xyz, -r0, r30
+    mov o3.xyz, r0
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r2.xyz, r0
+    dp3 r0.x, -r1, r2
+    add r0.x, r0.x, r0.x
+    mad o1.xyz, r2, -r0.x, -r1
+    mul r0.x, r2.y, r2.y
+    mad r0.x, r2.x, r2.x, -r0.x
+    mul r1, r2.yzzx, r2.xyzz
+    dp4 r3.x, c14, r1
+    dp4 r3.y, c15, r1
+    dp4 r3.z, c16, r1
+    mad r0.xyz, c17, r0.x, r3
+    mov r2.w, c19.x
+    dp4 r1.x, c11, r2
+    dp4 r1.y, c12, r2
+    dp4 r1.z, c13, r2
+    mov o2.xyz, r2
+    add o5.xyz, r0, r1
+    mov o4, c19.y

@@ -1,0 +1,104 @@
+// CRC32: B97A2302 | Unity headers extracted from Additive-Fresnel.shader
+// Shader "Dreamfall/FX/Fresnel Additive" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _FresnelExp ("Fresnel Exp", Float) = 3.5
+//    _FresnelCol ("Fresnel Color", Color) = (1,1,1,1)
+//    _FresnelAmt ("Fresnel Amount", Float) = 1
+//   }
+//   Fallback "Specular"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 6/6 {
+//       Name "META"
+//       Tags { "LIGHTMODE"="Meta" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 352251
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Vector 1 [_Color]
+//           Float 4 [_FresnelAmt]
+//           Vector 2 [_FresnelCol]
+//           Float 3 [_FresnelExp]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Float 7 [unity_MaxOutputValue]
+//           Vector 5 [unity_MetaFragmentControl]
+//           Float 6 [unity_OneOverOutputBoost]
+//           Float 8 [unity_UseLinearSpace]
+//           SetTexture 0 [_MainTex] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c9, 0, 0.305306017, 0.682171106, 0.0125228781
+    def c10, 0.010309278, 0.0199999996, 255, 0.00392156886
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_2d s0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_FX_Fresnel Additive/fp/B97A2302.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v2
+    nrm_pp r1.xyz, r0
+    dp3 r0.x, v1, r1
+    pow r1.x, r0.x, c3.x
+    mul_sat r0.x, r1.x, c4.x
+    mul r0.xyz, r0.x, c2
+    texld_pp r1, v0, s0
+    mul_pp r0.xyz, r0, r1
+    mul_pp r1.xyz, r1, c1
+    mad_pp r2.xyz, r0, c9.y, c9.z
+    mad_pp r2.xyz, r0, r2, c9.w
+    mul_pp r2.xyz, r0, r2
+    abs r0.w, c8.x
+    cmp_pp r0.xyz, -r0.w, r2, r0
+    mul r0.xyz, r0, c10.x
+    max r1.w, r0.x, r0.y
+    max r2.x, r0.z, c10.y
+    max r0.w, r1.w, r2.x
+    mul r0.w, r0.w, c10.z
+    frc r1.w, -r0.w
+    add r0.w, r0.w, r1.w
+    mul_pp r2.w, r0.w, c10.w
+    rcp r0.w, r2.w
+    mul_pp r2.xyz, r0.w, r0
+    mov_sat r0.x, c6.x
+    log r3.x, r1.x
+    log r3.y, r1.y
+    log r3.z, r1.z
+    mul r0.xyz, r0.x, r3
+    exp_pp r1.x, r0.x
+    exp_pp r1.y, r0.y
+    exp_pp r1.z, r0.z
+    min_pp r0.xyz, c7.x, r1
+    mov r1.x, c9.x
+    cmp_pp r0.xyz, -c5.x, r1.x, r0
+    mov r0.w, c5.x
+    cmp_pp oC0, -c5.y, r0, r2

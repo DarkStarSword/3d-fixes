@@ -1,0 +1,192 @@
+// CRC32: 126564A0 | Unity headers extracted from ReflectiveBumpWorldOverlay.shader
+// Shader "Dreamfall/WorldProject/Blurred Reflective Bump Detail" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//    _DetailAmt ("Detail Amount", Float) = 0
+//    _UVScale ("UV Scale", Float) = 1
+//    _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//    _Blur ("reflection blur", Range(0,10)) = 1
+//    _RefMask ("Optional Blurred Reflection Mask (RGB)", 2D) = "white" { }
+//    _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//    _RefMul ("Reflection Boost", Float) = 1
+//    _RefPow ("Reflection Power", Float) = 1
+//    _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//   }
+//   Fallback "Reflective/Bumped Diffuse"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 5/6 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//       GpuProgramID 309305
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+//           Float 9 [_AlbedoBlend]
+//           Float 6 [_Blur]
+//           Vector 3 [_Color]
+//           Float 4 [_DetailAmt]
+//           Float 7 [_RefMul]
+//           Float 8 [_RefPow]
+//           Vector 10 [_ReflectColor]
+//           Float 5 [_UVScale]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 2 [unity_DynamicLightmap_HDR]
+//           Vector 1 [unity_Lightmap_HDR]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [unity_DynamicLightmap] 2D 2
+//           SetTexture 3 [unity_DynamicDirectionality] 2D 3
+//           SetTexture 4 [_MainTex] 2D 4
+//           SetTexture 5 [_BumpMap] 2D 5
+//           SetTexture 6 [_Detail] 2D 6
+//           SetTexture 7 [_DetailBump] 2D 7
+//           SetTexture 8 [_RefMask] 2D 8
+//           SetTexture 9 [_Cube] CUBE 9
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 1.39999998, 1.79999995, 0.100000001, 1
+    def c12, 2, -1, 0, -0.5
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4 v4
+    dcl_texcoord5 v5.xyz
+    dcl_texcoord7_pp v6
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_cube s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_WorldProject_Blurred Reflective Bump Detail/fp/126564A0.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s5
+    mad_pp r0.xy, r0.wyzw, c12.x, c12.y
+    dp2add_sat_pp r0.w, r0, r0, c12.z
+    add_pp r0.w, -r0.w, c11.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    mul r1, c5.x, v4.zxyz
+    texld_pp r2, r1, s7
+    mad_pp r2.xy, r2.wyzw, c12.x, c12.y
+    dp2add_sat_pp r0.w, r2, r2, c12.z
+    add_pp r0.w, -r0.w, c11.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r2.z, r0.w
+    add_pp r0.xyz, r0, r2
+    nrm_pp r2.xyz, r0
+    dp3 r0.x, v1, r2
+    dp3 r0.y, v2, r2
+    dp3 r0.z, v3, r2
+    mad_pp oC2.xyz, r0, -c12.w, -c12.w
+    texld_pp r2, v6.zwzw, s2
+    mul_pp r0.w, r2.w, c2.x
+    mul_pp r2.xyz, r2, r0.w
+    log_pp r3.x, r2.x
+    log_pp r3.y, r2.y
+    log_pp r3.z, r2.z
+    mul_pp r2.xyz, r3, c2.y
+    exp_pp r3.x, r2.x
+    exp_pp r3.y, r2.y
+    exp_pp r3.z, r2.z
+    texld_pp r2, v6.zwzw, s3
+    add_pp r2.xyz, r2, c12.w
+    rcp r0.w, r2.w
+    dp3_pp r2.x, r0, r2
+    add_pp r2.x, r2.x, -c12.w
+    mul_pp r2.xyz, r2.x, r3
+    mul_pp r2.xyz, r0.w, r2
+    texld_pp r3, v6, s0
+    pow_pp r0.w, r3.w, c1.y
+    mul_pp r0.w, r0.w, c1.x
+    mul_pp r3.xyz, r3, r0.w
+    texld_pp r4, v6, s1
+    add_pp r4.xyz, r4, c12.w
+    rcp r0.w, r4.w
+    dp3_pp r2.w, r0, r4
+    add_pp r2.w, r2.w, -c12.w
+    mul_pp r3.xyz, r2.w, r3
+    mad_pp r2.xyz, r3, r0.w, r2
+    texld_pp r3, r1, s6
+    texld_pp r1, r1.zwzw, s6
+    mul r4.xyz, c11.x, v5
+    mul r4.xyz, r4, r4
+    mul_sat r4.xyz, r4, r4
+    nrm r5.xyz, r4
+    mul r1.xyz, r1, r5.x
+    mad_pp r1.xyz, r3, r5.y, r1
+    mul r3.xy, c5.x, v4
+    texld_pp r3, r3, s6
+    mad_pp r1.xyz, r3, r5.z, r1
+    add_pp r1.xyz, r1, -c4.x
+    mad_pp r1.xyz, r1, c11.y, c11.z
+    min_pp r3.xyz, c11.w, r1
+    texld_pp r1, v0, s4
+    mul_pp r1.xyz, r1, c3
+    mul_pp r4.xyz, r3, r1
+    mad r1.xyz, r1, -r3, c11.w
+    mad r1.xyz, c9.x, r1, r4
+    mul_pp r2.xyz, r2, r4
+    mov_pp oC0.xyz, r4
+    mov r3.x, v1.w
+    mov r3.y, v2.w
+    mov r3.z, v3.w
+    add r3.xyz, -r3, r30
+    nrm_pp r4.xyz, r3
+    dp3 r0.w, -r4, r0
+    add r0.w, r0.w, r0.w
+    mad r0.xyz, r0, -r0.w, -r4
+    texld_pp r3, v0, s8
+    mul r0.w, r3.x, c6.x
+    texldl r0, r0, s9
+    mul_pp r0.xyz, r0, c8.x
+    mul r0.xyz, r1.w, r0
+    mul r0.xyz, r0, v4.w
+    mul r0.xyz, r0, c10
+    mul r0.xyz, r0, c7.x
+    mad_pp r0.xyz, r0, r1, r2
+    exp_pp oC3.x, -r0.x
+    exp_pp oC3.y, -r0.y
+    exp_pp oC3.z, -r0.z
+    mov_pp oC0.w, c11.w
+    mov_pp oC1, c12.z
+    mov_pp oC2.w, c11.w
+    mov_pp oC3.w, c11.w

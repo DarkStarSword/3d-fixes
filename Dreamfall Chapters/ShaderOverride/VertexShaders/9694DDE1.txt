@@ -1,0 +1,193 @@
+// CRC32: 9694DDE1 | Matched 10 variants of 2 shaders: Dreamfall/Unity5/Standard_WorldProject_Detail, Dreamfall/WorldProject/Blurred Reflective Bump Detail
+// 
+//     Unity headers extracted from Standard_WorldProject_Detail.shader
+//     Shader "Dreamfall/Unity5/Standard_WorldProject_Detail" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//        _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//        _DetailAmt ("Detail Amount", Float) = 0
+//        _AlphaFactor ("Alpha Factor", Range(0,1)) = 1
+//        _GlossHigh ("Glossy High", Range(0,1)) = 0.8
+//        _GlossLow ("Glossy Low", Range(0,1)) = 0.2
+//        _Metallness ("Metallness", Range(0,1)) = 0
+//        _MetalNesAlphaFactor ("Metalness Alpha Factor", Range(0,1)) = 1
+//        _UVScale ("UV Scale", Float) = 1
+//        _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//       }
+//       Fallback "Legacy Shaders/Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 2/4 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 110600
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+// 01:           Keywords { "POINT" "SHADOWS_OFF" }
+// 08:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+// 04:           Keywords { "SHADOWS_OFF" "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Float 12 [_Fresnel]
+//               Vector 13 [_MainTex_ST]
+//               Vector 10 [_WorldSpaceCameraPos]
+//               Vector 11 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from ReflectiveBumpWorldOverlay.shader
+//     Shader "Dreamfall/WorldProject/Blurred Reflective Bump Detail" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//        _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//        _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//        _DetailAmt ("Detail Amount", Float) = 0
+//        _UVScale ("UV Scale", Float) = 1
+//        _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//        _Blur ("reflection blur", Range(0,10)) = 1
+//        _RefMask ("Optional Blurred Reflection Mask (RGB)", 2D) = "white" { }
+//        _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//        _RefMul ("Reflection Boost", Float) = 1
+//        _RefPow ("Reflection Power", Float) = 1
+//        _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//       }
+//       Fallback "Reflective/Bumped Diffuse"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 2/6 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 85078
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Float 12 [_Fresnel]
+//               Vector 13 [_MainTex_ST]
+//               Vector 10 [_WorldSpaceCameraPos]
+//               Vector 11 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c14, 1, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed Dreamfall_Unity5_Standard_WorldProject_Detail/vp/9694DDE1.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp3 o7.x, c4, v2
+    dp3 o7.y, c5, v2
+    dp3 o7.z, c6, v2
+    mov r0.xy, c14
+    mad r0, r30.xyzx, r0.xxxy, r0.yyyx
+    dp4 r1.x, c7, r0
+    dp4 r1.y, c8, r0
+    dp4 r1.z, c9, r0
+    add r0.xyz, r1, -v0
+    nrm r1.xyz, r0
+    dp3 r0.x, r1, v2
+    add r0.x, -r0.x, c14.x
+    log r0.x, r0.x
+    mul r0.x, r0.x, c12.x
+    exp o6.w, r0.x
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mad o1.xy, v3, c13, c13.zwzw
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r1.xyz, c8.zxyw, v2.y
+    mad r1.xyz, c7.zxyw, v2.x, r1
+    mad r1.xyz, c9.zxyw, v2.z, r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r1.zxyw, r0.yzxw, -r2
+    mul r0.z, c11.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o2.y, r2.x
+    mov o2.z, r1.y
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.z
+    mov o4.z, r1.x
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    mov o5.xyz, r0
+    mov o6.xyz, r0

@@ -1,0 +1,83 @@
+// CRC32: CA7BE3CD | Matched 2 variants of 1 shaders: Hidden/RenderGrey
+// 
+//    Unity headers extracted from RenderGrey.shader
+//    Shader "Hidden/RenderGrey" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 5/6 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
+//          GpuProgramID 307204
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord2" TexCoord2
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 11 [unity_DynamicLightmapST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c12, 0, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord2 v2
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed Hidden_RenderGrey/vp/CA7BE3CD.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o1.xyz, r0.w, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add o3.xyz, -r0, r30
+    mov o2.xyz, r0
+    mad o4.zw, v2.xyxy, c11.xyxy, c11
+    mov o4.xy, c12.x

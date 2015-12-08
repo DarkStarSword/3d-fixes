@@ -1,0 +1,104 @@
+// CRC32: 3EBBD04F | Unity headers extracted from Alpha-BumpSpec.shader
+// Shader "Legacy Shaders/Transparent/Bumped Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,0)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Legacy Shaders/Transparent/VertexLit"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha One
+//       ColorMask RGB
+//       GpuProgramID 68034
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "FOG_LINEAR" }
+//           Vector 5 [_Color]
+//           Vector 3 [_LightColor0]
+//           Float 6 [_Shininess]
+//           Vector 4 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 2 [unity_FogParams]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_BumpMap] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c7, 2, -1, 0, 1
+    def c8, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord5 v5.x
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Legacy Shaders_Transparent_Bumped Specular/fp/3EBBD04F.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s0
+    mul_pp oC0.w, r0.w, c5.w
+    add r1.xyz, r30, -v4
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mad_pp r1.xyz, r1, r1.w, c1
+    nrm_pp r2.xyz, r1
+    texld_pp r1, v0.zwzw, s1
+    mad_pp r1.xy, r1.wyzw, c7.x, c7.y
+    dp2add_sat_pp r1.w, r1, r1, c7.z
+    add_pp r1.w, -r1.w, c7.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r1.z, r1.w
+    dp3_pp r3.x, v1, r1
+    dp3_pp r3.y, v2, r1
+    dp3_pp r3.z, v3, r1
+    dp3_pp r1.x, r3, r2
+    dp3_pp r1.y, r3, c1
+    max_pp r2.x, r1.y, c7.z
+    max r2.y, r1.x, c7.z
+    mov r1.x, c6.x
+    mul r1.x, r1.x, c8.x
+    pow r3.x, r2.y, r1.x
+    mul r0.w, r0.w, r3.x
+    mul_pp r0.xyz, r0, c5
+    mul_pp r0.xyz, r0, c3
+    mov r1.xyz, c3
+    mul r1.xyz, r1, c4
+    mul r1.xyz, r0.w, r1
+    mad_pp r0.xyz, r0, r2.x, r1
+    mad_sat r0.w, v5.x, c2.z, c2.w
+    mul_pp oC0.xyz, r0, r0.w

@@ -1,0 +1,127 @@
+// CRC32: 8D918F7F | Unity headers extracted from Normal-BumpSpec2Sided.shader
+// Shader "Dreamfall/Bumped Specular 2 Sided" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _EmissionColor ("Emission Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Specular"
+//   SubShader 1/1 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       Cull Off
+//       GpuProgramID 36377
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Vector 5 [_Color]
+//           Vector 6 [_EmissionColor]
+//           Vector 3 [_LightColor0]
+//           Float 7 [_Shininess]
+//           Vector 4 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 2 [unity_DynamicLightmap_HDR]
+//           SetTexture 0 [unity_DynamicLightmap] 2D 0
+//           SetTexture 1 [unity_DynamicDirectionality] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_BumpMap] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 2, -1, 0, 1
+    def c9, -0.5, 0.5, 128, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord7_pp v4.zw
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Bumped Specular 2 Sided/fp/8D918F7F.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, v1.w
+    mov r0.y, v2.w
+    mov r0.z, v3.w
+    add r0.xyz, -r0, r30
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad_pp r0.xyz, r0, r0.w, c1
+    nrm_pp r1.xyz, r0
+    texld_pp r0, v0.zwzw, s3
+    mad_pp r0.xy, r0.wyzw, c8.x, c8.y
+    dp2add_sat_pp r0.w, r0, r0, c8.z
+    add_pp r0.w, -r0.w, c8.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    dp3_pp r2.x, v1, r0
+    dp3_pp r2.y, v2, r0
+    dp3_pp r2.z, v3, r0
+    dp3_pp r0.x, r2, r1
+    max r1.x, r0.x, c8.z
+    mov r0.z, c9.z
+    mul r0.x, r0.z, c7.x
+    pow r2.w, r1.x, r0.x
+    texld_pp r0, v0, s2
+    mul r0.w, r0.w, r2.w
+    mul_pp r0.xyz, r0, c5
+    mov r1.xyz, c3
+    mul r1.xyz, r1, c4
+    mul r1.xyz, r0.w, r1
+    dp3_pp r0.w, r2, c1
+    max_pp r1.w, r0.w, c8.z
+    mul_pp r3.xyz, r0, c3
+    mad_pp r1.xyz, r3, r1.w, r1
+    texld_pp r3, v4.zwzw, s1
+    add_pp r3.xyz, r3, c9.x
+    rcp r0.w, r3.w
+    dp3_pp r1.w, r2, r3
+    add_pp r1.w, r1.w, c9.y
+    texld_pp r2, v4.zwzw, s0
+    mul_pp r2.w, r2.w, c2.x
+    mul_pp r2.xyz, r2, r2.w
+    log_pp r3.x, r2.x
+    log_pp r3.y, r2.y
+    log_pp r3.z, r2.z
+    mul_pp r2.xyz, r3, c2.y
+    exp_pp r3.x, r2.x
+    exp_pp r3.y, r2.y
+    exp_pp r3.z, r2.z
+    mul_pp r2.xyz, r1.w, r3
+    mul_pp r2.xyz, r0.w, r2
+    mad_pp r0.xyz, r0, r2, r1
+    add_pp oC0.xyz, r0, c6
+    mov_pp oC0.w, c8.w

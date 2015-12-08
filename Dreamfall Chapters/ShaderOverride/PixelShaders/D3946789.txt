@@ -1,0 +1,291 @@
+// CRC32: D3946789 | Matched 2 variants of 1 shaders: Dreamfall/Unity5/Standard_DirectionBlend
+// 
+//    Unity headers extracted from Standard_DirectionBlend.shader
+//    Shader "Dreamfall/Unity5/Standard_DirectionBlend" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _BlendColor ("Blend Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BlendTex ("Blend (RGB) Gloss (A)", 2D) = "white" { }
+//       _BlendBump ("Blend Normal (RGB)", 2D) = "bump" { }
+//       _BlendTile ("Blend Map Tile Factor", Float) = 1
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Detail ("Detail Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _DetailBump ("Detail Normalmap", 2D) = "bump" { }
+//       _Boost ("Fresnel Boost", Float) = 1
+//       _Direction ("Direction", Vector) = (0,1,0,1)
+//       _Adjust ("Fresnel Adjust", Range(-1,1)) = 0
+//       _MainAlphaFactor ("Alpha Factor Main", Range(0,1)) = 1
+//       _2ndAlphaFactor ("Alpha Factor Seccond", Range(0,1)) = 1
+//       _MainGloss ("Gloss Main", Range(0,1)) = 0.8
+//       _2ndGloss ("Gloss Seccond", Range(0,1)) = 0.2
+//       _MainMetallness ("Metallness Main", Range(0,1)) = 0
+//       _2ndMetallness ("Metallness Seccond", Range(0,1)) = 0
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 128881
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 1:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Float 17 [_2ndAlphaFactor]
+//              Float 19 [_2ndGloss]
+//              Float 21 [_2ndMetallness]
+//              Float 13 [_Adjust]
+//              Vector 11 [_BlendColor]
+//              Float 15 [_BlendTile]
+//              Float 14 [_Boost]
+//              Vector 10 [_Color]
+//              Vector 12 [_Direction]
+//              Vector 8 [_LightColor0]
+//              Vector 5 [_LightPositionRange]
+//              Vector 6 [_LightShadowData]
+//              Float 16 [_MainAlphaFactor]
+//              Float 18 [_MainGloss]
+//              Float 20 [_MainMetallness]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 7 [unity_ColorSpaceDielectricSpec]
+//              Vector 9 [unity_LightGammaCorrectionConsts]
+//              SetTexture 0 [_ShadowMapTexture] CUBE 0
+//              SetTexture 1 [_LightTexture0] CUBE 1
+//              SetTexture 2 [_LightTextureB0] 2D 2
+//              SetTexture 3 [_MainTex] 2D 3
+//              SetTexture 4 [_BumpMap] 2D 4
+//              SetTexture 5 [_BlendTex] 2D 5
+//              SetTexture 6 [_Detail] 2D 6
+//              SetTexture 7 [_DetailBump] 2D 7
+//              SetTexture 8 [_BlendBump] 2D 8
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c22, 1.79999995, 0.100000001, 1, -2
+    def c23, 1, -1, 0.0078125, 0.5
+    def c24, 0, 0.333333343, 1, 0
+    def c25, 0.00999999978, 0.970000029, 0.015625, 0.00100000005
+    def c26, 31.622776, 9.99999975e-005, 0.967999995, 0.0299999993
+    def c27, 10, 0, 0, 0
+    defi i0, 16, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord5 v5.xyz
+    dcl_cube s0
+    dcl_cube s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Unity5_Standard_DirectionBlend/fp/D3946789.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, c4, -v4
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul_pp r1.xyz, r0.w, r0
+    add r2.xyz, r30, -v4
+    nrm_pp r3.xyz, r2
+    texld_pp r2, v0, s3
+    mul r4.xy, c15.x, v0
+    texld_pp r5, r4, s5
+    texld_pp r6, v0.zwzw, s6
+    mad_pp r6.xyz, r6, c22.x, c22.y
+    min_pp r7.xyz, c22.z, r6
+    mul_pp r2.xyz, r2, r7
+    texld_pp r6, v0, s4
+    mad_pp r6.xy, r6.wyzw, -c22.w, -c22.z
+    dp2add_sat_pp r1.w, r6, r6, c24.x
+    add_pp r1.w, -r1.w, c22.z
+    rsq_pp r1.w, r1.w
+    rcp_pp r6.z, r1.w
+    texld_pp r7, v0.zwzw, s7
+    mad_pp r7.xy, r7.wyzw, -c22.w, -c22.z
+    dp2add_sat_pp r1.w, r7, r7, c24.x
+    add_pp r1.w, -r1.w, c22.z
+    rsq_pp r1.w, r1.w
+    rcp_pp r7.z, r1.w
+    add_pp r6.xyz, r6, r7
+    dp3_pp r1.w, r6, r6
+    rsq_pp r1.w, r1.w
+    mul_pp r7.xyz, r1.w, r6
+    dp3 r8.x, v1, r7
+    dp3 r8.y, v2, r7
+    dp3 r8.z, v3, r7
+    add r8.xyz, r8, -c13.x
+    dp3_sat r2.w, r8, c12
+    mul_sat r2.w, r2.w, c14.x
+    mul r8.xyz, r2, c10
+    mad r9.xyz, r5, c11, -r8
+    mad_pp r8.xyz, r2.w, r9, r8
+    texld_pp r4, r4, s8
+    mad_pp r4.xy, r4.wyzw, -c22.w, -c22.z
+    dp2add_sat_pp r3.w, r4, r4, c24.x
+    add_pp r3.w, -r3.w, c22.z
+    rsq_pp r3.w, r3.w
+    rcp_pp r4.z, r3.w
+    mad r4.xyz, r6, -r1.w, r4
+    mad_pp r4.xyz, r2.w, r4, r7
+    add_pp r1.w, r2.y, r2.x
+    mad_pp r1.w, r2.z, c24.y, r1.w
+    max_pp r2.x, r1.w, c16.x
+    mul_pp r1.w, r2.x, c18.x
+    add_pp r2.x, r5.y, r5.x
+    mad_pp r2.x, r5.z, c24.y, r2.x
+    max_pp r3.w, r2.x, c17.x
+    mad r2.x, c19.x, r3.w, -r1.w
+    mad_pp r1.w, r2.w, r2.x, r1.w
+    mov r2.x, c20.x
+    add r2.x, -r2.x, c21.x
+    mad_pp r2.x, r2.w, r2.x, c20.x
+    mad r5, v4.xyzx, c24.zzzx, c24.xxxz
+    dp4 r6.x, c0, r5
+    dp4 r6.y, c1, r5
+    dp4 r6.z, c2, r5
+    dp3 r2.y, r6, r6
+    texld r5, r2.y, s2
+    texld r6, r6, s1
+    mul r2.y, r5.x, r6.w
+    dp3 r2.z, v5, v5
+    rsq r2.z, r2.z
+    rcp r2.z, r2.z
+    mul r2.z, r2.z, c5.w
+    mov r5, c24.x
+    mov r2.w, c24.x
+    rep i0
+    add r3.w, r2.w, c22.z
+    mad r6.xyz, r2.w, c23.xyyw, c23.xyyw
+    mul r6.xyz, r6, c23.z
+    mul r4.w, r2.w, c23.w
+    frc r4.w, r4.w
+    add r4.w, r4.w, r4.w
+    frc r6.w, r4.w
+    add r4.w, r4.w, -r6.w
+    add r4.w, r4.w, -c22.z
+    cmp r6.xyz, -r4_abs.w, -r6.xzzw, r6
+    add r7.xyz, r6.x, v5
+    texld r7, r7, s0
+    add r9.xyz, r6.zzxw, v5
+    texld r9, r9, s0
+    add r9.yzw, r6.xzxz, v5.xxyz
+    texld r10, r9.yzww, s0
+    add r6.xyz, r6, v5
+    texld r6, r6, s0
+    mad r4.w, r2.w, -c25.x, c25.y
+    mov r7.y, r9.x
+    mov r7.z, r10.x
+    mov r7.w, r6.x
+    mad r6, r2.z, -r4.w, r7
+    mov r7.z, c22.z
+    cmp r6, r6, r7.z, c6.x
+    add r5, r5, r6
+    mov r2.w, r3.w
+    endrep
+    dp4 r2.z, r5, c25.z
+    mov r5.z, c22.z
+    lrp r3.w, r2.z, r5.z, c6.x
+    mul_pp r2.y, r2.y, r3.w
+    dp3_pp r6.x, v1, r4
+    dp3_pp r6.y, v2, r4
+    dp3_pp r6.z, v3, r4
+    dp3_pp r2.z, r6, r1
+    max_pp r3.w, r2.z, c24.x
+    mul_pp r2.yzw, r2.y, c8.xxyz
+    nrm_pp r4.xyz, r6
+    lrp_pp r5.xyw, r2.x, r8.xyzz, c7.xyzz
+    mad_pp r2.x, r2.x, -c7.w, c7.w
+    mul_pp r6.xyz, r2.x, r8
+    add_pp r1.w, -r1.w, c22.z
+    mad_pp r0.xyz, r0, r0.w, r3
+    dp3_pp r0.w, r0, r0
+    add r2.x, -r0.w, c25.w
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r2.x, c26.x, r0.w
+    mul_pp r0.xyz, r0.w, r0
+    dp3_pp r0.w, r4, r0
+    max_pp r2.x, r0.w, c24.x
+    dp3_pp r0.w, r4, r3
+    max_pp r3.x, r0.w, c24.x
+    dp3_pp r0.x, r1, r0
+    max_pp r1.x, r0.x, c24.x
+    mul_pp r0.x, r1.w, r1.w
+    mul_pp r0.y, r0.x, c9.w
+    mad_pp r0.x, r0.x, -c9.w, r5.z
+    mad_pp r0.z, r3.w, r0.x, r0.y
+    mad_pp r0.x, r3.x, r0.x, r0.y
+    mad r0.x, r0.z, r0.x, c26.y
+    rcp_pp r0.x, r0.x
+    add_pp r0.y, -r1.w, c22.z
+    mad_pp r0.y, r0.y, c26.z, c26.w
+    log_pp r0.y, r0.y
+    rcp r0.y, r0.y
+    mul_pp r0.y, r0.y, c27.x
+    mul_pp r0.z, r0.y, r0.y
+    mad_pp r0.y, r0.y, r0.y, c22.z
+    mul_pp r0.y, r0.y, c9.y
+    pow_pp r1.y, r2.x, r0.z
+    mul_pp r0.y, r0.y, r1.y
+    add_pp r0.z, -r3.w, c22.z
+    mul_pp r0.w, r0.z, r0.z
+    mul_pp r0.w, r0.w, r0.w
+    mul_pp r0.z, r0.z, r0.w
+    add_pp r0.w, -r3.x, c22.z
+    mul_pp r1.y, r0.w, r0.w
+    mul_pp r1.y, r1.y, r1.y
+    mul_pp r0.w, r0.w, r1.y
+    mul_pp r1.y, r1.x, r1.x
+    dp2add_pp r1.y, r1.y, r1.w, -c23.w
+    mad_pp r0.z, r1.y, r0.z, c22.z
+    mad_pp r0.w, r1.y, r0.w, c22.z
+    mul_pp r0.xz, r0.yyww, r0
+    mul_pp r0.x, r3.w, r0.x
+    mul_pp r0.x, r0.x, c9.x
+    max_pp r1.y, r0.x, c24.x
+    mul_pp r0.x, r3.w, r0.z
+    mul_pp r0.xyz, r0.x, r2.yzww
+    mul_pp r1.yzw, r2, r1.y
+    add_pp r0.w, -r1.x, c22.z
+    mul_pp r1.x, r0.w, r0.w
+    mul_pp r1.x, r1.x, r1.x
+    mul_pp r0.w, r0.w, r1.x
+    lrp_pp r2.xyz, r0.w, c22.z, r5.xyww
+    mul_pp r1.xyz, r1.yzww, r2
+    mad_pp oC0.xyz, r6, r0, r1
+    mov_pp oC0.w, c22.z

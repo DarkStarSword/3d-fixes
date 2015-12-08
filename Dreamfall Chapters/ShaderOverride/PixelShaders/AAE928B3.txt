@@ -1,0 +1,404 @@
+// CRC32: AAE928B3 | Matched 7 variants of 7 shaders: Chickenlord/Reflective/Fresnel/Bumped Specular, Dreamfall/BlurredReflective/Bumped Spec, Dreamfall/BlurredReflective/Bumped Spec Illum, Dreamfall/Bumped Specular Cloth, Dreamfall/Reflective/Fresnel/Bumped Specular, Legacy Shaders/Bumped Specular, Self-Illumin/Dreamfall/Reflective/Fresnel/Bumped Specular Illum
+// 
+//    Unity headers extracted from Reflect-BumpSpec_Fresnel.shader
+//    Shader "Chickenlord/Reflective/Fresnel/Bumped Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 103992
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from BlurredRef-BumpSpec.shader
+//    Shader "Dreamfall/BlurredReflective/Bumped Spec" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//       _RefMask ("Roughness(R)/Metalness(G)", 2D) = "black" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//       _Blur ("reflection blur", Range(0,10)) = 1
+//       _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//       _RZero ("Fresnel Zero", Float) = 0
+//       _RefMul ("Reflection Boost", Float) = 1
+//       _RefPow ("Reflection Power", Float) = 1
+//       _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//      }
+//      Fallback "Reflective/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 105369
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from BlurredRef-BumpSpec_Illum.shader
+//    Shader "Dreamfall/BlurredReflective/Bumped Spec Illum" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//       _RefMask ("Roughness(R)/Metalness(G)", 2D) = "black" { }
+//       _IllumMap ("Illumination Map(RGB)", 2D) = "black" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//       _Blur ("reflection blur", Range(0,10)) = 1
+//       _Fresnel ("Fresnel Power", Range(0.01,8)) = 1
+//       _RZero ("Fresnel Zero", Float) = 0
+//       _RefMul ("Reflection Boost", Float) = 1
+//       _RefPow ("Reflection Power", Float) = 1
+//       _GlowMul ("Glow Boost", Float) = 1
+//       _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 0
+//      }
+//      Fallback "Reflective/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 95333
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Normal-Bump-Cloth.shader
+//    Shader "Dreamfall/Bumped Specular Cloth" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _MeshOffsetR ("Offset (R)", Float) = 1
+//       _MeshOffsetG ("Offset (G)", Float) = 1
+//       _MeshOffsetB ("Offset (B)", Float) = 1
+//       _WindDirection ("Wind", Vector) = (0,0,0,0)
+//       _Speed1 ("Speed 1", Float) = 1
+//       _Scale1 ("Scale 1", Float) = 1
+//       _Scale2 ("Scale 2", Float) = 1
+//       _Strength1 ("Strength 1", Float) = 1
+//       _Strength2 ("Strength 2", Float) = 1
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/7 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 130219
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-Bump_SpecFresnel.shader
+//    Shader "Dreamfall/Reflective/Fresnel/Bumped Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _ReflectColor ("Reflect Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _Fresnel ("Specular Fresnel Exponent", Range(0.01,16)) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       _RefMul ("Reflection Boost", Float) = 1
+//       _AlbedoBlend ("0 = lighting modifies reflection", Range(0,1)) = 1
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 66736
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Normal-BumpSpec.shader
+//    Shader "Legacy Shaders/Bumped Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Legacy Shaders/Specular"
+//      SubShader 1/2 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 68896
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Reflect-BumpSpec_Fresnel_Illum.shader
+//    Shader "Self-Illumin/Dreamfall/Reflective/Fresnel/Bumped Specular Illum" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.01,6)) = 1
+//       _MainTex ("Base (RGB) RefStrGloss (A)", 2D) = "white" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _Illum ("IllumMap (RGB)", 2D) = "black" { }
+//       _EmissionLM ("Emission (Lightmapper)", Float) = 1
+//      }
+//      Fallback "Reflective/Bumped Diffuse"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 113166
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "FOG_EXP2" "POINT_COOKIE" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 8 [_Color]
+//              Vector 6 [_LightColor0]
+//              Float 9 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_FogParams]
+//              SetTexture 0 [_LightTexture0] CUBE 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c10, 2, -1, 0, 1
+    def c11, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord6 v5.x
+    dcl_cube s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Chickenlord_Reflective_Fresnel_Bumped Specular/fp/AAE928B3.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0, v4.xyzx, c10.wwwz, c10.zzzw
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp3 r0.x, r1, r1
+    texld r1, r1, s0
+    texld r0, r0.x, s1
+    mul_pp r0.x, r1.w, r0.x
+    mul_pp r0.xyz, r0.x, c6
+    mul r1.xyz, r0, c7
+    add r2.xyz, r30, -v4
+    dp3 r0.w, r2, r2
+    rsq r0.w, r0.w
+    add r3.xyz, c4, -v4
+    nrm_pp r4.xyz, r3
+    mad_pp r2.xyz, r2, r0.w, r4
+    nrm_pp r3.xyz, r2
+    texld_pp r2, v0.zwzw, s3
+    mad_pp r2.xy, r2.wyzw, c10.x, c10.y
+    dp2add_sat_pp r0.w, r2, r2, c10.z
+    add_pp r0.w, -r0.w, c10.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r2.z, r0.w
+    dp3_pp r5.x, v1, r2
+    dp3_pp r5.y, v2, r2
+    dp3_pp r5.z, v3, r2
+    dp3_pp r0.w, r5, r3
+    dp3_pp r1.w, r5, r4
+    max_pp r2.x, r1.w, c10.z
+    max r1.w, r0.w, c10.z
+    mov r3.x, c9.x
+    mul r0.w, r3.x, c11.x
+    pow r2.y, r1.w, r0.w
+    texld_pp r3, v0, s2
+    mul r0.w, r2.y, r3.w
+    mul_pp r2.yzw, r3.xxyz, c8.xxyz
+    mul_pp r0.xyz, r0, r2.yzww
+    mul r1.xyz, r0.w, r1
+    mad_pp r0.xyz, r0, r2.x, r1
+    mul r0.w, c5.x, v5.x
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, c10.w

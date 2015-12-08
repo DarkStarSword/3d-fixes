@@ -1,0 +1,127 @@
+// CRC32: F41D8839 | Unity headers extracted from Additive-FresnelDistort.shader
+// Shader "Dreamfall/FX/Fresnel Additive Distort Parallax" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _Parallax ("Height", Range(0.005,0.2)) = 0.02
+//    _FresnelExp ("Fresnel Exp", Float) = 3.5
+//    _FresnelCol ("Fresnel Color", Color) = (1,1,1,1)
+//    _FresnelAmt ("Fresnel Amount", Float) = 1
+//    _ParallaxMap ("Heightmap (A)", 2D) = "grey" { }
+//    _DistortMap ("DistortMap", 2D) = "black" { }
+//    _DistortAmt ("Distort Amount", Float) = 0
+//    _DistortSpeed ("Distort Speed", Float) = 0
+//   }
+//   Fallback "Specular"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 50331
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Vector 9 [_Color]
+//           Float 13 [_DistortAmt]
+//           Float 14 [_DistortSpeed]
+//           Float 12 [_FresnelAmt]
+//           Vector 10 [_FresnelCol]
+//           Float 11 [_FresnelExp]
+//           Vector 8 [_LightColor0]
+//           Float 15 [_Parallax]
+//           Vector 0 [_Time]
+//           Vector 1 [_WorldSpaceCameraPos]
+//           Vector 2 [_WorldSpaceLightPos0]
+//           Vector 6 [unity_FogColor]
+//           Vector 7 [unity_FogParams]
+//           Vector 5 [unity_SHAb]
+//           Vector 4 [unity_SHAg]
+//           Vector 3 [unity_SHAr]
+//           SetTexture 0 [_ShadowMapTexture] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_ParallaxMap] 2D 2
+//           SetTexture 3 [_DistortMap] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c16, 0.5, 0.419999987, 1, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4
+    dcl_texcoord5 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_FX_Fresnel Additive Distort Parallax/fp/F41D8839.txt
+mov r30, c1
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad_pp r0, v1.xyzx, c16.zzzw, c16.wwwz
+    dp4_pp r1.x, c3, r0
+    dp4_pp r1.y, c4, r0
+    dp4_pp r1.z, c5, r0
+    add_pp r0.xyz, r1, v3
+    texld_pp r1, v0, s2
+    mov r1.x, c16.x
+    mul_pp r0.w, r1.x, c15.x
+    mad_pp r0.w, r1.w, c15.x, -r0.w
+    add r1.xyz, r30, -v2
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mad r2.x, r1.z, r1.w, c16.y
+    mul_pp r1.xyz, r1.w, r1
+    rcp r1.w, r2.x
+    mul r2.xy, r1.w, r1
+    dp3 r1.x, v1, r1
+    pow r2.z, r1.x, c11.x
+    mul_sat r1.x, r2.z, c12.x
+    mul r1.xyz, r1.x, c10
+    mad r2.xy, r0.w, r2, v0
+    mov r3.x, c0.x
+    mad r2.z, r3.x, c14.x, r2.y
+    texld r3, r2.xzzw, s3
+    mad r2.xy, r3, c13.x, r2
+    texld_pp r2, r2, s1
+    mul_pp r3.xyz, r2, c9
+    mul_pp r0.xyz, r0, r3
+    texldp_pp r4, v4, s0
+    mul_pp r4.xyz, r4.x, c8
+    mul_pp r3.xyz, r3, r4
+    dp3_pp r0.w, v1, c2
+    max_pp r1.w, r0.w, c16.w
+    mad_pp r0.xyz, r3, r1.w, r0
+    mad_pp r0.xyz, r2, r1, r0
+    add r0.xyz, r0, -c6
+    mul r0.w, c7.y, v5.x
+    exp_sat r0.w, -r0.w
+    mad_pp oC0.xyz, r0.w, r0, c6
+    mov_pp oC0.w, c16.z
