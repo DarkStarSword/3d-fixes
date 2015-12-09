@@ -22,7 +22,6 @@ unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin
 
 unity_shader_directional_lighting     = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Shader\s".*PrePassCollectShadows.*"\s{$')
 unity_tag_shadow_caster               = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"LIGHTMODE"="SHADOWCASTER".*"\s}$')
-unity_tag_ignore_projector            = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"IGNOREPROJECTOR"="true".*"\s}$')
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
@@ -2255,34 +2254,30 @@ def fix_unity_reflection(tree, args):
     # We might possibly use this shader as a source of the MVP and
     # _Object2World matrices, but only if it is rendering from the POV of the
     # camera. Blacklist shadow casters which are rendered from the POV of a
-    # light. Also blacklist shaders tagged with IGNOREPROJECTOR - I don't know
-    # what that does or if this is necessary, but it sounds dangerous so let's
-    # not risk it - seemed to help in Dreamfall Chapters anyway...
+    # light.
+    #
+    # No longer blacklisting IGNOREPROJECTOR shaders - I was never sure what
+    # that tag signified, but it's clear that they do/can have valid matrices,
+    # and some scenes (e.g. falling Dreamer in Dreamfall chapter 1) only have
+    # the matrices we want in these shaders.
     #
     # This blacklisting may not be necessary - I doubt that any shadow casters
-    # will have used _WorldSpaceCameraPos and we won't have got this far. We
-    # can definitely get here for IGNOREPROJECTOR shaders, but I'm not certain
-    # if I actually need to blacklist them or not.
+    # will have used _WorldSpaceCameraPos and we won't have got this far.
     unity_glstate_matrix_mvp = _Object2World0 = None
     try:
         match = find_header(tree, unity_tag_shadow_caster)
     except KeyError:
         try:
-            match = find_header(tree, unity_tag_ignore_projector)
+            match = find_header(tree, unity_glstate_matrix_mvp_pattern)
+            unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
+            match = find_header(tree, unity_Object2World)
+            _Object2World0 = Register('c' + match.group('matrix'))
+            tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
+                'Candidate to obtain MVP and _Object2World matrices:'))
+            tree.ini.append(('InverseMatrix', 'true', None))
+            tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
         except KeyError:
-            try:
-                match = find_header(tree, unity_glstate_matrix_mvp_pattern)
-                unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
-                match = find_header(tree, unity_Object2World)
-                _Object2World0 = Register('c' + match.group('matrix'))
-                tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
-                    'Candidate to obtain MVP and _Object2World matrices:'))
-                tree.ini.append(('InverseMatrix', 'true', None))
-                tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
-            except KeyError:
-                pass
-        else:
-            tree.ini.append((None, None, 'Skipping possible matrix source - shader has IGNOREPROJECTOR tag'))
+            pass
     else:
         tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
 
