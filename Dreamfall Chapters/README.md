@@ -1,12 +1,33 @@
-Dreamfall Chapters (Books 1-4 Work In Progress)
-===============================================
+Dreamfall Chapters (Books 1-4)
+==============================
 
-Update 2015-12-05
+Update 2015-12-10
 -----------------
-This is an early release to make the Unity 5 and Book 4 updates playable.
-There are some known rendering issues that I have not re-fixed yet, and I have
-not completed Book 4 to fix further issues, so I would recommend waiting a few
-days for a more polished fix.
+This is a major update:
+
+- Re-fixed game from scratch for the Unity 5 update
+
+- Fixed chapter 4
+
+- Added an automatic depth adjustment to the HUD. The floating targeting icon
+  and descriptive text will automatically adjust their depth to match whatever
+  the icon is resting on. This is not 100% perfect (and the mouse cursor is
+  still at screen depth), so it can be toggled on and off with Q.
+
+- Brand new Unity lighting fix (yes, this is the second time this game has been
+  used to develop a new lighting fix) - looks exactly the same as the old one,
+  but it was necessary to work within some constraints in Helix Mod to also
+  allow:
+
+- Brand new Unity reflection fix. Aside from the obvious things like windows,
+  glass, water, puddles, and even Zoe's eyes, this also adds a lot of small
+  detail to many objects (literally thousands of shaders were adjusted to fully
+  enable this). With Unity 5's physically accurate lighting model this makes
+  the way light hits certain surfaces appear more realistic - hair has more
+  detail, highlights reflecting on wooden surfaces are below the surface, and
+  even things like Zoe's leather jacket reflect light in just the right way. I
+  highly recommend loading a save from Book one and taking a stroll around
+  Propast to see the difference this makes :)
 
 Installation
 ------------
@@ -18,29 +39,42 @@ Installation
 Fixed
 -----
 - Lighting and shadows
-- Halos on all surfaces, reflections, etc.
-- UI depth (except the mouse cursor) is adjustable with the keys on the number
-  row and tilde to return to screen depth.
+
+- Physically accurate reflections
+
+- Glow around lights
+
+- Halos on all surfaces
+
+- Automatic HUD depth (toggle with Q)
+
+- UI depth (except the mouse cursor and automatic HUD) is adjustable with the
+  keys on the number row and tilde to return to screen depth.
 
 Known Issues
 ------------
 - Volumetric ray-marched light shafts are at screen depth and are disabled. You
   can re-enable them with U.
-- Reflections are mono
+
 - The mouse cursor depth is not adjustable as it uses a hardware cursor.
+
+- The Purple Mountains background is drawn closer than some of the foreground.
+  This is not a skybox - it is in fact two scenes rendered on top of each other
+  making it difficult to separate them.
 
 Additional Notes
 ----------------
-- I played the game on the awesome quality setting. If you are playing on a
-  lower setting and notice any broken surfaces, please let me where in the game
-  you saw it and what settings you were using.
+- I have not completely replayed the first three chapters since the Unity 5
+  update. If you find something broken (especially things like glass or heat
+  distortions), please let me know.
+
 - I expect that I will need to update the fix as more books are released, so
   check back for updates.
 
 
-Thanks to everyone who helped out on the forum to make this fix possible,
-especially 4everAwake and mike_ar69! Together we have pioneered new techniques
-for fixing broken lighting and shadows in Unity games, so this thread may be of
-interest to other shaderhackers:
+Thanks to everyone who helped out on the forum to make the original Book 1 fix
+possible, especially 4everAwake and mike_ar69! This was the game where we
+cracked Unity 5 lighting and has enabled many more fixes since - shaderhackers
+may be interested in reading through this thread:
 
 <https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters>
