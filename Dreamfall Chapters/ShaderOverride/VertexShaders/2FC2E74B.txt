@@ -100,11 +100,14 @@ if_eq r30.w, c220.y
 		// for Miasmata, adapted to HLSL and made to use coordinates other than
 		// (0,0), then adapted back to assembly for UE3.
 
-		// Screen depth coordinates to sample around - Just using current
-		// vertex for now. Would be better to use the center, but we can't look
-		// up other vertices. Haven't checked if the matrix is useful in Unity.
-		rcp r22.w, r0.w
-		mul r22.xy, r0.xy, r22.w
+		// Screen depth coordinates to sample around - Using the first
+		// vertex position obtained with Helix Mod. Would be better to
+		// use the center, but I don't think it is possible to look
+		// that up in Helix Mod (would need to get the possition of a
+		// diagonally opposite vertex).
+		mov r23, c170
+		dp4 r22.x, c0, r23
+		dp4 r22.y, c1, r23
 
 		// near clipping plane - for Unity we get this from _ZBufferParams
 		rcp r20.w, c150.w
