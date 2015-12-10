@@ -7,7 +7,7 @@ This is a major update:
 
 - Re-fixed game from scratch for the Unity 5 update
 
-- Fixed chapter 4
+- Fixed Book 4
 
 - Added an automatic depth adjustment to the HUD. The floating targeting icon
   and descriptive text will automatically adjust their depth to match whatever
