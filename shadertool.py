@@ -1077,17 +1077,24 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     repl_reg = tree._find_free_reg('r', VS3, desired=30)
 
     if reg.startswith('dcl_texcoord'):
-        org_reg = find_declaration(tree, reg, 'v').reg
+        declared_reg = find_declaration(tree, reg, 'v')
+        org_reg = declared_reg.reg
     if reg.startswith('texcoord'):
-        org_reg = find_declaration(tree, 'dcl_%s' % reg, 'v').reg
+        declared_reg = find_declaration(tree, 'dcl_%s' % reg, 'v')
+        org_reg = declared_reg.reg
     else:
-        org_reg = reg
+        # FIXME: Look up mask in declaration
+        declared_reg = org_reg = reg
     replace_regs = {org_reg: repl_reg}
     tree.do_replacements(replace_regs, False)
 
+    repl_reg_mask = repl_reg
+    if declared_reg is not None and declared_reg.swizzle is not None:
+        repl_reg_mask = '%s.%s' % (repl_reg, declared_reg.swizzle)
+
     pos = tree.decl_end - 1
     pos += insert_vanity_comment(args, tree, pos, "Input adjustment inserted with")
-    pos += tree.insert_instr(pos, NewInstruction('mov', [repl_reg, org_reg]))
+    pos += tree.insert_instr(pos, NewInstruction('mov', [repl_reg_mask, org_reg]))
     if args.condition:
         pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
         pos += tree.insert_instr(pos, NewInstruction('if_eq', [tmp_reg.x, stereo_const.x]))
