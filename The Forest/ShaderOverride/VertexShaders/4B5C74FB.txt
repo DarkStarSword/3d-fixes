@@ -55,8 +55,6 @@
 //       _DetailNormalMapScale ("Scale", Float) = 1
 //       _DetailNormalMap ("Normal Map", 2D) = "bump" { }
 //      [Enum(UV0,0,UV1,1)]  _UVSec ("UV Set for secondary textures", Float) = 0
-//      [HideInInspector]  _EmissionScaleUI ("Scale", Float) = 0
-//      [HideInInspector]  _EmissionColorUI ("Color", Color) = (1,1,1,1)
 //      [HideInInspector]  _Mode ("__mode", Float) = 0
 //      [HideInInspector]  _SrcBlend ("__src", Float) = 1
 //      [HideInInspector]  _DstBlend ("__dst", Float) = 0
@@ -69,7 +67,7 @@
 //        Pass 3/3 {
 //          Name "SHADOWCASTER"
 //          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
-//          GpuProgramID 480964
+//          GpuProgramID 473441
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Keywords { "SHADOWS_DEPTH" }
@@ -91,6 +89,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c16, 1, 0, 0, 0
     dcl_position v0
     dcl_normal v1
@@ -131,10 +130,10 @@ dcl_2d s0
     dp4 r1.w, c3, r2
     lrp r2, r0.x, r3, r1
 
-mov o1, r2 // Relocated from line 137 with shadertool.py
+mov o1, r2 // Relocated from line 136 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Legacy Shaders_VertexLit/vp/4B5C74FB.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Legacy Shaders_VertexLit/vp/4B5C74FB.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x
@@ -148,6 +147,7 @@ mad r2.x, r31.w, r31.x, r2.x
     lrp r2.z, c15.y, r0.y, r0.x
     mov o0, r2
 
-//     mov o1, r2 // Relocated to line 129 with shadertool.py
-mov o1.z, r2.z // Inserted by shadertool.py
+//     mov o1, r2 // Relocated to line 128 with shadertool.py
+mov o1.z, r2 // Inserted by shadertool.py
 
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0

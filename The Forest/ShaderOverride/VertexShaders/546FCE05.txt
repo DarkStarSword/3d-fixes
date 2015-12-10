@@ -44,6 +44,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c21, 1, 0.5, 0, 0
     dcl_position v0
     dcl_tangent v1
@@ -89,10 +90,10 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o6, r0 // Relocated from line 90 with shadertool.py
+mov o6, r0 // Relocated from line 91 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Legacy Shaders_Bumped Diffuse/vp/546FCE05.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Legacy Shaders_Bumped Diffuse/vp/546FCE05.txt
 texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -101,9 +102,10 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o5.xy, r2.z, c11.zwzw, r2.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o6, r0 // Relocated to line 87 with shadertool.py
-mov o6.z, r0.z // Inserted by shadertool.py
+//     mov o6, r0 // Relocated to line 88 with shadertool.py
+mov o6.z, r0 // Inserted by shadertool.py
 
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o5.zw, r0
     dp3 r0.z, c4, v1
     dp3 r0.x, c5, v1

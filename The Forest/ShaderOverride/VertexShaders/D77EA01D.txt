@@ -17,7 +17,7 @@
 //          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="GrassBillboard" }
 //          ZWrite Off
 //          Cull Off
-//          GpuProgramID 228996
+//          GpuProgramID 229691
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
@@ -55,6 +55,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c25, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
     def c26, 1.20000005, 2, 1.60000002, 4.80000019
     def c27, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
@@ -129,10 +130,10 @@ dcl_2d s0
     dp4 r1.x, c0, r0
     dp4 r1.w, c3, r0
 
-mov o5, r1 // Relocated from line 131 with shadertool.py
+mov o5, r1 // Relocated from line 132 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Details_BillboardWavingDoublePass/vp/D77EA01D.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Hidden_TerrainEngine_Details_BillboardWavingDoublePass/vp/D77EA01D.txt
 texldl r31, c220.z, s0
 add r31.w, r1.w, -r31.y
 mad r1.x, r31.w, r31.x, r1.x
@@ -142,9 +143,10 @@ mad r1.x, r31.w, r31.x, r1.x
     dp4 r1.z, c2, r0
     mul r0.x, r1.y, c10.x
 
-//     mov o5, r1 // Relocated to line 127 with shadertool.py
-mov o5.zy, r1.zy // Inserted by shadertool.py
+//     mov o5, r1 // Relocated to line 128 with shadertool.py
+mov o5.yz, r1 // Inserted by shadertool.py
 
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o2.zw, r1
     mul r2.w, r0.x, c32.y
     mad o2.xy, r2.z, c11.zwzw, r2.xwzw

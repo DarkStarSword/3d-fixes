@@ -1,91 +1,123 @@
-// CRC32: 42400DD2 | Matched 12 variants of 2 shaders: Hidden/Skin Composite, Lux/Human/Skin
+// CRC32: 42400DD2 | Matched 6 variants of 3 shaders: Custom/Sheen, Lux/Detail Blend Splatmap CG, Lux/Detail Blend Splatmap General Lighting
 // 
-//      Unity headers extracted from Skin Composite.shader
-//      Shader "Hidden/Skin Composite" {
-//        Properties {
-//         _Color ("RGB Translucency A F0", Color) = (1,0.2,0,1)
-//         _MainTex ("Albedo", 2D) = "white" { }
-//         AOsaturation ("AO Saturation", Float) = 2
-//         _NormalMap ("NormalMap", 2D) = "bump" { }
-//         _Microstructure ("Microstructure", 2D) = "bump" { }
-//         _MicrostructureTile ("Microstructure tile", Float) = 0
-//         _SpecularMap ("SpecularMap (R=F0 G=Thickness B=AO A=Roughness", 2D) = "white" { }
-//         _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
-//         beckmannTex ("Beckman", 2D) = "white" { }
-//         Roughness ("Roughness", Range(0.0001,0.99)) = 0.5
-//         mRoughness ("Detail Roughness", Range(0.0001,0.99)) = 0.5
-//         Albedo ("Albedo", Range(0,1)) = 1
-//         IBL ("Irradiance CubeMap", CUBE) = "black" { }
-//        }
-//        Fallback "Diffuse"
-//        SubShader 1/1 {
-//          LOD 500
-//          Tags { "QUEUE"="Background" "RenderType"="Opaque" "OnlySkin"="true" }
-//          Pass 2/2 {
-//            Name "FORWARD"
-//            Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "QUEUE"="Background" "RenderType"="Opaque" "OnlySkin"="true" }
-//            ZWrite Off
-//            Blend One One
-//            GpuProgramID 95086
-//            Program "vp" {
-//              SubProgram "d3d9 " {
-// 040:           Keywords { "DIRECTIONAL" "KELEMEN_KALOS_OFF" "SHADOWS_OFF" }
-// 002:           Keywords { "DIRECTIONAL" "KELEMEN_KALOS_ON" "SHADOWS_OFF" }
-// 200:           Keywords { "DIRECTIONAL_COOKIE" "KELEMEN_KALOS_OFF" "SHADOWS_OFF" }
-// 010:           Keywords { "DIRECTIONAL_COOKIE" "KELEMEN_KALOS_ON" "SHADOWS_OFF" }
-// 020:           Keywords { "KELEMEN_KALOS_OFF" "POINT" "SHADOWS_OFF" }
-// 100:           Keywords { "KELEMEN_KALOS_OFF" "POINT_COOKIE" "SHADOWS_OFF" }
-// 080:           Keywords { "KELEMEN_KALOS_OFF" "SHADOWS_OFF" "SPOT" }
-// 001:           Keywords { "KELEMEN_KALOS_ON" "POINT" "SHADOWS_OFF" }
-// 008:           Keywords { "KELEMEN_KALOS_ON" "POINT_COOKIE" "SHADOWS_OFF" }
-// 004:           Keywords { "KELEMEN_KALOS_ON" "SHADOWS_OFF" "SPOT" }
-//                Bind "vertex" Vertex
-//                Bind "normal" Normal
-//                Bind "texcoord" TexCoord0
-//                Bind "tangent" TexCoord4
-//                Matrix 4 [_Object2World] 3
-//                Matrix 7 [_World2Object] 3
-//                Matrix 0 [glstate_matrix_mvp]
-//                Vector 12 [_MainTex_ST]
-//                Vector 10 [_ProjectionParams]
-//                Vector 11 [_ScreenParams]
-//              }
+//    Unity headers extracted from Sheen.shader
+//    Shader "Custom/Sheen" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//       _Metallic ("Metallic", Range(0,1)) = 0
+//       _BumpTex ("Normal Map", 2D) = "bump" { }
+//       _Sheen ("Sheen Texture", 2D) = "white" { }
+//       _SheenScale ("Sheen Texture Scale", Range(0,1)) = 0.25
+//       _SheenSpeed ("Blink Speed", Float) = 60
+//       _SheenIntensity ("Blink Intensity", Range(0,1)) = 0.01
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Background-1000" "RenderType"="Opaque" }
+//        Pass 2/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Background-1000" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 97821
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
 //            }
 //          }
 //        }
 //      }
+//    }
 // 
-//    Unity headers extracted from Lux Skin.shader
-//    Shader "Lux/Human/Skin" {
+//    Unity headers extracted from Lux Detail Blend Splatmap CG.shader
+//    Shader "Lux/Detail Blend Splatmap CG" {
 //      Properties {
-//       _Color ("Main Color", Color) = (1,1,1,1)
-//       _MainTex ("Base (RGB)", 2D) = "white" { }
-//       _BumpMap ("Normalmap", 2D) = "bump" { }
-//       _BumpLod ("Skin Softness", Range(0,1)) = 1
-//       _BumpBias ("Normal Map Blur Bias", Float) = 1.5
-//       _SpecTex ("Specular (R) Smoothness (G) SSS Mask (B), AO (A)", 2D) = "gray" { }
-//       _tuneCurvature ("Skin Scattering Strength", Range(0,1)) = 1
-//       _tuneSkinCoeffX ("Skin Coeffient R", Range(0,1)) = 1
-//       _tuneSkinCoeffY ("Skin Coeffient G", Range(0,1)) = 0.6
-//       _tuneSkinCoeffZ ("Skin Coeffient B", Range(0,1)) = 0.48
-//       _CurvatureScale ("Curvature Scale", Float) = 0.02
-//       _CurvatureInfluence ("Curvature Influence", Range(0,1)) = 1
-//       _BRDFTex ("BRDF Lookup (RGB)", 2D) = "gray" { }
-//       _Power ("Deep Subsurface Power", Float) = 2
-//       _Distortion ("Deep Subsurface Distortion", Float) = 0.1
-//       _Scale ("Deep Subsurface Scale", Float) = 2
-//       _SubColor ("Deep Subsurface Color", Color) = (1,0.4,0.25,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _BumpTex ("Normal Map", 2D) = "bump" { }
+//       _SpecGlossTex ("Specular (RGB) Smoothness(A)", 2D) = "white" { }
+//       _OcclusionTex ("Occlusion", 2D) = "white" { }
+//       _Detail1AlbedoTex ("Detail 1 Albedo", 2D) = "gray" { }
+//       _Detail1NormalTex ("Detail 1 Normal", 2D) = "bump" { }
+//       _Datail1Tiling ("Detail 1 Tiling", Float) = 1
+//       _Detail2AlbedoTex ("Detail 2 Albedo", 2D) = "gray" { }
+//       _Detail2NormalTex ("Detail 2 Normal", 2D) = "bump" { }
+//       _Datail2Tiling ("Detail 2 Tiling", Float) = 1
+//      [HideInInspector]  _Gray ("Gray", Color) = (0.5,0.5,0.5,1)
+//       _SplatMap ("Splat Map (G)", 2D) = "black" { }
+//       _AmbientStrength ("_AmbientStrength", Range(0,1)) = 1
 //      }
-//      Fallback "Legacy Shaders/Diffuse"
+//      Fallback "Diffuse"
 //      SubShader 1/1 {
 //        LOD 200
 //        Tags { "RenderType"="Opaque" }
-//        Pass 2/2 {
+//        Pass 2/3 {
 //          Name "FORWARD"
 //          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 78523
+//          GpuProgramID 89617
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Lux Detail Blend Splatmap General Lighting.shader
+//    Shader "Lux/Detail Blend Splatmap General Lighting" {
+//      Properties {
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _AlbedoTint ("Albedo Tint (RGB)", Color) = (1,1,1,1)
+//       _BumpTex ("Normal Map", 2D) = "bump" { }
+//       _SpecGlossTex ("Specular (RGB) Smoothness(A)", 2D) = "white" { }
+//       _OcclusionTex ("Occlusion", 2D) = "white" { }
+//       _Detail1AlbedoTex ("Detail 1 Albedo", 2D) = "gray" { }
+//       _Detail1NormalTex ("Detail 1 Normal", 2D) = "bump" { }
+//       _Datail1Tiling ("Detail 1 Tiling", Float) = 1
+//       _Detail2AlbedoTex ("Detail 2 Albedo", 2D) = "gray" { }
+//       _Detail2NormalTex ("Detail 2 Normal", 2D) = "bump" { }
+//       _Datail2Tiling ("Detail 2 Tiling", Float) = 1
+//      [HideInInspector]  _Gray ("Gray", Color) = (0.5,0.5,0.5,1)
+//       _SplatMap ("Splat Map (G)", 2D) = "black" { }
+//       _AmbientStrength ("Ambient Strength", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/3 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 109529
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
@@ -136,10 +168,10 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 137 with shadertool.py
+mov o0, r0 // Relocated from line 169 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Hidden_Skin Composite/vp/42400DD2.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Custom_Sheen/vp/42400DD2.txt
 texldl r31, c220.z, s0
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -148,8 +180,8 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o6.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 134 with shadertool.py
-mov o0.z, r0.z // Inserted by shadertool.py
+//     mov o0, r0 // Relocated to line 166 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
 
     mov o6.zw, r0
     dp3 r0.z, c4, v1
