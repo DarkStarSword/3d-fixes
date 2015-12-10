@@ -22,8 +22,8 @@ Installation
    to Stranded_Deep_x64.exe), replace the d3d9.dll from the fix with the one in
    the 32bit directory.
 
-3. Launch the game and set quality to Ultra (other settings may work as well,
-   but I haven't tested them)
+3. Select "DirectX 9.0" when launching the game from Steam (alternatively add
+   -force-d3d9 to the launch options)
 
 Keys
 ----
@@ -48,8 +48,8 @@ Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
 
-- From above, the waves right on the edge of the shore only move the water in
-  one eye.
+- I'm not sure the ocean waves are acting quite right in 3D, but it doesn't
+  affect gameplay.
 
 Notes
 -----
