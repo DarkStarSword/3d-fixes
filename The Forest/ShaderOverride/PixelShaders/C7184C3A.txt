@@ -99,11 +99,38 @@ def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
 // Input adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --adjust-input=texcoord5 --ignore-other-errors CetoTF_OceanTopSide_Low_TF/fp/C7184C3A.txt
-mov r30, v5
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors -f CetoTF_OceanTopSide_Low_TF/fp/C7184C3A.txt
+mov r12.xyw, v5
+texldl r10, c220.z, s15
+add r10.w, r12.w, -r10.y
+mul r10.w, r10.w, r10.x
+mul r10.w, r10.w, c220.w
+add r12.x, r12.x, r10.w
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors -f CetoTF_OceanTopSide_Low_TF/fp/C7184C3A.txt
+mov r11.xyw, v4
+texldl r10, c220.z, s15
+add r10.w, r11.w, -r10.y
+mul r10.w, r10.w, r10.x
+mul r10.w, r10.w, c220.w
+add r11.x, r11.x, r10.w
+
 texldl r31, c220.z, s15
-add r31.w, r30.w, -r31.y
-mad r30.x, r31.w, r31.x, r30.x
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors -f CetoTF_OceanTopSide_Low_TF/fp/C7184C3A.txt
+mov r30, c12
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mad r0.xzw, v3.xyzx, c45.xyxy, c45.yyyx
     mov r0.y, c29.x
@@ -123,8 +150,8 @@ mad r30.x, r31.w, r31.x, r30.x
     mul r1.y, r1.y, r1.y
     mul r1.y, r1.y, r1.y
     mov_pp r2.w, c45.x
-    rcp r1.z, v4.w
-    mul r3.xy, r1.z, v4
+    rcp r1.z, r11.w
+    mul r3.xy, r1.z, r11
     texld r4, r3, s7
     mad r2.z, r4.x, c47.x, c47.y
     mad r2.xy, r3, c47.x, c47.y
@@ -146,7 +173,7 @@ mad r30.x, r31.w, r31.x, r30.x
     exp r4.y, r2.y
     exp r4.z, r2.z
     mul r2.xyz, r4, c37
-    add r4.xyz, -c12, v3
+    add r4.xyz, -r30, v3
     dp3 r1.y, r4, r4
     rsq r1.y, r1.y
     rcp r1.y, r1.y
@@ -203,7 +230,7 @@ mad r30.x, r31.w, r31.x, r30.x
     mov_pp r6.y, c45.x
     add_pp r6.xyz, r0, r6
     nrm_pp r7.xyz, r6
-    add r6.xyz, c12, -v3
+    add r6.xyz, r30, -v3
     dp3 r0.w, r6, r6
     rsq r0.w, r0.w
     mul_pp r6.xzw, r0.w, r6.xyyz
@@ -224,13 +251,13 @@ mad r30.x, r31.w, r31.x, r30.x
     cmp r0.w, r0.w, r2.w, c46.z
     mul_pp r7.xy, r0.w, r7
     mul_pp r7.xy, r7, c45
-    mad_sat r7.zw, v4.xyxy, r1.z, r7.xyxy
+    mad_sat r7.zw, r11.xyxy, r1.z, r7.xyxy
     texld r8, r7.zwzw, s7
     mad r0.w, c13.x, r8.x, c13.y
     rcp r0.w, r0.w
     add r0.w, -r0.w, v3.w
     cmp_pp r7.xy, r0.w, c45.y, r7
-    mad_sat r7.zw, v4.xyxy, r1.z, r7.xyxy
+    mad_sat r7.zw, r11.xyxy, r1.z, r7.xyxy
     texld r8, r7.zwzw, s7
     mad r9.xy, r7.zwzw, c47.x, c47.y
     mad r9.z, r8.x, c47.x, c47.y
@@ -240,7 +267,7 @@ mad r30.x, r31.w, r31.x, r30.x
     dp4 r0.w, c11, r9
     dp4 r8.y, c9, r9
     rcp r0.w, r0.w
-    mad r8.xzw, r8.xyyz, r0.w, -c12.xyyz
+    mad r8.xzw, r8.xyyz, r0.w, -r30.xyyz
     mad r0.w, r8.y, r0.w, -c29.x
     dp3 r1.z, r8.xzww, r8.xzww
     rsq r1.z, r1.z
@@ -276,8 +303,8 @@ mad r30.x, r31.w, r31.x, r30.x
     exp r8.x, r9.x
     exp r8.y, r9.y
     exp r8.z, r9.z
-    rcp r1.y, r30.w
-    mad_sat r1.yz, r30.xxyw, r1.y, r7.xxyw
+    rcp r1.y, r12.w
+    mad_sat r1.yz, r12.xxyw, r1.y, r7.xxyw
     texld r7, r1.yzzw, s8
     mul_pp r7.xyz, r7, c32.x
     mul r7.xyz, r7, c39
@@ -346,7 +373,7 @@ mad r30.x, r31.w, r31.x, r30.x
     mov r0.x, v0.w
     mov r0.y, v1.w
     mov r0.z, v2.w
-    add r0.xyz, -r0, c12
+    add r0.xyz, -r0, r30
     dp3 r0.w, r0, r0
     rsq r0.w, r0.w
     mul_pp r6.xyz, r0.w, r0
