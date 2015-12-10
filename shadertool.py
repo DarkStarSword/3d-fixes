@@ -970,7 +970,7 @@ def vanity_comment(args, tree, what):
         # Life Is Strange has 75,000 pixel shaders hangs for minutes as a list,
         # as a set it's a fraction of a second)
         file_set = set(args.files)
-        vanity_args = list(filter(lambda x: x not in file_set, sys.argv[1:]))
+        vanity_args = list(filter(lambda x: x not in file_set and '*' not in x, sys.argv[1:]))
 
     return [
         "%s DarkStarSword's shadertool.py:" % what,
