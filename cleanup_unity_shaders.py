@@ -77,7 +77,7 @@ def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
 	cleanup_dx9_ini(os.path.join(game_dir, 'DX9Settings.ini'), sections)
 
 def main():
-	for game_dir in sys.argv[1:]:
+	for game_dir in map(os.path.realpath, sys.argv[1:]):
 		git_path = shadertool.game_git_dir(game_dir)
 		cleanup_dx9(game_dir, git_path, 'vp', 'VS', 'VertexShaders')
 		cleanup_dx9(game_dir, git_path, 'fp', 'PS', 'PixelShaders')
