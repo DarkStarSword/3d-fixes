@@ -53,6 +53,19 @@ dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjectio
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/22DCBCBE.txt
+mov r30, c7
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+mul r29.x, r29.x, v5.x
+dp4 r28.x, c4, r29
+dp4 r28.y, c5, r29
+dp4 r28.z, c6, r29
+add r30.xyz, r30, -r28
+
     mov r0.xyz, c13
     mul_pp r0.xyw, r0.xyzz, c11.xyzz
     add_pp r0.xw, r0.yyzw, r0.x
@@ -70,19 +83,18 @@ dcl_2d s15
     texld_pp r1, r1, s3
     mad r2.x, c9.x, r2.x, c9.y
     rcp r2.x, r2.x
-    mul r3.xyz, r0.yzww, r2.x // depth in r3.z
+    mul r3.xyz, r0.yzww, r2.x
     mov r3.w, c15.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps Hidden_Internal-PrePassLighting/fp/22DCBCBE.txt
-texldl r31, c220.z, s15
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/22DCBCBE.txt
 add r31.w, r3.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r3.x, -r31.w, v5.x, r3.x
 
     dp4 r4.x, c4, r3
     dp4 r4.y, c5, r3
-    dp4 r4.z, c6, r3
+    dp4 r4.z, c6, r3 // depth in r3.z
     mov r4.w, c15.x
     dp4 r5.x, c0, r4
     dp4 r5.y, c1, r4
@@ -98,7 +110,7 @@ mad r3.x, -r31.w, v5.x, r3.x
     mul r0.y, r6.w, r7.x
     cmp r0.y, r5.w, c15.y, r0.y
     mov_sat r0.z, r0.y
-    add r3.xyw, r4.xyzz, -c7.xyzz
+    add r3.xyw, r4.xyzz, -r30.xyzz
     add r4.xyz, r4, -c10
     dp3 r4.x, r4, r4
     rsq r4.x, r4.x

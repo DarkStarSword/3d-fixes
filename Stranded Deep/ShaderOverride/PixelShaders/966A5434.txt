@@ -77,6 +77,19 @@ dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjectio
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Sunshine-DeferredShading/fp/966A5434.txt
+mov r30, c12
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+mul r29.x, r29.x, v5.x
+dp4 r28.x, c4, r29
+dp4 r28.y, c5, r29
+dp4 r28.z, c6, r29
+add r30.xyz, r30, -r28
+
     rcp r0.x, v1.z
     mul r0.x, r0.x, c13.z
     mul r0.xyz, r0.x, v1
@@ -85,19 +98,18 @@ dcl_2d s15
     texld r2, r1, s0
     mad r0.w, c14.x, r2.x, c14.y
     rcp r0.w, r0.w
-    mul r2.xyz, r0.w, r0 // depth in r2.z
+    mul r2.xyz, r0.w, r0
     mov r2.w, c30.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps Hidden_Sunshine-DeferredShading/fp/966A5434.txt
-texldl r31, c220.z, s15
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Sunshine-DeferredShading/fp/966A5434.txt
 add r31.w, r2.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r2.x, -r31.w, v5.x, r2.x
 
     dp4 r3.x, c4, r2
     dp4 r3.y, c5, r2
-    dp4 r3.z, c6, r2
+    dp4 r3.z, c6, r2 // depth in r2.z
     mov r3.w, c30.x
     dp4 r4.z, c9, r3
     dp4 r4.x, c7, r3
@@ -160,7 +172,7 @@ mad r2.x, -r31.w, v5.x, r2.x
     add_sat_pp r0.y, r0.y, r2.x
     dp4 r2.x, c10, r3
     dp4 r2.y, c11, r3
-    add r3.xyz, r3, -c12
+    add r3.xyz, r3, -r30
     texld r2, r2, s1
     mul r0.y, r0.y, r2.w
     mul r0.x, r0.x, r0.y
