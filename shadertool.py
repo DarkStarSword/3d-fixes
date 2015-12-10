@@ -2631,6 +2631,8 @@ def parse_args():
             help='Dumps the syntax tree')
     parser.add_argument('--ignore-parse-errors', action='store_true',
             help='Continue with the next file in the event of a parse error')
+    parser.add_argument('--ignore-other-errors', action='store_true',
+            help='Continue with the next file in the event of some other error while applying a fix')
     parser.add_argument('--ignore-register-errors', action='store_true',
             help='Continue with the next file in the event that a fix cannot be applied due to running out of registers')
 
@@ -2829,6 +2831,13 @@ def main():
                 adjust_output(tree, a)
         except (NoFreeRegisters, StereoSamplerAlreadyInUse) as e:
             if args.ignore_register_errors:
+                collected_errors.append((file, e))
+                import traceback, time
+                traceback.print_exc()
+                continue
+            raise
+        except Exception as e:
+            if args.ignore_other_errors:
                 collected_errors.append((file, e))
                 import traceback, time
                 traceback.print_exc()
