@@ -1,0 +1,223 @@
+// CRC32: 4EE6A2CF | Matched 2 variants of 1 shaders: AFS/Tree Bark Tumbling
+// 
+//    Unity headers extracted from AFS Tree Bark Tumbling.shader
+//    Shader "AFS/Tree Bark Tumbling" {
+//      Properties {
+//      [Header(Base and Detail Maps)] [Space]  _Color ("Color Variation", Color) = (0.9,0.5,0,0.1)
+//       _MainTex ("Albedo (RGB) Occlusion(A)", 2D) = "white" { }
+//      [NoScaleOffset] [Normal]  _BumpTex ("Normal Map", 2D) = "bump" { }
+//      [NoScaleOffset]  _SpecGlossMap ("Specular (RGB) Smoothness (A)", 2D) = "black" { }
+//       _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//      [NoScaleOffset]  _DetailNormalMap ("Detail Normal Map", 2D) = "bump" { }
+//      [Space(5)] [Header(Wind)] [Space]  _LeafTurbulence ("Leaf Turbulence", Range(0,1)) = 0.5
+//      [Space(5)] [Header(Stippling and Wind Fading)] [Space]  _StippleNear ("Stipple Near", Range(0,600)) = 180
+//       _StippleFar ("Stipple Far", Range(0,600)) = 200
+//       _WindNear ("Wind Near", Range(0,600)) = 180
+//       _WindFar ("Wind Far", Range(0,600)) = 200
+//      [Space(5)] [Enum(Static,0,Falling,1)]  _TreeBendingMode ("Tree Bending Mode", Float) = 0
+//      [HideInInspector]  _Variation ("Variation", Float) = 0
+//      }
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="AFSTreeBark" }
+//        Pass 2/4 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="AFSTreeBark" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 69344
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" "_CUTVERSION" }
+// 1:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+//              Matrix 0 [_LightMatrix0] 3
+//              Vector 10 [_Color]
+//              Vector 8 [_LightColor0]
+//              Vector 5 [_LightPositionRange]
+//              Vector 6 [_LightShadowData]
+//              Vector 3 [_WorldSpaceCameraPos]
+//              Vector 4 [_WorldSpaceLightPos0]
+//              Vector 7 [unity_ColorSpaceDouble]
+//              Vector 9 [unity_LightGammaCorrectionConsts]
+//              SetTexture 0 [_ShadowMapTexture] CUBE 0
+//              SetTexture 1 [_LightTexture0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpTex] 2D 3
+//              SetTexture 4 [_SpecGlossMap] 2D 4
+//              SetTexture 5 [_DetailAlbedoMap] 2D 5
+//              SetTexture 6 [_DetailNormalMap] 2D 6
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 0.5, 2, -1, 0
+    def c12, 0.0078125, -0.0078125, 0.970000029, 0.25
+    def c13, 0.00100000005, 31.622776, 9.99999975e-005, 10
+    def c14, 0.967999995, 0.0299999993, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_color_pp v5.yz
+    dcl_texcoord5 v6.xyz
+    dcl_cube s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors AFS_Tree Bark Tumbling/fp/4EE6A2CF.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add_pp r0, c11.x, -v5.z
+    texkill r0
+    dp3 r0.x, v6, v6
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mul r0.x, r0.x, c5.w
+    add r0.yzw, c12.x, v6.xxyz
+    texld r1, r0.yzww, s0
+    add r0.yzw, c12.xyyx, v6.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.y, r2.x
+    add r0.yzw, c12.xyxy, v6.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.z, r2.x
+    add r0.yzw, c12.xxyy, v6.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.w, r2.x
+    mad r0, r0.x, -c12.z, r1
+    mov r1.z, c11.z
+    cmp_pp r0, r0, -r1.z, c6.x
+    dp4_pp r0.x, r0, c12.w
+    mad r2, v4.xyzx, c11_abs.zzzw, c11_abs.wwwz
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2
+    dp3 r0.y, r3, r3
+    texld r2, r0.y, s1
+    mul_pp r0.x, r0.x, r2.x
+    mul_pp r0.xyz, r0.x, c8
+    texld_pp r2, v0, s3
+    mad_pp r1.xy, r2.wyzw, c11.y, c11.z
+    dp2add_sat_pp r0.w, r1, r1, c11.w
+    add_pp r0.w, -r0.w, -c11.z
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    texld_pp r2, v0.zwzw, s6
+    mad_pp r2.xy, r2.wyzw, c11.y, c11.z
+    dp2add_sat_pp r1.w, r2, r2, c11.w
+    add_pp r2.xy, r1, r2
+    add_pp r1.x, -r1.w, -c11.z
+    rsq_pp r1.x, r1.x
+    rcp_pp r1.x, r1.x
+    mul_pp r2.z, r0.w, r1.x
+    nrm_pp r3.xyz, r2
+    dp3_pp r2.x, v1, r3
+    dp3_pp r2.y, v2, r3
+    dp3_pp r2.z, v3, r3
+    nrm_pp r3.xyz, r2
+    add r1.xyw, r30.xyzz, -v4.xyzz
+    nrm_pp r4.xyz, r1.xyww
+    add r1.xyw, c4.xyzz, -v4.xyzz
+    dp3 r0.w, r1.xyww, r1.xyww
+    rsq r0.w, r0.w
+    mad_pp r5.xyz, r1.xyww, r0.w, r4
+    dp3_pp r2.w, r3, r4
+    max_pp r3.w, r2.w, c11.w
+    mul_pp r1.xyw, r0.w, r1
+    dp3_pp r0.w, r5, r5
+    add r2.w, -r0.w, c13.x
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r2.w, c13.y, r0.w
+    mul_pp r4.xyz, r0.w, r5
+    dp3_pp r0.w, r3, r4
+    dp3_pp r2.w, r1.xyww, r4
+    dp3_pp r1.x, r2, r1.xyww
+    max_pp r2.x, r1.x, c11.w
+    max_pp r1.x, r2.w, c11.w
+    max_pp r1.y, r0.w, c11.w
+    texld_pp r4, v0, s4
+    add_pp r0.w, -r4.w, -c11.z
+    add_pp r1.w, -r0.w, -c11.z
+    mad_pp r1.w, r1.w, c14.x, c14.y
+    log_pp r1.w, r1.w
+    rcp r1.w, r1.w
+    mul_pp r1.w, r1.w, c13.w
+    mul_pp r2.y, r1.w, r1.w
+    mad_pp r1.w, r1.w, r1.w, -c11.z
+    mul_pp r1.w, r1.w, c9.y
+    pow_pp r3.x, r1.y, r2.y
+    mul_pp r1.y, r1.w, r3.x
+    mul_pp r1.w, r0.w, r0.w
+    mul_pp r2.y, r1.w, c9.w
+    mad_pp r1.z, r1.w, -c9.w, -r1.z
+    mad_pp r1.w, r3.w, r1.z, r2.y
+    add_pp r2.z, -r3.w, -c11.z
+    mad_pp r1.z, r2.x, r1.z, r2.y
+    mad r1.z, r1.z, r1.w, c13.z
+    rcp_pp r1.z, r1.z
+    mul_pp r1.y, r1.y, r1.z
+    mul_pp r1.y, r2.x, r1.y
+    mul_pp r1.y, r1.y, c9.x
+    max_pp r2.y, r1.y, c11.w
+    mul_pp r1.yzw, r0.xxyz, r2.y
+    add_pp r2.y, -r1.x, -c11.z
+    mul_pp r1.x, r1.x, r1.x
+    dp2add_pp r0.w, r1.x, r0.w, -c11.x
+    mul_pp r1.x, r2.y, r2.y
+    mul_pp r1.x, r1.x, r1.x
+    mul_pp r1.x, r2.y, r1.x
+    lrp_pp r3.xyz, r1.x, -c11.z, r4
+    mul_pp r1.xyz, r1.yzww, r3
+    mul_pp r1.w, r2.z, r2.z
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r1.w, r2.z, r1.w
+    mad_pp r1.w, r0.w, r1.w, -c11.z
+    add_pp r2.y, -r2.x, -c11.z
+    mul_pp r2.z, r2.y, r2.y
+    mul_pp r2.z, r2.z, r2.z
+    mul_pp r2.y, r2.y, r2.z
+    mad_pp r0.w, r0.w, r2.y, -c11.z
+    mul_pp r0.w, r1.w, r0.w
+    mul_pp r0.w, r2.x, r0.w
+    mul_pp r0.xyz, r0.w, r0
+    max_pp r0.w, r4.x, r4.y
+    max_pp r1.w, r0.w, r4.z
+    add_pp r0.w, -r1.w, -c11.z
+    texld_pp r2, v0.zwzw, s5
+    mul_pp r2.xyz, r2, c7
+    texld_pp r3, v0, s2
+    mad_pp r4.xyz, r3, r2, c10
+    mul_pp r2.xyz, r2, r3
+    mad_pp r3.xyz, r4, c11.x, -r2
+    mul_pp r1.w, c10.w, v5.y
+    mad_pp r2.xyz, r1.w, r3, r2
+    mul_pp r2.xyz, r0.w, r2
+    mad_pp oC0.xyz, r2, r0, r1
+    mov_pp oC0.w, -c11.z

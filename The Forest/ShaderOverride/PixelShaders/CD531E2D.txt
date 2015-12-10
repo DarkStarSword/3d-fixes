@@ -1,0 +1,241 @@
+// CRC32: CD531E2D | Unity headers extracted from AFS Tree Bark Lower Moss.shader
+// Shader "AFS/Tree Bark Lower Moss" {
+//   Properties {
+//   [Header(Base and Detail Maps)] [Space]  _Color ("Color Variation", Color) = (0.9,0.5,0,0.1)
+//    _MainTex ("Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//   [NoScaleOffset] [Normal]  _BumpTex ("Normal Map", 2D) = "bump" { }
+//   [NoScaleOffset]  _SpecGlossMap ("Detail Mask (G) Noise (B) Occlusion (A)", 2D) = "white" { }
+//   [Space(5)]  _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//   [NoScaleOffset] [Normal]  _DetailNormalMap ("Detail Normal Map", 2D) = "bump" { }
+//   [Space]  _VertexAOStrength ("Brighten Vertex AO", Range(0,2)) = 1.3
+//   [NoScaleOffset] [Space(5)] [Header(Moss)] [Space]  _MossTex ("Moss Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//   [NoScaleOffset]  _MossNormalMap ("Moss Normal Map", 2D) = "bump" { }
+//    _MossTiling ("Moss Tiling (XY)", Vector) = (1,1,0,0)
+//   [Space(10)]  _MossNormalStrength ("Moss Normal Strength", Range(0,1)) = 0.75
+//    _MossContrast ("Moss Density", Range(0,1)) = 0
+//    _MossSpread ("Moss Spread", Range(0,1)) = 0
+//    _MossHeight ("Moss Height", Range(0,100)) = 5
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 70600
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" }
+//           Matrix 0 [_LightMatrix0]
+//           Vector 11 [_Color]
+//           Vector 9 [_LightColor0]
+//           Vector 6 [_LightShadowData]
+//           Float 12 [_MossContrast]
+//           Float 14 [_MossNormalStrength]
+//           Vector 13 [_MossTiling]
+//           Vector 4 [_WorldSpaceCameraPos]
+//           Vector 5 [_WorldSpaceLightPos0]
+//           Vector 8 [unity_ColorSpaceDielectricSpec]
+//           Vector 7 [unity_ColorSpaceDouble]
+//           Vector 10 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_ShadowMapTexture] 2D 0
+//           SetTexture 1 [_LightTexture0] 2D 1
+//           SetTexture 2 [_LightTextureB0] 2D 2
+//           SetTexture 3 [_MainTex] 2D 3
+//           SetTexture 4 [_BumpTex] 2D 4
+//           SetTexture 5 [_SpecGlossMap] 2D 5
+//           SetTexture 6 [_DetailAlbedoMap] 2D 6
+//           SetTexture 7 [_DetailNormalMap] 2D 7
+//           SetTexture 8 [_MossTex] 2D 8
+//           SetTexture 9 [_MossNormalMap] 2D 9
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c15, 2, -1, 0, 1
+    def c16, 0.5, -0.5, 0.00100000005, 31.622776
+    def c17, 9.99999975e-005, 0.967999995, 0.0299999993, 10
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_color_pp v5.xy
+    dcl_texcoord5 v6
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_2d s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors AFS_Tree Bark Lower Moss/fp/CD531E2D.txt
+mov r30, c4
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s4
+    mad_pp r0.xy, r0.wyzw, c15.x, c15.y
+    dp2add_sat_pp r0.z, r0, r0, c15.z
+    add_pp r0.z, -r0.z, c15.w
+    rsq_pp r0.z, r0.z
+    rcp_pp r0.z, r0.z
+    texld_pp r1, v0.zwzw, s7
+    mad_pp r1.xy, r1.wyzw, c15.x, c15.y
+    dp2add_sat_pp r0.w, r1, r1, c15.z
+    add_pp r1.xy, r0, r1
+    add_pp r0.x, -r0.w, c15.w
+    rsq_pp r0.x, r0.x
+    rcp_pp r0.x, r0.x
+    mul_pp r1.z, r0.x, r0.z
+    dp3_pp r0.x, r1, r1
+    rsq_pp r0.x, r0.x
+    mul r0.yz, c13.xxyw, v0.xxyw
+    texld_pp r2, r0.yzzw, s9
+    texld_pp r3, r0.yzzw, s8
+    mad_pp r2.xy, r2.wyzw, c15.x, c15.y
+    dp2add_sat_pp r0.y, r2, r2, c15.z
+    add_pp r0.y, -r0.y, c15.w
+    rsq_pp r0.y, r0.y
+    rcp_pp r2.z, r0.y
+    mad_pp r0.yzw, r1.xxyz, -r0.x, r2.xxyz
+    mul_pp r1.xyz, r0.x, r1
+    mov r2.xy, c16
+    mad r0.x, v5.x, c12.x, r2.y
+    mad_sat r0.x, r0.x, c12.x, r2.x
+    texld_pp r2, v0, s5
+    mul_pp r0.x, r0.x, r2.z
+    mul_pp r0.x, r0.x, r0.x
+    mul_pp r0.x, r0.x, r0.x
+    mul_pp r1.w, r0.x, c14.x
+    mad_pp r0.yzw, r1.w, r0, r1.xxyz
+    nrm_pp r1.xyz, r0.yzww
+    dp3_pp r4.x, v1, r1
+    dp3_pp r4.y, v2, r1
+    dp3_pp r4.z, v3, r1
+    nrm_pp r1.xyz, r4
+    add r0.yzw, r30.xxyz, -v4.xxyz
+    nrm_pp r5.xyz, r0.yzww
+    add r0.yzw, c5.xxyz, -v4.xxyz
+    dp3 r1.w, r0.yzww, r0.yzww
+    rsq r1.w, r1.w
+    mad_pp r2.xzw, r0.yyzw, r1.w, r5.xyyz
+    dp3_pp r4.w, r1, r5
+    max_pp r5.x, r4.w, c15.z
+    mul_pp r0.yzw, r0, r1.w
+    dp3_pp r1.w, r2.xzww, r2.xzww
+    add r4.w, -r1.w, c16.z
+    rsq_pp r1.w, r1.w
+    cmp_pp r1.w, r4.w, c16.w, r1.w
+    mul_pp r2.xzw, r1.w, r2
+    dp3_pp r1.x, r1, r2.xzww
+    dp3_pp r1.y, r0.yzww, r2.xzww
+    dp3_pp r0.y, r4, r0.yzww
+    max_pp r1.z, r0.y, c15.z
+    max_pp r0.y, r1.y, c15.z
+    max_pp r0.z, r1.x, c15.z
+    texld_pp r4, v0.zwzw, s6
+    mul_pp r1.xyw, r4.xyzz, c7.xyzz
+    add_pp r0.w, -r2.y, c15.w
+    mad_pp r1.xyw, r1, r2.y, r0.w
+    texld_pp r2, v0, s3
+    mad_pp r4.xyz, r2, r1.xyww, c11
+    mul_pp r1.xyw, r1, r2.xyzz
+    mad_pp r4.xyz, r4, c16.x, -r1.xyww
+    mul_pp r0.w, c11.w, v5.y
+    mad_pp r2.xyz, r0.w, r4, r1.xyww
+    lrp_pp r4, r0.x, r3, r2
+    add_pp r0.x, -r4.w, c15.w
+    add_pp r0.w, -r0.x, c15.w
+    mad_pp r0.w, r0.w, c17.y, c17.z
+    log_pp r0.w, r0.w
+    rcp r0.w, r0.w
+    mul_pp r0.w, r0.w, c17.w
+    mul_pp r1.x, r0.w, r0.w
+    mad_pp r0.w, r0.w, r0.w, c15.w
+    mul_pp r0.w, r0.w, c10.y
+    pow_pp r2.x, r0.z, r1.x
+    mul_pp r0.z, r0.w, r2.x
+    mul_pp r0.w, r0.x, r0.x
+    mul_pp r1.x, r0.w, c10.w
+    mov r1.w, c15.w
+    mad_pp r0.w, r0.w, -c10.w, r1.w
+    mad_pp r1.y, r5.x, r0.w, r1.x
+    add_pp r2.x, -r5.x, c15.w
+    mad_pp r0.w, r1.z, r0.w, r1.x
+    mad r0.w, r0.w, r1.y, c17.x
+    rcp_pp r0.w, r0.w
+    mul_pp r0.z, r0.z, r0.w
+    mul_pp r0.z, r1.z, r0.z
+    mul_pp r0.z, r0.z, c10.x
+    max_pp r1.x, r0.z, c15.z
+    mad r3, v4.xyzx, c15.wwwz, c15.zzzw
+    dp4 r0.z, c3, r3
+    rcp r0.z, r0.z
+    dp4 r5.x, c0, r3
+    dp4 r5.y, c1, r3
+    dp4 r5.z, c2, r3
+    mad r0.zw, r5.xyxy, r0.z, c16.x
+    dp3 r1.y, r5, r5
+    texld_pp r3, r1.y, s2
+    texld_pp r6, r0.zwzw, s1
+    mul r0.z, r3.x, r6.w
+    cmp r0.z, -r5.z, c15.z, r0.z
+    texldp_pp r3, v6, s0
+    lrp_pp r0.w, r3.x, r1.w, c6.x
+    mul_pp r0.z, r0.w, r0.z
+    mul_pp r2.yzw, r0.z, c9.xxyz
+    mul_pp r3.xyz, r1.x, r2.yzww
+    add_pp r0.z, -r0.y, c15.w
+    mul_pp r0.y, r0.y, r0.y
+    dp2add_pp r0.x, r0.y, r0.x, c16.y
+    mul_pp r0.y, r0.z, r0.z
+    mul_pp r0.y, r0.y, r0.y
+    mul_pp r0.y, r0.z, r0.y
+    lrp_pp r5.xyz, r0.y, r1.w, c8
+    mul_pp r0.yzw, r3.xxyz, r5.xxyz
+    mul_pp r1.x, r2.x, r2.x
+    mul_pp r1.x, r1.x, r1.x
+    mul_pp r1.x, r2.x, r1.x
+    mad_pp r1.x, r0.x, r1.x, c15.w
+    add_pp r1.y, -r1.z, c15.w
+    mul_pp r1.w, r1.y, r1.y
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r1.y, r1.y, r1.w
+    mad_pp r0.x, r0.x, r1.y, c15.w
+    mul_pp r0.x, r1.x, r0.x
+    mul_pp r0.x, r1.z, r0.x
+    mul_pp r1.xyz, r0.x, r2.yzww
+    max_pp r0.x, c8.x, c8.y
+    max_pp r1.w, r0.x, c8.z
+    add_pp r0.x, -r1.w, c15.w
+    mul_pp r2.xyz, r0.x, r4
+    mad_pp oC0.xyz, r2, r1, r0.yzww
+    mov_pp oC0.w, c15.w
