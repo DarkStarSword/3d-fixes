@@ -1,0 +1,159 @@
+// CRC32: 146A49F3 | Matched 4 variants of 1 shaders: Lux/Particles/Lit Particles Sun simple vertex Lights
+// 
+//    Unity headers extracted from Lux litParticles 02 Sun simple vertexLights.shader
+//    Shader "Lux/Particles/Lit Particles Sun simple vertex Lights" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Color (RGBA)", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _DirLightStrength ("Directional Light Strength", Range(0,1)) = 1
+//       _AmbientStrength ("Ambient Strength", Range(0,1)) = 1
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One OneMinusSrcAlpha
+//          GpuProgramID 14570
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 8 [_Camera2World] 3
+//              Matrix 4 [glstate_matrix_mvp]
+//              Float 28 [FogStartDistance]
+//              Float 27 [Visibility]
+//              Float 25 [_AmbientStrength]
+//              Float 26 [_DirLightStrength]
+//              Vector 24 [_MainTex_ST]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//              Vector 30 [_SunShineSunDir]
+//              Vector 29 [_SunShineSunLight]
+//              Vector 16 [unity_4LightAtten0]
+//              Vector 13 [unity_4LightPosX0]
+//              Vector 14 [unity_4LightPosY0]
+//              Vector 15 [unity_4LightPosZ0]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 19 [unity_SHAb]
+//              Vector 18 [unity_SHAg]
+//              Vector 17 [unity_SHAr]
+//              Vector 22 [unity_SHBb]
+//              Vector 21 [unity_SHBg]
+//              Vector 20 [unity_SHBr]
+//              Vector 23 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c31, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_color v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_color o2
+    dcl_texcoord1 o3
+    dcl_texcoord2 o4.xyz
+    dcl_texcoord3 o5.xy
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.y, c5, v0
+    mul r1.x, r0.y, c11.x
+    mul r1.w, r1.x, c31.x
+    dp4 r0.x, c4, v0
+    dp4 r0.w, c7, v0
+
+mov o0, r0 // Relocated from line 140 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Lux_Particles_Lit Particles Sun simple vertex Lights/vp/146A49F3.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c31.x
+    mad o3.xy, r1.z, c12.zwzw, r1.xwzw
+    mad o1.xy, v2, c24, c24.zwzw
+    dp4 r1.x, c9, v0
+    add r1, -r1.x, c14
+    mul r2, r1, v1.y
+    mul r1, r1, r1
+    dp4 r3.x, c8, v0
+    add r3, -r3.x, c13
+    mad r2, r3, v1.x, r2
+    mad r1, r3, r3, r1
+    dp4 r3.x, c10, v0
+    add r3, -r3.x, c15
+    mad r2, r3, v1.z, r2
+    mad r1, r3, r3, r1
+    rsq r3.x, r1.x
+    rsq r3.y, r1.y
+    rsq r3.z, r1.z
+    rsq r3.w, r1.w
+    mov r4.y, c31.y
+    mad r1, r1, c16, r4.y
+    mul r2, r2, r3
+    max r2, r2, c31.z
+    rcp r3.x, r1.x
+    rcp r3.y, r1.y
+    rcp r3.z, r1.z
+    rcp r3.w, r1.w
+    mul r1, r2, r3
+    mul r2.xyz, r1.y, c1
+    mad r2.xyz, c0, r1.x, r2
+    mad r1.xyz, c2, r1.z, r2
+    mad r1.xyz, c3, r1.w, r1
+    mul r1.w, v1.y, v1.y
+    mad r1.w, v1.x, v1.x, -r1.w
+    mul r2, v1.yzzx, v1.xyzz
+    dp4 r3.x, c20, r2
+    dp4 r3.y, c21, r2
+    dp4 r3.z, c22, r2
+    mad r2.xyz, c23, r1.w, r3
+    mad r3, v1.xyzx, c31.yyyz, c31.zzzy
+    dp4 r4.x, c17, r3
+    dp4 r4.y, c18, r3
+    dp4 r4.z, c19, r3
+    add r2.xyz, r2, r4
+    mad r1.xyz, r2, c25.x, r1
+    dp3_sat r1.w, v1, c30
+    mul r2.xyz, r1.w, c29
+    mad o4.xyz, r2, c26.x, r1
+    rcp r1.x, c27.x
+    dp4 r0.z, c6, v0
+    add r1.y, r0.z, -c28.x
+    max r1.y, r1.y, c31.z
+    mul r1.x, r1.x, r1.y
+    max r1.x, r1.x, c31.z
+    exp r1.x, -r1.x
+    add o5.y, -r1.x, c31.y
+
+//     mov o0, r0 // Relocated to line 84 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o3.zw, r0
+    mov o2, v3
+    mov o5.x, c31.z

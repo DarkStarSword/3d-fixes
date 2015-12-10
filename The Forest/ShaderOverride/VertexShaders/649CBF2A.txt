@@ -1,0 +1,148 @@
+// CRC32: 649CBF2A | Matched 2 variants of 1 shaders: AFS/Tree Bark Lower Moss
+// 
+//    Unity headers extracted from AFS Tree Bark Lower Moss.shader
+//    Shader "AFS/Tree Bark Lower Moss" {
+//      Properties {
+//      [Header(Base and Detail Maps)] [Space]  _Color ("Color Variation", Color) = (0.9,0.5,0,0.1)
+//       _MainTex ("Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//      [NoScaleOffset] [Normal]  _BumpTex ("Normal Map", 2D) = "bump" { }
+//      [NoScaleOffset]  _SpecGlossMap ("Detail Mask (G) Noise (B) Occlusion (A)", 2D) = "white" { }
+//      [Space(5)]  _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//      [NoScaleOffset] [Normal]  _DetailNormalMap ("Detail Normal Map", 2D) = "bump" { }
+//      [Space]  _VertexAOStrength ("Brighten Vertex AO", Range(0,2)) = 1.3
+//      [NoScaleOffset] [Space(5)] [Header(Moss)] [Space]  _MossTex ("Moss Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//      [NoScaleOffset]  _MossNormalMap ("Moss Normal Map", 2D) = "bump" { }
+//       _MossTiling ("Moss Tiling (XY)", Vector) = (1,1,0,0)
+//      [Space(10)]  _MossNormalStrength ("Moss Normal Strength", Range(0,1)) = 0.75
+//       _MossContrast ("Moss Density", Range(0,1)) = 0
+//       _MossSpread ("Moss Spread", Range(0,1)) = 0
+//       _MossHeight ("Moss Height", Range(0,100)) = 5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 2/3 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 70600
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 16 [_DetailAlbedoMap_ST]
+//              Vector 15 [_MainTex_ST]
+//              Float 13 [_MossHeight]
+//              Float 14 [_MossSpread]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Float 12 [_VertexAOStrength]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c17, 0.100000001, -0.5, 0.5, 0.75
+    def c18, 1, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_color o6
+    dcl_texcoord5 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mov r0.w, c4.w
+    add r0.x, r0.w, c6.w
+    mul r0.x, r0.x, c17.x
+    frc r0.x, r0.x
+    add r0.x, r0.x, c17.y
+    add r0.x, r0_abs.x, r0_abs.x
+    max r0.y, r0.x, c17.z
+    mov o6.y, r0.x
+    mul r0.x, r0.y, c13.x
+    mad r0.y, c13.x, r0.y, -v0.y
+    mul r0.x, r0.x, c17.w
+    rcp r0.x, r0.x
+    mul_sat r0.x, r0.x, r0.y
+    mul r1, c8.zxyz, v2.y
+    mad r1, c7.zxyz, v2.x, r1
+    mad r1, c9.zxyz, v2.z, r1
+    dp3 r0.y, r1.yzww, r1.yzww
+    rsq r0.y, r0.y
+    mul r1, r0.y, r1
+    mov_sat r1.x, -r1.x
+    add r0.y, -r1.x, c18.x
+    mad r0.y, c14.x, r0.y, r1.x
+    mul o6.x, r0.x, r0.y
+    mul_sat o6.w, c12.x, v4.w
+    mad o1.xy, v3, c15, c15.zwzw
+    mad o1.zw, v3.xyxy, c16.xyxy, c16
+    dp4 o5.x, c4, v0
+    dp4 o5.y, c5, v0
+    dp4 o5.z, c6, v0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r2.w, r1.x, c17.z
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 112 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Lower Moss/vp/649CBF2A.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r2.xz, r0.xyww, c17.z
+    mad o7.xy, r2.z, c11.zwzw, r2.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 109 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o7.zw, r0
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r2.xyz, r0, r1.wyzw
+    mad r2.xyz, r1.zwyw, r0.yzxw, -r2
+    mul r2.xyz, r2, v1.w
+    mov o2.y, r2.x
+    mov o2.z, r1.y
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.z
+    mov o4.z, r1.w
+    mov o6.z, v4.z

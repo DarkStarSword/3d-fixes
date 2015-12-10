@@ -1,0 +1,115 @@
+// CRC32: DD0C217A | Matched 2 variants of 1 shaders: Hidden/Amplify Motion/SkinnedVectors
+// 
+//    Unity headers extracted from SkinnedVectors.shader
+//    Shader "Hidden/Amplify Motion/SkinnedVectors" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.25
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+// 1:     Pass 5/8 {
+// 2:     Pass 6/8 {
+// 2:       Name "MOB_CUTOUT"
+// 1:       Name "MOB_OPAQUE"
+//          Tags { "RenderType"="Opaque" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset -1, -1
+// 1:       GpuProgramID 282848
+// 2:       GpuProgramID 352396
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 4 [_AM_MATRIX_PREV_MVP]
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 13 [_AM_MAX_VELOCITY]
+//              Float 12 [_AM_MIN_VELOCITY]
+//              Float 11 [_AM_MOTION_SCALE]
+//              Float 10 [_AM_OBJECT_ID]
+//              Float 14 [_AM_RCP_TOTAL_VELOCITY]
+//              Vector 15 [_MainTex_ST]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              SetTexture 0 [_AM_PREV_VERTEX_TEX] 2D 0
+//              SetTexture 1 [_AM_CURR_VERTEX_TEX] 2D 1
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c16, 1, 0, 9.99999994e-009, -2
+    def c17, 0.5, 0, 1, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_texcoord1 v2
+    dcl_2d s0
+    dcl_2d s1
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xy
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s2
+
+    mul r0, c16.xxyy, v2.xyxx
+    texldl r1, r0, s0
+    texldl r0, r0, s1
+    dp4 r2.x, c5, r1
+    mov r2.y, -r2.x
+    dp4 r2.z, c7, r1
+    dp4 r2.x, c4, r1
+    rcp r1.x, r2.z
+    mul r1.xy, r1.x, r2
+    mad r2, v0.xyzx, c16.xxxy, c16.yyyx
+    mad r0, r2, c16.z, r0
+    dp4 r2.w, c3, r0
+    rcp r1.z, r2.w
+    dp4 r3.y, c1, r0
+    mov r2.y, -r3.y
+    dp4 r2.x, c0, r0
+    dp4 r3.z, c2, r0
+    mad r0.xy, r2, r1.z, -r1
+    mul r0.xy, r0, c11.x
+    mul r0.zw, r0.xyxy, r0.xyxy
+    add r0.z, r0.w, r0.z
+    rsq r0.z, r0.z
+    mul r0.xy, r0.z, r0
+    rcp r0.z, r0.z
+    mad o1.xy, r0, c17.x, c17.x
+    slt r0.x, r0.z, c12.x
+    mad r0.x, r0.x, -r0.z, r0.z
+    min r0.x, r0.x, c13.x
+    add r0.x, r0.x, -c12.x
+    max r0.x, r0.x, c16.y
+    mul o1.z, r0.x, c14.x
+    mov r0.y, c16.y
+    slt r0.x, r0.y, c8.x
+    mul r0.x, r0.x, r3.y
+    mad r2.z, r0.x, c16.w, r3.y
+    mov r0.xyz, c17
+    mad r0.xyz, c8.x, r0.yzyw, r0.xyxw
+    mul r0.xyz, r0, r2.xzww
+    mov r3.xw, r2
+    mul r0.w, r0.y, c17.x
+    mad o2.xy, r0.z, c9.zwzw, r0.xwzw
+    mad o3.xy, v1, c15, c15.zwzw
+    mov o0, r3
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Hidden_Amplify Motion_SkinnedVectors/vp/DD0C217A.txt
+texldl r31, c220.z, s2
+add r31.w, r3.w, -r31.y
+mad r3.x, r31.w, r31.x, r3.x
+
+    mov o2.zw, r3
+    mov o1.w, c10.x
