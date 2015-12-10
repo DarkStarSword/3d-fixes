@@ -1,80 +1,38 @@
-// CRC32: E8C86F92 | Matched 6 variants of 2 shaders: Hidden/Internal-PrePassLighting, Hidden/Sunshine-PrePassLighting
-// 
-//    Unity headers extracted from Internal-PrePassLighting.shader
-//    Shader "Hidden/Internal-PrePassLighting" {
-//      Properties {
-//       _LightTexture0 ("", any) = "" { }
-//       _LightTextureB0 ("", 2D) = "" { }
-//       _ShadowMapTexture ("", any) = "" { }
-//      }
-//      Fallback Off
-//      SubShader 1/1 {
-//        Pass 2/3 {
-//          Tags { "SHADOWSUPPORT"="true" }
-//          ZWrite Off
-//          Blend One One
-//          GpuProgramID 113408
-//          Program "fp" {
-//            SubProgram "d3d9 " {
-//              Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
-//              Matrix 0 [_CameraToWorld] 3
-//              Matrix 3 [_LightMatrix0] 2
-//              Vector 11 [_LightColor]
-//              Vector 10 [_LightDir]
-//              Vector 6 [_ProjectionParams]
-//              Vector 5 [_WorldSpaceCameraPos]
-//              Vector 7 [_ZBufferParams]
-//              Vector 9 [unity_ColorSpaceLuminance]
-//              Vector 12 [unity_LightmapFade]
-//              Vector 8 [unity_ShadowFadeCenterAndType]
-//              SetTexture 0 [_CameraDepthTexture] 2D 0
-//              SetTexture 1 [_LightTexture0] 2D 1
-//              SetTexture 2 [_CameraNormalsTexture] 2D 2
-//            }
-//          }
-//        }
-//      }
-//    }
-// 
-//     Unity headers extracted from Sunshine-PrePassLighting.shader
-//     Shader "Hidden/Sunshine-PrePassLighting" {
-//       Properties {
-//        _LightTexture0 ("", any) = "" { }
-//        _LightTextureB0 ("", 2D) = "" { }
-//        _ShadowMapTexture ("", any) = "" { }
-//       }
-//       Fallback Off
-//       SubShader 1/1 {
-//         Pass 2/3 {
-//           Tags { "SHADOWSUPPORT"="true" }
-//           ZWrite Off
-//           Blend One One
-//           GpuProgramID 124095
-//           Program "fp" {
-//             SubProgram "d3d9 " {
-// 01:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "SUNSHINE_DISABLED" }
-// 10:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_HARD" }
-// 08:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_2x2" }
-// 04:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_3x3" }
-// 02:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "SUNSHINE_FILTER_PCF_4x4" }
-//               Matrix 0 [_CameraToWorld] 3
-//               Matrix 3 [_LightMatrix0] 2
-//               Vector 11 [_LightColor]
-//               Vector 10 [_LightDir]
-//               Vector 6 [_ProjectionParams]
-//               Vector 5 [_WorldSpaceCameraPos]
-//               Vector 7 [_ZBufferParams]
-//               Vector 9 [unity_ColorSpaceLuminance]
-//               Vector 12 [unity_LightmapFade]
-//               Vector 8 [unity_ShadowFadeCenterAndType]
-//               SetTexture 0 [_CameraDepthTexture] 2D 0
-//               SetTexture 1 [_LightTexture0] 2D 1
-//               SetTexture 2 [_CameraNormalsTexture] 2D 2
-//             }
-//           }
+// CRC32: E8C86F92 | Unity headers extracted from Internal-PrePassLighting.shader
+// Shader "Hidden/Internal-PrePassLighting" {
+//   Properties {
+//    _LightTexture0 ("", any) = "" { }
+//    _LightTextureB0 ("", 2D) = "" { }
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 2/3 {
+//       Tags { "SHADOWSUPPORT"="true" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 113408
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+//           Matrix 0 [_CameraToWorld] 3
+//           Matrix 3 [_LightMatrix0] 2
+//           Vector 11 [_LightColor]
+//           Vector 10 [_LightDir]
+//           Vector 6 [_ProjectionParams]
+//           Vector 5 [_WorldSpaceCameraPos]
+//           Vector 7 [_ZBufferParams]
+//           Vector 9 [unity_ColorSpaceLuminance]
+//           Vector 12 [unity_LightmapFade]
+//           Vector 8 [unity_ShadowFadeCenterAndType]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_LightTexture0] 2D 1
+//           SetTexture 2 [_CameraNormalsTexture] 2D 2
 //         }
 //       }
 //     }
+//   }
+// }
 // 
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
@@ -92,6 +50,19 @@ dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjectio
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/E8C86F92.txt
+mov r30, c5
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+mul r29.x, r29.x, v5.x
+dp4 r28.x, c0, r29
+dp4 r28.y, c1, r29
+dp4 r28.z, c2, r29
+add r30.xyz, r30, -r28
 
     mov r0.xyz, c11
     mul_pp r0.xyw, r0.xyzz, c9.xyzz
@@ -113,20 +84,19 @@ dcl_2d s15
     rcp r0.w, v1.z
     mul r0.w, r0.w, c6.z
     mul r1.xyz, r0.w, v1
-    mul r3.xyz, r0.y, r1 // depth in r3.z
+    mul r3.xyz, r0.y, r1
     mov r3.w, c13.x
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py --stereo-sampler-ps=s15 --fix-unity-lighting-ps --ignore-register-errors --in-place E8C86F92.txt
-texldl r31, c220.z, s15
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/E8C86F92.txt
 add r31.w, r3.z, -r31.y
 mul r31.w, r31.w, r31.x
 mad r3.x, -r31.w, v5.x, r3.x
 
     dp4 r4.x, c0, r3
     dp4 r4.y, c1, r3
-    dp4 r4.z, c2, r3
-    add r1.xyw, r4.xyzz, -c5.xyzz
+    dp4 r4.z, c2, r3 // depth in r3.z
+    add r1.xyw, r4.xyzz, -r30.xyzz
     dp3 r0.w, r1.xyww, r1.xyww
     rsq r0.w, r0.w
     mad r1.xyw, r1, -r0.w, -c10.xyzz
