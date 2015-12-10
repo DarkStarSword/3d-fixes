@@ -712,7 +712,7 @@ def decode_unity_d3d11_shader(asm):
     # Not sure what it is (flags? checksum?), don't really care either.
     if asm.startswith('root12:'):
         root12 = _decode_unity_d3d11_shader(asm[7:15])
-        print('root12: 0x%08x' % struct.unpack('<I', root12)[0])
+        # print('root12: 0x%08x' % struct.unpack('<I', root12)[0])
         asm = asm[asm.find('\n')+1:]
 
     return _decode_unity_d3d11_shader(asm)
