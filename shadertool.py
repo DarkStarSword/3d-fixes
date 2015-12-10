@@ -869,6 +869,12 @@ def get_alias(game):
     except IOError:
         return game
 
+def game_git_dir(game_dir):
+    game = os.path.basename(game_dir)
+    script_dir = os.path.dirname(__file__)
+    alias = get_alias(game)
+    return os.path.join(script_dir, alias)
+
 def install_shader_to_git(shader, file, args):
     game_dir = find_game_dir(file)
 
@@ -877,10 +883,7 @@ def install_shader_to_git(shader, file, args):
     while os.path.basename(game_dir).lower() in blacklisted_names:
         game_dir = os.path.realpath(os.path.join(game_dir, '..'))
 
-    game = os.path.basename(game_dir)
-    script_dir = os.path.dirname(__file__)
-    alias = get_alias(game)
-    dest_dir = os.path.join(script_dir, alias)
+    dest_dir = game_git_dir(game_dir)
 
     return install_shader_to(shader, file, args, dest_dir, True)
 
