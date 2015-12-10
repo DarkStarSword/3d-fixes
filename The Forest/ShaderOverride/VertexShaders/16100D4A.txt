@@ -107,13 +107,29 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r10, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Foliage Shader Deferred SingleSided Touch v4 Stipple/vp/16100D4A.txt
+mov r30, c18
+mov r29, c220.x
+mul r29.x, r10.x, -r10.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mad o5.xy, v3, c42, c42.zwzw
     rcp r0.x, c39.x
     mul o5.z, r0.x, v0.y
     dp4 r0.x, c8, v0
     dp4 r0.y, c9, v0
     dp4 r0.z, c10, v0
-    add r1.xyz, -r0, c18
+    add r1.xyz, -r0, r30
     dp3 r1.x, r1, r1
     rsq r1.x, r1.x
     rcp r1.x, r1.x
@@ -200,7 +216,7 @@ dcl_2d s0
     dp4 r0.x, c8, r1
     dp4 r0.y, c9, r1
     dp4 r0.z, c10, r1
-    add r2.xy, r0.xzzw, -c18.xzzw
+    add r2.xy, r0.xzzw, -r30.xzzw
     mul r2.xy, r2, r2
     add r0.w, r2.y, r2.x
     mov r2.x, c36.x
@@ -215,7 +231,7 @@ dcl_2d s0
     mul_sat o7.x, r0.w, r2.x
     nrm r3.xyz, v2
     nrm r4.xyz, v1
-    add r2.xzw, -r0.xyyz, c18.xyyz
+    add r2.xzw, -r0.xyyz, r30.xyyz
     nrm r5.xyz, r2.xzww
     mul r6, r3.y, c13.xyzz
     mad r6, c12.xyzz, r3.x, r6
@@ -284,7 +300,7 @@ dcl_2d s0
 mov o0, r5 // Relocated from line 283 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./AFS_Foliage Shader Deferred SingleSided Touch v4 Stipple/vp/16100D4A.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Foliage Shader Deferred SingleSided Touch v4 Stipple/vp/16100D4A.txt
 texldl r31, c220.z, s0
 add r31.w, r5.w, -r31.y
 mad r5.x, r31.w, r31.x, r5.x

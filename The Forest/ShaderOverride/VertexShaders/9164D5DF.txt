@@ -139,6 +139,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r6, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Outline/vp/9164D5DF.txt
+mov r30, c14
+mov r29, c220.x
+mul r29.x, r6.x, -r6.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mad o1.xy, v2, c25, c25.zwzw
     abs r0.x, c27.x
     sge r0.x, -r0.x, r0.x
@@ -148,7 +164,7 @@ dcl_2d s0
     dp4 r0.x, c8, v0
     dp4 r0.y, c9, v0
     dp4 r0.z, c10, v0
-    add o2.xyz, r0, -c14
+    add o2.xyz, r0, -r30
     dp4 r1.y, c5, v0
     mul r0.w, r1.y, c15.x
     mul r2.w, r0.w, c28.x
@@ -158,7 +174,7 @@ dcl_2d s0
 mov o0, r1 // Relocated from line 196 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Outline/vp/9164D5DF.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Outline/vp/9164D5DF.txt
 texldl r31, c220.z, s0
 add r31.w, r1.w, -r31.y
 mad r1.x, r31.w, r31.x, r1.x

@@ -106,6 +106,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r14, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling/vp/17494EC9.txt
+mov r30, c11
+mov r29, c220.x
+mul r29.x, r14.x, -r14.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mul r0.xy, c44, v5.x
     frc r0.xy, r0
     mad r0.xz, r0.xyyw, c44.z, c44.w
@@ -119,7 +135,7 @@ dcl_2d s0
     dp4 r2.x, c4, v0
     dp4 r2.y, c5, v0
     dp4 r2.z, c6, v0
-    add r3.xy, r2.xzzw, -c11.xzzw
+    add r3.xy, r2.xzzw, -r30.xzzw
     mul r3.xy, r3, r3
     add r0.w, r3.y, r3.x
     mov r3.xzw, c44
@@ -493,7 +509,7 @@ dcl_2d s0
     mul r0.w, r0.w, r1.w
     add r1.w, r3.x, -c23.x
     mul_sat o7.x, r0.w, r1.w
-    add r2.xyz, -r2, c11
+    add r2.xyz, -r2, r30
     nrm r3.xyz, r2
     mul r2, r0.y, c8.xyzz
     mad r2, c7.xyzz, r0.x, r2
@@ -541,7 +557,7 @@ dcl_2d s0
 mov o0, r2 // Relocated from line 540 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling/vp/17494EC9.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling/vp/17494EC9.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x

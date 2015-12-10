@@ -146,11 +146,27 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r4, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Nature_Terrain_CMU_3 5_2 boosted/vp/32DD8EE6.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r4.x, -r4.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     rcp r0.x, c20.x
     dp4 r1.x, c4, v0
     dp4 r1.z, c6, v0
     dp4 r1.y, c5, v0
-    add r0.yzw, -r1.xxyz, c10.xxyz
+    add r0.yzw, -r1.xxyz, r30.xxyz
     mov o1.w, r1.x
     mov o3.w, r1.z
     dp3 r0.y, r0.yzww, r0.yzww
@@ -165,7 +181,7 @@ dcl_2d s0
     rcp r0.x, c24.x
     mul_sat r0.x, r0.x, r0.y
     mov r2.xy, c25
-    mad r2, c10.xyzx, r2.yyyx, r2.xxxy
+    mad r2, r30.xyzx, r2.yyyx, r2.xxxy
     dp4 r3.x, c7, r2
     dp4 r3.y, c8, r2
     dp4 r3.z, c9, r2
@@ -211,7 +227,7 @@ dcl_2d s0
 mov o0, r2 // Relocated from line 209 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Nature_Terrain_CMU_3 5_2 boosted/vp/32DD8EE6.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Nature_Terrain_CMU_3 5_2 boosted/vp/32DD8EE6.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x

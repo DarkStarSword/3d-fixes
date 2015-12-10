@@ -150,6 +150,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r5, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/BF319363.txt
+mov r30, c19
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     dp4 o0.z, c6, v0
     mad o1.xy, v2, c23, c23.zwzw
     abs r0.x, c25.x
@@ -160,7 +176,7 @@ dcl_2d s0
     dp4 r0.x, c8, v0
     dp4 r0.y, c9, v0
     dp4 r0.z, c10, v0
-    add o2.xyz, r0, -c19
+    add o2.xyz, r0, -r30
     mul r1.xyz, c17, v1.y
     mad r1.xyz, c16, v1.x, r1
     mad r1.xyz, c18, v1.z, r1
@@ -184,7 +200,7 @@ dcl_2d s0
     dp4 o7.z, c2, r0
     dp4 o7.w, c3, r0
     mov r1.xyw, c28
-    mad r2, c19.xyzx, r1.xxxy, r1.yyyx
+    mad r2, r30.xyzx, r1.xxxy, r1.yyyx
     dp4 r1.x, c16, r2
     dp4 r1.y, c17, r2
     dp4 r1.z, c18, r2
@@ -206,7 +222,7 @@ dcl_2d s0
     mov r1.z, c18.y
     dp3 o8.y, v4, r1
     dp3 o8.z, r2, r1
-    add r1.xyz, -r0, c19
+    add r1.xyz, -r0, r30
     mad r0.xyz, r0, -c22.w, c22
     dp3 r0.w, r1, r1
     rsq r0.w, r0.w
@@ -220,7 +236,7 @@ dcl_2d s0
     mov o0.xyw, r2
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/BF319363.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/BF319363.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x

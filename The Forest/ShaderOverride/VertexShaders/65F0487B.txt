@@ -91,6 +91,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r12, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/65F0487B.txt
+mov r30, c14
+mov r29, c220.x
+mul r29.x, r12.x, -r12.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mov r0.x, c8.w
     mov r0.y, c9.w
     mov r0.z, c10.w
@@ -100,7 +116,7 @@ dcl_2d s0
     frc r0.w, r0.w
     add r0.w, r0.w, c32.y
     add r1.x, r0_abs.w, r0_abs.w
-    add r2.xy, -r0.xzzw, c14.xzzw
+    add r2.xy, -r0.xzzw, r30.xzzw
     mul r2.xy, r2, r2
     add r0.w, r2.y, r2.x
     sge r2.x, r0.w, c31.w
@@ -130,7 +146,7 @@ dcl_2d s0
     add r2.w, r4.w, c32.y
     mul r4.w, r2.w, c27.x
     mad r6.x, c27.x, r2.w, -r6.y
-    add r0.xyz, -r0, c14
+    add r0.xyz, -r0, r30
     dp3 r0.y, r0, r0
     rsq r0.y, r0.y
     mul r7.xy, r0.y, r0.xzzw
@@ -247,7 +263,7 @@ dcl_2d s0
 mov o0, r6 // Relocated from line 246 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/65F0487B.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/65F0487B.txt
 texldl r31, c220.z, s0
 add r31.w, r6.w, -r31.y
 mad r6.x, r31.w, r31.x, r6.x

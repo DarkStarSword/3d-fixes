@@ -1,0 +1,136 @@
+// CRC32: A86414DE | Unity headers extracted from OceanDepth.shader
+// Shader "Ceto/OceanDepth" {
+//   SubShader 9/9 {
+//     Tags { "RenderType"="GrassBillboard" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="GrassBillboard" }
+//       Cull Off
+//       Fog { Mode Off }
+//       GpuProgramID 577553
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           Matrix 7 [_Object2World] 3
+//           Matrix 4 [glstate_matrix_modelview0] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Float 18 [Ceto_MaxDepthDist]
+//           Float 17 [Ceto_OceanLevel]
+//           Vector 14 [_CameraPosition]
+//           Vector 15 [_CameraRight]
+//           Vector 16 [_CameraUp]
+//           Vector 11 [_ProjectionParams]
+//           Vector 13 [_WaveAndDistance]
+//           Vector 12 [_WavingTint]
+//           Vector 10 [_WorldSpaceCameraPos]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c19, 1.20000005, 2, 1.60000002, 4.80000019
+    def c20, 6.40884876, -3.14159274, 0.00833330024, -0.000198409994
+    def c21, 0.00600000005, 0.0199999996, 0.0500000007, -0.161616161
+    def c22, 0.674199879, 0.269679934, 0.134839967, 0.699999988
+    def c23, 0.0240000002, 0.0399999991, -0.119999997, 0.0960000008
+    def c24, 0.00600000005, 0.0199999996, -0.0199999996, 0.100000001
+    def c25, -0.5, 0.5, 0, 1
+    def c26, 0.0120000001, 0.0199999996, 0.0599999987, 0.0240000002
+    dcl_position v0
+    dcl_tangent v1
+    dcl_texcoord v2
+    dcl_color v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+dcl_color o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Ceto_OceanDepth/vp/A86414DE.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, v0, -c14
+    dp3 r0.x, r0, r0
+    slt r0.x, c13.w, r0.x
+    mad r0.xy, r0.x, -v1, v1
+    mad r0.xzw, r0.x, c15.xyyz, v0.xyyz
+    mad r0.xyz, r0.y, c16, r0.xzww
+    mul r1.xy, r0.xzzw, c13.y
+    mul r2, r1.y, c21.xyyz
+    mad r1, r1.x, c26, r2
+    mov r2.x, c13.x
+    mad r1, r2.x, c19, r1
+    frc r1, r1
+    mad r1, r1, c20.x, c20.y
+    mul r2, r1, r1
+    mul r3, r1, r2
+    mad r1, r3, c21.w, r1
+    mul r3, r2, r3
+    mul r2, r2, r3
+    mad r1, r3, c20.z, r1
+    mad r1, r2, c20.w, r1
+    mul r1, r1, r1
+    mul r1, r1, r1
+    mul r2, r1, v1.y
+    dp4 r1.x, r1, c22.xxyz
+    mul r1.x, r1.x, c22.w
+    dp4 r3.x, r2, c23
+    dp4 r3.z, r2, c24
+    mad r0.xz, r3, -c13.z, r0
+    add r1.yzw, r0.xxyz, -c14.xxyz
+    dp3 r1.y, r1.yzww, r1.yzww
+    add r1.y, -r1.y, c13.w
+    add r1.y, r1.y, r1.y
+    mul r1.y, r1.y, c14.w
+    max r1.y, r1.y, c25.z
+    min o3.w, r1.y, c25.w
+    mov r2.x, c25.x
+    add r1.yzw, r2.x, c12.xxyz
+    mad r1.xyz, r1.x, r1.yzww, c25.y
+    mul r1.xyz, r1, v3
+    add o3.xyz, r1, r1
+    mov r0.w, v0.w
+    dp4 o2.x, c0, r0
+    dp4 o2.y, c1, r0
+    dp4 o2.z, c2, r0
+    dp4 o2.w, c3, r0
+    dp4 r1.y, c8, r0
+    add r1.w, r1.y, -c17.x
+    rcp r2.x, c18.x
+    mul o0.x, -r1.w, r2.x
+    dp4 r1.x, c7, r0
+    dp4 r1.z, c9, r0
+    dp4 r0.x, c6, r0
+    mul r0.x, r0.x, c11.w
+    mov o0.z, -r0.x
+    add r0.xyz, r1, -r30
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    rcp r0.y, c11.z
+    mul o0.y, r0.y, r0.x
+    mov o1.xy, v2

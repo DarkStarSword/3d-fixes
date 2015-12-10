@@ -1,0 +1,326 @@
+// CRC32: 5148C628 | Unity headers extracted from AFS Tree Bark Tumbling Moss.shader
+// Shader "AFS/Tree Bark Tumbling Moss" {
+//   Properties {
+//   [Header(Base and Detail Maps)] [Space]  _Color ("Color Variation", Color) = (0.9,0.5,0,0.1)
+//    _MainTex ("Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//   [NoScaleOffset] [Normal]  _BumpTex ("Normal Map", 2D) = "bump" { }
+//   [NoScaleOffset]  _SpecGlossMap ("Detail Mask (G) Noise (B) Occlusion (A)", 2D) = "white" { }
+//   [Space(5)]  _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//   [NoScaleOffset]  _DetailNormalMap ("Detail Normal Map", 2D) = "bump" { }
+//   [Space]  _VertexAOStrength ("Brighten Vertex AO", Range(0,2)) = 1.3
+//   [NoScaleOffset] [Space(5)] [Header(Moss)] [Space]  _MossTex ("Moss Albedo (RGB) Smoothness (A)", 2D) = "white" { }
+//   [NoScaleOffset]  _MossNormalMap ("Moss Normal Map (GA) Occlusion (B)", 2D) = "bump" { }
+//    _MossTiling ("Moss Tiling (XY)", Vector) = (1,1,0,0)
+//   [Space(10)]  _MossNormalStrength ("Moss Normal Strength", Range(0,1)) = 0.75
+//    _MossContrast ("Moss Density", Range(0,1)) = 0
+//    _MossSpread ("Moss Spread", Range(0,1)) = 0
+//    _MossHeight ("Moss Height", Range(0,100)) = 5
+//   [Space(5)] [Header(Wind)] [Space]  _LeafTurbulence ("Leaf Turbulence", Range(0,1)) = 0.5
+//   [Space(5)] [Header(Stippling and Wind Fading)] [Space]  _StippleNear ("Stipple Near", Range(0,600)) = 180
+//    _StippleFar ("Stipple Far", Range(0,600)) = 200
+//    _WindNear ("Wind Near", Range(0,600)) = 180
+//    _WindFar ("Wind Far", Range(0,600)) = 200
+//   [Space(5)] [Enum(Static,0,Falling,1)]  _TreeBendingMode ("Tree Bending Mode", Float) = 0
+//   [HideInInspector]  _Variation ("Variation (set by Script)", Float) = 0
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="AFSTreeBark" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="AFSTreeBark" }
+//       GpuProgramID 26723
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Bind "tangent" TexCoord4
+//           Matrix 8 [_Object2World] 3
+//           Matrix 14 [_TreeRotMatrix] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 4 [glstate_matrix_mvp]
+//           Vector 27 [_AfsTimeFrequency]
+//           Vector 42 [_DetailAlbedoMap_ST]
+//           Vector 37 [_FallingDir]
+//           Vector 36 [_FallingWind]
+//           Float 28 [_LeafTurbulence]
+//           Vector 41 [_MainTex_ST]
+//           Float 39 [_MossHeight]
+//           Float 40 [_MossSpread]
+//           Float 30 [_StippleFar]
+//           Float 29 [_StippleNear]
+//           Float 38 [_TreeBendingMode]
+//           Float 32 [_Variation]
+//           Float 31 [_VertexAOStrength]
+//           Vector 26 [_Wind]
+//           Float 34 [_WindFar]
+//           Float 33 [_WindNear]
+//           Vector 35 [_WindStrengthTrees]
+//           Vector 17 [_WorldSpaceCameraPos]
+//           Vector 21 [unity_4LightAtten0]
+//           Vector 18 [unity_4LightPosX0]
+//           Vector 19 [unity_4LightPosY0]
+//           Vector 20 [unity_4LightPosZ0]
+//           Vector 0 [unity_LightColor0]
+//           Vector 1 [unity_LightColor1]
+//           Vector 2 [unity_LightColor2]
+//           Vector 3 [unity_LightColor3]
+//           Vector 24 [unity_SHBb]
+//           Vector 23 [unity_SHBg]
+//           Vector 22 [unity_SHBr]
+//           Vector 25 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c43, -1, 0.100000001, -0.5, 2
+    def c44, 0, 0.800000012, 2, 3
+    def c45, 0.330000013, 0.75, 0.375, 0.193000004
+    def c46, 1.97500002, 0.792999983, 0.300000012, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_color v5
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_color o5
+    dcl_texcoord4 o6.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Tumbling Moss/vp/5148C628.txt
+mov r30, c17
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 r0.x, c8, v0
+    dp4 r0.y, c9, v0
+    dp4 r0.z, c10, v0
+    add r1.xy, -r0.xzzw, r30.xzzw
+    mul r1.xy, r1, r1
+    add r0.w, r1.y, r1.x
+    mov r1.xw, c43
+    add r1.y, r1.x, c38.x
+    sge r1.y, -r1_abs.y, r1_abs.y
+    mov r2.w, c8.w
+    add r1.z, r2.w, c10.w
+    mul r1.z, r1.z, c43.y
+    frc r1.z, r1.z
+    add r1.z, r1.z, c43.z
+    add r2.x, r1_abs.z, r1_abs.z
+    mad r1.z, r1_abs.z, -r1.w, c32.x
+    mad r1.z, r1.y, r1.z, r2.x
+    mov r1.w, c34.x
+    mov r2.x, c33.x
+    mul r2.y, r1.w, r1.w
+    mad r1.w, r1.w, -r1.w, r0.w
+    mad r2.x, r2.x, r2.x, -r2.y
+    rcp r2.x, r2.x
+    mul_sat r1.w, r1.w, r2.x
+    if_lt c44.x, r1.w
+    mul r2.xy, r1.w, c35
+    mov r3.xyz, c11
+    dp3 r3.x, r3, c26
+    mov r4.xyz, c12
+    dp3 r3.y, r4, c26
+    mov r4.xyz, c13
+    dp3 r3.z, r4, c26
+    nrm r4.xyz, r3
+    add r3.y, r1.z, v5.x
+    add r1.w, r3.y, v5.y
+    dp3 r3.x, v0, r1.w
+    add r5.x, r1.z, c27.x
+    mov r6.y, c44.y
+    mad r5.y, c27.x, r6.y, r1.z
+    add r2.zw, r5.xyxy, -c43.z
+    frc r2.zw, r2
+    mad r2.zw, r2, c43.w, c43.x
+    mul r3.zw, r2_abs, r2_abs
+    mad r2.zw, r2_abs, -c44.z, c44.w
+    mul r2.zw, r2, r3
+    mad r1.w, r2.w, r2.w, r2.z
+    add r1.w, r1.w, c44.w
+    mul r1.w, r1.w, c45.x
+    mul r2.xy, r2, r1.w
+    add r3, r3.xxyy, c27.y
+    add r1.w, c45.y, v5.x
+    mul r2.zw, r1.w, c45
+    mov r5.zw, c27
+    mad r5.xy, r1.w, -c45.zwzw, r5.zwzw
+    mad r5.zw, c28.x, r5.xyxy, r2
+    mov r5.xy, c46
+    mul r3, r3, r5
+    frc r3, r3
+    mad r3, r3, c43.w, c43.z
+    frc r3, r3
+    mad r3, r3, c43.w, c43.x
+    mul r5, r3_abs, r3_abs
+    mad r3, r3_abs, -c44.z, c44.w
+    mul r3, r3, r5
+    add r3.xy, r3.ywzw, r3.xzzw
+    dp3 r1.w, v0, v0
+    rsq r1.w, r1.w
+    rcp r1.w, r1.w
+    mul r2.z, c43.y, v5.y
+    mul r2.zw, r2.z, v2.xyxz
+    slt r5.xy, -v2.xzzw, v2.xzzw
+    slt r5.zw, v2.xyxz, -v2.xyxz
+    add r5.xy, -r5.zwzw, r5
+    mul r5.xz, r2.zyww, r5.xyyw
+    mul r5.y, r3.y, v4.y
+    mov r3.z, c46.z
+    mad r3.xyz, r3.xzxw, r5, r5.y
+    mad r2.yzw, r3.xxyz, r2.y, v0.xxyz
+    mul r3.xyz, r4, v4.x
+    mad r2.xyz, r3, r2.x, r2.yzww
+    nrm r3.xyz, r2
+    mul r2.xyz, r1.w, r3
+    else
+    mov r2.xyz, v0
+    endif
+    dp3 r1.w, r2, r2
+    rsq r1.w, r1.w
+    rcp r1.w, r1.w
+    mov r3.xyz, c11
+    dp3 r3.x, r3, c37
+    mov r4.xyz, c12
+    dp3 r3.y, r4, c37
+    mov r4.xyz, c13
+    dp3 r3.z, r4, c37
+    nrm r4.xyz, r3
+    mul r3.xyz, r4, v4.x
+    mad r3.xyz, r3, -c36.z, r2
+    nrm r4.xyz, r3
+    mad r3.xyz, r4, r1.w, -r2
+    mad r2.xyz, r1.y, r3, r2
+    nrm r3.xyz, v2
+    nrm r4.xyz, v1
+    mul r5.xyz, r3.y, c15
+    mad r5.xyz, c14, r3.x, r5
+    mad r5.xyz, c16, r3.z, r5
+    dp3 r1.w, r5, r5
+    rsq r1.w, r1.w
+    mul r6, r3.y, c12.zxyz
+    mad r6, c11.zxyz, r3.x, r6
+    mad r3, c13.zxyz, r3.z, r6
+    dp3 r4.w, r3.yzww, r3.yzww
+    rsq r4.w, r4.w
+    mul r3, r3, r4.w
+    mad r1.w, r5.z, r1.w, -r3.x
+    mad r1.y, r1.y, r1.w, r3.x
+    max r1.w, r1.z, -c43.z
+    min r1.w, r1.w, -c43.x
+    mul r3.x, r1.w, c39.x
+    mad r1.w, c39.x, r1.w, -r2.y
+    mul r3.x, r3.x, c45.y
+    rcp r3.x, r3.x
+    mul_sat r1.w, r1.w, r3.x
+    mov_sat r1.y, -r1.y
+    add r3.x, -r1.y, -c43.x
+    mad r1.y, c40.x, r3.x, r1.y
+    mul o5.x, r1.w, r1.y
+    mul_sat o5.w, c31.x, v5.w
+    add r0.xyz, -r0, r30
+    nrm r5.xyz, r0
+    dp3 r0.x, r3.yzww, r5
+    mov r0.y, c29.x
+    mov r0.z, c30.x
+    mul r1.y, r0.y, r0.y
+    mad r0.y, r0.y, -r0.y, r0.w
+    mad r0.z, r0.z, r0.z, -r1.y
+    rcp r0.z, r0.z
+    mul_sat r0.y, r0.z, r0.y
+    mad r0.x, r0.x, -r0.x, -c43.x
+    mad o5.z, r0.x, r0.y, r0.y
+    mov r2.w, v0.w
+    dp4 o0.x, c4, r2
+    dp4 o0.y, c5, r2
+    dp4 o0.z, c6, r2
+    dp4 o0.w, c7, r2
+    mad o1.xy, v3, c41, c41.zwzw
+    mad o1.zw, v3.xyxy, c42.xyxy, c42
+    dp4 r0.x, c8, r2
+    dp4 r0.y, c9, r2
+    dp4 r0.z, c10, r2
+    dp3 r2.z, c8, r4
+    dp3 r2.x, c9, r4
+    dp3 r2.y, c10, r4
+    dp3 r0.w, r2, r2
+    rsq r0.w, r0.w
+    mul r2.xyz, r0.w, r2
+    mul r4.xyz, r2, r3.wyzw
+    mad r4.xyz, r3.zwyw, r2.yzxw, -r4
+    mul r4.xyz, r4, v1.w
+    mul r5, r3.zwwy, r3.yzww
+    dp4 r6.x, c22, r5
+    dp4 r6.y, c23, r5
+    dp4 r6.z, c24, r5
+    mul r0.w, r3.z, r3.z
+    mad r0.w, r3.y, r3.y, -r0.w
+    mad r5.xyz, c25, r0.w, r6
+    add r6, -r0.x, c18
+    add r7, -r0.y, c19
+    add r8, -r0.z, c20
+    mul r9, r7, r7
+    mad r9, r6, r6, r9
+    mad r9, r8, r8, r9
+    mul r7, r3.z, r7
+    mad r6, r6, r3.y, r7
+    mad r6, r8, r3.w, r6
+    rsq r7.x, r9.x
+    rsq r7.y, r9.y
+    rsq r7.z, r9.z
+    rsq r7.w, r9.w
+    mul r6, r6, r7
+    max r6, r6, c44.x
+    mad r7, r9, c21, -r1.x
+    rcp r8.x, r7.x
+    rcp r8.y, r7.y
+    rcp r8.z, r7.z
+    rcp r8.w, r7.w
+    mul r6, r6, r8
+    mul r1.xyw, r6.y, c1.xyzz
+    mad r1.xyw, c0.xyzz, r6.x, r1
+    mad r1.xyw, c2.xyzz, r6.z, r1
+    mad r1.xyw, c3.xyzz, r6.w, r1
+    add o6.xyz, r1.xyww, r5
+    mov o2.x, r2.z
+    mov o2.y, r4.x
+    mov o2.z, r3.y
+    mov o2.w, r0.x
+    mov o3.x, r2.x
+    mov o3.y, r4.y
+    mov o3.z, r3.z
+    mov o3.w, r0.y
+    mov o4.x, r2.y
+    mov o4.y, r4.z
+    mov o4.z, r3.w
+    mov o4.w, r0.z
+    mov o5.y, r1.z

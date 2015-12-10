@@ -102,6 +102,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s0
 
+texldl r13, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling VFACE/vp/2FD81314.txt
+mov r30, c11
+mov r29, c220.x
+mul r29.x, r13.x, -r13.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mul r0.xy, c42, v5.x
     frc r0.xy, r0
     mad r0.xz, r0.xyyw, c42.z, c42.w
@@ -114,7 +130,7 @@ dcl_2d s0
     mul r1.xyz, r0, v5.y
     dp4 r2.x, c4, v0
     dp4 r2.y, c6, v0
-    add r2.xy, r2, -c11.xzzw
+    add r2.xy, r2, -r30.xzzw
     mul r2.xy, r2, r2
     add r0.w, r2.y, r2.x
     mov r2.xzw, c42
@@ -523,7 +539,7 @@ dcl_2d s0
 mov o0, r2 // Relocated from line 522 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling VFACE/vp/2FD81314.txt
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Leaves Tumbling VFACE/vp/2FD81314.txt
 texldl r31, c220.z, s0
 add r31.w, r2.w, -r31.y
 mad r2.x, r31.w, r31.x, r2.x
