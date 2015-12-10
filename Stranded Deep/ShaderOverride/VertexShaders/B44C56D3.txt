@@ -1,4 +1,59 @@
-// CRC32: B44C56D3 | Matched 3 variants of 1 shaders: Beam Team/Standard/Other - Player Arm Effects
+// CRC32: B44C56D3 | Matched 6 variants of 2 shaders: Beam Team/Standard/Cloth/Forward/Cloth, Beam Team/Standard/Other - Player Arm Effects
+// 
+//    Unity headers extracted from Cloth - Forward.shader
+//    Shader "Beam Team/Standard/Cloth/Forward/Cloth" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//      [Header(Packed Normals)]  _PackTex ("Gloss (R) Normal X (G) Translucency (B) Normal Y (A)", 2D) = "white" { }
+//      [Header(Translucency)]  _TranslucencyColor ("Translucency Tint", Color) = (0.73,0.85,0.41,1)
+//       _TranslucencyIntensity ("Translucency Intensity", Range(0,5)) = 1
+//       _TranslucencyViewDependency ("Translucency View Dependency", Range(0,1)) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Tags { "QUEUE"="AlphaTest" "RenderType"="Cloth" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "SHADOWSUPPORT"="true" "RenderType"="Cloth" }
+//          Cull Off
+//          GpuProgramID 59933
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_HARD" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_2x2" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "SUNSHINE_FILTER_PCF_3x3" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 15 [_Object2World] 3
+//              Matrix 18 [_World2Object] 3
+//              Matrix 12 [glstate_matrix_modelview0] 3
+//              Matrix 4 [glstate_matrix_mvp]
+//              Matrix 8 [sunshine_CameraVToSunVP]
+//              Vector 32 [_MainTex_ST]
+//              Vector 21 [_ProjectionParams]
+//              Vector 22 [_ScreenParams]
+//              Vector 26 [unity_4LightAtten0]
+//              Vector 23 [unity_4LightPosX0]
+//              Vector 24 [unity_4LightPosY0]
+//              Vector 25 [unity_4LightPosZ0]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 29 [unity_SHBb]
+//              Vector 28 [unity_SHBg]
+//              Vector 27 [unity_SHBr]
+//              Vector 30 [unity_SHC]
+//              Vector 31 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
 // 
 //    Unity headers extracted from Other - Player Arm Effects.shader
 //    Shader "Beam Team/Standard/Other - Player Arm Effects" {
@@ -137,10 +192,10 @@ dcl_2d s3
     dp4 r1.x, c4, v0
     dp4 r1.w, c7, v0
 
-mov o0, r1 // Relocated from line 138 with shadertool.py
+mov o0, r1 // Relocated from line 193 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Standard_Other - Player Arm Effects/vp/B44C56D3.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Beam Team_Standard_Cloth_Forward_Cloth/vp/B44C56D3.txt
 texldl r31, c220.z, s3
 add r31.w, r1.w, -r31.y
 mad r1.x, r31.w, r31.x, r1.x
@@ -149,7 +204,7 @@ mad r1.x, r31.w, r31.x, r1.x
     mad o7.xy, r2.z, c22.zwzw, r2.xwzw
     dp4 r1.z, c6, v0
 
-//     mov o0, r1 // Relocated to line 135 with shadertool.py
+//     mov o0, r1 // Relocated to line 190 with shadertool.py
 mov o0.z, r1 // Inserted by shadertool.py
 
     mov o7.zw, r1

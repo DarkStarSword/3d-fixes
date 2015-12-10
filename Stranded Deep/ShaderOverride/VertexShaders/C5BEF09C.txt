@@ -9,14 +9,8 @@
 //     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
 //     Pass 1/1 {
 //       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//       BindChannels {
-//          Bind "vertex", Vertex
-//          Bind "color", Color
-//          Bind "texcoord", TexCoord
-//         }
 //       ZWrite Off
 //       Cull Off
-//       Fog { Mode Off }
 //       Blend One OneMinusSrcAlpha
 //       GpuProgramID 55518
 //       Program "vp" {
@@ -72,17 +66,17 @@ dcl_2d s3
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o2.xyw, r0 // Relocated from line 71 with shadertool.py
+mov o2.xyw, r0 // Relocated from line 65 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Sky_Cumulus Particle/vp/C5BEF09C.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Beam Team_Sky_Cumulus Particle/vp/C5BEF09C.txt
 texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
 
     mul r1.xzw, r0.xywz, c20.x
 
-//     mov o2.xyw, r0 // Relocated to line 70 with shadertool.py
+//     mov o2.xyw, r0 // Relocated to line 64 with shadertool.py
     mov o1.w, r0.w
     mad o1.xy, r1.z, c9.zwzw, r1.xwzw
     dp4 r0.z, c6, v0
