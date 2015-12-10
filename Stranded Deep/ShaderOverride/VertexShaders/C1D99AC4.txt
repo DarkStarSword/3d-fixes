@@ -1,0 +1,314 @@
+// CRC32: C1D99AC4 | Matched 5 variants of 5 shaders: Eisko/Eye, Eisko/Generic, Eisko/Skin, Eisko/Teeth, Eisko/lightPrepass
+// 
+//    Unity headers extracted from Eye.shader
+//    Shader "Eisko/Eye" {
+//      Properties {
+//      [NoScaleOffset]  _AlbedoTex ("RGB= Albedo map, A= Height map", 2D) = "white" { }
+//       _AlbedoDesaturation ("Light luminance", Range(0,1)) = 0.5
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _MicrostructureV ("Microstructure RG - Variance B", 2D) = "bump" { }
+//       _VarianceDetailMultiplier ("Variance Detail Multiplier", Range(0,50)) = 1
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//      [NoScaleOffset]  _SpecularMap ("Multimap: (R=Specular, G=Thickness, B=AO, A=Roughness)", 2D) = "white" { }
+//       _thickness ("Thickness", Range(0.0001,2)) = 1
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       AOsaturation ("AO Strenght", Range(0.01,3)) = 0.5
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       _ColorAlbedo ("RGB: Color Sclera", Color) = (1,1,1,0.02)
+//       Roughness ("Roughness Sclera", Range(0.0001,8)) = 1
+//       _SpecStrength ("Specular Strength Sclera", Range(0,10)) = 1
+//      [NoScaleOffset]  _EyeMask ("Iris mask", 2D) = "white" { }
+//       _ColorIris ("RGB: Color Iris", Color) = (0.737,0.737,0.737,1)
+//       RoughnessIris ("Roughness Iris", Range(0.0001,12)) = 1
+//       _SpecStrengthIris ("Specular Strength Iris", Range(0,20)) = 0.02
+//       Refraction ("Refraction", Range(0,2)) = 0.06
+//       Dilation ("Pupil dilation", Range(0,2)) = 0.05
+//      [HideInInspector]  _DispMap ("Displacement Map", 2D) = "bump" { }
+//       _EyeLeftRight ("Eye Left or Right", Range(0,1)) = 0
+//      [HideInInspector]  _isSkin ("HIDDEN--IS SKIN", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_EYE"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 14303
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [unity_SHBb]
+//              Vector 10 [unity_SHBg]
+//              Vector 9 [unity_SHBr]
+//              Vector 12 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from generic.shader
+//    Shader "Eisko/Generic" {
+//      Properties {
+//       _ColorAlbedo ("RGB: Color ", Color) = (1,1,1,0.02)
+//      [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _SpecMap ("Multimap: (R=Specular, G=Empty, B=AO, A=Roughness)", 2D) = "white" { }
+//       _AOsaturation ("AO Strenght", Range(0.1,3)) = 1
+//       _SpecStrength ("Specular Strength", Range(0.001,3)) = 1
+//       _Roughness ("Roughness", Range(0.001,5)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_UBER"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 44683
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [unity_SHBb]
+//              Vector 10 [unity_SHBg]
+//              Vector 9 [unity_SHBr]
+//              Vector 12 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Skin.shader
+//    Shader "Eisko/Skin" {
+//      Properties {
+//       _ColorAlbedo ("RGB: Color skin", Color) = (1,1,1,0.02)
+//      [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//       _AlbedoDesaturation ("Light luminance", Range(0,1)) = 0.5
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _MicrostructureV ("Microstructure RG - Variance B", 2D) = "bump" { }
+//       _VarianceDetailMultiplier ("Variance Detail Multiplier", Range(0,50)) = 1
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//      [NoScaleOffset]  _SpecularMap ("Multimap:(R=F0, G=Thickness, B=AO, A=Roughness)", 2D) = "white" { }
+//       _tColor ("Translucency color", Color) = (1,0.5,0,1)
+//       thickness ("Thickness", Range(0.001,2)) = 1
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       AOsaturation ("AO Strenght", Range(0.01,3)) = 0.5
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       Roughness ("Roughness", Range(0.0001,3)) = 1
+//       _SpecStrength ("Specular Strength", Range(0,5)) = 1
+//      [HideInInspector]  _DispMap ("Displacement Map", 2D) = "bump" { }
+//      [HideInInspector]  _isSkin ("HIDDEN--IS SKIN", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_SKIN"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 30639
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [unity_SHBb]
+//              Vector 10 [unity_SHBg]
+//              Vector 9 [unity_SHBr]
+//              Vector 12 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Teeth.shader
+//    Shader "Eisko/Teeth" {
+//      Properties {
+//       __ColorAlbedo ("RGB: Color teeth", Color) = (1,1,1,0.02)
+//       _tColor ("Translucency color", Color) = (1,0.5,0,1)
+//      [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//       _AlbedoDesaturation ("Light luminance", Range(0,1)) = 0.5
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _MicrostructureV ("Microstructure RG - Variance B", 2D) = "bump" { }
+//       _VarianceDetailMultiplier ("Variance Detail Multiplier", Range(0,50)) = 1
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//      [NoScaleOffset]  _SpecularMap ("Multimap: (R=Specular, G=Thickness, B=AO, A=Roughness)", 2D) = "white" { }
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       AOsaturation ("AO Strenght", Range(0.01,3)) = 0.5
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       Roughness ("Roughness", Range(0.0001,8)) = 1
+//       _SpecStrength ("Specular Strength", Range(0,10)) = 1
+//       _Thickness ("Thickness", Range(0.0001,8)) = 1
+//      [NoScaleOffset]  _GradientObsidian ("Obsidian Map", 2D) = "white" { }
+//       _Obsidian ("Obsidian", Range(0.0001,1)) = 1
+//      [NoScaleOffset]  _DispMap ("Displacement Map", 2D) = "bump" { }
+//      [HideInInspector]  _isSkin ("HIDDEN--IS SKIN", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_TEETH"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 23339
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [unity_SHBb]
+//              Vector 10 [unity_SHBg]
+//              Vector 9 [unity_SHBr]
+//              Vector 12 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from lightPrepass.shader
+//    Shader "Eisko/lightPrepass" {
+//      Properties {
+//       _ColorAlbedo ("RGB: Color A: F0", Color) = (0.784,0.784,0.784,0.1)
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       _tColor ("Translucency color", Color) = (1,0.5,0,1)
+//      [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//       AOsaturation ("AO", Range(0.01,3)) = 1
+//       Roughness ("Roughness", Range(0.0001,3)) = 1
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _SpecularMap ("All in One: SpecularMap (R=F0 G=Thickness B=AO A=Roughness", 2D) = "white" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_LIGHTPREPASS"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 58208
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//              Vector 11 [unity_SHBb]
+//              Vector 10 [unity_SHBg]
+//              Vector 9 [unity_SHBr]
+//              Vector 12 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_tangent v3
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+    dcl_texcoord9 o7.xy
+    dcl_texcoord8 o8
+    dcl_texcoord7 o9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mad r0, v0.xyzx, c13.xxxy, c13.yyyx
+    dp4 o2.x, c4, r0
+    dp4 o2.y, c5, r0
+    dp4 o2.z, c6, r0
+    nrm r1.xyz, v3
+    dp3 r2.x, c4, r1
+    dp3 r2.y, c5, r1
+    dp3 r2.z, c6, r1
+    nrm r1.xyz, r2
+    nrm r2.xyz, v1
+    dp3 r3.x, c4, r2
+    dp3 r3.y, c5, r2
+    dp3 r3.z, c6, r2
+    nrm r2.xyz, r3
+    mul r3.xyz, r1.yzxw, r2.zxyw
+    mad r3.xyz, r2.yzxw, r1.zxyw, -r3
+    mov o4.xyz, r1
+    mul r1.xyz, r3, v3.w
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mul o5.xyz, r1.w, r1
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    mov o3.xyz, r2
+    dp4 r2.x, c9, r3
+    dp4 r2.y, c10, r3
+    dp4 r2.z, c11, r3
+    mad o6.xyz, c12, r1.x, r2
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp4 r1.w, c3, r0
+    mov o0, r1
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Eisko_Eye/vp/C1D99AC4.txt
+texldl r31, c220.z, s3
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r0.xz, r1.xyww, c13.z
+    mul r0.y, r1.y, c7.x
+    mul r0.w, r0.y, c13.z
+    mad r1.xy, r0.z, c8.zwzw, r0.xwzw
+    mov o1, v2
+    mov o6.w, c13.y
+    mov o7.xy, c13.y
+    mov o8, r1
+    mov o9, r1
