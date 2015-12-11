@@ -56,7 +56,7 @@ def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
 
 	command = ['git', '-C', git_path, 'rm'] + removed_files
 	print("Running '%s'..." % ' '.join(command))
-	subprocess.check_call(command)
+	subprocess.call(command)
 
 	sections = set([ '[%s%s]' % (ini_prefix, os.path.splitext(x)[0]) for x in removed_crcs ])
 	ini_path = os.path.join(git_path, 'DX9Settings.ini')
@@ -64,7 +64,7 @@ def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
 
 	command = ['git', '-C', git_path, 'add', ini_path]
 	print("Running '%s'..." % ' '.join(command))
-	subprocess.check_call(command)
+	subprocess.call(command)
 
 	for file in removed_crcs:
 		path = os.path.join(game_dir, 'ShaderOverride', helix_type, file)
@@ -84,7 +84,7 @@ def main():
 
 		command = [ 'git', '-C', git_path, 'commit', '-m', '%s: run cleanup_unity_shaders.py' % os.path.basename(git_path) ]
 		print("Running '%s'..." % ' '.join(command))
-		subprocess.check_call(command)
+		subprocess.call(command)
 
 if __name__ == '__main__':
 	main()
