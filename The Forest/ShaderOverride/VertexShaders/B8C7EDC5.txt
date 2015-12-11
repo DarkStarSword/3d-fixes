@@ -40,10 +40,10 @@ dcl_position o1
 dcl_color o2
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s0
+dcl_2d s3
 
 // For the auto HUD depth:
-dcl_2d s3 // Copy of _CameraDepthTexture
+dcl_2d s2 // Copy of _CameraDepthTexture
 defi i0, 255, 0, 0, 0
 def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
@@ -56,7 +56,7 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
 // Only adjust when originally drawn at screen depth:
 if_eq r0.w, c220.y
-	texldl r31, c220.z, s0
+	texldl r31, c220.z, s3
 
 	// Auto depth: sample a number of points on the depth buffer to
 	// determine an appropriate depth for this object, starting at the near
@@ -120,7 +120,7 @@ if_eq r0.w, c220.y
 		// Convert to texture coordinates (coords / 2 + 0.5):
 		mad r23.xy, r23.xy, c220.w, c220.w
 		// Sample depth buffer:
-		texldl r5, r23.xy, s3
+		texldl r5, r23.xy, s2
 
 		// scale depth buffer to world Z (game dependent - look for scaling applied to
 		// the depth buffer wherever else it is used. In the case of Unity we use

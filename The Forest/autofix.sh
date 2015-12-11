@@ -17,7 +17,7 @@ find . \( -name 05F7E52C.txt -o -name 678DC18B.txt \) -a -print0 | xargs -0 dirn
 # Blacklist Ocean shaders as some of the vertex shaders do not have any free
 # sampler registers, so halos must be fixed in their pixel shaders instead
 find -maxdepth 1 -print0 | grep -zv '\(CetoTF_OceanTopSide\|CetoTF_OceanUnderSide\|Ceto_OceanMask\)' | sed -z 's/$/\/vp\/*/' | xargs -0 \
-	shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed | unix2dos | tee -a ../../DX9Settings.ini
+	shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed | unix2dos | tee -a ../../DX9Settings.ini
 
 # Water halo fix in the pixel shader:
 shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection  --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanTopSide*/fp/* | unix2dos | tee -a ../../DX9Settings.ini
