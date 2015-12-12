@@ -10,7 +10,7 @@
 //       Name "FORWARD"
 //       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent-150" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="OceanBelow" "OceanMask"="Projected_Grid_Under" }
 //       Cull Front
-//       GpuProgramID 9714
+//       GpuProgramID 6127
 //       Program "fp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
@@ -77,11 +77,27 @@ def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
 // Input adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --adjust-input=texcoord4 -f Ceto_OceanUnderSide_BRDF/fp/BD968583.txt
-mov r30, v4
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors -f Ceto_OceanUnderSide_BRDF/fp/BD968583.txt
+mov r8, v4
+texldl r7, c220.z, s15
+add r7.w, r8.w, -r7.y
+mad r8.x, r7.w, r7.x, r8.x
+
 texldl r31, c220.z, s15
-add r31.w, r30.w, -r31.y
-mad r30.x, r31.w, r31.x, r30.x
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors -f Ceto_OceanUnderSide_BRDF/fp/BD968583.txt
+mov r30, c8
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mad r0.xzw, v3.xyzx, c27.xyxy, c27.yyyx
     mov r0.y, c20.x
@@ -216,7 +232,7 @@ mad r30.x, r31.w, r31.x, r30.x
     mov r4.x, v0.w
     mov r4.y, v1.w
     mov r4.z, v2.w
-    add r4.xyz, -r4, c8
+    add r4.xyz, -r4, r30
     nrm_pp r5.xyz, r4
     mul_pp r3.yw, r5.xyzz, c27.xwzx
     dp2add_pp r1.w, r3.ywzw, r3.zxzw, c27.y
@@ -286,7 +302,7 @@ mad r30.x, r31.w, r31.x, r30.x
     mov_pp r3.xyz, -r0.xzyw
     mul r4.xy, r0, -c26.w
     mov r0.xy, c26
-    add r0.xyz, r0.xyxw, c8
+    add r0.xyz, r0.xyxw, r30
     add r0.xyz, r0, -v3
     nrm_pp r5.xyz, r0
     dp3_pp r0.x, -r5, r3
@@ -327,19 +343,19 @@ mad r30.x, r31.w, r31.x, r30.x
     exp_sat r6.y, r5.y
     exp_sat r6.z, r5.z
     mad_pp r1.xyz, r6, r1, r2
-    mov r2.zw, r30
+    mov r2.zw, r8
     mov_pp r4.zw, c27.y
-    mul r5, c30.yyyx, r30.xywy
+    mul r5, c30.yyyx, r8.xywy
     add r2.xy, r5.z, r5.xwzw
     add r2, r2, r4
     texldp_pp r2, r2, s4
     lrp r4.xyz, r0.x, r1, r2
     mul r1.y, r5.y, c9.x
-    mul r1.x, c27.z, r30.x
+    mul r1.x, c27.z, r8.x
     mad r1.xy, r5.z, c10.zwzw, r1
-    mov r1.zw, r30
+    mov r1.zw, r8
     texldp r1, r1, s5
-    mad r1.x, r1.z, c9.z, -r30.w
+    mad r1.x, r1.z, c9.z, -r8.w
     mul_sat r1.x, r1.x, c27.z
     lrp_pp r5.xyz, r1.x, r4, r2
     add_pp r0.yzw, r0, r5.xxyz
