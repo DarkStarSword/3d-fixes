@@ -1,0 +1,155 @@
+// CRC32: 3ED645F9 | Unity headers extracted from generic.shader
+// Shader "Eisko/Generic" {
+//   Properties {
+//    _ColorAlbedo ("RGB: Color ", Color) = (1,1,1,0.02)
+//   [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//   [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//   [NoScaleOffset]  _SpecMap ("Multimap: (R=Specular, G=Empty, B=AO, A=Roughness)", 2D) = "white" { }
+//    _AOsaturation ("AO Strenght", Range(0.1,3)) = 1
+//    _SpecStrength ("Specular Strength", Range(0.001,3)) = 1
+//    _Roughness ("Roughness", Range(0.001,5)) = 1
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
+//     Pass 2/3 {
+//       Name "FORWARD_ADD_UBER"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//       Lighting On
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 121391
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//           Float 3 [_AOsaturation]
+//           Vector 5 [_ColorAlbedo]
+//           Vector 6 [_LightColor0]
+//           Float 2 [_Roughness]
+//           Float 4 [_SpecStrength]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_AlbedoTex] 2D 0
+//           SetTexture 1 [_NormalMap] 2D 1
+//           SetTexture 2 [_SpecMap] 2D 2
+//           SetTexture 3 [_ShadowMapTexture] 2D 3
+//           SetTexture 4 [_LightTexture0] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c7, 2, -1, 0, 1
+    def c8, 0.5, 2, -2, 0.0769230798
+    def c9, 13, 0.159155071, 0.78539753, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5 v5.xy
+    dcl_texcoord6 v6
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Eisko_Generic/fp/3ED645F9.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s1
+    mad_pp r0.xy, r0.wyzw, c7.x, c7.y
+    mul r1.xyz, r0.y, v4
+    mad r1.xyz, r0.x, v3, r1
+    dp2add_sat_pp r0.x, r0, r0, c7.z
+    add_pp r0.x, -r0.x, c7.w
+    rsq_pp r0.x, r0.x
+    rcp_pp r0.x, r0.x
+    mad r0.xyz, r0.x, v2, r1
+    nrm_pp r1.xyz, r0
+    mad r0.xyz, v1, -c1.w, c1
+    nrm_pp r2.xyz, r0
+    add r0.xyz, r30, -v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad r3.xyz, r0, r0.w, r2
+    dp3_pp r1.w, r1, r2
+    mul_pp r0.xyz, r0.w, r0
+    mul r2.xyz, r3, c8.x
+    nrm r3.xyz, r2
+    dp3_sat r0.w, r1, r3
+    dp3_pp r1.x, r1, r0
+    dp3_sat r0.x, r0, r3
+    add r0.x, -r0.x, c7.w
+    texld r2, v0, s2
+    pow_sat_pp r0.y, r2.w, c2.x
+    mul r0.z, r0.y, r0.y
+    rcp r0.z, r0.z
+    mad r0.z, r0.z, c8.y, c8.z
+    log r0.z, r0.z
+    mul_sat r0.z, r0.z, c8.w
+    mul r1.y, r0.z, c9.x
+    exp r1.y, r1.y
+    pow r2.y, r0.w, r1.y
+    add r0.w, r1.y, c7.x
+    mul r0.w, r0.w, c9.y
+    mul r0.w, r2.y, r0.w
+    mul r0.w, r0.w, c9.z
+    mul r1.y, r0.x, r0.x
+    mul r1.y, r1.y, r1.y
+    mul r0.x, r0.x, r1.y
+    pow_sat_pp r1.y, r2.x, c4.x
+    pow_sat_pp r1.z, r2.z, c3.x
+    max r2.x, r1.y, r0.z
+    lrp r3.x, r0.x, r2.x, r1.y
+    add r0.x, -r1.y, c7.w
+    mul r0.z, r0.w, r3.x
+    mul_pp r0.w, r1.x, r1.x
+    lrp r1.y, r0.w, c7.w, r0.y
+    rsq r0.w, r1.y
+    rcp r0.w, r0.w
+    add r0.w, r0.w, r1.x
+    rcp r0.w, r0.w
+    mul_pp r1.x, r1.w, r1.w
+    lrp r2.x, r1.x, c7.w, r0.y
+    rsq r0.y, r2.x
+    rcp r0.y, r0.y
+    add r0.y, r0.y, r1.w
+    max_pp r2.x, r1.w, c7.z
+    rcp r0.y, r0.y
+    mul r0.y, r0.w, r0.y
+    mul r0.y, r0.y, r0.z
+    texld r3, v5, s4
+    texldp_pp r4, v6, s3
+    mul_pp r0.z, r3.w, r4.x
+    mul_pp r1.xyw, r0.z, c6.xyzz
+    mul r0.yzw, r0.y, r1.xxyw
+    mul r0.yzw, r1.z, r0
+    texld r3, v0, s0
+    mul r2.yzw, r3.xxyz, c5.xxyz
+    mul r2.xyz, r2.x, r2.yzww
+    mul r1.xyz, r1.xyww, r2
+    mad oC0.xyz, r1, r0.x, r0.yzww
+    mov_pp oC0.w, c7.w

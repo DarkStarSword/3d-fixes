@@ -1,0 +1,189 @@
+// CRC32: 189E0AA0 | Unity headers extracted from Ocean LOD.shader
+// Shader "Beam Team/Ocean/Ocean LOD" {
+//   Properties {
+//   [HideInInspector]  _MainTex ("Base (RGB)", 2D) = "black" { }
+//    _Map0 ("Base (RGB)", 2D) = "black" { }
+//    _FourierSize ("Computed FFT size", Float) = 0
+//    _SunSpec ("Sun specular 'hardness'", Float) = 1000
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent-200" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent-200" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//       ZWrite Off
+//       GpuProgramID 64550
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SUNSHINE_FILTER_PCF_2x2" }
+//           Matrix 0 [sunshine_CascadeRanges]
+//           Float 14 [_ShadowFade]
+//           Vector 16 [_SunColor]
+//           Vector 17 [_SunPosition]
+//           Float 15 [_SunSpec]
+//           Vector 18 [_WaterColor]
+//           Vector 4 [_WorldSpaceCameraPos]
+//           Vector 12 [sunshine_CascadeFarRatiosSq]
+//           Vector 11 [sunshine_CascadeNearRatiosSq]
+//           Vector 5 [sunshine_Lightmap_TexelSize]
+//           Vector 7 [sunshine_OvercastCoord]
+//           Vector 8 [sunshine_OvercastVectorsUV]
+//           Vector 9 [sunshine_ShadowCoordDepthStart]
+//           Vector 13 [sunshine_ShadowFadeParams]
+//           Vector 6 [sunshine_ShadowParamsAndHalfTexel]
+//           Vector 10 [sunshine_ShadowToWorldScale]
+//           SetTexture 0 [sunshine_Lightmap] 2D 0
+//           SetTexture 1 [sunshine_OvercastMap] 2D 1
+//           SetTexture 2 [_SkyMap] 2D 2
+//           SetTexture 3 [_Map1] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c19, 1, 0, -0.0112710549, 0.768900156
+    def c20, 0.5, 0.784000039, 0.0199999996, 0.453999996
+    def c21, 10, 20, -50, 123456792
+    def c22, 1, 0.00392156886, 1.53787005e-005, 6.03086292e-008
+    def c23, 1.5, 0, 0, 0
+    dcl_texcoord v0.xyz
+    dcl_texcoord1_pp v1.xy
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4_pp v4.x
+    dcl_texcoord5 v5.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Beam Team_Ocean_Ocean LOD/fp/189E0AA0.txt
+mov r30, c4
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, -r30, v0
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mul r0.x, r0.x, c19.z
+    exp r0.x, r0.x
+    mul_pp r1.xyz, c19.xxyw, v1.xyxw
+    mov_pp r1.w, v4.x
+    texldl_pp r1, r1, s3
+    mad_pp r0.yzw, r1.xxyx, c19.xxxy, c19.xyyx
+    nrm_pp r1.xyz, r0.yzww
+    mov_pp r2.xz, -r1.xyyw
+    mov r2.y, c19.x
+    nrm_pp r3.xyz, r2
+    dp3_pp r0.y, -v2.xzyw, r3
+    mad r0.z, r0_abs.y, r0_abs.y, c19.w
+    rsq r0.z, r0.z
+    rcp r0.z, r0.z
+    add r0.w, -r0_abs.y, r0.z
+    add r0.z, r0_abs.y, r0.z
+    mad r1.w, r0_abs.y, r0.w, c19.x
+    mad r0.y, r0_abs.y, r0.z, -c19.x
+    rcp r0.z, r0.z
+    mul r0.z, r0.z, r0.w
+    mul r0.z, r0.z, r0.z
+    mul r0.z, r0.z, c20.x
+    rcp r0.w, r1.w
+    mul r0.y, r0.w, r0.y
+    mad r0.y, r0.y, r0.y, c19.x
+    mul_sat_pp r0.y, r0.y, r0.z
+    mul r0.y, r0.y, c20.y
+    mad r0.x, r0.y, r0.x, c20.z
+    dp3 r0.y, r3.xzyw, v2
+    add r0.y, r0.y, r0.y
+    mad r0.yzw, r0.y, r3.xxyz, -v2.xxzy
+    add r0.z, r0.z, c19.x
+    rcp r0.z, r0.z
+    mul r0.yz, r0.z, r0.xyww
+    mad r0.yz, r0, c20.w, c20.x
+    texld_pp r2, r0.yzzw, s2
+    lrp_pp r3.xyz, r0.x, r2, c18
+    mov r0.xyz, v2
+    add_pp r0.xyz, r0, v3
+    nrm_pp r2.xyz, r0
+    dp3_pp r0.x, r1, r2
+    max r1.x, r0.x, c19.y
+    pow r0.x, r1.x, c15.x
+    mul r0.x, r0.x, c21.x
+    min r1.x, r0.x, c21.y
+    mul_pp r0.xyz, r1.x, c16
+    mad_pp r0.xyz, r0, r1.x, r3
+    add r1.xyz, -c9, v5
+    mul r1.xyz, r1, c10
+    dp3 r0.w, r1, r1
+    mul r1.x, r0.w, c21.w
+    frc r1.x, r1.x
+    mov r2.xy, c19
+    mad r1.x, r1.x, -c6.y, r2.x
+    mad r3, r0.w, -r1.x, c12
+    mad r1, r0.w, r1.x, -c11
+    mad_sat r0.w, r0.w, -c13.y, c13.x
+    cmp r3, r3, c19.x, c19.y
+    cmp r1, r1, r3, c19.y
+    mul r3, r1.y, c1
+    mad r3, c0, r1.x, r3
+    mad r3, c2, r1.z, r3
+    mad r1, c3, r1.w, r3
+    mad r1.xy, r1.zwzw, v5, r1
+    add r1.xy, r1, -c6.zwzw
+    mul r1.xy, r1, c5.zwzw
+    frc r3.xy, r1
+    add r1.xy, r1, -r3
+    mov r4.xy, c5
+    mad r1.xy, r1, r4, c6.zwzw
+    add r1.zw, r1.xyxy, c5.xyxy
+    texld r4, r1.zwzw, s0
+    dp4 r4.w, r4, c22
+    texld r5, r1, s0
+    mad r1, c5.xyxy, r2.xyyx, r1.xyxy
+    dp4 r4.x, r5, c22
+    texld r5, r1, s0
+    texld r1, r1.zwzw, s0
+    dp4 r4.z, r1, c22
+    dp4 r4.y, r5, c22
+    add r1, -r4, v5.z
+    cmp_pp r1, r1, c19.x, c19.y
+    add r3.zw, -r3.xyxy, c19.x
+    mul_pp r3, r3.wwyy, r3.zxzx
+    dp4_pp r1.x, r1, r3
+    mad r0.w, r1.x, -r0.w, c19.x
+    mov r1.xy, c8
+    mad r1.xy, r1, v5.x, c7
+    mad r1.xy, c8.zwzw, v5.y, r1
+    texld r1, r1, s1
+    add r1.x, r2.x, -c14.x
+    max r2.x, r1.x, r1.w
+    mad r0.w, r0.w, -r2.x, c19.x
+    mov r1.x, c6.x
+    mad_pp r0.w, r0.w, -r1.x, c23.x
+    mov r1.z, c21.z
+    add_pp r1.x, r1.z, c17.y
+    mul_sat_pp r1.x, r1.x, c20.z
+    add_pp r1.x, -r1.x, c19.x
+    max_sat_pp r2.x, r1.x, r0.w
+    mul_pp oC0.xyz, r0, r2.x
+    mov_pp oC0.w, c19.x

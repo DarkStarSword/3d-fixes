@@ -1,0 +1,129 @@
+// CRC32: CA3BFC11 | Unity headers extracted from Specular-AddPass.shader
+// Shader "Hidden/TerrainEngine/Splatmap/Specular-AddPass" {
+//   Properties {
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//   [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   }
+//   Fallback "Hidden/TerrainEngine/Splatmap/Diffuse-AddPass"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 54055
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_ON" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Vector 3 [_LightColor0]
+//           Float 5 [_Shininess]
+//           Vector 4 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 2 [unity_DynamicLightmap_HDR]
+//           SetTexture 0 [unity_DynamicLightmap] 2D 0
+//           SetTexture 1 [_Control] 2D 1
+//           SetTexture 2 [_Splat0] 2D 2
+//           SetTexture 3 [_Splat1] 2D 3
+//           SetTexture 4 [_Splat2] 2D 4
+//           SetTexture 5 [_Splat3] 2D 5
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c6, 1, -0.00389999989, 0.00100000005, 0
+    def c7, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_texcoord4 v4.xy
+    dcl_texcoord7_pp v5.zw
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Splatmap_Specular-AddPass/fp/CA3BFC11.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v4, s1
+    dp4_pp r1.x, r0, c6.x
+    add r1.yz, r1.x, c6
+    mov_pp r2, r1.y
+    rcp r1.y, r1.z
+    mul_pp r0, r0, r1.y
+    texkill r2
+    texld r2, v0, s2
+    texld r3, v0.zwzw, s3
+    mul r3, r0.y, r3
+    mad_pp r2, r0.x, r2, r3
+    texld r3, v1, s4
+    mad_pp r2, r0.z, r3, r2
+    texld r3, v1.zwzw, s5
+    mad_pp r0, r0.w, r3, r2
+    mul_pp r1.yzw, r0.xxyz, c3.xxyz
+    add r2.xyz, r30, -v3
+    dp3 r2.w, r2, r2
+    rsq r2.w, r2.w
+    mad_pp r2.xyz, r2, r2.w, c1
+    nrm_pp r3.xyz, r2
+    dp3_pp r2.x, v2, r3
+    max r3.x, r2.x, c6.w
+    mov r2.x, c5.x
+    mul r2.x, r2.x, c7.x
+    pow r4.x, r3.x, r2.x
+    mul r0.w, r0.w, r4.x
+    mov r2.xyz, c3
+    mul r2.xyz, r2, c4
+    mul r2.xyz, r0.w, r2
+    dp3_pp r0.w, v2, c1
+    max_pp r2.w, r0.w, c6.w
+    mad_pp r1.yzw, r1, r2.w, r2.xxyz
+    texld_pp r2, v5.zwzw, s0
+    mul_pp r0.w, r2.w, c2.x
+    mul_pp r2.xyz, r2, r0.w
+    log_pp r3.x, r2.x
+    log_pp r3.y, r2.y
+    log_pp r3.z, r2.z
+    mul_pp r2.xyz, r3, c2.y
+    exp_pp r3.x, r2.x
+    exp_pp r3.y, r2.y
+    exp_pp r3.z, r2.z
+    mad_pp r0.xyz, r0, r3, r1.yzww
+    mul_pp oC0.xyz, r1.x, r0
+    mov_pp oC0.w, c6.x
