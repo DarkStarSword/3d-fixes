@@ -96,6 +96,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s3
 
+texldl r13, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Nature_SpeedTree/vp/5E7AB880.txt
+mov r30, c13
+mov r29, c220.x
+mul r29.x, r13.x, -r13.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     mul o3.xyz, c33, v5.x
     mov r0.x, c16.x
     mul r0.y, r0.x, c17.x
@@ -415,7 +431,7 @@ dcl_2d s3
 mov o0.xyw, r4 // Relocated from line 428 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Nature_SpeedTree/vp/5E7AB880.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Nature_SpeedTree/vp/5E7AB880.txt
 texldl r31, c220.z, s3
 add r31.w, r4.w, -r31.y
 mad r4.x, r31.w, r31.x, r4.x
@@ -437,7 +453,7 @@ mad r4.x, r31.w, r31.x, r4.x
     dp3 r0.w, r0, r0
     rsq r0.w, r0.w
     mul o1.xyz, r0.w, r0
-    add o6.xyz, -r2, c13
+    add o6.xyz, -r2, r30
 
 //     mov o0.xyw, r4 // Relocated to line 410 with shadertool.py
     mov o2.xyz, r2

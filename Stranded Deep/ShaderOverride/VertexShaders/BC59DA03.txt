@@ -74,6 +74,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s3
 
+texldl r2, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Atmosphere_Atmospheric Spherical Fog Volume/vp/BC59DA03.txt
+mov r30, c7
+mov r29, c220.x
+mul r29.x, r2.x, -r2.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     dp4 r0.y, c1, v0
     mul r1.x, r0.y, c8.x
     mul r1.w, r1.x, c11.x
@@ -83,7 +99,7 @@ dcl_2d s3
 mov o0, r0 // Relocated from line 86 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed ./Beam Team_Atmosphere_Atmospheric Spherical Fog Volume/vp/BC59DA03.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Atmosphere_Atmospheric Spherical Fog Volume/vp/BC59DA03.txt
 texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -93,7 +109,7 @@ mad r0.x, r31.w, r31.x, r0.x
     dp4 r1.x, c4, v0
     dp4 r1.y, c5, v0
     dp4 r1.z, c6, v0
-    add o3.xyz, r1, -c7
+    add o3.xyz, r1, -r30
     mov o2.xyz, r1
     dp4 r0.z, c2, v0
 

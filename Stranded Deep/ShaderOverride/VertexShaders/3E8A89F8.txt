@@ -1,0 +1,107 @@
+// CRC32: 3E8A89F8 | Matched 4 variants of 1 shaders: Nature/SpeedTree
+// 
+//    Unity headers extracted from SpeedTree.shader
+//    Shader "Nature/SpeedTree" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0,0,0,0)
+//       _HueVariation ("Hue Variation", Color) = (1,0.5,0,0.1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.1
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//       _DetailTex ("Detail", 2D) = "black" { }
+//       _BumpMap ("Normal Map", 2D) = "bump" { }
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.333
+//      [MaterialEnum(Off,0,Front,1,Back,2)]  _Cull ("Cull", Float) = 2
+//      [MaterialEnum(None,0,Fastest,1,Fast,2,Better,3,Best,4,Palm,5)]  _WindQuality ("Wind Quality", Range(0,5)) = 0
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 2/2 {
+//        LOD 400
+//        Tags { "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//        Pass 5/7 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//          Cull [_Cull]
+//          GpuProgramID 739727
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "GEOM_TYPE_BRANCH" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "LOD_FADE_PERCENTAGE" }
+// 4:           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "GEOM_TYPE_BRANCH" "LIGHTMAP_OFF" "LOD_FADE_PERCENTAGE" "UNITY_HDR_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_ON" "GEOM_TYPE_BRANCH" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "LOD_FADE_PERCENTAGE" }
+// 8:           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_ON" "GEOM_TYPE_BRANCH" "LIGHTMAP_OFF" "LOD_FADE_PERCENTAGE" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 12 [_Color]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 11 [unity_LODFade]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 1, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Nature_SpeedTree/vp/3E8A89F8.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mul o3.xyz, c12, v4.x
+    mov r0, v0
+    add r0.xyz, -r0, v3
+    mad r0.xyz, c11.x, r0, v0
+    dp4 o0.x, c0, r0
+    dp4 o0.y, c1, r0
+    dp4 o0.z, c2, r0
+    dp4 o0.w, c3, r0
+    mul r1.xyz, c8, v1.y
+    mad r1.xyz, c7, v1.x, r1
+    mad r1.xyz, c9, v1.z, r1
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mul o1.xyz, r1.w, r1
+    dp4 r1.x, c4, r0
+    dp4 r1.y, c5, r0
+    dp4 r1.z, c6, r0
+    add o5.xyz, -r1, r30
+    mov o2.xyz, r1
+    mov o3.w, c12.w
+    mul o4.xyz, c13.xxyw, v2.xyxw
+    mov o6, c13.y
