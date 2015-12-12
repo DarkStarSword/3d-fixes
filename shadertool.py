@@ -518,8 +518,7 @@ class ShaderBlock(SyntaxTree):
                     # instruction since creating a new register means they no
                     # longer point to the same one.
                     node.reg = regs[node.reg]
-                    parent[idx] = Register(node)
-                    node = parent[idx]
+                    parent[idx] = Register(str(node))
                     parent.refresh_args()
             if isinstance(node, Instruction):
                 if insts is not None and node.opcode in insts:
