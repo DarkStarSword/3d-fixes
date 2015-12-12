@@ -854,9 +854,23 @@ def install_shader(shader, file, args):
 
     return install_shader_to(shader, file, args, gamedir)
 
-def check_shader_installed(file):
+def _check_shader_installed(shader_dir, file):
+    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
+    dest = os.path.join(shader_dir, dest_name)
+    return os.path.exists(dest)
+
+def check_shader_installed(file, args):
     # TODO: Refactor common code with install functions
     src_dir = os.path.realpath(os.path.dirname(os.path.join(os.curdir, file)))
+
+    if args.install_to:
+        # If using -I we aren't in the dumps directory so we won't know if it's
+        # a vertex or pixel shader until we parse it. We still want the
+        # pre-check though, so just check both possible destinations:
+        vertex_path = os.path.join(args.install_to, 'ShaderOverride/VertexShaders')
+        pixel_path = os.path.join(args.install_to, 'ShaderOverride/PixelShaders')
+        return _check_shader_installed(vertex_path, file) or _check_shader_installed(pixel_path, file)
+
     dumps = os.path.realpath(os.path.join(src_dir, '../..'))
     if os.path.basename(dumps).lower() != 'dumps':
         raise Exception("Not checking if %s installed - not in a Dumps directory" % file)
@@ -871,9 +885,7 @@ def check_shader_installed(file):
     else:
         raise ValueError("Couldn't determine type of shader from directory")
 
-    dest_name = '%s.txt' % shaderutil.get_filename_crc(file)
-    dest = os.path.join(shader_dir, dest_name)
-    return os.path.exists(dest)
+    return _check_shader_installed(shader_dir, file)
 
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.join(os.curdir, file))
@@ -2691,7 +2703,7 @@ def parse_args():
             args.auto_convert = False
 
     args.precheck_installed = False
-    if args.install and not args.force and not args.output and not args.install_to and not args.to_git:
+    if (args.install or args.install_to) and not args.force and not args.output and not args.to_git:
         args.precheck_installed = True
 
     if args.restore_original:
@@ -2763,7 +2775,7 @@ def main():
                 continue
             processed.add(crc)
 
-        if args.precheck_installed and check_shader_installed(file):
+        if args.precheck_installed and check_shader_installed(file, args):
             debug_verbose(0, 'Skipping %s - already installed and you did not specify --force' % file)
             continue
 
