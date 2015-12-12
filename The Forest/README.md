@@ -11,7 +11,9 @@ Fixed
 -----
 - Halos on all surfaces
 - Light, shadows and specular highlights
-- Water (some issues with lights & reflections remain)
+- Water (some issues with reflections remain)
+- Terrain = "High (Parallax Occlusion)" now makes the ground more 3D! Check out
+  the sand, pebbles, etc.
 - Certain UI elements that were originally drawn at screen depth (e.g. camp &
   build HUD icons) are now auto-adjusted (each vertex is adjusted
   independently, which may cause these to stretch similar to compatibility mode
@@ -37,6 +39,9 @@ Known Issues
   in each eye. I'd still suggest leaving it on, because it adds a lot of visual
   fidelity to the game. Increasing it to high helps a little.
 - Mouse cursor is at screen depth
+- Shadows do not fall quite right on parallax occluded terrain - they are
+  slightly under the surface (they are in fact on the real surface, the 3D
+  effect on the terrain could be considered an optical illusion).
 
 Notes
 -----
