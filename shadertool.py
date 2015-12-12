@@ -1032,7 +1032,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
 
     if reg.startswith('dcl_texcoord'):
         dst_reg = find_declaration(tree, reg, 'o').reg
-    if reg.startswith('texcoord') or reg == 'position':
+    elif reg.startswith('texcoord') or reg == 'position':
         dst_reg = find_declaration(tree, 'dcl_%s' % reg, 'o').reg
     else:
         dst_reg = reg
@@ -1079,7 +1079,7 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     if reg.startswith('dcl_texcoord'):
         declared_reg = find_declaration(tree, reg, 'v')
         org_reg = declared_reg.reg
-    if reg.startswith('texcoord'):
+    elif reg.startswith('texcoord'):
         declared_reg = find_declaration(tree, 'dcl_%s' % reg, 'v')
         org_reg = declared_reg.reg
     else:
@@ -2407,7 +2407,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
 
     if reg.startswith('dcl_texcoord'):
         reg = find_declaration(tree, reg, 'o').reg
-    if reg.startswith('texcoord'):
+    elif reg.startswith('texcoord'):
         reg = find_declaration(tree, 'dcl_%s' % reg, 'o').reg
 
     disabled = stereo_const.xxxx
