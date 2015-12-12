@@ -307,6 +307,15 @@ class Instruction(SyntaxTree):
     def is_def_or_dcl(self):
         return self.is_definition() or self.is_declaration() or self.opcode in sections
 
+    def refresh_args(self):
+        '''
+        Call after updating the syntax tree to refresh the instruction arguments
+        '''
+        self.args = []
+        for token in self:
+            if isinstance(token, (Register, Number)):
+                self.args.append(token)
+
 class NewInstruction(Instruction):
     def __init__(self, opcode, args):
         self.opcode = OpCode(opcode)
@@ -496,7 +505,22 @@ class ShaderBlock(SyntaxTree):
                 if not replace_dcl and parent.is_declaration():
                     continue
                 if regs is not None and node.reg in regs:
-                    node.reg = regs[node.reg] # FIXME: Update reg.type
+                    # Bit of a hack - Register is supposed to be immutable
+                    # since it is a subclass of str, but here we are changing
+                    # just part of it, which will get it's string
+                    # representation out of sync with itself (and e.g. causes
+                    # find_declaration('texcoord', 'v') to fail in a
+                    # non-obvious way since the representation starts with 'v',
+                    # but the immutable string still starts with 't'). To fix
+                    # this, we create a new Register based on the string
+                    # representation of the modified register, and we then need
+                    # to refresh the copy of the arguments in the parent
+                    # instruction since creating a new register means they no
+                    # longer point to the same one.
+                    node.reg = regs[node.reg]
+                    parent[idx] = Register(node)
+                    node = parent[idx]
+                    parent.refresh_args()
             if isinstance(node, Instruction):
                 if insts is not None and node.opcode in insts:
                     parent[idx] = insts[node.opcode]
@@ -663,7 +687,7 @@ class PS11(PixelShader):
 
         def fixup_ps11_modifier(tree, node, parent, idx, match, gi):
             reg = node.args[0]
-            node.opcode = match.group('before') + match.group('after')
+            node.opcode = OpCode(match.group('before') + match.group('after'))
             node[0] = node.opcode
             modifier = match.group('modifier')
             if modifier[1] == 'x':
@@ -706,20 +730,20 @@ class PS2(PixelShader):
             modifier = node.opcode[3:]
             reg = node.args[0]
             if reg.type == 'v':
-                node.opcode = 'dcl_color%s' % modifier
+                node.opcode = OpCode('dcl_color%s' % modifier)
                 if reg.num:
-                    node.opcode = 'dcl_color%d%s' % (reg.num, modifier)
+                    node.opcode = OpCode('dcl_color%d%s' % (reg.num, modifier))
             elif reg.type == 't':
-                node.opcode = 'dcl_texcoord%s' % modifier
+                node.opcode = OpCode('dcl_texcoord%s' % modifier)
                 if reg.num:
-                    node.opcode = 'dcl_texcoord%d%s' % (reg.num, modifier)
+                    node.opcode = OpCode('dcl_texcoord%d%s' % (reg.num, modifier))
             node[0] = node.opcode
         self.analyse_regs()
         replace_regs = {}
 
         if 't' in self.reg_types:
             for reg in sorted(self.reg_types['t']):
-                replace_regs[reg.reg] = new_reg = self._find_free_reg('v', PS3)
+                replace_regs[reg.reg] = self._find_free_reg('v', PS3)
 
         self.do_replacements(replace_regs, True, {self.model: 'ps_3_0'},
                 {'sincos': fixup_sincos, 'dcl': fixup_ps2_dcl,
