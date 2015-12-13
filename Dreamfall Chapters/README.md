@@ -12,7 +12,10 @@ This is a major update:
 - Added an automatic depth adjustment to the HUD. The floating targeting icon
   and descriptive text will automatically adjust their depth to match whatever
   the icon is resting on. This is not 100% perfect (and the mouse cursor is
-  still at screen depth), so it can be toggled on and off with Q.
+  still at screen depth), so it can be toggled on and off with Q.  
+  [Info about the technique][1]
+
+[1]: https://forums.geforce.com/default/topic/902840/3d-vision/i-fixed-unity-reflections-and-got-more-than-i-bargained-for/post/4754023/#4754023
 
 - Brand new Unity lighting fix (yes, this is the second time this game has been
   used to develop a new lighting fix) - looks exactly the same as the old one,
@@ -27,7 +30,10 @@ This is a major update:
   detail, highlights reflecting on wooden surfaces are below the surface, and
   even things like Zoe's leather jacket reflect light in just the right way. I
   highly recommend loading a save from Book one and taking a stroll around
-  Propast to see the difference this makes :)
+  Propast to see the difference this makes :)  
+  [Screenshots and info about the technique][2]
+
+[2]: https://forums.geforce.com/default/topic/902840/3d-vision/i-fixed-unity-reflections-and-got-more-than-i-bargained-for/
 
 Installation
 ------------
@@ -75,6 +81,7 @@ Additional Notes
 Thanks to everyone who helped out on the forum to make the original Book 1 fix
 possible, especially 4everAwake and mike_ar69! This was the game where we
 cracked Unity 5 lighting and has enabled many more fixes since - shaderhackers
-may be interested in reading through this thread:
+may be interested in reading through [this thread][3] for background on the
+original technique.
 
-<https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters>
+[3]: https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters
