@@ -97,10 +97,17 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --adjust-input=texcoord6 --ignore-other-errors Ceto_OceanTopSide_BRDF/fp/471526C3.txt
+mov r14, v5
+texldl r12, c220.z, s15
+add r12.w, r14.w, -r12.y
+mad r14.x, r12.w, r12.x, r14.x
+
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Ceto_OceanTopSide_BRDF/fp/471526C3.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --adjust-input=texcoord6 --ignore-other-errors Ceto_OceanTopSide_BRDF/fp/471526C3.txt
 mov r30, c12
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -226,13 +233,13 @@ add r30.xyz, r30, -r29
     mad r2.xy, r2, c31.x, c31.y
     texld_pp r9, r2, s12
     mul_pp r2.xyz, r9, c33.z
-    mul r1.x, c13.x, v5.y
+    mul r1.x, c13.x, r14.y
     mul r9.w, r1.x, c33.z
-    mul r9.xz, c33.z, v5.xyww
+    mul r9.xz, c33.z, r14.xyww
     mad r9.xy, r9.z, c14.zwzw, r9.xwzw
-    mov r9.zw, v5
+    mov r9.zw, r14
     texldp r9, r9, s11
-    mad r1.x, r9.z, c13.z, -v5.w
+    mad r1.x, r9.z, c13.z, -r14.w
     mul_sat r1.x, r1.x, c33.z
     mul_pp r2.xyz, r1.x, r2
     mov r3.z, c31.z

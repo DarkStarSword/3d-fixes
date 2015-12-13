@@ -76,8 +76,8 @@ def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
 // Input adjustment inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors -f Ceto_OceanUnderSide_BRDF/fp/3FBBFAA4.txt
-mov r8.xyz, v4
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --ignore-other-errors Ceto_OceanUnderSide_BRDF/fp/3FBBFAA4.txt
+mov r8, v5
 texldl r7, c220.z, s15
 add r7.w, r8.w, -r7.y
 mad r8.x, r7.w, r7.x, r8.x
@@ -85,7 +85,7 @@ mad r8.x, r7.w, r7.x, r8.x
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors -f Ceto_OceanUnderSide_BRDF/fp/3FBBFAA4.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --ignore-other-errors Ceto_OceanUnderSide_BRDF/fp/3FBBFAA4.txt
 mov r30, c8
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -98,7 +98,7 @@ dp4 r29.y, c191, r28
 dp4 r29.z, c192, r28
 add r30.xyz, r30, -r29
 
-    mad r0.xzw, r8.xyzx, c31.xyxy, c31.yyyx
+    mad r0.xzw, v4.xyzx, c31.xyxy, c31.yyyx
     mov r0.y, c17.x
     dp4_pp r1.x, c7, r0
     rcp r1.x, r1.x
@@ -178,15 +178,15 @@ add r30.xyz, r30, -r29
     rsq_pp r0.w, r0.w
     mul_pp r0.xyz, r0.w, r0
     mul r1.xy, r0, -c23.w
-    mov r2.zw, v5
+    mov r2.zw, r8
     mov r1.zw, c31.y
-    mul r3.xz, c31.z, v5.xyww
-    mad r2.xy, v5, c26.yxzw, r3.z
+    mul r3.xz, c31.z, r8.xyww
+    mad r2.xy, r8, c26.yxzw, r3.z
     add r1, r1, r2
     texldp_pp r1, r1, s4
     mov r2.xy, c23
     add r2.xyz, r2.xyxw, r30
-    add r2.xyz, r2, -r8
+    add r2.xyz, r2, -v4
     nrm_pp r4.xyz, r2
     dp3_pp r0.w, -r4.xzyw, -r0
     mul_pp r0.xyz, r0, c31.wxww
@@ -224,12 +224,12 @@ add r30.xyz, r30, -r29
     exp_sat r6.z, r5.z
     mad_pp r2.xyz, r6, r2, r4
     lrp r4.xyz, r0.w, r2, r1
-    mul r1.w, c9.x, v5.y
+    mul r1.w, c9.x, r8.y
     mul r3.w, r1.w, c31.z
     mad r2.xy, r3.z, c10.zwzw, r3.xwzw
-    mov r2.zw, v5
+    mov r2.zw, r8
     texldp r2, r2, s5
-    mad r1.w, r2.z, c9.z, -v5.w
+    mad r1.w, r2.z, c9.z, -r8.w
     mul_sat r1.w, r1.w, c31.z
     lrp_pp r2.xyz, r1.w, r4, r1
     dp3_pp r1.x, v1, r0

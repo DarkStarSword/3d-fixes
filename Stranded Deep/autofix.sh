@@ -20,8 +20,18 @@ find -maxdepth 1 -print0 | grep -zv '\(Ceto_OceanTopSide_BRDF\|Ceto_OceanUnderSi
 	shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors | unix2dos | tee -a ../../DX9Settings.ini
 
 # Ocean halo fix in the pixel shader:
-shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --ignore-other-errors Ceto_OceanTopSide_BRDF/fp/* | unix2dos | tee -a ../../DX9Settings.ini
-shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors Ceto_OceanUnderSide_BRDF/fp/* | unix2dos | tee -a ../../DX9Settings.ini
+grep -lZ '^\/\/.*Keywords {.*\(DIRECTIONAL\|POINT\|SPOT\)' Ceto_OceanTopSide_BRDF/fp/*.txt | xargs -0 grep -LZ '^\/\/.*Keywords {.*DIRLIGHTMAP' | xargs -0 \
+	shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --adjust-input=texcoord6 --ignore-other-errors #| unix2dos | tee -a ../../DX9Settings.ini
+grep -lZ '^\/\/.*Keywords {.*DIRLIGHTMAP' Ceto_OceanTopSide_BRDF/fp/*.txt | xargs -0 \
+	shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --ignore-other-errors #| unix2dos | tee -a ../../DX9Settings.ini
+
+grep -lZ '^\/\/.*Keywords {.*\(DIRECTIONAL\|POINT\|SPOT\)' Ceto_OceanUnderSide_BRDF/fp/*.txt | xargs -0 grep -LZ '^\/\/.*Keywords {.*DIRLIGHTMAP' | xargs -0 \
+	shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord5 --ignore-other-errors #| unix2dos | tee -a ../../DX9Settings.ini
+grep -lZ '^\/\/.*Keywords {.*DIRLIGHTMAP' Ceto_OceanUnderSide_BRDF/fp/*.txt | xargs -0 \
+	shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --ignore-other-errors #| unix2dos | tee -a ../../DX9Settings.ini
+grep -lZ '^\/\/.*Keywords {.*SHADOWS_DEPTH' Ceto_OceanUnderSide_BRDF/fp/*.txt | xargs -0 \
+	shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord --ignore-other-errors #| unix2dos | tee -a ../../DX9Settings.ini
+
 # shadertool.py -I ../.. --stereo-sampler-ps=s15 --adjust-input=v0 --adjust-input=v1 --adjust-multiply=0.5 Beam\ Team_Ocean_OceaB/fp/*
 
 # Reflection fix:
