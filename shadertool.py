@@ -43,6 +43,7 @@ reg_names = {
 }
 
 class NoFreeRegisters(Exception): pass
+class ExceptionDontReport(Exception): pass
 
 verbosity = 0
 def debug(*args, **kwargs):
@@ -1097,14 +1098,32 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
 
 def adjust_output(tree, args):
     if not isinstance(tree, VS3):
-        raise Exception('Output adjustment must be done on a vertex shader (currently)')
+        raise Exception('Output adjustment must be done on a vertex shader')
 
     stereo_const, _ = insert_stereo_declarations(tree, args)
 
     tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
+    success = False
+
     for reg in args.adjust:
-        _adjust_output(tree, reg, args, stereo_const, tmp_reg)
+        try:
+            _adjust_output(tree, reg, args, stereo_const, tmp_reg)
+            success = True
+        except Exception as e:
+            if args.ignore_other_errors:
+                collected_errors.append((tree.filename, e))
+                import traceback, time
+                traceback.print_exc()
+                last_exc = e
+                continue
+            raise
+
+    if not success and last_exc is not None:
+        # We have already reported this exception, but since none of the inputs
+        # were adjusted we don't want this shader to be installed. Raise a
+        # special exception to skip it without double reporting the error.
+        raise ExceptionDontReport()
 
 def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     # TODO: Refactor common code with _adjust_output
@@ -1153,8 +1172,26 @@ def adjust_input(tree, args):
     stereo_const, _ = insert_stereo_declarations(tree, args)
     tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
+    success = False
+
     for reg in args.adjust_input:
-        _adjust_input(tree, reg, args, stereo_const, tmp_reg)
+        try:
+            _adjust_input(tree, reg, args, stereo_const, tmp_reg)
+            success = True
+        except Exception as e:
+            if args.ignore_other_errors:
+                collected_errors.append((tree.filename, e))
+                import traceback, time
+                traceback.print_exc()
+                last_exc = e
+                continue
+            raise
+
+    if not success and last_exc is not None:
+        # We have already reported this exception, but since none of the inputs
+        # were adjusted we don't want this shader to be installed. Raise a
+        # special exception to skip it without double reporting the error.
+        raise ExceptionDontReport()
 
 def pos_to_line(tree, position):
     return len([ x for x in tree[:position] if isinstance(x, NewLine) ]) + 1
@@ -2467,8 +2504,26 @@ def disable_output(tree, args):
 
     tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
+    success = False
+
     for reg in args.disable_output:
-        _disable_output(tree, reg, args, stereo_const, tmp_reg)
+        try:
+            _disable_output(tree, reg, args, stereo_const, tmp_reg)
+            success = True
+        except Exception as e:
+            if args.ignore_other_errors:
+                collected_errors.append((tree.filename, e))
+                import traceback, time
+                traceback.print_exc()
+                last_exc = e
+                continue
+            raise
+
+    if not success and last_exc is not None:
+        # We have already reported this exception, but since none of the inputs
+        # were adjusted we don't want this shader to be installed. Raise a
+        # special exception to skip it without double reporting the error.
+        raise ExceptionDontReport()
 
 def disable_shader(tree, args):
     if isinstance(tree, VS3):
@@ -2878,6 +2933,10 @@ def main():
                 traceback.print_exc()
                 continue
             raise
+        except ExceptionDontReport as e:
+            # Exception has already been reported, we are just here to skip
+            # installing the shader
+            continue
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
