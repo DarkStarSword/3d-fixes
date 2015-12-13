@@ -159,21 +159,20 @@ if_ne r0.w, c220.y
 	// the shader has valid MV and MVP matrices so we can still derive the
 	// inverse projection matrix to get the FOV like usual.
 
-	// Our projection matrix will be valid, so we can use the matrices
-	// passed into this shader:
-	mov r25, c4 // MV[0]
-	mov r26, c5 // MV[1]
-	mov r27, c6 // MV[2]
-	mov r28, c0 // MVP[0]
-
-	// We can't use Helix mod to invert the MV matrix since we are either
-	// using the matrix passed directily into this shader, or a 3x4 matrix
-	// copied from a different shader (Helix mod expects a 4x4 matrix).
+	// We can't use Helix mod to invert the MV matrix since we are already
+	// using both matrix copy slots for the inverse MVP and _Object2World
+	// matrices, and the MV matrix in Unity 5 is only a 3x4 matrix, while
+	// Helix Mod expects a 4x4 matrix.
 	// So let's do it directly in assembly instead! It sounds complicated,
 	// but we can make some large simplifications based on assumptions
 	// about the MV and MVP matrices and the fact we only need one cell of
 	// the (inverse) projection matrix, which means it is actually possible
 	// to do in a farily small number of instructions :)
+
+	// Use a temporary register for MV[1] to get around the fact that some
+	// of the below instructions need to read from more constant registers
+	// than there are available read ports:
+	mov r26, c5
 
 	// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
 	//    4th column of the MV matrix is 0,0,0,1
@@ -187,43 +186,35 @@ if_ne r0.w, c220.y
 	// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
 
 	// Do some multiplications in parallel with SIMD instructions:
-	mul r20.xyz, r25.yzx, r26.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
-	mul r21.xyz, r25.zxy, r26.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+	mul r20.xyz, c4.yzx, r26.zxy	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+	mul r21.xyz, c4.zxy, r26.yzx	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
 	// Do the subtractions:
 	add r20.xyz, r20.xyz, -r21.xyz	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
 	// Now the final three multiplications and the two additions:
-	dp3 r22.w, r20.xyz, r27.xyz
-	if_eq r22.w, c220.x
-		mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
-	else
-		// And finally get 1/determinant:
-		rcp r22.w, r22.w
+	dp3 r22.w, r20.xyz, c6.xyz
+	// And finally get 1/determinant:
+	rcp r22.w, r22.w
 
-		// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
-		//    the 4th column of the MV matrix is 0,0,0,1
-		//
-		// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
-		// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
-		// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+	// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+	//    the 4th column of the MV matrix is 0,0,0,1
+	//
+	// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+	// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+	// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
 
-		// Do some multiplications in parallel with SIMD instructions:
-		mul r20.xyz, r26.yzx, r27.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
-		mul r21.xyz, r26.zxy, r27.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
-		// Do the subtractions:
-		add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
-		// Multiply against 1/determinant:
-		mul r20.xyz, r20.xyz, r22.www
+	// Do some multiplications in parallel with SIMD instructions:
+	mul r20.xyz, r26.yzx, c6.zxy	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+	mul r21.xyz, r26.zxy, c6.yzx	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+	// Do the subtractions:
+	add r20.xyz, r20.xyz, -r21.xyz	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+	// Multiply against 1/determinant:
+	mul r20.xyz, r20.xyz, r22.www
 
-		// 3. Multiply the first row of the inverted MV matrix with the 1st column of
-		//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
-		dp3 r30.x, r20.xyz, r28.xyz
+	// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+	//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+	dp3 r30.x, r20.xyz, c0.xyz
 
-		if_eq r30.x, c220.x
-			mov r30.x, c220.w // One of the inputs was zero, use a hardcoded FOV
-		else
-			rcp r30.x, r30.x // Calculate P.I[0,0]
-		endif
-	endif
+	rcp r30.x, r30.x // Calculate P.I[0,0]
 
 	// Apply view-space stereo correction to ray:
 	mad r1.x, r31.w, r30.x, r1.x
