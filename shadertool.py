@@ -10,6 +10,7 @@ import shaderutil
 # Regular expressions to match various shader headers:
 unity_CameraDepthTexture              = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
 unity_CameraToWorld                   = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+unity_FrustumCornersWS                = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
 unity_glstate_matrix_mvp_pattern      = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
 unity_Object2World                    = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
 unity_WorldSpaceCameraPos             = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
@@ -2365,6 +2366,75 @@ def fix_unity_reflection(tree, args):
 
     tree.autofixed = True
 
+def fix_unity_frustrum_world(tree, args):
+    try:
+        match = find_header(tree, unity_FrustumCornersWS)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _FrustumCornersWS, or is missing headers (my other scripts can extract these)')
+        return
+    _FrustumCornersWS = [ Register('c' + match.group('matrix')) ]
+    for i in range(1, 4):
+        _FrustumCornersWS.append(Register('c%i' % (_FrustumCornersWS[0].num + i)))
+
+    inv_mvp0 = tree._find_free_reg('c', None, desired=180)
+    # FIXME: Confirm these are free too:
+    inv_mvp1 = Register('c%i' % (inv_mvp0.num + 1))
+    inv_mvp2 = Register('c%i' % (inv_mvp0.num + 2))
+    inv_mvp3 = Register('c%i' % (inv_mvp0.num + 3))
+    _Object2World0 = tree._find_free_reg('c', None, desired=190)
+    # FIXME: Confirm these are free too:
+    _Object2World1 = Register('c%i' % (_Object2World0.num + 1))
+    _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
+    _ZBufferParams = tree._find_free_reg('c', None, desired=150)
+
+    repl_frustrum = []
+    for i in range(4):
+        repl_frustrum.append( tree._find_free_reg('r', None))
+        replace_regs = {_FrustumCornersWS[i]: repl_frustrum[i]}
+        tree.do_replacements(replace_regs, False)
+
+    t = tree._find_free_reg('r', None, desired=31)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+
+    pos = tree.decl_end
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+
+    clip_space_adj = tree._find_free_reg('r', None, desired=29)
+    local_space_adj = tree._find_free_reg('r', None, desired=28)
+    world_space_adj = clip_space_adj # Reuse the same register
+
+    # Apply a stereo correction to the world space frustrum corners - this
+    # fixes the glow around the sun in The Forest (shaders called Sunshine
+    # PostProcess Scatter)
+    pos += insert_vanity_comment(args, tree, pos, "Unity _FrustrumCornerWS fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, _ZBufferParams.z, _ZBufferParams.w]), comment='Derive 1/far from _ZBufferParams')
+    pos += tree.insert_instr(pos, NewInstruction('rcp', [clip_space_adj.x, clip_space_adj.x]))
+    pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, clip_space_adj.x, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.w, inv_mvp3, clip_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.x, _Object2World0, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
+    pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
+    for i in range(4):
+        pos += tree.insert_instr(pos, NewInstruction('add', [repl_frustrum[i], _FrustumCornersWS[i], -world_space_adj]))
+    pos += tree.insert_instr(pos)
+
+    if not hasattr(tree, 'ini'):
+        tree.ini = []
+    tree.ini.append(('UseMatrix', 'true',
+        'Copy inversed MVP matrix, _Object2World and _ZBufferParams in for Unity _FrustrumCornerWS fix'))
+    tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
+    tree.ini.append(('UseMatrix1', 'true', None))
+    tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
+    tree.ini.append(('SetConst1ToReg', str(_ZBufferParams.num), None))
+
+    tree.autofixed = True
+
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
@@ -2701,6 +2771,8 @@ def parse_args():
             help="Variant the above that calculates the adjustment in the vertex shader and passes it through to the pixel shader (does not require matrices copied from elsewhere, but does require a spare output)")
     parser.add_argument('--fix-unity-reflection-ps', action='store_true',
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
+    parser.add_argument('--fix-unity-frustrum-world', action='store_true',
+            help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -2790,7 +2862,8 @@ def args_require_reg_analysis(args):
                 args.fix_unity_lighting_ps_world or \
                 args.fix_unity_reflection or \
                 args.fix_unity_reflection_vs or \
-                args.fix_unity_reflection_ps
+                args.fix_unity_reflection_ps or \
+                args.fix_unity_frustrum_world
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -2913,6 +2986,8 @@ def main():
                 fix_unity_reflection_vs(tree, args)
             if args.fix_unity_reflection_ps:
                 fix_unity_reflection_ps_variant(tree, args)
+            if args.fix_unity_frustrum_world:
+                fix_unity_frustrum_world(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
