@@ -1,3 +1,51 @@
+// CRC32: 615A6D19 | Matched 12 variants of 1 shaders: Hidden/Sunshine/PostProcess/Scatter
+// 
+//      Unity headers extracted from Sunshine Post Scatter.shader
+//      Shader "Hidden/Sunshine/PostProcess/Scatter" {
+//        Properties {
+//         _MainTex ("Base (RGB)", 2D) = "white" { }
+//         _ScatterRamp ("Scatter Ramp (RGB)", 2D) = "white" { }
+//        }
+//        Fallback Off
+//        SubShader 1/2 {
+//          Pass 1/2 {
+//            Name "LIGHT SCATTERING (DESKTOP)"
+//            ZTest False
+//            ZWrite Off
+//            Cull Off
+//            Fog { Mode Off }
+//            GpuProgramID 16683
+//            Program "vp" {
+//              SubProgram "d3d9 " {
+// 004:           Keywords { "SUNSHINE_FILTER_HARD" "SUNSHINE_FOUR_CASCADES" }
+// 001:           Keywords { "SUNSHINE_FILTER_HARD" "SUNSHINE_ONE_CASCADE" }
+// 002:           Keywords { "SUNSHINE_FILTER_HARD" "SUNSHINE_TWO_CASCADES" }
+// 020:           Keywords { "SUNSHINE_FILTER_PCF_2x2" "SUNSHINE_FOUR_CASCADES" }
+// 008:           Keywords { "SUNSHINE_FILTER_PCF_2x2" "SUNSHINE_ONE_CASCADE" }
+// 010:           Keywords { "SUNSHINE_FILTER_PCF_2x2" "SUNSHINE_TWO_CASCADES" }
+// 100:           Keywords { "SUNSHINE_FILTER_PCF_3x3" "SUNSHINE_FOUR_CASCADES" }
+// 040:           Keywords { "SUNSHINE_FILTER_PCF_3x3" "SUNSHINE_ONE_CASCADE" }
+// 080:           Keywords { "SUNSHINE_FILTER_PCF_3x3" "SUNSHINE_TWO_CASCADES" }
+// 800:           Keywords { "SUNSHINE_FILTER_PCF_4x4" "SUNSHINE_FOUR_CASCADES" }
+// 200:           Keywords { "SUNSHINE_FILTER_PCF_4x4" "SUNSHINE_ONE_CASCADE" }
+// 400:           Keywords { "SUNSHINE_FILTER_PCF_4x4" "SUNSHINE_TWO_CASCADES" }
+//                Bind "vertex" Vertex
+//                Bind "texcoord" TexCoord0
+//                Matrix 4 [_FrustumCornersWS]
+//                Matrix 0 [glstate_matrix_mvp]
+//                Vector 11 [_MainTex_TexelSize]
+//                Vector 9 [sunshine_ShadowCoordDepthRayU]
+//                Vector 10 [sunshine_ShadowCoordDepthRayV]
+//                Vector 8 [sunshine_ShadowCoordDepthRayZ]
+//              }
+//            }
+//          }
+//        }
+//      }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     vs_3_0
     def c12, 0, -2, 1, 0
     dcl_position v0
@@ -7,6 +55,16 @@
     dcl_texcoord1 o2
     dcl_texcoord2 o3.xy
     dcl_texcoord3 o4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Adjust the texcoord by separation/2 to move light shafts to infinity:
+mov r10, v1
+mad r10.x, -r31.x, c220.w, r10.x
+
     dp4 o0.x, c0, v0
     dp4 o0.y, c1, v0
     dp4 o0.z, c2, v0
@@ -16,7 +74,7 @@
     mad r0.y, v1.y, c12.y, c12.z
     mad r0.x, r0.x, r0.y, v1.y
     mov r1, c9
-    mad r1, v1.x, r1, c8
+    mad r1, r10.x, r1, c8 // Use modified texcoord to fix light shafts
     mad o2, r0.x, c10, r1
     mov o3.y, r0.x
     mov r0, c4
@@ -28,6 +86,4 @@
     add r0, r0, -r1
     mad o4, v1.y, r0, r1
     mov o1.xy, v1
-    mov o3.x, v1.x
-
-// approximately 22 instruction slots used
+    mov o3.x, v1.x // *Must* use original texcoord here!
