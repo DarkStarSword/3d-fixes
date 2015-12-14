@@ -83,13 +83,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
-texldl r31, c220.z, s15
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-unity-ceto-reflections --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanTopSide_High_TF/fp/F76A732E.txt
+mov r13.xyw, v4
+texldl r12, c220.z, s15
+add r12.w, r13.w, -r12.y
+mul r12.w, r12.w, r12.x
+mul r12.w, r12.w, c220.w
+add r13.x, r13.x, r12.w
+
+texldl r11, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors CetoTF_OceanTopSide_High_TF/fp/F76A732E.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-unity-ceto-reflections --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanTopSide_High_TF/fp/F76A732E.txt
 mov r30, c8
 mov r29, c220.x
-mul r29.x, r31.x, -r31.y
+mul r29.x, r11.x, -r11.y
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
@@ -233,9 +242,15 @@ add r30.xyz, r30, -r29
     mad_pp r1.zw, r4.xyxz, -r1.z, r8.xyxz
     cmp_pp r1.zw, r0.w, r8.xyxz, r1
     mul r1.zw, r1, c19.x
-    rcp r0.w, v4.w
-    mad_pp r6.xy, v4, r0.w, r1.zwzw
+    rcp r0.w, r13.w
+    mad_pp r6.xy, r13, r0.w, r1.zwzw
     mov r6.zw, c36.y
+
+// Ceto_Reflections fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-unity-ceto-reflections --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanTopSide_High_TF/fp/F76A732E.txt
+texldl r31, c220.z, s15
+mad r6.x, -r31.x, c220.w, r6.x
+
     texldl_pp r6, r6, s0
     mul_pp r6.xyz, r6, c18
     lrp_pp r7.xzw, r1.y, r6.xyyz, c26.xyyz

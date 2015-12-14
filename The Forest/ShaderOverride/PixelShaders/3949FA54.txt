@@ -76,10 +76,19 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-unity-ceto-reflections --adjust-input=texcoord4 --adjust-input=texcoord8 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanUnderSide_Low_TF/fp/3949FA54.txt
+mov r9, v6
+texldl r7, c220.z, s15
+add r7.w, r9.w, -r7.y
+mul r7.w, r7.w, r7.x
+mul r7.w, r7.w, c220.w
+add r9.x, r9.x, r7.w
+
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors CetoTF_OceanUnderSide_Low_TF/fp/3949FA54.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-unity-ceto-reflections --adjust-input=texcoord4 --adjust-input=texcoord8 --adjust-multiply=0.5 --ignore-other-errors CetoTF_OceanUnderSide_Low_TF/fp/3949FA54.txt
 mov r30, c8
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -291,7 +300,7 @@ add r30.xyz, r30, -r29
     mul r0.y, r0.y, c15.x
     mul_pp r0.y, r0.z, r0.y
     cmp_pp r0.y, c9.y, r0.y, r4.y
-    texldp_pp r3, v6, s0
+    texldp_pp r3, r9, s0
     mul_pp r2.yzw, r3.x, c13.xxyz
     mul_pp r0.yzw, r0.y, r2
     add r1.w, -r2.x, c32.x
