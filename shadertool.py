@@ -8,6 +8,7 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 import shaderutil
 
 # Regular expressions to match various shader headers:
+unity_Ceto_Reflections                = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[Ceto_Reflections\]\s2D\s(?P<sampler2>[0-9]+)$')
 unity_CameraDepthTexture              = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
 unity_CameraToWorld                   = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
 unity_FrustumCornersWS                = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
@@ -15,7 +16,7 @@ unity_glstate_matrix_mvp_pattern      = re.compile(r'//\s+Matrix\s(?P<matrix>[0-
 unity_Object2World                    = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
 unity_WorldSpaceCameraPos             = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
 unity_ZBufferParams                   = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
-unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+(?P<sampler>s[0-9]+)\s+1$')
+unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<sampler>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
@@ -1495,29 +1496,28 @@ def auto_fix_unreal_light_shafts(tree, args):
 
     tree.autofixed = True
 
-# Not sure if this is a generic UE3 thing, or specific to Life Is Strange
-def auto_fix_unreal_dne_reflection(tree, args):
+def adjust_simple_reflection_to_infinity(tree, args, sampler_pattern, sampler_name, fix_name="simple reflection infinity adjustment"):
     if not isinstance(tree, PS3):
-        raise Exception('Unreal DNE reflection fix is only applicable to pixel shaders')
+        raise Exception('%s fix is only applicable to pixel shaders' % fix_name)
 
     try:
-        match = find_header(tree, unreal_DNEReflectionTexture_pattern)
+        match = find_header(tree, sampler_pattern)
     except KeyError:
-        debug_verbose(0, 'Shader does not use DNEReflectionTexture')
+        debug_verbose(0, 'Shader does not use %s' % sampler_name)
         return
 
-    orig = Register(match.group('sampler'))
-    debug_verbose(0, 'DNEReflectionTexture identified as %s' % orig)
+    orig = Register('s' + match.group('sampler'))
+    debug_verbose(0, '%s identified as %s' % (sampler_name, orig))
 
     results = scan_shader(tree, orig, write=False)
     if not results:
-        debug_verbose(0, 'DNEReflectionTexture is not used in shader')
+        debug_verbose(0, '%s is not used in shader' % sampler_name)
         return
     if len(results) > 1:
-        debug("Autofixing a shader using DNEReflectionTexture multiple times is untested and disabled for safety. Please enable it, test and report back.")
+        debug("Autofixing a shader using %s multiple times is untested and disabled for safety. Please enable it, test and report back." % sampler_name)
         return
 
-    debug_verbose(-1, 'Applying DNE reflection fix')
+    debug_verbose(-1, 'Applying simple adjustment to move reflection to infinity')
 
     t = tree._find_free_reg('r', PS3, desired=31)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
@@ -1525,13 +1525,20 @@ def auto_fix_unreal_dne_reflection(tree, args):
     for (sampler_line, sampler_linepos, sampler_instr) in results:
         orig_pos = pos = prev_line_pos(tree, sampler_line + offset)
         reg = sampler_instr.args[1]
-        pos += insert_vanity_comment(args, tree, pos, "DNERefelctionTexture fix inserted with")
+        pos += insert_vanity_comment(args, tree, pos, "%s fix inserted with" % sampler_name)
         pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
         pos += tree.insert_instr(pos, NewInstruction('mad', [reg.x, -t.x, stereo_const.w, reg.x]))
         pos += tree.insert_instr(pos)
         offset += pos - orig_pos
 
         tree.autofixed = True
+
+# Not sure if this is a generic UE3 thing, or specific to Life Is Strange
+def auto_fix_unreal_dne_reflection(tree, args):
+    return adjust_simple_reflection_to_infinity(tree, args, unreal_DNEReflectionTexture_pattern, 'DNEReflectionTexture')
+
+def adjust_unity_ceto_reflections(tree, args):
+    return adjust_simple_reflection_to_infinity(tree, args, unity_Ceto_Reflections, 'Ceto_Reflections')
 
 def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_pattern, matrix_name='ScreenToShadowMatrix', name="shadow"):
     if not isinstance(tree, PS3):
@@ -2773,6 +2780,8 @@ def parse_args():
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
     parser.add_argument('--fix-unity-frustrum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
+    parser.add_argument('--adjust-unity-ceto-reflections', action='store_true',
+            help="Attempt to automatically fix reflections in Unity Ceto Ocean shader")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -2856,6 +2865,7 @@ def args_require_reg_analysis(args):
                 args.disable_redundant_unreal_correction or \
                 args.auto_fix_unreal_light_shafts or \
                 args.auto_fix_unreal_dne_reflection or \
+                args.adjust_unity_ceto_reflections or \
                 args.auto_fix_unreal_shadows or \
                 args.auto_fix_unreal_lights or \
                 args.fix_unity_lighting_ps or \
@@ -2972,6 +2982,8 @@ def main():
                 auto_fix_unreal_light_shafts(tree, args)
             if args.auto_fix_unreal_dne_reflection:
                 auto_fix_unreal_dne_reflection(tree, args)
+            if args.adjust_unity_ceto_reflections:
+                adjust_unity_ceto_reflections(tree, args)
             if args.auto_fix_unreal_shadows:
                 auto_fix_unreal_shadows(tree, args)
             if args.auto_fix_unreal_lights:
