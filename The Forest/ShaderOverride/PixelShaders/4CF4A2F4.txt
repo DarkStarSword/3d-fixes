@@ -1,3 +1,45 @@
+// CRC32: 4CF4A2F4 | Unity headers extracted from SESSAO.shader
+// Shader "Hidden/SESSAO" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "white" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/7 {
+//       ZTest False
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       GpuProgramID 31003
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Matrix 0 [ProjectionMatrixInverse]
+//           Float 7 [Bias]
+//           Float 13 [Downsamp]
+//           Float 11 [DrawDistance]
+//           Float 12 [DrawDistanceFadeSize]
+//           Float 14 [HalfSampling]
+//           Float 9 [Intensity]
+//           Float 16 [Orthographic]
+//           Float 15 [PreserveDetails]
+//           Float 6 [Radius]
+//           Float 10 [SampleDistributionCurve]
+//           Float 8 [ZThickness]
+//           Vector 5 [_MainTex_TexelSize]
+//           Vector 4 [_ScreenParams]
+//           SetTexture 0 [_CameraDepthNormalsTexture] 2D 0
+//           SetTexture 1 [_CameraDepthTexture] 2D 1
+//           SetTexture 2 [_DitherTexture] 2D 2
+//           SetTexture 3 [_ColorDownsampled] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
     ps_3_0
     def c17, 3.55539989, 0, -1.77769995, 1
     def c18, 5, 4, 8, 9.99999975e-005
@@ -12,10 +54,21 @@
     dcl_2d s1
     dcl_2d s2
     dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
     mul r0, c22.xxyy, v0.xyxx
     texldl r0, r0, s1
     mad r0.z, r0.x, c22.z, c22.w
     mad r0.xyw, v0.xyzx, c22.zzzy, c22.wwzx
+
+// SSAO normal map artefact fix:
+add r31.w, r0.w, -r31.y
+mad r0.x, -r31.w, r31.x, r0.x
+
     dp4 r1.x, c0, r0
     dp4 r1.y, c1, r0
     dp4 r1.z, c2, r0
@@ -85,6 +138,11 @@
         texldl r9, r5, s1
         mad r6.xy, r5, c22.z, c22.w
         mad r6.z, r9.x, c22.z, c22.w
+
+// SSAO normal map artefact fix:
+add r31.w, r6.w, -r31.y
+mad r6.x, -r31.w, r31.x, r6.x
+
         dp4 r9.x, c0, r6
         dp4 r9.y, c1, r6
         dp4 r9.z, c2, r6
@@ -125,5 +183,3 @@
       rsq r0.w, r0.w
       mul oC0.xyz, r0.w, r0
     endif
-
-// approximately 137 instruction slots used (9 texture, 128 arithmetic)
