@@ -11,6 +11,8 @@ Fixed
 - Underwater crepuscular rays
 - Automatically adjust the crosshair depth
 - Automatically remove the crosshair when it is faded out
+- Parallax sand is now 3D
+- SSAO artefacts on rocky surfaces
 
 Installation
 ------------
@@ -36,6 +38,8 @@ Keys
 
 - V: Cycles crosshair modes between automatic, always enabled and always
   disabled (crosshair must be enabled in the settings).
+
+- ~: Move HUD to screen depth (use for inventory + crafting menus)
 
 Troubleshooting
 ---------------

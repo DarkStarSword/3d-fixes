@@ -11,7 +11,7 @@ Fixed
 -----
 - Halos on all surfaces
 - Light, shadows and specular highlights
-- Water (some issues with reflections remain)
+- Water
 - Terrain = "High (Parallax Occlusion)" now makes the ground more 3D! Check out
   the sand, pebbles, etc.
 - Certain UI elements that were originally drawn at screen depth (e.g. camp &
@@ -19,6 +19,9 @@ Fixed
   independently, which may cause these to stretch similar to compatibility mode
   UIs). Note that most of the UI was already at a good depth in this game out
   of the box and has not been adjusted.
+- Light shafts
+- Glow around sun
+- SSAO artefacts on rocky surfaces
 
 Convergence Presets
 -------------------
@@ -26,6 +29,7 @@ Convergence Presets
   crafting book pretty close to the mouse cursor.
 - ]: Sets a higher convergence (2.5) that will bring the inventory closer to
   the mouse cursor.
+- ~: Toggle the above two presets (I reassigned the inventory key to tab)
 
 You can save your own custom convergence & separation preset to these buttons.
 First, press the button you want to edit, then adjust the convergence and
