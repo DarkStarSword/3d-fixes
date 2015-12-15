@@ -1,0 +1,91 @@
+// CRC32: 538EB136 | Unity headers extracted from SESSAO.shader
+// Shader "Hidden/SESSAO" {
+//   Properties {
+//    _MainTex ("Base (RGB)", 2D) = "white" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 3/7 {
+//       ZTest False
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 172486
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Float 3 [DepthTolerance]
+//           Vector 2 [Kernel]
+//           Float 4 [PreserveDetails]
+//           Vector 1 [_MainTex_TexelSize]
+//           Vector 0 [_ZBufferParams]
+//           SetTexture 0 [_CameraDepthNormalsTexture] 2D 0
+//           SetTexture 1 [_CameraDepthTexture] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c5, 3.55539989, 0, -1.77769995, 1
+    def c6, 2, -1, 1, 5
+    def c7, 0, 5, -4, 0
+    defi i0, 255, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    texld r0, v0, s1
+    mad r0.x, c0.z, r0.x, c0.w
+    rcp r0.x, r0.x
+    texld r1, v0, s0
+    mad r0.yzw, r1.xxyz, c5.xxxy, c5.xzzw
+    dp3 r0.w, r0.yzww, r0.yzww
+    rcp r0.w, r0.w
+    add r1.x, r0.w, r0.w
+    mul_pp r1.xy, r0.yzzw, r1.x
+    mad_pp r1.z, r0.w, c6.x, c6.y
+    dp2add_pp r0.y, r1, r1, c5.y
+    rsq_pp r0.y, r0.y
+    rcp_pp r0.y, r0.y
+    mad r0.y, r0.y, c6.x, c6.z
+    mul r0.y, r0.y, c3.x
+    mov r2.xw, c6
+    mad r0.z, c4.x, -r2.x, r2.w
+    rcp r0.y, r0.y
+    mov r2.zw, c5.y
+    mov r3, c5.y
+    mov r0.w, c5.y
+    mov r1.w, c5.y
+    rep i0
+    mov r4.x, r0.z
+    break_ge r1.w, r4.x
+    add r4.x, r1.w, c4.x
+    add r4.x, r4.x, -c6.x
+    mul r4.xy, r4.x, c2
+    mad r2.xy, r4, c1, v0
+    texldl r4, r2.xyww, s1
+    mad r4.x, c0.z, r4.x, c0.w
+    rcp r4.x, r4.x
+    texldl r5, r2.xyww, s0
+    mad r4.yzw, r5.xxyz, c5.xxxy, c5.xzzw
+    dp3 r4.w, r4.yzww, r4.yzww
+    rcp r4.w, r4.w
+    add r5.x, r4.w, r4.w
+    mul_pp r5.xy, r4.yzzw, r5.x
+    mad_pp r5.z, r4.w, c6.x, c6.y
+    add r4.x, r0.x, -r4.x
+    mad_sat r4.x, r4_abs.x, -r0.y, c5.w
+    dp3_pp r4.y, r5, r1
+    mad_sat r4.y, r4.y, c7.y, c7.z
+    mul r4.z, r4.y, r4.x
+    texldl r5, r2, s2
+    mad r3, r5, r4.z, r3
+    mad r0.w, r4.x, r4.y, r0.w
+    add r1.w, r1.w, c5.w
+    endrep
+    rcp r0.x, r0.w
+    mul oC0, r0.x, r3
