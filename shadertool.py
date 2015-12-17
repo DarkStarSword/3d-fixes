@@ -556,6 +556,8 @@ class VertexShader(ShaderBlock): pass
 class PixelShader(ShaderBlock): pass
 
 class VS3(VertexShader):
+    model = 'vs_3_0'
+
     max_regs = { # http://msdn.microsoft.com/en-us/library/windows/desktop/bb172963(v=vs.85).aspx
         'c': 256,
         'i': 16,
@@ -621,6 +623,7 @@ def vs_to_shader_model_3_common(shader, shader_model, args, extra_fixups = {}):
 
     shader.do_replacements(replace_regs, True, {shader_model: 'vs_3_0'}, fixups)
 
+    insert_converted_by(shader, shader_model) # Do this before changing the class!
     shader.__class__ = VS3
 
     if (args.add_fog_on_sm3_update):
@@ -633,15 +636,17 @@ def insert_converted_by(tree, orig_model):
     tree[tree.shader_start].append(CPPStyleComment("// Converted from %s with DarkStarSword's shadertool.py" % orig_model))
 
 class VS11(VertexShader):
+    model = 'vs_1_1'
+
     def to_shader_model_3(self, args):
         # NOTE: Only very lightly tested!
-        vs_to_shader_model_3_common(self, 'vs_1_1', args, {'mov': fixup_mova})
-        insert_converted_by(self, 'vs_1_1')
+        vs_to_shader_model_3_common(self, self.model, args, {'mov': fixup_mova})
 
 class VS2(VertexShader):
+    model = 'vs_2_0'
+
     def to_shader_model_3(self, args):
-        vs_to_shader_model_3_common(self, 'vs_2_0', args)
-        insert_converted_by(self, 'vs_2_0')
+        vs_to_shader_model_3_common(self, self.model, args)
 
 class PS11(PixelShader):
     model = 'ps_1_1'
@@ -753,6 +758,11 @@ class PS2(PixelShader):
         insert_converted_by(self, self.model) # Do this before changing the class!
         self.__class__ = PS3
 
+class VS2X(VS2):
+    # Need to verify, but this looks like the same conversion as vs_2_0 should
+    # work
+    model = 'vs_2_x'
+
 class PS2X(PS2):
     # Need to verify, but this looks like the same conversion as ps_2_0 should
     # work
@@ -762,6 +772,7 @@ sections = {
     'vs_3_0': VS3,
     'ps_3_0': PS3,
     'vs_2_0': VS2,
+    'vs_2_x': VS2X,
     'ps_2_0': PS2,
     'ps_2_x': PS2X,
     'vs_1_1': VS11,
