@@ -8,14 +8,14 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 import shaderutil
 
 # Regular expressions to match various shader headers:
-unity_Ceto_Reflections                = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[Ceto_Reflections\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraDepthTexture              = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraToWorld                   = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
-unity_FrustumCornersWS                = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
-unity_glstate_matrix_mvp_pattern      = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
-unity_Object2World                    = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
-unity_WorldSpaceCameraPos             = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
-unity_ZBufferParams                   = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
+unity_Ceto_Reflections                = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[Ceto_Reflections\]\s2D\s(?P<sampler2>[0-9]+)$')
+unity_CameraDepthTexture              = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
+unity_CameraToWorld                   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
+unity_FrustumCornersWS                = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
+unity_glstate_matrix_mvp_pattern      = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
+unity_Object2World                    = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
+unity_WorldSpaceCameraPos             = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
+unity_ZBufferParams                   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
 unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<sampler>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
@@ -2453,6 +2453,110 @@ def fix_unity_frustrum_world(tree, args):
 
     tree.autofixed = True
 
+def fix_unity_ssao(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unity SSAO fix is only applicable to pixel shaders!')
+
+    try:
+        match = find_header(tree, unity_CameraDepthTexture)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+        return
+    _CameraDepthTexture = Register('s' + match.group('sampler'))
+
+    try:
+        match = find_header(tree, unity_ZBufferParams)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
+        return
+    _ZBufferParams = Register('c' + match.group('constant'))
+
+    debug_verbose(0, '_CameraDepthTexture in %s, _ZBufferParams in %s' % (_CameraDepthTexture, _ZBufferParams))
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step)
+    results = scan_shader(tree, _ZBufferParams, write=False)
+    if len(results) == 0:
+        debug_verbose(0, '_ZBufferParams read 0 times')
+        return
+
+    # Insert the stereo declarations and sampler. FIXME: We don't know for sure
+    # yet that we will be modifying the shader - we should do this once we have
+    # confirmed that we will
+    t = tree._find_free_reg('r', PS3, desired=31)
+    tmp = tree._find_free_reg('r', PS3, desired=30)
+    pos = tree.decl_end
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+    offset += tree.insert_instr(pos + offset, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    offset += tree.insert_instr(pos + offset)
+    separation = t.x; convergence = t.y
+
+    vanity_inserted = False
+    lines_done = set()
+    for (line, linepos, instr) in results:
+        if line in lines_done:
+            continue
+        lines_done.add(line)
+
+        line += offset
+        reg = instr.args[0]
+
+        # We're expecting a reciprocal calculation as part of the Z buffer -> world
+        # Z scaling:
+        results = scan_shader(tree, reg.reg, components=reg.swizzle, opcode='rcp',
+                write=False, start=line+1, stop=True)
+        if not results:
+            debug_verbose(0, 'Could not find expected rcp instruction')
+            continue
+        (line, linepos, instr) = results[0]
+        reg = instr.args[0]
+
+        # Find where the reciprocal is next used:
+        results = scan_shader(tree, reg.reg, components=reg.swizzle, write=False,
+                start=line+1, stop=True, opcode=('mad', 'mul'))
+        if not results:
+            debug_verbose(0, 'Could not find expected instruction')
+            continue
+        (line, linepos, instr) = results[0]
+        reg = instr.args[0]
+
+        if len(reg.swizzle) != 3:
+            debug_verbose(0, 'Instruction has wrong dimensional swizzle - skipping')
+            continue
+
+        start_pos = pos = next_line_pos(tree, line)
+
+        debug('Inserting stereo uncorrection at line %i: %s' % (line, instr))
+
+        if not vanity_inserted:
+            pos += insert_vanity_comment(args, tree, pos, "Unity SSAO fix inserted with")
+            vanity_inserted = True
+        else:
+            pos += tree.insert_instr(pos);
+
+        if instr.opcode == 'mul':
+            x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
+            depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+            pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+            pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+        else:
+            tree[line].insert(0, CPPStyleComment('// '))
+            tree[line].append(WhiteSpace(' '))
+            tree[line].append(CPPStyleComment('// Instruction split into mul and add with shadertool.py'))
+            tmp_reg = Register('%s.%s' % (tmp.reg, reg.swizzle))
+            pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg, instr.args[1], instr.args[2]]))
+            x_reg = Register('%s.%s' % (tmp.reg, reg.swizzle[0]))
+            depth = Register('%s.%s' % (tmp.reg, reg.swizzle[2]))
+            pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+            pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+            pos += tree.insert_instr(pos, NewInstruction('add', [instr.args[0], tmp, instr.args[3]]))
+
+        pos += tree.insert_instr(pos);
+
+        offset += pos - start_pos
+
+    tree.autofixed = True
+
 def add_unity_autofog_VS3(tree, reason):
     try:
         d = find_declaration(tree, 'dcl_fog')
@@ -2791,6 +2895,9 @@ def parse_args():
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
     parser.add_argument('--fix-unity-frustrum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
+    # WORK IN PROGRESS:
+    # parser.add_argument('--fix-unity-ssao', action='store_true',
+    #         help="Attempts to autofix various 3rd party SSAO shaders found in certain Unity games")
     parser.add_argument('--adjust-unity-ceto-reflections', action='store_true',
             help="Attempt to automatically fix reflections in Unity Ceto Ocean shader")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -2884,7 +2991,8 @@ def args_require_reg_analysis(args):
                 args.fix_unity_reflection or \
                 args.fix_unity_reflection_vs or \
                 args.fix_unity_reflection_ps or \
-                args.fix_unity_frustrum_world
+                args.fix_unity_frustrum_world or \
+                args.fix_unity_ssao
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
@@ -3011,6 +3119,8 @@ def main():
                 fix_unity_reflection_ps_variant(tree, args)
             if args.fix_unity_frustrum_world:
                 fix_unity_frustrum_world(tree, args)
+            if args.fix_unity_ssao:
+                fix_unity_ssao(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:
