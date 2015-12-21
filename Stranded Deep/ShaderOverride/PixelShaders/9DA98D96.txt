@@ -71,10 +71,24 @@
     dcl_2d s5
     dcl_2d s6
 
-dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x
-
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps-world --only-autofixed -f ./Hidden_Sunshine-DeferredShading/fp/9DA98D96.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     rcp r0.x, v1.z
     mul r0.x, r0.x, c11.z
@@ -84,19 +98,26 @@ dcl_2d s15
     texld r2, r1, s0
     mad r0.w, c12.x, r2.x, c12.y
     rcp r0.w, r0.w
-    mul r2.xyz, r0.w, r0 // depth in r2.z
+    mul r2.xyz, r0.w, r0
     mov r2.w, c27.x
-
-// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps Hidden_Sunshine-DeferredShading/fp/9DA98D96.txt
-texldl r31, c220.z, s15
-add r31.w, r2.z, -r31.y
-mul r31.w, r31.w, r31.x
-mad r2.x, -r31.w, v5.x, r2.x
-
     dp4 r3.x, c4, r2
     dp4 r3.y, c5, r2
-    dp4 r3.z, c6, r2
+    dp4 r3.z, c6, r2 // depth in r2.z
+
+// Unity light/shadow fix (pixel shader stage, world-space variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps-world --only-autofixed -f ./Hidden_Sunshine-DeferredShading/fp/9DA98D96.txt
+mov r29, c220.x
+add r29.x, r2.z, -r31.y
+mul r29.x, r29.x, r31.x
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r3.xyz, r3, -r29
+
     mov r3.w, c27.x
     dp4 r4.z, c9, r3
     dp4 r4.x, c7, r3
@@ -132,7 +153,7 @@ mad r2.x, -r31.w, v5.x, r2.x
     mad r0.x, r0.x, -r1.z, c27.x
     mad r0.x, r0.x, -c18.x, r2.x
     add r4.xyz, r3, -c14
-    add r3.xyz, r3, -c10
+    add r3.xyz, r3, -r30
     dp3 r0.y, r4, r4
     rsq r0.y, r0.y
     rcp r0.y, r0.y

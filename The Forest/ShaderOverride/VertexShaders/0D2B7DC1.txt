@@ -18,7 +18,7 @@
 //        Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
 //        Pass 1/2 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
 //          ZWrite Off
 //          Blend One One
 //          GpuProgramID 240049
@@ -77,7 +77,7 @@
 //        Tags { "QUEUE"="Geometry-99" "RenderType"="Opaque" "SplatCount"="4" }
 //        Pass 1/2 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry-99" "RenderType"="Opaque" "SplatCount"="4" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-99" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
 //          GpuProgramID 253244
 //          Program "vp" {
 //            SubProgram "d3d9 " {
@@ -112,6 +112,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c24, 1, 0.5, 0, 0
     dcl_position v0
     dcl_normal v1
@@ -128,7 +129,7 @@ dcl_position o7
 
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s0
+dcl_2d s3
 
     mad o4.xy, v2, c19, c19.zwzw
     mad o0.xy, v2, c20, c20.zwzw
@@ -161,11 +162,11 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o7, r0 // Relocated from line 162 with shadertool.py
+mov o7, r0 // Relocated from line 163 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Splatmap_Diffuse-AddPass/vp/0D2B7DC1.txt
-texldl r31, c220.z, s0
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Hidden_TerrainEngine_Splatmap_Diffuse-AddPass/vp/0D2B7DC1.txt
+texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
 
@@ -173,7 +174,8 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o6.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o7, r0 // Relocated to line 159 with shadertool.py
-mov o7.z, r0.z // Inserted by shadertool.py
+//     mov o7, r0 // Relocated to line 160 with shadertool.py
+mov o7.z, r0 // Inserted by shadertool.py
 
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o6.zw, r0

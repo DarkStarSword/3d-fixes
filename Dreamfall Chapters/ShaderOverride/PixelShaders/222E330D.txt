@@ -1,0 +1,277 @@
+// CRC32: 222E330D | Unity headers extracted from Standard_WetMask_Terrain.shader
+// Shader "Dreamfall/Unity5/Terrain/Standard_WetMask_Terrain" {
+//   Properties {
+//    _GlossValues ("Gloss Values for each layer Min Value 0 Max Value 1", Vector) = (0,0,0,0)
+//    _GlossFactor ("Gloss Grayscale Factor", Range(0,1)) = 0
+//    _GlossTerrainMin ("Gloss Terrain min", Range(0,1)) = 0
+//    _GlossTerrainMax ("Gloss Terrain Max", Range(0,1)) = 1
+//    _GlossWet ("Gloss Wet Mask", Range(0,1)) = 1
+//    _RefMask ("Reflection Mask (R)", 2D) = "black" { }
+//    _RefMaskOffsetTile ("RefMask Offset(RB), Tile(G), WetDarkening(A) ", Vector) = (0,0,10,0)
+//    _RefMaskLayerControll ("Reflection Mask layer controll", Vector) = (1,1,1,1)
+//   [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   }
+//   Fallback "Nature/Terrain/Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 3/4 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//       GpuProgramID 195261
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_ON" "UNITY_HDR_ON" }
+//           Float 8 [_GlossFactor]
+//           Float 7 [_GlossTerrainMax]
+//           Float 6 [_GlossTerrainMin]
+//           Vector 4 [_GlossValues]
+//           Float 5 [_GlossWet]
+//           Vector 10 [_RefMaskLayerControll]
+//           Vector 9 [_RefMaskOffsetTile]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [unity_ColorSpaceDielectricSpec]
+//           Vector 3 [unity_LightGammaCorrectionConsts]
+//           Vector 2 [unity_Lightmap_HDR]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [_Control] 2D 2
+//           SetTexture 3 [_Splat0] 2D 3
+//           SetTexture 4 [_Splat1] 2D 4
+//           SetTexture 5 [_Splat2] 2D 5
+//           SetTexture 6 [_Splat3] 2D 6
+//           SetTexture 7 [_Normal0] 2D 7
+//           SetTexture 8 [_Normal2] 2D 8
+//           SetTexture 9 [_Normal3] 2D 9
+//           SetTexture 10 [_RefMask] 2D 10
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 0.333333343, 0.00100000005, 31.622776, 9.99999975e-005
+    def c12, 0.5, 2, -1, 0
+    def c13, 0.967999995, 0.0299999993, 10, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord5_pp v4.xy
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_2d s9
+    dcl_2d s10
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed -f Dreamfall_Unity5_Terrain_Standard_WetMask_Terrain/fp/222E330D.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld r0, v0.zwzw, s6
+    texld r1, v0.zwzw, s5
+    texld r2, v0.zwzw, s3
+    texld r3, v0.zwzw, s4
+    texld_pp r4, v0, s2
+    mul r3.xyz, r3, r4.y
+    mad_pp r2.xyz, r4.x, r2, r3
+    mad_pp r1.xyz, r4.z, r1, r2
+    mad_pp r0.xyz, r4.w, r0, r1
+    add_pp r0.w, r0.y, r0.x
+    mad_pp r0.w, r0.z, c11.x, r0.w
+    max_pp r1.x, r0.w, c8.x
+    min_pp r0.w, r1.x, -c12.z
+    dp4_pp r1.x, c4, r4
+    max_pp r2.x, r1.x, c6.x
+    min_pp r1.x, c7.x, r2.x
+    mul_pp r1.y, r0.w, r1.x
+    mad r0.w, r1.x, -r0.w, c5.x
+    mad_pp r1.xz, v0.xyyw, c9.z, c9.xyyw
+    texld_pp r2, r1.xzzw, s10
+    mul_pp r3, r2.x, c10
+    mul_pp r1.x, r2.x, c5.x
+    add_pp r2, -r4, -c12.z
+    mad r2, r2, -r3, r3
+    add r1.z, r2.y, r2.x
+    add r1.z, r2.z, r1.z
+    add r1.z, r2.w, r1.z
+    mad_pp r0.w, r1.z, r0.w, r1.y
+    mov r2.z, c12.z
+    mad r1.y, r1.z, -c9.w, -r2.z
+    mul_pp r0.xyz, r0, r1.y
+    mul_pp r0.xyz, r0, c1.w
+    add_pp r1.y, -r0.w, -c12.z
+    add_pp r1.z, -r1.y, -c12.z
+    mad_pp r1.z, r1.z, c13.x, c13.y
+    log_pp r1.z, r1.z
+    rcp r1.z, r1.z
+    mul_pp r1.z, r1.z, c13.z
+    mad_pp r1.w, r1.z, r1.z, -c12.z
+    mul_pp r1.z, r1.z, r1.z
+    mul_pp r2.x, r1.w, c3.y
+    texld_pp r3, v0.zwzw, s7
+    mul_pp r3, r3.ywyw, r4.xxyy
+    add_pp r2.yw, r3.xwzz, r3.xyzx
+    texld r3, v0.zwzw, s8
+    mad_pp r2.yw, r4.z, r3.xwzy, r2
+    texld r3, v0.zwzw, s9
+    mad_pp r2.yw, r4.w, r3.xwzy, r2
+    lrp_pp r3.xy, r1.x, c12.x, r2.ywzw
+    mad_pp r3.xy, r3, c12.y, c12.z
+    dp2add_sat_pp r1.x, r3, r3, c12.w
+    add_pp r1.x, -r1.x, -c12.z
+    rsq_pp r1.x, r1.x
+    rcp_pp r3.z, r1.x
+    dp3_pp r4.x, v1, r3
+    dp3_pp r4.y, v2, r3
+    dp3_pp r4.z, v3, r3
+    mov r3.x, v1.w
+    mov r3.y, v2.w
+    mov r3.z, v3.w
+    add r3.xyz, -r3, r30
+    nrm_pp r5.xyz, r3
+    texld_pp r3, v4, s1
+    mad_pp r3.xyz, r3, c12.y, c12.z
+    dp3_pp r1.x, r3, r3
+    rsq_pp r1.x, r1.x
+    rcp_pp r1.x, r1.x
+    max_pp r2.y, c11.y, r1.x
+    rcp r1.x, r2.y
+    mad_pp r6.xyz, r3, r1.x, r5
+    mul_pp r3.xyz, r1.x, r3
+    dp3_pp r1.x, r6, r6
+    add r2.w, -r1.x, c11.y
+    rsq_pp r1.x, r1.x
+    cmp_pp r1.x, r2.w, c11.z, r1.x
+    mul_pp r6.xyz, r1.x, r6
+    dp3_pp r1.x, r4, r6
+    dp3_pp r2.w, r3, r6
+    dp3_pp r3.x, r4, r3
+    max_pp r4.w, r3.x, c12.w
+    max_pp r3.x, r2.w, c12.w
+    max_pp r2.w, r1.x, c12.w
+    pow_pp r3.y, r2.w, r1.z
+    mul_pp r1.x, r2.x, r3.y
+    mul_pp r2.x, r1.y, r1.y
+    mul_pp r2.w, r2.x, c3.w
+    mad_pp r3.y, r2.x, -c3.w, -r2.z
+    dp3_pp r3.z, r4, r5
+    max_pp r5.w, r3.z, c12.w
+    mad_pp r3.z, r5.w, r3.y, r2.w
+    mad_pp r2.w, r4.w, r3.y, r2.w
+    mad r2.w, r2.w, r3.z, c11.w
+    rcp_pp r2.w, r2.w
+    mul_pp r1.x, r1.x, r2.w
+    mul_pp r1.x, r4.w, r1.x
+    mul_pp r1.x, r1.x, c3.x
+    max_pp r2.w, r1.x, c12.w
+    add_pp r1.x, -r5.w, -c12.z
+    texld_pp r6, v4, s0
+    pow_pp r3.y, r6.w, c2.y
+    mul_pp r3.y, r3.y, c2.x
+    mul_pp r3.yzw, r6.xxyz, r3.y
+    mul_pp r6.xyz, r2.y, r3.yzww
+    add_pp r2.y, -r2.y, -c12.z
+    mul_pp r3.yzw, r2.y, r3
+    mul_pp r7.xyz, r2.w, r6
+    add_pp r2.y, -r3.x, -c12.z
+    mul_pp r2.w, r3.x, r3.x
+    dp2add_pp r1.y, r2.w, r1.y, -c12.x
+    mul_pp r2.w, r2.y, r2.y
+    mul_pp r2.w, r2.w, r2.w
+    mul_pp r2.y, r2.y, r2.w
+    lrp_pp r8.xyz, r2.y, -r2.z, c1
+    mul_pp r2.yzw, r7.xxyz, r8.xxyz
+    mul_pp r3.x, r1.x, r1.x
+    mul_pp r3.x, r3.x, r3.x
+    mul_pp r1.x, r1.x, r3.x
+    mad_pp r1.x, r1.y, r1.x, -c12.z
+    add_pp r3.x, -r4.w, -c12.z
+    mul_pp r5.w, r3.x, r3.x
+    mul_pp r5.w, r5.w, r5.w
+    mul_pp r3.x, r3.x, r5.w
+    mad_pp r1.y, r1.y, r3.x, -c12.z
+    mul_pp r1.x, r1.x, r1.y
+    mul_pp r1.x, r4.w, r1.x
+    add_pp r7.xy, c12.xwzw, v4
+    texld_pp r8, r7, s1
+    texld_pp r7, r7, s0
+    mad_pp r8.xyz, r8, c12.y, c12.z
+    dp3_pp r1.y, r8, r8
+    rsq_pp r1.y, r1.y
+    rcp_pp r1.y, r1.y
+    max_pp r3.x, c11.y, r1.y
+    rcp r1.y, r3.x
+    mul_pp r9.xyz, r1.y, r8
+    mad_pp r5.xyz, r8, r1.y, r5
+    dp3_pp r1.y, r4, r9
+    max_pp r5.w, r1.y, c12.w
+    pow_pp r1.y, r7.w, c2.y
+    mul_pp r1.y, r1.y, c2.x
+    mul_pp r7.xyz, r7, r1.y
+    add_pp r1.y, -r3.x, -c12.z
+    mul_pp r8.xyz, r3.x, r7
+    mul_pp r7.xyz, r1.y, r7
+    mul_pp r7.xyz, r5.w, r7
+    mad_pp r3.xyz, r3.yzww, r4.w, r7
+    mad_pp r3.xyz, r6, r1.x, r3
+    mad_pp r2.yzw, r0.xxyz, r3.xxyz, r2
+    dp3_pp r1.x, r5, r5
+    add r1.y, -r1.x, c11.y
+    rsq_pp r1.x, r1.x
+    cmp_pp r1.x, r1.y, c11.z, r1.x
+    mul_pp r3.xyz, r1.x, r5
+    dp3_pp r1.x, r9, r3
+    dp3_pp r1.y, r4, r3
+    mad_pp oC2.xyz, r4, c12.x, c12.x
+    max_pp r3.x, r1.y, c12.w
+    pow_pp r4.x, r3.x, r1.z
+    mul_pp r1.y, r1.w, r4.x
+    max_pp r3.x, r1.x, c12.w
+    mul_pp r1.x, r3.x, r3.x
+    mad_pp r1.x, r1.x, r0.w, r2.x
+    mov_pp oC1.w, r0.w
+    mul_pp r0.w, r1.x, c3.z
+    mad_pp r0.w, r0.w, r3.x, c11.w
+    rcp r0.w, r0.w
+    mul_pp r0.w, r0.w, r1.y
+    mad_pp r1.xyz, r0.w, c1, r0
+    mov_pp oC0.xyz, r0
+    mul_pp r0.xyz, r8, r1
+    mad_pp oC3.xyz, r0, r5.w, r2.yzww
+    mov_pp oC0.w, -c12.z
+    mov_pp oC1.xyz, c1
+    mov_pp oC2.w, -c12.z
+    mov_pp oC3.w, -c12.z

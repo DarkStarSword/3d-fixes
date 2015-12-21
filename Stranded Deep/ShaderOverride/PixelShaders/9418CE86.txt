@@ -1,0 +1,123 @@
+// CRC32: 9418CE86 | Unity headers extracted from lightPrepass.shader
+// Shader "Eisko/lightPrepass" {
+//   Properties {
+//    _ColorAlbedo ("RGB: Color A: F0", Color) = (0.784,0.784,0.784,0.1)
+//    _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//    _tColor ("Translucency color", Color) = (1,0.5,0,1)
+//   [NoScaleOffset]  _AlbedoTex ("Albedo", 2D) = "white" { }
+//    AOsaturation ("AO", Range(0.01,3)) = 1
+//    Roughness ("Roughness", Range(0.0001,3)) = 1
+//   [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//   [NoScaleOffset]  _SpecularMap ("All in One: SpecularMap (R=F0 G=Thickness B=AO A=Roughness", 2D) = "white" { }
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//     Pass 2/3 {
+//       Name "FORWARD_ADD_LIGHTPREPASS"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//       Lighting On
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 66649
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//           Float 2 [AOsaturation]
+//           Vector 6 [_ColorAO]
+//           Vector 7 [_LightColor0]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Float 3 [_isSkin]
+//           Vector 5 [_tColor]
+//           Float 4 [_thickness]
+//           SetTexture 0 [_NormalMap] 2D 0
+//           SetTexture 1 [_SpecularMap] 2D 1
+//           SetTexture 2 [_LightTexture0] CUBE 2
+//           SetTexture 3 [_LightTextureB0] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 0, 1, 2, -1
+    def c9, 0.00999999978, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5 v5.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Eisko_lightPrepass/fp/9418CE86.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    abs r0.x, c3.x
+    cmp oC0.w, -r0.x, c8.x, c8.y
+    texld_pp r1, v0, s0
+    mad_pp r0.yz, r1.xwyw, c8.z, c8.w
+    mul r1.xyz, r0.z, v4
+    mad r1.xyz, r0.y, v3, r1
+    dp2add_sat_pp r0.y, r0.yzzw, r0.yzzw, c8.x
+    add_pp r0.y, -r0.y, c8.y
+    rsq_pp r0.y, r0.y
+    rcp_pp r0.y, r0.y
+    mad r0.yzw, r0.y, v2.xxyz, r1.xxyz
+    nrm r1.xyz, r0.yzww
+    mad r0.yzw, v1.xxyz, -c1.w, c1.xxyz
+    dp3 r1.w, r0.yzww, r0.yzww
+    rsq r1.w, r1.w
+    mad_pp r2.xyz, r0.yzww, r1.w, r1
+    mul_pp r0.yzw, r0, r1.w
+    dp3 r0.y, r1, r0.yzww
+    add r1.xyz, r30, -v1
+    nrm_pp r3.xyz, r1
+    dp3_sat r0.z, r3, -r2
+    mul r0.z, r0.z, r0.z
+    dp3 r0.w, v5, v5
+    texld r1, r0.w, s3
+    texld r2, v5, s2
+    mul_pp r0.w, r1.x, r2.w
+    mul_pp r1.xyz, r0.w, c7
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    mul_pp r0.z, r0.w, r0.z
+    texld r2, v0, s1
+    pow_sat_pp r0.w, r2.y, c4.x
+    pow_sat_pp r1.w, r2.z, c2.x
+    max r2.x, c9.x, r0.w
+    mul_pp r0.z, r0.z, r2.x
+    mul r2.xyz, r1, c5
+    mul_pp r2.xyz, r0.z, r2
+    mov r3.y, c8.y
+    lrp r4.xyz, r1.w, r3.y, c6
+    mul r3.xyz, r0.y, r4
+    cmp r0.yzw, r0.y, r3.xxyz, c8.x
+    mad r0.yzw, r0, r1.xxyz, r2.xxyz
+    cmp oC0.xyz, -r0.x, c8.x, r0.yzww

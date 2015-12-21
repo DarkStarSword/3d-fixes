@@ -9,15 +9,9 @@
 //     Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
 //     Pass 1/1 {
 //       Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
-//       BindChannels {
-//          Bind "vertex", Vertex
-//          Bind "color", Color
-//          Bind "texcoord", TexCoord
-//         }
 //       ZWrite Off
 //       Cull Off
 //       Blend SrcAlpha OneMinusSrcAlpha
-//       AlphaTest Greater 0.01
 //       ColorMask RGB
 //       GpuProgramID 50074
 //       Program "vp" {
@@ -58,17 +52,17 @@ dcl_2d s3
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o2.xyw, r0 // Relocated from line 57 with shadertool.py
+mov o2.xyw, r0 // Relocated from line 51 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Standard_Particles_Alpha Blended - Rain/vp/2CAF1457.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Particles_Alpha Blended - Rain/vp/2CAF1457.txt
 texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
 
     mul r1.xzw, r0.xywz, c10.x
 
-//     mov o2.xyw, r0 // Relocated to line 56 with shadertool.py
+//     mov o2.xyw, r0 // Relocated to line 50 with shadertool.py
     mov o1.w, r0.w
     mad o1.xy, r1.z, c8.zwzw, r1.xwzw
     dp4 r0.x, c6, v0

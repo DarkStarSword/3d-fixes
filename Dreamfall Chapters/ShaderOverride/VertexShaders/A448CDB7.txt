@@ -1,0 +1,109 @@
+// CRC32: A448CDB7 | Matched 2 variants of 1 shaders: FX/Water
+// 
+//    Unity headers extracted from FX-Water.shader
+//    Shader "FX/Water" {
+//      Properties {
+//       _WaveScale ("Wave scale", Range(0.02,0.15)) = 0.063
+//       _ReflDistort ("Reflection distort", Range(0,1.5)) = 0.44
+//       _RefrDistort ("Refraction distort", Range(0,1.5)) = 0.4
+//       _RefrColor ("Refraction color", Color) = (0.34,0.85,0.92,1)
+//       _Fresnel ("Fresnel (A) ", 2D) = "gray" { }
+//       _BumpMap ("Normalmap ", 2D) = "bump" { }
+//       WaveSpeed ("Wave speed (map1 x,y; map2 x,y)", Vector) = (19,9,-16,-7)
+//       _ReflectiveColor ("Reflective color (RGB) fresnel (A) ", 2D) = "" { }
+//       _ReflectiveColorCube ("Reflective color cube (RGB) fresnel (A)", CUBE) = "" { }
+//       _HorizonColor ("Simple water horizon color", Color) = (0.172,0.463,0.435,1)
+//       _MainTex ("Fallback texture", 2D) = "" { }
+//       _ReflectionTex ("Internal Reflection", 2D) = "" { }
+//       _RefractionTex ("Internal Refraction", 2D) = "" { }
+//      }
+//      SubShader 1/4 {
+//        Tags { "RenderType"="Opaque" "WaterMode"="Refractive" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Opaque" "WaterMode"="Refractive" }
+//          GpuProgramID 13869
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "WATER_REFLECTIVE" }
+// 1:           Keywords { "WATER_REFRACTIVE" }
+//              Bind "vertex" Vertex
+//              Matrix 4 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//              Vector 11 [_WaveOffset]
+//              Vector 10 [_WaveScale4]
+//              Vector 7 [_WorldSpaceCameraPos]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c12, 1, 0, 0.5, 0
+    dcl_position v0
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r2, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors FX_Water/vp/A448CDB7.txt
+mov r30, c7
+mov r29, c220.x
+mul r29.x, r2.x, -r2.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xy, c12
+    mad r0, r30.xyzx, r0.xxxy, r0.yyyx
+    dp4 r1.x, c4, r0
+    dp4 r1.z, c5, r0
+    dp4 r1.y, c6, r0
+    add o3.xyz, r1, -v0.xzyw
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c8.x
+    mul r1.w, r1.x, c12.z
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o4, r0 // Relocated from line 71 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors FX_Water/vp/A448CDB7.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c12.z
+    mad o0.xy, r1.z, c9.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o4, r0 // Relocated to line 68 with shadertool.py
+mov o4.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0.zw, r0
+    mov r0, c10
+    mad r0, v0.xzxz, r0, c11
+    mov o1.xy, r0
+    mov o2.xy, r0.wzzw

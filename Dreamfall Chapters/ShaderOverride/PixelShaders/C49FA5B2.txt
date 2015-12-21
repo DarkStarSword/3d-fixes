@@ -1,0 +1,257 @@
+// CRC32: C49FA5B2 | Unity headers extracted from Standard_River.shader
+// Shader "Dreamfall/Unity5/Standard_River" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Maintex (RGB)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _ParallaxMap ("Height Map", 2D) = "white" { }
+//    _BumpAmt ("BumpAmount", Range(0,1)) = 1
+//    _Gloss ("Water Gloss", Range(0,1)) = 1
+//    _Metallic ("Water Metalness", Range(0,1)) = 0
+//    _Fresnel ("Reflection Fresnel Exponent", Float) = 2
+//    _Parallax ("Height", Range(-10,10)) = 0
+//    _MapTrength ("Parallax Map Strength", Range(-1,1)) = 1
+//    _Smudge ("Water Smudge", Range(-10,10)) = 1
+//    _ReflAmount ("Reflection amount", Float) = 0
+//    _ReflPow ("Reflection pow", Float) = 1
+//    _Cube1 ("Reflection Cubemap", CUBE) = "" { }
+//    _WaterSpeed ("Water Speed1", Float) = 1
+//    _WaterSpeed2 ("Water Speed1", Float) = 1
+//   }
+//   Fallback "Legacy Shaders/Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry+999" "RenderType"="Opaque" }
+//     Pass 2/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry+999" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 69000
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "FOG_EXP" "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Float 13 [_BumpAmt]
+//           Vector 12 [_Color]
+//           Float 14 [_Fresnel]
+//           Float 15 [_Gloss]
+//           Vector 10 [_LightColor0]
+//           Vector 6 [_LightPositionRange]
+//           Vector 7 [_LightShadowData]
+//           Float 20 [_MapTrength]
+//           Float 16 [_Metallic]
+//           Float 19 [_Parallax]
+//           Float 21 [_Smudge]
+//           Vector 3 [_Time]
+//           Float 17 [_WaterSpeed]
+//           Float 18 [_WaterSpeed2]
+//           Vector 4 [_WorldSpaceCameraPos]
+//           Vector 5 [_WorldSpaceLightPos0]
+//           Vector 9 [unity_ColorSpaceDielectricSpec]
+//           Vector 8 [unity_FogParams]
+//           Vector 11 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_ShadowMapTexture] CUBE 0
+//           SetTexture 1 [_LightTexture0] CUBE 1
+//           SetTexture 2 [_LightTextureB0] 2D 2
+//           SetTexture 3 [_MainTex] 2D 3
+//           SetTexture 4 [_ParallaxMap] 2D 4
+//           SetTexture 5 [_BumpMap] 2D 5
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c22, 0.5, 0.419999987, 2, -1
+    def c23, 0.0078125, -0.0078125, 0.970000029, 0.25
+    def c24, 0.00100000005, 31.622776, 9.99999975e-005, 10
+    def c25, 0.967999995, 0.0299999993, 0, 0
+    def c26, 0, 0.5, -0, -1
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord5 v5.xyz
+    dcl_texcoord6 v6.x
+    dcl_cube s0
+    dcl_cube s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Unity5_Standard_River/fp/C49FA5B2.txt
+mov r30, c4
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp3 r0.x, v5, v5
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mul r0.x, r0.x, c6.w
+    add r0.yzw, c23.x, v5.xxyz
+    texld r1, r0.yzww, s0
+    add r0.yzw, c23.xyyx, v5.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.y, r2.x
+    add r0.yzw, c23.xyxy, v5.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.z, r2.x
+    add r0.yzw, c23.xxyy, v5.xxyz
+    texld r2, r0.yzww, s0
+    mov r1.w, r2.x
+    mad r0, r0.x, -c23.z, r1
+    mov r1.xw, c22
+    cmp_pp r0, r0, -r1.w, c7.x
+    dp4_pp r0.x, r0, c23.w
+    mad r2, v4.xyzx, -c26.wwwz, -c26.zzzw
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2
+    dp3 r0.y, r3, r3
+    texld r2, r3, s1
+    texld r3, r0.y, s2
+    mul r0.y, r2.w, r3.x
+    mul_pp r0.x, r0.x, r0.y
+    mul_pp r0.xyz, r0.x, c10
+    mov r2.x, c3.x
+    mad r3.y, r2.x, c17.x, v0.w
+    mov r3.xz, v0.z
+    texld_pp r4, r3, s5
+    mad_pp r4.xy, r4.wyzw, c22.z, c22.w
+    dp2add_sat_pp r0.w, r4, r4, c26.x
+    add_pp r0.w, -r0.w, -c22.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r4.z, r0.w
+    mad r3.w, r2.x, c18.x, v0.w
+    texld_pp r2, r3.zwzw, s5
+    mad_pp r2.xy, r2.wyzw, c22.z, c22.w
+    dp2add_sat_pp r0.w, r2, r2, c26.x
+    add_pp r0.w, -r0.w, -c22.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r2.z, r0.w
+    add_pp r2.xyz, r2, r4
+    mad r2.xyz, r2, c26.y, c26.zzww
+    mov r3.zw, c26
+    mad_pp r2.xyz, c13.x, r2, -r3.zzww
+    dp3_pp r3.x, v1, r2
+    dp3_pp r3.y, v2, r2
+    dp3_pp r3.z, v3, r2
+    nrm_pp r4.xyz, r3
+    add r5.xyz, c5, -v4
+    dp3 r0.w, r5, r5
+    rsq r0.w, r0.w
+    add r6.xyz, r30, -v4
+    nrm_pp r7.xyz, r6
+    mad_pp r6.xyz, r5, r0.w, r7
+    mul_pp r5.xyz, r0.w, r5
+    dp3_pp r0.w, r6, r6
+    add r1.y, -r0.w, c24.x
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r1.y, c24.y, r0.w
+    mul_pp r6.xyz, r0.w, r6
+    dp3_pp r0.w, r4, r6
+    dp3_pp r1.y, r4, r7
+    max_pp r2.w, r1.y, c26.x
+    dp3_pp r1.y, r5, r6
+    dp3_pp r1.z, r3, r5
+    max_pp r3.x, r1.z, c26.x
+    max_pp r3.y, r1.y, c26.x
+    max_pp r1.y, r0.w, c26.x
+    add_pp r0.w, -r1.w, -c15.x
+    add_pp r1.z, -r0.w, -c22.w
+    mad_pp r1.z, r1.z, c25.x, c25.y
+    log_pp r1.z, r1.z
+    rcp r1.z, r1.z
+    mul_pp r1.z, r1.z, c24.w
+    mul_pp r3.z, r1.z, r1.z
+    mad_pp r1.z, r1.z, r1.z, -c22.w
+    mul_pp r1.z, r1.z, c11.y
+    pow_pp r4.x, r1.y, r3.z
+    mul_pp r1.y, r1.z, r4.x
+    mul_pp r1.z, r0.w, r0.w
+    mul_pp r3.z, r1.z, c11.w
+    mad_pp r1.z, r1.z, -c11.w, -r1.w
+    mad_pp r1.w, r3.x, r1.z, r3.z
+    mad_pp r1.z, r2.w, r1.z, r3.z
+    mad r1.z, r1.w, r1.z, c24.z
+    rcp_pp r1.z, r1.z
+    mul_pp r1.y, r1.y, r1.z
+    mul_pp r1.y, r3.x, r1.y
+    mul_pp r1.y, r1.y, c11.x
+    max_pp r3.z, r1.y, c26.x
+    mul_pp r1.yzw, r0.xxyz, r3.z
+    mul_pp r4.xyz, r7.y, v2
+    mad_pp r4.xyz, v1, r7.x, r4
+    mad_pp r4.xyz, v3, r7.z, r4
+    dp3_pp r3.z, r4, r4
+    rsq_pp r3.z, r3.z
+    mad r3.w, r4.z, r3.z, c22.y
+    mul r4.xyz, r3.z, r4
+    rcp r3.z, r3.w
+    mul r3.zw, r3.z, r4.xyxy
+    dp3 r2.z, r4, r2
+    add r2.zw, -r2, -c22.w
+    pow r4.x, r2.z, c14.x
+    add_pp r2.z, -r4.x, -c22.w
+    mul r2.z, r2.z, c21.x
+    mul_pp r1.x, r1.x, c19.x
+    mul r4.xy, r3.zwzw, r1.x
+    texld r5, v0, s4
+    mul_pp r1.x, r5.x, c20.x
+    mul_pp r1.x, r1.x, c22.x
+    mad r3.zw, r1.x, r3, r4.xyxy
+    add r3.zw, r3, v0.xyxy
+    add r2.xy, r2, r3.zwzw
+    texld_pp r4, r2, s3
+    mul r4.xyz, r4, c12
+    mad_pp r5.xyz, r4, r2.z, -c9
+    mul_pp r2.xyz, r2.z, r4
+    mov r4, c9
+    mad_pp r4.xyz, c16.x, r5, r4
+    add_pp r1.x, -r3.y, -c22.w
+    mul_pp r3.y, r3.y, r3.y
+    dp2add_pp r0.w, r3.y, r0.w, -c22.x
+    mul_pp r3.y, r1.x, r1.x
+    mul_pp r3.y, r3.y, r3.y
+    mul_pp r1.x, r1.x, r3.y
+    lrp_pp r3.yzw, r1.x, -c22.w, r4.xxyz
+    mul_pp r1.xyz, r1.yzww, r3.yzww
+    mad_pp r1.w, c16.x, -r4.w, r4.w
+    mul_pp r2.xyz, r1.w, r2
+    mul_pp r1.w, r2.w, r2.w
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r1.w, r2.w, r1.w
+    mad_pp r1.w, r0.w, r1.w, -c22.w
+    add_pp r2.w, -r3.x, -c22.w
+    mul_pp r3.y, r2.w, r2.w
+    mul_pp r3.y, r3.y, r3.y
+    mul_pp r2.w, r2.w, r3.y
+    mad_pp r0.w, r0.w, r2.w, -c22.w
+    mul_pp r0.w, r1.w, r0.w
+    mul_pp r0.w, r3.x, r0.w
+    mul_pp r0.xyz, r0.w, r0
+    mad_pp r0.xyz, r2, r0, r1
+    mul r0.w, c8.y, v6.x
+    exp_sat r0.w, -r0.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, -c22.w

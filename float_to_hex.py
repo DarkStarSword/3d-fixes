@@ -50,13 +50,16 @@ def _hex_to_best_str(val, hex_to, to_hex):
 	without using scientific notation.
 	'''
 	f = hex_to(val)
-	for precision in range(1, 16):
-		string = '%.*f' % (precision, f)
-		redecoded = to_hex(float(string))
-		if val == redecoded:
-			return string
+	# If the value is an integer, the %f won't bound the precision, so enforce
+	# a maximum value:
+	if abs(f) <= 10**16:
+		for precision in range(1, 16):
+			string = '%.*f' % (precision, f)
+			redecoded = to_hex(float(string))
+			if val == redecoded:
+				return string
 	# Try again, but this time with scientific notation:
-	for precision in range(1, 16):
+	for precision in range(1, 17):
 		string = '%.*e' % (precision, f)
 		redecoded = to_hex(float(string))
 		if val == redecoded:
@@ -76,6 +79,13 @@ def hex_to_best_float_str(val):
 	return _hex_to_best_str(val, _hex_to_float, _float_to_hex)
 
 def hex_to_best_double_str(val):
+
+	# Need at least 16 digits of precision in scientific notation for doubles:
+	# return '%.16e' % _hex_to_double(val)
+
+	# Or 17 if using %g
+	# return '%.17g' % _hex_to_double(val)
+
 	return _hex_to_best_str(val, _hex_to_double, _double_to_hex)
 
 def process_vals(vals):
@@ -111,7 +121,7 @@ def align_output(input):
 	format = '   '.join([ '%%%is' % l for l in lengths ])
 	return '\n'.join([format % line for line in input])
 
-def run_tests():
+def run_tests_32():
 	worst_case_e0_float = '0x3f800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is 0
 	worst_case_neg_e0_float = '0xbf800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is 0, sign bit set
 	worst_case_normal_float = '0x00800001' # mantissa has implicit high bit and explicit low bit, unbiased exponent is -126
@@ -142,6 +152,14 @@ def run_tests():
 		tests.append('0x%08x' % f)
 	print(align_output(list(process_vals(tests))))
 
+def run_tests_64():
+	tests = []
+	for i in range(10000):
+		import random
+		f = random.randint(0, 0xffffffffffffffff)
+		tests.append('0x%016x' % f)
+	print(align_output(list(process_vals(tests))))
+
 def main():
 	import sys
 	if len(sys.argv) == 1:
@@ -149,7 +167,10 @@ def main():
 		sys.exit(1)
 
 	if sys.argv[1] == 'test':
-		return run_tests()
+		return run_tests_32()
+
+	if sys.argv[1] == 'test64':
+		return run_tests_64()
 
 	print(align_output(list(process_vals(sys.argv[1:]))))
 

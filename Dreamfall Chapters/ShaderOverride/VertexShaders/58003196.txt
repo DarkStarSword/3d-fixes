@@ -1,0 +1,91 @@
+// CRC32: 58003196 | Matched 3 variants of 1 shaders: Dreamfall/FX/Cornea Reflections
+// 
+//    Unity headers extracted from Cornea Reflections.shader
+//    Shader "Dreamfall/FX/Cornea Reflections" {
+//      Properties {
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _Fresnel ("Reflection Fresnel Exponent", Range(0.1,6)) = 1
+//       _Cube ("Reflection Cubemap", CUBE) = "" { }
+//       _RefMult ("Reflect Amount", Float) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          Blend One One
+//          GpuProgramID 25291
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_ON" "SHADOWS_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord1" TexCoord1
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 11 [unity_LightmapST]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c12, 0, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord1 v2
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+    dcl_texcoord5 o5.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed Dreamfall_FX_Cornea Reflections/vp/58003196.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.w, c3, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r2.xyz, -r0, r30
+    mov o3.xyz, r0
+    dp3 r0.x, -r2, r1
+    add r0.x, r0.x, r0.x
+    mad o1.xyz, r1, -r0.x, -r2
+    mov o2.xyz, r1
+    mad o4.xy, v2, c11, c11.zwzw
+    dp4 r0.x, c2, v0
+    mov o0.z, r0.x
+    mov o5.x, r0.x
+    mov o4.zw, c12.x

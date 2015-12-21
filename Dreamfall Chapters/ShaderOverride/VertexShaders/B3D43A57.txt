@@ -1,0 +1,157 @@
+// CRC32: B3D43A57 | Unity headers extracted from Glass-Stained-BumpDistortNoFogFresnel.shader
+// Shader "FX/Glass/Stained BumpDistort NoFog Scroll Fresnel" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _BumpAmt ("Distortion", Range(0,128)) = 10
+//    _MainTex ("Tint Color (RGB)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _ScrollSpeedX ("ScrollSpeed X", Float) = 0
+//    _ScrollSpeedY ("ScrollSpeed Y", Float) = 0
+//    _Boost ("Boost Color", Float) = 1
+//    _Fresnel ("Fresnel", Float) = 1
+//    _MeshDistortSpeed ("MeshDistortSpeed", Float) = 1
+//    _Amplitude ("MeshAmplitude", Float) = 1
+//   }
+//   SubShader 1/2 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Opaque" }
+//     GrabPass {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" }
+//      }
+//     Pass 1/1 {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" "QUEUE"="Transparent" "RenderType"="Opaque" }
+//       GpuProgramID 42942
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Float 11 [_Amplitude]
+//           Vector 9 [_BumpMap_ST]
+//           Vector 10 [_MainTex_ST]
+//           Float 12 [_MeshDistortSpeed]
+//           Vector 7 [_Time]
+//           Vector 8 [_WorldSpaceCameraPos]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c13, 0.100000001, 5, 10, -0.00138883968
+    def c14, 0.159154937, 0.25, 6.28318548, -3.14159274
+    def c15, -2.52398507e-007, 2.47609005e-005, 0.0416666418, -0.5
+    def c16, 1, 0.166666672, 2, 3
+    def c17, 0.5, 0.75, 1, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_normal v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_position o5
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r4, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors FX_Glass_Stained BumpDistort NoFog Scroll Fresnel/vp/B3D43A57.txt
+mov r30, c8
+mov r29, c220.x
+mul r29.x, r4.x, -r4.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mul r0.xy, v0, c13.yzzw
+    mov r1.x, c7.x
+    mad r0.x, r1.x, c12.x, r0.x
+    mad r0.x, r0.x, c14.x, c14.y
+    frc r0.x, r0.x
+    mad r0.x, r0.x, c14.z, c14.w
+    mul r0.x, r0.x, r0.x
+    mad r0.z, r0.x, c15.x, c15.y
+    mad r0.z, r0.x, r0.z, c13.w
+    mad r0.z, r0.x, r0.z, c15.z
+    mad r0.z, r0.x, r0.z, c15.w
+    mad r0.x, r0.x, r0.z, c16.x
+    mov r2.x, c13.x
+    mul r0.z, r2.x, c11.x
+    mad r0.x, r0.x, r0.z, v0.z
+    mul r0.w, r1.x, c12.x
+    mad r0.y, r0.w, c14.y, r0.y
+    mul r0.w, r0.w, c16.y
+    mad r0.y, r0.y, c14.x, c14.y
+    frc r0.y, r0.y
+    mad r0.y, r0.y, c14.z, c14.w
+    mul r0.y, r0.y, r0.y
+    mad r1.x, r0.y, c15.x, c15.y
+    mad r1.x, r0.y, r1.x, c13.w
+    mad r1.x, r0.y, r1.x, c15.z
+    mad r1.x, r0.y, r1.x, c15.w
+    mad r0.y, r0.y, r1.x, c16.x
+    mul r0.y, r0.z, r0.y
+    mad r1.z, r0.y, c16.z, r0.x
+    add r0.xy, v0.zxzw, v0.yzzw
+    mad r0.xy, r0, c16.w, r0.w
+    mad r0.xy, r0, c14.x, c14.y
+    frc r0.xy, r0
+    mad r0.xy, r0, c14.z, c14.w
+    mul r0.xy, r0, r0
+    mad r2.xy, r0, c15.x, c15.y
+    mad r2.xy, r0, r2, c13.w
+    mad r2.xy, r0, r2, c15.z
+    mad r2.xy, r0, r2, c15.w
+    mad r0.xy, r0, r2, c16.x
+    mul r0.xy, r0.z, r0
+    mad r1.xy, r0, c17, v0
+    mov r1.w, v0.w
+    dp4 r0.z, c2, r1
+    dp4 r0.x, c0, r1
+    dp4 r0.y, c1, r1
+    dp4 r1.w, c3, r1
+    mov r2.zw, c17
+    mad r2, r30.xyzx, r2.zzzw, r2.wwwz
+    dp4 r3.x, c4, r2
+    dp4 r3.y, c5, r2
+    dp4 r3.z, c6, r2
+    add o3.xyz, -r0, r3
+    mov r1.xyz, r0
+
+mov o5, r1 // Relocated from line 124 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors FX_Glass_Stained BumpDistort NoFog Scroll Fresnel/vp/B3D43A57.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mov r0.w, -r1.y
+    add r0.xy, r0.xwzw, r1.w
+    mul o0.xy, r0, -c15.w
+    mad o1.xy, v1, c9, c9.zwzw
+    mad o2.xy, v1, c10, c10.zwzw
+
+//     mov o5, r1 // Relocated to line 119 with shadertool.py
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o0.zw, r1
+    mov o4.xyz, v2

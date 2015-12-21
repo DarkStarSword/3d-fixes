@@ -84,8 +84,15 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 //mov r25.x, c251.x
 //if_eq r25.x, c220.x
 
+// Check if auto-depth is enabled:
+mov r20, c200
+if_eq r20.z, c220.y
+	mov r30.x, c220.w // Auto-crosshair depth
+else
+	mov r30.x, c220.x // No adjustment
+endif
+
 // Blacklist full screen fade to black based on coordinate near corner of screen:
-mov r30.x, c220.w // Auto-crosshair depth
 if_le r10.x, c221.x
 	if_le r10.y, c221.x
 		mov r30.x, c220.x
@@ -114,7 +121,6 @@ if_le v2.y, c222.w
 	if_ge r10.y, c223.z
 	if_le r10.y, c223.w
 		// Check crosshair mode
-		mov r20, c200
 		if_eq r20.x, c220.x // Automatic crosshair
 			// Remove crosshair when it is faded out:
 			if_le v1.w, c224.w
@@ -134,11 +140,13 @@ endif
 endif
 endif
 
+// Blacklist adjustment when render target is square to prevent adjusting watch face:
+if_eq c4.x, c4.y
+	mov r30.x, c220.x
+endif
+
 texldl r31, c220.z, s3
 
-if_eq r30.x, c220.y
-	mad r10.x, r31.x, c200.z, r10.x
-endif
 if_eq r30.x, c220.w
 mov r20.w, c150.w // Check if _ZBufferParams is valid
 if_ne r20.w, c220.x

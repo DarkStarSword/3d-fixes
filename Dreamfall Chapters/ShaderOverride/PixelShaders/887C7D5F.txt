@@ -1,0 +1,118 @@
+// CRC32: 887C7D5F | Matched 3 variants of 1 shaders: Character/Ghost Shader Bumped
+// 
+//    Unity headers extracted from ghost.shader
+//    Shader "Character/Ghost Shader Bumped" {
+//      Properties {
+//       _MainTex ("Texture", 2D) = "white" { }
+//       _BumpMap ("Bumpmap", 2D) = "bump" { }
+//       _RimColor ("Rim Color", Color) = (0.46,0,1,0)
+//       _RimPower ("Rim Power", Range(0.2,2)) = 0.5
+//       _Brightness ("Brightness", Range(0,3)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 3/3 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One One
+//          ColorMask RGB
+//          GpuProgramID 119072
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP" }
+// 4:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" }
+// 1:           Keywords { "DIRECTIONAL_COOKIE" "FOG_LINEAR" }
+//              Matrix 0 [_LightMatrix0] 2
+//              Float 7 [_Brightness]
+//              Vector 4 [_LightColor0]
+//              Vector 5 [_RimColor]
+//              Float 6 [_RimPower]
+//              Vector 2 [_WorldSpaceCameraPos]
+//              Vector 3 [_WorldSpaceLightPos0]
+//              SetTexture 0 [_LightTexture0] 2D 0
+//              SetTexture 1 [_MainTex] 2D 1
+//              SetTexture 2 [_BumpMap] 2D 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c8, 0.300000012, 0.589999974, 0.109999999, 0
+    def c9, 2, -1, 1, 0.333333343
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord5 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Character_Ghost Shader Bumped/fp/887C7D5F.txt
+mov r30, c2
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xyz, v4
+    mov r0.w, c9.z
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    mov r0.x, v0.z
+    mov r0.y, v0.w
+    texld_pp r1, r1, s0
+    texld_pp r2, v0, s1
+    texld_pp r0, r0, s2
+    mul_pp r1.xyz, r1.w, c4
+    dp3_pp r1.w, r2, c8
+    mul_pp r1.xyz, r1, r1.w
+    mad_pp r2.x, r0.w, c9.x, c9.y
+    mad_pp r2.y, r0.y, c9.x, c9.y
+    dp2add_sat_pp r1.w, r2, r2, c8.w
+    add_pp r1.w, -r1.w, c9.z
+    rsq_pp r1.w, r1.w
+    rcp_pp r2.z, r1.w
+    dp3_pp r0.x, v1, r2
+    dp3_pp r0.y, v2, r2
+    dp3_pp r0.z, v3, r2
+    dp3_pp r1.w, r0, c3
+    max_pp r2.w, r1.w, c8.w
+    mul_pp r0.xyz, r1, r2.w
+    mov_sat r0.w, v5.x
+    mul_pp r0.xyz, r0, r0.w
+    add r1.xyz, -v4, r30
+    nrm_pp r3.xyz, r1
+    mul_pp r1.xyz, r3.y, v2
+    mad_pp r1.xyz, v1, r3.x, r1
+    mad_pp r1.xyz, v3, r3.z, r1
+    nrm r3.xyz, r1
+    dp3_sat r1.x, r3, r2
+    add_pp r1.x, -r1.x, c9.z
+    pow r2.x, r1.x, c6.x
+    mul r1.xyz, r2.x, c5
+    mul_pp r1.xy, r1, c7.x
+    add_pp r1.x, r1.y, r1.x
+    mad_pp r1.x, r1.z, c7.x, r1.x
+    mul_pp r0.w, r1.x, c9.w
+    mov_pp oC0, r0

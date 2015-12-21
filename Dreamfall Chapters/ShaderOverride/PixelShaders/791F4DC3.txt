@@ -1,0 +1,118 @@
+// CRC32: 791F4DC3 | Unity headers extracted from Additive-FresnelDistort.shader
+// Shader "Dreamfall/FX/Fresnel Additive Distort Parallax" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _Parallax ("Height", Range(0.005,0.2)) = 0.02
+//    _FresnelExp ("Fresnel Exp", Float) = 3.5
+//    _FresnelCol ("Fresnel Color", Color) = (1,1,1,1)
+//    _FresnelAmt ("Fresnel Amount", Float) = 1
+//    _ParallaxMap ("Heightmap (A)", 2D) = "grey" { }
+//    _DistortMap ("DistortMap", 2D) = "black" { }
+//    _DistortAmt ("Distort Amount", Float) = 0
+//    _DistortSpeed ("Distort Speed", Float) = 0
+//   }
+//   Fallback "Specular"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 2/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 85603
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "FOG_EXP" "POINT_COOKIE" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Vector 8 [_Color]
+//           Float 9 [_DistortAmt]
+//           Float 10 [_DistortSpeed]
+//           Vector 7 [_LightColor0]
+//           Float 11 [_Parallax]
+//           Vector 3 [_Time]
+//           Vector 4 [_WorldSpaceCameraPos]
+//           Vector 5 [_WorldSpaceLightPos0]
+//           Vector 6 [unity_FogParams]
+//           SetTexture 0 [_LightTexture0] CUBE 0
+//           SetTexture 1 [_LightTextureB0] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_ParallaxMap] 2D 3
+//           SetTexture 4 [_DistortMap] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c12, 0.5, 0.419999987, 1, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord4 v3.x
+    dcl_cube s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_FX_Fresnel Additive Distort Parallax/fp/791F4DC3.txt
+mov r30, c4
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v2
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad r0.z, r0.z, r0.w, c12.y
+    mul_pp r0.xy, r0.w, r0
+    rcp r0.z, r0.z
+    mul r0.xy, r0.z, r0
+    texld_pp r1, v0, s3
+    mov r1.x, c12.x
+    mul_pp r0.z, r1.x, c11.x
+    mad_pp r0.z, r1.w, c11.x, -r0.z
+    mad r0.xy, r0.z, r0, v0
+    mov r1.x, c3.x
+    mad r0.z, r1.x, c10.x, r0.y
+    texld r1, r0.xzzw, s4
+    mad r0.xy, r1, c9.x, r0
+    texld_pp r0, r0, s2
+    mul_pp r0.xyz, r0, c8
+    mad r1, v2.xyzx, c12.zzzw, c12.wwwz
+    dp4 r2.x, c0, r1
+    dp4 r2.y, c1, r1
+    dp4 r2.z, c2, r1
+    dp3 r0.w, r2, r2
+    texld r1, r2, s0
+    texld r2, r0.w, s1
+    mul_pp r0.w, r1.w, r2.x
+    mul_pp r1.xyz, r0.w, c7
+    mul_pp r0.xyz, r0, r1
+    add r1.xyz, c5, -v2
+    nrm_pp r2.xyz, r1
+    dp3_pp r0.w, v1, r2
+    max_pp r1.x, r0.w, c12.w
+    mul_pp r0.xyz, r0, r1.x
+    mul r0.w, c6.y, v3.x
+    exp_sat r0.w, -r0.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, c12.z

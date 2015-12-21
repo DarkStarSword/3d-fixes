@@ -1,0 +1,97 @@
+// CRC32: 446E48F1 | Unity headers extracted from Cornea Reflections.shader
+// Shader "Dreamfall/FX/Cornea Reflections" {
+//   Properties {
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _Fresnel ("Reflection Fresnel Exponent", Range(0.1,6)) = 1
+//    _Cube ("Reflection Cubemap", CUBE) = "" { }
+//    _RefMult ("Reflect Amount", Float) = 1
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//       Blend One One
+//       GpuProgramID 25291
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Float 9 [_Fresnel]
+//           Vector 7 [_LightColor0]
+//           Float 10 [_RefMult]
+//           Vector 8 [_ReflectColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 5 [unity_FogColor]
+//           Vector 6 [unity_FogParams]
+//           Vector 4 [unity_SHAb]
+//           Vector 3 [unity_SHAg]
+//           Vector 2 [unity_SHAr]
+//           SetTexture 0 [_Cube] CUBE 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 0.100000001, 32, 1, 0
+    def c12, 0.99000001, 0.00999999978, 0, 0
+    dcl_texcoord v0.xyz
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord5 v4.x
+    dcl_cube s0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_FX_Cornea Reflections/fp/446E48F1.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v2
+    nrm_pp r1.xyz, r0
+    dp3 r0.x, r1, v1
+    add r0.x, -r0.x, c11.z
+    mov r1.x, c11.x
+    max_pp r0.y, c9.x, r1.x
+    min_pp r1.x, r0.y, c11.y
+    pow r2.x, r0.x, r1.x
+    mad r0.x, r2.x, c12.x, c12.y
+    texld_pp r1, v0, s0
+    mul_pp r0.xyz, r0.x, r1
+    mov r1.x, c10.x
+    mul_pp r1.xyz, r1.x, c8
+    mul_pp r0.xyz, r0, r1
+    mad_pp r1, v1.xyzx, c11.zzzw, c11.wwwz
+    dp4_pp r2.x, c2, r1
+    dp4_pp r2.y, c3, r1
+    dp4_pp r2.z, c4, r1
+    add_pp r1.xyz, r2, v3
+    mul_pp r1.xyz, r0, r1
+    mul_pp r0.xyz, r0, c7
+    dp3_pp r0.w, v1, c1
+    max_pp r1.w, r0.w, c11.w
+    mad_pp r0.xyz, r0, r1.w, r1
+    add r0.xyz, r0, -c5
+    mul r0.w, c6.y, v4.x
+    exp_sat r0.w, -r0.w
+    mad_pp oC0.xyz, r0.w, r0, c5
+    mov_pp oC0.w, c11.z

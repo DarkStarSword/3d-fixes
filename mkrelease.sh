@@ -8,6 +8,7 @@ tag="$2"
 game=$(basename "$dir")
 readme_src=README.md
 readme_dst=3Dfix-README.txt
+exclude=autofix.sh
 tmp_dir=$(dirname $(readlink -f "$0"))/__MKRELEASE_TMP__
 rm_tmp_dir=
 
@@ -43,14 +44,21 @@ fi
 
 rm -fv "$zip" || true
 
-if [ -f "$dir/$readme_src" ]; then
+# FIXME: handle multiple items in exclude
+if [ -f "$dir/$readme_src" -o -f "$dir/$exclude" ]; then
 	rm -frv "$tmp_dir"
 	cp -as "$dir" "$tmp_dir"
-	unix2dos -n "$tmp_dir/$readme_src" "$tmp_dir/$readme_dst"
-	rm -f "$tmp_dir/$readme_src"
 	dir="$tmp_dir"
 	rm_tmp_dir=1
 
+	if [ -f "$dir/$readme_src" ]; then
+		unix2dos -n "$dir/$readme_src" "$dir/$readme_dst"
+		rm -f "$dir/$readme_src"
+	fi
+
+	if [ -f "$dir/$exclude" ]; then
+		rm -f "$dir/$exclude"
+	fi
 fi
 
 # Run in a subshell so that the current working directory is not changed in

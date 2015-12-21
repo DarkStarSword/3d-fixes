@@ -1,0 +1,186 @@
+// CRC32: FEB2BB6E | Unity headers extracted from Standard_River.shader
+// Shader "Dreamfall/Unity5/Standard_River" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _MainTex ("Maintex (RGB)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _ParallaxMap ("Height Map", 2D) = "white" { }
+//    _BumpAmt ("BumpAmount", Range(0,1)) = 1
+//    _Gloss ("Water Gloss", Range(0,1)) = 1
+//    _Metallic ("Water Metalness", Range(0,1)) = 0
+//    _Fresnel ("Reflection Fresnel Exponent", Float) = 2
+//    _Parallax ("Height", Range(-10,10)) = 0
+//    _MapTrength ("Parallax Map Strength", Range(-1,1)) = 1
+//    _Smudge ("Water Smudge", Range(-10,10)) = 1
+//    _ReflAmount ("Reflection amount", Float) = 0
+//    _ReflPow ("Reflection pow", Float) = 1
+//    _Cube1 ("Reflection Cubemap", CUBE) = "" { }
+//    _WaterSpeed ("Water Speed1", Float) = 1
+//    _WaterSpeed2 ("Water Speed1", Float) = 1
+//   }
+//   Fallback "Legacy Shaders/Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry+999" "RenderType"="Opaque" }
+//     Pass 4/4 {
+//       Name "META"
+//       Tags { "LIGHTMODE"="Meta" "QUEUE"="Geometry+999" "RenderType"="Opaque" }
+//       Cull Off
+//       GpuProgramID 208565
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Float 3 [_BumpAmt]
+//           Vector 2 [_Color]
+//           Float 6 [_Fresnel]
+//           Float 10 [_MapTrength]
+//           Float 9 [_Parallax]
+//           Float 4 [_ReflAmount]
+//           Float 5 [_ReflPow]
+//           Float 11 [_Smudge]
+//           Vector 0 [_Time]
+//           Float 7 [_WaterSpeed]
+//           Float 8 [_WaterSpeed2]
+//           Vector 1 [_WorldSpaceCameraPos]
+//           Float 14 [unity_MaxOutputValue]
+//           Vector 12 [unity_MetaFragmentControl]
+//           Float 13 [unity_OneOverOutputBoost]
+//           Float 15 [unity_UseLinearSpace]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_ParallaxMap] 2D 1
+//           SetTexture 2 [_BumpMap] 2D 2
+//           SetTexture 3 [_Cube1] CUBE 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c16, 0.5, 0.419999987, 2, -1
+    def c17, 0, 0.5, -0, -1
+    def c18, 0.305306017, 0.682171106, 0.0125228781, 0.010309278
+    def c19, 0.0199999996, 255, 0.00392156886, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Unity5_Standard_River/fp/FEB2BB6E.txt
+mov r30, c1
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, c0.x
+    mad r1.y, r0.x, c7.x, v0.w
+    mov r1.xz, v0.z
+    texld_pp r2, r1, s2
+    mad_pp r2.xy, r2.wyzw, c16.z, c16.w
+    dp2add_sat_pp r0.y, r2, r2, c17.x
+    add_pp r0.y, -r0.y, -c16.w
+    rsq_pp r0.y, r0.y
+    rcp_pp r2.z, r0.y
+    mad r1.w, r0.x, c8.x, v0.w
+    texld_pp r0, r1.zwzw, s2
+    mad_pp r0.xy, r0.wyzw, c16.z, c16.w
+    dp2add_sat_pp r0.w, r0, r0, c17.x
+    add_pp r0.w, -r0.w, -c16.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    add_pp r0.xyz, r0, r2
+    mad r0.xyz, r0, c17.y, c17.zzww
+    mov r1.xzw, c17
+    mad_pp r0.xyz, c3.x, r0, -r1.zzww
+    dp3 r2.x, v1, r0
+    dp3 r2.y, v2, r0
+    dp3 r2.z, v3, r0
+    mov r3.x, v1.w
+    mov r3.y, v2.w
+    mov r3.z, v3.w
+    add r1.yzw, -r3.xxyz, r30.xxyz
+    nrm_pp r3.xyz, r1.yzww
+    dp3 r0.w, -r3, r2
+    add r0.w, r0.w, r0.w
+    mad r1.yzw, r2.xxyz, -r0.w, -r3.xxyz
+    texld_pp r2, r1.yzww, s3
+    mul r1.yzw, r3.y, v2.xxyz
+    mad r1.yzw, v1.xxyz, r3.x, r1
+    mad_pp r1.yzw, v3.xxyz, r3.z, r1
+    dp3_pp r0.w, r1.yzww, r1.yzww
+    rsq_pp r0.w, r0.w
+    mul r3.xyz, r0.w, r1.yzww
+    mad r0.w, r1.w, r0.w, c16.y
+    rcp r0.w, r0.w
+    mul r1.yz, r0.w, r3.xxyw
+    dp3 r0.z, r3, r0
+    add r0.z, -r0.z, -c16.w
+    pow r1.w, r0.z, c6.x
+    add_pp r0.z, -r1.w, -c16.w
+    mul_pp r2.xyz, r0.z, r2
+    mul r0.z, r0.z, c11.x
+    log r3.x, r2.x
+    log r3.y, r2.y
+    log r3.z, r2.z
+    mul r2.xyz, r3, c5.x
+    exp_pp r3.x, r2.x
+    exp_pp r3.y, r2.y
+    exp_pp r3.z, r2.z
+    mul_pp r2.xyz, r3, c4.x
+    mad_pp r3.xyz, r2, c18.x, c18.y
+    mad_pp r3.xyz, r2, r3, c18.z
+    mul_pp r3.xyz, r2, r3
+    abs r0.w, c15.x
+    cmp_pp r2.xyz, -r0.w, r3, r2
+    mul r2.xyz, r2, c18.w
+    max r0.w, r2.x, r2.y
+    max r1.w, r2.z, c19.x
+    max r2.w, r0.w, r1.w
+    mul r0.w, r2.w, c19.y
+    frc r1.w, -r0.w
+    add r0.w, r0.w, r1.w
+    mul_pp r3.w, r0.w, c19.z
+    rcp r0.w, r3.w
+    mul_pp r3.xyz, r0.w, r2
+    mov r2.x, c16.x
+    mul_pp r0.w, r2.x, c9.x
+    mul r2.xy, r1.yzzw, r0.w
+    texld r4, v0, s1
+    mul_pp r0.w, r4.x, c10.x
+    mul_pp r0.w, r0.w, c16.x
+    mad r1.yz, r0.w, r1, r2.xxyw
+    add r1.yz, r1, v0.xxyw
+    add r0.xy, r0, r1.yzzw
+    texld_pp r2, r0, s0
+    mul r0.xyw, r2.xyzz, c2.xyzz
+    mul_pp r0.xyz, r0.z, r0.xyww
+    log r2.x, r0.x
+    log r2.y, r0.y
+    log r2.z, r0.z
+    mov_sat r0.x, c13.x
+    mul r0.xyz, r2, r0.x
+    exp_pp r2.x, r0.x
+    exp_pp r2.y, r0.y
+    exp_pp r2.z, r0.z
+    min_pp r0.xyz, c14.x, r2
+    cmp_pp r0.xyz, -c12.x, r1.x, r0
+    mov r0.w, c12.x
+    cmp_pp oC0, -c12.y, r0, r3

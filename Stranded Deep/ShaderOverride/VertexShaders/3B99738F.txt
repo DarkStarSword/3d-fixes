@@ -68,6 +68,22 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s3
 
+texldl r5, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/vp/3B99738F.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
     dp4 r0.x, c0, v0
     dp4 r0.y, c1, v0
     dp4 r0.w, c3, v0
@@ -75,7 +91,7 @@ dcl_2d s3
 mov o0, r0 // Relocated from line 111 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/vp/3B99738F.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/vp/3B99738F.txt
 texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -83,7 +99,7 @@ mad r0.x, r31.w, r31.x, r0.x
     mul r1.xz, r0.xyww, c21.x
     mad o5.xy, r0, c21, r1.z
     mov r2.zw, c21
-    mad r2, c10.xyzx, r2.zzzw, r2.wwwz
+    mad r2, r30.xyzx, r2.zzzw, r2.wwwz
     dp4 r3.x, c7, r2
     dp4 r3.y, c8, r2
     dp4 r3.z, c9, r2

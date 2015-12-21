@@ -1,21 +1,20 @@
-// CRC32: 3A8549D0 | Matched 2 variants of 2 shaders: Beam Team/Standard/Terrain/Base Map, Hidden/TerrainEngine/Splatmap/Standard-Base
+// CRC32: 3A8549D0 | Matched 2 variants of 2 shaders: Hidden/TerrainEngine/Splatmap/Standard-Base, MapEditor/MapEditorGizmos
 // 
-//    Unity headers extracted from Base Map.shader
-//    Shader "Beam Team/Standard/Terrain/Base Map" {
+//    Unity headers extracted from Standard-Base.shader
+//    Shader "Hidden/TerrainEngine/Splatmap/Standard-Base" {
 //      Properties {
-//       _Color ("Color", Color) = (1,1,1,1)
-//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
-//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
-//       _Metallic ("Metallic", Range(0,1)) = 0
+//       _MainTex ("Base (RGB) Smoothness (A)", 2D) = "white" { }
+//       _MetallicTex ("Metallic (R)", 2D) = "white" { }
+//       _Color ("Main Color", Color) = (1,1,1,1)
 //      }
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
 //        LOD 200
-//        Tags { "RenderType"="Opaque" }
-//        Pass 1/6 {
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" }
+//        Pass 1/4 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//          GpuProgramID 61770
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 22504
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
@@ -38,21 +37,23 @@
 //      }
 //    }
 // 
-//    Unity headers extracted from Standard-Base.shader
-//    Shader "Hidden/TerrainEngine/Splatmap/Standard-Base" {
+//    Unity headers extracted from MapEditorGizmos.shader
+//    Shader "MapEditor/MapEditorGizmos" {
 //      Properties {
-//       _MainTex ("Base (RGB) Smoothness (A)", 2D) = "white" { }
-//       _MetallicTex ("Metallic (R)", 2D) = "white" { }
-//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//       _Metallic ("Metallic", Range(0,1)) = 0
 //      }
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
 //        LOD 200
-//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" }
+//        Tags { "RenderType"="Opaque" }
 //        Pass 1/4 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//          GpuProgramID 56993
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZTest Always
+//          GpuProgramID 28379
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
@@ -116,10 +117,10 @@ dcl_2d s3
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 117 with shadertool.py
+mov o0, r0 // Relocated from line 118 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_Standard_Terrain_Base Map/vp/3A8549D0.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Hidden_TerrainEngine_Splatmap_Standard-Base/vp/3A8549D0.txt
 texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
@@ -128,7 +129,7 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o5.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 114 with shadertool.py
+//     mov o0, r0 // Relocated to line 115 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o5.zw, r0

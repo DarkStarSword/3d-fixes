@@ -1,0 +1,110 @@
+// CRC32: F9864E05 | Matched 3 variants of 1 shaders: Hidden/Sunshine/PostProcess/Scatter
+// 
+//    Unity headers extracted from Sunshine Post Scatter.shader
+//    Shader "Hidden/Sunshine/PostProcess/Scatter" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _ScatterRamp ("Scatter Ramp (RGB)", 2D) = "white" { }
+//      }
+//      Fallback Off
+// 1:   SubShader 1/2 {
+// 6:   SubShader 2/2 {
+// 2:     Pass 1/2 {
+// 5:     Pass 2/2 {
+// 5:       Name "APPLY SCATTER"
+// 2:       Name "LIGHT SCATTERING (MOBILE)"
+//          ZTest False
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+// 1:       GpuProgramID 116069
+// 2:       GpuProgramID 131116
+// 4:       GpuProgramID 228373
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "SUNSHINE_ONE_CASCADE" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_FrustumCornersWS]
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 11 [_MainTex_TexelSize]
+//              Vector 9 [sunshine_ShadowCoordDepthRayU]
+//              Vector 10 [sunshine_ShadowCoordDepthRayV]
+//              Vector 8 [sunshine_ShadowCoordDepthRayZ]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+// Glow around sun
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c12, 0, -2, 1, 0
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+def c220, 0, 1, 0.0625, 5000
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Derive the far clipping plane from _ZBufferParams copied in with Helix Mod:
+add r28.x, c150.z, c150.w
+rcp r28.x, r28.x
+
+// Stereo correction amount with depth at the far clipping plane
+// Use W=0 to suppress position transformations in the matrices
+mov r29, c220.x
+add r29.x, r28.x, -r31.y
+mul r29.x, r29.x, r31.x
+
+// Use an inverse MVP matrix copied with Helix Mod to transform the adjustment
+// amount into local coordinates:
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+
+// Now use the _Object2World matrix to transform it to world-space coordinates:
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+
+// Adjust _FrustumCornersWS:
+add r24, c4, -r29
+add r25, c5, -r29
+add r26, c6, -r29
+add r27, c7, -r29
+
+    dp4 o4.x, c0, v0
+    dp4 o4.y, c1, v0
+    dp4 o4.z, c2, v0
+    dp4 o4.w, c3, v0
+    mov r0.x, c12.x
+    slt r0.x, c11.y, r0.x
+    mad r0.y, v1.y, c12.y, c12.z
+    mad r0.x, r0.x, r0.y, v1.y
+    mov r1, c9
+    mad r1, v1.x, r1, c8
+    mad o1, r0.x, c10, r1
+    mov o2.y, r0.x
+    mov r0, r24
+    add r0, -r0, r25
+    mad r0, v1.x, r0, r24
+    mov r1, r27
+    add r1, -r1, r26
+    mad r1, v1.x, r1, r27
+    add r0, r0, -r1
+    mad o3, v1.y, r0, r1
+    mov o0.xy, v1
+    mov o2.x, v1.x

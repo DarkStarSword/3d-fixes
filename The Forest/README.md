@@ -1,19 +1,6 @@
 The Forest
 ==========
 
-**Fix updated 2015-04-19 for the 0.16 Unity 5 update**
-
-Note that the Unity 5 update is basically an entirely new fix from scratch and
-is still an early work in progress. The Unity 5 update has made the issues with
-the sun shafts and sun/moon glow more apparent and will need further work to
-fix. Additionally, there are some halo issues with lights shining on water
-(lightning, cannibal flashlights) that I have yet to fix.
-
-Download the appropriate fix for your version:
-
-- Unity 4 (for The Forest 0.15): <https://s3.amazonaws.com/DarkStarSword/3Dfix-The+Forest-2014-12-03.zip>
-- Unity 5 (for The Forest 0.16): <https://s3.amazonaws.com/DarkStarSword/3Dfix-The+Forest-2015-04-19.zip>
-
 Installation Instructions
 -------------------------
 1. Extract the zip file to the game directory
@@ -24,11 +11,17 @@ Fixed
 -----
 - Halos on all surfaces
 - Light, shadows and specular highlights
-- Water (some issues with lights & reflections remain)
-- Certain UI elements that were drawn at screen depth pushed back (e.g. camp &
-  build HUD icons). The number row will adjust the depth of these icons, but
-  note that most of the UI was already at a good depth in this game out of the
-  box and is not adjustable.
+- Water
+- Terrain = "High (Parallax Occlusion)" now makes the ground more 3D! Check out
+  the sand, pebbles, etc.
+- Certain UI elements that were originally drawn at screen depth (e.g. camp &
+  build HUD icons) are now auto-adjusted (each vertex is adjusted
+  independently, which may cause these to stretch similar to compatibility mode
+  UIs). Note that most of the UI was already at a good depth in this game out
+  of the box and has not been adjusted.
+- Light shafts
+- Glow around sun
+- SSAO artefacts on rocky surfaces
 
 Convergence Presets
 -------------------
@@ -36,6 +29,7 @@ Convergence Presets
   crafting book pretty close to the mouse cursor.
 - ]: Sets a higher convergence (2.5) that will bring the inventory closer to
   the mouse cursor.
+- ~: Toggle the above two presets (I reassigned the inventory key to tab)
 
 You can save your own custom convergence & separation preset to these buttons.
 First, press the button you want to edit, then adjust the convergence and
@@ -49,8 +43,9 @@ Known Issues
   in each eye. I'd still suggest leaving it on, because it adds a lot of visual
   fidelity to the game. Increasing it to high helps a little.
 - Mouse cursor is at screen depth
-- The first time the crafting book is opened the tutorial messages are at the
-  wrong depth.
+- Shadows do not fall quite right on parallax occluded terrain - they are
+  slightly under the surface (they are in fact on the real surface, the 3D
+  effect on the terrain could be considered an optical illusion).
 
 Notes
 -----

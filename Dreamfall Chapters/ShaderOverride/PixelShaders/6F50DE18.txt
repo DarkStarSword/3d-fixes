@@ -1,0 +1,240 @@
+// CRC32: 6F50DE18 | Unity headers extracted from Standard-AddPass.shader
+// Shader "Hidden/TerrainEngine/Splatmap/Standard-AddPass" {
+//   Properties {
+//   [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   [HideInInspector] [Gamma]  _Metallic0 ("Metallic 0", Range(0,1)) = 0
+//   [HideInInspector] [Gamma]  _Metallic1 ("Metallic 1", Range(0,1)) = 0
+//   [HideInInspector] [Gamma]  _Metallic2 ("Metallic 2", Range(0,1)) = 0
+//   [HideInInspector] [Gamma]  _Metallic3 ("Metallic 3", Range(0,1)) = 0
+//   [HideInInspector]  _Smoothness0 ("Smoothness 0", Range(0,1)) = 1
+//   [HideInInspector]  _Smoothness1 ("Smoothness 1", Range(0,1)) = 1
+//   [HideInInspector]  _Smoothness2 ("Smoothness 2", Range(0,1)) = 1
+//   [HideInInspector]  _Smoothness3 ("Smoothness 3", Range(0,1)) = 1
+//   }
+//   Fallback "Hidden/TerrainEngine/Splatmap/Diffuse-AddPass"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 47403
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Float 12 [_Metallic0]
+//           Float 13 [_Metallic1]
+//           Float 14 [_Metallic2]
+//           Float 15 [_Metallic3]
+//           Float 16 [_Smoothness0]
+//           Float 17 [_Smoothness1]
+//           Float 18 [_Smoothness2]
+//           Float 19 [_Smoothness3]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 10 [unity_ColorSpaceDielectricSpec]
+//           Vector 1 [unity_FogParams]
+//           Vector 11 [unity_Lightmap_HDR]
+//           Vector 2 [unity_SpecCube0_BoxMax]
+//           Vector 3 [unity_SpecCube0_BoxMin]
+//           Vector 5 [unity_SpecCube0_HDR]
+//           Vector 4 [unity_SpecCube0_ProbePosition]
+//           Vector 6 [unity_SpecCube1_BoxMax]
+//           Vector 7 [unity_SpecCube1_BoxMin]
+//           Vector 9 [unity_SpecCube1_HDR]
+//           Vector 8 [unity_SpecCube1_ProbePosition]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [unity_SpecCube0] CUBE 2
+//           SetTexture 3 [unity_SpecCube1] CUBE 3
+//           SetTexture 4 [_ShadowMapTexture] 2D 4
+//           SetTexture 5 [_Control] 2D 5
+//           SetTexture 6 [_Splat0] 2D 6
+//           SetTexture 7 [_Splat1] 2D 7
+//           SetTexture 8 [_Splat2] 2D 8
+//           SetTexture 9 [_Splat3] 2D 9
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c20, 1, -0.00389999989, 0.00100000005, -0.5
+    def c21, 0, 0.75, 7, 0.999989986
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_texcoord5_pp v5.xy
+    dcl_texcoord6 v6
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+    dcl_cube s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_2d s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Splatmap_Standard-AddPass/fp/6F50DE18.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v3
+    nrm_pp r1.xyz, r0
+    texld_pp r0, v4, s5
+    dp4_pp r1.w, r0, c20.x
+    add r2.xy, r1.w, c20.yzzw
+    mov_pp r3, r2.x
+    texkill r3
+    rcp r2.x, r2.y
+    mul_pp r0, r0, r2.x
+    texld r2, v0, s6
+    mul r2, r0.x, r2
+    mul_pp r2.w, r2.w, c16.x
+    texld r3, v0.zwzw, s7
+    mul r3, r0.y, r3
+    mul r3.w, r3.w, c17.x
+    add_pp r2, r2, r3
+    texld r3, v1, s8
+    mul r3, r0.z, r3
+    mul r3.w, r3.w, c18.x
+    add_pp r2, r2, r3
+    texld r3, v1.zwzw, s9
+    mul r3, r0.w, r3
+    mul r3.w, r3.w, c19.x
+    add_pp r2, r2, r3
+    mov_pp r3.x, c12.x
+    mov_pp r3.y, c13.x
+    mov_pp r3.z, c14.x
+    mov_pp r3.w, c15.x
+    dp4_pp r0.x, r0, r3
+    texldp_pp r3, v6, s4
+    add_pp r0.y, -r2.w, c20.x
+    dp3_pp r0.z, -r1, v2
+    add_pp r0.z, r0.z, r0.z
+    mad_pp r3.yzw, v2.xxyz, -r0.z, -r1.xxyz
+    texld_pp r4, v5, s0
+    pow_pp r0.z, r4.w, c11.y
+    mul_pp r0.z, r0.z, c11.x
+    mul_pp r5.xyz, r4, r0.z
+    texld_pp r6, v5, s1
+    add_pp r6.xyz, r6, c20.w
+    dp3_pp r0.z, v2, r6
+    add_pp r0.z, r0.z, -c20.w
+    mul_pp r5.xyz, r0.z, r5
+    rcp r0.z, r6.w
+    mul_pp r5.xyz, r0.z, r5
+    mul_pp r4.xyz, r3.x, r4
+    min_pp r6.xyz, r4, r5
+    mul_pp r4.xyz, r3.x, r5
+    max_pp r5.xyz, r6, r4
+    mov r4.xw, c21
+    if_lt -c4.w, r4.x
+    nrm_pp r6.xyz, r3.yzww
+    add r7.xyz, c2, -v3
+    rcp r8.x, r6.x
+    rcp r8.y, r6.y
+    rcp r8.z, r6.z
+    mul_pp r7.xyz, r7, r8
+    add r9.xyz, c3, -v3
+    mul_pp r8.xyz, r8, r9
+    cmp_pp r7.xyz, -r6, r8, r7
+    min_pp r0.z, r7.y, r7.x
+    min_pp r3.x, r7.z, r0.z
+    mov r7.xyz, c3
+    add r7.xyz, r7, c2
+    mov r0.w, c20.w
+    mad r8.xyz, r7, -r0.w, -c4
+    add r8.xyz, r8, v3
+    mad r6.xyz, r6, r3.x, r8
+    mad_pp r6.xyz, r7, c20.w, r6
+    else
+    mov_pp r6.xyz, r3.yzww
+    endif
+    pow_pp r3.x, r0.y, c21.y
+    mul_pp r6.w, r3.x, c21.z
+    texldl_pp r7, r6, s2
+    pow_pp r0.y, r7.w, c5.y
+    mul_pp r0.y, r0.y, c5.x
+    mul_pp r8.xyz, r7, r0.y
+    if_lt c3.w, r4.w
+    if_lt -c8.w, r4.x
+    nrm_pp r4.xyz, r3.yzww
+    add r9.xyz, c6, -v3
+    rcp r10.x, r4.x
+    rcp r10.y, r4.y
+    rcp r10.z, r4.z
+    mul_pp r9.xyz, r9, r10
+    add r11.xyz, c7, -v3
+    mul_pp r10.xyz, r10, r11
+    cmp_pp r9.xyz, -r4, r10, r9
+    min_pp r0.z, r9.y, r9.x
+    min_pp r3.x, r9.z, r0.z
+    mov r9.xyz, c6
+    add r9.xyz, r9, c7
+    mov r0.w, c20.w
+    mad r10.xyz, r9, -r0.w, -c8
+    add r10.xyz, r10, v3
+    mad r4.xyz, r4, r3.x, r10
+    mad_pp r6.xyz, r9, c20.w, r4
+    else
+    mov_pp r6.xyz, r3.yzww
+    endif
+    texldl_pp r3, r6, s3
+    pow_pp r0.z, r3.w, c9.y
+    mul_pp r0.z, r0.z, c9.x
+    mul_pp r3.xyz, r3, r0.z
+    mad r0.yzw, r0.y, r7.xxyz, -r3.xxyz
+    mad_pp r8.xyz, c3.w, r0.yzww, r3
+    endif
+    nrm_pp r3.xyz, v2
+    lrp_pp r4.xyz, r0.x, r2, c10
+    mad_pp r0.x, r0.x, -c10.w, c10.w
+    mul_pp r0.yzw, r0.x, r2.xxyz
+    dp3_pp r1.x, r3, r1
+    add_pp r0.x, -r0.x, c20.x
+    add_sat_pp r0.x, r0.x, r2.w
+    add_pp r1.y, -r1.x, c20.x
+    cmp_pp r1.x, r1.x, r1.y, c20.x
+    mul_pp r1.y, r1.x, r1.x
+    mul_pp r1.y, r1.y, r1.y
+    mul_pp r1.x, r1.x, r1.y
+    lrp_pp r2.xyz, r1.x, r0.x, r4
+    mul_pp r1.xyz, r2, r8
+    mad_pp r0.xyz, r0.yzww, r5, r1
+    mul_pp r0.xyz, r1.w, r0
+    mul r0.w, c1.y, v4.z
+    exp_sat r0.w, -r0.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, c20.x

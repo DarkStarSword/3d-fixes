@@ -78,6 +78,19 @@ def convert_R24G8_UINT(buf):
 	g = scale8bit(buf >> 24,  8)
 	return np.uint8(np.column_stack((r, g, [0]*len(r))))
 
+def convert_D32_FLOAT_S8X24_UINT(buf):
+	d = scale_float(buf['f0'])
+	s = scale8bit(buf['f1'] & 0xff,  8)
+	return np.uint8(np.column_stack((d, s, [0]*len(d))))
+
+def convert_D32_FLOAT_X8X24_UINT(buf):
+	return np.uint8(scale_float(buf['f0']))
+
+def convert_rg_to_rgb(buf):
+	r = buf['f0']
+	g = buf['f1']
+	return np.uint8(np.column_stack((r, g, [0]*len(r))))
+
 def convert_2x16_snorm(buf):
 	# r = buf['f0'] / 0x7fff * 255
 	# g = buf['f1'] / 0x7fff * 255
@@ -105,9 +118,16 @@ def convert_4x16f(buf):
 	a = scale_float(buf['f3'])
 	return np.uint8(np.column_stack((r, g, b, a)))
 
-def convert_dxt5(buf, header):
-	''' From my Miasmata-fixes imag.py, could probably be optimised & DXT1 support easily added back '''
-	block_size = 16
+def convert_dxt(buf, header, dxt):
+	''' From my Miasmata-fixes imag.py, could probably be optimised '''
+	if dxt == 5:
+		block_size = 16
+		channels = 4
+	elif dxt == 1:
+		block_size = 8
+		channels = 3
+	else:
+		raise NotImplementedError()
 
 	(width, height) = (header.width, header.height)
 
@@ -129,26 +149,27 @@ def convert_dxt5(buf, header):
 	cl = buf['clookup'].reshape([height / 4, width / 4, 1]).copy()
 
 	# Alpha:
-	channels = 4
-	alpha = buf['alpha'].reshape(height / 4, width / 4)
-	a = [None]*8
-	aa = [None]*8
-	ab = [None]*8
-	# Byte swapped due to reading in LE
-	al = ((alpha & 0xffffffffffff0000) >> 16)
-	a[0] = alpha & 0xff
-	a[1] = (alpha & 0xff00) >> 8
-	at = a[0] <= a[1]
-	for i in range(1, 7):
-		aa[i+1] = ((7-i)*a[0] + i*a[1]) / 7
-	for i in range(1, 5):
-		ab[i+1] = ((5-i)*a[0] + i*a[1]) / 5
-	ab[6] = np.zeros_like(a[0])
-	ab[7] = np.empty_like(a[0])
-	ab[7].fill(255)
-	for i in range(2, 8):
-		a[i] = np.choose(at, [aa[i], ab[i]])
-	del aa, ab, at
+	# TODO: Implement --no-alpha optimisation like I have in Miasmata version
+	if channels == 4:
+		alpha = buf['alpha'].reshape(height / 4, width / 4)
+		a = [None]*8
+		aa = [None]*8
+		ab = [None]*8
+		# Byte swapped due to reading in LE
+		al = ((alpha & 0xffffffffffff0000) >> 16)
+		a[0] = alpha & 0xff
+		a[1] = (alpha & 0xff00) >> 8
+		at = a[0] <= a[1]
+		for i in range(1, 7):
+			aa[i+1] = ((7-i)*a[0] + i*a[1]) / 7
+		for i in range(1, 5):
+			ab[i+1] = ((5-i)*a[0] + i*a[1]) / 5
+		ab[6] = np.zeros_like(a[0])
+		ab[7] = np.empty_like(a[0])
+		ab[7].fill(255)
+		for i in range(2, 8):
+			a[i] = np.choose(at, [aa[i], ab[i]])
+		del aa, ab, at
 
 	out = np.empty([height, width, channels], np.uint16)
 	for y in range(4):
@@ -188,6 +209,12 @@ def convert_dxt5(buf, header):
 	image = Image.fromarray(np.array(out, np.uint8))
 
 	return image
+
+def convert_dxt1(buf, header):
+	return convert_dxt(buf, header, 1)
+
+def convert_dxt5(buf, header):
+	return convert_dxt(buf, header, 5)
 
 def fourcc(code):
 	return struct.unpack('<I', struct.pack('4s', code.encode('ascii')))[0]
@@ -269,58 +296,76 @@ dxgi_formats = {
 	# should be interpreted as a float or an int. I've picked the most
 	# likely option.
 	# Vim Align plugin \tsq map used to align table - strings should use double quotes:
+
+	# TODO: If I separate out splitting the data into it's components from
+	# interpreting the data type, I think I can simplify this code - and
+	# probably add more flexibility to override the typeless guess.
+
 	1:          ("DXGI_FORMAT_R32G32B32A32_TYPELESS",      ),
 	2:          ("DXGI_FORMAT_R32G32B32A32_FLOAT",         ),
 	3:          ("DXGI_FORMAT_R32G32B32A32_UINT",          ),
 	4:          ("DXGI_FORMAT_R32G32B32A32_SINT",          ),
+
 	5:          ("DXGI_FORMAT_R32G32B32_TYPELESS",         ),
 	6:          ("DXGI_FORMAT_R32G32B32_FLOAT",            ),
 	7:          ("DXGI_FORMAT_R32G32B32_UINT",             ),
 	8:          ("DXGI_FORMAT_R32G32B32_SINT",             ),
-	9:          ("DXGI_FORMAT_R16G16B16A16_TYPELESS",      ),
+
+	9:          ("DXGI_FORMAT_R16G16B16A16_TYPELESS",      np.dtype("<f2, <f2, <f2, <f2"), "RGBA", convert_4x16f),
 	10:         ("DXGI_FORMAT_R16G16B16A16_FLOAT",         ),
 	11:         ("DXGI_FORMAT_R16G16B16A16_UNORM",         ),
 	12:         ("DXGI_FORMAT_R16G16B16A16_UINT",          ),
 	13:         ("DXGI_FORMAT_R16G16B16A16_SNORM",         ),
 	14:         ("DXGI_FORMAT_R16G16B16A16_SINT",          ),
+
 	15:         ("DXGI_FORMAT_R32G32_TYPELESS",            ),
 	16:         ("DXGI_FORMAT_R32G32_FLOAT",               ),
 	17:         ("DXGI_FORMAT_R32G32_UINT",                ),
 	18:         ("DXGI_FORMAT_R32G32_SINT",                ),
-	19:         ("DXGI_FORMAT_R32G8X24_TYPELESS",          ),
+
+	19:         ("DXGI_FORMAT_R32G8X24_TYPELESS",          np.dtype("<u4, <u4"),       "RGB",  convert_D32_FLOAT_S8X24_UINT),
 	20:         ("DXGI_FORMAT_D32_FLOAT_S8X24_UINT",       ),
-	21:         ("DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS",   ),
+	21:         ("DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS",   np.dtype("<u4, <u4"),       "L",    convert_D32_FLOAT_X8X24_UINT),
 	22:         ("DXGI_FORMAT_X32_TYPELESS_G8X24_UINT",    ),
+
 	23:         ("DXGI_FORMAT_R10G10B10A2_TYPELESS",       np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
 	24:         ("DXGI_FORMAT_R10G10B10A2_UNORM",          ),
 	25:         ("DXGI_FORMAT_R10G10B10A2_UINT",           ),
+
 	26:         ("DXGI_FORMAT_R11G11B10_FLOAT",            np.dtype("<u4"),            "RGB",  convert_R11G11B10_FLOAT),
+
 	27:         ("DXGI_FORMAT_R8G8B8A8_TYPELESS",          np.dtype("u1, u1, u1, u1"), "RGBA", None),
 	28:         ("DXGI_FORMAT_R8G8B8A8_UNORM",             ),
 	29:         ("DXGI_FORMAT_R8G8B8A8_UNORM_SRGB",        ),
 	30:         ("DXGI_FORMAT_R8G8B8A8_UINT",              ),
 	31:         ("DXGI_FORMAT_R8G8B8A8_SNORM",             ),
 	32:         ("DXGI_FORMAT_R8G8B8A8_SINT",              ),
-	33:         ("DXGI_FORMAT_R16G16_TYPELESS",            ),
+
+	# Not positive this typeless guess is always right - got a couple of invalid value warnings:
+	33:         ("DXGI_FORMAT_R16G16_TYPELESS",            np.dtype("<f2, <f2"),       "RGB",  convert_2x16f),
 	34:         ("DXGI_FORMAT_R16G16_FLOAT",               ),
 	35:         ("DXGI_FORMAT_R16G16_UNORM",               ),
 	36:         ("DXGI_FORMAT_R16G16_UINT",                ),
 	37:         ("DXGI_FORMAT_R16G16_SNORM",               ), #np.dtype("<i2, <i2"),        "RGB", convert_2x16_snorm),
 	38:         ("DXGI_FORMAT_R16G16_SINT",                ),
+
 	39:         ("DXGI_FORMAT_R32_TYPELESS",               np.dtype("<f4"),            "L",    scale_float),
 	40:         ("DXGI_FORMAT_D32_FLOAT",                  ),
 	41:         ("DXGI_FORMAT_R32_FLOAT",                  ),
 	42:         ("DXGI_FORMAT_R32_UINT",                   ),
 	43:         ("DXGI_FORMAT_R32_SINT",                   ),
+
 	44:         ("DXGI_FORMAT_R24G8_TYPELESS",             np.dtype("<u4"),            "RGB",  convert_R24G8_UINT),
 	45:         ("DXGI_FORMAT_D24_UNORM_S8_UINT",          ),
 	46:         ("DXGI_FORMAT_R24_UNORM_X8_TYPELESS",      ),
 	47:         ("DXGI_FORMAT_X24_TYPELESS_G8_UINT",       ),
-	48:         ("DXGI_FORMAT_R8G8_TYPELESS",              ),
+
+	48:         ("DXGI_FORMAT_R8G8_TYPELESS",              np.dtype("u1, u1"),         "RGB",  convert_rg_to_rgb),
 	49:         ("DXGI_FORMAT_R8G8_UNORM",                 ),
 	50:         ("DXGI_FORMAT_R8G8_UINT",                  ),
 	51:         ("DXGI_FORMAT_R8G8_SNORM",                 ),
 	52:         ("DXGI_FORMAT_R8G8_SINT",                  ),
+
 	53:         ("DXGI_FORMAT_R16_TYPELESS",               np.dtype("<u2"),            "L",    lambda x: scale8bit(x, 16)),
 	54:         ("DXGI_FORMAT_R16_FLOAT",                  ),
 	55:         ("DXGI_FORMAT_D16_UNORM",                  ),
@@ -328,23 +373,29 @@ dxgi_formats = {
 	57:         ("DXGI_FORMAT_R16_UINT",                   ),
 	58:         ("DXGI_FORMAT_R16_SNORM",                  ),
 	59:         ("DXGI_FORMAT_R16_SINT",                   ),
-	60:         ("DXGI_FORMAT_R8_TYPELESS",                ),
+
+	60:         ("DXGI_FORMAT_R8_TYPELESS",                np.dtype("u1"),             "L",    None),
 	61:         ("DXGI_FORMAT_R8_UNORM",                   ),
 	62:         ("DXGI_FORMAT_R8_UINT",                    ),
 	63:         ("DXGI_FORMAT_R8_SNORM",                   ),
 	64:         ("DXGI_FORMAT_R8_SINT",                    ),
+
 	65:         ("DXGI_FORMAT_A8_UNORM",                   ),
+
 	66:         ("DXGI_FORMAT_R1_UNORM",                   ),
+
 	67:         ("DXGI_FORMAT_R9G9B9E5_SHAREDEXP",         ),
+
 	68:         ("DXGI_FORMAT_R8G8_B8G8_UNORM",            ),
 	69:         ("DXGI_FORMAT_G8R8_G8B8_UNORM",            ),
-	70:         ("DXGI_FORMAT_BC1_TYPELESS",               ),
+
+	70:         ("DXGI_FORMAT_BC1_TYPELESS",               np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
 	71:         ("DXGI_FORMAT_BC1_UNORM",                  ),
 	72:         ("DXGI_FORMAT_BC1_UNORM_SRGB",             ),
 	73:         ("DXGI_FORMAT_BC2_TYPELESS",               ),
 	74:         ("DXGI_FORMAT_BC2_UNORM",                  ),
 	75:         ("DXGI_FORMAT_BC2_UNORM_SRGB",             ),
-	76:         ("DXGI_FORMAT_BC3_TYPELESS",               ),
+	76:         ("DXGI_FORMAT_BC3_TYPELESS",               np.dtype([('alpha', '<u8'), ('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGBA", convert_dxt5),
 	77:         ("DXGI_FORMAT_BC3_UNORM",                  ),
 	78:         ("DXGI_FORMAT_BC3_UNORM_SRGB",             ),
 	79:         ("DXGI_FORMAT_BC4_TYPELESS",               ),
@@ -353,21 +404,28 @@ dxgi_formats = {
 	82:         ("DXGI_FORMAT_BC5_TYPELESS",               ),
 	83:         ("DXGI_FORMAT_BC5_UNORM",                  ),
 	84:         ("DXGI_FORMAT_BC5_SNORM",                  ),
+
 	85:         ("DXGI_FORMAT_B5G6R5_UNORM",               ),
+
 	86:         ("DXGI_FORMAT_B5G5R5A1_UNORM",             ),
+
 	87:         ("DXGI_FORMAT_B8G8R8A8_UNORM",             ),
 	88:         ("DXGI_FORMAT_B8G8R8X8_UNORM",             ),
+
 	89:         ("DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM", ),
-	90:         ("DXGI_FORMAT_B8G8R8A8_TYPELESS",          ),
+
+	90:         ("DXGI_FORMAT_B8G8R8A8_TYPELESS",          np.dtype("u1, u1, u1, u1"), "BGRA", None),
 	91:         ("DXGI_FORMAT_B8G8R8A8_UNORM_SRGB",        ),
 	92:         ("DXGI_FORMAT_B8G8R8X8_TYPELESS",          ),
 	93:         ("DXGI_FORMAT_B8G8R8X8_UNORM_SRGB",        ),
+
 	94:         ("DXGI_FORMAT_BC6H_TYPELESS",              ),
 	95:         ("DXGI_FORMAT_BC6H_UF16",                  ),
 	96:         ("DXGI_FORMAT_BC6H_SF16",                  ),
 	97:         ("DXGI_FORMAT_BC7_TYPELESS",               ),
 	98:         ("DXGI_FORMAT_BC7_UNORM",                  ),
 	99:         ("DXGI_FORMAT_BC7_UNORM_SRGB",             ),
+
 	100:        ("DXGI_FORMAT_AYUV",                       ),
 	101:        ("DXGI_FORMAT_Y410",                       ),
 	102:        ("DXGI_FORMAT_Y416",                       ),
@@ -383,7 +441,9 @@ dxgi_formats = {
 	112:        ("DXGI_FORMAT_IA44",                       ),
 	113:        ("DXGI_FORMAT_P8",                         ),
 	114:        ("DXGI_FORMAT_A8P8",                       ),
+
 	115:        ("DXGI_FORMAT_B4G4R4A4_UNORM",             ),
+
 	130:        ("DXGI_FORMAT_P208",                       ),
 	131:        ("DXGI_FORMAT_V208",                       ),
 	132:        ("DXGI_FORMAT_V408",                       ),
@@ -632,6 +692,15 @@ def _convert(src_filename, pos, header, dest_filename, np_dtype, img_type, conve
 			buf = converter(buf, header)
 		except TypeError:
 			buf = converter(buf)
+
+	if img_type == 'BGRA':
+		b = buf['f0']; g = buf['f1']; r = buf['f2']; a = buf['f3']
+		buf = np.column_stack((r, g, b, a))
+		img_type = 'RGBA'
+	elif img_type == 'BGR':
+		b = buf['f0']; g = buf['f1']; r = buf['f2']
+		buf = np.column_stack((r, g, b))
+		img_type = 'RGB'
 
 	if isinstance(buf, Image.Image):
 		image = buf

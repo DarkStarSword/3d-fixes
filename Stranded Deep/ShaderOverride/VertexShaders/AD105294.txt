@@ -1,1 +1,129 @@
-../../../Unity5/DX9/ShaderOverride/VertexShaders/AD105294.txt
+// CRC32: AD105294 | Matched 3 variants of 3 shaders: Particles/Additive, Particles/Alpha Blended, Particles/Multiply
+// 
+//    Unity headers extracted from Particle Add.shader
+//    Shader "Particles/Additive" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha One
+//          ColorMask RGB
+//          GpuProgramID 62330
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Alpha Blend.shader
+//    Shader "Particles/Alpha Blended" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 54810
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Particle Multiply.shader
+//    Shader "Particles/Multiply" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//      }
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend Zero SrcColor
+//          GpuProgramID 33137
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 9 [_MainTex_ST]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c10, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord2 o1
+dcl_position o2
+dcl_color o3
+
+    dp4 o2.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c7.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+// Do NOT Apply a halo fix here - doing so causes a new halo underwater while suffocating
+
+    mul r1.xzw, r0.xywz, c10.x
+    mov o2.xyw, r0
+    mov o1.w, r0.w
+    mad o1.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 r0.x, c6, v0
+    mov o1.z, -r0.x
+    mad o0.xy, v2, c9, c9.zwzw
+    mov o3, v1

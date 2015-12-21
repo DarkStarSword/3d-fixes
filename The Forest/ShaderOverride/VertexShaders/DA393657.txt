@@ -1,0 +1,129 @@
+// CRC32: DA393657 | Unity headers extracted from Fur_Standard.shader
+// Shader "Lux/Standard Fur" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("Albedo (RGB) Gloss(A)", 2D) = "white" { }
+//   [Space(8)] [Toggle(_NORMALMAP)]  _Normal ("Enable Normal Map", Float) = 0
+//   [NoScaleOffset]  _BumpMap ("Normal Map", 2D) = "bump" { }
+//    _BumpScale ("Normal Scale", Float) = 1
+//   [Space(8)] [Toggle(_SPECGLOSSMAP)]  _Occlusion ("Enable Occlusion Map", Float) = 0
+//   [NoScaleOffset]  _OcclusionMap ("Occlusion (G)", 2D) = "white" { }
+//    _OcclusionStrength ("Occlusion Strength", Range(0,1)) = 1
+//   [Space(12)] [Header(___________________________________________________________________________)] [Space(8)]  _TangentDir ("Primary Strand Direction (XY)", Vector) = (1,0,0,0)
+//   [Space(4)] [Enum(None,0,TangentDir,1)]  _DebugMode ("Debug Mode", Float) = 0
+//   [Header(___________________________________________________________________________)] [Header(Primary Specular Highlight)]  _KKPrimarySpecularColor ("Primary Specular Color", Color) = (1,1,1,1)
+//    _KKPrimarySpecularExponent ("Primary Exponent", Range(0.1,512)) = 0.5
+//    _KKPrimaryRootShift ("Primary Root Shift", Range(-1,1)) = 0.275
+//   [Header(___________________________________________________________________________)] [Header(Secondary Specular Highlight)]  _KKSecondarySpecularColor ("Secondary Specular Color", Color) = (1,1,1,1)
+//    _KKSecondarySpecularExponent ("Secondary Exponent", Range(0.1,256)) = 0.5
+//    _KKSecondaryRootShift ("Secondary Root Shift", Range(-1,1)) = -0.04
+//   [Header(___________________________________________________________________________)] [Header(Isotropic and Ambient Specular Reflections)]  _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//    _SpecColor ("Specular Color", Color) = (0.2,0.2,0.2,1)
+//   [Header(___________________________________________________________________________)] [Header(Direct Specular Factors)] [Space(2)]  _KKSpecularMixDirectFactors ("Primary (X) Secondary (Y) Isotropic (Z)", Vector) = (0.15,0.1,0.05,0)
+//   [Space(4)] [Header(Ambient Specular Factors)] [Space(2)]  _KKSpecularMixIndirectFactors ("Primary (X) Secondary (Y) Isotropic (Z)", Vector) = (0.75,0.6,0.15,0)
+//   [Header(___________________________________________________________________________)] [Header(Rim Lighting)]  _RimStrength ("Rim Strength", Range(0,1)) = 0.2
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     LOD 150
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 33038
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 16 [_DetailAlbedoMap_ST]
+//           Vector 15 [_MainTex_ST]
+//           Float 17 [_UVSec]
+//           Vector 10 [_WorldSpaceCameraPos]
+//           Vector 13 [unity_SHBb]
+//           Vector 12 [unity_SHBg]
+//           Vector 11 [unity_SHBr]
+//           Vector 14 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c18, 0, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord8 o7.xyz
+    dcl_color o8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Fur/vp/DA393657.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    mad o1.xy, v2, c15, c15.zwzw
+    abs r0.x, c17.x
+    sge r0.x, -r0.x, r0.x
+    mov r1.xy, v2
+    lrp r2.xy, r0.x, r1, v3
+    mad o1.zw, r2.xyxy, c16.xyxy, c16
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add o2.xyz, r0, -r30
+    mov o7.xyz, r0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    mov o5.xyz, r1
+    dp4 r1.x, c11, r2
+    dp4 r1.y, c12, r2
+    dp4 r1.z, c13, r2
+    mad o6.xyz, c14, r0.x, r1
+    mov o3, c18.x
+    mov o4, c18.x
+    mov o5.w, c18.x
+    mov o6.w, c18.x
+    mov o8, v4

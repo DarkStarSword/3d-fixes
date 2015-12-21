@@ -11,6 +11,8 @@ Fixed
 - Underwater crepuscular rays
 - Automatically adjust the crosshair depth
 - Automatically remove the crosshair when it is faded out
+- Parallax sand is now 3D
+- SSAO artefacts on rocky surfaces
 
 Installation
 ------------
@@ -22,8 +24,8 @@ Installation
    to Stranded_Deep_x64.exe), replace the d3d9.dll from the fix with the one in
    the 32bit directory.
 
-3. Launch the game and set quality to Ultra (other settings may work as well,
-   but I haven't tested them)
+3. Select "DirectX 9.0" when launching the game from Steam (alternatively add
+   -force-d3d9 to the launch options)
 
 Keys
 ----
@@ -37,6 +39,8 @@ Keys
 - V: Cycles crosshair modes between automatic, always enabled and always
   disabled (crosshair must be enabled in the settings).
 
+- ~: Move HUD to screen depth (use for inventory + crafting menus)
+
 Troubleshooting
 ---------------
 - If the water looks broken, try alt+tabbing out of the game and back in.
@@ -48,8 +52,8 @@ Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
 
-- From above, the waves right on the edge of the shore only move the water in
-  one eye.
+- I'm not sure the ocean waves are acting quite right in 3D, but it doesn't
+  affect gameplay.
 
 Notes
 -----

@@ -1,0 +1,118 @@
+// CRC32: F1DC5A50 | Unity headers extracted from Reflect-Bumped.shader
+// Shader "Legacy Shaders/Reflective/Bumped Diffuse" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Legacy Shaders/Reflective/VertexLit"
+//   SubShader 1/1 {
+//     LOD 300
+//     Tags { "RenderType"="Opaque" }
+//     Pass 4/6 {
+//       Name "PREPASS"
+//       Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//       ZWrite Off
+//       GpuProgramID 239241
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//           Vector 4 [_Color]
+//           Vector 5 [_ReflectColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 3 [unity_DynamicLightmap_HDR]
+//           Vector 1 [unity_FogColor]
+//           Vector 2 [unity_FogParams]
+//           SetTexture 0 [unity_DynamicLightmap] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_BumpMap] 2D 2
+//           SetTexture 3 [_Cube] CUBE 3
+//           SetTexture 4 [_LightBuffer] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c6, 2, -1, 0, 1
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4 v4
+    dcl_texcoord5 v5.zw
+    dcl_texcoord6 v6.xyz
+    dcl_texcoord7 v7.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Legacy Shaders_Reflective_Bumped Diffuse/fp/F1DC5A50.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texldp_pp r0, v4, s4
+    add_pp r0.xyz, r0, v6
+    texld_pp r1, v5.zwzw, s0
+    mul_pp r0.w, r1.w, c3.x
+    mul_pp r1.xyz, r1, r0.w
+    log_pp r2.x, r1.x
+    log_pp r2.y, r1.y
+    log_pp r2.z, r1.z
+    mul_pp r1.xyz, r2, c3.y
+    exp_pp r2.x, r1.x
+    exp_pp r2.y, r1.y
+    exp_pp r2.z, r1.z
+    add_pp r0.xyz, r0, r2
+    mov r1.x, v1.w
+    mov r1.y, v2.w
+    mov r1.z, v3.w
+    add r1.xyz, -r1, r30
+    nrm_pp r2.xyz, r1
+    texld_pp r1, v0.zwzw, s2
+    mad_pp r1.xy, r1.wyzw, c6.x, c6.y
+    dp2add_sat_pp r0.w, r1, r1, c6.z
+    add_pp r0.w, -r0.w, c6.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r1.z, r0.w
+    dp3 r3.x, v1, r1
+    dp3 r3.y, v2, r1
+    dp3 r3.z, v3, r1
+    dp3 r0.w, -r2, r3
+    add r0.w, r0.w, r0.w
+    mad r1.xyz, r3, -r0.w, -r2
+    texld_pp r1, r1, s3
+    texld_pp r2, v0, s1
+    mul_pp r1.xyz, r1, r2.w
+    mul_pp r2.xyz, r2, c4
+    mul_pp r1.xyz, r1, c5
+    mad_pp r0.xyz, r2, r0, r1
+    add r0.xyz, r0, -c1
+    mul r0.w, c2.x, v7.x
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mad_pp oC0.xyz, r0.w, r0, c1
+    mov_pp oC0.w, c6.w

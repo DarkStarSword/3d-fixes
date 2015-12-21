@@ -1,0 +1,147 @@
+// CRC32: 7688FD36 | Unity headers extracted from Specular-FirstPass.shader
+// Shader "Nature/Terrain/Specular" {
+//   Properties {
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//   [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   [HideInInspector]  _MainTex ("BaseMap (RGB)", 2D) = "white" { }
+//   [HideInInspector]  _Color ("Main Color", Color) = (1,1,1,1)
+//   }
+//   Dependency "AddPassShader" = "Hidden/TerrainEngine/Splatmap/Specular-AddPass"
+//   Dependency "BaseMapShader" = "Hidden/TerrainEngine/Splatmap/Specular-Base"
+//   Fallback "Nature/Terrain/Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 2/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 122012
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "FOG_EXP2" "_TERRAIN_NORMAL_MAP" }
+//           Vector 3 [_LightColor0]
+//           Float 5 [_Shininess]
+//           Vector 4 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 2 [unity_FogParams]
+//           SetTexture 0 [_Control] 2D 0
+//           SetTexture 1 [_Splat0] 2D 1
+//           SetTexture 2 [_Splat1] 2D 2
+//           SetTexture 3 [_Splat2] 2D 3
+//           SetTexture 4 [_Splat3] 2D 4
+//           SetTexture 5 [_Normal0] 2D 5
+//           SetTexture 6 [_Normal1] 2D 6
+//           SetTexture 7 [_Normal2] 2D 7
+//           SetTexture 8 [_Normal3] 2D 8
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c6, 1, 0.00100000005, 2, -1
+    def c7, 0, 128, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5 v5.xyz
+    dcl_texcoord6 v6.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Nature_Terrain_Specular/fp/7688FD36.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v5
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad_pp r0.xyz, r0, r0.w, c1
+    nrm_pp r1.xyz, r0
+    texld r0, v1.zwzw, s8
+    texld r2, v1, s7
+    texld r3, v0, s5
+    texld r4, v0.zwzw, s6
+    texld_pp r5, v6, s0
+    dp4_pp r0.x, r5, c6.x
+    add r0.z, r0.x, c6.y
+    rcp r0.z, r0.z
+    mul_pp r5, r0.z, r5
+    mul r2.xz, r4.wyyw, r5.y
+    mad_pp r2.xz, r5.x, r3.wyyw, r2
+    mad_pp r2.xy, r5.z, r2.wyzw, r2.xzzw
+    mad_pp r0.yz, r5.w, r0.xwyw, r2.xxyw
+    mad_pp r2.xy, r0.yzzw, c6.z, c6.w
+    dp2add_sat_pp r0.y, r2, r2, c7.x
+    add_pp r0.y, -r0.y, c6.x
+    rsq_pp r0.y, r0.y
+    rcp_pp r2.z, r0.y
+    dp3_pp r3.x, v2, r2
+    dp3_pp r3.y, v3, r2
+    dp3_pp r3.z, v4, r2
+    dp3_pp r0.y, r3, r1
+    dp3_pp r0.z, r3, c1
+    max_pp r1.x, r0.z, c7.x
+    max r1.y, r0.y, c7.x
+    mov r0.y, c7.y
+    mul r0.y, r0.y, c5.x
+    pow r2.x, r1.y, r0.y
+    texld r3, v0, s1
+    texld r4, v0.zwzw, s2
+    mul r4, r4, r5.y
+    mad_pp r3, r5.x, r3, r4
+    texld r4, v1, s3
+    mad_pp r3, r5.z, r4, r3
+    texld r4, v1.zwzw, s4
+    mad_pp r3, r5.w, r4, r3
+    mul r0.y, r2.x, r3.w
+    mul_pp r1.yzw, r3.xxyz, c3.xxyz
+    mov r2.xyz, c3
+    mul r2.xyz, r2, c4
+    mul r0.yzw, r0.y, r2.xxyz
+    mad_pp r0.yzw, r1, r1.x, r0
+    mul_pp r0.xyz, r0.x, r0.yzww
+    mul r0.w, c2.x, v6.z
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mul_pp oC0.xyz, r0, r0.w
+    mov_pp oC0.w, c6.x

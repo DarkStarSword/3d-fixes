@@ -1,0 +1,52 @@
+// CRC32: FD195F0C | Unity headers extracted from Depth.shader
+// Shader "Hidden/Depth" {
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="Opaque" }
+//       Cull Off
+//       GpuProgramID 60736
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Matrix 4 [glstate_matrix_modelview0] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 7 [_ProjectionParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+
+dcl_texcoord o0
+dcl_position o1
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 o1.x, c0, v0
+    dp4 o1.y, c1, v0
+    dp4 o1.z, c2, v0
+    dp4 o1.w, c3, v0
+    dp4 r0.x, c6, v0
+    add r0.x, -r0.x, -c7.y
+    add r0.y, -c7.y, c7.z
+    rcp r0.y, r0.y
+    mul o0.x, r0.y, r0.x
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c200.x -f Hidden_Depth/vp/FD195F0C.txt
+texldl r31, c220.z, s0
+if_ne r31.x, -r31.x
+mov r31.w, c200.x
+if_eq r31.w, c220.x
+mov o1.xyzw, c220.xxxx
+endif
+endif

@@ -1,0 +1,66 @@
+// CRC32: 2540BA06 | Unity headers extracted from MirrorReflection.shader
+// Shader "FX/MirrorReflection" {
+//   Properties {
+//    _Blur ("Blur Strength", Float) = 0.1
+//    _Reflection ("Reflection Strength", Float) = 1
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("Base (RGB)", 2D) = "white" { }
+//   [HideInInspector]  _ReflectionTex ("", 2D) = "white" { }
+//   }
+//   SubShader 1/1 {
+//     LOD 100
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="Opaque" }
+//       GpuProgramID 29936
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 6 [_MainTex_ST]
+//           Vector 4 [_ProjectionParams]
+//           Vector 5 [_ScreenParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c7, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v1, c6, c6.zwzw
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c4.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o2.xyw, r0 // Relocated from line 48 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed FX_MirrorReflection/vp/2540BA06.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xzw, r0.xywz, c7.x
+
+//     mov o2.xyw, r0 // Relocated to line 47 with shadertool.py
+    mad o1.xy, r1.z, c5.zwzw, r1.xwzw
+    dp4 r0.x, c2, v0
+    mov o1.zw, r0.xyxw
+    mov o2.z, r0.x

@@ -1,0 +1,114 @@
+// CRC32: A0601194 | Matched 3 variants of 1 shaders: Hidden/RenderGrey
+// 
+//    Unity headers extracted from RenderGrey.shader
+//    Shader "Hidden/RenderGrey" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 46879
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_LINEAR" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord1" TexCoord1
+//              Bind "texcoord2" TexCoord2
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_DynamicLightmapST]
+//              Vector 13 [unity_LightmapST]
+//              Vector 12 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c15, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord1 v3
+    dcl_texcoord2 v4
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.x
+    dcl_texcoord5 o6.xyz
+    dcl_texcoord6 o7.xyz
+    dcl_texcoord7 o8.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    mad o3.zw, v4.xyxy, c14.xyxy, c14
+    mad o3.xy, v3, c13, c13.zwzw
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c15.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 72 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed Hidden_RenderGrey/vp/A0601194.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c15.x
+    mad o4.xy, r1.z, c11.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 69 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o4.zw, r0
+    mov o5.x, r0.z
+    mul r0.xyz, c8, v2.y
+    mad r0.xyz, c7, v2.x, r0
+    mad r0.xyz, c9, v2.z, r0
+    nrm r1.xyz, r0
+    mov o1.xyz, r1
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o6.x, r0.z
+    mul r2.xyz, r0, r1.zxyw
+    mad r2.xyz, r1.yzxw, r0.yzxw, -r2
+    mul r0.z, c12.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o6.y, r2.x
+    mov o6.z, r1.x
+    mov o7.x, r0.x
+    mov o8.x, r0.y
+    mov o7.y, r2.y
+    mov o8.y, r2.z
+    mov o7.z, r1.y
+    mov o8.z, r1.z

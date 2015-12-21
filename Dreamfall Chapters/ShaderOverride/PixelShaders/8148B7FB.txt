@@ -1,0 +1,207 @@
+// CRC32: 8148B7FB | Matched 6 variants of 2 shaders: Dreamfall/Bumped Specular Cloth, Legacy Shaders/Bumped Specular
+// 
+//    Unity headers extracted from Normal-Bump-Cloth.shader
+//    Shader "Dreamfall/Bumped Specular Cloth" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _MeshOffsetR ("Offset (R)", Float) = 1
+//       _MeshOffsetG ("Offset (G)", Float) = 1
+//       _MeshOffsetB ("Offset (B)", Float) = 1
+//       _WindDirection ("Wind", Vector) = (0,0,0,0)
+//       _Speed1 ("Speed 1", Float) = 1
+//       _Scale1 ("Scale 1", Float) = 1
+//       _Scale2 ("Scale 2", Float) = 1
+//       _Strength1 ("Strength 1", Float) = 1
+//       _Strength2 ("Strength 2", Float) = 1
+//      }
+//      Fallback "Specular"
+//      SubShader 1/1 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/7 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 51619
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Vector 5 [_Color]
+//              Float 6 [_Shininess]
+//              Vector 4 [_SpecColor]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [unity_FogColor]
+//              Vector 2 [unity_FogParams]
+//              Vector 3 [unity_Lightmap_HDR]
+//              SetTexture 0 [unity_Lightmap] 2D 0
+//              SetTexture 1 [unity_LightmapInd] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Normal-BumpSpec.shader
+//    Shader "Legacy Shaders/Bumped Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Legacy Shaders/Specular"
+// 3:   SubShader 1/2 {
+// c:   SubShader 2/2 {
+//        LOD 400
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+// c:       GpuProgramID 403798
+// 3:       GpuProgramID 63316
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 5:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_OFF" }
+// a:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//              Vector 5 [_Color]
+//              Float 6 [_Shininess]
+//              Vector 4 [_SpecColor]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [unity_FogColor]
+//              Vector 2 [unity_FogParams]
+//              Vector 3 [unity_Lightmap_HDR]
+//              SetTexture 0 [unity_Lightmap] 2D 0
+//              SetTexture 1 [unity_LightmapInd] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c7, 2, -1, 0, 1
+    def c8, 0.00100000005, 0.5, 0, 128
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4_pp v4.xy
+    dcl_texcoord6 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Dreamfall_Bumped Specular Cloth/fp/8148B7FB.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add_pp r0.xy, c8.yzzw, v4
+    texld_pp r1, r0, s0
+    texld_pp r0, r0, s1
+    mad_pp r0.xyz, r0, c7.x, c7.y
+    pow_pp r0.w, r1.w, c3.y
+    mul_pp r0.w, r0.w, c3.x
+    mul_pp r1.xyz, r1, r0.w
+    dp3_pp r0.w, r0, r0
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    max_pp r1.w, c8.x, r0.w
+    mul_pp r2.xyz, r1.w, r1
+    mul r3.xyz, r2, c4
+    mov r4.x, v1.w
+    mov r4.y, v2.w
+    mov r4.z, v3.w
+    add r4.xyz, -r4, r30
+    nrm_pp r5.xyz, r4
+    rcp r0.w, r1.w
+    add_pp r1.w, -r1.w, c7.w
+    mul_pp r1.xyz, r1.w, r1
+    mad_pp r4.xyz, r0, r0.w, r5
+    mul_pp r0.xyz, r0.w, r0
+    nrm_pp r6.xyz, r4
+    texld_pp r4, v0.zwzw, s3
+    mad_pp r4.xy, r4.wyzw, c7.x, c7.y
+    dp2add_sat_pp r0.w, r4, r4, c7.z
+    add_pp r0.w, -r0.w, c7.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r4.z, r0.w
+    dp3_pp r7.x, v1, r4
+    dp3_pp r7.y, v2, r4
+    dp3_pp r7.z, v3, r4
+    dp3_pp r0.w, r7, r6
+    max r1.w, r0.w, c7.z
+    mov r0.w, c8.w
+    mul r0.w, r0.w, c6.x
+    pow r2.w, r1.w, r0.w
+    texld_pp r4, v0, s2
+    mul r1.w, r2.w, r4.w
+    mul r3.xyz, r1.w, r3
+    mul_pp r4.xyz, r4, c5
+    mul_pp r2.xyz, r2, r4
+    dp3_pp r0.x, r7, r0
+    max_pp r1.w, r0.x, c7.z
+    mad_pp r0.xyz, r2, r1.w, r3
+    mul_pp r1.xyz, r1.w, r1
+    texld_pp r2, v4, s1
+    mad_pp r2.xyz, r2, c7.x, c7.y
+    dp3_pp r1.w, r2, r2
+    rsq_pp r1.w, r1.w
+    rcp_pp r1.w, r1.w
+    max_pp r2.w, c8.x, r1.w
+    rcp r1.w, r2.w
+    mad_pp r3.xyz, r2, r1.w, r5
+    mul_pp r2.xyz, r1.w, r2
+    dp3_pp r1.w, r7, r2
+    max_pp r2.x, r1.w, c7.z
+    nrm_pp r5.xyz, r3
+    dp3_pp r1.w, r7, r5
+    max r2.y, r1.w, c7.z
+    pow r1.w, r2.y, r0.w
+    mul r0.w, r4.w, r1.w
+    texld_pp r3, v4, s0
+    pow_pp r1.w, r3.w, c3.y
+    mul_pp r1.w, r1.w, c3.x
+    mul_pp r3.xyz, r3, r1.w
+    mul_pp r5.xyz, r2.w, r3
+    add_pp r1.w, -r2.w, c7.w
+    mul_pp r2.yzw, r1.w, r3.xxyz
+    mad_pp r1.xyz, r2.yzww, r2.x, r1
+    mul r2.yzw, r5.xxyz, c4.xxyz
+    mul_pp r3.xyz, r4, r5
+    mul r2.yzw, r0.w, r2
+    mad_pp r2.xyz, r3, r2.x, r2.yzww
+    add_pp r0.xyz, r0, r2
+    mad_pp r0.xyz, r4, r1, r0
+    add r0.xyz, r0, -c1
+    mul r0.w, c2.y, v5.x
+    exp_sat r0.w, -r0.w
+    mad_pp oC0.xyz, r0.w, r0, c1
+    mov_pp oC0.w, c7.w

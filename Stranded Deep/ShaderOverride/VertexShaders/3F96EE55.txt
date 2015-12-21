@@ -1,7 +1,7 @@
-// CRC32: 3F96EE55 | Matched 2 variants of 1 shaders: Beam Team/SpeedTree/Forward/SpeedTree Foliage - Cull Off
+// CRC32: 3F96EE55 | Matched 2 variants of 1 shaders: Beam Team/SpeedTree/SpeedTree Foliage - Forward Cull Off
 // 
-//    Unity headers extracted from Speedtree Foliage - Cull Off.shader
-//    Shader "Beam Team/SpeedTree/Forward/SpeedTree Foliage - Cull Off" {
+//    Unity headers extracted from Speedtree Foliage - Forward Cull Off.shader
+//    Shader "Beam Team/SpeedTree/SpeedTree Foliage - Forward Cull Off" {
 //      Properties {
 //      [Header(Diffuse)]  _Color ("Color", Color) = (1,1,1,1)
 //       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
@@ -12,15 +12,15 @@
 //       _TranslucencyIntensity ("Translucency Intensity", Range(1,5)) = 1
 //       _TranslucencyViewDependency ("Translucency View Dependency", Range(0,1)) = 0.5
 //      [Header(Wind)] [MaterialEnum(None, 0, Fastest, 1, Fast, 2, Better, 3, Best, 4, Palm, 5)]  _WindQuality ("Wind Quality", Range(0,5)) = 0
-//      [HideInInspector]  _HighlightRimColor ("Highlight Rim Color", Color) = (0,0,0,0)
 //      }
+//      Fallback "Legacy Shaders/Transparent/Cutout/VertexLit"
 //      SubShader 1/2 {
-//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="SpeedTree" }
+//        Tags { "QUEUE"="AlphaTest" "DisableBatching"="LodFading" "RenderType"="SpeedTree" }
 //        Pass 1/2 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "DisableBatching"="LodFading" "RenderType"="SpeedTree" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "DisableBatching"="LodFading" "RenderType"="SpeedTree" }
 //          Cull Off
-//          GpuProgramID 37744
+//          GpuProgramID 1202
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 2:           Keywords { "BEAM_SPEEDTREE_TRANSLUCENCY" "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "GEOM_TYPE_FROND" "LIGHTMAP_OFF" "LOD_FADE_CROSSFADE" "SHADOWS_OFF" "SUNSHINE_DISABLED" "VERTEXLIGHT_ON" }
@@ -92,6 +92,22 @@
 
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s3
+
+texldl r10, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_SpeedTree_SpeedTree Foliage - Forward Cull Off/vp/3F96EE55.txt
+mov r30, c14
+mov r29, c220.x
+mul r29.x, r10.x, -r10.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mov r0.x, c26.x
     mul r0.y, r0.x, c27.x
@@ -268,7 +284,7 @@ dcl_2d s3
 mov o0.xyw, r1 // Relocated from line 329 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py --stereo-sampler-vs=s3 --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed -I ../.. --ignore-register-errors Beam Team_SpeedTree_Forward_SpeedTree Foliage - Cull Off/vp/3F96EE55.txt
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_SpeedTree_SpeedTree Foliage - Forward Cull Off/vp/3F96EE55.txt
 texldl r31, c220.z, s3
 add r31.w, r1.w, -r31.y
 mad r1.x, r31.w, r31.x, r1.x
@@ -281,7 +297,7 @@ mad r1.x, r31.w, r31.x, r1.x
     dp4 r2.x, c8, r0
     dp4 r2.y, c9, r0
     dp4 r2.z, c10, r0
-    add r3.xyz, -r2, c14
+    add r3.xyz, -r2, r30
     dp3 r1.z, r3, r3
     rsq r1.z, r1.z
     rcp r1.z, r1.z
@@ -341,8 +357,6 @@ mad r1.x, r31.w, r31.x, r1.x
     add o7.xyz, r5, r6
 
 //     mov o0.xyw, r1 // Relocated to line 263 with shadertool.py
-mov o0.z, r1 // Inserted by shadertool.py
-
     mov o1.x, r3.z
     mov o1.y, r4.x
     mov o1.z, r0.x

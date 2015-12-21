@@ -1,0 +1,226 @@
+// CRC32: 20C09D0B | Unity headers extracted from FinalInterpolation.shader
+// Shader "Hidden/Final Interpolation" {
+//   Properties {
+//    _ZTest ("", Float) = 8
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 1/1 {
+//       ZTest [_ZTest]
+//       ZWrite Off
+//       Blend One SrcAlpha
+//       GpuProgramID 21222
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "LIGHT_OFF_SCREEN" "QUAD_SHAFTS" "SHOW_SAMPLES_ON" "SPOT_SHAFTS" }
+//           Matrix 0 [_FrustumRays]
+//           Vector 6 [_CameraPosLocal]
+//           Vector 8 [_CoordTexDim]
+//           Float 9 [_DepthThreshold]
+//           Float 7 [_FrustumApex]
+//           Vector 5 [_LightPos]
+//           Float 10 [_ShowSamplesBackgroundFade]
+//           Vector 4 [_ZBufferParams]
+//           SetTexture 0 [_DepthEpi] 2D 0
+//           SetTexture 1 [_SamplePositions] 2D 1
+//           SetTexture 2 [_RaymarchedLight] 2D 2
+//           SetTexture 3 [_CameraDepthTexture] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 0.5, -0.5, 0, 1
+    def c12, 990000000, 2, -1, 1
+    def c13, 9.99999975e-006, -0.00100000005, -39, 1000000
+    def c14, 0.25, 0, 0.5, 0.75
+    def c15, 2, 0, -2, -9.99999997e-007
+    def c16, -0, 0, -1, 1
+    def c17, 999.999939, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+    mov r0.xyz, c0
+    add r0.xyz, -r0, c1
+    mad r0.xyz, v0.x, r0, c0
+    mov r1.xyz, c3
+    add r1.xyz, -r1, c2
+    mad r1.xyz, v0.x, r1, c3
+    lrp r2.xyz, v0.y, r1, r0
+    dp3 r0.x, r2, r2
+    rsq r0.x, r0.x
+    mul r0.yzw, r0.x, r2.xxyz
+    mul r1.x, r0.w, c11.x
+    mov r2, c11
+    add r1.y, r2.x, -c7.x
+    mad r1.zw, r1.y, r0.xyzy, r1.x
+    mad r0.yz, r1.y, r0.xzyw, -r1.x
+    mul r1.xy, r1.y, c6.yxzw
+    rcp r1.z, r1.z
+    rcp r1.w, r1.w
+    mov r3.z, c6.z
+    add r3.x, r3.z, -c7.x
+    mad r3.yz, r3.x, -c11.x, -r1.xxyw
+    mad r1.xy, r3.x, c11.x, -r1
+    mul r4.xy, r1.wzzw, r3.zyzw
+    rcp r0.y, r0.y
+    rcp r0.z, r0.z
+    mul r4.zw, r0.xyzy, r1.xyyx
+    mad r1, r4, r0.w, c6.z
+    add r1, -r1, c7.x
+    cmp r0.y, -r0.w, c11.z, c11.w
+    cmp r0.z, r0.w, -c11.z, -c11.w
+    rcp r0.w, r0.w
+    add r0.y, r0.z, r0.y
+    mul r0.y, r0.y, c12.x
+    cmp r1, r1.zwxy, r0.y, r4.zwxy
+    mov r3.zw, r1
+    add r0.yz, r2.xyxw, -c6.z
+    mul r3.xy, r0.yzzw, r0.w
+    mov r1.z, r3.y
+    max r0.yzw, r1.xxyz, r3.xzwx
+    min r4.xyz, r3.zwxw, r1
+    max r1.xy, r4.x, r4.yzzw
+    max r2.y, r1.x, r1.y
+    min r1.xy, r0.zwzw, r0.y
+    min r0.y, r1.y, r1.x
+    mul_pp r0.y, r0.x, r0.y
+    texld_pp r1, v0, s3
+    mad r0.z, c4.x, r1.x, c4.y
+    rcp_pp r0.z, r0.z
+    min_pp r1.x, r0.y, r0.z
+    mad r0.x, r2.y, -r0.x, r1.x
+    cmp r0.x, r0.x, c11.w, c11.z
+    mad r0.yz, v0.xxyw, c12.y, c12.z
+    add r1.yz, r0, -c5.xxyw
+    dp2add r0.w, r1.yzzw, r1.yzzw, c11.z
+    rsq r0.w, r0.w
+    mul r3.xy, r0.w, r1.yzzw
+    add r3.zw, r3_abs.xyxy, c15.w
+    cmp r3.zw, r3, c11.z, c11.w
+    mad r1.yz, r1, r0.w, r3.xzww
+    rcp r4.xz, r1.y
+    rcp r4.yw, r1.z
+    mov r5.xy, c5
+    add r5, -r5.xyxy, c12.zzww
+    mul r4, r4, r5
+    mad r6, v0.xxyy, c15.x, c15.yzyz
+    mul r1.yz, r3.x, r6.xzww
+    mad r6, r6.xxyy, r3.y, -r1.zyyz
+    cmp r7, r6.yzwx, c11.w, c11.z
+    cmp r6, r6, c11.z, r7
+    dp4 r0.w, r6, r4
+    mul r1.yz, r0.w, r3.xxyw
+    mad r3.xy, r3, r0.w, c5
+    dp2add r0.w, r1.yzzw, r1.yzzw, c11.z
+    rsq r0.w, r0.w
+    mul r3.zw, r0.w, r1.xyyz
+    add r4, -r3_abs.zwzw, c13.x
+    cmp r4, r4, c16.xxyy, c16.zzww
+    mad r1.yz, r1, r0.w, r4.xxyw
+    rcp r0.w, r0.w
+    add r0.w, r0.w, c13.y
+    add r1.yz, r1, c11.w
+    rcp r7.xz, r1.y
+    rcp r7.yw, r1.z
+    mad r8, r5, r7, -r0.w
+    mul r5, r5, r7
+    cmp r4, r8, c11.z, r4.zwzw
+    lrp r7, r4, r5, c13.z
+    max r0.w, r7.x, c11.z
+    max r1.y, r0.w, r7.y
+    max r0.w, r1.y, r7.z
+    max r1.y, r0.w, r7.w
+    mad r1.yz, r3.xzww, r1.y, c5.xxyw
+    add r0.yz, r0, -r1
+    add r1.yz, -r1, r3.xxyw
+    mad r3, r3.yxyx, c11.yxxy, c11.x
+    mad r3, r3, c14.x, c14.yxzw
+    dp4_pp r3.y, r6, r3
+    dp2add r0.w, r1.yzzw, r1.yzzw, c11.z
+    rsq r0.w, r0.w
+    rcp r1.w, r0.w
+    add r1.w, r1.w, c15.w
+    cmp r1.w, r1.w, r0.w, c13.w
+    mul r1.yz, r1.w, r1
+    dp2add r0.y, r0.yzzw, r1.yzzw, c11.z
+    mad r0.y, r0.y, r0.w, c8.z
+    add r0.z, -r2.w, c8.x
+    mul r0.z, r0.z, c8.z
+    mul_pp r3.x, r0.z, r0.y
+    mad r0.yz, r3.xxyw, c8.xxyw, r2.x
+    frc r1.yz, r0
+    add r1.yz, r0, -r1
+    add r3.xy, r0.yzzw, -r1.yzzw
+    add r0.yz, r1, c11.x
+    add r3.zw, -r3.xyxy, c11.w
+    mul r3, r3.yyxw, r3.zxwz
+    mul r1.yz, r0, c8.xzww
+    mad r0.yz, r0, c8.xzww, -c8.xzww
+    texld r4, r1.yzzw, s0
+    mad r5, c8.zwzw, -r2.wzzw, r1.yzyz
+    abs r4.y, r4.x
+    texld r6, r5, s0
+    texld r5, r5.zwzw, s0
+    abs r4.z, r5.x
+    abs r4.x, r6.x
+    texld r5, r0.yzzw, s0
+    abs r4.w, r5.x
+    add r1, r1.x, -r4
+    max r4, r1_abs, c9.x
+    rcp r1.x, r4.x
+    rcp r1.y, r4.y
+    rcp r1.z, r4.z
+    rcp r1.w, r4.w
+    mul_sat r1, r1, c9.x
+    mul r1, r1, r1
+    mul r1, r1, r1
+    mul r1, r1, r3
+    dp4 r0.w, r1, c11.w
+    rcp r0.w, r0.w
+    mul r1, r0.w, r1
+    add r1.xw, r1.wyzy, r1.zyzx
+    rcp r0.w, r1.w
+    add r2.xy, r1.xwzw, c13.y
+    cmp r0.w, r2.y, r0.w, c17.x
+    mul r0.w, r0.w, r1.y
+    mul r3.x, r0.w, c8.z
+    mov r3.y, c8.w
+    add r2.yw, r0.xyzz, r3.xxzy
+    texld r3, r2.ywzw, s2
+    mul r3.xyz, r1.w, r3
+    rcp r0.w, r1.x
+    cmp r0.w, r2.x, r0.w, c17.x
+    mul r0.w, r0.w, r1.z
+    mul r2.x, r0.w, c8.z
+    mov r2.y, c11.z
+    add r0.yz, r0, r2.xxyw
+    texld r4, r0.yzzw, s2
+    mad r0.yzw, r1.x, r4.xxyz, r3.xxyz
+    mul r0.xyz, r0.yzww, r0.x
+    mul r0.xyz, r0, c10.x
+    texld r1, v0, s1
+    dp3 r0.w, r1, r1
+    cmp oC0.xyz, -r0.w, r0, r1
+    cmp oC0.w, -r0.w, c10.x, r2.z
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c200.x -f Hidden_Final Interpolation/fp/20C09D0B.txt
+texldl r31, c220.z, s13
+if_ne r31.x, -r31.x
+mov r31.w, c200.x
+if_eq r31.w, c220.x
+mov oC0.xyzw, c220.xxxx
+endif
+endif

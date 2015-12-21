@@ -1,0 +1,182 @@
+// CRC32: F3F2B9D0 | Matched 2 variants of 2 shaders: Hidden/Internal-PrePassLighting, Hidden/ShadowSoftener-PrePassLighting
+// 
+//    Unity headers extracted from Internal-PrePassLighting.shader
+//    Shader "Hidden/Internal-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 3/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 155461
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Matrix 3 [_LightMatrix0] 2
+//              Vector 12 [_LightColor]
+//              Vector 11 [_LightDir]
+//              Vector 8 [_LightShadowData]
+//              Vector 6 [_ProjectionParams]
+//              Vector 5 [_WorldSpaceCameraPos]
+//              Vector 7 [_ZBufferParams]
+//              Vector 10 [unity_ColorSpaceLuminance]
+//              Vector 13 [unity_LightmapFade]
+//              Vector 9 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_LightTexture0] 2D 1
+//              SetTexture 2 [_ShadowMapTexture] 2D 2
+//              SetTexture 3 [_CameraNormalsTexture] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ShadowSoftener-PrePassLighting.shader
+//    Shader "Hidden/ShadowSoftener-PrePassLighting" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback "Hidden/Internal-PrePassLighting"
+//      SubShader 1/1 {
+//        Pass 3/3 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 161130
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+//              Matrix 0 [_CameraToWorld] 3
+//              Matrix 3 [_LightMatrix0] 2
+//              Vector 12 [_LightColor]
+//              Vector 11 [_LightDir]
+//              Vector 8 [_LightShadowData]
+//              Vector 6 [_ProjectionParams]
+//              Vector 5 [_WorldSpaceCameraPos]
+//              Vector 7 [_ZBufferParams]
+//              Vector 10 [unity_ColorSpaceLuminance]
+//              Vector 13 [unity_LightmapFade]
+//              Vector 9 [unity_ShadowFadeCenterAndType]
+//              SetTexture 0 [_CameraDepthTexture] 2D 0
+//              SetTexture 1 [_LightTexture0] 2D 1
+//              SetTexture 2 [_ShadowMapTexture] 2D 2
+//              SetTexture 3 [_CameraNormalsTexture] 2D 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c14, 1, 2, -1, 0
+    def c15, 128, 0, 0, 0
+    dcl_texcoord v0.xyw
+    dcl_texcoord1 v1.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-lighting-ps-world --only-autofixed -f Hidden_Internal-PrePassLighting/fp/F3F2B9D0.txt
+mov r30, c5
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    rcp r0.x, v1.z
+    mul r0.x, r0.x, c6.z
+    mul r0.xyz, r0.x, v1
+    rcp r0.w, v0.w
+    mul r1.xy, r0.w, v0
+    texld r2, r1, s0
+    mad r0.w, c7.x, r2.x, c7.y
+    rcp r0.w, r0.w
+    mul r2.xyz, r0.w, r0
+    mov r2.w, c14.x
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2 // depth in r2.z
+
+// Unity light/shadow fix (pixel shader stage, world-space variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-lighting-ps-world --only-autofixed -f Hidden_Internal-PrePassLighting/fp/F3F2B9D0.txt
+mov r29, c220.x
+add r29.x, r2.z, -r31.y
+mul r29.x, r29.x, r31.x
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r3.xyz, r3, -r29
+
+    add r2.xyw, r3.xyzz, -c9.xyzz
+    dp3 r0.x, r2.xyww, r2.xyww
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mad r0.x, r0.z, -r0.w, r0.x
+    mad r0.x, c9.w, r0.x, r2.z
+    mad_sat r0.y, r0.x, c8.z, c8.w
+    mad r0.x, r0.x, c13.z, c13.w
+    add_sat r0.x, -r0.x, c14.x
+    texld r2, r1, s2
+    texld_pp r1, r1, s3
+    add_sat_pp r0.y, r0.y, r2.x
+    mov r3.w, c14.x
+    dp4 r2.x, c3, r3
+    dp4 r2.y, c4, r3
+    add r3.xyz, r3, -r30
+    texld r2, r2, s1
+    mul r0.y, r0.y, r2.w
+    mov_sat r0.z, r0.y
+    dp3 r0.w, r3, r3
+    rsq r0.w, r0.w
+    mad r2.xyz, r3, -r0.w, -c11
+    nrm_pp r3.xyz, r2
+    mad_pp r1.xyz, r1, c14.y, c14.z
+    mul_pp r0.w, r1.w, c15.x
+    nrm_pp r2.xyz, r1
+    dp3_pp r1.x, r3, r2
+    dp3_pp r1.y, -c11, r2
+    max_pp r2.x, r1.y, c14.w
+    mul r0.y, r0.y, r2.x
+    mul_pp r2.yzw, r0.y, c12.xxyz
+    max_pp r0.y, r1.x, c14.w
+    pow r1.x, r0.y, r0.w
+    mul r0.y, r0.z, r1.x
+    mov r1.xyz, c12
+    mul_pp r1.xyw, r1.xyzz, c10.xyzz
+    add_pp r0.zw, r1.xyyw, r1.x
+    mul_pp r0.w, r0.w, r1.y
+    mad_pp r0.z, r1.z, c10.z, r0.z
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    dp2add_pp r0.z, c10.w, r0.w, r0.z
+    mul_pp r2.x, r0.z, r0.y
+    mul_pp oC0, r0.x, r2

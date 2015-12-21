@@ -1,0 +1,101 @@
+// CRC32: 2CA8005B | Unity headers extracted from Other - Crosshatching.shader
+// Shader "Beam Team/Standard/Other/Hatching" {
+//   Properties {
+//    _Hatch0 ("Hatch 0", 2D) = "white" { }
+//    _Hatch1 ("Hatch 1", 2D) = "white" { }
+//    _Hatch2 ("Hatch 2", 2D) = "white" { }
+//    _Hatch3 ("Hatch 3", 2D) = "white" { }
+//    _Hatch4 ("Hatch 4", 2D) = "white" { }
+//    _Hatch5 ("Hatch 5", 2D) = "white" { }
+//    _Outline ("Outline", Range(0,1)) = 0.5
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 124369
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 16 [_Hatch0_ST]
+//           Vector 7 [_ProjectionParams]
+//           Vector 8 [_ScreenParams]
+//           Vector 11 [unity_SHAb]
+//           Vector 10 [unity_SHAg]
+//           Vector 9 [unity_SHAr]
+//           Vector 14 [unity_SHBb]
+//           Vector 13 [unity_SHBg]
+//           Vector 12 [unity_SHBr]
+//           Vector 15 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c17, 1, 0.5, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+    dcl_texcoord5 o5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mad o1.xy, v2, c16, c16.zwzw
+    mul r0.xyz, c5, v1.y
+    mad r0.xyz, c4, v1.x, r0
+    mad r0.xyz, c6, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c12, r2
+    dp4 r3.y, c13, r2
+    dp4 r3.z, c14, r2
+    mad r0.xyz, c15, r0.x, r3
+    mov r1.w, c17.x
+    dp4 r2.x, c9, r1
+    dp4 r2.y, c10, r1
+    dp4 r2.z, c11, r1
+    mov o2.xyz, r1
+    add o3.xyz, r0, r2
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c7.x
+    mul r1.w, r1.x, c17.y
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 83 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Other_Hatching/vp/2CA8005B.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c17.y
+    mad o4.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 80 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o4.zw, r0
+    mov o5, c17.z

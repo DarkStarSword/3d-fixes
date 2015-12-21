@@ -1,0 +1,189 @@
+// CRC32: 3CCA9582 | Unity headers extracted from Standard_BillboardGrass.shader
+// Shader "Hidden/TerrainEngine/Details/BillboardWavingDoublePass" {
+//   Properties {
+//    _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//    _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//    _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//    _Cutoff ("Cutoff", Float) = 0.5
+//   }
+//   Fallback "Legacy Shaders/Transparent/Cutout/Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="AlphaTest+1" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="TransparentCutout" }
+//     Pass 3/5 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "QUEUE"="AlphaTest+1" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="TransparentCutout" }
+//       Cull Off
+//       ColorMask RGB
+//       GpuProgramID 149061
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+//           Float 4 [_Cutoff]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [unity_ColorSpaceDielectricSpec]
+//           Vector 3 [unity_LightGammaCorrectionConsts]
+//           Vector 2 [unity_Lightmap_HDR]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c5, 2, -1, 0.00100000005, 0
+    def c6, 0.5, 0, 31.622776, 9.99999975e-005
+    def c7, 4.90740919, 3.90740919, 10000, 0
+    def c8, 0.5, 0, 1, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_color_pp v3
+    dcl_texcoord4_pp v4.xy
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Details_BillboardWavingDoublePass/fp/3CCA9582.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld r0, v0, s2
+    mul_pp r0, r0, v3
+    mad_pp r1, r0.w, v3.w, -c4.x
+    mul_pp r0.xyz, r0, c1.w
+    texkill r1
+    texld_pp r1, v4, s1
+    mad_pp r1.xyz, r1, c5.x, c5.y
+    dp3_pp r0.w, r1, r1
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.w, r0.w
+    max_pp r1.w, c5.z, r0.w
+    rcp r0.w, r1.w
+    add r2.xyz, r30, -v2
+    nrm_pp r3.xyz, r2
+    mad_pp r2.xyz, r1, r0.w, r3
+    mul_pp r1.xyz, r0.w, r1
+    dp3_pp r0.w, r2, r2
+    add r2.w, -r0.w, c5.z
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r2.w, c6.z, r0.w
+    mul_pp r2.xyz, r0.w, r2
+    dp3_pp r0.w, v1, r2
+    dp3_pp r2.x, r1, r2
+    dp3_pp r1.x, v1, r1
+    max_pp r2.y, r1.x, c5.w
+    max_pp r1.x, r2.x, c5.w
+    max_pp r1.y, r0.w, c5.w
+    pow_pp r0.w, r1.y, c7.y
+    mov r4.yzw, c3
+    mul_pp r1.y, r4.y, c7.x
+    mul_pp r0.w, r0.w, r1.y
+    dp3_pp r1.y, v1, r3
+    max_pp r2.x, r1.y, c5.w
+    add_pp r1.y, -r4.w, -c5.y
+    mad_pp r1.z, r2.x, r1.y, c3.w
+    add_pp r2.x, -r2.x, -c5.y
+    mad_pp r1.y, r2.y, r1.y, c3.w
+    mad r1.y, r1.y, r1.z, c6.w
+    rcp_pp r1.y, r1.y
+    mul_pp r0.w, r0.w, r1.y
+    mul_pp r0.w, r2.y, r0.w
+    mul_pp r0.w, r0.w, c3.x
+    max_pp r1.y, r0.w, c5.w
+    texld_pp r5, v4, s0
+    pow_pp r0.w, r5.w, c2.y
+    mul_pp r0.w, r0.w, c2.x
+    mul_pp r4.xyw, r5.xyzz, r0.w
+    mul_pp r5.xyz, r1.w, r4.xyww
+    add_pp r0.w, -r1.w, -c5.y
+    mul_pp r4.xyw, r0.w, r4
+    mul_pp r1.yzw, r1.y, r5.xxyz
+    add_pp r0.w, -r1.x, -c5.y
+    dp2add_pp r1.x, r1.x, r1.x, -c6.x
+    mul_pp r2.z, r0.w, r0.w
+    mul_pp r2.z, r2.z, r2.z
+    mul_pp r0.w, r0.w, r2.z
+    mov r6.yw, c5
+    lrp_pp r7.xyz, r0.w, -r6.y, c1
+    mul_pp r1.yzw, r1, r7.xxyz
+    mul_pp r0.w, r2.x, r2.x
+    mul_pp r0.w, r0.w, r0.w
+    mul_pp r0.w, r2.x, r0.w
+    mad_pp r0.w, r1.x, r0.w, -c5.y
+    add_pp r2.x, -r2.y, -c5.y
+    mul_pp r2.z, r2.x, r2.x
+    mul_pp r2.z, r2.z, r2.z
+    mul_pp r2.x, r2.x, r2.z
+    mad_pp r1.x, r1.x, r2.x, -c5.y
+    mul_pp r0.w, r0.w, r1.x
+    mul_pp r0.w, r2.y, r0.w
+    add_pp r2.xz, c6.xyyw, v4.xyyw
+    texld_pp r7, r2.xzzw, s0
+    texld_pp r8, r2.xzzw, s1
+    mad_pp r2.xzw, r8.xyyz, c5.x, c5.y
+    pow_pp r1.x, r7.w, c2.y
+    mul_pp r1.x, r1.x, c2.x
+    mul_pp r7.xyz, r7, r1.x
+    dp3_pp r1.x, r2.xzww, r2.xzww
+    rsq_pp r1.x, r1.x
+    rcp_pp r1.x, r1.x
+    max_pp r3.w, c5.z, r1.x
+    add_pp r1.x, -r3.w, -c5.y
+    mul_pp r8.xyz, r1.x, r7
+    mul_pp r7.xyz, r3.w, r7
+    rcp r1.x, r3.w
+    mul_pp r9.xyz, r1.x, r2.xzww
+    mad_pp r2.xzw, r2, r1.x, r3.xyyz
+    dp3_pp r1.x, v1, r9
+    max_pp r3.x, r1.x, c5.w
+    mul_pp r3.yzw, r3.x, r8.xxyz
+    mad_pp r3.yzw, r4.xxyw, r2.y, r3
+    mad_pp r3.yzw, r5.xxyz, r0.w, r3
+    mad_pp r1.xyz, r0, r3.yzww, r1.yzww
+    dp3_pp r0.w, r2.xzww, r2.xzww
+    add r1.w, -r0.w, c5.z
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r1.w, c6.z, r0.w
+    mul_pp r2.xyz, r0.w, r2.xzww
+    dp3_pp r0.w, r9, r2
+    dp3_pp r1.w, v1, r2
+    max_pp r2.x, r1.w, c5.w
+    pow_pp r1.w, r2.x, c7.y
+    mul_pp r1.w, r1.w, c7.x
+    mad r2.x, r4.z, r0.w, c6.w
+    rcp r2.x, r2.x
+    cmp r0.w, r0.w, r2.x, c7.z
+    mul_pp r0.w, r0.w, r1.w
+    mad_pp r2.xyz, r0.w, c1, r0
+    mov_pp oC0.xyz, r0
+    mul_pp r0.xyz, r7, r2
+    mad_pp r0.xyz, r0, r3.x, r1
+    exp_pp oC3.x, -r0.x
+    exp_pp oC3.y, -r0.y
+    exp_pp oC3.z, -r0.z
+    mov_pp oC0.w, -c5.y
+    mul_pp oC1, r6_abs.yyyw, c1.xyzx
+    mad_pp oC2, v1.xyzx, c8.xxxy, c8.xxxz
+    mov_pp oC3.w, -c5.y

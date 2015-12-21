@@ -1,0 +1,114 @@
+// CRC32: 3F3B3FDE | Unity headers extracted from CumulusCloud.shader
+// Shader "Beam Team/Sky/Cumulus Particle" {
+//   Properties {
+//    _MainTex ("Particle Texture", 2D) = "white" { }
+//    _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One OneMinusSrcAlpha
+//       GpuProgramID 55518
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SOFTPARTICLES_OFF" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 4 [glstate_matrix_modelview0] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 17 [_MainTex_ST]
+//           Vector 7 [_WorldSpaceCameraPos]
+//           Vector 9 [ambient]
+//           Float 8 [ambientBoost]
+//           Vector 14 [cloudPos]
+//           Float 11 [extinction]
+//           Float 13 [fade]
+//           Vector 12 [fog]
+//           Vector 10 [lightDir]
+//           Float 16 [maxPhase]
+//           Float 15 [minPhase]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c18, 0, 1, -1.44269502, 1.5
+    def c19, 1.70000005, -0.200000003, 1.72250009, 1.00999999
+    def c20, 0.148499981, 0.235874981, 0, 0
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Sky_Cumulus Particle/vp/3F3B3FDE.txt
+mov r30, c7
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 o1.x, c0, v0
+    dp4 o1.y, c1, v0
+    dp4 o1.z, c2, v0
+    dp4 o1.w, c3, v0
+    mov r0.xyz, c14
+    add r0.xyz, r0, -r30
+    nrm r1.xyz, r0
+    dp3 r0.x, r1, c10
+    mad r0.xy, r0.x, -c19, c19.zwzw
+    pow r1.x, r0.y, c18.w
+    pow r1.y, r0.x, c18.w
+    rcp r0.x, r1.y
+    rcp r0.y, r1.x
+    mul r0.y, r0.y, c20.x
+    mad r0.x, r0.x, c20.y, r0.y
+    max r0.x, r0.x, c15.x
+    min r0.x, r0.x, c16.x
+    mov r1.xyz, c9
+    mul r0.yzw, r1.xxyz, c8.x
+    mad r0.xyz, v1, r0.x, r0.yzww
+    mul r0.xyz, r0, v1.w
+    max r0.xyz, r0, c18.x
+    dp4 r1.x, c4, v0
+    dp4 r1.y, c5, v0
+    dp4 r1.z, c6, v0
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    mul r0.w, r0.w, c12.w
+    max r0.w, r0.w, c18.x
+    min r0, r0, c18.y
+    mul r1.x, r0.w, c18.z
+    mad r0.w, r0.w, -r0.w, c18.y
+    mul r0.w, r0.w, c13.x
+    exp r1.x, r1.x
+    lrp r2.xyz, r1.x, r0, c12
+    mul o2.xyz, r0.w, r2
+    mul o2.w, r0.w, c11.x
+    mad o0.xy, v2, c17, c17.zwzw

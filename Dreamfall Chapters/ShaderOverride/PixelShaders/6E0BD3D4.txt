@@ -1,0 +1,123 @@
+// CRC32: 6E0BD3D4 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/2 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 58189
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+//           Matrix 19 [_CameraToWorld]
+//           Matrix 0 [unity_World2Shadow0]
+//           Matrix 4 [unity_World2Shadow1]
+//           Matrix 8 [unity_World2Shadow2]
+//           Matrix 12 [unity_World2Shadow3] 3
+//           Vector 26 [_LightShadowData]
+//           Vector 23 [_ZBufferParams]
+//           Vector 24 [unity_OrthoParams]
+//           Vector 27 [unity_ShadowFadeCenterAndType]
+//           Vector 15 [unity_ShadowSplitSpheres0]
+//           Vector 16 [unity_ShadowSplitSpheres1]
+//           Vector 17 [unity_ShadowSplitSpheres2]
+//           Vector 18 [unity_ShadowSplitSpheres3]
+//           Vector 25 [unity_ShadowSplitSqRadii]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c28, 1, 0, -0, -1
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+    texld r0, v0, s0
+    mov r1.xy, v2
+    mad r1.w, c23.x, r0.x, c23.y
+    rcp r1.w, r1.w
+    lrp r2.w, c24.w, r0.x, r1.w
+    lrp r1.z, r0.x, v2.w, v2.z
+    mad r0.xyz, v1, -r2.w, r1
+    mul r1.xyz, r2.w, v1
+    mad r0.xyz, c24.w, r0, r1
+    mov r0.w, c28.x
+    dp4 r1.x, c19, r0
+    dp4 r1.y, c20, r0
+    dp4 r1.z, c21, r0 // depth in r0.z
+
+// Unity light/shadow fix (pixel shader stage, world-space variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-lighting-ps-world --only-autofixed -f Hidden_Internal-PrePassCollectShadows/fp/6E0BD3D4.txt
+mov r29, c220.x
+add r29.x, r0.z, -r31.y
+mul r29.x, r29.x, r31.x
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r1.xyz, r1, -r29
+
+    dp4 r1.w, c22, r0
+    add r0.xyz, r1, -c15
+    dp3 r0.x, r0, r0
+    add r2.xyz, r1, -c16
+    dp3 r0.y, r2, r2
+    add r2.xyz, r1, -c17
+    dp3 r0.z, r2, r2
+    add r2.xyz, r1, -c18
+    dp3 r0.w, r2, r2
+    add r0, r0, -c25
+    cmp r2.xyz, r0, c28.z, c28.w
+    cmp r0, r0, c28.y, c28.x
+    add_pp r3.xy, r2, r0.yzxw
+    add_pp r3.z, r2.z, r0.w
+    max_pp r0.yzw, r3.wzyx, c28.y
+    dp4 r2.x, c4, r1
+    dp4 r2.y, c5, r1
+    dp4 r2.z, c6, r1
+    mul r2.xyz, r0.w, r2
+    dp4 r3.x, c0, r1
+    dp4 r3.y, c1, r1
+    dp4 r3.z, c2, r1
+    mad r2.xyz, r3, r0.x, r2
+    dp4 r3.x, c8, r1
+    dp4 r3.y, c9, r1
+    dp4 r3.z, c10, r1
+    mad r2.xyz, r3, r0.z, r2
+    dp4 r3.x, c12, r1
+    dp4 r3.y, c13, r1
+    dp4 r3.z, c14, r1
+    add r1.xyz, r1, -c27
+    dp3 r2.w, r1, r1
+    rsq r2.w, r2.w
+    rcp r2.w, r2.w
+    mad_sat_pp r2.w, r2.w, c26.z, c26.w
+    mad r0.xyz, r3, r0.y, r2
+    mov r0.w, c28.x
+    texldp_pp r0, r0, s1
+    mov r1.x, c28.x
+    lrp_pp r2.x, r0.x, r1.x, c26.x
+    add_pp r0, r2.w, r2.x
+    mov_pp oC0, r0

@@ -1,0 +1,156 @@
+// CRC32: 02F1F5EE | Matched 6 variants of 1 shaders: Dreamfall/Fresnel/Bumped Colored Specular
+// 
+//     Unity headers extracted from BumpColorSpecFresnel.shader
+//     Shader "Dreamfall/Fresnel/Bumped Colored Specular" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//        _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//        _MainTex ("Base (RGB) ", 2D) = "white" { }
+//        _SpecMap ("Specular Map (R)", 2D) = "white" { }
+//        _BumpMap ("Normalmap", 2D) = "bump" { }
+//        _FresnelCol ("Fresnel Color", Color) = (1,1,1,1)
+//        _Fresnel ("Fresnel Exponent", Range(0.1,6)) = 1
+//        _FresnelMult ("Reflect Multiplier", Float) = 1
+//       }
+//       Fallback "Specular"
+//       SubShader 1/1 {
+//         LOD 400
+//         Tags { "RenderType"="Opaque" }
+//         Pass 4/6 {
+//           Name "PREPASS"
+//           Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//           ZWrite Off
+//           GpuProgramID 250995
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 04:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 08:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 10:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 20:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 01:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 02:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "tangent" TexCoord4
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 22 [_BumpMap_ST]
+//               Vector 21 [_MainTex_ST]
+//               Vector 11 [_ProjectionParams]
+//               Vector 12 [_ScreenParams]
+//               Vector 23 [_SpecMap_ST]
+//               Vector 10 [_WorldSpaceCameraPos]
+//               Vector 15 [unity_SHAb]
+//               Vector 14 [unity_SHAg]
+//               Vector 13 [unity_SHAr]
+//               Vector 18 [unity_SHBb]
+//               Vector 17 [unity_SHBg]
+//               Vector 16 [unity_SHBr]
+//               Vector 19 [unity_SHC]
+//               Vector 20 [unity_WorldTransformParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c24, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xy
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7.xyz
+    dcl_texcoord7 o8.x
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r5, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Dreamfall_Fresnel_Bumped Colored Specular/vp/02F1F5EE.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad o1.xy, v3, c21, c21.zwzw
+    mad o1.zw, v3.xyxy, c22.xyxy, c22
+    mad o2.xy, v3, c23, c23.zwzw
+    dp3 r0.x, c4, v1
+    dp3 r0.y, c5, v1
+    dp3 r0.z, c6, v1
+    nrm r1.xyz, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r2.xyz, -r0, r30
+    mov o3.xyz, r0
+    dp3 o4.x, r2, r1
+    mul r0.x, c20.w, v1.w
+    mul r0.yzw, c8.xxyz, v2.y
+    mad r0.yzw, c7.xxyz, v2.x, r0
+    mad r0.yzw, c9.xxyz, v2.z, r0
+    nrm r3.xyz, r0.yzww
+    mul r0.yzw, r1.xyzx, r3.xzxy
+    mad r0.yzw, r3.xyzx, r1.xzxy, -r0
+    mul r0.xyz, r0.x, r0.yzww
+    dp3 o4.y, r2, r0
+    dp3 o4.z, r2, r3
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c11.x
+    mul r1.w, r1.x, c24.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 121 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Dreamfall_Fresnel_Bumped Colored Specular/vp/02F1F5EE.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c24.x
+    mad o5.xy, r1.z, c12.zwzw, r1.xwzw
+    mul r1.x, r3.y, r3.y
+    mad r1.x, r3.x, r3.x, -r1.x
+    mul r2, r3.yzzx, r3.xyzz
+    dp4 r4.x, c16, r2
+    dp4 r4.y, c17, r2
+    dp4 r4.z, c18, r2
+    mad r1.xyz, c19, r1.x, r4
+    mov r3.w, c24.y
+    dp4 r2.x, c13, r3
+    dp4 r2.y, c14, r3
+    dp4 r2.z, c15, r3
+    add o7.xyz, r1, r2
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 106 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o5.zw, r0
+    mov o8.x, r0.z
+    mov o6, c24.z

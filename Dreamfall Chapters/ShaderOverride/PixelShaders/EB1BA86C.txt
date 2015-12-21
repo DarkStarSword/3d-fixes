@@ -1,0 +1,137 @@
+// CRC32: EB1BA86C | Matched 3 variants of 1 shaders: Nature/Tree Creator Bark
+// 
+//    Unity headers extracted from TreeCreatorBark.shader
+//    Shader "Nature/Tree Creator Bark" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _GlossMap ("Gloss (A)", 2D) = "black" { }
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//      [HideInInspector]  _TreeInstanceColor ("TreeInstanceColor", Vector) = (1,1,1,1)
+//      [HideInInspector]  _TreeInstanceScale ("TreeInstanceScale", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SquashAmount ("Squash", Float) = 1
+//      }
+//      Dependency "OptimizedShader" = "Hidden/Nature/Tree Creator Bark Optimized"
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "IGNOREPROJECTOR"="true" "RenderType"="TreeBark" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "IGNOREPROJECTOR"="true" "RenderType"="TreeBark" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 70203
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "FOG_EXP" "SPOT" }
+// 4:           Keywords { "FOG_EXP2" "SPOT" }
+// 1:           Keywords { "FOG_LINEAR" "SPOT" }
+//              Matrix 0 [_LightMatrix0]
+//              Vector 6 [_LightColor0]
+//              Float 8 [_Shininess]
+//              Vector 7 [_SpecColor]
+//              Vector 4 [_WorldSpaceCameraPos]
+//              Vector 5 [_WorldSpaceLightPos0]
+//              SetTexture 0 [_LightTexture0] 2D 0
+//              SetTexture 1 [_LightTextureB0] 2D 1
+//              SetTexture 2 [_MainTex] 2D 2
+//              SetTexture 3 [_BumpMap] 2D 3
+//              SetTexture 4 [_GlossMap] 2D 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c9, 2, -1, 0, 1
+    def c10, 0.5, 128, 0, 0
+    dcl_texcoord v1.xy
+    dcl_texcoord1_pp v2.xyz
+    dcl_texcoord2_pp v3.xyz
+    dcl_texcoord3_pp v4.xyz
+    dcl_texcoord4 v5.xyz
+    dcl_color v0
+    dcl_texcoord6 v6.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Nature_Tree Creator Bark/fp/EB1BA86C.txt
+mov r30, c4
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xyz, v5
+    mov_pp r0.w, c9.w
+    dp4_pp r1.x, c0, r0
+    dp4_pp r1.y, c1, r0
+    dp4_pp r1.z, c2, r0
+    dp4_pp r1.w, c3, r0
+    rcp r1.w, r1.w
+    mad_pp r0.xy, r1, r1.w, c10.x
+    dp3 r1.xy, r1, r1
+    texld_pp r0, r0, s0
+    texld_pp r2, r1, s1
+    texld_pp r3, v1, s2
+    texld_pp r4, v1, s3
+    texld_pp r5, v1, s4
+    mul r3.w, r0.w, r2.x
+    mul_pp r0.xyz, r3.w, c6
+    cmp_pp r0.xyz, -r1.z, c9.z, r0
+    mul_pp r1.xyz, r3, v0
+    mul_pp r1.xyz, r1, v0.w
+    mul_pp r1.xyz, r0, r1
+    mul r0.xyz, r0, c7
+    add r2.xyz, -v5, r30
+    dp3 r0.w, r2, r2
+    rsq r0.w, r0.w
+    add r3.xyz, -v5, c5
+    nrm_pp r5.xyz, r3
+    mad_pp r2.xyz, r2, r0.w, r5
+    nrm_pp r3.xyz, r2
+    mad_pp r2.x, r4.w, c9.x, c9.y
+    mad_pp r2.y, r4.y, c9.x, c9.y
+    dp2add_sat_pp r0.w, r2, r2, c9.z
+    add_pp r0.w, -r0.w, c9.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r2.z, r0.w
+    dp3_pp r4.x, v2, r2
+    dp3_pp r4.y, v3, r2
+    dp3_pp r4.z, v4, r2
+    dp3_pp r0.w, r4, r3
+    dp3_pp r1.w, r4, r5
+    max_pp r2.x, r1.w, c9.z
+    max r1.w, r0.w, c9.z
+    mov r0.w, c10.y
+    mul r0.w, r0.w, c8.x
+    pow r2.y, r1.w, r0.w
+    mul r0.w, r5.w, r2.y
+    mul r0.xyz, r0.w, r0
+    mad_pp r0.xyz, r1, r2.x, r0
+    mov_sat r0.w, v6.x
+    mul_pp r0.xyz, r0, r0.w
+    mov_pp r0.w, c9.w
+    mov_pp oC0, r0

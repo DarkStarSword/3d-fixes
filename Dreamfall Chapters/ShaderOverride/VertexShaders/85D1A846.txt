@@ -1,0 +1,133 @@
+// CRC32: 85D1A846 | Matched 2 variants of 1 shaders: Legacy Shaders/Reflective/Diffuse
+// 
+//    Unity headers extracted from Reflect-Diffuse.shader
+//    Shader "Legacy Shaders/Reflective/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//      }
+//      Fallback "Legacy Shaders/Reflective/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/6 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          GpuProgramID 229935
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 20 [_MainTex_ST]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//              Vector 10 [_WorldSpaceCameraPos]
+//              Vector 15 [unity_SHAb]
+//              Vector 14 [unity_SHAg]
+//              Vector 13 [unity_SHAr]
+//              Vector 18 [unity_SHBb]
+//              Vector 17 [unity_SHBg]
+//              Vector 16 [unity_SHBr]
+//              Vector 19 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c21, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_position o6
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r5, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Legacy Shaders_Reflective_Diffuse/vp/85D1A846.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad o0.xy, v2, c20, c20.zwzw
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    add r1.xyz, -r0, r30
+    mov o2.xyz, r0
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r2.xyz, r0
+    dp3 r0.x, -r1, r2
+    add r0.x, r0.x, r0.x
+    mad o1.xyz, r2, -r0.x, -r1
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c11.x
+    mul r1.w, r1.x, c21.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o6, r0 // Relocated from line 98 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Legacy Shaders_Reflective_Diffuse/vp/85D1A846.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c21.x
+    mad o3.xy, r1.z, c12.zwzw, r1.xwzw
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c16, r3
+    dp4 r4.y, c17, r3
+    dp4 r4.z, c18, r3
+    mad r1.xyz, c19, r1.x, r4
+    mov r2.w, c21.y
+    dp4 r3.x, c13, r2
+    dp4 r3.y, c14, r2
+    dp4 r3.z, c15, r2
+    add o5.xyz, r1, r3
+    dp4 r0.z, c2, v0
+
+//     mov o6, r0 // Relocated to line 83 with shadertool.py
+mov o6.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o3.zw, r0
+    mov o4, c21.z

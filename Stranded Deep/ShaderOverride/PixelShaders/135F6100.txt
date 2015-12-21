@@ -50,10 +50,24 @@
     dcl_cube s2
     dcl_2d s3
 
-dcl_texcoord5 v5.x // New input from vertex shader with unity_CameraInvProjection[0].x
-
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps-world --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/135F6100.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
 
     mov r0.xyz, c11
     mul_pp r0.xyw, r0.xyzz, c9.xyzz
@@ -72,19 +86,26 @@ dcl_2d s15
     texld_pp r1, r1, s3
     mad r2.x, c5.x, r2.x, c5.y
     rcp r2.x, r2.x
-    mul r3.xyz, r0.yzww, r2.x // depth in r3.z
+    mul r3.xyz, r0.yzww, r2.x
     mov r3.w, c13.x
-
-// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps Hidden_Internal-PrePassLighting/fp/135F6100.txt
-texldl r31, c220.z, s15
-add r31.w, r3.z, -r31.y
-mul r31.w, r31.w, r31.x
-mad r3.x, -r31.w, v5.x, r3.x
-
     dp4 r4.x, c0, r3
     dp4 r4.y, c1, r3
-    dp4 r4.z, c2, r3
+    dp4 r4.z, c2, r3 // depth in r3.z
+
+// Unity light/shadow fix (pixel shader stage, world-space variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps-world --only-autofixed -f ./Hidden_Internal-PrePassLighting/fp/135F6100.txt
+mov r29, c220.x
+add r29.x, r3.z, -r31.y
+mul r29.x, r29.x, r31.x
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r4.xyz, r4, -r29
+
     add r2.yzw, r4.xxyz, -c10.xxyz
     add r3.xyw, r2.yzzw, c13.y
     texld r5, r3.xyww, s2
@@ -110,7 +131,7 @@ mad r3.x, -r31.w, v5.x, r3.x
     dp4_pp r0.y, r5, c14.x
     mul r0.y, r0.y, r6.x
     mov_sat r0.z, r0.y
-    add r3.xyw, r4.xyzz, -c3.xyzz
+    add r3.xyw, r4.xyzz, -r30.xyzz
     add r4.xyz, r4, -c8
     dp3 r4.x, r4, r4
     rsq r4.x, r4.x

@@ -1,0 +1,59 @@
+// CRC32: 7C4F5441 | Matched 2 variants of 2 shaders: Hidden/DepthBreaks, Scion/ScionDepthOfFieldMask
+// 
+//    Unity headers extracted from DepthBreaks.shader
+//    Shader "Hidden/DepthBreaks" {
+//      SubShader 1/1 {
+//        Pass 2/2 {
+//          ZWrite Off
+//          Cull Front
+//          Stencil {
+//             Pass Zero
+//            }
+//          GpuProgramID 81782
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from DepthOfFieldMask.shader
+//    Shader "Scion/ScionDepthOfFieldMask" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//      }
+//      SubShader 1/2 {
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/1 {
+//          Tags { "RenderType"="Opaque" }
+//          ZTest False
+//          GpuProgramID 23134
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c0, 0, 0, 0, 0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+    mov oC0, c0.x
+
+// Shader disabled by DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --disable=0 --condition=c200.x -f Hidden_DepthBreaks/fp/7C4F5441.txt
+texldl r31, c220.z, s13
+if_ne r31.x, -r31.x
+mov r31.w, c200.x
+if_eq r31.w, c220.x
+mov oC0.xyzw, c220.xxxx
+endif
+endif

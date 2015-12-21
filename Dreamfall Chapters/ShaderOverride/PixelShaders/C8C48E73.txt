@@ -1,0 +1,204 @@
+// CRC32: C8C48E73 | Matched 2 variants of 2 shaders: Chickenlord/Transparent Rim Lighting 1Side, Chickenlord/Transparent Rim Lighting 2Side
+// 
+//    Unity headers extracted from Rim_Transparent_1side.shader
+//    Shader "Chickenlord/Transparent Rim Lighting 1Side" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _RS ("Pre Power", Range(1,10)) = 2.5
+//       _RM ("Post Multiplier", Range(0,5)) = 2
+//       _RPS ("Post Power", Range(1,5)) = 2
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 3/3 {
+//          Name "META"
+//          Tags { "LIGHTMODE"="Meta" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          ColorMask RGB
+//          GpuProgramID 175345
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Vector 4 [_Color]
+//              Float 7 [_RM]
+//              Float 8 [_RPS]
+//              Float 6 [_RS]
+//              Float 5 [_Shininess]
+//              Vector 3 [_SpecColor]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [glstate_lightmodel_ambient]
+//              Vector 2 [unity_ColorSpaceLuminance]
+//              Float 11 [unity_MaxOutputValue]
+//              Vector 9 [unity_MetaFragmentControl]
+//              Float 10 [unity_OneOverOutputBoost]
+//              Float 12 [unity_UseLinearSpace]
+//              SetTexture 0 [_MainTex] 2D 0
+//              SetTexture 1 [_BumpMap] 2D 1
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Rim_Transparent_2side.shader
+//    Shader "Chickenlord/Transparent Rim Lighting 2Side" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _RS ("Pre Power", Range(1,10)) = 2.5
+//       _RM ("Post Multiplier", Range(0,5)) = 2
+//       _RPS ("Post Power", Range(1,5)) = 2
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 6/6 {
+//          Name "META"
+//          Tags { "LIGHTMODE"="Meta" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          ColorMask RGB
+//          GpuProgramID 348113
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Vector 4 [_Color]
+//              Float 7 [_RM]
+//              Float 8 [_RPS]
+//              Float 6 [_RS]
+//              Float 5 [_Shininess]
+//              Vector 3 [_SpecColor]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [glstate_lightmodel_ambient]
+//              Vector 2 [unity_ColorSpaceLuminance]
+//              Float 11 [unity_MaxOutputValue]
+//              Vector 9 [unity_MetaFragmentControl]
+//              Float 10 [unity_OneOverOutputBoost]
+//              Float 12 [unity_UseLinearSpace]
+//              SetTexture 0 [_MainTex] 2D 0
+//              SetTexture 1 [_BumpMap] 2D 1
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c13, 2, -1, 0, 1
+    def c14, 128, 0.305306017, 0.682171106, 0.0125228781
+    def c15, 0.010309278, 0.0199999996, 255, 0.00392156886
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Chickenlord_Transparent Rim Lighting 1Side/fp/C8C48E73.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, v1.w
+    mov r0.y, v2.w
+    mov r0.z, v3.w
+    add r0.xyz, -r0, r30
+    nrm_pp r1.xyz, r0
+    mul r0.xyz, r1.y, v2
+    mad r0.xyz, v1, r1.x, r0
+    mad_pp r0.xyz, v3, r1.z, r0
+    nrm r1.xyz, r0
+    texld_pp r0, v0.zwzw, s1
+    mad_pp r0.xy, r0.wyzw, c13.x, c13.y
+    dp2add_sat_pp r0.w, r0, r0, c13.z
+    add_pp r0.w, -r0.w, c13.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    dp3_sat r0.x, r0, r1
+    add_pp r0.y, -r0.x, c13.w
+    pow_pp r1.x, r0.y, c6.x
+    mul_pp r0.y, r1.x, c7.x
+    mov r1.yz, c13
+    mad r0.z, c7.x, r1.x, r1.y
+    pow_pp r1.x, r0.y, c8.x
+    cmp_pp r0.y, r0.z, c13.w, r1.x
+    mov r1.x, c14.x
+    mul r0.z, r1.x, c5.x
+    pow r1.x, r0.x, r0.z
+    mov r2.xyz, c2
+    mul_pp r0.xzw, r2.xyyz, c1.xyyz
+    add_pp r3.xyz, r0.xzww, r0.xzww
+    add_pp r0.xz, r3.yyzw, r3.x
+    mul_pp r0.z, r0.z, r3.y
+    mad_pp r0.x, r0.w, c13.x, r0.x
+    rsq_pp r0.z, r0.z
+    rcp_pp r0.z, r0.z
+    dp2add_pp r0.x, c2.w, r0.z, r0.x
+    texld_pp r3, v0, s0
+    mad r0.x, r1.x, r3.w, -r0.x
+    max r1.x, r0.x, c13.z
+    mul_pp r0.xzw, r2.xyyz, c3.xyyz
+    add_pp r0.xw, r0.zyzw, r0.x
+    mul_pp r0.z, r0.w, r0.z
+    mad_pp r0.x, c3.z, r2.z, r0.x
+    rsq_pp r0.z, r0.z
+    rcp_pp r0.z, r0.z
+    dp2add_pp r0.x, c2.w, r0.z, r0.x
+    mul r0.x, r0.x, r1.x
+    mul_pp r0.z, r3.w, c4.w
+    mad_pp r0.x, r0.z, r0.y, r0.x
+    mul_pp r0.yzw, r0.z, c4.xxyz
+    mad_pp r1.xyw, r3.xyzz, c4.xyzz, r0.x
+    log r2.x, r1.x
+    log r2.y, r1.y
+    log r2.z, r1.w
+    mov_sat r0.x, c10.x
+    mul r1.xyw, r2.xyzz, r0.x
+    exp_pp r2.x, r1.x
+    exp_pp r2.y, r1.y
+    exp_pp r2.z, r1.w
+    min_pp r1.xyw, c11.x, r2.xyzz
+    cmp_pp r1.xyz, -c9.x, r1.z, r1.xyww
+    mad_pp r2.xyz, r0.yzww, c14.y, c14.z
+    mad_pp r2.xyz, r0.yzww, r2, c14.w
+    mul_pp r2.xyz, r0.yzww, r2
+    abs r0.x, c12.x
+    cmp_pp r0.xyz, -r0.x, r2, r0.yzww
+    mul r0.xyz, r0, c15.x
+    max r2.x, r0.x, r0.y
+    max r2.y, r0.z, c15.y
+    max r0.w, r2.x, r2.y
+    mul r0.w, r0.w, c15.z
+    frc r2.x, -r0.w
+    add r0.w, r0.w, r2.x
+    mul_pp r2.w, r0.w, c15.w
+    rcp r0.w, r2.w
+    mul_pp r2.xyz, r0.w, r0
+    mov r1.w, c9.x
+    cmp_pp oC0, -c9.y, r1, r2

@@ -1,0 +1,131 @@
+// CRC32: FD130619 | Unity headers extracted from Reflect-Diffuse_Fresnel.shader
+// Shader "Chickenlord/Reflective/Fresnel/Diffuse" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _Fresnel ("Reflection Fresnel Exponent", Range(0,6)) = 1
+//    _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//   }
+//   Fallback "Reflective/VertexLit"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 61734
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_COMBINED" "DYNAMICLIGHTMAP_ON" "FOG_EXP2" "LIGHTMAP_ON" "SHADOWS_SCREEN" }
+//           Vector 5 [_Color]
+//           Float 7 [_Fresnel]
+//           Vector 6 [_ReflectColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 4 [unity_DynamicLightmap_HDR]
+//           Vector 1 [unity_FogColor]
+//           Vector 2 [unity_FogParams]
+//           Vector 3 [unity_Lightmap_HDR]
+//           SetTexture 0 [unity_Lightmap] 2D 0
+//           SetTexture 1 [unity_LightmapInd] 2D 1
+//           SetTexture 2 [unity_DynamicLightmap] 2D 2
+//           SetTexture 3 [unity_DynamicDirectionality] 2D 3
+//           SetTexture 4 [_ShadowMapTexture] 2D 4
+//           SetTexture 5 [_MainTex] 2D 5
+//           SetTexture 6 [_Cube] CUBE 6
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 1, -0.5, 0.5, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_texcoord4_pp v4
+    dcl_texcoord5 v5
+    dcl_texcoord6 v6.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_cube s6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Chickenlord_Reflective_Fresnel_Diffuse/fp/FD130619.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v4, s0
+    pow_pp r1.x, r0.w, c3.y
+    mul_pp r0.w, r1.x, c3.x
+    mul_pp r1.xyz, r0, r0.w
+    texld_pp r2, v4, s1
+    add_pp r2.xyz, r2, c8.y
+    rcp r0.w, r2.w
+    dp3_pp r1.w, v2, r2
+    add_pp r1.w, r1.w, c8.z
+    mul_pp r1.xyz, r1.w, r1
+    mul_pp r1.xyz, r0.w, r1
+    texldp_pp r2, v5, s4
+    mul_pp r0.xyz, r0, r2.x
+    mul_pp r2.xyz, r1, r2.x
+    min_pp r3.xyz, r0, r1
+    max_pp r0.xyz, r3, r2
+    texld_pp r1, v4.zwzw, s2
+    mul_pp r0.w, r1.w, c4.x
+    mul_pp r1.xyz, r1, r0.w
+    log_pp r2.x, r1.x
+    log_pp r2.y, r1.y
+    log_pp r2.z, r1.z
+    mul_pp r1.xyz, r2, c4.y
+    exp_pp r2.x, r1.x
+    exp_pp r2.y, r1.y
+    exp_pp r2.z, r1.z
+    texld_pp r1, v4.zwzw, s3
+    add_pp r1.xyz, r1, c8.y
+    rcp r0.w, r1.w
+    dp3_pp r1.x, v2, r1
+    add_pp r1.x, r1.x, c8.z
+    mul_pp r1.xyz, r1.x, r2
+    mad_pp r0.xyz, r1, r0.w, r0
+    add r1.xyz, r30, -v3
+    nrm_pp r2.xyz, r1
+    dp3 r0.w, r2, v2
+    add r0.w, -r0.w, c8.x
+    pow r1.x, r0.w, c7.x
+    texld_pp r2, v1, s6
+    texld_pp r3, v0, s5
+    mul_pp r1.yzw, r2.xxyz, r3.w
+    mul_pp r2.xyz, r3, c5
+    mul_pp r1.xyz, r1.x, r1.yzww
+    mul_pp r1.xyz, r1, c6
+    mad_pp r0.xyz, r2, r0, r1
+    add r0.xyz, r0, -c1
+    mul r0.w, c2.x, v6.x
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mad_pp oC0.xyz, r0.w, r0, c1
+    mov_pp oC0.w, c8.x
