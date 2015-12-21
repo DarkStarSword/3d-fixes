@@ -56,30 +56,10 @@
     dcl_texcoord o1.xy
     dcl_texcoord1 o2.x
     dcl_texcoord2 o3
-
-def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
-
-texldl r7, c220.z, s3
-
-// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_Plankton/vp/85F0006E.txt
-mov r30, c21
-mov r29, c220.x
-mul r29.x, r7.x, -r7.y
-dp4 r28.x, c180, r29
-dp4 r28.y, c181, r29
-dp4 r28.z, c182, r29
-dp4 r28.w, c183, r29
-dp4 r29.x, c190, r28
-dp4 r29.y, c191, r28
-dp4 r29.z, c192, r28
-add r30.xyz, r30, -r29
-
     mov r0.x, c8.w
     mov r0.yw, c9.w
     mov r0.z, c10.w
-    add r0.xyz, r0, -r30
+    add r0.xyz, r0, -c21
     dp3 r0.x, r0, r0
     rsq r0.x, r0.x
     rcp r0.x, r0.x
@@ -146,15 +126,6 @@ add r30.xyz, r30, -r29
     dp4 r4.y, c13, r5
     dp4 r4.z, c14, r5
     dp4 r4.w, c15, r5
-
-mov o0, r4 // Relocated from line 192 with shadertool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_Plankton/vp/85F0006E.txt
-texldl r31, c220.z, s3
-add r31.w, r4.w, -r31.y
-mad r4.x, r31.w, r31.x, r4.x
-
     dp4 r2.x, r2, r4
     mul r0.yzw, r3.xyzx, c1.xzxy
     mad r0.yzw, c1.xyzx, r3.xzxy, -r0
@@ -218,8 +189,11 @@ mad r4.x, r31.w, r31.x, r4.x
     dp3 r6.z, r0.zwyw, r1.xzww
     mul r0, r0.x, r6
     dp4 r2.z, r0, r4
+    mov o0, r4
 
-//     mov o0, r4 // Relocated to line 129 with shadertool.py
+// DO NOT APPLY HALO FIX - DOING SO BREAKS THE LIGHTING ON THE PLANKTON
+// EASILY SEEN WITH THE FLASHLIGHT IN THE BISMARK LEVEL
+
     dp4 r0.x, c8, r2
     dp4 r0.y, c9, r2
     dp4 r0.z, c10, r2
@@ -229,3 +203,5 @@ mad r4.x, r31.w, r31.x, r4.x
     dp4 o3.z, c18, r0
     dp4 o3.w, c19, r0
     mov o1.xy, v1
+
+// approximately 143 instruction slots used
