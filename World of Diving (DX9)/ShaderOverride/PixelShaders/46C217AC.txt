@@ -1,0 +1,178 @@
+// CRC32: 46C217AC | Matched 3 variants of 1 shaders: Relief Pack/ReliefTerrain-AddPass
+// 
+//    Unity headers extracted from ReliefTerrain-AddPass.shader
+//    Shader "Relief Pack/ReliefTerrain-AddPass" {
+//      Properties {
+//       _Control ("Control (RGBA)", 2D) = "black" { }
+//       _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//       _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//       _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//       _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        LOD 700
+//        Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//        Pass 3/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassBase" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 148663
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "FOG_EXP" "RTP_SIMPLE_SHADING" }
+// 2:           Keywords { "FOG_LINEAR" "RTP_SIMPLE_SHADING" }
+// 1:           Keywords { "RTP_SIMPLE_SHADING" }
+//              Float 1 [_BumpMapGlobalScale]
+//              Vector 9 [_BumpMapGlobalStrength89AB]
+//              Float 10 [_RTP_MIP_BIAS]
+//              Vector 2 [_TERRAIN_ReliefTransform]
+//              Float 4 [_TERRAIN_distance_start]
+//              Float 6 [_TERRAIN_distance_start_bumpglobal]
+//              Float 5 [_TERRAIN_distance_transition]
+//              Float 7 [_TERRAIN_distance_transition_bumpglobal]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Float 3 [rtp_mipoffset_globalnorm]
+//              Float 8 [rtp_perlin_start_val]
+//              SetTexture 0 [_Control3] 2D 0
+//              SetTexture 1 [_BumpMap89] 2D 1
+//              SetTexture 2 [_BumpMapAB] 2D 2
+//              SetTexture 3 [_BumpMapGlobal] 2D 3
+//              SetTexture 4 [_TERRAIN_HeightMap3] 2D 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 1024, 1, 0.00100000005, -0.666666687
+    def c12, 0, 0.5, 0.400000006, 0.600000024
+    def c13, 8, 1, 0, 3
+    def c14, 3, -1.5, 2, -1
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Relief Pack_ReliefTerrain-AddPass/fp/46C217AC.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    rcp r0.x, c2.x
+    rcp r0.y, c2.y
+    mov r1.x, v1.w
+    mov r1.z, v3.w
+    mad r0.xy, r1.xzzw, r0, c2.zwzw
+    dsx r0.zw, r0.xyxy
+    dsy r2.xy, r0
+    mul r2.zw, r0.xyxy, c11.x
+    mov r3.yw, c11
+    add r1.w, r3.y, c10.x
+    mul r2.zw, r1.w, r2
+    dsx r3.xz, r2.zyww
+    dsy r2.zw, r2
+    texld_pp r4, v0, s0
+    dp4_pp r5.w, r4, c11.y
+    if_lt r5.w, c11.z
+    mov_pp r6.xyz, c13.zzyw
+    mov_pp r5.w, c12.x
+    else
+    mov r1.y, v2.w
+    add r1.xyz, -r1, r30
+    dp3 r1.x, r1, r1
+    rsq r1.x, r1.x
+    rcp r1.x, r1.x
+    mul r1.y, r3.w, c10.x
+    exp r1.y, r1.y
+    rcp r1.y, r1.y
+    mul r0.zw, r0, r1.y
+    mul r1.yz, r1.y, r2.xxyw
+    add r1.w, r1.x, -c6.x
+    rcp r2.x, c7.x
+    mul_sat r1.w, r1.w, r2.x
+    add r1.x, r1.x, -c4.x
+    rcp r2.x, c5.x
+    mul_sat r1.x, r1.x, r2.x
+    add r1.x, -r1.x, c11.y
+    dp2add r2.x, r3.xzzw, r3.xzzw, c12.x
+    dp2add r2.y, r2.zwzw, r2.zwzw, c12.x
+    max r3.x, r2.x, r2.y
+    log r2.x, r3.x
+    mul r7.xy, r0, c1.x
+    mov r2.y, c12.y
+    mad r7.zw, r2.x, r2.y, c3.x
+    texldl r2, r7.xyww, s3
+    mad r7, r7, c13.xxyy, c13.zzww
+    texldl r7, r7, s3
+    mul r2.zw, r7.xyxy, c12.z
+    mad r2.xy, r2, c12.w, r2.zwzw
+    texldd_pp r7, r0, s4, r0.zwzw, r1.yzzw
+    add_sat r7, r7, c11.z
+    mul r4, r4, r7
+    mul r4, r4, r4
+    dp4 r2.z, r4, c11.y
+    rcp r2.z, r2.z
+    mul r4, r2.z, r4
+    mul r7, r4, r4
+    dp4 r2.z, r7, c11.y
+    rcp r2.z, r2.z
+    mad r7, r7, r2.z, -r4
+    mad r4, r1.x, r7, r4
+    mad r2.xy, r2, c14.x, c14.y
+    dp2add_sat r2.w, r2, r2, c12.x
+    add r2.w, -r2.w, c11.y
+    rsq r2.w, r2.w
+    rcp r2.z, r2.w
+    if_lt -r1.x, c12.x
+    texldd_pp r7, r0, s1, r0.zwzw, r1.yzzw
+    texldd_pp r0, r0, s2, r0.zwzw, r1.yzzw
+    mul r0, r4.zzww, r0
+    mad r0, r7, r4.xxyy, r0
+    add r0.xy, r0.zwzw, r0
+    mad r0.xy, r0, c14.z, c14.w
+    mul_pp r0.xy, r1.x, r0
+    dp2add_sat r0.w, r0, r0, c12.x
+    add r0.w, -r0.w, c11.y
+    rsq r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    else
+    mov_pp r0.xyz, c13.zzyw
+    endif
+    dp4 r0.w, c9, r4
+    lrp r2.w, r1.w, r3.y, c8.x
+    mul r1.xyz, r2.w, r2
+    mad_pp r0.xyz, r1, r0.w, r0
+    nrm_pp r6.xyz, r0
+    endif
+    dp3_pp r0.x, v1, r6
+    dp3_pp r0.y, v2, r6
+    dp3_pp r0.z, v3, r6
+    mad_pp r5.xyz, r0, c12.y, c12.y
+    mov_pp oC0, r5

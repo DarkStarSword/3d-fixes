@@ -1,0 +1,104 @@
+// CRC32: C7D645EB | Unity headers extracted from Reflect-Bumped.shader
+// Shader "Legacy Shaders/Reflective/Bumped Diffuse" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//    _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//    _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Legacy Shaders/Reflective/VertexLit"
+//   SubShader 1/1 {
+//     LOD 300
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/5 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 33223
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Vector 3 [_Color]
+//           Vector 2 [_LightColor0]
+//           Vector 4 [_ReflectColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_ShadowMapTexture] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_BumpMap] 2D 2
+//           SetTexture 3 [_Cube] CUBE 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c5, 2, -1, 0, 1
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5_pp v5
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Legacy Shaders_Reflective_Bumped Diffuse/fp/C7D645EB.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, -v1.w
+    mov r0.y, -v2.w
+    mov r0.z, -v3.w
+    add r0.xyz, r0, r30
+    nrm_pp r1.xyz, r0
+    mov r0.x, v0.z
+    mov r0.y, v0.w
+    texld_pp r0, r0, s2
+    mad_pp r2.x, r0.w, c5.x, c5.y
+    mad_pp r2.y, r0.y, c5.x, c5.y
+    dp2add_sat_pp r1.w, r2, r2, c5.z
+    add_pp r1.w, -r1.w, c5.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r2.z, r1.w
+    dp3 r0.x, v1, r2
+    dp3 r0.y, v2, r2
+    dp3 r0.z, v3, r2
+    dp3 r0.w, -r1, r0
+    add r0.w, r0.w, r0.w
+    mad r1.xyz, r0, -r0.w, -r1
+    dp3_pp r1.w, r0, c1
+    max_pp r0.x, r1.w, c5.z
+    texld_pp r1, r1, s3
+    texld_pp r2, v0, s1
+    texldp_pp r3, v5, s0
+    mul_pp r0.yzw, r1.wzyx, r2.w
+    mul_pp r1.xyz, r2, c3
+    mul_pp r2.xyz, r3.x, c2
+    mul_pp r2.xyz, r1, r2
+    mul_pp r1.xyz, r1, v4
+    mad_pp r1.xyz, r2, r0.x, r1
+    mad_pp r0.xyz, r0.wzyx, c4, r1
+    mov_pp r0.w, c5.w
+    mov_pp oC0, r0

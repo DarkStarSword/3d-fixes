@@ -1,0 +1,121 @@
+// CRC32: 1932BCF1 | Unity headers extracted from HighlightObjectOverlay.shader
+// Shader "Custom/Specific/HighlightObjectOverlay" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("MainTex", 2D) = "white" { }
+//    _HighlightColor ("HighlightColor", Color) = (0.192157,0.937255,1,1)
+//    _HighlightTex ("HighlightTex", 2D) = "white" { }
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/2 {
+//       Name "FORWARD_DELTA"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 105927
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+//           Vector 6 [_Color]
+//           Vector 8 [_HighlightColor]
+//           Vector 9 [_HighlightTex_ST]
+//           Vector 4 [_LightColor0]
+//           Vector 7 [_MainTex_ST]
+//           Vector 2 [_ProjectionParams]
+//           Vector 0 [_Time]
+//           Vector 5 [_TimeEditor]
+//           Vector 1 [_WorldSpaceCameraPos]
+//           Vector 3 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_HighlightTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c10, 6.28318548, -3.14159274, -1, 1
+    def c11, 0, 0.0397887342, 0.477464825, 0.5
+    def c12, 2, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3 v3.xyw
+    dcl_texcoord4 v4.xy
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Specific_HighlightObjectOverlay/fp/1932BCF1.txt
+mov r30, c1
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    rcp r0.x, v3.w
+    mul r0.xy, r0.x, v3
+    mul r0.z, r0.y, c2.x
+    add r0.xy, r0.xzzw, -c11.w
+    mov r1.y, c0.y
+    add r0.z, r1.y, c5.y
+    mad r1.xy, r0.z, c11.yzzw, c11.w
+    frc r1.xy, r1
+    mad r1.xy, r1, c10.x, c10.y
+    sincos r2.xy, r1.x
+    sincos r3.y, r1.y
+    add r0.w, r3.y, c12.x
+    mul r1.xy, r2.yxzw, c10.zwzw
+    dp2add r2.x, r0, r2, c11.x
+    dp2add r2.y, r0, r1, c11.x
+    add r0.xy, r0.z, r2
+    add r0.xy, r0, c11.w
+    mad r0.xy, r0, c9, c9.zwzw
+    texld r1, r0, s2
+    mov r0.z, c10.z
+    add r0.xyz, r0.z, c8
+    mad r0.xyz, r1, r0, c10.w
+    add r1.xyz, r30, -v1
+    nrm r2.xyz, r1
+    nrm r1.xyz, v2
+    dp3 r1.w, r1, r2
+    add r2.x, -r1.w, c10.w
+    log r2.x, r2.x
+    cmp r1.w, r1.w, r2.x, c11.x
+    mul r0.w, r0.w, r1.w
+    exp r0.w, r0.w
+    mul r2.xyz, r0.w, c8
+    mad r3.xy, v0, c7, c7.zwzw
+    texld r3, r3, s1
+    mul r3.xyz, r3, c6
+    mad r2.xyz, r3, c11.w, r2
+    mul r0.xyz, r0, r2
+    mad r2.xyz, c3.w, -v1, c3
+    nrm r3.xyz, r2
+    dp3 r0.w, r1, r3
+    max r1.x, r0.w, c11.x
+    texld r2, v4, s0
+    mul r1.yzw, r2.w, c4.xxyz
+    mul r1.xyz, r1.yzww, r1.x
+    mul oC0.xyz, r0, r1
+    mov oC0.w, c11.x

@@ -1,0 +1,112 @@
+// CRC32: 695185EF | Matched 8 variants of 2 shaders: Custom/FX/HDR, Custom/FX/HDR_Dark
+// 
+//    Unity headers extracted from HDR.shader
+//    Shader "Custom/FX/HDR" {
+//      Properties {
+//       _NearFadeStart ("NearFadeStart", Float) = 5
+//       _FarFadeStart ("FarFadeStart", Float) = 20
+//       _FarFadeEnd ("FarFadeEnd", Float) = 25
+//       _Intensity ("Intensity", Float) = 0
+//      [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Overlay" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Overlay" }
+//          ZTest Always
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 34994
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from HDR_Dark.shader
+//    Shader "Custom/FX/HDR_Dark" {
+//      Properties {
+//       _NearFadeStart ("NearFadeStart", Float) = 5
+//       _FarFadeStart ("FarFadeStart", Float) = 20
+//       _FarFadeEnd ("FarFadeEnd", Float) = 25
+//      [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 32399
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 o1.x, c4, v0
+    dp4 o1.y, c5, v0
+    dp4 o1.z, c6, v0
+    dp4 o1.w, c7, v0
+    dp4 o0.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c11.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0.xyw, r0 // Relocated from line 94 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_HDR/vp/695185EF.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xzw, r0.xywz, c13.x
+
+//     mov o0.xyw, r0 // Relocated to line 93 with shadertool.py
+    mov o2.w, r0.w
+    mad o2.xy, r1.z, c12.zwzw, r1.xwzw
+    dp4 r0.x, c10, v0
+    mov o2.z, -r0.x

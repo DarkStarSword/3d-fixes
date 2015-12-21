@@ -1,0 +1,93 @@
+// CRC32: E3B0FD75 | Matched 4 variants of 1 shaders: Custom/FX/LightBeam
+// 
+//    Unity headers extracted from LightBeam.shader
+//    Shader "Custom/FX/LightBeam" {
+//      Properties {
+//       _ConeFalloff ("Cone Falloff", 2D) = "white" { }
+//       _ConeColor ("Cone Color", Color) = (1,1,1,0)
+//       _ConeStrength ("Cone Strength", Range(0,4)) = 0.55
+//       _Smoke ("Smoke", 2D) = "white" { }
+//       _SmokeStrength ("Smoke Strength", Float) = 2
+//       _NearFadeStart ("NearFadeStart", Float) = 5
+//       _FarFadeStart ("FarFadeStart", Float) = 20
+//       _FarFadeEnd ("FarFadeEnd", Float) = 25
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One OneMinusSrcColor
+//          GpuProgramID 9557
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World]
+//              Matrix 11 [_World2Object] 3
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 14 [_ProjectionParams]
+//              Vector 15 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c16, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, c12, v1.y
+    mad r0.xyz, c11, v1.x, r0
+    mad r0.xyz, c13, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o3.xyz, r0.w, r0
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    dp4 o2.w, c7, v0
+    dp4 o0.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c14.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0.xyw, r0 // Relocated from line 74 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_LightBeam/vp/E3B0FD75.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xzw, r0.xywz, c16.x
+
+//     mov o0.xyw, r0 // Relocated to line 73 with shadertool.py
+    mov o4.w, r0.w
+    mad o4.xy, r1.z, c15.zwzw, r1.xwzw
+    dp4 r0.x, c10, v0
+    mov o4.z, -r0.x
+    mov o1.xy, v2

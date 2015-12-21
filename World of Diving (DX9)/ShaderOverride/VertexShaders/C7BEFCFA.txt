@@ -1,0 +1,82 @@
+// CRC32: C7BEFCFA | Matched 3 variants of 1 shaders: Custom/Specific/HighlightObjectOverlay
+// 
+//    Unity headers extracted from HighlightObjectOverlay.shader
+//    Shader "Custom/Specific/HighlightObjectOverlay" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("MainTex", 2D) = "white" { }
+//       _HighlightColor ("HighlightColor", Color) = (0.192157,0.937255,1,1)
+//       _HighlightTex ("HighlightTex", 2D) = "white" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+// 3:     Pass 1/2 {
+// 4:     Pass 2/2 {
+// 3:       Name "FORWARD"
+// 4:       Name "FORWARD_DELTA"
+// 4:       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+// 3:       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+// 4:       Blend One One
+// 3:       Blend SrcAlpha OneMinusSrcAlpha
+// 4:       GpuProgramID 105927
+// 3:       GpuProgramID 41111
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 4:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, c9, v1.y
+    mad r0.xyz, c8, v1.x, r0
+    mad r0.xyz, c10, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o3.xyz, r0.w, r0
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    dp4 o2.w, c7, v0
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_Specific_HighlightObjectOverlay/vp/C7BEFCFA.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mov o4, r0
+    mov o1.xy, v2

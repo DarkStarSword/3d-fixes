@@ -1,0 +1,135 @@
+// CRC32: 07646DF9 | Matched 2 variants of 1 shaders: Legacy Shaders/Reflective/Bumped Diffuse
+// 
+//    Unity headers extracted from Reflect-Bumped.shader
+//    Shader "Legacy Shaders/Reflective/Bumped Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _ReflectColor ("Reflection Color", Color) = (1,1,1,0.5)
+//       _MainTex ("Base (RGB) RefStrength (A)", 2D) = "white" { }
+//       _Cube ("Reflection Cubemap", CUBE) = "_Skybox" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Legacy Shaders/Reflective/VertexLit"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/5 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          GpuProgramID 199755
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 20 [_BumpMap_ST]
+//              Vector 19 [_MainTex_ST]
+//              Vector 10 [_ProjectionParams]
+//              Vector 11 [_ScreenParams]
+//              Vector 14 [unity_SHAb]
+//              Vector 13 [unity_SHAg]
+//              Vector 12 [unity_SHAr]
+//              Vector 17 [unity_SHBb]
+//              Vector 16 [unity_SHBg]
+//              Vector 15 [unity_SHBr]
+//              Vector 18 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c21, 0.5, 1, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_texcoord4 o4
+dcl_texcoord5 o5
+dcl_texcoord6 o6
+dcl_position o7
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad o0.xy, v3, c19, c19.zwzw
+    mad o0.zw, v3.xyxy, c20.xyxy, c20
+    dp4 o1.w, c4, v0
+    dp4 o2.w, c5, v0
+    dp4 o3.w, c6, v0
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c10.x
+    mul r1.w, r1.x, c21.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o7, r0 // Relocated from line 98 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Legacy Shaders_Reflective_Bumped Diffuse/vp/07646DF9.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c21.x
+    mad o4.xy, r1.z, c11.zwzw, r1.xwzw
+    mul r1.xyz, v2.y, c8
+    mad r1.xyz, c7, v2.x, r1
+    mad r1.xyz, c9, v2.z, r1
+    nrm r2.xyz, r1
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c15, r3
+    dp4 r4.y, c16, r3
+    dp4 r4.z, c17, r3
+    mad r1.xyz, c18, r1.x, r4
+    mov r2.w, c21.y
+    dp4 r3.x, c12, r2
+    dp4 r3.y, c13, r2
+    dp4 r3.z, c14, r2
+    add o6.xyz, r1, r3
+    dp4 r0.z, c2, v0
+
+//     mov o7, r0 // Relocated to line 79 with shadertool.py
+mov o7.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o4.zw, r0
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o1.x, r0.z
+    mul r1.xyz, r0, r2.zxyw
+    mad r1.xyz, r2.yzxw, r0.yzxw, -r1
+    mul r1.xyz, r1, v1.w
+    mov o1.y, r1.x
+    mov o1.z, r2.x
+    mov o2.x, r0.x
+    mov o3.x, r0.y
+    mov o2.y, r1.y
+    mov o3.y, r1.z
+    mov o2.z, r2.y
+    mov o3.z, r2.z
+    mov o5, c21.z

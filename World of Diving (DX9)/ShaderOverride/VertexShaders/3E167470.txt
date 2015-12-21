@@ -1,0 +1,80 @@
+// CRC32: 3E167470 | Unity headers extracted from HighlightObjectOverlay.shader
+// Shader "Custom/Specific/HighlightObjectOverlay" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("MainTex", 2D) = "white" { }
+//    _HighlightColor ("HighlightColor", Color) = (0.192157,0.937255,1,1)
+//    _HighlightTex ("HighlightTex", 2D) = "white" { }
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/2 {
+//       Name "FORWARD_DELTA"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 105927
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_OFF" "SPOT" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Matrix 8 [_LightMatrix0]
+//           Matrix 4 [_Object2World]
+//           Matrix 12 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.xyz, c13, v1.y
+    mad r0.xyz, c12, v1.x, r0
+    mad r0.xyz, c14, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o3.xyz, r0.w, r0
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    dp4 r0.w, c7, v0
+    dp4 o5.x, c8, r0
+    dp4 o5.y, c9, r0
+    dp4 o5.z, c10, r0
+    dp4 o5.w, c11, r0
+    mov o2, r0
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
+    dp4 r0.w, c3, v0
+    mov o0, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_Specific_HighlightObjectOverlay/vp/3E167470.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mov o4, r0
+    mov o1.xy, v2

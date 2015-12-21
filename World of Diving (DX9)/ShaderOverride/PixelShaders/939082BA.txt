@@ -1,0 +1,85 @@
+// CRC32: 939082BA | Unity headers extracted from Normal-Glossy.shader
+// Shader "Legacy Shaders/Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//   }
+//   Fallback "Legacy Shaders/VertexLit"
+//   SubShader 1/1 {
+//     LOD 300
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/5 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 85758
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" }
+//           Vector 4 [_Color]
+//           Vector 2 [_LightColor0]
+//           Float 5 [_Shininess]
+//           Vector 3 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_MainTex] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c6, 0, 128, 1, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_2d s0
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Legacy Shaders_Specular/fp/939082BA.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s0
+    add r1.xyz, -v2, r30
+    dp3 r1.w, r1, r1
+    rsq r1.w, r1.w
+    mad_pp r1.xyz, r1, r1.w, c1
+    nrm_pp r2.xyz, r1
+    dp3_pp r1.x, v1, r2
+    max r2.x, r1.x, c6.x
+    mov r1.y, c6.y
+    mul r1.x, r1.y, c5.x
+    pow r3.w, r2.x, r1.x
+    mul r0.w, r0.w, r3.w
+    mul_pp r0.xyz, r0, c4
+    mul_pp r0.xyz, r0, c2
+    mov r1.xyz, c2
+    mul r1.xyz, r1, c3
+    mul r1.xyz, r0.w, r1
+    dp3_pp r0.w, v1, c1
+    max_pp r1.w, r0.w, c6.x
+    mad_pp r0.xyz, r0, r1.w, r1
+    mov_pp r0.w, c6.z
+    mov_pp oC0, r0

@@ -1,0 +1,225 @@
+// CRC32: 0162D806 | Matched 3 variants of 1 shaders: Custom/Standard_LightMap
+// 
+//    Unity headers extracted from Standard_LightMap.shader
+//    Shader "Custom/Standard_LightMap" {
+//      Properties {
+//       _LightMap ("LightMap", 2D) = "white" { }
+//       _Color ("Color", Color) = (0.5,0.5,0.5,1)
+//       _MainTex ("MainTex", 2D) = "white" { }
+//       _BumpMap ("BumpMap", 2D) = "bump" { }
+//       _Occlusion ("Occlusion", 2D) = "white" { }
+//       _Specular ("Specular", 2D) = "white" { }
+//       _BumpMapDetail ("BumpMap Detail", 2D) = "bump" { }
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 3/3 {
+//          Name "FORWARD_DELTA"
+//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Blend One One
+//          GpuProgramID 174372
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP" "LIGHTMAP_OFF" "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_LINEAR" "LIGHTMAP_OFF" "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+//              Vector 10 [_BumpMapDetail_ST]
+//              Vector 7 [_BumpMap_ST]
+//              Vector 8 [_Color]
+//              Vector 4 [_LightColor0]
+//              Vector 2 [_LightPositionRange]
+//              Vector 3 [_LightShadowData]
+//              Vector 6 [_MainTex_ST]
+//              Vector 9 [_Specular_ST]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_LightGammaCorrectionConsts]
+//              SetTexture 0 [_ShadowMapTexture] CUBE 0
+//              SetTexture 1 [_LightTexture0] CUBE 1
+//              SetTexture 2 [_LightTextureB0] 2D 2
+//              SetTexture 3 [_MainTex] 2D 3
+//              SetTexture 4 [_BumpMap] 2D 4
+//              SetTexture 5 [_Specular] 2D 5
+//              SetTexture 6 [_BumpMapDetail] 2D 6
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 0.0078125, -0.0078125, 0.970000029, 0.25
+    def c12, 2, -1, 0, 1
+    def c13, 10, 1, 9.99999975e-005, -0.5
+    def c14, 0.967999995, 0.0299999993, 1.00001001, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord3 v1.xyz
+    dcl_texcoord4 v2.xyz
+    dcl_texcoord5 v3.xyz
+    dcl_texcoord6 v4.xyz
+    dcl_texcoord7 v5.xyz
+    dcl_texcoord8 v6.xyz
+    dcl_cube s0
+    dcl_cube s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Standard_LightMap/fp/0162D806.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0.xy, v0, c10, c10.zwzw
+    texld_pp r0, r0, s6
+    mad_pp r0.xy, r0.wyzw, c12.x, c12.y
+    dp2add_sat_pp r0.w, r0, r0, c12.z
+    add_pp r0.w, -r0.w, c12.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    mul r0.xyz, r0, c12.yyww
+    mad r1.xy, v0, c7, c7.zwzw
+    texld_pp r1, r1, s4
+    mad_pp r1.xz, r1.wyyw, c12.x, c12.y
+    add_pp r2.xy, r1.wyzw, r1.wyzw
+    dp2add_sat_pp r0.w, r1.xzzw, r1.xzzw, c12.z
+    add_pp r0.w, -r0.w, c12.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r2.z, r0.w
+    add r1.xyz, r2, c12.yyww
+    dp3 r0.w, r1, r0
+    mul r1.xyw, r0.w, r1.xyzz
+    rcp r0.w, r1.z
+    mad r0.xyz, r1.xyww, r0.w, -r0
+    mul r1.xyz, r0.y, v4
+    mad r0.xyw, r0.x, v3.xyzz, r1.xyzz
+    nrm r1.xyz, v2
+    mad r0.xyz, r0.z, r1, r0.xyww
+    nrm r1.xyz, r0
+    add r0.xyz, r30, -v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad r2.xyz, c1.w, -v1, c1
+    nrm r3.xyz, r2
+    mad r2.xyz, r0, r0.w, r3
+    mul r0.xyz, r0.w, r0
+    dp3_pp r0.x, r1, r0
+    max_pp r1.w, r0.x, c12.z
+    nrm r0.xyz, r2
+    dp3_pp r0.w, r1, r0
+    dp3_pp r1.x, r1, r3
+    dp3_pp r0.x, r3, r0
+    max_pp r1.y, r0.x, c12.z
+    max_pp r0.x, r1.x, c12.z
+    max_pp r1.x, r0.w, c12.z
+    log_pp r0.y, r1.x
+    mad r0.zw, v0.xyxy, c9.xyxy, c9
+    texld r2, r0.zwzw, s5
+    add_pp r0.z, -r2.w, c12.w
+    add_pp r0.w, -r0.z, c12.w
+    mad_pp r0.w, r0.w, c14.x, c14.y
+    log_pp r0.w, r0.w
+    rcp r0.w, r0.w
+    mul_pp r0.w, r0.w, c13.x
+    mul_pp r1.x, r0.w, r0.w
+    mad_pp r0.w, r0.w, r0.w, c12.w
+    mul_pp r0.w, r0.w, c5.y
+    mul_pp r1.x, r0.y, r1.x
+    exp_pp r1.x, r1.x
+    mul_pp r0.w, r0.w, r1.x
+    max r1.x, r0.w, c12.z
+    mul_pp r0.w, r0.z, r0.z
+    mul_pp r1.z, r0.w, c5.w
+    mov r3.w, c12.w
+    mad_pp r0.w, r0.w, -c5.w, r3.w
+    mad_pp r3.x, r1.w, r0.w, r1.z
+    add r1.w, -r1.w, c14.z
+    mad_pp r0.w, r0.x, r0.w, r1.z
+    mad r0.w, r0.w, r3.x, c13.z
+    rcp_pp r0.w, r0.w
+    mul r0.w, r0.w, r0.x
+    mul r0.w, r1.x, r0.w
+    mul r0.w, r0.w, c5.x
+    max r1.x, r0.w, c12.z
+    mad r0.w, r2.w, c13.x, c13.y
+    exp r0.w, r0.w
+    mul r0.y, r0.y, r0.w
+    exp r0.y, r0.y
+    dp3 r0.w, v6, v6
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    mul r0.w, r0.w, c2.w
+    add r3.xyz, c11.x, v6
+    texld r4, r3, s0
+    add r3.xyz, c11.yyxw, v6
+    texld r5, r3, s0
+    mov r4.y, r5.x
+    add r3.xyz, c11.yxyw, v6
+    texld r5, r3, s0
+    mov r4.z, r5.x
+    add r3.xyz, c11.xyyw, v6
+    texld r5, r3, s0
+    mov r4.w, r5.x
+    mad r4, r0.w, -c11.z, r4
+    cmp_pp r3, r4, r3.w, c3.x
+    dp4_pp r0.w, r3, c11.w
+    dp3 r1.z, v5, v5
+    texld r3, r1.z, s2
+    texld r4, v5, s1
+    mul r1.z, r3.x, r4.w
+    mul r0.w, r0.w, r1.z
+    mul r3.xyz, r0.w, c4
+    mul r4.xyz, r0.y, r3
+    mul r4.xyz, r1.x, r4
+    mul r4.xyz, r4, c4
+    add_pp r0.y, -r1.y, c12.w
+    mul_pp r0.w, r0.y, r0.y
+    mul_pp r0.w, r0.w, r0.w
+    mul_pp r0.y, r0.y, r0.w
+    lrp_pp r5.xyz, r0.y, c12.w, r2
+    mul r4.xyz, r4, r5
+    mul r0.y, r1.w, r1.w
+    mul r0.y, r0.y, r0.y
+    mul r0.y, r0.y, r1.w
+    add r0.w, r1.y, r1.y
+    mul r0.w, r1.y, r0.w
+    mad r0.z, r0.w, r0.z, c13.w
+    mad r0.y, r0.z, r0.y, c12.w
+    add r0.w, -r0.x, c14.z
+    mul r1.x, r0.w, r0.w
+    mul r1.x, r1.x, r1.x
+    mul r0.w, r0.w, r1.x
+    mad r0.z, r0.z, r0.w, c12.w
+    mul r0.y, r0.y, r0.z
+    mul r0.x, r0.x, r0.y
+    mul r0.xyz, r3, r0.x
+    max r0.w, r2.x, r2.y
+    max r1.x, r0.w, r2.z
+    add r0.w, -r1.x, c12.w
+    mad r1.xy, v0, c6, c6.zwzw
+    texld r1, r1, s3
+    mul r1.xyz, r1, c8
+    mul r1.xyz, r0.w, r1
+    mad oC0.xyz, r0, r1, r4
+    mov_pp oC0.w, c12.z
