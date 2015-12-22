@@ -2895,9 +2895,8 @@ def parse_args():
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
     parser.add_argument('--fix-unity-frustrum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
-    # WORK IN PROGRESS:
-    # parser.add_argument('--fix-unity-ssao', action='store_true',
-    #         help="Attempts to autofix various 3rd party SSAO shaders found in certain Unity games")
+    parser.add_argument('--fix-unity-ssao', action='store_true',
+            help="(WORK IN PROGRESS) Attempts to autofix various 3rd party SSAO shaders found in certain Unity games")
     parser.add_argument('--adjust-unity-ceto-reflections', action='store_true',
             help="Attempt to automatically fix reflections in Unity Ceto Ocean shader")
     parser.add_argument('--only-autofixed', action='store_true',
