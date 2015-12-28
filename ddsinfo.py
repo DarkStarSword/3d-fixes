@@ -536,7 +536,8 @@ class DDSPixelFormat(object):
 		if self.flags & self.Flags.YUV:
 			raise UnsupportedFile("YUV")
 		if self.flags & self.Flags.LUMINANCE:
-			raise UnsupportedFile("LUMINANCE")
+			self.rgb_bit_count = rgb_bit_count
+			self.r_bit_mask = r_bit_mask
 
 
 	def __str__(self):
@@ -774,9 +775,28 @@ def convert_pixelformat_alpha(fp, header):
 
 	convert(fp, header, (None, np.uint8, 'L', None))
 
+def convert_pixelformat_luminance(fp, header):
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA:
+		raise UnsupportedFile("Luminance pixel format has alpha")
+	if header.pixel_format.flags & DDSPixelFormat.Flags.RGB:
+		raise UnsupportedFile("Luminance pixel format has RGB")
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
+		# TODO: This is a valid format with 2 channels
+		raise UnsupportedFile("Luminance pixel format has alpha pixels")
+	if header.pixel_format.rgb_bit_count != 8:
+		raise UnsupportedFile("Luminance pixel format is not 8bpp")
+	if header.pixel_format.r_bit_mask != 0xff:
+		raise UnsupportedFile("Luminance pixel format unsupported alpha mask")
+
+	convert(fp, header, (None, np.uint8, 'L', None))
+
+
 def convert_pixelformat(fp, header):
 	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA:
 		return convert_pixelformat_alpha(fp, header)
+
+	if header.pixel_format.flags & DDSPixelFormat.Flags.LUMINANCE:
+		return convert_pixelformat_luminance(fp, header)
 
 	# If these fail I will need a converter:
 	if not header.pixel_format.flags & DDSPixelFormat.Flags.RGB:
