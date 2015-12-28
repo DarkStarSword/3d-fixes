@@ -329,8 +329,8 @@ dxgi_formats = {
 	22:         ("DXGI_FORMAT_X32_TYPELESS_G8X24_UINT",    ),
 
 	23:         ("DXGI_FORMAT_R10G10B10A2_TYPELESS",       np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
-	24:         ("DXGI_FORMAT_R10G10B10A2_UNORM",          ),
-	25:         ("DXGI_FORMAT_R10G10B10A2_UINT",           ),
+	24:         ("DXGI_FORMAT_R10G10B10A2_UNORM",          np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
+	25:         ("DXGI_FORMAT_R10G10B10A2_UINT",           np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
 
 	26:         ("DXGI_FORMAT_R11G11B10_FLOAT",            np.dtype("<u4"),            "RGB",  convert_R11G11B10_FLOAT),
 
