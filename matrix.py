@@ -4,6 +4,10 @@ import numpy as np
 from math import *
 import pyasm
 
+# Suppress scientific notation of small floating point values to make matrices
+# easier to read:
+np.set_printoptions(suppress=True)
+
 def translate(x, y, z, verbose=False):
     if verbose:
         print('''TRANSLATE:  %-8f   %-8f   %-8f''' % (x, y, z))
