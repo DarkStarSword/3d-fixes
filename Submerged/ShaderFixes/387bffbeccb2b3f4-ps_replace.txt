@@ -1,3 +1,4 @@
+// Shadows (near-mid frame)
 // ---- Created with 3Dmigoto v1.2.20 on Fri Jan 01 18:16:14 2016
 Texture2D<float4> t2 : register(t2);
 
@@ -45,6 +46,10 @@ void main(
   r1.xy = v0.xy * cb1[42].zw + -cb1[40].wz;
   r1.xy = r1.xy / cb1[40].xy;
   r1.xy = r1.xy * r0.zz;
+
+float4 stereo = StereoParams.Load(0);
+r1.x -= stereo.x * (r0.z - stereo.y);
+
   r2.xyzw = cb0[28].xyzw * r1.yyyy;
   r1.xyzw = r1.xxxx * cb0[27].xyzw + r2.xyzw;
   r1.xyzw = r0.zzzz * cb0[29].xyzw + r1.xyzw;
