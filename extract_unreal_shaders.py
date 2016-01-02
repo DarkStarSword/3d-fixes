@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 from extract_unity_shaders import fnv_3Dmigoto_shader
-import sys, os, struct
+import sys, os, struct, argparse
 
-enable_debug = False
+verbosity = 0
 
 def pr_debug(*msg, **kwargs):
-	if enable_debug:
-		print(*msg, file=sys.stderr, **kwargs)
+	if verbosity:
+		print(*msg, **kwargs)
 
 
 class file_parser(object):
@@ -22,7 +22,7 @@ class file_parser(object):
 	def unknown(self, len, show=True):
 		buf = self.read(len)
 
-		if not enable_debug or not show:
+		if not verbosity or not show:
 			return buf
 
 		width = 16
@@ -167,11 +167,25 @@ def parse_cooked_shader_cache(f):
 
 	return ret
 
+def parse_args():
+	global verbosity
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('files', nargs='+')
+	parser.add_argument('--verbose', '-v', action='count', default=0)
+	args = parser.parse_args()
+
+	verbosity = args.verbose
+
+	return args
+
 def main():
-	f = file_parser(sys.argv[1])
+	args = parse_args()
+
+	f = file_parser(args.files[0])
 	shader_names = parse_cooked_shader_cache(f)
 
-	for shader in sys.argv[2:]:
+	for shader in args.files[1:]:
 		fnv = int(os.path.basename(shader)[0:16], 16)
 		if fnv in shader_names:
 			print('%s: %s' % (shader, shader_names[fnv]))
