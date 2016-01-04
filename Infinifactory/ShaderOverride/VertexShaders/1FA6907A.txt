@@ -1,0 +1,119 @@
+// CRC32: 1FA6907A | Matched 2 variants of 2 shaders: Legacy Shaders/Diffuse, Legacy Shaders/Transparent/Diffuse
+// 
+//    Unity headers extracted from Normal-Diffuse.shader
+//    Shader "Legacy Shaders/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//      }
+//      Fallback "Legacy Shaders/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/5 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 59087
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 17 [_MainTex_ST]
+//              Vector 12 [unity_SHAb]
+//              Vector 11 [unity_SHAg]
+//              Vector 10 [unity_SHAr]
+//              Vector 15 [unity_SHBb]
+//              Vector 14 [unity_SHBg]
+//              Vector 13 [unity_SHBr]
+//              Vector 16 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Alpha-Diffuse.shader
+//    Shader "Legacy Shaders/Transparent/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//      }
+//      Fallback "Legacy Shaders/Transparent/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 54657
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 17 [_MainTex_ST]
+//              Vector 12 [unity_SHAb]
+//              Vector 11 [unity_SHAg]
+//              Vector 10 [unity_SHAr]
+//              Vector 15 [unity_SHBb]
+//              Vector 14 [unity_SHBg]
+//              Vector 13 [unity_SHBr]
+//              Vector 16 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c18, 1, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+    dp4 o4.x, c0, v0
+    dp4 o4.y, c1, v0
+    dp4 o4.z, c2, v0
+    dp4 o4.w, c3, v0
+    mad o0.xy, v2, c17, c17.zwzw
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c13, r2
+    dp4 r3.y, c14, r2
+    dp4 r3.z, c15, r2
+    mad r0.xyz, c16, r0.x, r3
+    mov r1.w, c18.x
+    dp4 r2.x, c10, r1
+    dp4 r2.y, c11, r1
+    dp4 r2.z, c12, r1
+    mov o1.xyz, r1
+    add o3.xyz, r0, r2

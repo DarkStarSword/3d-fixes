@@ -1,0 +1,138 @@
+// CRC32: 278195DF | Matched 15 variants of 3 shaders: Custom/Output Bounding Box, Legacy Shaders/Diffuse, Legacy Shaders/Transparent/Diffuse
+// 
+//     Unity headers extracted from Output Bounding Box.shader
+//     Shader "Custom/Output Bounding Box" {
+//       Properties {
+//        _MainTex ("Texture (RGB)", 2D) = "white" { }
+//        _Color ("Color (RGB) Opacity (A)", Color) = (1,1,1,0.5)
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//         Pass 2/2 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//           ZWrite Off
+//           Blend SrcAlpha One
+//           ColorMask RGB
+//           GpuProgramID 109278
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_MainTex_ST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Normal-Diffuse.shader
+//     Shader "Legacy Shaders/Diffuse" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Base (RGB)", 2D) = "white" { }
+//       }
+//       Fallback "Legacy Shaders/VertexLit"
+//       SubShader 1/1 {
+//         LOD 200
+//         Tags { "RenderType"="Opaque" }
+//         Pass 2/5 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 123306
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_MainTex_ST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+//     Unity headers extracted from Alpha-Diffuse.shader
+//     Shader "Legacy Shaders/Transparent/Diffuse" {
+//       Properties {
+//        _Color ("Main Color", Color) = (1,1,1,1)
+//        _MainTex ("Base (RGB) Trans (A)", 2D) = "white" { }
+//       }
+//       Fallback "Legacy Shaders/Transparent/VertexLit"
+//       SubShader 1/1 {
+//         LOD 200
+//         Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         Pass 2/2 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZWrite Off
+//           Blend SrcAlpha One
+//           ColorMask RGB
+//           GpuProgramID 87412
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 10 [_MainTex_ST]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+
+    dp4 o3.x, c0, v0
+    dp4 o3.y, c1, v0
+    dp4 o3.z, c2, v0
+    dp4 o3.w, c3, v0
+    mad o0.xy, v2, c10, c10.zwzw
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    mul r0.xyz, v1.y, c8
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o1.xyz, r0.w, r0

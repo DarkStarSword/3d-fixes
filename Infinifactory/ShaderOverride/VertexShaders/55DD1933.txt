@@ -1,0 +1,72 @@
+// CRC32: 55DD1933 | Matched 5 variants of 1 shaders: Custom/Whale Block
+// 
+//     Unity headers extracted from Whale Block.shader
+//     Shader "Custom/Whale Block" {
+//       Properties {
+//        _ExteriorSideTex ("Exterior Side Texture (RGB)", 2D) = "white" { }
+//        _ExteriorTopTex ("Exterior Top Texture (RGB)", 2D) = "white" { }
+//        _ExteriorBottomTex ("Exterior Bottom Texture (RGB)", 2D) = "white" { }
+//        _InteriorTex ("Interior Texture (RGB)", 2D) = "white" { }
+//        _SpecularPower ("Specular Power", Float) = 1
+//        _Tiling ("Tiling - width of texture in tiles", Float) = 8
+//        _OriginalPosition ("Original Position", Vector) = (0,0,0,1)
+//        _ExteriorTop ("Exterior Top", Float) = 0
+//        _ExteriorBottom ("Exterior Bottom", Float) = 0
+//        _ExteriorLeft ("Exterior Left", Float) = 0
+//        _ExteriorRight ("Exterior Right", Float) = 0
+//        _ExteriorForward ("Exterior Forward", Float) = 0
+//        _ExteriorBackward ("Exterior Backward", Float) = 0
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Tags { "RenderType"="Opaque" }
+//         Pass 2/3 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 101437
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    dcl_position v0
+    dcl_normal v1
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o1.xyz, r0.w, r0
+    mov o3.xyz, v1
+    mov o4.xyz, v0
