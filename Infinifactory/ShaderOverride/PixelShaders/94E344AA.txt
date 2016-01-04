@@ -1,0 +1,107 @@
+// CRC32: 94E344AA | Unity headers extracted from Regular Block (Transparent).shader
+// Shader "Custom/Regular Block (Transparent)" {
+//   Properties {
+//    _MainTex ("Texture (RGB)", 2D) = "white" { }
+//    _EmissionTex ("Emission Map", 2D) = "black" { }
+//    _Opacity ("Opacity", Float) = 0.5
+//    _Glossiness ("Glossiness", Float) = 1
+//    _SpecularPower ("Specular Power", Float) = 1
+//    _ScrollRate ("Scroll Rate of Texture", Float) = 0
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha One
+//       ColorMask RGB
+//       GpuProgramID 85271
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" }
+//           Matrix 0 [_LightMatrix0] 2
+//           Float 11 [_Env_BottomFogFullHeight]
+//           Float 10 [_Env_BottomFogStartHeight]
+//           Float 9 [_Env_FogFullDistance]
+//           Float 7 [_Env_FogMaxOpacity]
+//           Float 8 [_Env_FogStartDistance]
+//           Vector 4 [_LightColor0]
+//           Float 13 [_ManualScrollTime]
+//           Float 5 [_Opacity]
+//           Float 6 [_ScrollRate]
+//           Vector 2 [_WorldSpaceCameraPos]
+//           Vector 3 [_WorldSpaceLightPos0]
+//           Float 12 [_ZI_SimTime]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c14, 0, 1, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Regular Block (Transparent)/fp/94E344AA.txt
+mov r30, c2
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, c6.x
+    mov r1.x, c12.x
+    mad r0.y, r0.x, -r1.x, c13.x
+    mov r0.x, c14.x
+    add r0.xy, r0, v0
+    texld r0, r0, s1
+    mul_pp oC0.w, r0.w, c5.x
+    mul_pp r0.xyz, r0, c4
+    mad r1, v2.xyzx, c14.yyyx, c14.xxxy
+    dp4 r2.x, c0, r1
+    dp4 r2.y, c1, r1
+    texld_pp r1, r2, s0
+    nrm_pp r1.xyz, v1
+    dp3_pp r0.w, r1, c3
+    dp2add_pp r0.w, r0.w, r1.w, c14.x
+    mul_pp r0.xyz, r0.w, r0
+    add r1.xyz, r30, -v2
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    add r0.w, r0.w, -c8.x
+    mov r1.x, c8.x
+    add r1.x, -r1.x, c9.x
+    rcp r1.x, r1.x
+    mul_sat r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c7.x
+    mov r1.x, c10.x
+    add r1.x, -r1.x, c11.x
+    rcp r1.x, r1.x
+    add r1.y, -c10.x, v2.y
+    mul_sat r1.x, r1.x, r1.y
+    max r2.x, r0.w, r1.x
+    mad_pp oC0.xyz, r2.x, -r0, r0

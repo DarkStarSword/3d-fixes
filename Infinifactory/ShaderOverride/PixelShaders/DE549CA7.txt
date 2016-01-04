@@ -1,0 +1,151 @@
+// CRC32: DE549CA7 | Unity headers extracted from Whale Block.shader
+// Shader "Custom/Whale Block" {
+//   Properties {
+//    _ExteriorSideTex ("Exterior Side Texture (RGB)", 2D) = "white" { }
+//    _ExteriorTopTex ("Exterior Top Texture (RGB)", 2D) = "white" { }
+//    _ExteriorBottomTex ("Exterior Bottom Texture (RGB)", 2D) = "white" { }
+//    _InteriorTex ("Interior Texture (RGB)", 2D) = "white" { }
+//    _SpecularPower ("Specular Power", Float) = 1
+//    _Tiling ("Tiling - width of texture in tiles", Float) = 8
+//    _OriginalPosition ("Original Position", Vector) = (0,0,0,1)
+//    _ExteriorTop ("Exterior Top", Float) = 0
+//    _ExteriorBottom ("Exterior Bottom", Float) = 0
+//    _ExteriorLeft ("Exterior Left", Float) = 0
+//    _ExteriorRight ("Exterior Right", Float) = 0
+//    _ExteriorForward ("Exterior Forward", Float) = 0
+//    _ExteriorBackward ("Exterior Backward", Float) = 0
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 101437
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" }
+//           Matrix 0 [_LightMatrix0] 2
+//           Float 17 [_Env_BottomFogFullHeight]
+//           Float 16 [_Env_BottomFogStartHeight]
+//           Float 15 [_Env_FogFullDistance]
+//           Float 13 [_Env_FogMaxOpacity]
+//           Float 14 [_Env_FogStartDistance]
+//           Float 12 [_ExteriorBackward]
+//           Float 8 [_ExteriorBottom]
+//           Float 11 [_ExteriorForward]
+//           Float 9 [_ExteriorLeft]
+//           Float 10 [_ExteriorRight]
+//           Float 7 [_ExteriorTop]
+//           Vector 4 [_LightColor0]
+//           Vector 6 [_OriginalPosition]
+//           Float 5 [_Tiling]
+//           Vector 2 [_WorldSpaceCameraPos]
+//           Vector 3 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_ExteriorSideTex] 2D 1
+//           SetTexture 2 [_ExteriorTopTex] 2D 2
+//           SetTexture 3 [_ExteriorBottomTex] 2D 3
+//           SetTexture 4 [_InteriorTex] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c18, -0.889999986, 100.000099, -2, 3
+    def c19, 0.5, 1, 0, 0
+    dcl_texcoord_pp v0.xyz
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2.y
+    dcl_texcoord3 v3.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Whale Block/fp/DE549CA7.txt
+mov r30, c2
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, v3, v3
+    mov_sat r1.xyz, r0
+    mov_sat r0.xyz, -r0
+    mul r0.w, r1.x, c10.x
+    mul r0.x, r0.x, c9.x
+    max r1.x, r0.w, r0.x
+    mul r0.x, r1.y, c7.x
+    mul r0.w, r1.z, c11.x
+    mul r0.y, r0.y, c8.x
+    mul r0.z, r0.z, c12.x
+    max r1.y, r0.w, r0.z
+    max r1.z, r0.x, r0.y
+    max r0.x, r1.x, r1.z
+    max r2.x, r0.x, r1.y
+    add r0.x, r2.x, c18.x
+    mul_sat r0.x, r0.x, c18.y
+    mad r0.y, r0.x, c18.z, c18.w
+    mul r0.x, r0.x, r0.x
+    mul r0.x, r0.x, r0.y
+    rcp r0.y, c5.x
+    add r1.yzw, c6.xxyz, v3.xxyz
+    add r1.x, r1.w, r1.y
+    mul r1, r0.y, r1.xzyw
+    texld r2, r1.zwzw, s2
+    texld r3, r1.zwzw, s3
+    cmp r0.yzw, -v2.y, r3.xxyz, r2.xxyz
+    texld r2, r1, s1
+    add r2.w, c19.x, -v2_abs.y
+    cmp r0.yzw, r2.w, r2.xxyz, r0
+    texld r3, r1, s4
+    texld r1, r1.zwzw, s4
+    cmp r1.xyz, r2.w, r3, r1
+    lrp_pp r2.xyz, r0.x, r0.yzww, r1
+    mul_pp r0.xyz, r2, c4
+    mad r1, v1.xyzx, c19.yyyz, c19.zzzy
+    dp4 r2.x, c0, r1
+    dp4 r2.y, c1, r1
+    texld_pp r1, r2, s0
+    dp3_pp r0.w, v0, c3
+    dp2add_pp r0.w, r0.w, r1.w, c19.z
+    mul_pp r0.xyz, r0.w, r0
+    add r1.xyz, r30, -v1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    add r0.w, r0.w, -c14.x
+    mov r1.x, c14.x
+    add r1.x, -r1.x, c15.x
+    rcp r1.x, r1.x
+    mul_sat r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c13.x
+    mov r1.x, c16.x
+    add r1.x, -r1.x, c17.x
+    rcp r1.x, r1.x
+    add r1.y, -c16.x, v1.y
+    mul_sat r1.x, r1.x, r1.y
+    max r2.x, r0.w, r1.x
+    mad_pp oC0.xyz, r2.x, -r0, r0
+    mov_pp oC0.w, c19.y

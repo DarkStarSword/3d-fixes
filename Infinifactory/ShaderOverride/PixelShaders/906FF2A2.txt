@@ -1,0 +1,128 @@
+// CRC32: 906FF2A2 | Unity headers extracted from Terrain Block (Transparent).shader
+// Shader "Custom/Terrain Block (Transparent)" {
+//   Properties {
+//    _MainTex ("Wall Texture (RGB)", 2D) = "white" { }
+//    _Opacity ("Opacity", Range(0,1)) = 0.5
+//    _EdgeTex ("Edge Texture", 2D) = "" { }
+//    _Glossiness ("Glossiness", Float) = 0
+//    _SpecularPower ("Specular Power", Float) = 1
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "RenderType"="Transparent" }
+//     Pass 2/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha One
+//       ColorMask RGB
+//       GpuProgramID 115290
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Float 11 [_Env_BottomFogFullHeight]
+//           Float 10 [_Env_BottomFogStartHeight]
+//           Float 9 [_Env_FogFullDistance]
+//           Float 7 [_Env_FogMaxOpacity]
+//           Float 8 [_Env_FogStartDistance]
+//           Vector 5 [_LightColor0]
+//           Float 6 [_Opacity]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 4 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_EdgeTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c12, 0.125, 0.0625, 8, 0.5
+    def c13, 1, -1, 2, 0.00999999978
+    def c14, 1, 0, 0, 0
+    dcl_texcoord v0.yw
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Terrain Block (Transparent)/fp/906FF2A2.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.z, v0.y
+    add r1.x, v2.z, v2.x
+    mul r0.x, r1.x, c12.x
+    texld r0, r0.xzzw, s2
+    mov r1.y, v2.y
+    mad r1.xy, r1, c12.x, c12.y
+    texld r2, r1, s1
+    mad r1.x, r1.y, c12.z, c12.y
+    mad r1.yz, v2.xxzw, c12.x, c12.y
+    mul r3.xy, r1.yzzw, c13
+    texld r3, r3, s1
+    texld r4, r1.yzzw, s1
+    mad r1.y, r1.z, c12.z, c12.w
+    lrp r2.w, v1_abs.y, r1.y, r1.x
+    frc r1.x, r2.w
+    mad r1.x, r1.x, c13.z, c13.y
+    cmp r1.yzw, -v1.y, r3.xxyz, r4.xxyz
+    lrp r3.xyz, v1_abs.y, r1.yzww, r2
+    lrp_pp r1.yzw, r0.w, r0.xxyz, r3.xxyz
+    add r0.x, c13.x, -v1_abs.y
+    mad r0.x, r1_abs.x, -r0.x, c13.w
+    add r0.y, c12.w, -v0.w
+    cmp r0.x, r0.y, c13.w, r0.x
+    cmp_pp r0.xyz, r0.x, r3, r1.yzww
+    mul_pp r0.xyz, r0, c5
+    mad r1, v2.xyzx, c14.xxxy, c14.yyyx
+    dp4 r2.x, c0, r1
+    dp4 r2.y, c1, r1
+    dp4 r2.z, c2, r1
+    dp3 r0.w, r2, r2
+    texld_pp r1, r0.w, s0
+    add r1.yzw, c4.xxyz, -v2.xxyz
+    nrm_pp r2.xyz, r1.yzww
+    dp3_pp r0.w, v1, r2
+    dp2add_pp r0.w, r0.w, r1.x, c14.y
+    mul_pp r0.xyz, r0.w, r0
+    add r1.xyz, r30, -v2
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    add r0.w, r0.w, -c8.x
+    mov r1.x, c8.x
+    add r1.x, -r1.x, c9.x
+    rcp r1.x, r1.x
+    mul_sat r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c7.x
+    mov r1.x, c10.x
+    add r1.x, -r1.x, c11.x
+    rcp r1.x, r1.x
+    add r1.y, -c10.x, v2.y
+    mul_sat r1.x, r1.x, r1.y
+    max r2.x, r0.w, r1.x
+    mad_pp oC0.xyz, r2.x, -r0, r0
+    mov_pp oC0.w, c6.x
