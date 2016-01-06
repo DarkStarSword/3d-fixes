@@ -23,7 +23,7 @@ uses the world space camera position.
 
 Advantages:
 
-- Accurate fix for specular highlights and environmental reflections
+- Accurate fix for all specular highlights and reflections
 
 - Also pops certain parallax shaders into 3D (e.g. Rocks + sand in The Forest)
 
@@ -85,9 +85,10 @@ Disadvantages:
 
 - The required matrices may not be available at all.
 
-- Will only accurately fix specular highlights that were drawn by the physical
-  lighting shaders. Other specular highlights drawn by the surface shaders will
-  not be fixed.
+- Will only accurately fix specular highlights and reflections that were drawn
+  by the deferred physical lighting shaders. Other specular highlights and
+  reflections drawn by the surface shaders will not be fixed (this may include
+  reflections on water).
 
 - Incompatible with various other fixes that need world-space adjustments
   (unless they are self-contained and do not require additional matrices to be
@@ -114,6 +115,6 @@ lighting pixel shaders.
 
 There is a slightly more up to date version of this in the DX11 version of the
 World of Diving fix that will also partially fix physical lighting (specular
-highlights and environmental reflections moved to surface depth), but even it
-is lacking the recent advancements made to the DX9 templates (e.g. correct
-placement of specular highlights and environmental reflections).
+highlights and reflections moved to surface depth), but even it is lacking the
+recent advancements made to the DX9 templates (e.g. correct placement of
+specular highlights and reflections).

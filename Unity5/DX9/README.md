@@ -23,9 +23,9 @@ environment) to perform these fixes automatically. It will fix:
 - All lighting pixel shaders, including all known 3rd party replacement Unity
   lighting shaders.
 - World space camera position in the deferred lighting shaders ONLY. This will
-  fix things like specular highlights and environmental reflections, but will
-  not fix all of them or other related problems. There is an alternative
-  DX9-New template that can fix all of these.
+  fix things like specular highlights and reflections, but will not fix all of
+  them or other related problems. There is an alternative DX9-New template that
+  can fix all of these.
 
 Unity likes to throw curve balls, so expect the unexpected. You may have to
 adjust the script for the given game (check out the versions in The Forest and
