@@ -33,6 +33,11 @@ Advantages:
 - Compatible with various other fixes that need world-space adjustments (yay, I
   can finally fix the light shafts in The Forest!)
 
+- Adds directives to copy the depth buffer to the DX9Settings.ini to make it
+  easier to add an auto-UI adjustment later (Note that this does not add a UI
+  adjustment as that is very game-specific, it just adds the depth buffer
+  copy).
+
 Disadvantages:
 
 - May need to find additional sources of the required matrices (but there is a

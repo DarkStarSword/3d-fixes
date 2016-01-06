@@ -67,6 +67,4 @@ shadows from point or spot lights are broken:
   are more widely available.
 
 UI adjustments are very game specific and as such are not included in the
-template. shadertool will add sections to the DX9Settings.ini to copy the depth
-buffer and Z Buffer params from various shaders to ease the process of adding
-an automatic depth adjustment.
+template.
