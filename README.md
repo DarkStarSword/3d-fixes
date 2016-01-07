@@ -145,9 +145,9 @@ Implements shader like semantics in Python, including registers supporting
 masks and swizzles using a natural syntax, and various shader instructions.
 Useful to prototype & debug complicated algorithms.
 
-### dump_cb_floats.py ###
-Decodes the given constant buffer extracted via 3DMigoto's frame analysis
-feature as float4s, showing the offset of each value.
+### decode_buffer.py ###
+Decodes the given buffer extracted via 3DMigoto's frame analysis feature as
+both integers and floats.
 
 ### 3dvisionlive_download_button.user.js ###
 User script to add a download button to images on 3D Vision Live.
