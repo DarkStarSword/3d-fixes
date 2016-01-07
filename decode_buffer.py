@@ -15,9 +15,14 @@ def dump(stream, args):
 	else:
 		out = sys.stdout
 
+	if args.offset:
+		stream.seek(args.offset)
+
 	for index in itertools.count():
 		zero = True
 		for offset in range(args.stride // 4):
+			if args.length and args.length <= index * args.stride + offset * 4:
+				return
 			buf = stream.read(4)
 			if len(buf) == 0:
 				return
@@ -37,8 +42,8 @@ def dump(stream, args):
 			if uval:
 				zero = False
 
-			if args.stride == 1:
-				print('{:08x}: '.format((index * args.stride + offset) * 4), end='', file=out)
+			if args.stride == 4:
+				print('{:08x}: '.format((index * args.stride + offset * 4)), end='', file=out)
 			else:
 				print('{}+{:04x}: '.format(index, offset * 4), end='', file=out)
 			print('0x{:08x} | {: 12d} | {}'.format(uval, ival, fval), file=out)
@@ -46,14 +51,21 @@ def dump(stream, args):
 			print(out.getvalue(), end='')
 			out.seek(0)
 			out.truncate(0)
-		if args.stride != 1:
+		if args.stride != 4:
 			print(file=out)
+
+def parse_offset(off):
+	if off.lower().startswith('0x'):
+		return int(off, 16)
+	return int(off)
 
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('files', nargs='+', type=argparse.FileType('rb'))
-	parser.add_argument('-s', '--stride', type=int, default=1)
+	parser.add_argument('-s', '--stride', type=int, default=4)
 	parser.add_argument('-t', '--truncate', action='store_true')
+	parser.add_argument('-o', '--offset', type=parse_offset)
+	parser.add_argument('-l', '--length', type=parse_offset)
 	args = parser.parse_args()
 
 	for file in args.files:
