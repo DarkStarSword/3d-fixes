@@ -26,7 +26,7 @@ def dump(stream, args):
 			buf = stream.read(4)
 			if len(buf) == 0:
 				return
-			if len(buf) < 4: 
+			if len(buf) < 4:
 				print('Remaining:', repr(buf), file=out)
 				return
 
@@ -45,8 +45,13 @@ def dump(stream, args):
 			if args.stride == 4:
 				print('{:08x}: '.format((index * args.stride + offset * 4)), end='', file=out)
 			else:
-				print('{}+{:04x}: '.format(index, offset * 4), end='', file=out)
-			print('0x{:08x} | {: 12d} | {}'.format(uval, ival, fval), file=out)
+				print('%d+%-4s ' % (index, '%d:' % (offset * 4)), end='', file=out)
+			if args.format == 'int':
+				print('{}'.format(ival), file=out)
+			elif args.format == 'float':
+				print('{}'.format(fval), file=out)
+			else:
+				print('0x{:08x} | {: 12d} | {}'.format(uval, ival, fval), file=out)
 		if args.truncate and not zero:
 			print(out.getvalue(), end='')
 			out.seek(0)
@@ -66,6 +71,7 @@ def main():
 	parser.add_argument('-t', '--truncate', action='store_true')
 	parser.add_argument('-o', '--offset', type=parse_offset)
 	parser.add_argument('-l', '--length', type=parse_offset)
+	parser.add_argument('-f', '--format', choices=('int', 'float'))
 	args = parser.parse_args()
 
 	for file in args.files:
