@@ -1,6 +1,8 @@
 Unity 5 World Space Correction Template
 =======================================
 
+**THIS TEMPLATE WILL NOT WORK WITH UNITY 5.3 WITHOUT CONSIDERABLE EFFORT PENDING UPDATES TO THE EXTRACTION SCRIPTS**
+
 This template can be used as a starting point to fix any DX9 Unity game. It
 includes:
 

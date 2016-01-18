@@ -1,6 +1,14 @@
 Unity 5 Templates
 =================
 
+**Unity 5.3 has made a number of changes to how shaders are stored that will
+cause problems for these templates. DX9-Old is probably easier than DX9-New for
+now as it depends less on the Unity specific headers, but either way will
+require more effort until the extraction scripts have been updated. If an
+existing fix needs to be updated to 5.3, try UseAlternateCRC=true to see if
+your existing shaders will work (needs confirmation if this works for vertex
+shaders, or only pixel shaders)**
+
 These are a collection of templates that can be used as a starting point to fix
 any Unity game. Either DX9 or DX9-New can be used for DX9 games - check below
 for a few key differences between the two and reasons you might select one over
@@ -40,6 +48,8 @@ Advantages:
 
 Disadvantages:
 
+- CURRENTLY BROKEN IN UNITY 5.3
+
 - May need to find additional sources of the required matrices (but there is a
   script provided to do this for you)
 
@@ -66,6 +76,8 @@ This template works by applying a view-space correction to the lighting pixel
 shaders.
 
 Advantages:
+
+- Can work with Unity 5.3 shaders, but currently auto-extraction is broken
 
 - Simpler fix, as fewer shaders need to be included.
 
