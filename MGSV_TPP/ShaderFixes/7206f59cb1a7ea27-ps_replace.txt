@@ -1,3 +1,4 @@
+// Light on curtain
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:45 2016
 
 cbuffer cPSScene : register(b2)
@@ -83,6 +84,7 @@ void main(
   r2.xyz = r2.xyz;
   r3.xyzw = g_SpecularTexture.Sample(g_samplerPoint_Wrap_s, r1.xy).yxzw;
   r1.x = g_DepthTexture.Sample(g_samplerPoint_Wrap_s, r1.xy).x;
+
   r1.x = r1.x;
   r2.xyz = r2.xyz;
   r1.yz = float2(2,2) * r2.xy;
@@ -127,6 +129,10 @@ void main(
   r5.z = r5.z / r1.x;
   r6.z = r5.z;
   r5.xy = r6.zz * r1.yz;
+
+float4 stereo = StereoParams.Load(0);
+r5.x -= stereo.x * (r6.z - stereo.y) / g_psScene.m_projection._m00;
+
   r6.xy = r5.xy;
   r5.w = 1;
   r6.xy = r6.xy;
