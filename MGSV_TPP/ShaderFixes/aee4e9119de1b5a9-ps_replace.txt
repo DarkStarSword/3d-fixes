@@ -1,0 +1,862 @@
+// ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:45 2016
+
+cbuffer cPSScene : register(b2)
+{
+
+  struct
+  {
+    float4x4 m_projectionView;
+    float4x4 m_projection;
+    float4x4 m_view;
+    float4x4 m_shadowProjection;
+    float4x4 m_shadowProjection2;
+    float4 m_eyepos;
+    float4 m_projectionParam;
+    float4 m_viewportSize;
+    float4 m_exposure;
+    float4 m_fogParam[3];
+    float4 m_fogColor;
+    float4 m_cameraCenterOffset;
+    float4 m_shadowMapResolutions;
+  } g_psScene : packoffset(c0);
+
+}
+
+cbuffer cPSLight : register(b3)
+{
+
+  struct
+  {
+    float4 m_lightParams[11];
+  } g_psLight : packoffset(c0);
+
+}
+
+cbuffer cPSMaterial : register(b4)
+{
+
+  struct
+  {
+    float4 m_materials[8];
+  } g_psMaterial : packoffset(c0);
+
+}
+
+SamplerState g_samplerPoint_Wrap_s : register(s8);
+SamplerState g_samplerPoint_Clamp_s : register(s9);
+SamplerState g_samplerLinear_Clamp_s : register(s11);
+Texture2D<float4> g_NormalTexture : register(t0);
+Texture2D<float4> g_SpecularTexture : register(t1);
+Texture2D<float4> g_DepthTexture : register(t2);
+Texture3D<float4> g_lut2 : register(t8);
+Texture2D<float4> g_lut1 : register(t9);
+Texture2D<float4> g_MaterialTexture : register(t10);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = v2.xyw;
+  r0.xyz = r0.xyz;
+  r0.xy = r0.xy / r0.zz;
+  r0.xy = r0.xy;
+  r0.xy = r0.xy;
+  r0.xy = r0.xy;
+  r1.xyz = g_NormalTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).xyz;
+  r1.xyz = r1.xyz;
+  r2.xyzw = g_SpecularTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).yxzw;
+  r0.x = g_DepthTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).x;
+  r0.x = r0.x;
+  r1.xyz = r1.xyz;
+  r0.yz = float2(2,2) * r1.xy;
+  r0.yz = float2(-1,-1) + r0.yz;
+  r0.w = r1.z * r1.z;
+  r0.w = 2 * r0.w;
+  r1.z = -1 + r0.w;
+  r0.w = r1.z * r1.z;
+  r0.w = -r0.w;
+  r0.w = 1 + r0.w;
+  r3.xy = r0.yz * r0.ww;
+  r0.y = dot(r0.yz, r0.yz);
+  r0.y = r0.w * r0.y;
+  r0.y = 1.00000001e-007 + r0.y;
+  r0.y = rsqrt(r0.y);
+  r1.xy = r3.xy * r0.yy;
+  r1.xy = r1.xy;
+  r1.z = r1.z;
+  r1.xyz = r1.xyz;
+  r3.y = r2.y;
+  r2.x = r2.x;
+  r2.z = r2.z;
+  r2.w = r2.w;
+  r1.xyz = r1.xyz;
+  r2.z = r2.z;
+  r2.x = r2.x;
+  r3.y = r3.y;
+  r2.w = r2.w;
+  r0.x = r0.x;
+  r0.x = r0.x;
+  r0.yzw = v1.xyw;
+  r0.x = r0.x;
+  r0.yzw = r0.yzw;
+  r0.yz = r0.yz / r0.ww;
+  r4.xy = -g_psScene.m_cameraCenterOffset.xy;
+  r0.yz = r4.xy + r0.yz;
+  r0.x = r0.x;
+  r4.xyzw = g_psScene.m_projectionParam.xyzw;
+  r0.yz = r4.xy * r0.yz;
+  r0.w = -r4.w;
+  r0.x = r0.x + r0.w;
+  r4.z = r4.z / r0.x;
+  r4.xy = r4.zz * r0.yz;
+  r4.xy = r4.xy;
+  r4.z = r4.z;
+  r4.xyz = r4.xyz;
+  r0.x = dot(r4.xyz, r4.xyz);
+  r0.x = rsqrt(r0.x);
+  r0.xyz = r4.xyz * r0.xxx;
+  r4.xyz = r4.xyz;
+  r0.xyz = r0.xyz;
+  r4.xyz = r4.xyz;
+  r4.xyz = r4.xyz;
+  r4.xyz = -r4.xyz;
+  r4.xyz = g_psLight.m_lightParams[3].xyz + r4.xyz;
+  r0.w = g_psMaterial.m_materials[7].x;
+  r1.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r1.w);
+  r4.w = r3.w * r1.w;
+  r0.w = max(r4.w, r0.w);
+  r4.xyz = r4.xyz * r3.www;
+  r4.w = g_psMaterial.m_materials[7].w;
+  r3.w = r3.w * r3.w;
+  r1.w = g_psLight.m_lightParams[6].w * r1.w;
+  r1.w = -r1.w;
+  r1.w = r3.w + r1.w;
+  r1.w = min(r4.w, r1.w);
+  r1.w = max(0, r1.w);
+  r5.xyz = g_psLight.m_lightParams[7].xyz;
+  r6.xyz = g_psLight.m_lightParams[5].xyz;
+  r4.xyz = r4.xyz;
+  r5.x = r5.x;
+  r5.y = r5.y;
+  r7.xyz = -r4.xyz;
+  r3.w = dot(r6.xyz, r7.xyz);
+  r5.z = r5.z;
+  r4.w = -r5.x;
+  r3.w = r4.w + r3.w;
+  r3.w = r3.w * r5.y;
+  r3.w = max(0, r3.w);
+  r3.w = min(1, r3.w);
+  r3.w = log2(r3.w);
+  r3.w = r5.z * r3.w;
+  r5.xyz = exp2(r3.www);
+  r5.xyz = r5.xyz;
+  r5.xyz = r5.xyz;
+  r6.xyz = g_psLight.m_lightParams[4].xyz * r1.www;
+  r5.xyz = r6.xyz * r5.xyz;
+  r5.xyz = g_psScene.m_exposure.zzz * r5.xyz;
+  r1.w = g_psLight.m_lightParams[4].w;
+  r0.w = r0.w;
+  r1.w = 1 * r1.w;
+  r0.w = r1.w / r0.w;
+  r0.w = 0.899999976 * r0.w;
+  r0.w = max(0, r0.w);
+  r5.w = min(1, r0.w);
+  r5.w = r5.w;
+  r4.xyz = r4.xyz;
+  r5.xyz = r5.xyz;
+  r5.w = r5.w;
+  r1.xyz = r1.xyz;
+  r4.xyz = r4.xyz;
+  r5.xyzw = r5.xyzw;
+  r0.xyz = r0.xyz;
+  r2.x = r2.x;
+  r2.z = r2.z;
+  r3.y = r3.y;
+  r2.w = r2.w;
+  r1.xyz = r1.xyz;
+  r4.xyz = r4.xyz;
+  r5.xyzw = r5.xyzw;
+  r0.xyz = r0.xyz;
+  r2.x = r2.x;
+  r2.z = r2.z;
+  r3.y = r3.y;
+  r2.w = r2.w;
+  r4.xyz = r4.xyz;
+  r1.xyz = r1.xyz;
+  r6.xyz = r4.xyz;
+  r0.w = dot(r6.xyz, r1.xyz);
+  r0.xyz = -r0.xyz;
+  r1.w = dot(r0.xyz, r1.xyz);
+  r1.w = r1.w + r1.w;
+  r1.w = -r1.w;
+  r7.xyz = r1.xyz * r1.www;
+  r7.xyz = r7.xyz + r0.xyz;
+  r7.xyz = -r7.xyz;
+  r8.xyz = -r6.xyz;
+  r8.xyz = r8.xyz + r7.xyz;
+  r1.w = dot(r8.xyz, r8.xyz);
+  r1.w = sqrt(r1.w);
+  r1.w = r5.w / r1.w;
+  r1.w = max(0, r1.w);
+  r8.xyz = min(float3(1,1,1), r1.www);
+  r9.xyz = -r4.xyz;
+  r7.xyz = r9.xyz + r7.xyz;
+  r7.xyz = r8.xyz * r7.xyz;
+  r4.xyz = r7.xyz + r4.xyz;
+  r1.w = dot(r4.xyz, r4.xyz);
+  r1.w = rsqrt(r1.w);
+  r4.xyz = r4.xyz * r1.www;
+  r0.xyz = r4.xyz + r0.xyz;
+  r1.w = dot(r0.xyz, r0.xyz);
+  r1.w = rsqrt(r1.w);
+  r0.xyz = r1.www * r0.xyz;
+  r1.x = dot(r0.xyz, r1.xyz);
+  r1.x = max(0, r1.x);
+  r1.x = min(1, r1.x);
+  r0.x = dot(r0.xyz, r6.xyz);
+  r2.z = r2.z;
+  r2.y = 0.25;
+  r4.xyzw = g_MaterialTexture.Sample(g_samplerPoint_Clamp_s, r2.zy).xyzw;
+  r2.y = 0.75;
+  r3.xz = g_MaterialTexture.Sample(g_samplerPoint_Clamp_s, r2.zy).xw;
+  r3.xz = r3.xz;
+  r4.xyz = r4.xyz;
+  r4.w = r4.w;
+  r0.y = r3.x;
+  r3.z = r3.z;
+  r0.x = r0.x;
+  r0.y = r0.y;
+  r0.x = g_lut1.Sample(g_samplerLinear_Clamp_s, r0.xy).x;
+  r0.x = r0.x;
+  r0.x = r0.x;
+  r0.y = r0.w * r0.w;
+  r0.y = -r0.y;
+  r0.y = 1 + r0.y;
+  r0.y = r0.y * r2.w;
+  r0.y = r0.w + r0.y;
+  r0.z = r4.w * r2.w;
+  r0.y = max(r0.y, r0.z);
+  r0.y = max(0, r0.y);
+  r0.y = min(1, r0.y);
+  r1.yzw = r4.xyz * r2.xxx;
+  r1.x = r1.x;
+  r3.y = r3.y;
+  r3.z = r3.z;
+  r0.z = max(0, r1.x);
+  r3.x = min(1, r0.z);
+  r3.y = r3.y;
+  r3.z = r3.z;
+  r2.xyz = r3.xyz * r3.xyz;
+  r2.xyz = float3(0.984375,0.9375,0.9375) * r2.xyz;
+  r2.xyz = float3(0.0078125,0.03125,0.03125) + r2.xyz;
+  r2.xy = g_lut2.Sample(g_samplerLinear_Clamp_s, r2.xyz).xy;
+  r2.xy = r2.xy;
+  r2.xy = r2.xy * r2.xy;
+  r0.z = r2.x / r2.y;
+  r0.x = r0.x * r0.z;
+  r0.w = r0.w;
+  r0.z = 4 * r0.w;
+  r0.z = max(0, r0.z);
+  r0.z = min(1, r0.z);
+  r0.x = r0.x * r0.z;
+  r1.xyz = r1.yzw * r5.xyz;
+  r0.xzw = r1.xyz * r0.xxx;
+  r0.y = 1 * r0.y;
+  r0.y = 1 * r0.y;
+  r1.xyz = r0.yyy * r5.xyz;
+  r0.xzw = r0.xzw;
+  r1.xyz = r1.xyz;
+  r1.xyz = r1.xyz;
+  r0.xzw = r0.xzw;
+  r1.xyz = r1.xyz;
+  r0.xzw = r0.xzw;
+  r1.xyz = r1.xyz;
+  r0.xzw = r0.xzw;
+  r1.xyz = float3(1,1,1) * r1.xyz;
+  r0.y = g_psLight.m_lightParams[8].y;
+  r1.xyz = r1.xyz * r0.yyy;
+  r1.xyz = float3(1,1,1) * r1.xyz;
+  r0.xyz = float3(1,1,1) * r0.xzw;
+  r0.w = g_psLight.m_lightParams[8].x;
+  r0.xyz = r0.xyz * r0.www;
+  r0.xyz = float3(1,1,1) * r0.xyz;
+  r1.xyz = r1.xyz;
+  r0.xyz = r0.xyz;
+  r1.xyz = r1.xyz;
+  r0.xyz = r0.xyz;
+  r1.xyz = r1.xyz;
+  r0.xyz = r0.xyz;
+  r1.xyz = r1.xyz;
+  r0.xyz = r0.xyz;
+  r1.xyz = r1.xyz;
+  r0.xyz = r0.xyz;
+  r0.xyz = r0.xyz;
+  r0.xyz = r0.xyz;
+  r0.xyz = r0.xyz;
+  r0.w = 1;
+  r0.xyz = r0.xyz;
+  r0.xyzw = r0.xyzw;
+  r0.xyzw = r0.xyzw;
+  r1.xyz = r1.xyz;
+  r1.xyz = r1.xyz;
+  r1.xyz = r1.xyz;
+  r1.w = 1;
+  r1.xyz = r1.xyz;
+  r1.xyzw = r1.xyzw;
+  r1.xyzw = r1.xyzw;
+  o0.xyzw = r1.xyzw;
+  o1.xyzw = r0.xyzw;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cPSScene
+// {
+//
+//   struct PSScene
+//   {
+//       
+//       float4x4 m_projectionView;     // Offset:    0
+//       float4x4 m_projection;         // Offset:   64
+//       float4x4 m_view;               // Offset:  128
+//       float4x4 m_shadowProjection;   // Offset:  192
+//       float4x4 m_shadowProjection2;  // Offset:  256
+//       float4 m_eyepos;               // Offset:  320
+//       float4 m_projectionParam;      // Offset:  336
+//       float4 m_viewportSize;         // Offset:  352
+//       float4 m_exposure;             // Offset:  368
+//       float4 m_fogParam[3];          // Offset:  384
+//       float4 m_fogColor;             // Offset:  432
+//       float4 m_cameraCenterOffset;   // Offset:  448
+//       float4 m_shadowMapResolutions; // Offset:  464
+//
+//   } g_psScene;                       // Offset:    0 Size:   480
+//
+// }
+//
+// cbuffer cPSLight
+// {
+//
+//   struct PSLight
+//   {
+//       
+//       float4 m_lightParams[11];      // Offset:    0
+//
+//   } g_psLight;                       // Offset:    0 Size:   176
+//
+// }
+//
+// cbuffer cPSMaterial
+// {
+//
+//   struct PSMaterial
+//   {
+//       
+//       float4 m_materials[8];         // Offset:    0
+//
+//   } g_psMaterial;                    // Offset:    0 Size:   128
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// g_samplerPoint_Wrap               sampler      NA          NA    8        1
+// g_samplerPoint_Clamp              sampler      NA          NA    9        1
+// g_samplerLinear_Clamp             sampler      NA          NA   11        1
+// g_NormalTexture                   texture  float4          2d    0        1
+// g_SpecularTexture                 texture  float4          2d    1        1
+// g_DepthTexture                    texture  float4          2d    2        1
+// g_lut2                            texture  float4          3d    8        1
+// g_lut1                            texture  float4          2d    9        1
+// g_MaterialTexture                 texture  float4          2d   10        1
+// cPSScene                          cbuffer      NA          NA    2        1
+// cPSLight                          cbuffer      NA          NA    3        1
+// cPSMaterial                       cbuffer      NA          NA    4        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xy w
+// TEXCOORD                 1   xyzw        2     NONE   float   xy w
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb2[29], immediateIndexed
+dcl_constantbuffer cb3[9], immediateIndexed
+dcl_constantbuffer cb4[8], immediateIndexed
+dcl_sampler s8, mode_default
+dcl_sampler s9, mode_default
+dcl_sampler s11, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture2d (float,float,float,float) t2
+dcl_resource_texture3d (float,float,float,float) t8
+dcl_resource_texture2d (float,float,float,float) t9
+dcl_resource_texture2d (float,float,float,float) t10
+dcl_input_ps linear v1.xyw
+dcl_input_ps linear v2.xyw
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_temps 10
+
+#line 129 "d:\work\master\git_clone\_intermediate\win64\GrModelShaders_dx11_win64\Release\SSLighting2_Spot_NoShadow_ps.hlsl"
+mov r0.xyz, v2.xywx  // NScreenToTextureCoordinate_screenToTextureCoordinate_inBackBufferSamplingPosition<0,1,3>
+nop 
+mov r0.xyz, r0.xyzx  // inBackBufferSamplingPosition<0,1,3>
+
+#line 212
+div r0.xy, r0.xyxx, r0.zzzz  // outTexcoord<0:NaN:Inf,1:NaN:Inf>
+
+#line 130
+mov r0.xy, r0.xyxx  // NScreenToTextureCoordinate_screenToTextureCoordinate_outTexcoord<0:NaN:Inf,1:NaN:Inf>
+
+#line 138
+mov r0.xy, r0.xyxx  // NGetGeometryParam_getGeometryParam_inTexcoord<0:NaN:Inf,1:NaN:Inf>
+nop 
+mov r0.xy, r0.xyxx  // inTexcoord<0:NaN:Inf,1:NaN:Inf>
+
+#line 242
+sample_indexable(texture2d)(float,float,float,float) r1.xyz, r0.xyxx, t0.xyzw, s8
+mov r1.xyz, r1.xyzx  // encodeViewNormal<0:Inf,1:Inf,2:Inf>
+sample_indexable(texture2d)(float,float,float,float) r2.xyzw, r0.xyxx, t1.yxzw, s8  // specular<1:Inf,0:Inf,2:Inf,3:Inf>
+sample_indexable(texture2d)(float,float,float,float) r0.x, r0.xyxx, t2.xyzw, s8
+mov r0.x, r0.x  // outDepth<0:Inf>
+
+#line 299
+nop 
+mov r1.xyz, r1.xyzx  // encodeNormal<0:Inf,1:Inf,2:Inf>
+
+#line 132
+mul r0.yz, r1.xxyx, l(0.000000, 2.000000, 2.000000, 0.000000)
+add r0.yz, r0.yyzy, l(0.000000, -1.000000, -1.000000, 0.000000)  // viewSpaceNormal<0:Inf,1:Inf>
+mul r0.w, r1.z, r1.z
+mul r0.w, r0.w, l(2.000000)
+add r1.z, r0.w, l(-1.000000)  // viewSpaceNormal<2:NaN:Inf>
+mul r0.w, r1.z, r1.z
+mov r0.w, -r0.w
+add r0.w, r0.w, l(1.000000)  // oneMinusZz<0:NaN:Inf>
+mul r3.xy, r0.wwww, r0.yzyy
+dp2 r0.y, r0.yzyy, r0.yzyy
+mul r0.y, r0.y, r0.w
+add r0.y, r0.y, l(0.000000)
+rsq r0.y, r0.y
+mul r1.xy, r0.yyyy, r3.xyxx  // viewSpaceNormal<0:NaN:Inf,1:NaN:Inf>
+
+#line 145
+mov r1.xy, r1.xyxx  // DecodeViewSpaceNormal<0:NaN:Inf,1:NaN:Inf>
+mov r1.z, r1.z  // DecodeViewSpaceNormal<2:NaN:Inf>
+
+#line 299
+mov r1.xyz, r1.xyzx  // outViewSpaceNormal<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 303
+mov r3.y, r2.y  // outRoughness<0:Inf>
+mov r2.x, r2.x  // outSpecularMap<0:Inf>
+mov r2.z, r2.z  // outMaterialIndex<0:Inf>
+mov r2.w, r2.w  // outTranslucent<0:Inf>
+
+#line 139
+mov r1.xyz, r1.xyzx  // NGetGeometryParam_getGeometryParam_outViewSpaceNormal<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.z, r2.z  // NGetGeometryParam_getGeometryParam_outMaterialIndex<0:Inf>
+mov r2.x, r2.x  // NGetGeometryParam_getGeometryParam_outSpecularMap<0:Inf>
+mov r3.y, r3.y  // NGetGeometryParam_getGeometryParam_outRoughness<0:Inf>
+mov r2.w, r2.w  // NGetGeometryParam_getGeometryParam_outTranslucent<0:Inf>
+mov r0.x, r0.x  // NGetGeometryParam_getGeometryParam_outDepth<0:Inf>
+mov r0.x, r0.x  // NGetViewPos_getViewPos_inDepth<0:Inf>
+
+#line 143
+mov r0.yzw, v1.xxyw  // NGetViewPos_getViewPos_inClipSpaceXY<0,1,3>
+nop 
+mov r0.x, r0.x  // inDepth<0:Inf>
+mov r0.yzw, r0.yyzw  // inClipSpaceXY<0,1,3>
+
+#line 365
+nop 
+div r0.yz, r0.yyzy, r0.wwww
+mov r4.xy, -cb2[28].xyxx
+add r0.yz, r0.yyzy, r4.xxyx  // inScreenSpacePos<0:NaN:Inf,1:NaN:Inf>
+mov r0.x, r0.x  // inDepth<0:Inf>
+mov r4.xyzw, cb2[21].xyzw  // inProjectionParam<0,1,2,3>
+mul r0.yz, r0.yyzy, r4.xxyx  // viewPos<0:NaN:Inf,1:NaN:Inf>
+mov r0.w, -r4.w
+add r0.x, r0.w, r0.x
+div r4.z, r4.z, r0.x  // viewPos<2:NaN:Inf>
+
+#line 374
+mul r4.xy, r0.yzyy, r4.zzzz  // viewPos<0:NaN:Inf,1:NaN:Inf>
+mov r4.xy, r4.xyxx  // ReconstructViewPos2<0:NaN:Inf,1:NaN:Inf>
+mov r4.z, r4.z  // ReconstructViewPos2<2:NaN:Inf>
+
+#line 365
+mov r4.xyz, r4.xyzx  // outViewPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+dp3 r0.x, r4.xyzx, r4.xyzx
+rsq r0.x, r0.x
+mul r0.xyz, r0.xxxx, r4.xyzx  // outEyeDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 144
+mov r4.xyz, r4.xyzx  // NGetViewPos_getViewPos_outViewPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // NGetViewPos_getViewPos_outEyeDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 148
+mov r4.xyz, r4.xyzx  // NGetLightParam_getLightParam_inViewPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+nop 
+mov r4.xyz, r4.xyzx  // inViewPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 69
+mov r4.xyz, -r4.xyzx
+add r4.xyz, r4.xyzx, cb3[3].xyzx  // lightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.w, cb4[7].x  // innerRange<0>
+
+#line 107
+dp3 r1.w, r4.xyzx, r4.xyzx  // lightLength2<0:NaN:Inf>
+rsq r3.w, r1.w  // rLightLength<0:NaN>
+mul r4.w, r1.w, r3.w  // lightDirLength<0:NaN:Inf>
+max r0.w, r0.w, r4.w  // dist<0:Inf>
+mul r4.xyz, r3.wwww, r4.xyzx  // lightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r4.w, cb4[7].w  // maxAttenuate<0>
+mul r3.w, r3.w, r3.w
+mul r1.w, r1.w, cb3[6].w
+mov r1.w, -r1.w
+add r1.w, r1.w, r3.w  // att<0:NaN:Inf>
+
+#line 118
+min r1.w, r1.w, r4.w
+max r1.w, r1.w, l(0.000000)  // att<0:[-0f,3.40282e+038f]>
+
+#line 144
+nop 
+mov r5.xyz, cb3[7].xyzx  // penumbraParameter<0,1,2>
+mov r6.xyz, cb3[5].xyzx  // spotDir<0,1,2>
+mov r4.xyz, r4.xyzx  // targetToLightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 10
+mov r5.x, r5.x  // umbra<0>
+mov r5.y, r5.y  // inv_penumbra_range<0>
+mov r7.xyz, -r4.xyzx
+dp3 r3.w, r6.xyzx, r7.xyzx  // cosa<0:NaN:Inf>
+mov r5.z, r5.z  // e<0>
+mov r4.w, -r5.x
+add r3.w, r3.w, r4.w
+mul r3.w, r5.y, r3.w
+max r3.w, r3.w, l(0.000000)
+min r3.w, r3.w, l(1.000000)
+log r3.w, r3.w
+mul r3.w, r3.w, r5.z
+exp r5.xyz, r3.wwww  // cut<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 18
+mov r5.xyz, r5.xyzx  // CalcSpotConeCutoff<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 144
+mov r5.xyz, r5.xyzx  // cut<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 148
+mul r6.xyz, r1.wwww, cb3[4].xyzx
+mul r5.xyz, r5.xyzx, r6.xyzx
+mul r5.xyz, r5.xyzx, cb2[23].zzzz  // outLightColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 153
+nop 
+mov r1.w, cb3[4].w  // size<0>
+mov r0.w, r0.w  // dist<0:Inf>
+
+#line 558
+mul r1.w, r1.w, l(1.000000)
+div r0.w, r1.w, r0.w
+mul r0.w, r0.w, l(0.900000)
+max r0.w, r0.w, l(0.000000)
+min r5.w, r0.w, l(1.000000)  // AdjustLightSizeFromDistance<0:[0f,1f]>
+
+#line 153
+mov r5.w, r5.w  // outLightColor<3:[0f,1f]>
+
+#line 149
+mov r4.xyz, r4.xyzx  // NGetLightParam_getLightParam_outLightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r5.xyz, r5.xyzx  // NGetLightParam_getLightParam_outLightColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r5.w, r5.w  // NGetLightParam_getLightParam_outLightColor<3:[0f,1f]>
+
+#line 155
+nop 
+
+#line 163
+nop 
+mov r1.xyz, r1.xyzx  // NLightCalculate_lightCalculate_inNormal<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r4.xyz, r4.xyzx  // NLightCalculate_lightCalculate_inLightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r5.xyzw, r5.xyzw  // NLightCalculate_lightCalculate_inLightColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:[0f,1f]>
+
+#line 173
+mov r0.xyz, r0.xyzx  // NLightCalculate_lightCalculate_inEyeDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.x, r2.x  // NLightCalculate_lightCalculate_inSpecularIntensity<0:Inf>
+
+#line 178
+mov r2.z, r2.z  // NLightCalculate_lightCalculate_inMaterialIndex<0:Inf>
+mov r3.y, r3.y  // NLightCalculate_lightCalculate_inRoughness<0:Inf>
+mov r2.w, r2.w  // NLightCalculate_lightCalculate_inTranslucent<0:Inf>
+nop 
+mov r1.xyz, r1.xyzx  // inNormal<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r4.xyz, r4.xyzx  // inLightDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r5.xyzw, r5.xyzw  // inLightColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:[0f,1f]>
+mov r0.xyz, r0.xyzx  // inEyeDir<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.x, r2.x  // inSpecularIntensity<0:Inf>
+mov r2.z, r2.z  // inMaterialIndex<0:Inf>
+mov r3.y, r3.y  // inRoughness<0:Inf>
+mov r2.w, r2.w  // inTranslucent<0:Inf>
+
+#line 818
+mov r4.xyz, r4.xyzx  // L<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r1.xyz, r1.xyzx  // N<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 823
+mov r6.xyz, r4.xyzx
+dp3 r0.w, r6.xyzx, r1.xyzx  // LN<0:NaN:Inf>
+
+#line 828
+mov r0.xyz, -r0.xyzx
+dp3 r1.w, r0.xyzx, r1.xyzx
+add r1.w, r1.w, r1.w
+mov r1.w, -r1.w
+mul r7.xyz, r1.wwww, r1.xyzx
+add r7.xyz, r0.xyzx, r7.xyzx
+mov r7.xyz, -r7.xyzx  // vec<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r8.xyz, -r6.xyzx
+add r8.xyz, r7.xyzx, r8.xyzx  // diff<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+dp3 r1.w, r8.xyzx, r8.xyzx
+sqrt r1.w, r1.w  // len<0:NaN:Inf>
+div r1.w, r5.w, r1.w
+max r1.w, r1.w, l(0.000000)
+min r8.xyz, r1.wwww, l(1.000000, 1.000000, 1.000000, 0.000000)  // rate<0:[0f,1f],0:[0f,1f],0:[0f,1f]>
+mov r9.xyz, -r4.xyzx
+add r7.xyz, r7.xyzx, r9.xyzx
+mul r7.xyz, r7.xyzx, r8.xyzx
+add r4.xyz, r4.xyzx, r7.xyzx
+dp3 r1.w, r4.xyzx, r4.xyzx
+rsq r1.w, r1.w
+mul r4.xyz, r1.wwww, r4.xyzx  // Ln2<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+add r0.xyz, r0.xyzx, r4.xyzx
+dp3 r1.w, r0.xyzx, r0.xyzx
+rsq r1.w, r1.w
+mul r0.xyz, r0.xyzx, r1.wwww  // H<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+dp3 r1.x, r0.xyzx, r1.xyzx
+max r1.x, r1.x, l(0.000000)
+min r1.x, r1.x, l(1.000000)  // HN<0:[0f,1f]>
+
+#line 840
+dp3 r0.x, r0.xyzx, r6.xyzx  // LH<0:NaN:Inf>
+
+#line 844
+mov r2.z, r2.z  // materialIndex<0:Inf>
+
+#line 848
+mov r2.y, l(0.250000)
+sample_indexable(texture2d)(float,float,float,float) r4.xyzw, r2.zyzz, t10.xyzw, s9  // material1<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r2.y, l(0.750000)
+sample_indexable(texture2d)(float,float,float,float) r3.xz, r2.zyzz, t10.xywz, s9  // material0<0:Inf>
+mov r3.xz, r3.xxzx  // material0<0:Inf,3:Inf>
+mov r4.xyz, r4.xyzx  // SPECULER_COLOR<0:Inf,1:Inf,2:Inf>
+mov r4.w, r4.w  // TANSLUCENT<0:Inf>
+mov r0.y, r3.x  // F0<0:Inf>
+mov r3.z, r3.z  // ANISO_ROUGHNESS<0:Inf>
+
+#line 875
+nop 
+mov r0.x, r0.x  // EH<0:NaN:Inf>
+mov r0.y, r0.y  // F0<0:Inf>
+
+#line 548
+sample_indexable(texture2d)(float,float,float,float) r0.x, r0.xyxx, t9.xyzw, s11
+mov r0.x, r0.x  // lookupFresnel<0:Inf>
+
+#line 875
+mov r0.x, r0.x  // F_s<0:Inf>
+
+#line 878
+mul r0.y, r0.w, r0.w
+mov r0.y, -r0.y
+add r0.y, r0.y, l(1.000000)
+mul r0.y, r2.w, r0.y
+add r0.y, r0.y, r0.w
+mul r0.z, r2.w, r4.w
+max r0.y, r0.z, r0.y
+max r0.y, r0.y, l(0.000000)
+min r0.y, r0.y, l(1.000000)  // LN_trans<0:[0f,1f]>
+
+#line 898
+mul r1.yzw, r2.xxxx, r4.xxyz  // K_s<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 917
+nop 
+mov r1.x, r1.x  // HN<0:[0f,1f]>
+mov r3.y, r3.y  // roughness<0:Inf>
+mov r3.z, r3.z  // anisoRoughness<0:Inf>
+
+#line 567
+max r0.z, r1.x, l(0.000000)
+min r3.x, r0.z, l(1.000000)  // uv<0:[0f,1f]>
+mov r3.y, r3.y  // uv<1:Inf>
+mov r3.z, r3.z  // uv<2:Inf>
+mul r2.xyz, r3.xyzx, r3.xyzx  // uv<0:[0f,1f],1:NaN:Inf,2:NaN:Inf>
+
+#line 575
+mul r2.xyz, r2.xyzx, l(0.984375, 0.937500, 0.937500, 0.000000)
+add r2.xyz, r2.xyzx, l(0.007813, 0.031250, 0.031250, 0.000000)  // uv<0:[0.0078125f,0.992188f],1:NaN:Inf,2:NaN:Inf>
+
+#line 602
+sample_indexable(texture3d)(float,float,float,float) r2.xy, r2.xyzx, t8.xyzw, s11
+mov r2.xy, r2.xyxx  // value<0:Inf,1:Inf>
+mul r2.xy, r2.xyxx, r2.xyxx  // value<0:NaN:Inf,1:NaN:Inf>
+div r0.z, r2.x, r2.y  // lookupSpecularPower<0:NaN:Inf>
+
+#line 917
+mul r0.x, r0.z, r0.x
+nop 
+mov r0.w, r0.w  // LN<0:NaN:Inf>
+
+#line 494
+mul r0.z, r0.w, l(4.000000)
+max r0.z, r0.z, l(0.000000)
+min r0.z, r0.z, l(1.000000)  // specularErrorMask<0:[0f,1f]>
+
+#line 917
+mul r0.x, r0.z, r0.x  // specularPower<0:NaN:Inf>
+
+#line 921
+mul r1.xyz, r5.xyzx, r1.yzwy
+mul r0.xzw, r0.xxxx, r1.xxyz  // specular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 930
+mul r0.y, r0.y, l(1.000000)
+mul r0.y, r0.y, l(1.000000)
+mul r1.xyz, r5.xyzx, r0.yyyy  // diffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 933
+mov r0.xzw, r0.xxzw  // outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r1.xyz, r1.xyzx  // outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 182
+mov r1.xyz, r1.xyzx  // NLightCalculate_lightCalculate_outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xzw, r0.xxzw  // NLightCalculate_lightCalculate_outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 161
+nop 
+
+#line 183
+mov r1.xyz, r1.xyzx  // NLightComposit_composit_inDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xzw, r0.xxzw  // NLightComposit_composit_inSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 188
+nop 
+mov r1.xyz, r1.xyzx  // inDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xzw, r0.xxzw  // inSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 212
+mul r1.xyz, r1.xyzx, l(1.000000, 1.000000, 1.000000, 0.000000)
+mov r0.y, cb3[8].y
+mul r1.xyz, r0.yyyy, r1.xyzx
+mul r1.xyz, r1.xyzx, l(1.000000, 1.000000, 1.000000, 0.000000)  // outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mul r0.xyz, r0.xzwx, l(1.000000, 1.000000, 1.000000, 0.000000)
+mov r0.w, cb3[8].x
+mul r0.xyz, r0.wwww, r0.xyzx
+mul r0.xyz, r0.xyzx, l(1.000000, 1.000000, 1.000000, 0.000000)  // outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 188
+mov r1.xyz, r1.xyzx  // NLightComposit_composit_outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // NLightComposit_composit_outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r1.xyz, r1.xyzx  // NEnvSpecularComposit_envComposit_inDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // NEnvSpecularComposit_envComposit_inSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 195
+nop 
+mov r1.xyz, r1.xyzx  // inDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // inSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 1188
+mov r1.xyz, r1.xyzx  // outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 195
+mov r1.xyz, r1.xyzx  // NEnvSpecularComposit_envComposit_outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r0.xyz, r0.xyzx  // NEnvSpecularComposit_envComposit_outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 209
+mov r0.xyz, r0.xyzx  // NWriteLightSpecularAccumulationWithoutExposure_writeLightSpecularAccumulation_inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+nop 
+mov r0.xyz, r0.xyzx  // inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 411
+nop 
+mov r0.xyz, r0.xyzx  // color<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 269
+mov r0.w, l(1.000000)  // EncodeAliasHDRColor<3: 1f>
+mov r0.xyz, r0.xyzx  // EncodeAliasHDRColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 411
+mov r0.xyzw, r0.xyzw  // outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 210
+mov r0.xyzw, r0.xyzw  // NWriteLightSpecularAccumulationWithoutExposure_writeLightSpecularAccumulation_outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 203
+mov r1.xyz, r1.xyzx  // NWriteLightDiffuseAccumulationWithoutExposure_writeLightDiffuseAccumulation_inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+nop 
+mov r1.xyz, r1.xyzx  // inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 237
+nop 
+mov r1.xyz, r1.xyzx  // color<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 269
+mov r1.w, l(1.000000)  // EncodeAliasHDRColor<3: 1f>
+mov r1.xyz, r1.xyzx  // EncodeAliasHDRColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 237
+mov r1.xyzw, r1.xyzw  // outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 204
+mov r1.xyzw, r1.xyzw  // NWriteLightDiffuseAccumulationWithoutExposure_writeLightDiffuseAccumulation_outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+mov o0.xyzw, r1.xyzw  // outDiffuse<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 211
+mov o1.xyzw, r0.xyzw  // outSpecular<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 92
+ret 
+// Approximately 273 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
