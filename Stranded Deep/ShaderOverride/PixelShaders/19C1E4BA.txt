@@ -86,10 +86,19 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanTopSide_Transparent/fp/19C1E4BA.txt
+mov r13.xyw, v4
+texldl r12, c220.z, s15
+add r12.w, r13.w, -r12.y
+mul r12.w, r12.w, r12.x
+mul r12.w, r12.w, c220.w
+add r13.x, r13.x, r12.w
+
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Ceto_OceanTopSide_Transparent/fp/19C1E4BA.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanTopSide_Transparent/fp/19C1E4BA.txt
 mov r30, c8
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -232,8 +241,8 @@ add r30.xyz, r30, -r29
     mad_pp r1.yzw, r4.xxyz, -r0.y, r2.xxyz
     cmp_pp r2.xyz, r0.x, r2, r1.yzww
     mul r0.xy, r2.xzzw, c19.x
-    rcp r0.z, v4.w
-    mad_pp r4.xy, v4, r0.z, r0
+    rcp r0.z, r13.w
+    mad_pp r4.xy, r13, r0.z, r0
     mov r4.zw, c33.y
     texldl_pp r4, r4, s0
     mul_pp r0.xyz, r4, c18

@@ -97,10 +97,28 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanUnderSide_Transparent/fp/E44FF64B.txt
+mov r13.xyw, v5
+texldl r11, c220.z, s15
+add r11.w, r13.w, -r11.y
+mul r11.w, r11.w, r11.x
+mul r11.w, r11.w, c220.w
+add r13.x, r13.x, r11.w
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanUnderSide_Transparent/fp/E44FF64B.txt
+mov r12.xyw, v4
+texldl r11, c220.z, s15
+add r11.w, r12.w, -r11.y
+mul r11.w, r11.w, r11.x
+mul r11.w, r11.w, c220.w
+add r12.x, r12.x, r11.w
+
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Ceto_OceanUnderSide_Transparent/fp/E44FF64B.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanUnderSide_Transparent/fp/E44FF64B.txt
 mov r30, c8
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -225,15 +243,15 @@ add r30.xyz, r30, -r29
     mul r1.xy, r5.xzzw, c26.x
     mul_pp r1.xy, r1.w, r1
     mul_pp r1.xy, r1, c37
-    rcp r1.z, v4.w
-    mad_sat r1.zw, v4.xyxy, r1.z, r1.xyxy
+    rcp r1.z, r12.w
+    mad_sat r1.zw, r12.xyxy, r1.z, r1.xyxy
     texld r10, r1.zwzw, s6
     mad r1.z, c9.x, r10.x, c9.y
     rcp r1.z, r1.z
     add r1.z, -r1.z, v3.w
     cmp_pp r1.xy, r1.z, c37.y, r1
-    rcp r1.z, v5.w
-    mad_sat r1.xy, v5, r1.z, r1
+    rcp r1.z, r13.w
+    mad_sat r1.xy, r13, r1.z, r1
     texld r1, r1, s7
     mul_pp r1.xyz, r1, c25.x
     mad r1.w, r0_abs.y, r0_abs.y, c34.w

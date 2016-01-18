@@ -104,10 +104,28 @@
 def c220, 0, 1, 0.0625, 0.5
 dcl_2d s15
 
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanTopSide_Transparent/fp/01531FA0.txt
+mov r17.xyw, v5
+texldl r15, c220.z, s15
+add r15.w, r17.w, -r15.y
+mul r15.w, r15.w, r15.x
+mul r15.w, r15.w, c220.w
+add r17.x, r17.x, r15.w
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanTopSide_Transparent/fp/01531FA0.txt
+mov r16.xyw, v4
+texldl r15, c220.z, s15
+add r15.w, r16.w, -r15.y
+mul r15.w, r15.w, r15.x
+mul r15.w, r15.w, c220.w
+add r16.x, r16.x, r15.w
+
 texldl r31, c220.z, s15
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Ceto_OceanTopSide_Transparent/fp/01531FA0.txt
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --adjust-input=texcoord4 --adjust-input=texcoord5 --adjust-multiply=0.5 --ignore-other-errors --force Ceto_OceanTopSide_Transparent/fp/01531FA0.txt
 mov r30, c12
 mov r29, c220.x
 mul r29.x, r31.x, -r31.y
@@ -132,8 +150,8 @@ add r30.xyz, r30, -r29
     mov_sat r1.x, r1.x
     add r1, -r1.x, c52.z
     texkill r1
-    rcp r1.x, v4.w
-    mul r1.yz, r1.x, v4.xxyw
+    rcp r1.x, r16.w
+    mul r1.yz, r1.x, r16.xxyw
     texld r2, r1.yzzw, s6
     mad r3.xy, r1.yzzw, c50.y, c50.z
     mad r3.z, r2.x, c50.y, c50.z
@@ -246,13 +264,13 @@ add r30.xyz, r30, -r29
     mul r5.xy, r11.xzzw, c36.x
     mul_pp r5.xy, r1.y, r5
     mul_pp r5.xy, r5, c52
-    mad_sat r7.zw, v4.xyxy, r1.x, r5.xyxy
+    mad_sat r7.zw, r16.xyxy, r1.x, r5.xyxy
     texld r12, r7.zwzw, s6
     mad r0.z, c14.x, r12.x, c14.y
     rcp r0.z, r0.z
     add r0.z, -r0.z, v3.w
     cmp_pp r5.xy, r0.z, c52.y, r5
-    mad_sat r1.xy, v4, r1.x, r5
+    mad_sat r1.xy, r16, r1.x, r5
     mad r12.xy, r1, c50.y, c50.z
     texld r13, r1, s6
     mad r12.z, r13.x, c50.y, c50.z
@@ -297,8 +315,8 @@ add r30.xyz, r30, -r29
     exp r12.x, r13.x
     exp r12.y, r13.y
     exp r12.z, r13.z
-    rcp r1.x, v5.w
-    mad_sat r1.xy, v5, r1.x, r5
+    rcp r1.x, r17.w
+    mad_sat r1.xy, r17, r1.x, r5
     texld r13, r1, s7
     mul_pp r13.xyz, r13, c35.x
     mul r13.xyz, r13, c42
