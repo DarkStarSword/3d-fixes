@@ -7,23 +7,42 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
+def unity_header(name, type):
+    if type == 'constant':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[' + name + '\]$')
+        unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<constant>[0-9]+)\s+1$')
+    if type == 'matrix':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[' + name + '\](?:\s[34]$)?')
+        unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<matrix>[0-9]+)\s+3$')
+    if type == 'texture':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler2>[0-9]+)$')
+        unity53_header = re.compile(r'//\s+' + name + '\s+s(?P<sampler>[0-9]+)\s+1$')
+    return unity_header, unity53_header
+
+
 # Regular expressions to match various shader headers:
-unity_Ceto_Reflections                = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[Ceto_Reflections\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraDepthTexture              = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraToWorld                   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
-unity_FrustumCornersWS                = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
-unity_glstate_matrix_mvp_pattern      = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
-unity_Object2World                    = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
-unity_WorldSpaceCameraPos             = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
-unity_ZBufferParams                   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
+unity_Ceto_Reflections                = unity_header('Ceto_Reflections', 'texture')
+unity_CameraDepthTexture              = unity_header('_CameraDepthTexture', 'texture')
+unity_CameraToWorld                   = unity_header('_CameraToWorld', 'matrix')
+unity_FrustumCornersWS                = unity_header('_FrustumCornersWS', 'matrix')
+unity_glstate_matrix_mvp_pattern      = unity_header('glstate_matrix_mvp', 'matrix')
+unity_Object2World                    = unity_header('_Object2World', 'matrix')
+unity_WorldSpaceCameraPos             = unity_header('_WorldSpaceCameraPos', 'constant')
+unity_ZBufferParams                   = unity_header('_ZBufferParams', 'constant')
+
 unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<sampler>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 
+# WARNING: THESE REQUIRE THE UNITY HEADERS ATTACHED TO THE SHADER (not a
+# problem in 5.2 or older because everything requires that, but starting with
+# 5.3 the shaders are no longer stripped and we might be running on a shader
+# without Unity headers attached)
 unity_shader_directional_lighting     = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Shader\s".*PrePassCollectShadows.*"\s{$')
 unity_tag_shadow_caster               = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"LIGHTMODE"="SHADOWCASTER".*"\s}$')
+unity_headers_attached                = re.compile(r"// Headers extracted with DarkStarSword's extract_unity_shaders.py")
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
@@ -1425,15 +1444,19 @@ def auto_fix_vertex_halo(tree, args):
 
     tree.autofixed = True
 
-def find_header(tree, comment_pattern):
+def find_header(tree, comment_patterns):
     for line in range(tree.shader_start):
         for token in tree[line]:
             if not isinstance(token, CPPStyleComment):
                 continue
 
-            match = comment_pattern.match(token)
-            if match is not None:
-                return match
+            if not isinstance(comment_patterns, (tuple, list)):
+                comment_patterns = (comment_patterns, )
+
+            for comment_pattern in comment_patterns:
+                match = comment_pattern.match(token)
+                if match is not None:
+                    return match
     raise KeyError()
 
 def disable_unreal_correction(tree, args, redundant_check):
@@ -1843,23 +1866,30 @@ def fix_unity_lighting_ps_world(tree, args):
 
     # XXX: Directional lighting shaders seem to have a bogus _ZBufferParams!
     try:
-        match = find_header(tree, unity_shader_directional_lighting)
+        match = find_header(tree, unity_headers_attached)
     except KeyError:
-        try:
-            match = find_header(tree, unity_ZBufferParams)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _ZBufferParams')
-            return
-        _ZBufferParams = Register('c' + match.group('constant'))
-
-        try:
-            match = find_header(tree, unity_CameraDepthTexture)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _CameraDepthTexture')
-            return
-        _CameraDepthTexture = Register('s' + match.group('sampler'))
+        debug('Skipping possible depth buffer source - shader does not have Unity headers attached so unable to check what kind of lighting shader it is')
+        has_unity_headers = False
     else:
-        _CameraDepthTexture = _ZBufferParams = None
+        has_unity_headers = True
+        try:
+            match = find_header(tree, unity_shader_directional_lighting)
+        except KeyError:
+            try:
+                match = find_header(tree, unity_ZBufferParams)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _ZBufferParams')
+                return
+            _ZBufferParams = Register('c' + match.group('constant'))
+
+            try:
+                match = find_header(tree, unity_CameraDepthTexture)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+                return
+            _CameraDepthTexture = Register('s' + match.group('sampler'))
+        else:
+            _CameraDepthTexture = _ZBufferParams = None
 
     # Find _CameraToWorld usage - adjustment must be below this point, and this
     # gives us the register with X that needs to be adjusted:
@@ -1969,12 +1999,15 @@ def fix_unity_lighting_ps_world(tree, args):
     tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
     tree.ini.append(('UseMatrix1', 'true', None))
     tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
-    if _CameraDepthTexture is not None:
-        tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
-            'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
-        tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+    if has_unity_headers:
+        if _CameraDepthTexture is not None:
+            tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
+                'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
+            tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+        else:
+            tree.ini.append((None, None, 'Directional lighting shader, _ZBufferParams may be bogus'))
     else:
-        tree.ini.append((None, None, 'Directional lighting shader, _ZBufferParams may be bogus'))
+            tree.ini.append((None, None, 'No Unity headers attached, skipping possible depth buffer source'))
 
     tree.autofixed = True
 
@@ -2366,21 +2399,27 @@ def fix_unity_reflection(tree, args):
     # will have used _WorldSpaceCameraPos and we won't have got this far.
     unity_glstate_matrix_mvp = _Object2World0 = None
     try:
-        match = find_header(tree, unity_tag_shadow_caster)
+        match = find_header(tree, unity_headers_attached)
     except KeyError:
-        try:
-            match = find_header(tree, unity_glstate_matrix_mvp_pattern)
-            unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
-            match = find_header(tree, unity_Object2World)
-            _Object2World0 = Register('c' + match.group('matrix'))
-            tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
-                'Candidate to obtain MVP and _Object2World matrices:'))
-            tree.ini.append(('InverseMatrix', 'true', None))
-            tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
-        except KeyError:
-            pass
+        debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
+        tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
     else:
-        tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+        try:
+            match = find_header(tree, unity_tag_shadow_caster)
+        except KeyError:
+            try:
+                match = find_header(tree, unity_glstate_matrix_mvp_pattern)
+                unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
+                match = find_header(tree, unity_Object2World)
+                _Object2World0 = Register('c' + match.group('matrix'))
+                tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
+                    'Candidate to obtain MVP and _Object2World matrices:'))
+                tree.ini.append(('InverseMatrix', 'true', None))
+                tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
+            except KeyError:
+                pass
+        else:
+            tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
 
     tree.autofixed = True
 
