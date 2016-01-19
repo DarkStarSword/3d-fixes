@@ -8,44 +8,46 @@ these fixes.
 [1]: http://helixmod.blogspot.com.au/
 
 ### Complete Fixes ###
-- Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
-- The Book of Unwritten Tales 2 (Fixes shadows, halos, etc.)
-- Montague's Mount (Fixes halos, shadows, etc.)
-- Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
-- World of Diving (Fixed halos, shadows, etc.)
-- The Forest (Fixed halos, shadows)
-- Legends of Aethereus (Fixed halos, shadows, skybox, etc.)
-- DreadOut (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
-- Eleusis (Fixed shadows, light shafts, etc.)
-- Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
-- Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
-- Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
-- Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
-- Pineview Drive (Halos, shadows, sun shafts, etc.)
-- The Long Dark (Halos, shadows, etc.)
-- Viscera Cleanup Detail (shadows, missing UI, etc.)
-- Dead or Alive 5: Last Round (water, halos, lens flare)
-- The Last Tinker: City of Colors (new technique to fix shadows)
-- Euro Truck Simulator 2 (skybox, god rays, reflections)
-- Lichdom Battlemage (first every CryEngine 3 fix)
-- Mad Max (Collaboration with DHR. Fixes shadows, bloom, decals, reflections, etc)
+- [Betrayer](Betrayer) (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
+- [The Book of Unwritten Tales 2](BoUT2) (Fixes shadows, halos, etc.)
+- [Montague's Mount](Montague's Mount) (Fixes halos, shadows, etc.)
+- [Dreamfall Chapters](Dreamfall Chapters) (First ever Unity FOV correct shadow fix)
+- [World of Diving](World of Diving) (Fixed halos, shadows, etc.)
+- [The Forest](The Forest) (Fixed halos, shadows)
+- [Legends of Aethereus](LegendsOfAethereus) (Fixed halos, shadows, skybox, etc.)
+- [DreadOut](DreadOut) (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
+- [Eleusis](Eleusis) (Fixed shadows, light shafts, etc.)
+- [Stranded Deep](Stranded Deep) (Fixed water, light shafts, yet another shadow pattern)
+- [Life Is Strange](Life is Strange) (Fixed shadows, reflections, light shafts, bloom, etc.)
+- [Miasmata](Miasmata) (Reflections, light shafts, stereo crosshair, skybox, etc.)
+- [Oddworld: New 'n' Tasty](Oddworld New n Tasty) (Shadows, halos, clipping, ripple distortion, etc.)
+- [Pineview Drive](Pineview Drive) (Halos, shadows, sun shafts, etc.)
+- [The Long Dark](TheLongDark) (Halos, shadows, etc.)
+- [Viscera Cleanup Detail](Viscera) (shadows, missing UI, etc.)
+- [Dead or Alive 5: Last Round](Dead or Alive 5 Last Round) (water, halos, lens flare)
+- [The Last Tinker: City of Colors](The Last Tinker City of Colors) (new technique to fix shadows)
+- [Euro Truck Simulator 2](Euro Truck Simulator 2) (skybox, god rays, reflections)
+- [Lichdom Battlemage](Lichdom Battlemage) (first every CryEngine 3 fix)
+- [Mad Max](Mad Max) (Collaboration with DHR. Fixes shadows, bloom, decals, reflections, etc)
 
 Several of my fixes can be found in the 3DMigoto repository instead:
-- [Far Cry 4][FC4] (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
-- [Witcher 3][W3] (with mike_ar69 & others - Highlight: physical lighting compute shaders)
-
-[FC4]: https://github.com/bo3b/3Dmigoto/tree/master/FC4
-[W3]: https://github.com/bo3b/3Dmigoto/tree/master/Witcher3
-[BAK]: https://github.com/bo3b/3Dmigoto/tree/master/Batman
+- [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
+- [Witcher 3](https://github.com/bo3b/3Dmigoto/tree/master/Witcher3) (with mike_ar69 & others - Highlight: physical lighting compute shaders)
 
 ### Works In Progress ###
-- Metal Gear Solid V: The Phantom Pain (WIP)
-- Submerged (UE4 3DMigoto approach WIP, fixes shadows)
-- [Batman: Arkham Knight][BAK] (with mike_ar64 - fixes tile lighting compute shaders and halos)
+- [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) (WIP)
+- [Submerged](Submerged) (UE4 3DMigoto approach WIP, fixes shadows)
+- [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar64 - fixes tile lighting compute shaders and halos)
 
 ### Minor Improvements ###
-- Far Cry 2 (Adds auto-convergence while holding RMB)
-- Infinifactory (fixes shadows from bo3b's fix)
+- [Far Cry 2](Far Cry 2) (Adds auto-convergence while holding RMB)
+- [Infinifactory](Infinifactory) (fixes shadows from bo3b's fix)
+
+### Other Branches ###
+There's a couple of fixes that aren't in the master branch for various reasons:
+- [Crysis 3](https://github.com/DarkStarSword/3d-fixes/tree/crysis3/Crysis 3) - Assisting DHR with a few lights
+- [Glare](https://github.com/DarkStarSword/3d-fixes/tree/glare/Glare) - Was unable to resolve clipping issue on lights at the time (I should revisit this - I believe I now know how to solve this)
+- [Demonicon](https://github.com/DarkStarSword/3d-fixes/tree/demonicon/demonicon) - Quick fix to make the game playable (lights are still broken)
 
 ### Templates ###
 - Unity 4
