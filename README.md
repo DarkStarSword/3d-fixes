@@ -93,7 +93,8 @@ some of the stereo attributes that I've identified in each profile.
 ### shadertool.py ###
 This is a python tool I've started working on to parse shaders and automate
 some of the process of hacking them. It's very early and the code is not very
-pretty. At the moment it can:
+pretty. At the moment it can (this list is out of date, run with --help for all
+current features):
 - Install shaders to the ShaderOverride directory, taking care of naming the
   file correctly.
 - Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0, optionally adding instructions
@@ -119,6 +120,14 @@ pretty. At the moment it can:
   using a 2D DNEReflectionTexture, used in Life Is Strange).
 - Automatically fix shadows in Unreal Engine games.
 - Apply the tedious part of a Unity shadow fix (but not the difficult part!)
+
+### hlsltool.py ###
+This is similar to shadertool.py, but works on HLSL shaders instead. It's
+feature set is more limited than shadertool:
+- Install shaders to the ShaderFixes directory.
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia

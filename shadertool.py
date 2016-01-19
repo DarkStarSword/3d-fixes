@@ -7,6 +7,8 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
+tool_name = os.path.basename(sys.argv[0])
+
 def unity_header(name, type):
     if type == 'constant':
         unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[' + name + '\]$')
@@ -1041,7 +1043,7 @@ def vanity_comment(args, tree, what):
         vanity_args = list(filter(lambda x: x not in file_set and '*' not in x, sys.argv[1:]))
 
     return [
-        "%s DarkStarSword's shadertool.py:" % what,
+        "%s DarkStarSword's %s:" % (what, tool_name),
         '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(vanity_args + [tree.filename])),
     ]
 
