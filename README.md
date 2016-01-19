@@ -31,17 +31,17 @@ these fixes.
 - Mad Max (Collaboration with DHR. Fixes shadows, bloom, decals, reflections, etc)
 
 Several of my fixes can be found in the 3DMigoto repository instead:
-- [Far Cry 4] (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
-- [Witcher 3] (with mike_ar69 & others - Highlight: physical lighting compute shaders)
+- [Far Cry 4][FC4] (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
+- [Witcher 3][W3] (with mike_ar69 & others - Highlight: physical lighting compute shaders)
 
-[Far Cry 4]: https://github.com/bo3b/3Dmigoto/tree/master/FC4
-[Witcher 3]: https://github.com/bo3b/3Dmigoto/tree/master/Witcher3
-[Batman: Arkham Knight]: https://github.com/bo3b/3Dmigoto/tree/master/Batman
+[FC4]: https://github.com/bo3b/3Dmigoto/tree/master/FC4
+[W3]: https://github.com/bo3b/3Dmigoto/tree/master/Witcher3
+[BAK]: https://github.com/bo3b/3Dmigoto/tree/master/Batman
 
 ### Works In Progress ###
 - Metal Gear Solid V: The Phantom Pain (WIP)
 - Submerged (UE4 3DMigoto approach WIP, fixes shadows)
-- [Batman: Arkham Knight] (with mike_ar64 - fixes tile lighting compute shaders and halos)
+- [Batman: Arkham Knight][BAK] (with mike_ar64 - fixes tile lighting compute shaders and halos)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
