@@ -22,13 +22,36 @@ these fixes.
 - Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
 - Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
 - Pineview Drive (Halos, shadows, sun shafts, etc.)
+- The Long Dark (Halos, shadows, etc.)
 - Viscera Cleanup Detail (shadows, missing UI, etc.)
 - Dead or Alive 5: Last Round (water, halos, lens flare)
 - The Last Tinker: City of Colors (new technique to fix shadows)
 - Euro Truck Simulator 2 (skybox, god rays, reflections)
+- Lichdom Battlemage (first every CryEngine 3 fix)
+- Mad Max (Collaboration with DHR. Fixes shadows, bloom, decals, reflections, etc)
+
+Several of my fixes can be found in the 3DMigoto repository instead:
+- [Far Cry 4] (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
+- [Witcher 3] (with mike_ar69 & others - Highlight: physical lighting compute shaders)
+
+[Far Cry 4]: https://github.com/bo3b/3Dmigoto/tree/master/FC4
+[Witcher 3]: https://github.com/bo3b/3Dmigoto/tree/master/Witcher3
+[Batman: Arkham Knight]: https://github.com/bo3b/3Dmigoto/tree/master/Batman
+
+### Works In Progress ###
+- Metal Gear Solid V: The Phantom Pain (WIP)
+- Submerged (UE4 3DMigoto approach WIP, fixes shadows)
+- [Batman: Arkham Knight] (with mike_ar64 - fixes tile lighting compute shaders and halos)
 
 ### Minor Improvements ###
 - Far Cry 2 (Adds auto-convergence while holding RMB)
+- Infinifactory (fixes shadows from bo3b's fix)
+
+### Templates ###
+- Unity 4
+- Unity 5 DX9 Old view-space style fix
+- Unity 5 DX9 New world-space style fix
+- Unity 5 DX11 Old view-space style fix
 
 Misc
 ====
@@ -110,10 +133,16 @@ the different variants into separate files, with headers intact.
 
 ### ddsinfo.py ###
 Decodes the header on a DDS file and possibly converts it to PNG (conversion
-only supported for some DDS formats). Use GetSampler1FromReg,
-GetSampler2FromReg or GetSampler3FromReg in a shader section of DX9Settings.ini
-to extract a texture passed to a shader, press F12 in game to dump it out as
-Tex1.dds, Tex2.dds or Tex3.dds, then use this tool to decode it's header.
+only supported for some DDS formats, extending support as I come across new
+formats, but I kind of want to rewrite the format support to be more
+declarative).
+
+For use with Helix Mod: Use GetSampler1FromReg, GetSampler2FromReg or
+GetSampler3FromReg in a shader section of DX9Settings.ini to extract a texture
+passed to a shader, press F12 in game to dump it out as Tex1.dds, Tex2.dds or
+Tex3.dds, then use this tool to decode it's header.
+
+For use with 3DMigoto: Use on .dds files dumped during frame analysis.
 
 ### interlaced2jps.py ###
 Converts an interlaced image into a jps file
@@ -151,3 +180,32 @@ both integers and floats.
 
 ### 3dvisionlive_download_button.user.js ###
 User script to add a download button to images on 3D Vision Live.
+
+### cleanup_unity_shaders.py ###
+Removes shaders from a Unity game in this git repository that are no longer
+found amongst the extracted shaders to stop a fix growing endlessly. Use only
+for games that people should not be running old versions of (like early
+access). Old shaders will still be in the git history if we need them.
+
+### compare_shader_bins.py ###
+This was a quick 'n' dirty means to repair the damage caused to a DX11 assembly
+shader by the microsoft disassembler by comparing the original and otherwise
+unmodified reassembled shader binaries to look for differences then patch
+floating point values in the assembly text to compensate. In some cases this
+may patch the wrong floating point value, but has worked remarkably well in
+practice. This script is no longer required as 3DMigoto will now auto repair
+assembly shaders when they are dumped.
+
+### extract_unreal_shaders.py ###
+Early work in progress, probably only works with Arkham Knight for now.
+Extracts shader names from the UE3 cooked shader cache. Eventually want to make
+this extract all shaders from UE3 + UE4 games to facilitate bulk fixing in
+games that only dump shaders on demand and recover some info about shaders with
+missing headers.
+
+### __profiles__ ###
+A couple of scripts to help catalogue the driver profiles and normalise the
+profile format to make it easier to compare changes between driver versions.
+
+### shaderutil.py ###
+Utility library used by shadertool and the shader database.
