@@ -12,7 +12,7 @@ these fixes.
 - [The Book of Unwritten Tales 2](BoUT2) (Fixes shadows, halos, etc.)
 - [Montague's Mount](Montague's Mount) (Fixes halos, shadows, etc.)
 - [Dreamfall Chapters](Dreamfall Chapters) (First ever Unity FOV correct shadow fix)
-- [World of Diving](World of Diving) (Fixed halos, shadows, etc.)
+- World of Diving [DX9](World of Diving (DX9)) & [DX11](World of Diving (DX11)) (Fixed halos, shadows, etc.)
 - [The Forest](The Forest) (Fixed halos, shadows)
 - [Legends of Aethereus](LegendsOfAethereus) (Fixed halos, shadows, skybox, etc.)
 - [DreadOut](DreadOut) (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
