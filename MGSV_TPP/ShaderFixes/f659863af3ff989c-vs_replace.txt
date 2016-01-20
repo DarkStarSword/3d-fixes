@@ -1,0 +1,505 @@
+// ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:49 2016
+
+cbuffer cVSScene : register(b2)
+{
+
+  struct
+  {
+    float4x4 m_projectionView;
+    float4x4 m_projection;
+    float4x4 m_view;
+    float4x4 m_shadowProjection;
+    float4x4 m_shadowProjection2;
+    float4 m_eyepos;
+    float4 m_projectionParam;
+    float4 m_viewportSize;
+    float4 m_exposure;
+    float4 m_fogParam[3];
+    float4 m_fogColor;
+    float4 m_cameraCenterOffset;
+    float4 m_shadowMapResolutions;
+  } g_vsScene : packoffset(c0);
+
+}
+
+cbuffer cVSObject : register(b5)
+{
+
+  struct
+  {
+    float4x4 m_viewWorld;
+    float4x4 m_world;
+    float4 m_useWeightCount;
+    float4 m_localParam[4];
+  } g_vsObject : packoffset(c0);
+
+}
+
+cbuffer cVSLight : register(b3)
+{
+
+  struct
+  {
+    float4 m_lightParams[11];
+  } g_vsLight : packoffset(c0);
+
+}
+
+cbuffer VSBones : register(b6)
+{
+
+  struct
+  {
+    float4x3 m_boneMatrices[32];
+  } g_vsBone : packoffset(c0);
+
+
+  struct
+  {
+    float4x3 m_boneMatrices[32];
+  } g_vsPrevBone : packoffset(c96);
+
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : NORMAL0,
+  float4 v2 : COLOR0,
+  float4 v3 : TANGENT0,
+  uint4 v4 : BLENDINDICES0,
+  float4 v5 : BLENDWEIGHT0,
+  float2 v6 : TEXCOORD0,
+  out float4 o0 : COLOR0,
+  out float2 o1 : TEXCOORD0,
+  out float p1 : TEXCOORD1,
+  out float4 o2 : SV_Position0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = v0.xyz;
+  r1.xyzw = v5.xyzw;
+  r0.xyz = r0.xyz;
+  r1.xyzw = r1.xyzw;
+  r2.x = cmp(g_vsObject.m_useWeightCount.x != 0.000000);
+  if (r2.x != 0) {
+    r1.xyzw = r1.xyzw;
+    r2.x = (int)v4.x * 3;
+    r3.xyzw = g_vsBone.m_boneMatrices[v4.x]._m00_m10_m20_m30 * r1.xxxx;
+    r4.xyzw = g_vsBone.m_boneMatrices[v4.x]._m01_m11_m21_m31 * r1.xxxx;
+    r2.xyzw = g_vsBone.m_boneMatrices[v4.x]._m02_m12_m22_m32 * r1.xxxx;
+    r1.x = (int)v4.y * 3;
+    r5.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r1.yyyy;
+    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r1.yyyy;
+    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r1.yyyy;
+    r3.xyzw = r5.xyzw + r3.xyzw;
+    r4.xyzw = r6.xyzw + r4.xyzw;
+    r2.xyzw = r7.xyzw + r2.xyzw;
+    r1.x = (int)v4.z * 3;
+    r5.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r1.zzzz;
+    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r1.zzzz;
+    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r1.zzzz;
+    r3.xyzw = r5.xyzw + r3.xyzw;
+    r4.xyzw = r6.xyzw + r4.xyzw;
+    r2.xyzw = r7.xyzw + r2.xyzw;
+    r1.x = (int)v4.w * 3;
+    r5.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r1.wwww;
+    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r1.wwww;
+    r1.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r1.wwww;
+    r3.xyzw = r5.xyzw + r3.xyzw;
+    r4.xyzw = r6.xyzw + r4.xyzw;
+    r1.xyzw = r2.xyzw + r1.xyzw;
+    r0.x = dot(v0.xyzw, r3.xyzw);
+    r0.y = dot(v0.xyzw, r4.xyzw);
+    r0.z = dot(v0.xyzw, r1.xyzw);
+    r0.xyz = r0.xyz;
+    r0.xyz = r0.xyz;
+  }
+  r0.w = v0.w;
+  r1.y = dot(r0.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
+  r1.z = dot(r0.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
+  r1.w = dot(r0.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
+  r1.x = dot(r0.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
+  r1.xyzw = r1.xyzw;
+  r0.x = g_vsLight.m_lightParams[7].x;
+  r0.y = g_vsLight.m_lightParams[7].z;
+  r0.z = g_vsLight.m_lightParams[7].w;
+  r0.w = -r1.y;
+  r2.x = g_vsLight.m_lightParams[3].x + r0.w;
+  r0.w = -g_vsLight.m_lightParams[3].y;
+  r2.y = r1.z + r0.w;
+  r0.w = -g_vsLight.m_lightParams[3].z;
+  r2.z = r1.w + r0.w;
+  r1.x = r1.x;
+  r1.xyz = r2.xyz / r1.xxx;
+  r1.w = r1.z * r0.z;
+  r0.x = -r0.x;
+  r0.x = r1.w + r0.x;
+  r0.x = r0.x * r0.y;
+  r0.x = 0.5 + r0.x;
+  r0.z = dot(r1.xyw, r1.xyw);
+  r0.z = sqrt(r0.z);
+  r1.xyz = r1.xyw / r0.zzz;
+  r0.w = 1 + r1.z;
+  r1.xy = r1.xy / r0.ww;
+  r0.w = g_vsScene.m_shadowMapResolutions.z / 2;
+  r1.z = g_vsScene.m_shadowMapResolutions.w;
+  r1.w = -2 + r0.w;
+  r2.x = r1.w / r0.w;
+  r0.w = -2 + r1.z;
+  r2.y = r0.w / r1.z;
+  r1.xy = r2.xy * r1.xy;
+  r0.y = r0.z * r0.y;
+  r0.y = -r0.y;
+  r1.z = 1 + r0.y;
+  r1.xy = r1.xy;
+  r1.z = r1.z;
+  r1.w = 1;
+  r0.x = r0.x;
+  r1.xyzw = r1.xyzw;
+  r0.x = r0.x;
+  r0.yzw = v1.xyz;
+  r0.x = r0.x;
+  r0.yzw = r0.yzw;
+  r0.x = r0.x;
+  r0.yzw = float3(0.5,0.5,0.5) * r0.yzw;
+  r0.yzw = float3(0.5,0.5,0.5) + r0.yzw;
+  r2.z = dot(r0.yzw, float3(0.298999995,0.587000012,0.114));
+  r2.xyz = r2.zzz;
+  r2.w = g_vsObject.m_useWeightCount.w * r0.x;
+  r2.xyz = r2.xyz;
+  r2.w = r2.w;
+  r0.x = r1.z;
+  r0.x = r0.x;
+  r0.x = r0.x / 1;
+  r0.x = r0.x;
+  o2.xyzw = r1.xyzw;
+  p1.x = r0.x;
+  o0.xyzw = r2.xyzw;
+  o1.xy = v6.xy;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cVSScene
+// {
+//
+//   struct VSScene
+//   {
+//       
+//       float4x4 m_projectionView;     // Offset:    0
+//       float4x4 m_projection;         // Offset:   64
+//       float4x4 m_view;               // Offset:  128
+//       float4x4 m_shadowProjection;   // Offset:  192
+//       float4x4 m_shadowProjection2;  // Offset:  256
+//       float4 m_eyepos;               // Offset:  320
+//       float4 m_projectionParam;      // Offset:  336
+//       float4 m_viewportSize;         // Offset:  352
+//       float4 m_exposure;             // Offset:  368
+//       float4 m_fogParam[3];          // Offset:  384
+//       float4 m_fogColor;             // Offset:  432
+//       float4 m_cameraCenterOffset;   // Offset:  448
+//       float4 m_shadowMapResolutions; // Offset:  464
+//
+//   } g_vsScene;                       // Offset:    0 Size:   480
+//
+// }
+//
+// cbuffer cVSObject
+// {
+//
+//   struct VSObject
+//   {
+//       
+//       float4x4 m_viewWorld;          // Offset:    0
+//       float4x4 m_world;              // Offset:   64
+//       float4 m_useWeightCount;       // Offset:  128
+//       float4 m_localParam[4];        // Offset:  144
+//
+//   } g_vsObject;                      // Offset:    0 Size:   208
+//
+// }
+//
+// cbuffer cVSLight
+// {
+//
+//   struct VSLight
+//   {
+//       
+//       float4 m_lightParams[11];      // Offset:    0
+//
+//   } g_vsLight;                       // Offset:    0 Size:   176
+//
+// }
+//
+// cbuffer VSBones
+// {
+//
+//   struct VSBone
+//   {
+//       
+//       float4x3 m_boneMatrices[32];   // Offset:    0
+//
+//   } g_vsBone;                        // Offset:    0 Size:  1536
+//   
+//   struct VSBone
+//   {
+//       
+//       float4x3 m_boneMatrices[32];   // Offset: 1536
+//
+//   } g_vsPrevBone;                    // Offset: 1536 Size:  1536 [unused]
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// cVSScene                          cbuffer      NA          NA    2        1
+// cVSLight                          cbuffer      NA          NA    3        1
+// cVSObject                         cbuffer      NA          NA    5        1
+// VSBones                           cbuffer      NA          NA    6        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// POSITION                 0   xyzw        0     NONE   float   xyzw
+// NORMAL                   0   xyzw        1     NONE   float   xyz 
+// COLOR                    0   xyzw        2     NONE   float       
+// TANGENT                  0   xyzw        3     NONE   float       
+// BLENDINDICES             0   xyzw        4     NONE    uint   xyzw
+// BLENDWEIGHT              0   xyzw        5     NONE   float   xyzw
+// TEXCOORD                 0   xy          6     NONE   float   xy  
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// COLOR                    0   xyzw        0     NONE   float   xyzw
+// TEXCOORD                 0   xy          1     NONE   float   xy  
+// TEXCOORD                 1     z         1     NONE   float     z 
+// SV_Position              0   xyzw        2      POS   float   xyzw
+//
+vs_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb2[30], immediateIndexed
+dcl_constantbuffer cb5[9], immediateIndexed
+dcl_constantbuffer cb3[8], immediateIndexed
+dcl_constantbuffer cb6[96], dynamicIndexed
+dcl_input v0.xyzw
+dcl_input v1.xyz
+dcl_input v4.xyzw
+dcl_input v5.xyzw
+dcl_input v6.xy
+dcl_output o0.xyzw
+dcl_output o1.xy
+dcl_output o1.z
+dcl_output_siv o2.xyzw, position
+dcl_temps 8
+
+#line 172 "d:\work\master\git_clone\_intermediate\win64\GrModelShaders_dx11_win64\Release\ModelForward_Shadow_Paraboloid_vs.hlsl"
+mov r0.xyz, v0.xyzx  // NTransformInput_transform_inPosition<0,1,2>
+
+#line 184
+mov r1.xyzw, v5.xyzw  // NTransformInput_transform_inBlendWeights<0,1,2,3>
+nop 
+mov r0.xyz, r0.xyzx  // inPosition<0,1,2>
+mov r1.xyzw, r1.xyzw  // inBlendWeights<0,1,2,3>
+
+#line 52
+ne r2.x, cb5[8].x, l(0.000000)
+if_nz r2.x
+  nop 
+  mov r1.xyzw, r1.xyzw  // blendWeights<0,1,2,3>
+
+#line 22
+  imul null, r2.x, v4.x, l(3)
+  mul r3.xyzw, r1.xxxx, cb6[r2.x + 0].xyzw  // blendMatrix<0:Inf,3:Inf,6:Inf,9:Inf>
+  mul r4.xyzw, r1.xxxx, cb6[r2.x + 1].xyzw  // blendMatrix<1:Inf,4:Inf,7:Inf,10:Inf>
+  mul r2.xyzw, r1.xxxx, cb6[r2.x + 2].xyzw  // blendMatrix<2:Inf,5:Inf,8:Inf,11:Inf>
+  imul null, r1.x, v4.y, l(3)
+  mul r5.xyzw, r1.yyyy, cb6[r1.x + 0].xyzw
+  mul r6.xyzw, r1.yyyy, cb6[r1.x + 1].xyzw
+  mul r7.xyzw, r1.yyyy, cb6[r1.x + 2].xyzw
+  add r3.xyzw, r3.xyzw, r5.xyzw  // blendMatrix<0:NaN:Inf,3:NaN:Inf,6:NaN:Inf,9:NaN:Inf>
+  add r4.xyzw, r4.xyzw, r6.xyzw  // blendMatrix<1:NaN:Inf,4:NaN:Inf,7:NaN:Inf,10:NaN:Inf>
+  add r2.xyzw, r2.xyzw, r7.xyzw  // blendMatrix<2:NaN:Inf,5:NaN:Inf,8:NaN:Inf,11:NaN:Inf>
+  imul null, r1.x, v4.z, l(3)
+  mul r5.xyzw, r1.zzzz, cb6[r1.x + 0].xyzw
+  mul r6.xyzw, r1.zzzz, cb6[r1.x + 1].xyzw
+  mul r7.xyzw, r1.zzzz, cb6[r1.x + 2].xyzw
+  add r3.xyzw, r3.xyzw, r5.xyzw  // blendMatrix<0:NaN:Inf,3:NaN:Inf,6:NaN:Inf,9:NaN:Inf>
+  add r4.xyzw, r4.xyzw, r6.xyzw  // blendMatrix<1:NaN:Inf,4:NaN:Inf,7:NaN:Inf,10:NaN:Inf>
+  add r2.xyzw, r2.xyzw, r7.xyzw  // blendMatrix<2:NaN:Inf,5:NaN:Inf,8:NaN:Inf,11:NaN:Inf>
+  imul null, r1.x, v4.w, l(3)
+  mul r5.xyzw, r1.wwww, cb6[r1.x + 0].xyzw
+  mul r6.xyzw, r1.wwww, cb6[r1.x + 1].xyzw
+  mul r1.xyzw, r1.wwww, cb6[r1.x + 2].xyzw
+  add r3.xyzw, r3.xyzw, r5.xyzw  // blendMatrix<0:NaN:Inf,3:NaN:Inf,6:NaN:Inf,9:NaN:Inf>
+  add r4.xyzw, r4.xyzw, r6.xyzw  // blendMatrix<1:NaN:Inf,4:NaN:Inf,7:NaN:Inf,10:NaN:Inf>
+  add r1.xyzw, r1.xyzw, r2.xyzw  // blendMatrix<2:NaN:Inf,5:NaN:Inf,8:NaN:Inf,11:NaN:Inf>
+  nop 
+
+#line 416
+  dp4 r0.x, v0.xyzw, r3.xyzw  // ApplyMatrixT<0:NaN:Inf>
+  dp4 r0.y, v0.xyzw, r4.xyzw  // ApplyMatrixT<1:NaN:Inf>
+  dp4 r0.z, v0.xyzw, r1.xyzw  // ApplyMatrixT<2:NaN:Inf>
+
+#line 27
+  mov r0.xyz, r0.xyzx  // position<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+  nop 
+  nop 
+
+#line 54
+  mov r0.xyz, r0.xyzx  // inPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+endif 
+
+#line 63
+nop 
+nop 
+
+#line 68
+nop 
+nop 
+
+#line 191
+nop 
+
+#line 31
+nop 
+
+#line 408
+mov r0.w, v0.w
+dp4 r1.y, r0.xyzw, cb5[4].xyzw  // ApplyMatrixT<0:NaN:Inf>
+dp4 r1.z, r0.xyzw, cb5[5].xyzw  // ApplyMatrixT<1:NaN:Inf>
+dp4 r1.w, r0.xyzw, cb5[6].xyzw  // ApplyMatrixT<2:NaN:Inf>
+dp4 r1.x, r0.xyzw, cb5[7].xyzw  // ApplyMatrixT<3:NaN:Inf>
+
+#line 31
+mov r1.xyzw, r1.xyzw  // outWorldPosition<3:NaN:Inf,0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+nop 
+nop 
+
+#line 38
+mov r0.x, cb3[7].x  // near<0>
+mov r0.y, cb3[7].z  // range_inv<0>
+mov r0.z, cb3[7].w  // area<0>
+
+#line 43
+mov r0.w, -r1.y
+add r2.x, r0.w, cb3[3].x  // viewPos<0:NaN:Inf>
+mov r0.w, -cb3[3].y
+add r2.y, r0.w, r1.z  // viewPos<1:NaN:Inf>
+mov r0.w, -cb3[3].z
+add r2.z, r0.w, r1.w  // viewPos<2:NaN:Inf>
+mov r1.x, r1.x  // viewPos<3:NaN:Inf>
+
+#line 61
+div r1.xyz, r2.xyzx, r1.xxxx  // outScreenPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mul r1.w, r0.z, r1.z  // outScreenPosition<2:NaN:Inf>
+
+#line 66
+mov r0.x, -r0.x
+add r0.x, r0.x, r1.w
+mul r0.x, r0.y, r0.x
+add r0.x, r0.x, l(0.500000)  // cull<0:NaN:Inf>
+dp3 r0.z, r1.xywx, r1.xywx
+sqrt r0.z, r0.z  // len<0:NaN:Inf>
+div r1.xyz, r1.xywx, r0.zzzz  // outScreenPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+add r0.w, r1.z, l(1.000000)  // outScreenPosition<2:NaN:Inf>
+div r1.xy, r1.xyxx, r0.wwww  // outScreenPosition<0:NaN:Inf,1:NaN:Inf>
+
+#line 74
+div r0.w, cb2[29].z, l(2.000000)  // w<0:[-1.70141e+038f,1.70141e+038f]>
+mov r1.z, cb2[29].w  // h<0>
+
+#line 78
+add r1.w, r0.w, l(-2.000000)
+div r2.x, r1.w, r0.w
+add r0.w, r1.z, l(-2.000000)
+div r2.y, r0.w, r1.z
+mul r1.xy, r1.xyxx, r2.xyxx  // outScreenPosition<0:NaN:Inf,1:NaN:Inf>
+
+#line 82
+mul r0.y, r0.y, r0.z  // outScreenPosition<2:NaN:Inf>
+mov r0.y, -r0.y
+add r1.z, r0.y, l(1.000000)  // outScreenPosition<2:NaN:Inf>
+
+#line 86
+mov r1.xy, r1.xyxx  // outProjectionPosition<0:NaN:Inf,1:NaN:Inf>
+mov r1.z, r1.z  // outProjectionPosition<2:NaN:Inf>
+mov r1.w, l(1.000000)  // outProjectionPosition<3: 1f>
+mov r0.x, r0.x  // outMask<0:NaN:Inf>
+
+#line 191
+mov r1.xyzw, r1.xyzw  // NGetProjection_getProjection_outProjectionPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+mov r0.x, r0.x  // NGetProjection_getProjection_outMask<0:NaN:Inf>
+
+#line 211
+mov r0.yzw, v1.xxyz  // NCalcVertexColor_calcVertexColor_inNormal<0,1,2>
+
+#line 208
+mov r0.x, r0.x  // NCalcVertexColor_calcVertexColor_inMask<0:NaN:Inf>
+nop 
+mov r0.yzw, r0.yyzw  // inNormal<0,1,2>
+mov r0.x, r0.x  // inMask<0:NaN:Inf>
+
+#line 105
+mul r0.yzw, r0.yyzw, l(0.000000, 0.500000, 0.500000, 0.500000)
+add r0.yzw, r0.yyzw, l(0.000000, 0.500000, 0.500000, 0.500000)
+dp3 r2.z, r0.yzwy, l(0.299000, 0.587000, 0.114000, 0.000000)
+mov r2.xyz, r2.zzzz  // outColor<0:[-1.70141e+038f,1.70141e+038f],1:[-1.70141e+038f,1.70141e+038f],2:[-1.70141e+038f,1.70141e+038f]>
+mul r2.w, r0.x, cb5[8].w  // outColor<3:NaN:Inf>
+
+#line 209
+mov r2.xyz, r2.xyzx  // NCalcVertexColor_calcVertexColor_outColor<0:[-1.70141e+038f,1.70141e+038f],1:[-1.70141e+038f,1.70141e+038f],2:[-1.70141e+038f,1.70141e+038f]>
+mov r2.w, r2.w  // NCalcVertexColor_calcVertexColor_outColor<3:NaN:Inf>
+
+#line 193
+mov r0.x, r1.z  // NGetDepth_getDepth_inScreenPos<2:NaN:Inf>
+nop 
+mov r0.x, r0.x  // inScreenPos<2:NaN:Inf>
+
+#line 21
+div r0.x, r0.x, l(1.000000)  // outDepth<0:NaN:Inf>
+
+#line 194
+mov r0.x, r0.x  // NGetDepth_getDepth_outDepth<0:NaN:Inf>
+
+#line 197
+mov o2.xyzw, r1.xyzw  // outPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3: 1f>
+
+#line 204
+mov o1.z, r0.x  // outDepth<0:NaN:Inf>
+
+#line 217
+mov o0.xyzw, r2.xyzw  // outColor<0:[-1.70141e+038f,1.70141e+038f],1:[-1.70141e+038f,1.70141e+038f],2:[-1.70141e+038f,1.70141e+038f],3:NaN:Inf>
+
+#line 200
+mov o1.xy, v6.xyxx  // outBaseUV<0,1>
+
+#line 135
+ret 
+// Approximately 116 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
