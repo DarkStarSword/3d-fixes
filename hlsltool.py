@@ -11,7 +11,7 @@
 import sys, os, re, collections, argparse, itertools
 
 import shadertool
-from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name
+from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards
 
 class Instruction(object):
     pattern = re.compile('[^;]*;')
@@ -536,6 +536,7 @@ def parse_args():
 
 def main():
     parse_args()
+    shadertool.expand_wildcards(args)
     for file in args.files:
         debug_verbose(-2, 'parsing %s...' % file)
         shader = HLSLShader(file)

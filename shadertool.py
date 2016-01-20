@@ -3037,6 +3037,16 @@ def args_require_reg_analysis(args):
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
 
+def expand_wildcards(args):
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    f = []
+    for file in args.files:
+        if '*' in file:
+            f.extend(glob.glob(file))
+        else:
+            f.append(file)
+    args.files = f
+
 processed = set()
 
 def main():
@@ -3051,14 +3061,7 @@ def main():
         address_reg_ps = RegSet()
         checked_ps = checked_vs = False
 
-    # Windows command prompt passes us a literal *, so expand any that we were passed:
-    f = []
-    for file in args.files:
-        if '*' in file:
-            f.extend(glob.glob(file))
-        else:
-            f.append(file)
-    args.files = f
+    expand_wildcards(args)
 
     for file in args.files:
         try:
