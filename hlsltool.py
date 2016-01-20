@@ -231,7 +231,10 @@ class HLSLShader(object):
         try:
             return self.lookup_semantic('SV_Position0', True)
         except KeyError:
-            return self.lookup_semantic('SV_POSITION0', True)
+            try:
+                return self.lookup_semantic('SV_POSITION0', True)
+            except KeyError:
+                return self.lookup_semantic('POSITION0', True)
 
     def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
         '''
