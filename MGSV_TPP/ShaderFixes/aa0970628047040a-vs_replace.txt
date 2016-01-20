@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i aa0970628047040a-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:17 2016
 
 cbuffer cVSScene : register(b2)
@@ -71,40 +72,38 @@ void main(
 
   r0.xyzw = v1.xyzw;
   r1.xy = v0.xy;
-  r0.xyzw = r0.xyzw;
   r2.z = v3.x;
   r2.xy = v2.xy;
-  r1.xy = r1.xy;
-  r0.xyzw = r0.xyzw;
-  r2.z = r2.z;
-  r2.xy = r2.xy;
-  r2.z = r2.z;
   r3.w = 1;
   r3.xyz = v0.xyz;
   r4.x = dot(r3.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
   r4.y = dot(r3.xyzw, g_vsObject.m_viewWorld._m01_m11_m21_m31);
   r1.z = dot(r3.xyzw, g_vsObject.m_viewWorld._m02_m12_m22_m32);
   r4.w = dot(r3.xyzw, g_vsObject.m_viewWorld._m03_m13_m23_m33);
-  r1.z = r1.z;
   r1.w = g_vsObject.m_localParam[3].w;
-  r1.w = r1.w;
   r4.z = r1.z + r1.w;
   r3.x = dot(r4.xyzw, g_vsScene.m_projection._m00_m10_m20_m30);
   r3.y = dot(r4.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r3.z = dot(r4.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r3.w = dot(r4.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r3.xyzw = r3.xyzw;
   r4.xyz = g_vsMaterial.m_materials[1].zzz;
   r4.w = 1;
+
+o0.xyzw = r3.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i aa0970628047040a-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r3.w != 1.0)
+  r3.x += stereo.x * (r3.w - stereo.y);
+
   r5.z = r3.w;
   r1.z = g_vsObject.m_localParam[3].y;
   r1.w = -r1.z;
   r1.z = max(r1.z, r1.w);
-  r1.z = r1.z;
   r1.w = g_vsObject.m_localParam[3].z;
   r2.w = -r1.w;
   r2.w = max(r2.w, r1.w);
-  r2.w = r2.w;
   r5.w = r5.z;
   r6.x = -r1.z;
   r6.y = r6.x + r2.w;
@@ -117,17 +116,12 @@ void main(
   r1.z = r1.z ? 0 : r6.x;
   r2.w = cmp(r2.w < r5.w);
   r1.z = r2.w ? 1 : r1.z;
-  r1.w = r1.w;
   r1.w = cmp(r1.w < 0);
   r1.w = r1.w ? 1 : 0;
   r1.w = cmp(0 != r1.w);
   r1.z = r1.w ? 1 : r1.z;
-  r1.z = r1.z;
-  r1.z = r1.z;
   r0.xyzw = r4.xyzw * r0.xyzw;
   r0.w = r0.w * r1.z;
-  r2.xy = r2.xy;
-  r2.z = r2.z;
   r1.x = 2 * r1.x;
   r5.x = -1 + r1.x;
   r1.x = -2 * r1.y;
@@ -141,24 +135,9 @@ void main(
   r2.w = g_vsMaterial.m_materials[2].z;
   r1.z = sin(r2.w);
   r1.w = cos(r2.w);
-  r1.z = r1.z;
-  r1.w = r1.w;
-  r3.xyzw = r3.xyzw;
-  r0.xyz = r0.xyz;
-  r0.w = r0.w;
-  r2.xy = r2.xy;
-  r2.z = r2.z;
-  r5.x = r5.x;
-  r5.y = r5.y;
-  r5.z = r5.z;
-  r4.x = r4.x;
-  r4.y = r4.y;
-  r4.z = r4.z;
-  r4.w = r4.w;
-  r1.xy = r1.xy;
-  r1.z = r1.z;
-  r1.w = r1.w;
-  o0.xyzw = r3.xyzw;
+
+  // o0.xyzw = r3.xyzw; // Relocated from here with hlsltool.py
+
   o3.xyzw = r0.xyzw;
   o1.xyz = r2.xyz;
   o2.xyz = r5.xyz;

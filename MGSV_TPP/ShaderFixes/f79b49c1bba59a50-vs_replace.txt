@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i f79b49c1bba59a50-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:40 2016
 
 
@@ -18,12 +19,17 @@ void main(
   float4 fDest;
 
   r0.xy = v0.xy;
-  r0.xy = r0.xy;
   r0.xy = float2(2,-2) * r0.xy;
   r0.xy = float2(-1,1) + r0.xy;
-  r0.xy = r0.xy;
   r0.zw = float2(1,1);
   o1.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i f79b49c1bba59a50-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r0.w != 1.0)
+  r0.x += stereo.x * (r0.w - stereo.y);
+
   o0.xy = r0.xy;
   return;
 }

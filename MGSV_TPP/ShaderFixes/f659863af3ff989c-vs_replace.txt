@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i f659863af3ff989c-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:49 2016
 
 cbuffer cVSScene : register(b2)
@@ -88,8 +89,6 @@ void main(
 
   r0.xyz = v0.xyz;
   r1.xyzw = v5.xyzw;
-  r0.xyz = r0.xyz;
-  r1.xyzw = r1.xyzw;
   r2.x = cmp(g_vsObject.m_useWeightCount.x != 0.000000);
   if (r2.x != 0) {
     r1.xyzw = r1.xyzw;
@@ -121,15 +120,12 @@ void main(
     r0.x = dot(v0.xyzw, r3.xyzw);
     r0.y = dot(v0.xyzw, r4.xyzw);
     r0.z = dot(v0.xyzw, r1.xyzw);
-    r0.xyz = r0.xyz;
-    r0.xyz = r0.xyz;
   }
   r0.w = v0.w;
   r1.y = dot(r0.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r1.z = dot(r0.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r1.w = dot(r0.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
   r1.x = dot(r0.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
-  r1.xyzw = r1.xyzw;
   r0.x = g_vsLight.m_lightParams[7].x;
   r0.y = g_vsLight.m_lightParams[7].z;
   r0.z = g_vsLight.m_lightParams[7].w;
@@ -139,7 +135,6 @@ void main(
   r2.y = r1.z + r0.w;
   r0.w = -g_vsLight.m_lightParams[3].z;
   r2.z = r1.w + r0.w;
-  r1.x = r1.x;
   r1.xyz = r2.xyz / r1.xxx;
   r1.w = r1.z * r0.z;
   r0.x = -r0.x;
@@ -161,28 +156,27 @@ void main(
   r0.y = r0.z * r0.y;
   r0.y = -r0.y;
   r1.z = 1 + r0.y;
-  r1.xy = r1.xy;
-  r1.z = r1.z;
   r1.w = 1;
-  r0.x = r0.x;
-  r1.xyzw = r1.xyzw;
-  r0.x = r0.x;
   r0.yzw = v1.xyz;
-  r0.x = r0.x;
-  r0.yzw = r0.yzw;
-  r0.x = r0.x;
   r0.yzw = float3(0.5,0.5,0.5) * r0.yzw;
   r0.yzw = float3(0.5,0.5,0.5) + r0.yzw;
   r2.z = dot(r0.yzw, float3(0.298999995,0.587000012,0.114));
   r2.xyz = r2.zzz;
   r2.w = g_vsObject.m_useWeightCount.w * r0.x;
-  r2.xyz = r2.xyz;
-  r2.w = r2.w;
+
+o2.xyzw = r1.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i f659863af3ff989c-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r1.w != 1.0)
+  r1.x += stereo.x * (r1.w - stereo.y);
+
   r0.x = r1.z;
-  r0.x = r0.x;
   r0.x = r0.x / 1;
-  r0.x = r0.x;
-  o2.xyzw = r1.xyzw;
+
+  // o2.xyzw = r1.xyzw; // Relocated from here with hlsltool.py
+
   p1.x = r0.x;
   o0.xyzw = r2.xyzw;
   o1.xy = v6.xy;

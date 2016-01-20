@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i ec27f2f6d5c24233-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:46 2016
 
 cbuffer cVSScene : register(b2)
@@ -73,8 +74,6 @@ void main(
   float4 x0[3];
   r0.xyzw = v1.xyzw;
   r1.xyzw = v2.wxyz;
-  r1.x = r1.x;
-  r1.x = r1.x;
   r1.x = 2 * r1.x;
   r1.x = -1 + r1.x;
   r2.x = -r1.x;
@@ -84,14 +83,7 @@ void main(
   r1.x = cmp(r1.x < 0);
   r1.x = (int)r1.x + (int)-r2.y;
   r1.x = (int)r1.x;
-  r2.x = r2.x;
-  r1.x = r1.x;
   r2.yz = v3.xy;
-  r0.xyz = r0.xyz;
-  r1.yzw = r1.yzw;
-  r2.yz = r2.yz;
-  r0.xyz = r0.xyz;
-  r1.yzw = r1.yzw;
   r3.w = 1;
   r3.xyz = v0.xyz;
   r4.x = dot(r3.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
@@ -101,15 +93,20 @@ void main(
   r3.x = r4.x;
   r3.y = r4.y;
   r3.z = r4.z;
-  r3.xyz = r3.xyz;
-  r3.xyz = r3.xyz;
   r5.x = dot(r4.xyzw, g_vsScene.m_projection._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r5.w = dot(r4.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r5.xyzw = r5.xyzw;
+
+o0.xyzw = r5.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i ec27f2f6d5c24233-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r5.w != 1.0)
+  r5.x += stereo.x * (r5.w - stereo.y);
+
   r5.z = 0.0199999996 + r5.z;
-  r2.yz = r2.yz;
   r4.xyz = float3(2,2,2) * r0.xyz;
   r4.xyz = float3(-1,-1,-1) + r4.xyz;
   r4.w = 0;
@@ -128,12 +125,7 @@ void main(
   r1.yzw = r4.xyz * r1.yzw;
   r1.yzw = -r1.yzw;
   r1.yzw = r8.xyz + r1.yzw;
-  r5.xyw = r5.xyw;
-  r5.z = r5.z;
-  r3.xyz = r3.xyz;
-  r2.yz = r2.yz;
   r2.w = v0.w;
-  r2.w = r2.w;
   r4.xyz = g_vsMaterial.m_materials[1].xyz;
   r3.w = g_vsMaterial.m_materials[1].w;
   r4.w = -r3.w;
@@ -144,8 +136,9 @@ void main(
   r0.x = r3.w * r0.x;
   r0.x = r4.w + r0.x;
   r0.x = r2.w * r0.x;
-  r0.x = r0.x;
-  o0.xyzw = r5.xyzw;
+
+  // o0.xyzw = r5.xyzw; // Relocated from here with hlsltool.py
+
   x0[0].xyz = r7.xyz;
   x0[1].xyz = r1.yzw;
   x0[2].xyz = r6.xyz;

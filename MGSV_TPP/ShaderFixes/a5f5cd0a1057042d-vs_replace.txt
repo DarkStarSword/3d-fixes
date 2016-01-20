@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i a5f5cd0a1057042d-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:16 2016
 
 cbuffer cVSScene : register(b2)
@@ -66,22 +67,15 @@ void main(
   float4 x0[3];
   r0.xyzw = v1.xyzw;
   r1.xy = v0.xy;
-  r0.xyzw = r0.xyzw;
   r1.zw = v2.xy;
   r2.xyzw = v3.xyzw;
   r3.xyz = v4.xyz;
-  r1.xy = r1.xy;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
-  r2.xyzw = r2.xyzw;
-  r3.xyz = r3.xyz;
   r4.w = 1;
   r4.xyz = v0.xyz;
   r5.x = dot(r4.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
   r5.w = dot(r4.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
-  r5.xyzw = r5.xyzw;
   r4.xyz = float3(0,0,0) + r5.xyz;
   r5.xyz = r4.xyz;
   r4.w = 1;
@@ -93,22 +87,25 @@ void main(
   r4.y = dot(r6.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r4.z = dot(r6.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r4.w = dot(r6.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r4.xyzw = r4.xyzw;
   r3.w = g_vsObject.m_localParam[3].w;
   r0.w = r3.w * r0.w;
-  r0.xyz = r0.xyz;
-  r0.w = r0.w;
-  r1.zw = r1.zw;
   r1.z = 1 * r1.z;
   r6.x = 0 + r1.z;
   r1.z = 1 * r1.w;
   r6.y = 0 + r1.z;
-  r6.x = r6.x;
-  r6.y = r6.y;
   r1.x = 2 * r1.x;
   r7.x = -1 + r1.x;
   r1.x = -2 * r1.y;
   r7.y = 1 + r1.x;
+
+o0.xyzw = r4.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i a5f5cd0a1057042d-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r4.w != 1.0)
+  r4.x += stereo.x * (r4.w - stereo.y);
+
   r7.z = r4.w;
   r7.w = r2.w;
   r1.x = dot(r3.xyz, r3.xyz);
@@ -124,45 +121,27 @@ void main(
   r1.w = dot(r3.xyz, r3.xyz);
   r1.w = rsqrt(r1.w);
   r3.xyz = r3.xyz * r1.www;
-  r4.xyzw = r4.xyzw;
-  r0.xyzw = r0.xyzw;
-  r6.xy = r6.xy;
-  r7.x = r7.x;
-  r7.y = r7.y;
-  r7.z = r7.z;
-  r7.w = r7.w;
-  r5.xyz = r5.xyz;
-  r5.w = r5.w;
   r8.x = dot(v0.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
   r8.y = dot(v0.xyzw, g_vsObject.m_viewWorld._m01_m11_m21_m31);
   r8.z = dot(v0.xyzw, g_vsObject.m_viewWorld._m02_m12_m22_m32);
   r8.w = dot(v0.xyzw, g_vsObject.m_viewWorld._m03_m13_m23_m33);
   r1.w = dot(r8.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r1.w = r1.w;
-  r1.w = r1.w;
-  r1.w = r1.w;
-  r1.w = r1.w;
-  r1.w = r1.w;
   r2.w = g_vsScene.m_shadowProjection2._m31;
-  r2.w = r2.w;
   r3.w = g_vsScene.m_shadowProjection2._m32;
-  r3.w = r3.w;
   r8.w = 1;
   r9.x = dot(r8.xyzw, g_vsScene.m_shadowProjection._m00_m10_m20_m30);
   r9.y = dot(r8.xyzw, g_vsScene.m_shadowProjection._m01_m11_m21_m31);
   r9.z = dot(r8.xyzw, g_vsScene.m_shadowProjection._m02_m12_m22_m32);
   r9.w = dot(r8.xyzw, g_vsScene.m_shadowProjection._m03_m13_m23_m33);
-  r9.xyzw = r9.xyzw;
   r8.xyz = r9.xyz / r9.www;
   r2.w = -r2.w;
   r1.w = r2.w + r1.w;
   r1.w = r1.w * r3.w;
   r8.w = 1 + r1.w;
-  r8.w = r8.w;
-  r8.xyz = r8.xyz;
-  r8.w = r8.w;
   o4.xyzw = r8.xyzw;
-  o0.xyzw = r4.xyzw;
+
+  // o0.xyzw = r4.xyzw; // Relocated from here with hlsltool.py
+
   o8.xyzw = r0.xyzw;
   o1.xy = r6.xy;
   o2.xyzw = r7.xyzw;

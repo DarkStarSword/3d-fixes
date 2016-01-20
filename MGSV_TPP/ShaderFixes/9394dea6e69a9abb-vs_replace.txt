@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 9394dea6e69a9abb-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:41 2016
 
 cbuffer cVSScene : register(b2)
@@ -65,11 +66,7 @@ void main(
   float4 x0[3];
   r0.xyzw = v1.xyzw;
   r1.xy = v0.xy;
-  r0.xyzw = r0.xyzw;
   r1.zw = v2.xy;
-  r1.xy = r1.xy;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
   r2.w = 1;
   r2.xyz = v0.xyz;
   r3.x = dot(r2.xyzw, g_vsScene.m_view._m00_m10_m20_m30);
@@ -80,26 +77,30 @@ void main(
   r2.y = dot(r3.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r2.z = dot(r3.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r2.w = dot(r3.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r2.xyzw = r2.xyzw;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
   r1.x = 2 * r1.x;
   r3.x = -1 + r1.x;
   r1.x = -2 * r1.y;
   r3.y = 1 + r1.x;
+
+o0.xyzw = r2.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 9394dea6e69a9abb-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r2.w != 1.0)
+  r2.x += stereo.x * (r2.w - stereo.y);
+
   r3.z = r2.w;
   r4.w = 0;
   r4.xyz = v3.xyz;
   r5.x = dot(r4.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
-  r5.xyz = r5.xyz;
   r4.w = 0;
   r4.xyz = v4.xyz;
   r6.x = dot(r4.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r6.y = dot(r4.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r6.z = dot(r4.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
-  r6.xyz = r6.xyz;
   r4.xyz = r6.zxy * r5.yzx;
   r7.xyz = r6.yzx * r5.zxy;
   r7.xyz = -r7.xyz;
@@ -107,13 +108,9 @@ void main(
   r1.x = dot(r4.xyz, r4.xyz);
   r1.x = rsqrt(r1.x);
   r4.xyz = r4.xyz * r1.xxx;
-  r2.xyzw = r2.xyzw;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
-  r3.x = r3.x;
-  r3.y = r3.y;
-  r3.z = r3.z;
-  o0.xyzw = r2.xyzw;
+
+  // o0.xyzw = r2.xyzw; // Relocated from here with hlsltool.py
+
   o1.xyzw = r0.xyzw;
   o2.xy = r1.zw;
   o3.xyz = r3.xyz;

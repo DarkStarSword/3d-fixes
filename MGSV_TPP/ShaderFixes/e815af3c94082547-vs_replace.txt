@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i e815af3c94082547-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:16 2016
 
 cbuffer cVSScene : register(b2)
@@ -75,24 +76,16 @@ void main(
   float4 x0[3];
   r0.xyzw = v1.xyzw;
   r1.xy = v0.xy;
-  r0.xyzw = r0.xyzw;
   r1.zw = v2.xy;
   r2.xyz = v3.xyz;
   r3.xyz = v4.xyz;
   r2.w = v3.w;
-  r1.xy = r1.xy;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
-  r2.xyz = r2.xyz;
-  r3.xyz = r3.xyz;
-  r2.w = r2.w;
   r4.w = 1;
   r4.xyz = v0.xyz;
   r5.x = dot(r4.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
   r5.w = dot(r4.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
-  r5.xyzw = r5.xyzw;
   r4.xyz = float3(0,0,0) + r5.xyz;
   r5.xyz = r4.xyz;
   r4.w = 1;
@@ -104,12 +97,8 @@ void main(
   r4.y = dot(r6.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r4.z = dot(r6.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r4.w = dot(r6.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r4.xyzw = r4.xyzw;
   r3.w = g_vsObject.m_localParam[3].w;
   r0.w = r3.w * r0.w;
-  r0.xyz = r0.xyz;
-  r0.w = r0.w;
-  r1.zw = r1.zw;
   r3.w = (uint)g_vsMaterial.m_materials[0].x;
   r6.x = (uint)g_vsMaterial.m_materials[0].y;
   r6.y = g_vsObject.m_localParam[3].x;
@@ -130,12 +119,19 @@ void main(
   r7.x = r3.w + r1.z;
   r1.z = r6.w * r1.w;
   r7.y = r6.x + r1.z;
-  r7.x = r7.x;
-  r7.y = r7.y;
   r1.x = 2 * r1.x;
   r6.x = -1 + r1.x;
   r1.x = -2 * r1.y;
   r6.y = 1 + r1.x;
+
+o0.xyzw = r4.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i e815af3c94082547-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r4.w != 1.0)
+  r4.x += stereo.x * (r4.w - stereo.y);
+
   r6.z = r4.w;
   r1.x = dot(r3.xyz, r3.xyz);
   r1.x = rsqrt(r1.x);
@@ -152,16 +148,9 @@ void main(
   r3.xyz = r3.xyz * r1.www;
   r1.w = -r2.w;
   r6.w = max(r2.w, r1.w);
-  r4.xyzw = r4.xyzw;
-  r0.xyzw = r0.xyzw;
-  r7.xy = r7.xy;
-  r6.x = r6.x;
-  r6.y = r6.y;
-  r6.z = r6.z;
-  r6.w = r6.w;
-  r5.xyz = r5.xyz;
-  r5.w = r5.w;
-  o0.xyzw = r4.xyzw;
+
+  // o0.xyzw = r4.xyzw; // Relocated from here with hlsltool.py
+
   o7.xyzw = r0.xyzw;
   o1.xy = r7.xy;
   o2.xyzw = r6.xyzw;

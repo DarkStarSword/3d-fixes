@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i baccccd0d94dc700-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:43 2016
 
 cbuffer cVSScene : register(b2)
@@ -87,11 +88,6 @@ void main(
   r1.xyz = v1.xyz;
   r2.xyzw = v3.xyzw;
   r3.xyzw = v5.xyzw;
-  r0.xyz = r0.xyz;
-  r1.xyz = r1.xyz;
-  r2.xyzw = r2.xyzw;
-  r3.xyzw = r3.xyzw;
-  r0.xyz = r0.xyz;
   r4.x = cmp(g_vsObject.m_useWeightCount.x != 0.000000);
   if (r4.x != 0) {
     r3.xyzw = r3.xyzw;
@@ -123,22 +119,16 @@ void main(
     r0.x = dot(v0.xyzw, r5.xyzw);
     r0.y = dot(v0.xyzw, r6.xyzw);
     r0.z = dot(v0.xyzw, r3.xyzw);
-    r0.xyz = r0.xyz;
     r4.w = 0;
     r4.xyz = v1.xyz;
     r1.x = dot(r4.xyzw, r5.xyzw);
     r1.y = dot(r4.xyzw, r6.xyzw);
     r1.z = dot(r4.xyzw, r3.xyzw);
-    r1.xyz = r1.xyz;
     r4.w = 0;
     r4.xyz = v3.xyz;
     r5.x = dot(r4.xyzw, r5.xyzw);
     r5.y = dot(r4.xyzw, r6.xyzw);
     r5.z = dot(r4.xyzw, r3.xyzw);
-    r5.xyz = r5.xyz;
-    r0.xyz = r0.xyz;
-    r1.xyz = r1.xyz;
-    r5.xyz = r5.xyz;
   } else {
     r5.xyz = r2.xyz;
   }
@@ -151,8 +141,6 @@ void main(
   r0.y = dot(r3.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r0.z = dot(r3.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r0.w = dot(r3.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r0.xyzw = r0.xyzw;
-  r0.xyzw = r0.xyzw;
   r3.x = dot(v0.xyzw, g_vsScene.m_shadowProjection._m00_m10_m20_m30);
   r3.y = dot(v0.xyzw, g_vsScene.m_shadowProjection._m01_m11_m21_m31);
   r3.z = dot(v0.xyzw, g_vsScene.m_shadowProjection._m02_m12_m22_m32);
@@ -160,7 +148,15 @@ void main(
   r2.x = dot(r3.xyzw, g_vsScene.m_shadowProjection2._m00_m10_m20_m30);
   r2.y = dot(r3.xyzw, g_vsScene.m_shadowProjection2._m01_m11_m21_m31);
   r2.z = dot(r3.xyzw, g_vsScene.m_shadowProjection2._m03_m13_m23_m33);
-  r2.xyz = r2.xyz;
+
+o0.xyzw = r0.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i baccccd0d94dc700-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r0.w != 1.0)
+  r0.x += stereo.x * (r0.w - stereo.y);
+
   r3.xyz = r0.xyw;
   r1.w = 0;
   r4.x = dot(r1.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
@@ -184,10 +180,9 @@ void main(
   r1.w = rsqrt(r1.w);
   r5.xyz = r5.xyz * r1.www;
   r5.xyz = r5.xyz * r2.www;
-  r3.xyz = r3.xyz;
-  r2.xyz = r2.xyz;
-  r0.xyzw = r0.xyzw;
-  o0.xyzw = r0.xyzw;
+
+  // o0.xyzw = r0.xyzw; // Relocated from here with hlsltool.py
+
   x0[0].xyz = r4.xyz;
   x0[1].xyz = r5.xyz;
   x0[2].xyz = r1.xyz;

@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i faa75bdedf9da22b-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:35 2016
 
 cbuffer cVSScene : register(b2)
@@ -80,9 +81,6 @@ void main(
   r0.xyz = v0.xyz;
   r1.xyz = v1.xyz;
   r2.xyzw = v5.xyzw;
-  r0.xyz = r0.xyz;
-  r1.xyz = r1.xyz;
-  r2.xyzw = r2.xyzw;
   r3.x = cmp(g_vsObject.m_useWeightCount.x != 0.000000);
   if (r3.x != 0) {
     r2.xyzw = r2.xyzw;
@@ -114,22 +112,16 @@ void main(
     r0.x = dot(v0.xyzw, r4.xyzw);
     r0.y = dot(v0.xyzw, r5.xyzw);
     r0.z = dot(v0.xyzw, r2.xyzw);
-    r0.xyz = r0.xyz;
     r3.w = 0;
     r3.xyz = v1.xyz;
     r1.x = dot(r3.xyzw, r4.xyzw);
     r1.y = dot(r3.xyzw, r5.xyzw);
     r1.z = dot(r3.xyzw, r2.xyzw);
-    r1.xyz = r1.xyz;
-    r0.xyz = r0.xyz;
-    r1.xyz = r1.xyz;
   }
   r1.w = 0;
   r2.x = dot(r1.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r2.y = dot(r1.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r2.z = dot(r1.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
-  r2.xyz = r2.xyz;
-  r2.xyz = r2.xyz;
   r0.w = v0.w;
   r1.x = dot(r0.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
   r1.y = dot(r0.xyzw, g_vsObject.m_viewWorld._m01_m11_m21_m31);
@@ -139,17 +131,17 @@ void main(
   r3.y = dot(r1.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r3.z = dot(r1.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r3.w = dot(r1.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r3.xyzw = r3.xyzw;
   r1.x = dot(r0.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r1.y = dot(r0.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r1.z = dot(r0.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
-  r1.xyz = r1.xyz;
-  r1.xyz = r1.xyz;
-  r3.xyzw = r3.xyzw;
-  r1.xyz = r1.xyz;
-  r1.xyz = r1.xyz;
-  r3.xyzw = r3.xyzw;
   o3.xyzw = r3.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i faa75bdedf9da22b-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r3.w != 1.0)
+  r3.x += stereo.x * (r3.w - stereo.y);
+
   o0.xyz = r2.xyz;
   o1.xyz = r1.xyz;
   o1.w = r3.w;

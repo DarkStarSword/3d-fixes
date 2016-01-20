@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 6f3f2b27a74dcc56-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:43 2016
 
 cbuffer cVSScene : register(b2)
@@ -66,34 +67,19 @@ void main(
   r1.z = dot(v0.xyzw, g_vsObject.m_viewWorld._m02_m12_m22_m32);
   r1.w = dot(v0.xyzw, g_vsObject.m_viewWorld._m03_m13_m23_m33);
   r2.x = dot(r1.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r2.x = r2.x;
-  r2.x = r2.x;
-  r2.x = r2.x;
-  r2.x = r2.x;
-  r2.x = r2.x;
   r2.y = g_vsScene.m_shadowProjection2._m31;
-  r2.y = r2.y;
   r2.z = g_vsScene.m_shadowProjection2._m32;
-  r2.z = r2.z;
   r1.w = 1;
   r3.x = dot(r1.xyzw, g_vsScene.m_shadowProjection._m00_m10_m20_m30);
   r3.y = dot(r1.xyzw, g_vsScene.m_shadowProjection._m01_m11_m21_m31);
   r3.z = dot(r1.xyzw, g_vsScene.m_shadowProjection._m02_m12_m22_m32);
   r3.w = dot(r1.xyzw, g_vsScene.m_shadowProjection._m03_m13_m23_m33);
-  r3.xyzw = r3.xyzw;
   r1.xyz = r3.xyz / r3.www;
   r2.y = -r2.y;
   r2.x = r2.x + r2.y;
   r2.x = r2.x * r2.z;
   r1.w = 1 + r2.x;
-  r1.w = r1.w;
-  r1.xyz = r1.xyz;
-  r1.w = r1.w;
   r2.xy = v2.xy;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
-  r0.xyzw = r0.xyzw;
-  r0.xyzw = r0.xyzw;
   r3.w = 1;
   r3.xyz = v0.xyz;
   r4.x = dot(r3.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
@@ -102,41 +88,26 @@ void main(
   r3.x = r4.x;
   r3.y = r4.y;
   r3.z = r4.z;
-  r3.xyz = r3.xyz;
   r4.w = 1;
   r5.x = dot(r4.xyzw, g_vsScene.m_projectionView._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsScene.m_projectionView._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsScene.m_projectionView._m02_m12_m22_m32);
   r5.w = dot(r4.xyzw, g_vsScene.m_projectionView._m03_m13_m23_m33);
-  r5.xyzw = r5.xyzw;
-  r0.xyzw = r0.xyzw;
   r4.y = g_vsScene.m_exposure.z;
-  r4.y = r4.y;
-  r5.xyzw = r5.xyzw;
-  r3.xyz = r3.xyz;
-  r0.xyzw = r0.xyzw;
   r4.xw = float2(1,1);
+
+o0.xyzw = r5.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 6f3f2b27a74dcc56-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r5.w != 1.0)
+  r5.x += stereo.x * (r5.w - stereo.y);
+
   r4.z = r5.w;
-  r4.y = r4.y;
-  r5.xyzw = r5.xyzw;
-  r4.xyzw = r4.xyzw;
-  r0.xyzw = r0.xyzw;
-  r3.xyz = r3.xyz;
-  r5.xyzw = r5.xyzw;
-  r4.xyzw = r4.xyzw;
-  r0.xyzw = r0.xyzw;
-  r3.xyz = r3.xyz;
-  r5.xyzw = r5.xyzw;
-  r3.xyz = r3.xyz;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
-  r4.xyzw = r4.xyzw;
-  r5.xyzw = r5.xyzw;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
-  r3.xyz = r3.xyz;
-  r4.xyzw = r4.xyzw;
-  o0.xyzw = r5.xyzw;
+
+  // o0.xyzw = r5.xyzw; // Relocated from here with hlsltool.py
+
   o1.xyzw = r0.xyzw;
   o2.xy = r2.xy;
   o3.xyz = r3.xyz;

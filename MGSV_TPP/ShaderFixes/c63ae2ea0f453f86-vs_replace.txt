@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i c63ae2ea0f453f86-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:51 2016
 
 cbuffer cVSScene : register(b2)
@@ -68,11 +69,7 @@ void main(
 
   r0.xyzw = v1.xyzw;
   r1.xyz = v0.xyz;
-  r0.xyzw = r0.xyzw;
   r2.xy = v2.xy;
-  r1.xyz = r1.xyz;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
   r1.w = g_vsMaterial.m_materials[0].w;
   r1.w = cmp(r1.w < 0.00999999978);
   r1.xyz = r1.www ? float3(-10000,-10000,-10000) : r1.xyz;
@@ -86,21 +83,23 @@ void main(
   r1.y = dot(r3.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r1.z = dot(r3.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r1.w = dot(r3.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r1.xyzw = r1.xyzw;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
   r2.z = 2 * r2.z;
   r3.x = -1 + r2.z;
   r2.z = -2 * r2.w;
   r3.y = 1 + r2.z;
+
+o3.xyzw = r1.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i c63ae2ea0f453f86-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r1.w != 1.0)
+  r1.x += stereo.x * (r1.w - stereo.y);
+
   r3.z = r1.w;
-  r1.xyzw = r1.xyzw;
-  r0.xyzw = r0.xyzw;
-  r2.xy = r2.xy;
-  r3.x = r3.x;
-  r3.y = r3.y;
-  r3.z = r3.z;
-  o3.xyzw = r1.xyzw;
+
+  // o3.xyzw = r1.xyzw; // Relocated from here with hlsltool.py
+
   o1.xyzw = r0.xyzw;
   o0.xy = r2.xy;
   o2.xyz = r3.xyz;

@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 1fa3978e7bfd5df9-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:44:25 2016
 
 cbuffer cVSScene : register(b2)
@@ -67,12 +68,7 @@ void main(
   r0.xyzw = v1.xyzw;
   r1.xyz = v0.xyz;
   r2.xyzw = v3.xyzw;
-  r1.xyz = r1.xyz;
-  r2.xyzw = r2.xyzw;
-  r2.xyz = r2.xyz;
-  r2.w = r2.w;
   r3.xyz = g_vsScene.m_eyepos.yzx;
-  r3.xyz = r3.xyz;
   r3.xyz = -r3.xyz;
   r3.xyz = r3.xyz + r1.yzx;
   r1.w = dot(r3.xyz, r3.xyz);
@@ -99,13 +95,7 @@ void main(
   r2.w = dot(r5.xyz, r5.xyz);
   r2.w = rsqrt(r2.w);
   r5.xyz = r5.xyz * r2.www;
-  r4.xy = r4.xy;
-  r4.xy = r4.xy;
-  r0.xyzw = r0.xyzw;
   r4.zw = v2.xy;
-  r4.xy = r4.xy;
-  r0.xyzw = r0.xyzw;
-  r4.zw = r4.zw;
   r1.w = 1;
   r6.x = dot(r1.xyzw, g_vsObject.m_viewWorld._m00_m10_m20_m30);
   r6.y = dot(r1.xyzw, g_vsObject.m_viewWorld._m01_m11_m21_m31);
@@ -115,25 +105,26 @@ void main(
   r1.y = dot(r6.xyzw, g_vsScene.m_projection._m01_m11_m21_m31);
   r1.z = dot(r6.xyzw, g_vsScene.m_projection._m02_m12_m22_m32);
   r1.w = dot(r6.xyzw, g_vsScene.m_projection._m03_m13_m23_m33);
-  r1.xyzw = r1.xyzw;
-  r0.xyzw = r0.xyzw;
-  r4.zw = r4.zw;
   r2.w = 2 * r4.x;
   r6.x = -1 + r2.w;
   r2.w = -2 * r4.y;
   r6.y = 1 + r2.w;
+
+o0.xyzw = r1.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 1fa3978e7bfd5df9-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r1.w != 1.0)
+  r1.x += stereo.x * (r1.w - stereo.y);
+
   r6.z = r1.w;
-  r1.xyzw = r1.xyzw;
-  r0.xyzw = r0.xyzw;
-  r4.zw = r4.zw;
-  r6.x = r6.x;
-  r6.y = r6.y;
-  r6.z = r6.z;
-  r1.xyzw = r1.xyzw;
   x0[0].xyz = r3.xyz;
   x0[1].xyz = r2.xyz;
   x0[2].xyz = r5.xyz;
-  o0.xyzw = r1.xyzw;
+
+  // o0.xyzw = r1.xyzw; // Relocated from here with hlsltool.py
+
   o5.xyzw = r0.xyzw;
   o1.xy = r4.zw;
   o2.xyz = r6.xyz;

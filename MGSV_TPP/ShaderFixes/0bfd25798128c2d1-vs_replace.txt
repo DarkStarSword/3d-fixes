@@ -1,3 +1,4 @@
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 0bfd25798128c2d1-vs_replace.txt
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:46 2016
 
 cbuffer cVSSystem : register(b0)
@@ -32,20 +33,22 @@ void main(
   float4 fDest;
 
   r0.xy = v0.xy;
-  r0.xy = r0.xy;
   r0.zw = float2(2,-2) * r0.xy;
   r1.xy = float2(-1,1) + r0.zw;
   r2.xyzw = g_vsSystem.m_renderBuffer.zwzw * g_vsSystem.m_renderInfo.xyzw;
-  r0.xy = r0.xy;
   r0.xy = r0.xy * r2.xy;
   r0.xy = r0.xy + r2.zw;
-  r0.xy = r0.xy;
   r0.zw = float2(0,1);
-  r1.xy = r1.xy;
   r1.z = 1;
   r1.w = 1;
-  r0.xyzw = r0.xyzw;
   o2.xyzw = r1.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py --auto-fix-vertex-halo --only-autofixed -i 0bfd25798128c2d1-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r1.w != 1.0)
+  r1.x += stereo.x * (r1.w - stereo.y);
+
   o0.xyzw = r1.xyzw;
   o1.xyzw = r0.xyzw;
   return;
