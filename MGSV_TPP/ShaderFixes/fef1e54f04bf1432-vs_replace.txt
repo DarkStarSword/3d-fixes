@@ -1,3 +1,12 @@
+// Masked light pattern - Mask VS, apply stereo correction (reveal by setting o0.w in PS)
+// VS 6cd27af09c0c8923
+// PS 1a645144779c84fd
+// Mask VS: fef1e54f04bf1432 (reveal by setting o0.w=0)
+
+// To find mask shader, check frame analysis log.txt for interleaved shaders -
+// it will be every 2nd draw call while the lights are being drawn (and light
+// PS turns scene blue when skipped)
+
 // ---- Created with 3Dmigoto v1.2.24 on Tue Jan 19 04:43:46 2016
 
 
@@ -18,6 +27,10 @@ void main(
 
   r0.xyzw = v0.xyzw;
   o0.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+o0.x += stereo.x * (o0.w - stereo.y);
+
   return;
 }
 
