@@ -434,7 +434,8 @@ def auto_fix_vertex_halo(shader):
     pos += shader.insert_vanity_comment(pos, "Automatic vertex shader halo fix inserted with")
 
     pos += shader.insert_instr(pos, 'float4 stereo = StereoParams.Load(0);')
-    pos += shader.insert_instr(pos, '{0}.x += stereo.x * ({0}.w - stereo.y);'.format(temp_reg.variable))
+    pos += shader.insert_instr(pos, 'if ({0}.w != 1.0)'.format(temp_reg.variable))
+    pos += shader.insert_instr(pos, '  {0}.x += stereo.x * ({0}.w - stereo.y);'.format(temp_reg.variable))
     pos += shader.insert_instr(pos)
 
     shader.autofixed = True
