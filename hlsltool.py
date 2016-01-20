@@ -397,7 +397,7 @@ def auto_fix_vertex_halo(shader):
             #   " Only apply components to destination (as mask) to avoid bugs like this one: "mov o6.yz, r1.yz" "
             # does not apply here as HLSL does not use a mask in the same way.
             # Instead we apply the mask to both input & output:
-            instr = '%s.%s = %s.%s' % (pos_out, components, temp_reg.variable, components)
+            instr = '%s.%s = %s.%s;' % (pos_out, components, temp_reg.variable, components)
             debug_verbose(-1, "Line %i: Inserting '%s'" % (output_line + 1, instr))
             off = shader.insert_instr(output_line + 1, instr, 'Inserted by %s' % tool_name)
 
