@@ -8,10 +8,10 @@
 # parser - I'd be better off porting shadertool to DX11 since assembly language
 # is easier to reason about programatically than HLSL.
 
-import sys, os, re, collections, argparse, itertools
+import sys, os, re, collections, argparse, itertools, copy
 
 import shadertool
-from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards
+from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards, game_git_dir
 
 class Instruction(object):
     pattern = re.compile('[^;]*;')
@@ -440,7 +440,7 @@ def auto_fix_vertex_halo(shader):
     shader.autofixed = True
 
 def find_game_dir(file):
-    src_dir = os.path.dirname(os.path.join(os.curdir, file))
+    src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
     if os.path.basename(src_dir).lower() in ('shaderfixes', 'shadercache'):
         return os.path.realpath(os.path.join(src_dir, '..'))
     raise ValueError('Unable to find game directory')
