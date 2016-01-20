@@ -56,18 +56,11 @@ void main(
   float4 fDest;
 
   r0.xyzw = v1.xyzw;
-  r0.xyzw = r0.xyzw;
   r1.xy = v2.xy;
-  r0.xyzw = r0.xyzw;
-  r1.xy = r1.xy;
   r2.xyzw = g_vsLight.m_lightParams[1].xyzw;
-  r2.xyzw = r2.xyzw;
   r3.xyzw = g_vsLight.m_lightParams[2].xyzw;
-  r3.xyzw = r3.xyzw;
   r4.xyz = g_vsObject.m_localParam[0].xyz;
-  r4.xyz = r4.xyz;
   r5.xyz = g_vsObject.m_localParam[1].xyz;
-  r5.xyz = r5.xyz;
   r6.w = 1;
   r6.xyz = v0.xyz;
   r7.x = dot(r6.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
@@ -78,25 +71,20 @@ void main(
   r6.y = dot(r7.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
   r6.z = dot(r7.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
   r6.w = dot(r7.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
-  r6.xyzw = r6.xyzw;
   r4.xyz = r6.xyz * r4.xyz;
   r6.xyz = r4.xyz + r5.xyz;
   r0.xyzw = r2.xyzw * r0.xyzw;
-  r3.xyzw = r3.xyzw;
-  r1.xy = r1.xy;
-  r6.xyz = r6.xyz;
-  r6.w = r6.w;
-  r0.xyzw = r0.xyzw;
-  r3.xyzw = r3.xyzw;
-  r1.xy = r1.xy;
   o3.xyzw = r6.xyzw;
   o1.xyzw = r0.xyzw;
   o2.xyzw = r3.xyzw;
   o0.xy = r1.xy;
-  
+
+// Don't adjust UI vertices at screen corners so that fade to black is still full screen:
+if (all(abs(o3.xy) != 1.0)) {
   float4 stereo = StereoParams.Load(0);
   o3.x += stereo.x * 0.5;
-  
+}
+
   return;
 }
 
@@ -272,3 +260,4 @@ ret
 // Approximately 46 instruction slots used
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+ 
