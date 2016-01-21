@@ -38,14 +38,12 @@ enabled in the control panel) and finally press F7 to save.
 
 Known Issues
 ------------
-- Glow & sun shafts around the sun & moon is at wrong depth
-- Ambient occlusion makes some surfaces appear to shadowed slightly differently
-  in each eye. I'd still suggest leaving it on, because it adds a lot of visual
-  fidelity to the game. Increasing it to high helps a little.
 - Mouse cursor is at screen depth
 - Shadows do not fall quite right on parallax occluded terrain - they are
   slightly under the surface (they are in fact on the real surface, the 3D
   effect on the terrain could be considered an optical illusion).
+- The Ceto Ocean system is partially broken due to a conflict with Helix Mod.
+  Waves may behave a little strangely but it has no impact on gameplay.
 
 Notes
 -----
