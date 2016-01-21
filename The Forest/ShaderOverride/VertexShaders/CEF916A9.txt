@@ -11,6 +11,7 @@
 //      [Space(8)] [Toggle(_SPECGLOSSMAP)]  _Occlusion ("Enable Occlusion Map", Float) = 0
 //      [NoScaleOffset]  _OcclusionMap ("Occlusion (G)", 2D) = "white" { }
 //       _OcclusionStrength ("Occlusion Strength", Range(0,1)) = 1
+//      [Space(8)]  _GroundOcclusion ("Ground Occlusion Strength", Range(0,1)) = 0.25
 //      [Space(12)] [Header(___________________________________________________________________________)] [Space(8)]  _TangentDir ("Primary Strand Direction (XY)", Vector) = (1,0,0,0)
 //      [Space(4)] [Enum(None,0,TangentDir,1)]  _DebugMode ("Debug Mode", Float) = 0
 //      [Header(___________________________________________________________________________)] [Header(Primary Specular Highlight)]  _KKPrimarySpecularColor ("Primary Specular Color", Color) = (1,1,1,1)
@@ -34,7 +35,7 @@
 //          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 98704
+//          GpuProgramID 93013
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 8:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" "_NORMALMAP" }
@@ -84,15 +85,13 @@
     dcl_color o8
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
-texldl r31, c220.z, s3
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Fur/vp/CEF916A9.txt
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Fur/vp/CEF916A9.txt
 mov r30, c19
 mov r29, c220.x
-mul r29.x, r31.x, -r31.y
+mov r29.x, c255.x
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29

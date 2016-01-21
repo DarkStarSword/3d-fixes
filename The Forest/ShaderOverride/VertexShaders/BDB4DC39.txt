@@ -12,7 +12,7 @@
 //     Pass 4/4 {
 //       Name "SHADOWCASTER"
 //       Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
-//       GpuProgramID 233385
+//       GpuProgramID 200472
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "SHADOWS_DEPTH" }
@@ -45,7 +45,6 @@
     dcl_texcoord2 o3.xyz
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     dp4 r0.x, c1, v0
     mul r0.x, r0.x, c14.x
@@ -92,10 +91,9 @@ dcl_2d s3
 mov o1, r2 // Relocated from line 93 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_LODStipple/vp/BDB4DC39.txt
-texldl r31, c220.z, s3
-add r31.w, r2.w, -r31.y
-mad r2.x, r31.w, r31.x, r2.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_LODStipple/vp/BDB4DC39.txt
+mad r2.x, r2.w, c255.x, r2.x
+add r2.x, r2.x, c255.y
 
     rcp r0.x, r2.w
     mul_sat r0.x, r0.x, c17.x

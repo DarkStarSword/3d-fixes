@@ -19,6 +19,7 @@
 //       _MossHeight ("Moss Height", Range(0,100)) = 5
 //      [Space(5)]  _MossTransStrength ("Moss Translucency Strength", Float) = 10
 //       _MossTransColor ("Moss Translucency Color", Color) = (0.73,0.85,0.41,1)
+//      [Space(10)] [Toggle(_SPECGLOSSMAP)]  _FlipTangent ("Flip Tangent", Float) = 0
 //      }
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
@@ -27,7 +28,7 @@
 //        Pass 3/3 {
 //          Name "DEFERRED"
 //          Tags { "LIGHTMODE"="Deferred" "RenderType"="Opaque" }
-//          GpuProgramID 156077
+//          GpuProgramID 184873
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
@@ -78,15 +79,13 @@
     dcl_texcoord6 o8.xyz
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
-texldl r31, c220.z, s3
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Lower Moss/vp/8574C597.txt
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Lower Moss/vp/8574C597.txt
 mov r30, c10
 mov r29, c220.x
-mul r29.x, r31.x, -r31.y
+mov r29.x, c255.x
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29

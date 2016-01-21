@@ -17,6 +17,9 @@
 //       _MossContrast ("Moss Density", Range(0,1)) = 0
 //       _MossSpread ("Moss Spread", Range(0,1)) = 0
 //       _MossHeight ("Moss Height", Range(0,100)) = 5
+//      [Space(5)]  _MossTransStrength ("Moss Translucency Strength", Float) = 10
+//       _MossTransColor ("Moss Translucency Color", Color) = (0.73,0.85,0.41,1)
+//      [Space(10)] [Toggle(_SPECGLOSSMAP)]  _FlipTangent ("Flip Tangent", Float) = 0
 //      }
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
@@ -27,7 +30,7 @@
 //          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 70600
+//          GpuProgramID 88941
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
@@ -74,7 +77,6 @@
     dcl_texcoord5 o7
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mov r0.w, c4.w
     add r0.x, r0.w, c6.w
@@ -111,19 +113,18 @@ dcl_2d s3
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 112 with shadertool.py
+mov o0, r0 // Relocated from line 115 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Lower Moss/vp/649CBF2A.txt
-texldl r31, c220.z, s3
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Lower Moss/vp/649CBF2A.txt
+mad r0.x, r0.w, c255.x, r0.x
+add r0.x, r0.x, c255.y
 
     mul r2.xz, r0.xyww, c17.z
     mad o7.xy, r2.z, c11.zwzw, r2.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 109 with shadertool.py
+//     mov o0, r0 // Relocated to line 112 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o7.zw, r0

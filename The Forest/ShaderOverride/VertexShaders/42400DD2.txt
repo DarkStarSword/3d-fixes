@@ -1,4 +1,4 @@
-// CRC32: 42400DD2 | Matched 6 variants of 3 shaders: Custom/Sheen, Lux/Detail Blend Splatmap CG, Lux/Detail Blend Splatmap General Lighting
+// CRC32: 42400DD2 | Matched 6 variants of 3 shaders: Custom/Sheen, Custom/Sheen Deferred, Lux/Detail Blend Splatmap General Lighting
 // 
 //    Unity headers extracted from Sheen.shader
 //    Shader "Custom/Sheen" {
@@ -16,13 +16,13 @@
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
 //        LOD 200
-//        Tags { "QUEUE"="Background-1000" "RenderType"="Opaque" }
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
 //        Pass 2/2 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Background-1000" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 97821
+//          GpuProgramID 68917
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
@@ -43,33 +43,29 @@
 //      }
 //    }
 // 
-//    Unity headers extracted from Lux Detail Blend Splatmap CG.shader
-//    Shader "Lux/Detail Blend Splatmap CG" {
+//    Unity headers extracted from Sheen Deferred.shader
+//    Shader "Custom/Sheen Deferred" {
 //      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
 //       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//       _Metallic ("Metallic", Range(0,1)) = 0
 //       _BumpTex ("Normal Map", 2D) = "bump" { }
-//       _SpecGlossTex ("Specular (RGB) Smoothness(A)", 2D) = "white" { }
-//       _OcclusionTex ("Occlusion", 2D) = "white" { }
-//       _Detail1AlbedoTex ("Detail 1 Albedo", 2D) = "gray" { }
-//       _Detail1NormalTex ("Detail 1 Normal", 2D) = "bump" { }
-//       _Datail1Tiling ("Detail 1 Tiling", Float) = 1
-//       _Detail2AlbedoTex ("Detail 2 Albedo", 2D) = "gray" { }
-//       _Detail2NormalTex ("Detail 2 Normal", 2D) = "bump" { }
-//       _Datail2Tiling ("Detail 2 Tiling", Float) = 1
-//      [HideInInspector]  _Gray ("Gray", Color) = (0.5,0.5,0.5,1)
-//       _SplatMap ("Splat Map (G)", 2D) = "black" { }
-//       _AmbientStrength ("_AmbientStrength", Range(0,1)) = 1
+//       _Sheen ("Sheen Texture", 2D) = "white" { }
+//       _SheenScale ("Sheen Texture Scale", Range(0,1)) = 0.25
+//       _SheenSpeed ("Blink Speed", Float) = 60
+//       _SheenIntensity ("Blink Intensity", Range(0,1)) = 0.01
 //      }
 //      Fallback "Diffuse"
 //      SubShader 1/1 {
 //        LOD 200
-//        Tags { "RenderType"="Opaque" }
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
 //        Pass 2/3 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 89617
+//          GpuProgramID 85611
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
@@ -117,7 +113,7 @@
 //          Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          ZWrite Off
 //          Blend One One
-//          GpuProgramID 109529
+//          GpuProgramID 95706
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
@@ -156,7 +152,6 @@
     dcl_texcoord5 o6
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mad o1.xy, v3, c12, c12.zwzw
     dp4 o5.x, c4, v0
@@ -168,19 +163,18 @@ dcl_2d s3
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o0, r0 // Relocated from line 169 with shadertool.py
+mov o0, r0 // Relocated from line 165 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Custom_Sheen/vp/42400DD2.txt
-texldl r31, c220.z, s3
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Custom_Sheen/vp/42400DD2.txt
+mad r0.x, r0.w, c255.x, r0.x
+add r0.x, r0.x, c255.y
 
     mul r1.xz, r0.xyww, c13.x
     mad o6.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o0, r0 // Relocated to line 166 with shadertool.py
+//     mov o0, r0 // Relocated to line 162 with shadertool.py
 mov o0.z, r0 // Inserted by shadertool.py
 
     mov o6.zw, r0

@@ -85,15 +85,13 @@
     dcl_texcoord7 o9
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
-texldl r11, c220.z, s3
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
 mov r30, c10
 mov r29, c220.x
-mul r29.x, r11.x, -r11.y
+mov r29.x, c255.x
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
@@ -252,10 +250,9 @@ add r30.xyz, r30, -r29
 mov o0, r2 // Relocated from line 235 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
-texldl r31, c220.z, s3
-add r31.w, r2.w, -r31.y
-mad r2.x, r31.w, r31.x, r2.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
+mad r2.x, r2.w, c255.x, r2.x
+add r2.x, r2.x, c255.y
 
     mul r5.xz, r2.xyww, -c24.y
     mul r0.z, r2.y, c11.x

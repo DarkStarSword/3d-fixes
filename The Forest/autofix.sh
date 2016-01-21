@@ -50,7 +50,7 @@ if [ $FIX_HALO -eq 1 ]; then
 	# Blacklist Ocean shaders as some of the vertex shaders do not have any free
 	# sampler registers, so halos must be fixed in their pixel shaders instead
 	find -maxdepth 1 -print0 | grep -zv '\(CetoTF_OceanTopSide\|CetoTF_OceanUnderSide\|Ceto_OceanMask\)' | sed -z 's/$/\/vp\/*/' | xargs -0 \
-		shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed | update_ini
+		shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed | update_ini
 fi
 
 if [ $FIX_CETO -eq 1 ]; then

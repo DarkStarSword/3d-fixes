@@ -91,7 +91,7 @@
 //       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent-1" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" }
 //       ZWrite Off
 //       Cull Off
-//       GpuProgramID 33933
+//       GpuProgramID 42685
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
@@ -124,7 +124,6 @@
     dcl_texcoord3 o4
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     dp4 o1.w, c4, v0
     dp4 o2.w, c5, v0
@@ -138,10 +137,9 @@ dcl_2d s3
 mov o0, r0 // Relocated from line 136 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./The Forest_Water-Simple/vp/24DE9CDB.txt
-texldl r31, c220.z, s3
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./The Forest_Water-Simple/vp/24DE9CDB.txt
+mad r0.x, r0.w, c255.x, r0.x
+add r0.x, r0.x, c255.y
 
     mul r1.xz, r0.xyww, c12.x
     mad o4.xy, r1.z, c11.zwzw, r1.xwzw

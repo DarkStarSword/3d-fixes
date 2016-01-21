@@ -17,8 +17,8 @@
 //          Cull Off
 //          Fog { Mode Off }
 //          Offset -1, -1
-// 1:       GpuProgramID 170247
-// 2:       GpuProgramID 244679
+// 1:       GpuProgramID 164778
+// 2:       GpuProgramID 206519
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Bind "vertex" Vertex
@@ -53,7 +53,6 @@ dcl_position o3
 
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mad r0, v1.xyzx, c12.xxxy, c12.yyyx
     dp4 r1.x, c5, r0
@@ -87,10 +86,9 @@ dcl_2d s3
     mov o3, r1
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Hidden_Amplify Motion_SkinnedVectors/vp/9FE8C757.txt
-texldl r31, c220.z, s3
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Hidden_Amplify Motion_SkinnedVectors/vp/9FE8C757.txt
+mad r1.x, r1.w, c255.x, r1.x
+add r1.x, r1.x, c255.y
 
 mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o1.zw, r1

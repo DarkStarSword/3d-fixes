@@ -25,7 +25,7 @@
 //       Blend SrcAlpha OneMinusSrcAlpha
 //       AlphaTest Greater 0
 //       ColorMask RGB
-//       GpuProgramID 58595
+//       GpuProgramID 57739
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "VERTEXLIGHT_ON" }
@@ -83,7 +83,6 @@ dcl_color o8
 
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     dp4 r0.x, c4, v0
     dp4 r1.y, c5, v0
@@ -146,10 +145,9 @@ dcl_2d s3
     mov o7, r1
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Transparent_Refractive/vp/4F29FE83.txt
-texldl r31, c220.z, s3
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Transparent_Refractive/vp/4F29FE83.txt
+mad r1.x, r1.w, c255.x, r1.x
+add r1.x, r1.x, c255.y
 
 mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o4, r1

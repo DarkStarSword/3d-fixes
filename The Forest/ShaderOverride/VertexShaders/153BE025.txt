@@ -14,11 +14,11 @@
 //   Fallback "Diffuse"
 //   SubShader 1/1 {
 //     LOD 200
-//     Tags { "QUEUE"="Background-1000" "RenderType"="Opaque" }
+//     Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
 //     Pass 1/2 {
 //       Name "FORWARD"
-//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Background-1000" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//       GpuProgramID 10299
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 28838
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
@@ -69,7 +69,6 @@
     dcl_texcoord6 o7
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mad o1.xy, v3, c24, c24.zwzw
     dp4 r0.x, c10, v0
@@ -127,10 +126,9 @@ dcl_2d s3
 mov o0, r1 // Relocated from line 125 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Custom_Sheen/vp/153BE025.txt
-texldl r31, c220.z, s3
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Custom_Sheen/vp/153BE025.txt
+mad r1.x, r1.w, c255.x, r1.x
+add r1.x, r1.x, c255.y
 
     mul r2.xz, r1.xyww, c25.z
     mad o6.xy, r2.z, c15.zwzw, r2.xwzw

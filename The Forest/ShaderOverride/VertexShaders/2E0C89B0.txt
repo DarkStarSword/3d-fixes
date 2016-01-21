@@ -25,7 +25,8 @@
 //       _WindNear ("Wind Near", Range(0,600)) = 180
 //       _WindFar ("Wind Far", Range(0,600)) = 200
 //      [Space(5)] [Enum(Static,0,Falling,1)]  _TreeBendingMode ("Tree Bending Mode", Float) = 0
-//      [HideInInspector]  _Variation ("Variation (set by Script)", Float) = 0
+//      [Space(10)] [Toggle(_SPECGLOSSMAP)]  _FlipTangent ("Flip Tangent", Float) = 0
+//      [HideInInspector] [Space(10)]  _Variation ("Variation (set by Script)", Float) = 0
 //      }
 //      SubShader 1/1 {
 //        LOD 200
@@ -33,7 +34,7 @@
 //        Pass 3/4 {
 //          Name "DEFERRED"
 //          Tags { "LIGHTMODE"="Deferred" "RenderType"="AFSTreeBark" }
-//          GpuProgramID 172431
+//          GpuProgramID 149331
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 // 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
@@ -101,15 +102,13 @@
     dcl_texcoord6 o8.xyz
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
-texldl r31, c220.z, s3
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Tumbling Moss/vp/2E0C89B0.txt
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Tree Bark Tumbling Moss/vp/2E0C89B0.txt
 mov r30, c13
 mov r29, c220.x
-mul r29.x, r31.x, -r31.y
+mov r29.x, c255.x
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29

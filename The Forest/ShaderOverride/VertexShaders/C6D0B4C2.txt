@@ -1,5 +1,5 @@
-// CRC32: C6D0B4C2 | Unity headers extracted from CMU_3__5_2_boosted.shader
-// Shader "Nature/Terrain/CMU_3 5_2 boosted" {
+// CRC32: C6D0B4C2 | Unity headers extracted from CMU_3__5_2_boosted_base.shader
+// Shader "Nature/Terrain/CMU_3 5_2 boosted base" {
 //   Properties {
 //   [Space(10)] [Enum(None,0,Height,1,Wetness,2,Occlusion,3,Distribution Masks,4)]  _DebugMode ("Debug Mode", Float) = 0
 //   [Space(5)] [Enum(Off,0,On,1)]  _ShowOverlap ("Display Overlap", Float) = 0
@@ -16,7 +16,7 @@
 //    _OcclusionStrength ("Occlusion Strength", Range(0,1)) = 1
 //   [Space(5)] [Header(___________________________________________________________________________)] [Header(Extrusion)] [Space()]  _ParallaxPM ("Extrusion PM", Range(0.005,0.08)) = 0.04
 //   [Space()]  _Parallax ("Extrusion POM", Range(0.005,0.5)) = 0.05
-//   [Space()]  _ParallaxRTPPOM ("Extrusion POM_RTP", Range(0.005,0.1)) = 0.03
+//   [Space()]  _ParallaxRTPPOM ("Extrusion POM_RTP", Range(0.005,0.3)) = 0.03
 //   [Space()]  _POM_Linear_Steps ("POM Linear Steps", Float) = 20
 //   [Space()]  _Parallax14 ("Extrusion per Layer: 1-4", Vector) = (1,1,1,1)
 //    _Parallax58 ("Extrusion per Layer: 5-8", Vector) = (1,1,1,1)
@@ -83,15 +83,14 @@
 //   [Space(5)] [Header(___________________________________________________________________________)] [Header(General Terrain Settings)] [Space()]  _TerrainBaseSmoothness ("Terrain Base Smoothness", Range(0.03,1)) = 0.1
 //   [HideInInspector]  _Color ("Main Color", Color) = (1,1,1,1)
 //   }
-//   Dependency "BaseMapShader" = "Nature/Terrain/CMU_3 5_2 boosted"
 //   SubShader 1/1 {
 //     LOD 200
-//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="12" }
+//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" }
 //     Pass 4/4 {
 //       Name "CASTER"
-//       Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="12" }
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //       Cull Off
-//       GpuProgramID 225935
+//       GpuProgramID 228349
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "SHADOWS_DEPTH" }
@@ -120,7 +119,6 @@ dcl_position o2
 
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mad r0, v0.xyzx, c5.xxxy, c5.yyyx
     dp4 r1.w, c3, r0
@@ -135,16 +133,15 @@ dcl_2d s3
     dp4 r1.x, c0, r0
     dp4 r1.y, c1, r0
 
-mov o2, r1 // Relocated from line 134 with shadertool.py
+mov o2, r1 // Relocated from line 133 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Nature_Terrain_CMU_3 5_2 boosted/vp/C6D0B4C2.txt
-texldl r31, c220.z, s3
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Nature_Terrain_CMU_3 5_2 boosted base/vp/C6D0B4C2.txt
+mad r1.x, r1.w, c255.x, r1.x
+add r1.x, r1.x, c255.y
 
     mov o0, r1
 
-//     mov o2, r1 // Relocated to line 133 with shadertool.py
+//     mov o2, r1 // Relocated to line 132 with shadertool.py
 mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o1.xy, v1

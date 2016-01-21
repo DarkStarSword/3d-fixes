@@ -12,7 +12,7 @@
 //     Pass 1/4 {
 //       Name "FORWARD"
 //       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
-//       GpuProgramID 25570
+//       GpuProgramID 4043
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
@@ -60,7 +60,6 @@
     dcl_texcoord7 o6
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
     mov r0.yw, c25
     mul r0.xy, r0.y, c15
@@ -73,10 +72,9 @@ dcl_2d s3
 mov o0.xyw, r1 // Relocated from line 69 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_LODStipple/vp/CCE30BE2.txt
-texldl r31, c220.z, s3
-add r31.w, r1.w, -r31.y
-mad r1.x, r31.w, r31.x, r1.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_LODStipple/vp/CCE30BE2.txt
+mad r1.x, r1.w, c255.x, r1.x
+add r1.x, r1.x, c255.y
 
     mul r2.xz, r1.xyww, c25.x
 

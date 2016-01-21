@@ -70,6 +70,8 @@
 //    _WnThreshold ("Threshold", Range(-0.5,1)) = 0.75
 //    _WnSharpness ("Sharpness", Range(0.001,1)) = 0.1
 //    _WnNormalStrength ("Underlaying Normal Strength", Range(0,1)) = 1
+//    _MossTransColor ("Moss Translucency Color", Color) = (0.73,0.85,0.41,1)
+//    _MossTranslucenyStrength ("Moss Translunceny Strength ", Float) = 1
 //   [HideInInspector]  _Mode ("__mode", Float) = 0
 //   [HideInInspector]  _SrcBlend ("__src", Float) = 1
 //   [HideInInspector]  _DstBlend ("__dst", Float) = 0
@@ -84,7 +86,7 @@
 //       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
 //       ZWrite [_ZWrite]
 //       Blend [_SrcBlend] [_DstBlend]
-//       GpuProgramID 28828
+//       GpuProgramID 56238
 //       Program "vp" {
 //         SubProgram "d3d9 " {
 //           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" "_DETAIL_MULX2" "_LUX_FOAM" "_LUX_WATERFLOW" "_NORMALMAP" "_PARALLAXMAP" "_SPECGLOSSMAP" }
@@ -144,15 +146,13 @@
     dcl_color o9
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
-texldl r6, c220.z, s3
 
 // Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/4BE054BC.txt
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/4BE054BC.txt
 mov r30, c14
 mov r29, c220.x
-mul r29.x, r6.x, -r6.y
+mov r29.x, c255.x
 dp4 r28.x, c180, r29
 dp4 r28.y, c181, r29
 dp4 r28.z, c182, r29
@@ -251,10 +251,9 @@ add r30.xyz, r30, -r29
     mov o0.xyw, r0
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/4BE054BC.txt
-texldl r31, c220.z, s3
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
+// shadertool.py -I ../.. --use-nv-stereo-reg-vs --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_Standard Specular Custom Ambient Water Flow/vp/4BE054BC.txt
+mad r0.x, r0.w, c255.x, r0.x
+add r0.x, r0.x, c255.y
 
     mul r1.xz, r0.xyww, c28.z
     rcp r0.x, r0.w
