@@ -985,7 +985,13 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
 
-    if isinstance(tree, VertexShader) and args.stereo_sampler_vs:
+    if isinstance(tree, VertexShader) and args.use_nv_stereo_reg_vs:
+        # When using the undocumented stereo register we don't insert a texture
+        # declaration, but we still insert c220 because a bunch of code will
+        # try to use it
+        tree.stereo_sampler = None
+        tree.nv_stereo_reg = Register(args.use_nv_stereo_reg_vs)
+    elif isinstance(tree, VertexShader) and args.stereo_sampler_vs:
         tree.stereo_sampler = args.stereo_sampler_vs
         if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
             raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
@@ -1027,7 +1033,8 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     offset = 0
     offset += tree.insert_decl()
     offset += tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
-    offset += tree.insert_decl('dcl_2d', [tree.stereo_sampler])
+    if tree.stereo_sampler is not None:
+        offset += tree.insert_decl('dcl_2d', [tree.stereo_sampler])
     offset += tree.insert_decl()
     return tree.stereo_const, offset
 
@@ -1090,6 +1097,7 @@ def adjust_ui_depth(tree, args):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
@@ -1113,6 +1121,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x; convergence = tmp_reg.y
     tree.add_inst('add', [tmp_reg.w, pos_reg.w, -convergence])
@@ -1186,6 +1195,7 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     if args.condition:
         pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
         pos += tree.insert_instr(pos, NewInstruction('if_eq', [tmp_reg.x, stereo_const.x]))
+    # TODO: Add support for --use-nv-stereo-reg-vs
     pos += tree.insert_instr(pos, NewInstruction('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler]))
     separation = tmp_reg.x; convergence = tmp_reg.y
     pos += tree.insert_instr(pos, NewInstruction('add', [tmp_reg.w, repl_reg.w, -convergence]))
@@ -1438,10 +1448,18 @@ def auto_fix_vertex_halo(tree, args):
     debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
-    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
-    pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
+        pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, temp_reg.w, neg_sep_conv, temp_reg.x]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [temp_reg.x, temp_reg.x, separation]))
+
     pos += tree.insert_instr(pos)
 
     tree.autofixed = True
@@ -2352,8 +2370,10 @@ def fix_unity_reflection(tree, args):
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     pos = tree.decl_end
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
+
+    if tree.stereo_sampler is not None:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
 
     clip_space_adj = tree._find_free_reg('r', None, desired=29)
     local_space_adj = tree._find_free_reg('r', None, desired=28)
@@ -2368,7 +2388,15 @@ def fix_unity_reflection(tree, args):
     pos += insert_vanity_comment(args, tree, pos, "Unity reflection/specular fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('mov', [repl_cam_pos, _WorldSpaceCameraPos]))
     pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
-    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj.x, neg_sep_conv]))
+
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
@@ -2456,8 +2484,11 @@ def fix_unity_frustrum_world(tree, args):
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     pos = tree.decl_end
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
 
     clip_space_adj = tree._find_free_reg('r', None, desired=29)
     local_space_adj = tree._find_free_reg('r', None, desired=28)
@@ -2470,8 +2501,16 @@ def fix_unity_frustrum_world(tree, args):
     pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
     pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, _ZBufferParams.z, _ZBufferParams.w]), comment='Derive 1/far from _ZBufferParams')
     pos += tree.insert_instr(pos, NewInstruction('rcp', [clip_space_adj.x, clip_space_adj.x]))
-    pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, clip_space_adj.x, -convergence]))
-    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, clip_space_adj.x, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mad', [clip_space_adj.x, clip_space_adj.x, neg_sep_conv, separation]))
+
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
@@ -2528,9 +2567,13 @@ def fix_unity_ssao(tree, args):
     tmp = tree._find_free_reg('r', PS3, desired=30)
     pos = tree.decl_end
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
-    offset += tree.insert_instr(pos + offset, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        offset += tree.insert_instr(pos + offset, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
+
     offset += tree.insert_instr(pos + offset)
-    separation = t.x; convergence = t.y
 
     vanity_inserted = False
     lines_done = set()
@@ -2578,8 +2621,17 @@ def fix_unity_ssao(tree, args):
         if instr.opcode == 'mul':
             x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
             depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
-            pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
-            pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+
+            if tree.stereo_sampler is not None:
+                # Use Helix Mod stereo texture:
+                pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+            else:
+                # Use undocumented register injected by 3D Vision driver:
+                neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, depth, neg_sep_conv, x_reg]))
+                pos += tree.insert_instr(pos, NewInstruction('add', [x_reg, x_reg, separation]))
+
         else:
             tree[line].insert(0, CPPStyleComment('// '))
             tree[line].append(WhiteSpace(' '))
@@ -2588,8 +2640,17 @@ def fix_unity_ssao(tree, args):
             pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg, instr.args[1], instr.args[2]]))
             x_reg = Register('%s.%s' % (tmp.reg, reg.swizzle[0]))
             depth = Register('%s.%s' % (tmp.reg, reg.swizzle[2]))
-            pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
-            pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+
+            if tree.stereo_sampler is not None:
+                # Use Helix Mod stereo texture:
+                pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+            else:
+                # Use undocumented register injected by 3D Vision driver:
+                neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, depth, neg_sep_conv, x_reg]))
+                pos += tree.insert_instr(pos, NewInstruction('add', [x_reg, x_reg, separation]))
+
             pos += tree.insert_instr(pos, NewInstruction('add', [instr.args[0], tmp, instr.args[3]]))
 
         pos += tree.insert_instr(pos);
@@ -2718,6 +2779,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     disabled = stereo_const.xxxx
 
     append_vanity_comment(args, tree, 'Texcoord disabled by')
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -2778,6 +2840,7 @@ def disable_shader(tree, args):
     if args.disable == '1':
         disabled = stereo_const.yyyy
 
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -2891,6 +2954,8 @@ def parse_args():
             help='Specify the sampler to read the stereo parameters from in vertex shaders')
     parser.add_argument('--stereo-sampler-ps',
             help='Specify the sampler to read the stereo parameters from in pixel shaders')
+    parser.add_argument('--use-nv-stereo-reg-vs', nargs='?', default=None, const='c255',
+            help='Use the undocumented stereo register injected by the driver instead of the stereo texture injected by Helix Mod (not supported by all options). Intended for use to solve problems with certain effects that use all four samplers in the VS in combination with a binary patched Helix mod')
 
     parser.add_argument('--show-regs', '-r', action='store_true',
             help='Show the registers used in the shader')
