@@ -2955,7 +2955,7 @@ def parse_args():
     parser.add_argument('--stereo-sampler-ps',
             help='Specify the sampler to read the stereo parameters from in pixel shaders')
     parser.add_argument('--use-nv-stereo-reg-vs', nargs='?', default=None, const='c255',
-            help='Use the undocumented stereo register injected by the driver instead of the stereo texture injected by Helix Mod (not supported by all options). Intended for use to solve problems with certain effects that use all four samplers in the VS in combination with a binary patched Helix mod')
+            help='Use the undocumented stereo register injected by the driver instead of the stereo texture injected by Helix Mod. This is only supported by some options in this tool, and is only available in vertex shaders that the driver adjusted, so it is not recommended for use.')
 
     parser.add_argument('--show-regs', '-r', action='store_true',
             help='Show the registers used in the shader')
