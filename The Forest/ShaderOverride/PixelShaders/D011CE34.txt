@@ -1,0 +1,252 @@
+// CRC32: D011CE34 | Unity headers extracted from AfsFoliageShader Deferred SingleSided Touch v4 Stipple VFACE.shader
+// Shader "AFS/Foliage Shader Deferred SingleSided Touch v4 Stipple VFACE" {
+//   Properties {
+//   [Header(Base Maps and Settings)] [Space] [LM_Albedo] [LM_Transparency]  _MainTex ("Base (RGB)", 2D) = "white" { }
+//   [LM_TransparencyCutOff]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//   [NoScaleOffset] [LM_Glossiness]  _BumpTransSpecMap ("Normal (GA) Translucency(R) Smoothness(B)", 2D) = "bump" { }
+//   [LM_Specular]  _SpecularReflectivity ("Specular Reflectivity", Color) = (0.2,0.2,0.2,1)
+//    _TranslucencyStrength ("Translucency Strength", Range(0,1)) = 0.5
+//   [Space]  _VertexAOStrength ("Brighten Vertex AO", Range(0,2)) = 2
+//   [Space(5)] [Header(Wind)] [Space]  _Windmultiplier ("Wind Multiplier", Range(0,10)) = 1
+//    _LeafTurbulence ("Leaf Turbulence", Range(0,1)) = 0.5
+//    _LeafTurbulenceStrength ("Leaf Turbulence Strength", Range(0,6)) = 1
+//   [Space(10)] [KeywordEnum(Vertex Colors, Vertex Colors And UV4)]  _BendingControls ("Bending Parameters", Float) = 0
+//   [Space(5)] [Header(Stippling)] [Space]  _StippleNear ("Stipple Near", Range(0,300)) = 10
+//    _StippleFar ("Stipple Far", Range(0,300)) = 20
+//   [Space(5)] [Header(Burning)] [Space]  _BurnColor ("Burn Color (RGB) Ratio (A)", Color) = (0.75,0,0,0.1)
+//    _BurnHeight ("Burn Height", Float) = 3
+//    _BurnAmount ("Burn Amount", Range(0,1)) = 0
+//   [HideInInspector]  _TouchBendingPosition ("TouchBendingPosition", Vector) = (0,0,0,0)
+//   [HideInInspector]  _TouchBendingForce ("TouchBendingForce", Vector) = (0,0,0,0)
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="AFSFoliageBendingTouchSingleSided" "AfsMode"="Foliage" }
+//     Pass 2/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="AFSFoliageBendingTouchSingleSided" "AfsMode"="Foliage" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 86470
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Float 10 [_AfsRainamount]
+//           Float 13 [_BurnAmount]
+//           Vector 12 [_BurnColor]
+//           Float 11 [_Cutoff]
+//           Vector 8 [_LightColor0]
+//           Vector 6 [_LightPositionRange]
+//           Vector 7 [_LightShadowData]
+//           Vector 4 [_ProjectionParams]
+//           Vector 14 [_SpecularReflectivity]
+//           Float 15 [_TranslucencyStrength]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 5 [_WorldSpaceLightPos0]
+//           Vector 9 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_ShadowMapTexture] CUBE 0
+//           SetTexture 1 [_LightTexture0] CUBE 1
+//           SetTexture 2 [_LightTextureB0] 2D 2
+//           SetTexture 3 [_MainTex] 2D 3
+//           SetTexture 4 [_BumpTransSpecMap] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c16, 1, -1, 2, -2
+    def c17, 20, 0, 16, 0.5
+    def c18, 2.5, -0.800000012, 1, 0.0199999996
+    def c19, 0.970000029, 0.25, 0.00100000005, 31.622776
+    def c20, 1, 0, 0.0078125, -0.0078125
+    def c21, 9.99999975e-005, 0.967999995, 0.0299999993, 10
+    def c22, 8, 0, 0, 0
+    dcl_texcoord_pp v0.xyz
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_color_pp v4.w
+    dcl_texcoord4 v5.xyz
+    dcl_texcoord5 v6.x
+    dcl_texcoord6 v7.xyz
+    dcl vFace
+    dcl_cube s0
+    dcl_cube s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors AFS_Foliage Shader Deferred SingleSided Touch v4 Stipple VFACE/fp/D011CE34.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xz, c16
+    mad r0.y, c13.x, r0.z, v4.w
+    add r0.y, r0.y, v5.z
+    add r0.y, r0.y, c16.w
+    mul r0.z, r0.y, c17.x
+    mov r1.z, c17.z
+    mad_sat r0.y, r0.y, r1.z, c12.w
+    mov_sat r0.z, r0.z
+    add r0.yz, -r0, c16.x
+    texld_pp r1, v5, s3
+    mad r0.w, r1.w, r0.z, -c11.x
+    mul_pp r0.z, r0.z, r1.w
+    mov_pp oC0.w, r0.z
+    add r2, r0.w, -v6.x
+    texkill r2
+    dp3 r0.z, v7, v7
+    rsq r0.z, r0.z
+    rcp r0.z, r0.z
+    mul r0.z, r0.z, c6.w
+    add r2.xyz, c20.z, v7
+    texld r2, r2, s0
+    add r3.xyz, c20.wwzw, v7
+    texld r3, r3, s0
+    mov r2.y, r3.x
+    add r3.xyz, c20.wzww, v7
+    texld r3, r3, s0
+    mov r2.z, r3.x
+    add r3.xyz, c20.zwww, v7
+    texld r3, r3, s0
+    mov r2.w, r3.x
+    mad r2, r0.z, -c19.x, r2
+    cmp_pp r2, r2, r0.x, c7.x
+    dp4_pp r0.z, r2, c19.y
+    mad r2, v3.xyzx, c20.xxxy, c20.yyyx
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2
+    dp3 r0.w, r3, r3
+    texld r2, r3, s1
+    texld r3, r0.w, s2
+    mul r0.w, r2.w, r3.x
+    mul_pp r0.z, r0.z, r0.w
+    mul_pp r2.xyz, r0.z, c8
+    add r0.z, c16.x, -v6.x
+    mul r0.y, r0.y, r0.z
+    mov_pp r3.xyz, c14
+    cmp r0.z, vFace, c16.x, c16.y
+    mul r0.z, r0.z, c4.x
+    texld_pp r4, v5, s4
+    mad_pp r5.xy, r4.wyzw, c16.z, c16.y
+    dp2add_sat_pp r0.w, r5, r5, c17.y
+    add_pp r0.w, -r0.w, c16.x
+    rsq_pp r0.w, r0.w
+    rcp_pp r5.z, r0.w
+    mul_pp r5.xyz, r0.z, r5
+    dp3 r6.y, v1, r5
+    mul_sat r0.z, r6.y, c10.x
+    lrp_pp r7.w, r0.z, c16.x, r4.z
+    mov r8.xyz, c14
+    add r8.xyz, -r8, c18.w
+    mad_pp r7.xyz, r0.z, r8, c14
+    mov_pp r3.w, r4.z
+    cmp r3, -c10.x, r3, r7
+    mad_pp r0.y, r3.w, -r0.y, c16.x
+    add_pp r0.w, -r0.y, c16.x
+    mad_pp r0.w, r0.w, c21.y, c21.z
+    log_pp r0.w, r0.w
+    rcp r0.w, r0.w
+    mul_pp r0.w, r0.w, c21.w
+    mul_pp r1.w, r0.w, r0.w
+    mad_pp r0.w, r0.w, r0.w, c16.x
+    mul_pp r0.w, r0.w, c9.y
+    dp3_pp r6.x, v0, r5
+    dp3_pp r6.z, v2, r5
+    nrm_pp r5.xyz, r6
+    add r7.xyz, r30, -v3
+    nrm_pp r8.xyz, r7
+    add r7.xyz, c5, -v3
+    dp3 r2.w, r7, r7
+    rsq r2.w, r2.w
+    mad_pp r9.xyz, r7, r2.w, r8
+    dp3_pp r3.w, r5, r8
+    max_pp r4.y, r3.w, c17.y
+    mul_pp r7.xyz, r2.w, r7
+    dp3_pp r2.w, r9, r9
+    add r3.w, -r2.w, c19.z
+    rsq_pp r2.w, r2.w
+    cmp_pp r2.w, r3.w, c19.w, r2.w
+    mul_pp r8.xyz, r2.w, r9
+    dp3_pp r2.w, r5, r8
+    dp3_pp r3.w, -r5, r7
+    max_pp r4.w, r3.w, c17.y
+    dp3_pp r3.w, r7, r8
+    dp3_pp r5.x, r6, r7
+    max_pp r6.x, r5.x, c17.y
+    max_pp r5.x, r3.w, c17.y
+    max_pp r3.w, r2.w, c17.y
+    pow_pp r2.w, r3.w, r1.w
+    mul_pp r0.w, r0.w, r2.w
+    mul_pp r1.w, r0.y, r0.y
+    mul_pp r2.w, r1.w, c9.w
+    mad_pp r0.x, r1.w, -c9.w, r0.x
+    mad_pp r1.w, r4.y, r0.x, r2.w
+    add_pp r3.w, -r4.y, c16.x
+    mad_pp r0.x, r6.x, r0.x, r2.w
+    mad r0.x, r0.x, r1.w, c21.x
+    rcp_pp r0.x, r0.x
+    mul_pp r0.x, r0.w, r0.x
+    mul_pp r0.x, r6.x, r0.x
+    mul_pp r0.x, r0.x, c9.x
+    max_pp r1.w, r0.x, c17.y
+    mul_pp r5.yzw, r2.xxyz, r1.w
+    add_pp r0.x, -r5.x, c16.x
+    mul_pp r0.w, r5.x, r5.x
+    dp2add_pp r0.y, r0.w, r0.y, -c17.w
+    mul_pp r0.w, r0.x, r0.x
+    mul_pp r0.w, r0.w, r0.w
+    mul_pp r0.x, r0.x, r0.w
+    lrp_pp r6.yzw, r0.x, c16.x, r3.xxyz
+    mul_pp r5.xyz, r5.yzww, r6.yzww
+    mul_pp r0.x, r3.w, r3.w
+    mul_pp r0.x, r0.x, r0.x
+    mul_pp r0.x, r3.w, r0.x
+    mad_pp r0.x, r0.y, r0.x, c16.x
+    add_pp r0.w, -r6.x, c16.x
+    mul_pp r1.w, r0.w, r0.w
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r0.w, r0.w, r1.w
+    mad_pp r0.y, r0.y, r0.w, c16.x
+    mul_pp r0.x, r0.x, r0.y
+    mul_pp r0.x, r6.x, r0.x
+    mul_pp r0.xyw, r0.x, r2.xyzz
+    add_pp r1.w, -r4.z, c17.w
+    mul_sat r1.w, r1.w, c18.x
+    mul r0.z, r0.z, r1.w
+    mad r0.z, r0.z, c18.y, c18.z
+    mul_pp r6.xyz, r0.z, r1
+    cmp_pp r1.xyz, -c10.x, r1, r6
+    max_pp r0.z, r3.x, r3.y
+    max_pp r1.w, r0.z, r3.z
+    add_pp r0.z, -r1.w, c16.x
+    mul_pp r1.xyz, r0.z, r1
+    mad_pp r0.xyz, r1, r0.xyww, r5
+    mul_pp r1.xyz, r4.w, r1
+    mul_pp r1.xyz, r4.x, r1
+    mul_pp r1.xyz, r1, c15.x
+    mul_pp r1.xyz, r2, r1
+    mad_pp oC0.xyz, r1, c22.x, r0

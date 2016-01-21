@@ -1,0 +1,279 @@
+// CRC32: 839ED709 | Unity headers extracted from AfsBillboardDeferred_VFACE_180.shader
+// Shader "AFS/AFS BillboardDeferred VFACE" {
+//   Properties {
+//    _Color ("Color Variation", Color) = (0.9,0.5,0,0.1)
+//   [Space(5)]  _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//   [NoScaleOffset]  _BumpTex ("Normal (AGB) Translucency(R)", 2D) = "bump" { }
+//   [Space(5)]  _Cutoff ("Cutoff", Range(0,1)) = 0.2
+//    _SpecularReflectivity ("Specular Reflectivity", Color) = (0.2,0.2,0.2,1)
+//   [Gamma]  _Smoothness ("Smoothness", Range(0,1)) = 0.3
+//    _TranslucencyStrength ("Translucency Strength", Range(0,1)) = 0.5
+//   [Space(5)]  _TreeScale ("Tree Scale", Range(0,50)) = 10
+//    _TreeHeight ("Tree Height Factor", Range(0,10)) = 2
+//    _TreeHeightCut ("Tree Height Limit", Range(0,1)) = 1
+//    _TreeWidthCut ("Tree Width Limit", Range(0,1)) = 1
+//    _Trapezoidal ("Trapezoidal", Range(-1,1)) = 0
+//    _NormalFactor ("Normal Factor (XYZ)", Vector) = (2.6,2.6,2.6,0)
+//   [Space(5)] [Enum(lower,0,upper,1)]  _AtlasPosition ("Texture Y-Position in Atlas", Float) = 0
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="AFSBillboard" }
+//     Pass 1/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="AFSBillboard" }
+//       GpuProgramID 12459
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Float 22 [_AtlasPosition]
+//           Vector 11 [_ProjectionParams]
+//           Vector 12 [_ScreenParams]
+//           Vector 23 [_StippleRangeSq]
+//           Float 21 [_Trapezoidal]
+//           Float 17 [_TreeHeight]
+//           Float 18 [_TreeHeightCut]
+//           Float 20 [_TreeScale]
+//           Float 19 [_TreeWidthCut]
+//           Vector 10 [_WorldSpaceCameraPos]
+//           Vector 15 [unity_SHBb]
+//           Vector 14 [unity_SHBg]
+//           Vector 13 [unity_SHBr]
+//           Vector 16 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c24, 0.100000001, -0.5, 0.99000001, 0
+    def c25, 0, -1000000, 0, 0
+    def c26, 0.0208350997, -0.0851330012, -0.330299497, 0.999866009
+    def c27, 1, -1, 0, 0.180141002
+    def c28, -2, 1.57079637, -3.14159274, 6.28318548
+    def c29, -3.14159274, 8.74227766e-008, -0.5, 0.5
+    def c30, 1.27323949, 0.159154937, 0.25, 0.5
+    def c31, 0.5, 0.375, 0.875, 0
+    def c32, 0.5, 1, 0.612500012, 0.125
+    def c33, 0.25, 0.5, -0.25, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_tangent v2
+    dcl_texcoord v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_color o4
+    dcl_texcoord3 o5
+    dcl_texcoord4 o6.x
+    dcl_texcoord5 o7.xyz
+    dcl_texcoord6 o8.xyz
+    dcl_texcoord7 o9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r11, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r11.x, -r11.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.x, c4.w
+    mov r0.y, c5.w
+    mov r0.z, c6.w
+    add r0.xyz, r0, v0
+    add r0.w, r0.z, r0.x
+    mul r0.w, r0.w, c24.x
+    frc r0.w, r0.w
+    add r0.w, r0.w, c24.y
+    add r1.x, r0_abs.w, r0_abs.w
+    add r2.xy, -r0.xzzw, r30.xzzw
+    mul r2.xy, r2, r2
+    add r0.w, r2.y, r2.x
+    sge r2.x, r0.w, c23.w
+    add r0.w, -r0.w, c23.y
+    add r2.y, -c23.x, c23.y
+    rcp r2.y, r2.y
+    mul_sat r0.w, r0.w, r2.y
+    add r0.w, r0.w, v4.y
+    add r0.w, r0.w, v4.x
+    add r2.w, r2.x, r0.w
+    if_ge r2.w, c24.z
+    mov r0.w, v1.x
+    mov r3.xy, v1.yzzw
+    mov r3.z, v2.w
+    mov o5, v3
+    add r4.xyz, c25.xyxw, v0
+    mov r5.xyz, v2
+    mov r1.yz, v4.xyww
+    else
+    mov r6.yw, c24
+    sge r3.w, c21.x, r6.w
+    abs r5.w, c21.x
+    add r6.x, c27.x, -v3.y
+    mul r5.w, r5.w, r6.x
+    mad r6.x, c21.x, v3.y, -r5.w
+    mad r3.w, r3.w, r6.x, r5.w
+    lrp r5.w, r3.w, -c24.y, v3.x
+    add r3.w, r5.w, c24.y
+    mul r5.w, r3.w, c19.x
+    mad r6.xz, c19.x, r3.w, -r6.y
+    add r0.xyz, -r0, r30
+    dp3 r0.y, r0, r0
+    rsq r0.y, r0.y
+    mul r7.xy, r0.y, r0.xzzw
+    mul r7.zw, r7.y, c27.xyyz
+    mul r0.xyz, r7.ywxw, c27.yxxw
+    dp3 r3.w, r7.zwxw, r0
+    rsq r3.w, r3.w
+    mul r5.xyz, r0, r3.w
+    mul r0.x, r5.w, c20.x
+    mul r0.xz, r5, r0.x
+    mul r3.w, c20.x, v3.y
+    mul r3.w, r3.w, c17.x
+    mul r0.y, r3.w, c18.x
+    mul r6.y, c18.x, v3.y
+    add r4.xyz, r0, v0
+    min r0.x, r5_abs.z, r5_abs.x
+    max r0.y, r5_abs.z, r5_abs.x
+    rcp r0.y, r0.y
+    mul r0.x, r0.y, r0.x
+    mul r0.y, r0.x, r0.x
+    mad r0.z, r0.y, c26.x, c26.y
+    mad r0.z, r0.y, r0.z, c27.w
+    mad r0.z, r0.y, r0.z, c26.z
+    mad r0.y, r0.y, r0.z, c26.w
+    mul r0.x, r0.y, r0.x
+    slt r0.y, r5_abs.z, r5_abs.x
+    mad r0.z, r0.x, c28.x, c28.y
+    mad r0.x, r0.z, r0.y, r0.x
+    slt r0.y, r5.z, -r5.z
+    mad r0.x, r0.y, c28.z, r0.x
+    min r0.y, r5.z, -r5.x
+    max r0.z, r5.z, -r5.x
+    slt r0.y, r0.y, -r0.y
+    sge r0.z, r0.z, -r0.z
+    mul r0.y, r0.z, r0.y
+    add r0.z, r0.x, r0.x
+    mad r0.x, r0.y, -r0.z, r0.x
+    mad r0.x, v4.z, c28.w, r0.x
+    add r7, r0.x, c29.xyyy
+    sge r0.x, c24.w, r7.x
+    mad r0.x, r0.x, c29.z, c29.w
+    sge r0.y, r7.x, -c28.z
+    mad r0.y, r0.y, c24.y, r0.x
+    mul r7, r7, c30.xyyy
+    frc r8, r7
+    add r3.w, r7.x, -r8.x
+    mul r0.xz, r3.w, c30.z
+    mad r0.xyz, r6, c30.zwzw, r0
+    slt r6, c31.xyzx, r8
+    slt r7, r8.w, c32
+    add r9.xyz, r0, c33
+    mul r6.yzw, r6, r7.xxyz
+    mad r0.x, r6.z, c24.y, r0.y
+    lrp r10.x, r6.y, r9.y, r0.x
+    slt r0.x, c24.w, r8.w
+    mul r0.x, r7.w, r0.x
+    mad r0.x, r0.x, c24.y, r0.y
+    lrp r7.y, r6.w, r9.y, r0.x
+    add r10.yz, r8.x, c29.xzww
+    add r7.z, -r10.z, c27.x
+    mov r7.x, r9.z
+    mov r10.w, r9.x
+    lrp r2.xyz, r6.x, r10.wxyw, r7
+    mov r6.z, c30.z
+    mad o5.w, c22.x, r6.z, r2.y
+    mad o5.y, c22.x, r6.z, r0.y
+    mov r0.w, r5.z
+    mov r3.x, c24.w
+    mov r3.y, -r5.x
+    mov r3.z, c27.y
+    mov o5.x, r0.z
+    mov o5.z, r2.x
+    mov r1.yz, r2.xzww
+    endif
+    mov r4.w, v0.w
+    dp4 r2.x, c0, r4
+    dp4 r2.y, c1, r4
+    dp4 r2.z, c2, r4
+    dp4 r2.w, c3, r4
+    dp4 o1.w, c4, r4
+    dp4 o2.w, c5, r4
+    dp4 o3.w, c6, r4
+    mul r4, r3.x, c8.xyzz
+    mad r0, c7.xyzz, r0.w, r4
+    mad r0, c9.xyzz, r3.y, r0
+    dp3 r3.x, r0.xyww, r0.xyww
+    rsq r3.x, r3.x
+    mul r0, r0, r3.x
+    dp3 r4.z, c4, r5
+    dp3 r4.x, c5, r5
+    dp3 r4.y, c6, r5
+    dp3 r3.x, r4, r4
+    rsq r3.x, r3.x
+    mul r3.xyw, r3.x, r4.xyzz
+    mul r4.xyz, r0.wxyw, r3.xyww
+    mad r4.xyz, r0.ywxw, r3.ywxw, -r4
+    mul r4.xyz, r3.z, r4
+    mul r5, r0.ywzx, r0
+    dp4 r6.x, c13, r5
+    dp4 r6.y, c14, r5
+    dp4 r6.z, c15, r5
+    mul r0.z, r0.y, r0.y
+    mad r0.z, r0.x, r0.x, -r0.z
+    mad o8.xyz, c16, r0.z, r6
+
+mov o0, r2 // Relocated from line 235 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_AFS BillboardDeferred VFACE/vp/839ED709.txt
+texldl r31, c220.z, s3
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    mul r5.xz, r2.xyww, -c24.y
+    mul r0.z, r2.y, c11.x
+    mul r5.w, r0.z, -c24.y
+    mad o9.xy, r5.z, c12.zwzw, r5.xwzw
+
+//     mov o0, r2 // Relocated to line 231 with shadertool.py
+    mov o1.x, r3.w
+    mov o1.y, r4.x
+    mov o1.z, r0.x
+    mov o2.x, r3.x
+    mov o2.y, r4.y
+    mov o2.z, r0.y
+    mov o3.x, r3.y
+    mov o3.y, r4.z
+    mov o3.z, r0.w
+    mov r1.w, v4.z
+    mov o4, r1.xywz
+    mov o6.x, c24.w
+    mov o7.xyz, c24.w
+    mov o9.zw, r2
