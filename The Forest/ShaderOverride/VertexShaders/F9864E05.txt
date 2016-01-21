@@ -54,9 +54,6 @@ dcl_texcoord3 o3
 dcl_position o4
 
 def c220, 0, 1, 0.0625, 5000
-dcl_2d s3
-
-texldl r31, c220.z, s3
 
 // Derive the far clipping plane from _ZBufferParams copied in with Helix Mod:
 add r28.x, c150.z, c150.w
@@ -65,8 +62,7 @@ rcp r28.x, r28.x
 // Stereo correction amount with depth at the far clipping plane
 // Use W=0 to suppress position transformations in the matrices
 mov r29, c220.x
-add r29.x, r28.x, -r31.y
-mul r29.x, r29.x, r31.x
+mad r29.x, r28.x, c255.y, c255.x
 
 // Use an inverse MVP matrix copied with Helix Mod to transform the adjustment
 // amount into local coordinates:

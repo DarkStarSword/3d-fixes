@@ -116,7 +116,6 @@
     dcl_texcoord1 o2.xyz
 
 def c220, 0, 1, 0.0625, 1
-dcl_2d s3
 
     // Rearranged to simplify shader:
     dp4 r0.x, c0, v0
@@ -127,10 +126,9 @@ dcl_2d s3
 
 // Apply texcoord correction only when not drawing a full screen quad:
 if_ne r0.w, c220.y
-	// Apply stereo correction to screen coords stored in texcoord:
-	texldl r31, c220.z, s3
-	add r31.w, r0.w, -r31.y
-	mul r31.w, r31.w, r31.x
+	// Apply stereo correction to screen coords stored in texcoord, using
+	// the undocumented stereo register instead of the Helix sampler:
+	mad r31.w, r0.w, c255.y, c255.x
 	add r0.x, r0.x, r31.w
 endif
 

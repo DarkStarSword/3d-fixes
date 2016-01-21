@@ -40,7 +40,6 @@ dcl_position o1
 dcl_color o2
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s3
 
 // For the auto HUD depth:
 dcl_2d s2 // Copy of _CameraDepthTexture
@@ -56,7 +55,6 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
 // Only adjust when originally drawn at screen depth:
 if_eq r0.w, c220.y
-	texldl r31, c220.z, s3
 
 	// Auto depth: sample a number of points on the depth buffer to
 	// determine an appropriate depth for this object, starting at the near
@@ -70,6 +68,9 @@ if_eq r0.w, c220.y
 	// Based on DarkStarSword's stereo crosshair code originally developed
 	// for Miasmata, adapted to HLSL and made to use coordinates other than
 	// (0,0), then adapted back to assembly for UE3.
+
+	// This variant uses the undocumented stereo register injected by the
+	// driver instead of the Helix Mod stereo sampler
 
 	// Screen depth coordinates to sample around - Several icons are drawn
 	// simultaneously, so we cannot use the first vertex position like we
@@ -86,21 +87,18 @@ if_eq r0.w, c220.y
 	rcp r20.w, c150.w
 
 	// offset = separation * (near - convergence) / near
-	add r31.w, r20.w, -r31.y
-	mul r20.x, r31.w, r31.x
+	mad r20.x, r20.w, c255.y, c255.x
 	rcp r31.w, r20.w
 	mul r20.x, r20.x, r31.w
 
 	// Total distance to cover
 	// distance = separation - starting X offset:
-	add r20.y, r31.x, -r20.x
+	add r20.y, c255.y, -r20.x
 
 	// old_offset = offset
 	mov r21.x, r20.x
 
 	// Precompute some constants:
-	// separation * convergence:
-	mul r31.w, r31.x, r31.y
 	// distance / 255:
 	mul r20.z, r20.y, c227.x
 
@@ -110,9 +108,9 @@ if_eq r0.w, c220.y
 
 		// Calculate W for this adjustment amount:
 		// w = (separation * convergence) / (separation - offset):
-		add r20.w, r31.x, -r20.x
+		add r20.w, c255.y, -r20.x
 		rcp r20.w, r20.w
-		mul r20.w, r31.w, r20.w
+		mul r20.w, -c255.x, r20.w
 
 		// sample_x = x + offset, sample_y = y (not flipped compared to UE3)
 		mov r23.y, r22.y
