@@ -1116,7 +1116,7 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x; convergence = tmp_reg.y
     tree.add_inst('add', [tmp_reg.w, pos_reg.w, -convergence])
-    if args.use_mad and not args.adjust_multiply:
+    if not args.adjust_multiply:
         tree.add_inst('mad', [pos_reg.x, tmp_reg.w, separation, pos_reg.x])
     else:
         tree.add_inst('mul', [tmp_reg.w, tmp_reg.w, separation])
@@ -1189,7 +1189,7 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     pos += tree.insert_instr(pos, NewInstruction('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler]))
     separation = tmp_reg.x; convergence = tmp_reg.y
     pos += tree.insert_instr(pos, NewInstruction('add', [tmp_reg.w, repl_reg.w, -convergence]))
-    if args.use_mad and not args.adjust_multiply:
+    if not args.adjust_multiply:
         pos += tree.insert_instr(pos, NewInstruction('mad', [repl_reg.x, tmp_reg.w, separation, repl_reg.x]))
     else:
         pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, separation]))
@@ -2910,8 +2910,6 @@ def parse_args():
             help="Unadjust the output. Equivalent to --adjust=<output> --adjust-multiply=-1")
     parser.add_argument('--condition',
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
-    parser.add_argument('--no-mad', action='store_false', dest='use_mad',
-            help="Use mad instruction to make stereo correction more concise")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
