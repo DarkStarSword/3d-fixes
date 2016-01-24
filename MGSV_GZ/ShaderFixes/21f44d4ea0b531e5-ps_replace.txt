@@ -1,3 +1,4 @@
+// Outdoor physical lighting (uneven lighting in first level)
 // ---- Created with 3Dmigoto v1.2.26 on Sun Jan 24 04:58:05 2016
 
 cbuffer cPSScene : register(b2)
@@ -88,6 +89,11 @@ void main(
   r2.z = g_psScene.m_projectionParam.z / r0.w;
   r1.xy = g_psScene.m_projectionParam.xy * r1.xy;
   r2.xy = r1.xy * r2.zz;
+
+// Fix physical lighting on ground:
+float4 stereo = StereoParams.Load(0);
+r2.x -= stereo.x * (r2.z - stereo.y) / g_psScene.m_projection._m00;
+
   r2.w = 1;
   r1.x = dot(r2.xyzw, g_psScene.m_view._m00_m10_m20_m30);
   r1.y = dot(r2.xyzw, g_psScene.m_view._m01_m11_m21_m31);
