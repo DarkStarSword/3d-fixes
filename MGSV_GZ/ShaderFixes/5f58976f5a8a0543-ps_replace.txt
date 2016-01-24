@@ -1,0 +1,419 @@
+// ---- Created with 3Dmigoto v1.2.26 on Sun Jan 24 04:56:36 2016
+
+cbuffer cPSScene : register(b2)
+{
+
+  struct
+  {
+    float4x4 m_projectionView;
+    float4x4 m_projection;
+    float4x4 m_view;
+    float4x4 m_shadowProjection;
+    float4x4 m_shadowProjection2;
+    float4 m_eyepos;
+    float4 m_projectionParam;
+    float4 m_viewportSize;
+    float4 m_exposure;
+    float4 m_fogParam[3];
+    float4 m_fogColor;
+    float4 m_cameraCenterOffset;
+    float4 m_shadowMapResolutions;
+  } g_psScene : packoffset(c0);
+
+}
+
+cbuffer cPSObject : register(b5)
+{
+
+  struct
+  {
+    float4x4 m_viewWorld;
+    float4x4 m_world;
+    float4 m_useWeightCount;
+    float4 m_localParam[4];
+  } g_psObject : packoffset(c0);
+
+}
+
+cbuffer cPSLight : register(b3)
+{
+
+  struct
+  {
+    float4 m_lightDir0;
+    float4 m_lightColor0;
+    float4 m_lightColor1;
+    float4 m_lightSourcePos;
+    float4 m_lightSourceColor;
+    float4 m_lightSourceDir;
+    float4 m_lightSourceParam1;
+    float4 m_lightSourceParam2;
+    float4 m_lightSourceParam3;
+    float4 m_lightPos0;
+    float4 m_lightParam2;
+  } g_psLight : packoffset(c0);
+
+}
+
+SamplerState g_samplerPoint_Wrap_s : register(s8);
+SamplerState g_samplerPoint_Clamp_s : register(s9);
+SamplerState g_samplerLinear_Wrap_s : register(s10);
+SamplerState g_samplerLinear_Clamp_s : register(s11);
+Texture2D<float4> g_NormalTexture : register(t0);
+Texture2D<float4> g_SpecularTexture : register(t1);
+Texture2D<float4> g_DepthTexture : register(t2);
+Texture2D<float4> g_CloudTexture : register(t4);
+Texture3D<float4> g_lut2 : register(t8);
+Texture2D<float4> g_lut1 : register(t9);
+Texture2D<float4> g_MaterialTexture : register(t10);
+Texture2D<float4> g_WorldShadowMask : register(t13);
+Texture2D<float4> g_SkyReflectTexture : register(t15);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = v1.xy / v1.ww;
+  r0.xy = -g_psScene.m_cameraCenterOffset.xy + r0.xy;
+  r0.xy = g_psScene.m_projectionParam.xy * r0.xy;
+  r0.zw = v2.xy / v2.ww;
+  r1.x = g_DepthTexture.Sample(g_samplerPoint_Wrap_s, r0.zw).x;
+  r1.x = -g_psScene.m_projectionParam.w + r1.x;
+  r1.z = g_psScene.m_projectionParam.z / r1.x;
+  r1.xy = r1.zz * r0.xy;
+  r1.w = 1;
+  r0.x = dot(r1.xyzw, g_psScene.m_view._m00_m10_m20_m30);
+  r0.y = dot(r1.xyzw, g_psScene.m_view._m02_m12_m22_m32);
+  r0.xy = r0.xy * g_psLight.m_lightSourcePos.zw + float2(0.5,0.5);
+  r0.x = g_WorldShadowMask.Sample(g_samplerLinear_Wrap_s, r0.xy).x;
+  r2.x = dot(g_psObject.m_localParam[0].xyzw, r1.xyzw);
+  r2.y = dot(g_psObject.m_localParam[1].xyzw, r1.xyzw);
+  r0.y = g_CloudTexture.Sample(g_samplerLinear_Wrap_s, r2.xy).x;
+  r0.y = saturate(g_psObject.m_localParam[3].w * r0.y);
+  r0.x = r0.x * r0.y;
+  r2.xyz = g_NormalTexture.Sample(g_samplerPoint_Wrap_s, r0.zw).xyz;
+  r3.xyzw = g_SpecularTexture.Sample(g_samplerPoint_Wrap_s, r0.zw).yxzw;
+  r0.yz = r2.xy * float2(2,2) + float2(-1,-1);
+  r0.w = dot(r2.zz, r2.zz);
+  r2.z = -1 + r0.w;
+  r0.w = dot(r0.yz, r0.yz);
+  r1.w = -r2.z * r2.z + 1;
+  r0.w = r1.w * r0.w + 1.00000001e-007;
+  r0.yz = r1.ww * r0.yz;
+  r0.w = rsqrt(r0.w);
+  r2.xy = r0.yz * r0.ww;
+  r0.y = dot(g_psLight.m_lightDir0.xyz, r2.xyz);
+  r0.z = -r0.y * r0.y + 1;
+  r0.z = r0.z * r3.w + r0.y;
+  r0.y = saturate(4 * r0.y);
+  r4.yz = float2(0.25,0.75);
+  r4.x = r3.z;
+  r5.xyzw = g_MaterialTexture.Sample(g_samplerPoint_Clamp_s, r4.xy).xyzw;
+  r4.yz = g_MaterialTexture.Sample(g_samplerPoint_Clamp_s, r4.xz).xw;
+  r5.xyzw = r5.wxyz * r3.wxxx;
+  r0.z = saturate(max(r5.x, r0.z));
+  r6.xyz = g_psLight.m_lightColor0.xyz * g_psScene.m_exposure.zzz;
+  r7.xyz = r6.xyz * r0.zzz;
+  r5.xyz = r6.xyz * r5.yzw;
+  r6.xyz = r7.xyz * r0.xxx;
+  r0.z = dot(r1.xyz, r1.xyz);
+  r0.z = rsqrt(r0.z);
+  r1.xyz = r1.xyz * r0.zzz;
+  r0.z = dot(-r1.xyz, r2.xyz);
+  r7.x = saturate(r0.z);
+  r0.z = r0.z + r0.z;
+  r8.xyz = r2.xyz * -r0.zzz + -r1.xyz;
+  r8.xyz = -g_psLight.m_lightDir0.xyz + -r8.xyz;
+  r7.y = 0.0199999996;
+  r0.z = g_lut1.Sample(g_samplerLinear_Clamp_s, r7.xy).x;
+  r0.w = 1 + -r3.y;
+  r0.z = r0.w * r0.z;
+  r0.z = r0.z * r3.x;
+  r0.z = 0.5 * r0.z;
+  r7.xyz = r6.xyz * r0.zzz;
+  r0.w = max(g_psLight.m_lightColor1.x, r0.x);
+  r0.w = g_psLight.m_lightColor1.y * r0.w;
+  o0.xyz = -r7.xyz * r0.www + r6.xyz;
+  o0.w = 1;
+  r1.w = dot(r1.xyz, r2.xyz);
+  r1.w = r1.w + r1.w;
+  r6.xyz = r2.xyz * -r1.www + r1.xyz;
+  r6.xy = r6.xy * float2(-0.4921875,-0.4921875) + float2(0.5,0.5);
+  r1.w = cmp(0 < r6.z);
+  r6.zw = r1.ww ? float2(1.048576e+009,0) : 0;
+  r6.xy = r6.xy * float2(0.25,0.125) + r6.zw;
+  r6.xyz = g_SkyReflectTexture.Sample(g_samplerLinear_Clamp_s, r6.xy).xyz;
+  r6.xyz = r6.xyz * r0.zzz;
+  r6.xyz = r6.xyz * r0.www;
+  r0.z = dot(r8.xyz, r8.xyz);
+  r0.z = sqrt(r0.z);
+  r0.z = saturate(g_psLight.m_lightColor0.w / r0.z);
+  r7.xyz = r0.zzz * r8.xyz + g_psLight.m_lightDir0.xyz;
+  r0.z = dot(r7.xyz, r7.xyz);
+  r0.z = rsqrt(r0.z);
+  r1.xyz = r7.xyz * r0.zzz + -r1.xyz;
+  r0.z = dot(r1.xyz, r1.xyz);
+  r0.z = rsqrt(r0.z);
+  r1.xyz = r1.xyz * r0.zzz;
+  r3.x = saturate(dot(r1.xyz, r2.xyz));
+  r4.x = dot(r1.xyz, g_psLight.m_lightDir0.xyz);
+  r3.z = r4.z;
+  r0.z = g_lut1.Sample(g_samplerLinear_Clamp_s, r4.xy).x;
+  r1.xyz = r3.xyz * r3.xyz;
+  r1.xyz = r1.xyz * float3(0.984375,0.9375,0.9375) + float3(0.0078125,0.03125,0.03125);
+  r1.xy = g_lut2.Sample(g_samplerLinear_Clamp_s, r1.xyz).xy;
+  r1.xy = r1.xy * r1.xy;
+  r0.w = r1.x / r1.y;
+  r0.z = r0.z * r0.w;
+  r0.y = r0.z * r0.y;
+  r0.yzw = r5.xyz * r0.yyy;
+  o1.xyz = r0.yzw * r0.xxx + r6.xyz;
+  o1.w = 1;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cPSScene
+// {
+//
+//   struct PSScene
+//   {
+//       
+//       float4x4 m_projectionView;     // Offset:    0
+//       float4x4 m_projection;         // Offset:   64
+//       float4x4 m_view;               // Offset:  128
+//       float4x4 m_shadowProjection;   // Offset:  192
+//       float4x4 m_shadowProjection2;  // Offset:  256
+//       float4 m_eyepos;               // Offset:  320
+//       float4 m_projectionParam;      // Offset:  336
+//       float4 m_viewportSize;         // Offset:  352
+//       float4 m_exposure;             // Offset:  368
+//       float4 m_fogParam[3];          // Offset:  384
+//       float4 m_fogColor;             // Offset:  432
+//       float4 m_cameraCenterOffset;   // Offset:  448
+//       float4 m_shadowMapResolutions; // Offset:  464
+//
+//   } g_psScene;                       // Offset:    0 Size:   480
+//
+// }
+//
+// cbuffer cPSObject
+// {
+//
+//   struct PSObject
+//   {
+//       
+//       float4x4 m_viewWorld;          // Offset:    0
+//       float4x4 m_world;              // Offset:   64
+//       float4 m_useWeightCount;       // Offset:  128
+//       float4 m_localParam[4];        // Offset:  144
+//
+//   } g_psObject;                      // Offset:    0 Size:   208
+//
+// }
+//
+// cbuffer cPSLight
+// {
+//
+//   struct PSLight
+//   {
+//       
+//       float4 m_lightDir0;            // Offset:    0
+//       float4 m_lightColor0;          // Offset:   16
+//       float4 m_lightColor1;          // Offset:   32
+//       float4 m_lightSourcePos;       // Offset:   48
+//       float4 m_lightSourceColor;     // Offset:   64
+//       float4 m_lightSourceDir;       // Offset:   80
+//       float4 m_lightSourceParam1;    // Offset:   96
+//       float4 m_lightSourceParam2;    // Offset:  112
+//       float4 m_lightSourceParam3;    // Offset:  128
+//       float4 m_lightPos0;            // Offset:  144
+//       float4 m_lightParam2;          // Offset:  160
+//
+//   } g_psLight;                       // Offset:    0 Size:   176
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// g_samplerPoint_Wrap               sampler      NA          NA    8        1
+// g_samplerPoint_Clamp              sampler      NA          NA    9        1
+// g_samplerLinear_Wrap              sampler      NA          NA   10        1
+// g_samplerLinear_Clamp             sampler      NA          NA   11        1
+// g_NormalTexture                   texture  float4          2d    0        1
+// g_SpecularTexture                 texture  float4          2d    1        1
+// g_DepthTexture                    texture  float4          2d    2        1
+// g_CloudTexture                    texture  float4          2d    4        1
+// g_lut2                            texture  float4          3d    8        1
+// g_lut1                            texture  float4          2d    9        1
+// g_MaterialTexture                 texture  float4          2d   10        1
+// g_WorldShadowMask                 texture  float4          2d   13        1
+// g_SkyReflectTexture               texture  float4          2d   15        1
+// cPSScene                          cbuffer      NA          NA    2        1
+// cPSLight                          cbuffer      NA          NA    3        1
+// cPSObject                         cbuffer      NA          NA    5        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float       
+// TEXCOORD                 0   xyzw        1     NONE   float   xy w
+// TEXCOORD                 1   xyzw        2     NONE   float   xy w
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb2[29], immediateIndexed
+dcl_constantbuffer cb5[13], immediateIndexed
+dcl_constantbuffer cb3[4], immediateIndexed
+dcl_sampler s8, mode_default
+dcl_sampler s9, mode_default
+dcl_sampler s10, mode_default
+dcl_sampler s11, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t1
+dcl_resource_texture2d (float,float,float,float) t2
+dcl_resource_texture2d (float,float,float,float) t4
+dcl_resource_texture3d (float,float,float,float) t8
+dcl_resource_texture2d (float,float,float,float) t9
+dcl_resource_texture2d (float,float,float,float) t10
+dcl_resource_texture2d (float,float,float,float) t13
+dcl_resource_texture2d (float,float,float,float) t15
+dcl_input_ps linear v1.xyw
+dcl_input_ps linear v2.xyw
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_temps 9
+div r0.xy, v1.xyxx, v1.wwww
+add r0.xy, r0.xyxx, -cb2[28].xyxx
+mul r0.xy, r0.xyxx, cb2[21].xyxx
+div r0.zw, v2.xxxy, v2.wwww
+sample_indexable(texture2d)(float,float,float,float) r1.x, r0.zwzz, t2.xyzw, s8
+add r1.x, r1.x, -cb2[21].w
+div r1.z, cb2[21].z, r1.x
+mul r1.xy, r0.xyxx, r1.zzzz
+mov r1.w, l(1.000000)
+dp4 r0.x, r1.xyzw, cb2[8].xyzw
+dp4 r0.y, r1.xyzw, cb2[10].xyzw
+mad r0.xy, r0.xyxx, cb3[3].zwzz, l(0.500000, 0.500000, 0.000000, 0.000000)
+sample_indexable(texture2d)(float,float,float,float) r0.x, r0.xyxx, t13.xyzw, s10
+dp4 r2.x, cb5[9].xyzw, r1.xyzw
+dp4 r2.y, cb5[10].xyzw, r1.xyzw
+sample_indexable(texture2d)(float,float,float,float) r0.y, r2.xyxx, t4.yxzw, s10
+mul_sat r0.y, r0.y, cb5[12].w
+mul r0.x, r0.y, r0.x
+sample_indexable(texture2d)(float,float,float,float) r2.xyz, r0.zwzz, t0.xyzw, s8
+sample_indexable(texture2d)(float,float,float,float) r3.xyzw, r0.zwzz, t1.yxzw, s8
+mad r0.yz, r2.xxyx, l(0.000000, 2.000000, 2.000000, 0.000000), l(0.000000, -1.000000, -1.000000, 0.000000)
+dp2 r0.w, r2.zzzz, r2.zzzz
+add r2.z, r0.w, l(-1.000000)
+dp2 r0.w, r0.yzyy, r0.yzyy
+mad r1.w, -r2.z, r2.z, l(1.000000)
+mad r0.w, r1.w, r0.w, l(0.000000)
+mul r0.yz, r0.yyzy, r1.wwww
+rsq r0.w, r0.w
+mul r2.xy, r0.wwww, r0.yzyy
+dp3 r0.y, cb3[0].xyzx, r2.xyzx
+mad r0.z, -r0.y, r0.y, l(1.000000)
+mad r0.z, r0.z, r3.w, r0.y
+mul_sat r0.y, r0.y, l(4.000000)
+mov r4.yz, l(0,0.250000,0.750000,0)
+mov r4.x, r3.z
+sample_indexable(texture2d)(float,float,float,float) r5.xyzw, r4.xyxx, t10.xyzw, s9
+sample_indexable(texture2d)(float,float,float,float) r4.yz, r4.xzxx, t10.yxwz, s9
+mul r5.xyzw, r3.wxxx, r5.wxyz
+max_sat r0.z, r0.z, r5.x
+mul r6.xyz, cb2[23].zzzz, cb3[1].xyzx
+mul r7.xyz, r0.zzzz, r6.xyzx
+mul r5.xyz, r5.yzwy, r6.xyzx
+mul r6.xyz, r0.xxxx, r7.xyzx
+dp3 r0.z, r1.xyzx, r1.xyzx
+rsq r0.z, r0.z
+mul r1.xyz, r0.zzzz, r1.xyzx
+dp3 r0.z, -r1.xyzx, r2.xyzx
+mov_sat r7.x, r0.z
+add r0.z, r0.z, r0.z
+mad r8.xyz, r2.xyzx, -r0.zzzz, -r1.xyzx
+add r8.xyz, -r8.xyzx, -cb3[0].xyzx
+mov r7.y, l(0.020000)
+sample_indexable(texture2d)(float,float,float,float) r0.z, r7.xyxx, t9.yzxw, s11
+add r0.w, -r3.y, l(1.000000)
+mul r0.z, r0.z, r0.w
+mul r0.z, r3.x, r0.z
+mul r0.z, r0.z, l(0.500000)
+mul r7.xyz, r0.zzzz, r6.xyzx
+max r0.w, r0.x, cb3[2].x
+mul r0.w, r0.w, cb3[2].y
+mad o0.xyz, -r7.xyzx, r0.wwww, r6.xyzx
+mov o0.w, l(1.000000)
+dp3 r1.w, r1.xyzx, r2.xyzx
+add r1.w, r1.w, r1.w
+mad r6.xyz, r2.xyzx, -r1.wwww, r1.xyzx
+mad r6.xy, r6.xyxx, l(-0.492188, -0.492188, 0.000000, 0.000000), l(0.500000, 0.500000, 0.000000, 0.000000)
+lt r1.w, l(0.000000), r6.z
+and r6.zw, r1.wwww, l(0, 0, 0x3e800000, 0)
+mad r6.xy, r6.xyxx, l(0.250000, 0.125000, 0.000000, 0.000000), r6.zwzz
+sample_indexable(texture2d)(float,float,float,float) r6.xyz, r6.xyxx, t15.xyzw, s11
+mul r6.xyz, r0.zzzz, r6.xyzx
+mul r6.xyz, r0.wwww, r6.xyzx
+dp3 r0.z, r8.xyzx, r8.xyzx
+sqrt r0.z, r0.z
+div_sat r0.z, cb3[1].w, r0.z
+mad r7.xyz, r0.zzzz, r8.xyzx, cb3[0].xyzx
+dp3 r0.z, r7.xyzx, r7.xyzx
+rsq r0.z, r0.z
+mad r1.xyz, r7.xyzx, r0.zzzz, -r1.xyzx
+dp3 r0.z, r1.xyzx, r1.xyzx
+rsq r0.z, r0.z
+mul r1.xyz, r0.zzzz, r1.xyzx
+dp3_sat r3.x, r1.xyzx, r2.xyzx
+dp3 r4.x, r1.xyzx, cb3[0].xyzx
+mov r3.z, r4.z
+sample_indexable(texture2d)(float,float,float,float) r0.z, r4.xyxx, t9.yzxw, s11
+mul r1.xyz, r3.xyzx, r3.xyzx
+mad r1.xyz, r1.xyzx, l(0.984375, 0.937500, 0.937500, 0.000000), l(0.007813, 0.031250, 0.031250, 0.000000)
+sample_indexable(texture3d)(float,float,float,float) r1.xy, r1.xyzx, t8.xyzw, s11
+mul r1.xy, r1.xyxx, r1.xyxx
+div r0.w, r1.x, r1.y
+mul r0.z, r0.w, r0.z
+mul r0.y, r0.y, r0.z
+mul r0.yzw, r0.yyyy, r5.xxyz
+mad o1.xyz, r0.yzwy, r0.xxxx, r6.xyzx
+mov o1.w, l(1.000000)
+ret 
+// Approximately 97 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
