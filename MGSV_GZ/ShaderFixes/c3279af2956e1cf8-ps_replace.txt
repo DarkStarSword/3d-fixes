@@ -1,4 +1,4 @@
-// ---- Created with 3Dmigoto v1.2.26 on Sun Jan 24 04:56:37 2016
+// Lights
 
 cbuffer cPSScene : register(b2)
 {
@@ -96,6 +96,10 @@ void main(
   r0.x = -g_psScene.m_projectionParam.w + r1.x;
   r3.z = g_psScene.m_projectionParam.z / r0.x;
   r3.xy = r3.zz * r0.zw;
+  
+  float4 stereo = StereoParams.Load(0);
+  r3.x -= stereo.x * (r3.z - stereo.y) / g_psScene.m_projection._m00;
+  
   r0.xyz = g_psLight.m_lightSourcePos.xyz + -r3.xyz;
   r0.w = dot(r0.xyz, r0.xyz);
   r1.x = rsqrt(r0.w);
