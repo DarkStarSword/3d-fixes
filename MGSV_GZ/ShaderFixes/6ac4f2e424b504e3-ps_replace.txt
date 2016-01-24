@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.26 on Sun Jan 24 04:58:01 2016
+// Targetting circle when throwing a magazine
+// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 02:11:01 2016
 
 cbuffer cPSScene : register(b2)
 {
@@ -99,6 +100,10 @@ void main(
   r0.y = -g_psScene.m_projectionParam.w + r0.y;
   r0.y = g_psScene.m_projectionParam.z / r0.y;
   r0.zw = r0.zw * g_psObject.m_localParam[0].zw + -g_psMaterial.m_materials[0].xy;
+
+float4 stereo = StereoParams.Load(0);
+r0.z -= stereo.x * (r0.y - stereo.y) / r0.y / 2;
+
   r0.zw = g_psMaterial.m_materials[1].xy * r0.zw;
   r1.xy = r0.zw + r0.zw;
   r1.z = -g_psMaterial.m_materials[0].z + r0.y;
