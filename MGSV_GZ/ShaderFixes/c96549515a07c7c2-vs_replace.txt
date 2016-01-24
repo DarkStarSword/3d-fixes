@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.26 on Sun Jan 24 04:58:01 2016
+// Ocean - fix clipping at side of screen
+// ---- Created with 3Dmigoto v1.2.27 on Sun Jan 24 20:59:15 2016
 
 cbuffer cVSScene : register(b2)
 {
@@ -90,6 +91,14 @@ void main(
   r2.z = -g_vsMaterial.m_materials[6].y;
   r0.x = dot(float2(1,1), r2.yz);
   r5.xy = g_vsScene.m_projectionParam.xy * v0.xy;
+
+// Fix clipping at sides of screen (keeps texture aligned). This formula works
+// by stretching the coordinate horizontally as opposed to moving it to a
+// different depth. We need to do this as the ocean is made up of many vertices
+// and we need to move them away from the center of the screen proportionally.
+float4 stereo = StereoParams.Load(0);
+r5.x *= 1 + abs(stereo.x);
+
   r5.z = 1;
   r0.y = dot(r5.xyz, r3.xyz);
   r0.z = cmp(r0.y >= 0);
@@ -123,6 +132,11 @@ void main(
   o5.w = g_vsObject.m_world._m02;
   o6.zw = float2(0,0);
   p1.x = r0.x;
+
+// Stretch Ocean to remove clipping at sides of screen (misalignes texture,
+// there's a better place to adjust above):
+//o0.x *= 1 + abs(stereo.x);
+
   return;
 }
 
