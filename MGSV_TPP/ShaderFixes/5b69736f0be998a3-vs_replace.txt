@@ -82,7 +82,14 @@ void main(
 // Don't adjust UI vertices at screen corners so that fade to black is still full screen:
 if (all(abs(o3.xy) != 1.0)) {
   float4 stereo = StereoParams.Load(0);
-  o3.x += stereo.x * 0.5;
+  float4 params = IniParams.Load(0);
+
+  if (o3.w != 1.0) {
+    // Some HUD elements are not at screen depth to begin with, bring them back:
+    o3.x -= stereo.x * (o3.w - stereo.y);
+  }
+
+  o3.x += stereo.x * params.x * o3.w;
 }
 
   return;
