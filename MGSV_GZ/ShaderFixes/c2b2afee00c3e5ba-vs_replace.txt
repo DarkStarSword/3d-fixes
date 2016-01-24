@@ -61,6 +61,7 @@ cbuffer cVSWork : register(b7)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
 
 void main( 
   float3 v0 : POSITION0,
@@ -104,7 +105,9 @@ void main(
   float4 tex_filter = IniParams.Load(int2(2,0));
   if (tex_filter.x == 2)
   {
-  o0.x += stereo.x * iniParams.x; //Croshhair
+  //o0.x += stereo.x * iniParams.x; //Croshhair
+  //o0.x += adjust_from_stereo2mono_depth_buffer(0, 0); // Not working
+  o0.x += adjust_from_depth_buffer(0, 0);
   }
   
   return;
