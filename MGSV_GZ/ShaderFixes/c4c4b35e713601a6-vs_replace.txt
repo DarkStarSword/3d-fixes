@@ -96,7 +96,11 @@ void main(
   
   float4 stereo = StereoParams.Load(0);
   float4 iniParams = IniParams.Load(0);
-  r1.x += stereo.x * stereo.y * iniParams.y;
+
+  // Corrects placement & opacity -DSS:
+  float adj = stereo.x * (v0.z - stereo.y) / v0.z / 2;
+  r1.x += adj; // Placement
+  o3.x += adj; // Opacity
    
   
   r0.x = dot(r1.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
@@ -104,11 +108,6 @@ void main(
   r0.z = dot(r1.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
   o4.w = dot(r1.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
   o4.xyz = r0.xyz * g_vsObject.m_localParam[0].xyz + g_vsObject.m_localParam[1].xyz;
-  
-  if (iniParams.z == 0)
-  {
-  o4 = 0;
-  }
   
   return;
 }
