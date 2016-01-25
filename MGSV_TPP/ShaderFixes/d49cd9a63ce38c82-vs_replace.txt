@@ -1,4 +1,4 @@
-// Lensflares dhr
+// Lensflares
 
 cbuffer cVSObject : register(b5)
 {
@@ -59,7 +59,6 @@ void main(
 
   r0.xyzw = v1.xyzw;
   r1.x = v0.z;
-  r1.x = r1.x;
   r1.y = 0;
   r1.z = cmp(r1.x < 0);
   if (r1.z != 0) {
@@ -67,28 +66,23 @@ void main(
     r1.x = -1 * r1.x;
   }
   r1.x = r1.x;
-  r1.x = r1.x;
-  r1.y = r1.y;
-  r0.xyzw = r0.xyzw;
   r1.zw = v2.xy;
-  r1.y = r1.y;
-  r0.xyzw = r0.xyzw;
-  r1.zw = r1.zw;
-  r1.y = r1.y;
   r2.xyzw = g_vsLight.m_lightParams[2].xyzw;
-  r2.xyzw = r2.xyzw;
   r3.xyz = g_vsObject.m_localParam[0].xyz;
   r4.xyz = g_vsObject.m_localParam[1].xyz;
   r5.xy = v0.xy;
   r5.zw = float2(0,1);
+
+  // Correct lens flare placement
+  float4 stereo = StereoParams.Load(0);
+  float adj = stereo.x * (v0.z - stereo.y) / v0.z / 2;
+  r5.x += adj; // placement
+  r0.x += adj; // opacity (to be confirmed)
+
   r6.x = dot(r5.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
   r6.y = dot(r5.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
   r6.z = dot(r5.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
   r6.w = dot(r5.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
-  
-  
-  
-  r6.xyzw = r6.xyzw;
   r3.xyz = r6.xyz * r3.xyz;
   r6.xyz = r3.xyz + r4.xyz;
   r3.x = r1.z / 16;
@@ -125,27 +119,12 @@ void main(
   r0.w = 1 + r0.w;
   r3.xy = r3.xy * r0.ww;
   r1.yz = r3.xy + r1.zw;
-  r2.xyzw = r2.xyzw;
-  r0.xyz = r0.xyz;
-  r6.xyz = r6.xyz;
-  r6.w = r6.w;
-  r4.x = r4.x;
-  r4.y = r4.y;
-  r4.z = r4.z;
-  r4.w = r4.w;
-  r2.xyzw = r2.xyzw;
-  r1.yz = r1.yz;
-  r0.xyz = r0.xyz;
   o4.xyzw = r6.xyzw;
   o2.xyzw = r4.xyzw;
   o0.xyzw = r2.xyzw;
   o1.xy = r1.yz;
   o3.xyz = r0.xyz;
   p1.x = r1.x;
-  
-  float4 stereo = StereoParams.Load(0);
-  o4.x -= stereo.x * (o4.w - stereo.y);
-  
   return;
 }
 
