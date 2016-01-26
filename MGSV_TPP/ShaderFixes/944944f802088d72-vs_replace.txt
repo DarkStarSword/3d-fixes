@@ -53,6 +53,29 @@ Texture2D<float4> StereoParams : register(t125);
 
 #include <ShaderFixes/crosshair.hlsl>
 
+// Will need this later to find icon centers (but first need to decode the
+// vertex buffer):
+float4 calc_pos(float3 v0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6;
+
+  r4.xyz = g_vsObject.m_localParam[1].xyz;
+  r5.w = 1;
+  r5.xyz = v0.xyz;
+  r6.x = dot(r5.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
+  r6.y = dot(r5.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
+  r6.z = dot(r5.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
+  r6.w = dot(r5.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
+  r5.x = dot(r6.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
+  r5.y = dot(r6.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
+  r5.z = dot(r6.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
+  r5.w = dot(r6.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
+  r3.xyz = r5.xyz * r3.xyz;
+  r5.xyz = r3.xyz + r4.xyz;
+
+  return r5.xyzw;
+}
+
 void main( 
   float3 v0 : POSITION0,
   float4 v1 : COLOR0,
@@ -117,15 +140,29 @@ void main(
 
 float4 stereo = StereoParams.Load(0);
 float4 params = IniParams.Load(0);
+float4 filter = IniParams.Load(int2(1, 0));
+float tex_filter = filter.x;
+float aiming = filter.z;
 
 if (o0.w != 1.0) {
 	// Some HUD elements are in 3D, but way too far back with a reasonable
 	// convergence. This formula removes the convergence from the driver
 	// and replaces it with a custom one:
 	o0.x += stereo.x * (stereo.y - params.z);
+} else if (tex_filter == 2) {
+	// crosshair, or possibly other floating icon
+	if (aiming) {
+		o0.x += adjust_from_depth_buffer(0, 0) * o0.w;
+	} else {
+		// TODO: Find icon center if possible
+		o0.x += adjust_from_depth_buffer(o0.x, o0.y) * o0.w;
+	}
+} else if (tex_filter == 3) {
+	// Floating icon
+	// TODO: Find icon center if possible
+	o0.x += adjust_from_depth_buffer(o0.x, o0.y) * o0.w;
 } else {
-	// o0.x += stereo.x * params.x * o0.w;
-	o0.x += adjust_from_depth_buffer(0, 0) * o0.w;
+	o0.x += stereo.x * params.x * o0.w;
 }
 
 if (params.y && all(abs(o0.xy) >= 1.0)) {
