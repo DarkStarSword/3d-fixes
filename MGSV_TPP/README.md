@@ -10,3 +10,7 @@ Installation
 2. Change the graphics settings to use exclusive full screen
 
 3. Press Ctrl+Alt+F11 to disable compatibility mode (advanced keys must be enabled in the control panel)
+
+Notes
+-----
+Ambient Occlusion = High works out of the box. To use extra high, you must add the game to the Max Payne 3 profile.
