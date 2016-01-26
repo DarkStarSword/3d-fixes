@@ -118,11 +118,13 @@ float4 stereo = StereoParams.Load(0);
 float4 params = IniParams.Load(0);
 
 if (o0.w != 1.0) {
-	// Some HUD elements are not at screen depth to begin with, bring them back:
-	o0.x -= stereo.x * (o0.w - stereo.y);
+	// Some HUD elements are in 3D, but way too far back with a reasonable
+	// convergence. This formula removes the convergence from the driver
+	// and replaces it with a custom one:
+	o0.x += stereo.x * (stereo.y - params.z);
+} else {
+	o0.x += stereo.x * params.x * o0.w;
 }
-
-o0.x += stereo.x * params.x * o0.w;
 
 if (params.y && all(abs(o0.xy) >= 1.0)) {
 	// Disable cutscene pause background so we can fix effects:
