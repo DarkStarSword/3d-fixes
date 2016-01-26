@@ -117,7 +117,13 @@ void main(
 
 float4 stereo = StereoParams.Load(0);
 float4 params = IniParams.Load(0);
-o0.x += stereo.x * params.x;
+
+if (o0.w != 1.0) {
+	// Some HUD elements are not at screen depth to begin with, bring them back:
+	o0.x -= stereo.x * (o0.w - stereo.y);
+}
+
+o0.x += stereo.x * params.x * o0.w;
 
   return;
 }
