@@ -189,7 +189,9 @@ class HLSLShader(object):
         self.parameters_txt = self.text[self.main_match.end() : self.param_end_match.start()]
         body_txt = self.text[self.param_end_match.end() : main_end_match.start()]
         self.close_txt = self.text[main_end_match.start():main_end_match.end()]
-        self.tail_txt = self.text[main_end_match.end():]
+        # Normalise ending whitespace as 3DMigoto adds an extra newline every
+        # time the same shader is marked:
+        self.tail_txt = self.text[main_end_match.end():].rstrip() + '\n'
 
         self.parse_parameters()
         self.split_instructions(body_txt)
