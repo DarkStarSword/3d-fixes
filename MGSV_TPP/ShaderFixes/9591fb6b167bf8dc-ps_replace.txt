@@ -97,15 +97,28 @@ void main(
     r2.xy = min(float2(1,1), r0.zw);
   }
 
-  //r2.xyz = inDiffuseTexture.Sample(inDiffuseSampler_s, r2.xy).xyz;
+// Might be used with a static texture or an inverted stereo render target. To
+// distinguish between them, check if the render target is rectangular or
+// square. Need to confirm if this is reliable (in particular, are there going
+// to be any square render targets? If so, we could add a feature to 3DMigoto
+// to store the Format in an ini param and check that.
 
-// Reverse eyes for mirror
-float4 stereo = StereoParams.Load(0);
-float2 pos = r2.xy;
-pos.x = pos.x / 2;
-if (stereo.z == -1)
-	pos.x += 0.5;
-r2.xyz = stereo2mono.Sample(inDiffuseSampler_s, pos).xyz;
+uint width, height;
+inDiffuseTexture.GetDimensions(width, height);
+
+if (width == height) {
+  // Mono render target - use directly:
+  r2.xyz = inDiffuseTexture.Sample(inDiffuseSampler_s, r2.xy).xyz;
+} else {
+	// Inverted stereo render target - reverse eyes:
+	float4 stereo = StereoParams.Load(0);
+	float2 pos = r2.xy;
+	pos.x = pos.x / 2;
+	if (stereo.z == -1)
+		pos.x += 0.5;
+	r2.xyz = stereo2mono.Sample(inDiffuseSampler_s, pos).xyz;
+}
+
   r0.z = v4.y;
   r3.xyzw = r0.xyxy;
   r4.xyzw = g_psScene.m_viewportSize.xyxy;
