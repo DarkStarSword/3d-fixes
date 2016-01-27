@@ -11,7 +11,7 @@
 import sys, os, re, collections, argparse, itertools, copy
 
 import shadertool
-from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards, game_git_dir
+from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards, game_git_dir, collected_errors, show_collected_errors
 
 class Instruction(object):
     pattern = re.compile('[^;]*;')
@@ -527,6 +527,9 @@ def parse_args():
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
+    parser.add_argument('--ignore-other-errors', action='store_true',
+            help='Continue with the next file in the event of some other error while applying a fix')
+
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity')
     parser.add_argument('--quiet', '-q', action='count', default=0,
@@ -547,8 +550,16 @@ def main():
         debug_verbose(-2, 'parsing %s...' % file)
         shader = HLSLShader(file)
 
-        if args.auto_fix_vertex_halo:
-            auto_fix_vertex_halo(shader)
+        try:
+            if args.auto_fix_vertex_halo:
+                auto_fix_vertex_halo(shader)
+        except Exception as e:
+            if args.ignore_other_errors:
+                collected_errors.append((file, e))
+                import traceback, time
+                traceback.print_exc()
+                continue
+            raise
 
         real_file = file
         #if args.original:
@@ -577,6 +588,7 @@ def main():
                 if install_shader_to_git(shader, file, a):
                     #update_ini(shader)
                     pass
+    show_collected_errors()
 
 if __name__ == '__main__':
     main()
