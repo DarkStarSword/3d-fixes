@@ -12,6 +12,12 @@ exclude=autofix.sh
 tmp_dir=$(dirname $(readlink -f "$0"))/__MKRELEASE_TMP__
 rm_tmp_dir=
 
+die()
+{
+	echo "$@"
+	exit 1
+}
+
 if [ ! -d "$dir" -o ! "$tag" ]; then
 	echo "Usage: $0 game tag"
 	exit 1
@@ -23,6 +29,27 @@ if [ -z "$date" ]; then
 fi
 
 zip=${PWD}/3Dfix-${game}-$date.zip
+
+if [ -f "$dir/d3dx.ini" ]; then
+	echo Checking if d3dx.ini is in release mode...
+	grep "hunting=1" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
+	grep "hunting=2" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
+	grep "calls=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "input=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "debug=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "unbuffered=1" "$dir/d3dx.ini" && die ABORTING: Logging is unbuffered
+	grep "convergence=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "separation=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "force_cpu_affinity=1" "$dir/d3dx.ini" && die ABORTING: CPU Affinity is being forced
+	grep "export_fixed=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "export_shaders=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "export_hlsl=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "export_hlsl=2" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "export_hlsl=3" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "dump_usage=1" "$dir/d3dx.ini" && die ABORTING: Collecting usage statistics is enabled
+	grep "waitfordebugger=1" "$dir/d3dx.ini" && die ABORTING: Wait for debugger is enabled
+	grep "cache_shaders=0" "$dir/d3dx.ini" && die ABORTING: Shader cache is disabled
+fi
 
 if [ "$tag" != "--no-repo" ]; then
 	status=$(git status --porcelain "$dir")
