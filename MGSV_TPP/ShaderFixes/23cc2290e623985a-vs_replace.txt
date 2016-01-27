@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:08:46 2016
+// Moon (post processed skybox)
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 01:15:04 2016
 
 cbuffer cVSScene : register(b2)
 {
@@ -169,6 +170,12 @@ void main(
   if (r0.z != 0) {
     r0.zw = r6.xy / r6.zz;
     r2.xy = r5.xy / r5.zz;
+
+// Move moon to infinity:
+float4 stereo = StereoParams.Load(0);
+r0.z += stereo.x;
+r2.x += stereo.x;
+
     r0.zw = float2(0.5,-0.5) * r0.zw;
     r0.zw = float2(0.5,0.5) + r0.zw;
     r2.xy = float2(0.5,-0.5) * r2.xy;
@@ -186,6 +193,9 @@ void main(
   o2.xy = r2.zw;
   o2.zw = r0.zw;
   o3.xyzw = r1.xyzw;
+
+//o0.x += stereo.x; // Works, but sky clips - this is a post-processed skybox, so bad idea
+
   return;
 }
 
