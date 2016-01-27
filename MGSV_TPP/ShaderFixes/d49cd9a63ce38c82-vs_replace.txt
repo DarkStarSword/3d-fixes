@@ -75,7 +75,13 @@ void main(
 
   // Correct lens flare placement
   float4 stereo = StereoParams.Load(0);
-  float adj = stereo.x * (v0.z - stereo.y) / v0.z / 2;
+  float depth = v0.z;
+  float adj;
+  if (depth < 0) { // Depth is invalid, move to infinity:
+	  adj = stereo.x / 2;
+  } else { // Valid depth, use it:
+	  adj = stereo.x * (depth - stereo.y) / depth / 2;
+  }
   r5.x += adj; // placement
   r0.x += adj; // opacity (to be confirmed)
 
