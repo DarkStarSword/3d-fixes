@@ -280,7 +280,7 @@ d3d9_pixel_formats = {
 	fourcc("RGBG"): ("D3DFMT_R8G8_B8G8",           ),
 	fourcc("YUY2"): ("D3DFMT_YUY2",                ),
 	fourcc("GRGB"): ("D3DFMT_G8R8_G8B8",           ),
-	fourcc("DXT1"): ("D3DFMT_DXT1",                ),
+	fourcc("DXT1"): ("D3DFMT_DXT1",                np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
 	fourcc("DXT2"): ("D3DFMT_DXT2",                ),
 	fourcc("DXT3"): ("D3DFMT_DXT3",                ),
 	fourcc("DXT4"): ("D3DFMT_DXT4",                ),
