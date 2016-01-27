@@ -1,3 +1,4 @@
+// Targetting circle when throwing an item
 // ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 00:06:39 2016
 
 cbuffer cPSScene : register(b2)
@@ -112,6 +113,10 @@ void main(
   r0.y = r5.x / r0.y;
   r3.xy = -r3.xy;
   r3.xy = r4.zw + r3.xy;
+
+float4 stereo = StereoParams.Load(0);
+r3.x -= stereo.x * (r0.y - stereo.y) / r0.y / 2;
+
   r3.xy = r3.xy * r4.xy;
   r4.xy = float2(2,2) * r3.xy;
   r0.w = -r3.z;
