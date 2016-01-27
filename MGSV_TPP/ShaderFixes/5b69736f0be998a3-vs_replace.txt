@@ -88,7 +88,11 @@ if (all(abs(o3.xy) != 1.0)) {
 		// Some HUD elements are in 3D, but way too far back with a reasonable
 		// convergence. This formula removes the convergence from the driver
 		// and replaces it with a custom one:
-		o3.x += stereo.x * (stereo.y - params.z);
+		if (o3.w < params.y) { // 3D main menu after progressing a little way into the game
+			o3.x += stereo.x * (stereo.y - params.w);
+		} else {
+			o3.x += stereo.x * (stereo.y - params.z);
+		}
 	} else {
 		o3.x += stereo.x * params.x * o3.w;
 	}
