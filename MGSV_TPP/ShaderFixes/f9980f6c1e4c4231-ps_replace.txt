@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:08:39 2016
+// water reflection
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 02:00:13 2016
 
 cbuffer cPSScene : register(b2)
 {
@@ -87,6 +88,7 @@ Texture2D<float4> inShadowTexture : register(t14);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : COLOR0,
@@ -105,6 +107,9 @@ void main(
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13;
   uint4 bitmask, uiDest;
   float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
 
   r0.xyzw = float4(-0.5,-0.5,-0.5,-0.5) + v1.xyxy;
   r1.x = g_psMaterial.m_materials[1].x;
@@ -410,7 +415,12 @@ void main(
   r2.y = g_psScene.m_exposure.z;
   r9.xyz = g_psObject.m_localParam[1].xyz * r2.yyy;
   r10.xyz = v6.xyz;
+
   r11.xyz = g_psScene.m_eyepos.xyz;
+
+// Fix reflections like I do with Unity, by adjusting the world space eye position:
+r11.xyz += mul(float4(stereo.x * stereo.y / g_psScene.m_projection._m00, 0, 0, 0), inverse(g_psScene.m_view));
+
   r11.xyz = -r11.xyz;
   r10.xyz = r11.xyz + r10.xyz;
   r4.z = dot(r10.xyz, r10.xyz);
@@ -433,7 +443,9 @@ void main(
   r4.w = -r4.w;
   r12.xyz = r5.xyz * r4.www;
   r10.xyz = r12.xyz + r10.xyz;
+
   r10.xyz = inCubeMap.Sample(g_samplerLinear_Wrap_s, r10.xyz).xyz;
+
   r12.xyz = float3(0.0159964003,0.0159964003,0.0159964003) * r10.xyz;
   r13.xyz = float3(0.668276012,0.668276012,0.668276012) * r10.xyz;
   r13.xyz = r13.xyz * r10.xyz;
