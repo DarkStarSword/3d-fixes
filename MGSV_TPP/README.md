@@ -14,3 +14,7 @@ Installation
 Notes
 -----
 Ambient Occlusion = High works out of the box. To use extra high, you must add the game to the Max Payne 3 profile.
+
+Known Issues
+------------
+Blue highlight on enemies behind cover is broken around the hips and disabled. Press F3 to re-enable.
