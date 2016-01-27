@@ -1,7 +1,6 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
-
 Fixed
 -----
 - Lights
@@ -26,9 +25,15 @@ Installation
 3. Press Ctrl+Alt+F11 to disable compatibility mode (advanced keys must be
    enabled in the control panel)
 
+Settings
+--------
+Ambient Occlusion = High works out of the box. To use extra high, you must add
+the game to the Max Payne 3 profile.
+
 Convergence Presets
 -------------------
 A number of convergence presets are added for convenience:
+
 - I: Low preset for cinematics
 - O: Moderate preset for gameplay
 - P: High preset for gameplay
@@ -43,15 +48,17 @@ aim if you enter 1st person view.
 
 All these presets can be customised by editing the d3dx.ini.
 
-Notes
------
-- Ambient Occlusion = High works out of the box. To use extra high, you must
-  add the game to the Max Payne 3 profile.
-
-- I am still fairly early in the game so there might be more effects to fix
-  later on. If you find a broken effect, please send me a save file.
-
 Known Issues
 ------------
 - Blue highlight on enemies behind cover is broken around the hips and
   disabled. Press F3 to re-enable.
+
+Notes
+-----
+- I am still fairly early in the game so there might be more effects to fix
+  later on. If you find a broken effect, please send me a save file.
+
+Like my Work?
+-------------
+Consider supporting me on Patreon:
+<https://www.patreon.com/DarkStarSword>
