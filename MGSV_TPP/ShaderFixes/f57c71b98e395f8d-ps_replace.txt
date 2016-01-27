@@ -1,4 +1,4 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:07:34 2016
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 00:29:49 2016
 
 cbuffer cPSMaterial : register(b4)
 {
@@ -45,17 +45,26 @@ void main(
   float2 v2 : TEXCOORD0,
   float2 w2 : TEXCOORD1,
   float2 v3 : TEXCOORD2,
+  float offset : TEXCOORD3, // new input with offset from 2D position to fix opacity
   out float4 o0 : SV_Target0)
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
+
   r0.xy = float2(-0.5,-0.5) + v0.xy;
+
   r0.xy = float2(0.49609375,0.49609375) + r0.xy;
   r0.xy = g_psSystem.m_renderBuffer.zw * r0.xy;
   r0.zw = g_psSystem.m_renderBuffer.zz * g_psSystem.m_renderInfo.xx;
   r0.xy = r0.xy / r0.zw;
+
+// Fix opacity:
+r0.x -= offset / 2;
+
   r0.z = -0.5 + r0.x;
   r0.w = g_psSystem.m_renderBuffer.x * g_psSystem.m_renderBuffer.w;
   r0.z = r0.z * r0.w;

@@ -61,7 +61,9 @@ void main(
   out float4 o1 : COLOR0,
   out float2 o2 : TEXCOORD0,
   out float2 p2 : TEXCOORD1,
-  out float2 o3 : TEXCOORD2)
+  out float2 o3 : TEXCOORD2,
+  out float offset : TEXCOORD3 // new output to fix opacity in pixel shader
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6;
   uint4 bitmask, uiDest;
@@ -123,8 +125,12 @@ if (o0.w != 1.0) {
 	// convergence. This formula removes the convergence from the driver
 	// and replaces it with a custom one:
 	o0.x += stereo.x * (stereo.y - params.z);
+	// The offset to fix the opacity is just the custom convergence formula:
+	offset = (stereo.x * (o0.w - params.z)) / o0.w;
+
 } else {
-	o0.x += stereo.x * params.x * o0.w;
+	offset = stereo.x * params.x * o0.w;
+	o0.x += offset;
 }
 
   return;
