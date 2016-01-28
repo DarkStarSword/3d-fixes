@@ -146,9 +146,14 @@ float aiming = filter.z;
 
 int action = 0;
 
-if (filter.y && all(abs(o0.xy) >= 1.0)) {
-	// Disable cutscene pause background so we can fix effects:
-	action = -1;
+if (all(abs(o0.xy) >= o0.w)) { // full screen
+	if (filter.y) {
+		// Disable cutscene pause background so we can fix effects:
+		action = -1;
+	} else {
+		// Don't adjust full screen textures
+		action = 0;
+	}
 } else if (o0.w != 1.0) {
 	// Some HUD elements are in 3D, but way too far back with a reasonable
 	// convergence.
