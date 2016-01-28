@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:08:43 2016
+// Sand decals, flickering at edges due to driver heuristics
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 11:48:59 2016
 
 cbuffer cVSScene : register(b2)
 {
@@ -101,6 +102,13 @@ void main(
   o3.xy = r1.zw;
   o4.xyz = r2.xyz;
   o5.xyz = float3(1,1,1);
+
+// This is a full screen shader, but the driver heuristics can't decide whether
+// to adjust it or not, which results in flickering on the edges. Normalise the
+// output coordinate such that W == convergence to counter this.
+float4 stereo = StereoParams.Load(0);
+o2 = o2 / o2.w * stereo.y;
+
   return;
 }
 
