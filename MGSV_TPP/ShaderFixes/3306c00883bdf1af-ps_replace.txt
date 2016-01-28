@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:07:45 2016
+// Light - Uneven specular lighting shining off rocks in the mid-far frame
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 13:10:46 2016
 
 cbuffer cPSScene : register(b2)
 {
@@ -91,9 +92,22 @@ void main(
   r0.x = r1.w + r0.x;
   r3.z = r3.z / r0.x;
   r3.xy = r3.zz * r0.zw;
+
+float4 stereo = StereoParams.Load(0);
+
+// Adjustment for specular highlights:
+float3 spec = float3(r3.xy, r3.z);
+spec.x -= stereo.x * spec.z / g_psScene.m_projection._m00;
+
+// Fix shadow placement:
+r3.x -= stereo.x * (r3.z - stereo.y) / g_psScene.m_projection._m00;
+
   r0.x = dot(r3.xyz, r3.xyz);
   r0.x = rsqrt(r0.x);
-  r0.xzw = r3.xyz * r0.xxx;
+
+// Fix specular highlights:
+  r0.xzw = spec * r0.xxx;
+
   r3.xyz = g_psLight.m_lightParams[0].xyz;
   r4.xyz = g_psLight.m_lightParams[1].xyz * g_psScene.m_exposure.zzz;
   r4.w = g_psLight.m_lightParams[1].w;
