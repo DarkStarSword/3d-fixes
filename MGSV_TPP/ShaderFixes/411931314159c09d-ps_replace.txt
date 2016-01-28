@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:08:43 2016
+// Sand decals
+// ---- Created with 3Dmigoto v1.2.27 on Thu Jan 28 11:35:52 2016
 
 cbuffer cPSScene : register(b2)
 {
@@ -128,6 +129,10 @@ void main(
   r0.xy = float2(-1,1) + r0.xy;
   r0.xy = r0.xy * r7.zw;
   r7.xy = r0.xy * r5.ww;
+
+float4 stereo = StereoParams.Load(0);
+r7.x -= stereo.x * (r5.w - stereo.y) / g_psScene.m_projection._m00;
+
   r7.z = r5.w;
   r8.x = g_psScene.m_view._m00;
   r8.y = g_psScene.m_view._m01;
