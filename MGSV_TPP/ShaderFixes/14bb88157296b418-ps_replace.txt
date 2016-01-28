@@ -1,3 +1,4 @@
+// Specular lighting shader - blue light (from moon?) seen on Mother Base at night while raining
 // ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:07:45 2016
 
 cbuffer cPSScene : register(b2)
@@ -110,12 +111,24 @@ void main(
   r5.z = r5.z / r1.x;
   r6.z = r5.z;
   r5.xy = r6.zz * r1.yz;
+
+float4 stereo = StereoParams.Load(0);
+
+// Adjustment for specular highlights:
+float3 spec = float3(r5.xy, r6.z);
+spec.x -= stereo.x * spec.z / g_psScene.m_projection._m00;
+
+// Fix shadow placement:
+r5.x -= stereo.x * (r6.z - stereo.y) / g_psScene.m_projection._m00;
+
   r6.xy = r5.xy;
   r5.w = 1;
   r6.w = 1;
   r1.x = dot(r6.xyz, r6.xyz);
   r1.x = rsqrt(r1.x);
-  r1.xyz = r6.xyz * r1.xxx;
+
+  r1.xyz = spec * r1.xxx;
+
   r7.xyz = g_psLight.m_lightParams[0].xyz;
   r8.xyz = g_psLight.m_lightParams[1].xyz * g_psScene.m_exposure.zzz;
   r8.w = g_psLight.m_lightParams[1].w;
