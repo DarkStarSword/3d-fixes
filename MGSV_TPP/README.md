@@ -12,7 +12,7 @@ Fixed
 - Targetting circle when throwing items
 - Water Reflections
 - Moon pushed to infinity
-- Auto-crosshair added
+- Auto-crosshair + red dot sight added
 - 2D HUD moved to fixed depth (customise with x under [Constants])
 - 3D HUD items moved closer to screen
 
