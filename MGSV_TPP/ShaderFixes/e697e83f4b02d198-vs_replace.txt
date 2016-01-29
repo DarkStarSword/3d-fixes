@@ -1,3 +1,4 @@
+// Fog / sky glow
 // ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:08:44 2016
 
 cbuffer cVSScene : register(b2)
@@ -101,6 +102,11 @@ void main(
   r2.zw = float2(1,1);
   r3.xy = g_vsScene.m_projectionParam.xy * r4.xy;
   r0.xy = r3.xy * r4.zz;
+
+// Adjust sky glow for sun:
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r4.z - stereo.y) / 2;
+
   r0.w = 1;
   r3.x = dot(r0.xyzw, g_vsScene.m_view._m00_m10_m20_m30);
   r3.y = dot(r0.xyzw, g_vsScene.m_view._m01_m11_m21_m31);
