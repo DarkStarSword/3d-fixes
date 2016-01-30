@@ -1,6 +1,12 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.1
+-----------
+- Fixed atmospheric glow / fog
+- Added an auto adjustment to the red dot sight like the crosshair
+- Lowered the binoculars convergence preset a little
+
 Fixed
 -----
 - Lights
@@ -61,5 +67,4 @@ Notes
 
 Like my Work?
 -------------
-Consider supporting me on Patreon:
-<https://www.patreon.com/DarkStarSword>
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
