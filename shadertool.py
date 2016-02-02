@@ -46,7 +46,7 @@ unity_shader_directional_lighting     = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Shade
 unity_tag_shadow_caster               = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"LIGHTMODE"="SHADOWCASTER".*"\s}$')
 unity_headers_attached                = re.compile(r"// Headers extracted with DarkStarSword's extract_unity_shaders.py")
 
-preferred_stereo_const = 220
+preferred_stereo_const = 221
 dx9settings_ini = {}
 collected_errors = []
 
@@ -2841,16 +2841,16 @@ def disable_shader(tree, args):
         disabled = stereo_const.yyyy
 
     # TODO: Add support for --use-nv-stereo-reg-vs
-    tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
-    separation = tmp_reg.x
-    tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
+    #tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
+    #separation = tmp_reg.x
+    #tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
     if args.condition:
         tree.add_inst('mov', [tmp_reg.w, args.condition])
         tree.add_inst('if_eq', [tmp_reg.w, stereo_const.x])
     tree.add_inst('mov', [reg, disabled])
     if args.condition:
         tree.add_inst('endif', [])
-    tree.add_inst('endif', [])
+    #tree.add_inst('endif', [])
 
 def lookup_header_json(tree, index, file):
     if len(tree) and len(tree[0]) and isinstance(tree[0][0], CPPStyleComment) \
