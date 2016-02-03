@@ -1,3 +1,7 @@
+// Masked light pattern seen on mother base medical platform
+// VS 657f8f9f47871217
+// PS e0cb15aa5000d38c
+// MASK fef1e54f04bf1432 (I presume)
 // ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:07:47 2016
 
 cbuffer cPSScene : register(b2)
@@ -79,10 +83,18 @@ void main(
   r0.xy = r0.xy / r0.zz;
   r0.xy = g_psObject.m_localParam[1].xy + r0.xy;
   r0.x = g_DepthTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).x;
+
+float depth = g_psScene.m_projectionParam.z / (r0.x - g_psScene.m_projectionParam.w);
+
   r0.yzw = v0.xyw;
   r1.xy = r0.yz / r0.ww;
   r1.z = r0.x;
   r1.w = 1;
+
+// Screen space correction:
+float4 stereo = StereoParams.Load(0);
+r1.x -= stereo.x * (depth - stereo.y) / depth;
+
   r2.x = dot(r1.xyzw, g_psLightSH.m_projectionPlanes[0].xyzw);
   r2.y = dot(r1.xyzw, g_psLightSH.m_projectionPlanes[1].xyzw);
   r2.z = dot(r1.xyzw, g_psLightSH.m_projectionPlanes[2].xyzw);
