@@ -38,6 +38,7 @@ Several of my fixes can be found in the 3DMigoto repository instead:
 - [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) (WIP)
 - [Submerged](Submerged) (UE4 3DMigoto approach WIP, fixes shadows)
 - [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar64 - fixes tile lighting compute shaders and halos)
+- [Demonicon](demonicon) - Quick fix to make the game playable - fixes lights and some halos
 
 ### Minor Improvements ###
 - [Far Cry 2](Far Cry 2) (Adds auto-convergence while holding RMB)
@@ -47,7 +48,6 @@ Several of my fixes can be found in the 3DMigoto repository instead:
 There's a couple of fixes that aren't in the master branch for various reasons:
 - [Crysis 3](https://github.com/DarkStarSword/3d-fixes/tree/crysis3/Crysis 3) - Assisting DHR with a few lights
 - [Glare](https://github.com/DarkStarSword/3d-fixes/tree/glare/Glare) - Was unable to resolve clipping issue on lights at the time (I should revisit this - I believe I now know how to solve this)
-- [Demonicon](https://github.com/DarkStarSword/3d-fixes/tree/demonicon/demonicon) - Quick fix to make the game playable (lights are still broken)
 
 ### Templates ###
 - Unity 4
