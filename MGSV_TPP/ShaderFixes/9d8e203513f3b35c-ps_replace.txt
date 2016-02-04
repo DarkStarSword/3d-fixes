@@ -1,3 +1,7 @@
+// Masked light pattern - tunnel in africa base
+// VS 11f599630ed62477
+// PS 9d8e203513f3b35c
+// MASK fef1e54f04bf1432 (I presume)
 // ---- Created with 3Dmigoto v1.2.27 on Mon Jan 25 23:07:47 2016
 
 cbuffer cPSScene : register(b2)
@@ -83,6 +87,9 @@ void main(
   r0.xy = g_psObject.m_localParam[1].xy + r0.xy;
   r1.xyz = g_NormalTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).xyz;
   r0.x = g_DepthTexture.Sample(g_samplerPoint_Wrap_s, r0.xy).x;
+
+float depth = g_psScene.m_projectionParam.z / (r0.x - g_psScene.m_projectionParam.w);
+
   r0.yz = float2(2,2) * r1.xy;
   r0.yz = float2(-1,-1) + r0.yz;
   r0.w = r1.z * r1.z;
@@ -101,6 +108,11 @@ void main(
   r2.xy = r0.yz / r0.ww;
   r2.z = r0.x;
   r2.w = 1;
+
+// Screen space correction:
+float4 stereo = StereoParams.Load(0);
+r2.x -= stereo.x * (depth - stereo.y) / depth;
+
   r3.x = dot(r2.xyzw, g_psLightSH.m_projectionPlanes[0].xyzw);
   r3.y = dot(r2.xyzw, g_psLightSH.m_projectionPlanes[1].xyzw);
   r3.z = dot(r2.xyzw, g_psLightSH.m_projectionPlanes[2].xyzw);
