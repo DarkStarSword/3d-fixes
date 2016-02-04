@@ -73,6 +73,8 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+
   r0.x = g_vsMaterial.m_materials[2].z;
   r0.yzw = g_vsMaterial.m_materials[4].xyz;
   r1.x = g_vsScene.m_exposure.z;
@@ -121,6 +123,11 @@ void main(
   r2.zw = r3.xy;
   r4.xy = r3.xy;
   r4.zw = float2(0,1);
+
+// Fixes issue with haze offset from horizon when camera is tilted (e.g. while
+// taking off from mother base):
+r4.x -= stereo.x;
+
   r5.x = dot(r4.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
   r5.y = dot(r4.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
   r5.z = dot(r4.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
@@ -172,7 +179,6 @@ void main(
     r2.xy = r5.xy / r5.zz;
 
 // Move moon to infinity:
-float4 stereo = StereoParams.Load(0);
 r0.z += stereo.x;
 r2.x += stereo.x;
 
