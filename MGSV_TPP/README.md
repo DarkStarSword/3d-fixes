@@ -1,6 +1,12 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.2
+-----------
+- Fixed several more shadows, specular highlights & reflections
+- Fixed atmospheric haze misalignment when camera is tilted
+- Fixed flickering heat distortion through binoculars
+
 Update v1.1
 -----------
 - Fixed atmospheric glow / fog
@@ -22,6 +28,7 @@ Fixed
 - 2D HUD moved to fixed depth (customise with x under [Constants])
 - 3D HUD items moved closer to screen
 - Atmospheric glow
+- Heat distortion
 
 Installation
 ------------
