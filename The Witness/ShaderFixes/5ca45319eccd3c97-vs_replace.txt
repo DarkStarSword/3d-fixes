@@ -6,13 +6,40 @@ cbuffer cb0 : register(b0)
 }
 
 
-
-
 // 3Dmigoto declarations
 #define cmp -
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
+
+struct vbe {
+  float3 pos;
+  float2 texcoord;
+  uint color;
+};
+StructuredBuffer<vbe> vb : register(t100);
+
+float4 calc_pos(float3 v0)
+{
+  float4 r0, o2;
+
+  r0.xyz = v0.xyz;
+  r0.w = 1;
+  o2.x = dot(r0.xyzw, cb0[0].xyzw);
+  o2.y = dot(r0.xyzw, cb0[1].xyzw);
+  o2.z = dot(r0.xyzw, cb0[2].xyzw);
+  o2.w = dot(r0.xyzw, cb0[3].xyzw);
+
+  return o2;
+}
+
+float4 find_center()
+{
+	float4 pos1 = calc_pos(vb[0].pos);
+	float4 pos2 = calc_pos(vb[2].pos);
+	return (pos1 + pos2) / 2;
+}
 
 void main( 
   float3 v0 : POSITION0,
@@ -40,11 +67,10 @@ float4 rt_filter = IniParams.Load(int2(1, 0));
 if (rt_filter.x != rt_filter.z || rt_filter.y != rt_filter.w)
 	return;
 
-// For now move the cursor to a fixed depth to line up with the puzzles:
+// Auto adjust cursor depth:
 float4 stereo = StereoParams.Load(0);
-float4 params = IniParams.Load(0);
-float depth = params.x;
-o2.x += stereo.x * (depth - stereo.y) / depth;
+float4 center = find_center();
+o2.x += adjust_from_stereo2mono_depth_buffer(center.x, center.y);
 
   return;
 }
