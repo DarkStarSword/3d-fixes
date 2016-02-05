@@ -15,6 +15,9 @@ float world_z_from_depth_buffer(float x, float y)
 
 	ZBuffer.GetDimensions(width, height);
 
+	if (!width || !height)
+		return 0;
+
 	x = min(max((x / 2 + 0.5) * width, 0), width - 1);
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
 	z = ZBuffer.Load(int3(x, y, 0)).x;
