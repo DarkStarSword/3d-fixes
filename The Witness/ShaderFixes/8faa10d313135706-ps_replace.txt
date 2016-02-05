@@ -1,3 +1,5 @@
+// Reflections (distant)
+// VS 9231850fa4195231
 // ---- Created with 3Dmigoto v1.3.0 on Sat Feb 06 02:19:01 2016
 Texture2D<float4> t12 : register(t12);
 
@@ -76,6 +78,8 @@ void main(
   linear centroid float4 v1 : TEXCOORD2,
   float4 v2 : TEXCOORD3,
   float3 v3 : TEXCOORD4,
+float3 corrected_v0 : TEXCOORD5,
+float3 sun_v0 : TEXCOORD6,
   float4 v4 : SV_Position0,
   uint v5 : SV_IsFrontFace0,
   out float4 o0 : SV_Target0)
@@ -101,8 +105,11 @@ void main(
   r1.yw = v0.xy * float2(0.0599999987,0.0599999987) + r1.yw;
   r6.xyzw = t2.Sample(s2_s, r1.yw).xyzw;
   if (v5.x != 0) {
-    r7.xyz = cb1[0].xyz + -v0.xyz;
-    r1.y = dot(r7.xyz, r7.xyz);
+
+    r7.xyz = cb1[0].xyz + -corrected_v0.xyz;
+    float3 sun_r7 = cb1[0].xyz + -sun_v0.xyz;
+
+    r1.y = dot(sun_r7.xyz, sun_r7.xyz);
     r1.w = rsqrt(r1.y);
     r8.xyz = r7.xyz * r1.www;
     r1.x = r1.x + r1.x;
@@ -150,7 +157,7 @@ void main(
     r3.w = r12.y * 0.5 + 0.5;
     r4.zw = r4.zw / r3.ww;
     r4.zw = r4.zw * r4.zw;
-    r4.zw = r4.zw / w0.xw;
+    r4.zw = r4.zw / w0; // decompiler bug w0.xw
     r4.zw = v4.xy * cb1[19].xy + r4.zw;
     r6.xyzw = t12.SampleLevel(s12_s, r4.zw, 0, int2(0, 0)).xyzw;
     r3.w = -0.0850000009 + r6.x;
@@ -248,7 +255,9 @@ void main(
     r1.z = exp2(r1.z);
     r1.z = min(1, r1.z);
     r1.z = r1.z * 0.980000019 + 0.0199999996;
-    r8.xyz = v0.xyz;
+
+    r8.xyz = corrected_v0.xyz; // Moved reflection (distorted - moves distant reflection more, not sun)
+
     r8.w = 1;
     r12.x = dot(r8.xyzw, cb1[25].xyzw);
     r12.y = dot(r8.xyzw, cb1[26].xyzw);
@@ -295,7 +304,9 @@ void main(
     r1.z = min(4096, r1.z);
     r6.xyz = cb1[3].xyz * float3(1,0.899999976,0.699999988);
     r1.x = r5.w * r1.x;
-    r7.xyz = r7.xyz * r1.www + cb1[2].xyz;
+
+    r7.xyz = sun_r7.xyz * r1.www + cb1[2].xyz; // sun
+
     r1.w = dot(r7.xyz, r7.xyz);
     r1.w = rsqrt(r1.w);
     r7.xyz = r7.xyz * r1.www;
@@ -346,7 +357,7 @@ void main(
     r0.x = r6.w * 0.850000024 + 0.150000006;
     r6.xyz = r6.xyz * r0.xxx;
     r6.xyz = r6.xyz * r6.xyz;
-    r7.xyz = float3(0.00499999989,0.00499999989,0.25) * v0.xyw;
+    r7.xyz = float3(0.00499999989,0.00499999989,0.25) * float3(v0.xy, w0); // decompiler bug
     r0.xy = -r0.zw * float2(0.400000006,0.400000006) + r7.xy;
     r0.xyzw = t4.SampleLevel(s4_s, r0.xy, 0, int2(0, 0)).xyzw;
     r0.x = r0.y + r0.y;
