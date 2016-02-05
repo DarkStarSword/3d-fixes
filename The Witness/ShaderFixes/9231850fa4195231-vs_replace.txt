@@ -1,4 +1,6 @@
 // Reflections
+// PS b424f58060f2b3cd (foreground, sun reflection)
+// PS 8faa10d313135706 (distance)
 // ---- Created with 3Dmigoto v1.2.27 on Sat Feb 06 06:13:07 2016
 Texture2D<float4> t3 : register(t3);
 
@@ -44,6 +46,8 @@ void main(
   out float4 o1 : TEXCOORD2,
   out float4 o2 : TEXCOORD3,
   out float3 o3 : TEXCOORD4,
+out float3 corrected_o0 : TEXCOORD5,
+out float3 sun_o0 : TEXCOORD6,
   out float4 o4 : SV_Position0)
 {
   float4 r0,r1,r2,r3;
@@ -117,12 +121,18 @@ matrix m = matrix(cb1[0], cb1[1], cb1[2], cb1[3]);
 matrix im = inverse(m);
 
 float4 tmp = mul(m, float4(o0, 1));
+float4 sun_tmp = tmp;
 
-// World space stereo correction (fudge factor here is almost certainly wrong -
-// may need an adjustment elsewhere... need to get closer):
-tmp.x += stereo.x * (tmp.w - stereo.y) * 1.01;
+// World space stereo correction for the main reflection (fudge factor here
+// seems to work regardless of convergence, distance, FOV, etc. But I still
+// don't trust it):
+tmp.x += stereo.x * (tmp.w - stereo.y) * 1.01; // * params.w;
 
-o0.xyz = mul(im, tmp);
+// Alternate correction for the reflection of the sun:
+sun_tmp.x -= stereo.x * stereo.y;
+
+corrected_o0.xyz = mul(im, tmp);
+sun_o0.xyz = mul(im, sun_tmp);
 
   o1.xy = v1.xy;
   r2.xy = cb0[3].xx * r0.xy;
