@@ -1,32 +1,50 @@
 // Depth buffer copied from other shaders to this input with 3Dmigoto:
-Texture2D<float4> ZBuffer : register(t110);
+Texture2DMS<float4> ZBuffer : register(t110);
 
-// Definition copied from 4e463c9fbde695b9:
-cbuffer cb13 : register(b13)
-{
-  float4 cb13[4];
-}
+// Some of the puzzles and other effects are drawn with shaders VS
+// 28d7da4797f5c715 PS b9ee699c92cfd6e6 which do not output to the depth
+// buffer, but we need the cursor to line up on them for the puzzles to be
+// usable. We therefore have injected a new shader and render target to record
+// their depth, which is passed in here. For any pixels where this reads
+// non-zero we use it, otherwise we read the regular depth buffer:
+Texture2DMS<float4> PuzzleZBuffer : register(t111);
+
+
+// Was passing this in to scale the depth buffer, but the shader I copied it
+// from is not always in use, so for now I'm just hard coding the values:
+// // Definition copied from 4e463c9fbde695b9:
+// cbuffer cb13 : register(b13)
+// {
+//   float4 cb13[4];
+// }
 
 
 float world_z_from_depth_buffer(float x, float y)
 {
-	uint width, height;
+	uint width, height, num_samples;
 	float z;
 
-	ZBuffer.GetDimensions(width, height);
+	ZBuffer.GetDimensions(width, height, num_samples);
 
 	if (!width || !height)
 		return 0;
 
 	x = min(max((x / 2 + 0.5) * width, 0), width - 1);
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
-	z = ZBuffer.Load(int3(x, y, 0)).x;
+	z = PuzzleZBuffer.Load(int2(x, y), 0).x;
+	if (z == 0)
+		z = ZBuffer.Load(int2(x, y), 0).x;
 
-	// Copied from 4e463c9fbde695b9:
-	float4 r0;
-	r0.w = z * cb13[1].z + cb13[1].w;
-	r0.w = 1 / r0.w;
-	return r0.w;
+	// scaling may not always be available (well, it is, but it's a bit all
+	// over the place in terms of where to reliably find it), so just hard
+	// code it for now with values from frame analysis:
+	return (1 / (z * 16.666111 + 0.000555555569));
+
+	// // Copied from 4e463c9fbde695b9:
+	// float4 r0;
+	// r0.w = z * cb13[1].z + cb13[1].w;
+	// r0.w = 1 / r0.w;
+	// return r0.w;
 }
 
 float adjust_from_depth_buffer(float x, float y)
@@ -129,8 +147,8 @@ float adjust_from_stereo2mono_depth_buffer(float x, float y)
 		w = (asep * convergence) / (asep - offset);
 
 		// clamp right to 0.5 pixels left of the center line:
-		uint width, height;
-		ZBuffer.GetDimensions(width, height);
+		uint width, height, num_samples;
+		ZBuffer.GetDimensions(width, height, num_samples);
 		float px1 = 1.0 / width / 2.0;
 
 		float left = max((x - offset) / 2 + 0.5, 0);

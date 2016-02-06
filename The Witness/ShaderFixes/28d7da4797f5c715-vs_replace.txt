@@ -31,7 +31,12 @@ void main(
   out float4 o2 : TEXCOORD2,
   out float4 o3 : COLOR0,
   out float4 o4 : COLOR1,
-  out float4 o5 : SV_Position0)
+  out float4 o5 : SV_Position0,
+
+// New output to pass to injected shader puzzle_depth.hlsl:
+out float depth : TEXCOORD3
+
+  )
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
@@ -101,6 +106,7 @@ float4 stereo = StereoParams.Load(0);
     o1.xyz = float3(0,0,0);
 
 o5.x += stereo.x * (o5.w - stereo.y);
+depth = o5.z / o5.w;
 
     return;
   }
@@ -151,6 +157,7 @@ o5.x += stereo.x * (o5.w - stereo.y);
   o1.xyz = v1.xyz;
 
 o5.x += stereo.x * (o5.w - stereo.y);
+depth = o5.z / o5.w;
 
   return;
 }
