@@ -88,9 +88,6 @@ float3 sun_v0 : TEXCOORD6,
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-float4 params = IniParams.Load(0);
-
   r0.xy = v0.xy * cb0[1].xx + cb0[1].zw; // damages distant water?
 
   r0.zw = float2(0.0009765625,-0.0009765625) + r0.xy;
@@ -112,8 +109,8 @@ float4 params = IniParams.Load(0);
 
     r7.xyz = cb1[0].xyz + -corrected_v0.xyz; // moves whole reflection, distorted, including sun
     float3 sun_r7 = cb1[0].xyz + -sun_v0.xyz;
-
     r1.y = dot(sun_r7.xyz, sun_r7.xyz);
+
     r1.w = rsqrt(r1.y); // sun + atmosphere
     r8.xyz = r7.xyz * r1.www; // most reflection, not sun
     r3.zw = cb1[19].xy * v4.xy;
@@ -302,7 +299,9 @@ float4 params = IniParams.Load(0);
     r2.w = r5.z * r2.w;
     r5.z = cmp(0 < r2.w);
     r6.x = cmp(abs(v0.z) < 4);
+
     r6.y = saturate(sun_v0.z * 0.25 + 0.25);
+
     r6.z = dot(cb1[2].xy, cb1[2].xy);
     r6.z = rsqrt(r6.z);
     r12.xy = cb1[2].xy * r6.zz;
