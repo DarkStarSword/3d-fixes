@@ -9,7 +9,6 @@ Fixed
 - 2D Gates
 - 2D Puzzles
 - Light shafts
-- Fog (approximate)
 
 Installation
 ------------
