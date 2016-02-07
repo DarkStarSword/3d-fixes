@@ -26,13 +26,14 @@ Installation
 Important note about Puzzles
 ----------------------------
 There are a few puzzles in this game that are designed to rely on a 2D
-perspective and would be difficult to solve in 3D. For these puzzles, hold the
-Q key to temporarily reduce the separation so that the solution can be seen.
+perspective and would be difficult to solve in 3D. For these puzzles, hold
+either Q or the middle mouse button to temporarily reduce the separation so
+that the solution can be seen.
 
 Keys
 ----
 - Backslash: Activate recommended convergence
-- Q: Hold to temporarily reduce separation for certain puzzles
+- Q / Middle Mouse: Hold to temporarily reduce separation for certain puzzles
 
 Like my Work?
 -------------
