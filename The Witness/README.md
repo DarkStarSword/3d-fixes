@@ -23,9 +23,16 @@ Installation
 4. If you are on a 32bit OS, replace the DLLs with those from the 32bit
    directory.
 
+Important note about Puzzles
+----------------------------
+There are a few puzzles in this game that are designed to rely on a 2D
+perspective and would be difficult to solve in 3D. For these puzzles, hold the
+Q key to temporarily reduce the separation so that the solution can be seen.
+
 Keys
 ----
-Backslash: Activate recommended convergence
+- Backslash: Activate recommended convergence
+- Q: Hold to temporarily reduce separation for certain puzzles
 
 Like my Work?
 -------------
