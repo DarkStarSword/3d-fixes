@@ -46,16 +46,15 @@ void main(
   out float4 o1 : TEXCOORD2,
   out float4 o2 : TEXCOORD3,
   out float3 o3 : TEXCOORD4,
+
 out float3 corrected_o0 : TEXCOORD5,
 out float3 sun_o0 : TEXCOORD6,
+
   out float4 o4 : SV_Position0)
 {
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
   float4 fDest;
-
-float4 stereo = StereoParams.Load(0);
-float4 params = IniParams.Load(0);
 
   r0.xyz = cb0[2].xyz * v0.xyz;
   r0.z = cb0[2].w + r0.z;
@@ -126,6 +125,7 @@ float4 sun_tmp = tmp;
 // World space stereo correction for the main reflection (fudge factor here
 // seems to work regardless of convergence, distance, FOV, etc. But I still
 // don't trust it):
+float4 stereo = StereoParams.Load(0);
 tmp.x += stereo.x * (tmp.w - stereo.y) * 1.01; // * params.w;
 
 // Alternate correction for the reflection of the sun:
