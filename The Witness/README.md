@@ -35,6 +35,10 @@ Keys
 - Backslash: Activate recommended convergence
 - Q / Middle Mouse: Hold to temporarily reduce separation for certain puzzles
 
+Known Issues
+------------
+- Fog is slightly out
+
 Like my Work?
 -------------
 Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
