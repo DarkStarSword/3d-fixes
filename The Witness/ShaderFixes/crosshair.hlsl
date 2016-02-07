@@ -32,8 +32,10 @@ float world_z_from_depth_buffer(float x, float y)
 	x = min(max((x / 2 + 0.5) * width, 0), width - 1);
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
 	z = PuzzleZBuffer.Load(int2(x, y), 0).x;
-	if (z == 0)
-		z = ZBuffer.Load(int2(x, y), 0).x;
+	if (z)
+		return z;
+
+	z = ZBuffer.Load(int2(x, y), 0).x;
 
 	// scaling may not always be available (well, it is, but it's a bit all
 	// over the place in terms of where to reliably find it), so just hard
