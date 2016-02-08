@@ -36,8 +36,6 @@ out float3 sun_o0 : TEXCOORD6,
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-
   r0.w = 1;
   r1.xyz = cb0[2].xyz * v0.xyz;
   r1.z = cb0[2].w + r1.z;
@@ -63,13 +61,15 @@ float4 sun_tmp = tmp;
 // World space stereo correction for the main reflection (fudge factor here
 // seems to work regardless of convergence, distance, FOV, etc. But I still
 // don't trust it):
-tmp.x += stereo.x * (tmp.w - stereo.y) * 1.01; // * params.w;
+float4 stereo = StereoParams.Load(0);
+tmp = float4(stereo.x * (tmp.w - stereo.y) * 1.01, 0, 0, 0);
 
 // Alternate correction for the reflection of the sun:
-sun_tmp.x -= stereo.x * stereo.y;
+sun_tmp = float4(stereo.x * stereo.y, 0, 0, 0);
 
-corrected_o0.xyz = mul(im, tmp);
-sun_o0.xyz = mul(im, sun_tmp);
+// Negate Z to improve reflections when camera is tilted (only approximate):
+corrected_o0 = o0 + mul(im, tmp) * float3(1, 1, -1);
+sun_o0 = o0 - mul(im, sun_tmp) * float3(1, 1, -1);
 
   o1.xy = v1.xy;
   r1.xy = cb0[3].xx * r0.xy;
