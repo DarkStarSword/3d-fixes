@@ -38,6 +38,7 @@ Keys
 Known Issues
 ------------
 - Fog is slightly out
+- Water reflections are slightly out when the camera is tilted
 
 Like my Work?
 -------------
