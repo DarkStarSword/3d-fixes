@@ -1,0 +1,128 @@
+// CRC32: 5CA9F2D6 | Matched 2 variants of 1 shaders: Marmoset/Terrain/Terrain Diffuse IBL
+// 
+//    Unity headers extracted from Marmoset Terrain Diffuse.shader
+//    Shader "Marmoset/Terrain/Terrain Diffuse IBL" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _DetailWeight ("DetailWeight", Range(0,1)) = 1
+//       _FadeNear ("Fade Near", Float) = 500
+//       _FadeRange ("Fade Range", Float) = 100
+//       _DiffFresnel ("Master Diffuse Fresnel", Range(0,1)) = 0
+//       _Fresnel0 ("Diffuse Fresnel 0", Range(0,1)) = 0
+//       _Fresnel1 ("Diffuse Fresnel 1", Range(0,1)) = 0
+//       _Fresnel2 ("Diffuse Fresnel 2", Range(0,1)) = 0
+//       _Fresnel3 ("Diffuse Fresnel 3", Range(0,1)) = 0
+//       _Fresnel4 ("Secondary Fresnel 4", Range(0,1)) = 0
+//       _Fresnel5 ("Secondary Fresnel 5", Range(0,1)) = 0
+//       _Fresnel6 ("Secondary Fresnel 6", Range(0,1)) = 0
+//       _Fresnel7 ("Secondary Fresnel 7", Range(0,1)) = 0
+//       _BaseTex ("Base Diffuse (RGB) Occlusion (A)", 2D) = "white" { }
+//       _BumpMap ("Base Normalmap (RGB)", 2D) = "bump" { }
+//       _Control ("Control (RGBA)", 2D) = "red" { }
+//       _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//       _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//       _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//       _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//       _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//       _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//       _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//       _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//      }
+//      Dependency "AddPassShader" = "Hidden/Marmoset/Terrain/Terrain IBL AddPass"
+//      Dependency "BaseMapShader" = "Hidden/Marmoset/Terrain/Distant IBL"
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//        Pass 2/2 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//          GpuProgramID 90256
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "MARMO_TERRAIN_BLEND_OFF" "SHADOWS_DEPTH" }
+// 2:           Keywords { "MARMO_TERRAIN_BLEND_ON" "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 11 [_Object2World] 3
+//              Matrix 14 [_World2Object] 3
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [unity_MatrixVP]
+//              Vector 17 [_WorldSpaceLightPos0]
+//              Vector 18 [unity_LightShadowBias]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c19, 1, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord o0
+    dcl_position o1
+    dcl_texcoord1 o2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c8, v0
+    dp4 r0.y, c9, v0
+    dp4 r0.z, c10, v0
+    dp3 r0.x, r0, r0
+    rsq r0.x, r0.x
+    rcp o2.z, r0.x
+    abs r0.x, c18.z
+    slt r0.x, -r0.x, r0.x
+    mul r0.yzw, c15.xxyz, v1.y
+    mad r0.yzw, c14.xxyz, v1.x, r0
+    mad r0.yzw, c16.xxyz, v1.z, r0
+    nrm r1.xyz, r0.yzww
+    mad r2, v0.xyzx, c19.xxxy, c19.yyyx
+    dp4 r3.x, c11, r2
+    dp4 r3.y, c12, r2
+    dp4 r3.z, c13, r2
+    mad r0.yzw, r3.xxyz, -c17.w, c17.xxyz
+    nrm r4.xyz, r0.yzww
+    dp3 r0.y, r1, r4
+    mad r0.y, r0.y, -r0.y, c19.x
+    rsq r0.y, r0.y
+    rcp r0.y, r0.y
+    mul r0.y, r0.y, c18.z
+    mad r1.xyz, r1, -r0.y, r3
+    mov r1.w, c19.x
+    dp4 r3.x, c4, r1
+    dp4 r3.y, c5, r1
+    dp4 r3.z, c6, r1
+    dp4 r3.w, c7, r1
+    dp4 r1.x, c0, r2
+    dp4 r1.y, c1, r2
+    dp4 r1.z, c2, r2
+    dp4 r1.w, c3, r2
+    lrp r2, r0.x, r3, r1
+
+mov o1, r2 // Relocated from line 111 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Terrain_Terrain Diffuse IBL/vp/5CA9F2D6.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    rcp r0.x, r2.w
+    mul_sat r0.x, r0.x, c18.x
+    add r0.x, r0.x, r2.z
+    max r0.y, r0.x, c19.y
+    lrp r2.z, c18.y, r0.y, r0.x
+    mov o0, r2
+
+//     mov o1, r2 // Relocated to line 105 with shadertool.py
+mov o1.z, r2 // Inserted by shadertool.py
+
+    mul o2.xyw, c19.xxzy, v2.xyzx

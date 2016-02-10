@@ -1,0 +1,111 @@
+// CRC32: 1F098AE5 | Matched 4 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Cross Cards
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Cross Cards.shader
+//    Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Cross Cards" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _GIBoost ("Global Illumination Scale", Float) = 1
+//      }
+//      Fallback "Transparent/Cutout/Diffuse"
+//      SubShader 1/2 {
+//        LOD 350
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 5/5 {
+//          Name "DEFERRED"
+//          Tags { "LIGHTMODE"="Deferred" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          Cull Off
+//          GpuProgramID 266322
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_OFF" }
+// 4:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_OFF" "UNITY_HDR_ON" }
+// 8:           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_ON" "UNITY_HDR_ON" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 7 [_Object2World] 3
+//              Matrix 10 [_World2Object] 3
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 13 [_WorldSpaceCameraPos]
+//              Vector 16 [unity_SHAb]
+//              Vector 15 [unity_SHAg]
+//              Vector 14 [unity_SHAr]
+//              Vector 19 [unity_SHBb]
+//              Vector 18 [unity_SHBg]
+//              Vector 17 [unity_SHBr]
+//              Vector 20 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c21, 0.0399999991, 0.649999976, 1, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.x
+    dcl_texcoord4 o4
+    dcl_texcoord5 o5.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Transparent_Cutout_Bumped Diffuse IBL Cross Cards/vp/1F098AE5.txt
+mov r30, c13
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 r0.x, c6, v0
+    mul r0.x, r0_abs.x, c21.x
+    min r0.x, r0.x, c21.y
+    mul r0.y, r0.x, r0.x
+    mul o3.x, r0.y, r0.x
+    dp4 o0.x, c0, v0
+    dp4 o0.y, c1, v0
+    dp4 o0.z, c2, v0
+    dp4 o0.w, c3, v0
+    dp4 r0.x, c7, v0
+    dp4 r0.y, c8, v0
+    dp4 r0.z, c9, v0
+    add r0.xyz, -r0, r30
+    nrm r1.xyz, r0
+    mul r0.xyz, r1.y, c11
+    mad r0.xyz, c10, r1.x, r0
+    mad r0.xyz, c12, r1.z, r0
+    nrm r1.xyz, r0
+    mul r0.x, r1.y, r1.y
+    mad r0.x, r1.x, r1.x, -r0.x
+    mul r2, r1.yzzx, r1.xyzz
+    dp4 r3.x, c17, r2
+    dp4 r3.y, c18, r2
+    dp4 r3.z, c19, r2
+    mad r0.xyz, c20, r0.x, r3
+    mov r1.w, c21.z
+    dp4 r2.x, c14, r1
+    dp4 r2.y, c15, r1
+    dp4 r2.z, c16, r1
+    mov o1.xyz, r1
+    add o5.xyz, r0, r2
+    mul o2, c21.zzww, v1.xyxx
+    mov o4, c21.w
