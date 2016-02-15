@@ -4,13 +4,23 @@ import sys, os, argparse
 import struct, hashlib, codecs
 from collections import namedtuple
 
+# FIXME: This is per-shader type
 system_values = {
-    0: 'NONE',
+    0: 'NONE', # TARGET/COVERAGE/DEPTH/DEPTHGE/DEPTHLE/...
     1: 'POS',
+    2: 'CLIPDST',
+    3: 'CULLDST',
+    4: 'RTINDEX',
+    5: 'VPINDEX',
     6: 'VERTID',
     7: 'PRIMID',
     8: 'INSTID',
     9: 'FFACE',
+    10: 'SAMPLE',
+    11: 'QUADEDGE',
+    12: 'QUADINT',
+    13: 'TRIEDGE',
+    14: 'TRIINT',
 }
 
 types = {
@@ -89,7 +99,7 @@ def decode_sgn(buf, output):
         # Not all semantics have an obvious system value, e.g. SV_Target uses
         # NONE, and SV_Position uses POS as an output from the VS and input to
         # the PS, but NONE when it's an input to the VS
-        pr_verbose('      | System Value: {}'.format(lookup(sv, system_values)))
+        pr_verbose('      | System Value: {} ({})'.format(lookup(sv, system_values), sv))
         assert sv in system_values
 
         pr_verbose('      |         Type: {}'.format(lookup(type, types)))
@@ -100,8 +110,8 @@ def decode_sgn(buf, output):
         # reused so long as the mask is non-overlapping
 
         # Mask / used is a bit funky - used is often blank in outputs, sometimes not a subset of mask?
-        pr_verbose('      |         Mask: {}'.format(mask_str(mask)).rstrip(), verbosity=1)
-        pr_verbose('      |         Used: {}'.format(mask_str(used)).rstrip(), verbosity=1)
+        pr_verbose('      |         Mask: {} (0x{:x})'.format(mask_str(mask), mask), verbosity=1)
+        pr_verbose('      |         Used: {} (0x{:x})'.format(mask_str(used), used), verbosity=1)
         pr_verbose('      |    Unknown 6: {:#x}'.format(u6))
         # if output:
         #     assert(used & mask == 0)
@@ -115,9 +125,13 @@ def decode_isgn(buf):
 def decode_osgn(buf):
     return decode_sgn(buf, True)
 
+def decode_pcsg(buf): # Used in domain shaders
+    return decode_sgn(buf, True)
+
 chunks = {
-    b'ISGN': decode_isgn,
-    b'OSGN': decode_osgn,
+    b'ISGN': decode_isgn, # "Input signature"
+    b'OSGN': decode_osgn, # "Output signature"
+    b'PCSG': decode_pcsg, # "Patch Constant signature", for domain shaders
     # TODO: 'SHEX' / 'SHDR', maybe 'STAT', etc.
 }
 
