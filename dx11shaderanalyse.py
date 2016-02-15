@@ -4,6 +4,24 @@ import sys, os, argparse
 import struct, hashlib, codecs
 from collections import namedtuple
 
+system_values = {
+    0: 'NONE',
+    1: 'POS',
+    6: 'VERTID',
+    7: 'PRIMID',
+    8: 'INSTID',
+    9: 'FFACE',
+}
+
+types = {
+    1: 'uint',
+    2: 'int',
+    3: 'float'
+}
+
+def lookup(id, dict):
+    return dict.get(id, "Unknown ({})".format(id))
+
 def pr_verbose(*a, verbosity=1, **kw):
     if globals()['verbosity'] >= verbosity:
         print(*a, **kw)
@@ -55,7 +73,7 @@ def decode_sgn(buf, output):
     assert(u1 == 8)
     for reg in range(num_regs):
         offset = 8 + 24*reg # Is the 8 offset from u1?
-        (semantic_off, index, u3, u4, reg_num, mask, used, u6) = \
+        (semantic_off, index, sv, type, reg_num, mask, used, u6) = \
                 struct.unpack('<5I2BH', buf[offset:offset+24])
         semantic = c_str(buf[semantic_off:])
 
@@ -64,35 +82,27 @@ def decode_sgn(buf, output):
         print('    dcl_{} {}{}{} : {}{}'.format(
             io, reg_prefix, reg_num, reg_mask(mask), semantic, index or '')) # WIP
 
-        pr_verbose('      |  Semantic: {}'.format(semantic))
+        pr_verbose('      |     Semantic: {}'.format(semantic))
 
-        pr_verbose('      |     Index: {}'.format(index))
+        pr_verbose('      |        Index: {}'.format(index))
 
-        # Seems right for texcoords & pos, but not for SV_Target:
-        # Could have a different meaning for inputs / outputs?
-        # print('      |  SysValue: {}'.format(get_SysValue_name(u3)))
-        pr_verbose('      | Unknown 3: {:#x}'.format(u3))
-        if semantic == 'SV_POSITION' or semantic == 'SV_Position':
-            assert(u3 == 1)
-        elif semantic == 'SV_VertexID':
-            assert(u3 == 6)
-        else:
-            assert(u3 == 0)
+        # Not all semantics have an obvious system value, e.g. SV_Target uses
+        # NONE, and SV_Position uses POS as an output from the VS and input to
+        # the PS, but NONE when it's an input to the VS
+        pr_verbose('      | System Value: {}'.format(lookup(sv, system_values)))
+        assert sv in system_values
 
-        pr_verbose('      | Unknown 4: {:#x}'.format(u4))
-        if semantic == 'SV_VertexID':
-            assert(u4 == 1)
-        else:
-            assert(u4 == 3)
+        pr_verbose('      |         Type: {}'.format(lookup(type, types)))
+        assert type in types
 
-        pr_verbose('      |  Register: {}'.format(reg_num))
+        pr_verbose('      |     Register: {}'.format(reg_num))
         # assert(reg == reg_num) # Too strict - the register number may be
         # reused so long as the mask is non-overlapping
 
         # Mask / used is a bit funky - used is often blank in outputs, sometimes not a subset of mask?
-        pr_verbose('      |      Mask: {}'.format(mask_str(mask)).rstrip(), verbosity=1)
-        pr_verbose('      |      Used: {}'.format(mask_str(used)).rstrip(), verbosity=1)
-        pr_verbose('      | Unknown 6: {:#x}'.format(u6))
+        pr_verbose('      |         Mask: {}'.format(mask_str(mask)).rstrip(), verbosity=1)
+        pr_verbose('      |         Used: {}'.format(mask_str(used)).rstrip(), verbosity=1)
+        pr_verbose('      |    Unknown 6: {:#x}'.format(u6))
         # if output:
         #     assert(used & mask == 0)
         assert(u6 == 0)
