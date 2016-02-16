@@ -4,9 +4,8 @@ import sys, os, argparse
 import struct, hashlib, codecs
 from collections import namedtuple
 
-# FIXME: This is per-shader type
 system_values = {
-    0: 'NONE', # TARGET/COVERAGE/DEPTH/DEPTHGE/DEPTHLE/...
+    0: 'NONE', # or TARGET, or SPRs: COVERAGE, DEPTH, DEPTHGE, DEPTHLE, ...
     1: 'POS',
     2: 'CLIPDST',
     3: 'CULLDST',
@@ -21,6 +20,8 @@ system_values = {
     12: 'QUADINT',
     13: 'TRIEDGE',
     14: 'TRIINT',
+    15: 'LINEDET',
+    16: 'LINEDEN',
 }
 
 types = {
@@ -76,21 +77,36 @@ def reg_mask(mask):
         return ''
     return '.' + ''.join(filter(lambda x: x != ' ' and x or None, mask_components(mask)))
 
-def decode_sgn(buf, output):
+def decode_sgn(buf, output, size=24):
     (num_regs, u1) = struct.unpack('<2I', buf[0:8])
     pr_verbose('  Registers: {}'.format(num_regs))
     pr_verbose('  Unknown 1: {:#x}'.format(u1))
     assert(u1 == 8)
+    stream = min_precision = None
     for reg in range(num_regs):
-        offset = 8 + 24*reg # Is the 8 offset from u1?
-        (semantic_off, index, sv, type, reg_num, mask, used, u6) = \
-                struct.unpack('<5I2BH', buf[offset:offset+24])
+        offset = 8 + size*reg # Is the 8 offset from u1?
+
+        if size == 24:
+            (semantic_off, index, sv, type, reg_num, mask, used, u6) = \
+                    struct.unpack('<5I2BH', buf[offset:offset+size])
+        elif size == 28: # OSG5
+            (stream, semantic_off, index, sv, type, reg_num, mask, used, u6) = \
+                    struct.unpack('<6I2BH', buf[offset:offset+size])
+        elif size == 32: # ISG1, OSG1, PSG1
+            (stream, semantic_off, index, sv, type, reg_num, mask, used, u6, min_precision) = \
+                    struct.unpack('<6I2BHI', buf[offset:offset+size])
+        else:
+            assert(False) #BUG
+
         semantic = c_str(buf[semantic_off:])
 
         io = output and 'output' or 'input'
         reg_prefix = output and 'o' or 'v'
         print('    dcl_{} {}{}{} : {}{}'.format(
             io, reg_prefix, reg_num, reg_mask(mask), semantic, index or '')) # WIP
+
+        if stream is not None:
+            pr_verbose('      |       Stream: {}'.format(stream))
 
         pr_verbose('      |     Semantic: {}'.format(semantic))
 
@@ -109,6 +125,9 @@ def decode_sgn(buf, output):
         # assert(reg == reg_num) # Too strict - the register number may be
         # reused so long as the mask is non-overlapping
 
+        if min_precision is not None:
+            pr_verbose('      |Min Precision: {}'.format(min_precision))
+
         # Mask / used is a bit funky - used is often blank in outputs, sometimes not a subset of mask?
         pr_verbose('      |         Mask: {} (0x{:x})'.format(mask_str(mask), mask), verbosity=1)
         pr_verbose('      |         Used: {} (0x{:x})'.format(mask_str(used), used), verbosity=1)
@@ -119,19 +138,22 @@ def decode_sgn(buf, output):
 
     # print('    \\' + r'-'*13)
 
-def decode_isgn(buf):
-    return decode_sgn(buf, False)
-
-def decode_osgn(buf):
-    return decode_sgn(buf, True)
-
-def decode_pcsg(buf): # Used in domain shaders
-    return decode_sgn(buf, True)
+def decode_isgn(buf): return decode_sgn(buf, False, 24)
+def decode_isg1(buf): return decode_sgn(buf, False, 32)
+def decode_osgn(buf): return decode_sgn(buf, True, 24)
+def decode_osg1(buf): return decode_sgn(buf, True, 32)
+def decode_osg5(buf): return decode_sgn(buf, True, 28)
+def decode_pcsg(buf): return decode_sgn(buf, True, 24)
+def decode_psg1(buf): return decode_sgn(buf, True, 32)
 
 chunks = {
     b'ISGN': decode_isgn, # "Input signature"
+    b'ISG1': decode_isg1,
     b'OSGN': decode_osgn, # "Output signature"
+    b'OSG1': decode_osg1,
+    b'OSG5': decode_osg5,
     b'PCSG': decode_pcsg, # "Patch Constant signature", for domain shaders
+    b'PSG1': decode_psg1,
     # TODO: 'SHEX' / 'SHDR', maybe 'STAT', etc.
 }
 
