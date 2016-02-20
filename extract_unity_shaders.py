@@ -4,6 +4,7 @@ import sys, os, re, math, copy
 import json, hashlib, collections, struct
 
 shader_idx_filename = 'ShaderHeaders.json'
+cmd_Decompiler = os.path.join(os.path.dirname(__file__), 'cmd_Decompiler.exe')
 
 # Tokeniser loosely based on
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
@@ -749,22 +750,63 @@ def fixup_glsl_like_unity(sub_program):
         return '\n'.join((version, define, glsl))
     return '\n'.join((define, glsl))
 
+def disassemble_and_decompile_binary_shader(bin_filename):
+    import subprocess
+
+    # TODO: Batch these to reduce overhead. Remember:
+    # - command line parameters have a limited length (catch OSError, check
+    # errno == 7, retry with fewer arguments)
+    # - Change to a common directory and pass all shaders relative to that
+
+    # cmd_Decompiler expects windows paths. Since we might be being run from
+    # cygwin, the easiest way to satisfy this is to change to the same
+    # directory as the shader and run it with a relative path
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(os.path.realpath(bin_filename)))
+
+    try:
+        subprocess.call([cmd_Decompiler, '-d', '-D', os.path.basename(bin_filename)])
+    except FileNotFoundError:
+        os.chdir(cwd)
+        return False
+
+    os.chdir(cwd)
+    return True
+
+def attach_headers(old_file_path, new_file_path, headers, remove=True):
+    try:
+        with open(old_file_path, 'r') as old_file:
+            with open(new_file_path, 'w') as new_file:
+                new_file.write(headers)
+                new_file.write("\n\n")
+                new_file.write(old_file.read())
+        if remove:
+            os.remove(old_file_path)
+    except OSError as e:
+        print('Error attaching headers to %s' % old_file_path)
+
 def _export_shader(sub_program, headers, path_components):
     mkdir_recursive(path_components[:-1])
     dest = os.path.join(os.curdir, *path_components)
     headers = commentify(headers)
+    extra_headers = '\n//\n// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0]
     index_headers(headers, sub_program)
 
     if sub_program.name.startswith('d3d11'):
-        print('Extracting %s_headers.txt...' % dest)
-        with open('%s_headers.txt' % dest, 'w') as f:
-            f.write(headers)
-            if sub_program.name.startswith('d3d11'):
-                f.write('\n//\n')
-                f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
-        print('Extracting %s_original.bin...' % dest)
-        with open('%s_original.bin' % dest, 'wb') as f:
+        bin_filename = '%s.bin' % dest
+        print('Extracting %s' % bin_filename)
+        with open(bin_filename, 'wb') as f:
             f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
+
+        if disassemble_and_decompile_binary_shader(bin_filename):
+            attach_headers('%s.asm' % dest, '%s.txt' % dest, headers)
+            attach_headers('%s.hlsl' % dest, '%s_replace.txt' % dest, headers + extra_headers)
+        else:
+            print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+            with open('%s_headers.txt' % dest, 'w') as f:
+                f.write(headers)
+                f.write(extra_headers)
+
     elif is_opengl_shader(sub_program):
         print('Extracting %s.glsl...' % dest)
         with open('%s.glsl' % dest, 'w') as f:
