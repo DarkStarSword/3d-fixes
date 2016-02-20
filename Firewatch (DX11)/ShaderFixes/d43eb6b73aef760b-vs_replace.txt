@@ -1,0 +1,144 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe d43eb6b73aef760b-vs_replace.txt
+// 3DMigoto: d43eb6b73aef760b | Matched 20 variants of 1 shaders: Marmoset/Transparent/Simple Glass/Specular IBL
+// 
+//        Unity headers extracted from Marmoset Specular IBL.shader
+//        Shader "Marmoset/Transparent/Simple Glass/Specular IBL" {
+//          Properties {
+//           _Color ("Diffuse Color", Color) = (1,1,1,1)
+//           _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//           _SpecInt ("Specular Intensity", Float) = 1
+//           _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//           _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//           _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//           _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//          }
+//          Fallback "Marmoset/Transparent/Specular IBL"
+//          SubShader 1/1 {
+//            LOD 250
+//            Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//            Pass 2/2 {
+//              Name "FORWARD"
+//              Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//              ZWrite Off
+//              Blend SrcAlpha One
+//              ColorMask RGB
+//              GpuProgramID 86147
+//              Program "vp" {
+//                SubProgram "d3d11 " {
+// 00002:           Keywords { "DIRECTIONAL" "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" }
+// 00040:           Keywords { "DIRECTIONAL" "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" }
+// 00800:           Keywords { "DIRECTIONAL" "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" }
+// 10000:           Keywords { "DIRECTIONAL" "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" }
+// 00010:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" }
+// 00200:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" }
+// 04000:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" }
+// 80000:           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" }
+// 00001:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" "POINT" }
+// 00008:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" "POINT_COOKIE" }
+// 00004:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" "SPOT" }
+// 00020:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" "POINT" }
+// 00100:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" "POINT_COOKIE" }
+// 00080:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" "SPOT" }
+// 00400:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" "POINT" }
+// 02000:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" "POINT_COOKIE" }
+// 01000:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" "SPOT" }
+// 08000:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" "POINT" }
+// 40000:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" "POINT_COOKIE" }
+// 20000:           Keywords { "FOG_EXP2" "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" "SPOT" }
+//                  Bind "vertex" Vertex
+//                  Bind "color" Color
+//                  Bind "normal" Normal
+//                  Bind "texcoord" TexCoord0
+//                  ConstBuffer "UnityPerDraw" 352
+//                  Matrix 0 [glstate_matrix_mvp]
+//                  Matrix 192 [_Object2World]
+//                  Matrix 256 [_World2Object]
+//                  BindCB "UnityPerDraw" 0
+//                }
+//              }
+//            }
+//          }
+//        }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:35:21 2016
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[19];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float3 o1 : TEXCOORD0,
+  out float p1 : TEXCOORD4,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = cb0[1].xyzw * v0.yyyy;
+  r0.xyzw = cb0[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb0[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb0[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe d43eb6b73aef760b-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+
+  p1.x = r0.z;
+  r0.x = cb0[16].x * v2.x;
+  r0.y = cb0[17].x * v2.x;
+  r0.z = cb0[18].x * v2.x;
+  r1.x = cb0[16].y * v2.y;
+  r1.y = cb0[17].y * v2.y;
+  r1.z = cb0[18].y * v2.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.x = cb0[16].z * v2.z;
+  r1.y = cb0[17].z * v2.z;
+  r1.z = cb0[18].z * v2.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  o1.xyz = r0.xyz * r0.www;
+  r0.xyz = cb0[13].xyz * v0.yyy;
+  r0.xyz = cb0[12].xyz * v0.xxx + r0.xyz;
+  r0.xyz = cb0[14].xyz * v0.zzz + r0.xyz;
+  r0.xyz = cb0[15].xyz * v0.www + r0.xyz;
+  o2.xyz = r0.xyz;
+  o4.xyz = r0.xyz;
+  o3.xy = v3.xy;
+  o3.zw = float2(0,0);
+  o4.w = 0;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\d43eb6b73aef760b-vs_replace.txt(95,14-15): warning X3578: Output value 'o2' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

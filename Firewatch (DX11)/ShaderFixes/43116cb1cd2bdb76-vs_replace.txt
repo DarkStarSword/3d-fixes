@@ -1,0 +1,92 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 43116cb1cd2bdb76-vs_replace.txt
+// 3DMigoto: 43116cb1cd2bdb76 | Unity headers extracted from Internal-Halo.shader
+// Shader "Hidden/Internal-Halo" {
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Overlay" }
+//     Pass 1/1 {
+//       Tags { "RenderType"="Overlay" }
+//       ZWrite Off
+//       Cull Off
+//       Blend OneMinusDstColor One
+//       ColorMask RGB
+//       GpuProgramID 31992
+//       Program "vp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "FOG_LINEAR" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           ConstBuffer "$Globals" 112
+//           Vector 96 [_HaloFalloff_ST]
+//           ConstBuffer "UnityPerDraw" 352
+//           Matrix 0 [glstate_matrix_mvp]
+//           ConstBuffer "UnityFog" 32
+//           Vector 16 [unity_FogParams]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerDraw" 1
+//           BindCB "UnityFog" 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:32:41 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[2];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[4];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[7];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : COLOR0,
+  float2 v2 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : COLOR0,
+  out float2 o2 : TEXCOORD0,
+  out float p2 : TEXCOORD1)
+{
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = cb1[1].xyzw * v0.yyyy;
+  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb1[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 43116cb1cd2bdb76-vs_replace.txt
+float4 stereo = StereoParams.Load(0);
+if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+
+  p2.x = r0.z * cb2[1].z + cb2[1].w;
+  o1.xyzw = v1.xyzw;
+  o2.xy = v2.xy * cb0[6].xy + cb0[6].zw;
+  return;
+}
