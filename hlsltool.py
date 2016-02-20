@@ -13,6 +13,8 @@ import sys, os, re, collections, argparse, itertools, copy
 import shadertool
 from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards, game_git_dir, collected_errors, show_collected_errors
 
+shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[vhdgpc]s)', re.IGNORECASE)
+
 class Instruction(object):
     pattern = re.compile('[^;]*;')
 
@@ -173,9 +175,10 @@ class HLSLShader(object):
         ,?
     ''', re.VERBOSE)
     Parameter = collections.namedtuple('Parameter', ['output', 'type', 'variable', 'semantic'])
+    shader_model_pattern = re.compile(r'^(?:// Shader model )(?P<shader_type>[vhdgpc]s)_(?P<shader_model>[45]_[01])$', re.MULTILINE)
 
     def __init__(self, filename):
-        self.filename = filename
+        self.filename = os.path.basename(filename)
         self.autofixed = False
         self.vanity_inserted = False
 
@@ -195,6 +198,39 @@ class HLSLShader(object):
 
         self.parse_parameters()
         self.split_instructions(body_txt)
+
+        self.hash = None
+        self.shader_type = None
+        self.shader_model = None
+
+        self.get_info_from_filename()
+        self.guess_shader_type_and_model()
+        debug_verbose(0, "Guessed shader model %s" % self.shader_model)
+
+    def get_info_from_filename(self):
+        match = shader_filename_pattern.match(self.filename)
+        if match is None:
+            return None
+        d = match.groupdict()
+        self.hash = int(d['hash'], 16)
+        self.shader_type = d['shader_type'].lower()
+        self.shader_model = '%s_5_0' % self.shader_type
+
+    def guess_shader_type_and_model(self):
+        '''
+        This attempts to guess the shader model from comments inserted with
+        dump_hlsl=2 or extract_unity_shaders.py
+        '''
+        # Try matching the model inserted by extract_unity_shaders:
+        match = self.shader_model_pattern.search(self.declarations_txt)
+        if match is None:
+            # Try matching the model inserted by 3DMigoto with export_hlsl=2/3
+            match = self.shader_model_pattern.search(self.tail_txt)
+        if match is None:
+            return
+        d = match.groupdict()
+        self.shader_type = d['shader_type']
+        self.shader_model = '%s_%s' % (self.shader_type, d['shader_model'])
 
     def parse_parameters(self):
         self.parameters = {}
@@ -464,6 +500,42 @@ def install_shader_to_git(shader, file, args):
 
     return install_shader_to(shader, file, args, dest_dir, True)
 
+def validate_shader_compiles(filename, shader_model):
+    import subprocess
+
+    if shader_model is None:
+        debug_verbose('Could not determine shader model - will not validate')
+        return
+
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(os.path.realpath(filename)))
+    try:
+        fxc = subprocess.Popen([os.path.expanduser(args.fxc),
+            '/T', shader_model, '/Od', os.path.basename(filename)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = fxc.communicate()
+    except OSError as e:
+        os.chdir(cwd)
+        os.remove(filename)
+        raise
+    os.chdir(cwd)
+
+    err_type = None
+    if err:
+        debug(err)
+        err_type = 'WARNINGS'
+    if fxc.returncode != 0:
+        failed_filename = filename + '~failed'
+        os.rename(filename, failed_filename)
+        filename = failed_filename
+        err_type = 'ERRORS'
+
+    if err:
+        with open(filename, 'a') as f:
+            print('\n/****************************** COMPILE %s ******************************' % err_type, file=f)
+            print(err.decode('ascii').replace('\r', ''), end='', file=f)
+            print('****************************** COMPILE %s ******************************/' % err_type, file=f)
+
 def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     try:
         os.mkdir(base_dir)
@@ -487,6 +559,9 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     else:
         debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
+
+    if args.fxc:
+        validate_shader_compiles(dest, shader.shader_model)
 
     return True # Returning success will allow ini updates
 
@@ -518,6 +593,11 @@ def parse_args():
     parser.add_argument('--in-place', action='store_true',
             help='Overwrite the file in-place')
 
+    parser.add_argument('--fxc',
+            help='Path to fxc to validate that the shader compiles')
+    parser.add_argument('--no-validate', dest='validate', action='store_false',
+            help='Do not validate that the shader will compile')
+
     parser.add_argument('--strip-tail', '-s', action='store_true',
             help='Strip everything after the main function in the shader')
 
@@ -539,6 +619,9 @@ def parse_args():
     if not args.output and not args.in_place and not args.install and not \
             args.install_to and not args.to_git:
         parser.error("did not specify anything to do (e.g. --install, --install-to, --in-place, --output, --show-regs, etc)");
+
+    if (args.install or args.install_to) and not args.fxc and args.validate:
+        parser.error("Must specify either --fxc or --no-validate when installing a shader");
 
     shadertool.verbosity = args.verbose - args.quiet
 

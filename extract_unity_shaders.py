@@ -769,6 +769,9 @@ def disassemble_and_decompile_binary_shader(bin_filename):
     except FileNotFoundError:
         os.chdir(cwd)
         return False
+    except:
+        os.chdir(cwd)
+        raise
 
     os.chdir(cwd)
     return True
