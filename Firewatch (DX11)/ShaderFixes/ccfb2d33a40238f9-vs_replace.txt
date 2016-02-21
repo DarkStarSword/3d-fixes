@@ -207,6 +207,11 @@ void main(
   r0.xyz = cb2[0].xyw * v0.xxx + r0.xyz;
   r0.xyz = cb2[2].xyw * v0.zzz + r0.xyz;
   r0.xyz = cb2[3].xyw * v0.www + r0.xyz;
+
+// Pre-emptive halo fix:
+float4 s = StereoParams.Load(0);
+r0.x += s.x * (r0.z - s.y);
+
   r0.y = cb1[5].x * r0.y;
   r1.xzw = float3(0.5,0.5,0.5) * r0.xzy;
   o6.zw = r0.zz;

@@ -1,3 +1,4 @@
+// Lake
 // 3DMigoto: 1b43c6fa076d9539 | Matched 8 variants of 2 shaders: Marmoset/Transparent/Marmo Water IBL, Marmoset/Transparent/Marmo Water IBL Transparent Hack
 //
 // f0:    Unity headers extracted from Marmoset Water IBL Transparent Hack.shader
@@ -198,6 +199,11 @@ void main(
   r0.xyz = cb3[0].xyw * v0.xxx + r0.xyz;
   r0.xyz = cb3[2].xyw * v0.zzz + r0.xyz;
   r0.xyz = cb3[3].xyw * v0.www + r0.xyz;
+
+// Fix halo on lake:
+float4 s = StereoParams.Load(0);
+r0.x += s.x * (r0.z - s.y);
+
   r0.y = cb1[5].x * r0.y;
   r2.xzw = float3(0.5,0.5,0.5) * r0.xzy;
   o6.zw = r0.zz;
@@ -225,3 +231,8 @@ void main(
   o8.xyzw = float4(0,0,0,0);
   return;
 }
+
+/****************************** COMPILE WARNINGS ******************************
+R:\Steam\SteamApps\common\Firewatch\ShaderFixes\1b43c6fa076d9539-vs_replace.txt(141,14-15): warning X3578: Output value 'o7' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
