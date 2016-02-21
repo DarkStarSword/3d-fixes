@@ -165,5 +165,18 @@ void main(
   o0.xyzw = cb1[3].xyzw * v0.wwww + r0.xyzw;
   o1.xyzw = v1.xyzw;
   o2.xy = v2.xy * cb0[6].xy + cb0[6].zw;
+
+// This shader has the correct depth from Unity, but the driver heuristics are
+// inconsistent. Apply the stereo correction, then normalise the output to W ==
+// convergence to prevent the driver from adjusting it. Only normalise when the
+// effect is in front of the camera and convergence is not 0 to prevent bad
+// things happening.
+
+float4 stereo = StereoParams.Load(0);
+if (stereo.y && o0.w > 0) { // Only normalise in front of the camera & with stereo enabled
+	o0.x += stereo.x * (o0.w - stereo.y);
+	o0 = o0 / o0.w * stereo.y;
+}
+
   return;
 }
