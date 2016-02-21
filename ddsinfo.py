@@ -336,7 +336,7 @@ dxgi_formats = {
 
 	27:         ("DXGI_FORMAT_R8G8B8A8_TYPELESS",          np.dtype("u1, u1, u1, u1"), "RGBA", None),
 	28:         ("DXGI_FORMAT_R8G8B8A8_UNORM",             ),
-	29:         ("DXGI_FORMAT_R8G8B8A8_UNORM_SRGB",        ),
+	29:         ("DXGI_FORMAT_R8G8B8A8_UNORM_SRGB",        np.dtype("u1, u1, u1, u1"), "RGBA", None),
 	30:         ("DXGI_FORMAT_R8G8B8A8_UINT",              ),
 	31:         ("DXGI_FORMAT_R8G8B8A8_SNORM",             ),
 	32:         ("DXGI_FORMAT_R8G8B8A8_SINT",              ),
