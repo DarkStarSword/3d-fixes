@@ -8,6 +8,7 @@ EXTRACT=1
 UPDATE_INI=1
 
 FIX_LIGHTING=1
+FIX_SUN_SHAFTS=1
 FIX_HALO=1
 
 # If you need to force overwrite, add the option here:
@@ -38,6 +39,10 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	# Lighting fix - match any shaders that use known lighting vertex shaders:
 	find . \( -name 'b78925705424e647-vs*' -o -name 'ca5cfc8e4d8b1ce5-vs*' -o -name '69294277cca1bade-vs*' \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
 		hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
+fi
+
+if [ $FIX_SUN_SHAFTS -eq 1 ]; then
+	hlsltool.py -I ../.. --fix-unity-sun-shafts --only-autofixed --fxc "$FXC" Hidden_SunShaftsComposite/*_replace.txt
 fi
 
 if [ $FIX_HALO -eq 1 ]; then

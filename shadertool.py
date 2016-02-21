@@ -31,6 +31,7 @@ unity_glstate_matrix_mvp_pattern      = unity_header('glstate_matrix_mvp', 'matr
 unity_Object2World                    = unity_header('_Object2World', 'matrix')
 unity_WorldSpaceCameraPos             = unity_header('_WorldSpaceCameraPos', 'constant')
 unity_ZBufferParams                   = unity_header('_ZBufferParams', 'constant')
+unity_SunPosition                     = unity_header('_SunPosition', 'constant')
 
 unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<texture>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')

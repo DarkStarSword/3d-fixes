@@ -867,6 +867,22 @@ def fix_unity_lighting_ps(shader):
 
     shader.autofixed = True
 
+def fix_unity_sun_shafts(shader):
+    try:
+        _SunPosition = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_SunPosition, 'constant'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _SunPosition, or is missing headers (my other scripts can extract these)')
+        return
+
+    shader.insert_stereo_params()
+
+    shader.early_insert_vanity_comment("Unity sun position fix inserted with")
+    shader.replace_reg(_SunPosition, '_SunPosition', 'xy')
+    shader.early_insert_instr('float4 _SunPosition = %s;' % _SunPosition)
+    shader.early_insert_instr('_SunPosition.x += separation / 2;')
+
+    shader.autofixed = True
+
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
     if os.path.basename(src_dir).lower() in ('shaderfixes', 'shadercache'):
@@ -992,6 +1008,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
+    parser.add_argument('--fix-unity-sun-shafts', action='store_true',
+            help="Fix Unity SunShaftsComposite")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1026,6 +1044,8 @@ def main():
                 auto_fix_vertex_halo(shader)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(shader)
+            if args.fix_unity_sun_shafts:
+                fix_unity_sun_shafts(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
