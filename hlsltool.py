@@ -595,6 +595,7 @@ class HLSLShader(object):
     def insert_stereo_params(self):
         if self.inserted_stereo_params:
             return 0
+        self.inserted_stereo_params = True
         off  = self.early_insert_instr()
         off += self.early_insert_instr('float4 stereo = StereoParams.Load(0);')
         off += self.early_insert_instr('float separation = stereo.x, convergence = stereo.y, eye = stereo.z;')
@@ -763,8 +764,8 @@ def auto_fix_vertex_halo(shader):
     debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos, temp_reg.variable))
     pos += shader.insert_vanity_comment(pos, "Automatic vertex shader halo fix inserted with")
 
-    pos += shader.insert_instr(pos, 'float4 stereo = StereoParams.Load(0);')
-    pos += shader.insert_instr(pos, 'if ({0}.w != 1.0) {{ {0}.x += stereo.x * ({0}.w - stereo.y); }}'.format(temp_reg.variable))
+    pos += shader.insert_stereo_params()
+    pos += shader.insert_instr(pos, 'if ({0}.w != 1.0) {{ {0}.x += separation * ({0}.w - convergence); }}'.format(temp_reg.variable))
     pos += shader.insert_instr(pos)
 
     shader.autofixed = True
