@@ -947,7 +947,7 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
         debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
-    if args.validate:
+    if args.validate and args.fxc:
         validate_shader_compiles(dest, shader.shader_model)
 
     return True # Returning success will allow ini updates

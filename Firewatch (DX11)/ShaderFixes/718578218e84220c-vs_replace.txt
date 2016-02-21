@@ -1,3 +1,5 @@
+// Various menu text "PAUSED"
+
 // 3DMigoto: 718578218e84220c | Unity headers extracted from TMPro_SDF.shader
 // Shader "TMPro/Distance Field" {
 //   Properties {
@@ -157,6 +159,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -250,5 +253,19 @@ void main(
   o5.x = r0.y + -r0.w;
   r0.y = 0.5 + -r0.w;
   o5.z = r0.y + r0.x;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+  o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }

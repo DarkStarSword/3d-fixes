@@ -1,3 +1,5 @@
+// Crosshair
+
 // 3DMigoto: 9d1082755bb8ace6 | Unity headers extracted from UI-Default.shader
 // Shader "UI/Default" {
 //   Properties {
@@ -68,6 +70,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -89,6 +92,20 @@ void main(
   o1.xyzw = cb0[6].xyzw * v1.xyzw;
   o2.xy = v2.xy;
   o3.xyzw = v0.xyzw;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+  o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }
 
