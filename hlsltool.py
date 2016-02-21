@@ -1026,9 +1026,11 @@ def fix_unity_frustum_world(shader):
     shader.early_insert_instr('float4 clip_space_adj = float4(separation * (far - convergence), 0, 0, 0);')
     shader.early_insert_instr('float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);')
     shader.early_insert_instr('float4 world_space_adj = mul(_Object2World, local_space_adj);')
+    shader.early_insert_instr('// GOTCHA: _FrustumCornersWS is TRANSPOSED vs DX9!')
     shader.early_insert_instr('float4x4 _FrustumCornersWS = %s;' % hlsl_matrix(*_FrustumCornersWS))
-    for i in range(4):
-        shader.early_insert_instr('_FrustumCornersWS[%d].xyz -= world_space_adj.xyz;' % i)
+    shader.early_insert_instr('_FrustumCornersWS[0].xyz -= world_space_adj.x;')
+    shader.early_insert_instr('_FrustumCornersWS[1].xyz -= world_space_adj.y;')
+    shader.early_insert_instr('_FrustumCornersWS[2].xyz -= world_space_adj.z;')
 
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
