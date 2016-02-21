@@ -1,3 +1,5 @@
+// Conversation choices
+
 // hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 2c3105d25d4c7d98-vs_replace.txt
 // 3DMigoto: 2c3105d25d4c7d98 | Unity headers extracted from TMPro_SDF ScreenBlend.shader
 // Shader "TMPro/Distance Field ScreenBlend" {
@@ -162,6 +164,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -265,5 +268,19 @@ if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
   r0.xyz = float3(0.5,0.5,-0.5) * r1.xwy;
   o7.zw = r1.zw;
   o7.xy = r0.xz + r0.yy;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+  o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }
