@@ -11,7 +11,7 @@ tool_name = os.path.basename(sys.argv[0])
 
 def unity_header(name, type):
     if type == 'constant':
-        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[' + name + '\]$')
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[' + name + '\](?:\s[1234]$)?')
         unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<constant>[0-9]+)\s+1$')
     if type == 'matrix':
         unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[' + name + '\](?:\s[34]$)?')

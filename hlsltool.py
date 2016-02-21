@@ -11,9 +11,13 @@
 import sys, os, re, collections, argparse, itertools, copy
 
 import shadertool
-from shadertool import debug, debug_verbose, component_set_to_string, vanity_comment, tool_name, expand_wildcards, game_git_dir, collected_errors, show_collected_errors
+from shadertool import debug, debug_verbose, component_set_to_string
+from shadertool import vanity_comment, tool_name, expand_wildcards
+from shadertool import game_git_dir, collected_errors, show_collected_errors
 
 shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[vhdgpc]s)', re.IGNORECASE)
+unity_ConstBuffer_pattern = re.compile(r'ConstBuffer\s"(?P<name>[^"]+)"\s(?P<size>[0-9]+)$', re.MULTILINE)
+unity_BindCB_pattern = re.compile(r'BindCB\s"(?P<name>[^"]+)"\s(?P<cb>[0-9]+)$', re.MULTILINE)
 
 class Instruction(object):
     pattern = re.compile('[^;]*;')
@@ -49,9 +53,7 @@ class AssignmentInstruction(Instruction):
     pattern = re.compile(r'''
         \s*
         (?P<lval>\S+)
-        \s*
-        =
-        \s*
+        \s* = \s*
         (?P<rval>\S.*)
         ;
     ''', re.VERBOSE)
@@ -72,15 +74,71 @@ class AssignmentInstruction(Instruction):
         # print(repr(self.lval), repr(self.rval))
         return self.lval.strip() == self.rval.strip()
 
+class MultiplyInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* \* \s*
+            (?P<arg2>\S+)
+        )
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2)))
+
+class ReciprocalInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        (?P<rval>
+            1 \s* \/ \s*
+            (?P<arg>\S+)
+        )
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = (expression_as_single_register(arg) or arg, )
+
+class MADInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* \* \s*
+            (?P<arg2>\S+)
+            \s* \+ \s*
+            (?P<arg3>\S+)
+        )
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg1, arg2, arg3):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2, arg3)))
+
 def InstructionFactory(text, pos):
 
     match = Comment.pattern.match(text, pos)
     if match is not None:
         return Comment(match.group()), match.end()
 
-    match = AssignmentInstruction.pattern.match(text, pos)
-    if match is not None:
-        return AssignmentInstruction(match.group(), **match.groupdict()), match.end()
+    for specific_instruction in (MADInstruction, MultiplyInstruction, ReciprocalInstruction):
+        match = specific_instruction.pattern.match(text, pos)
+        if match is not None:
+            return specific_instruction(match.group(), **match.groupdict()), match.end()
 
     match = Instruction.pattern.match(text, pos)
     if match is not None:
@@ -90,60 +148,67 @@ def InstructionFactory(text, pos):
 
 
 # Tried to get rid of all the edge cases, probably still some left...
-vector_pattern = re.compile(r'''
-    (?<![.])				(?# Prevent matching structs like foo.bar.baz)
-    \b					(?# Ensure we start on a world boundary)
+register_pattern = re.compile(r'''
+    (?<![.])                            (?# Prevent matching structs like foo.bar.baz)
+    (?P<negate>-)?
+    \b                                  (?# Ensure we start on a world boundary)
     (?P<variable>[a-zA-Z][a-zA-Z0-9]*)
+    (?:\[(?P<index>[0-9]+)\])?          (?# Match optional numeric index, not currently matching variable index)
     (?:[.](?P<components>[xyzw]+))?
-    \b					(?# Ensure we end on a word boundary)
-    (?![(.])				(?# Prevent matching float2\(...\) or not matching components)
+    \b                                  (?# Ensure we end on a word boundary)
+    (?![(.])                            (?# Prevent matching float2\(...\) or not matching components)
 ''', re.VERBOSE)
-Vector = collections.namedtuple('Vector', ['variable', 'components'])
+RegisterCls = collections.namedtuple('Register', ['negate', 'variable', 'components'])
+def Register(negate, variable, index, components):
+    negate = not not negate
+    if index is not None:
+        variable = '%s[%s]' % (variable, index)
+    return RegisterCls(negate, variable, components)
 
 def find_regs_in_expression(expression):
     '''
-    Returns a list of scalar/vector variables used in an expression. Does
+    Returns a list of scalar/Register variables used in an expression. Does
     not return structs or literals, intended to be used to find register
     accesses.
     '''
     pos = 0
     regs = []
     while True:
-        match = vector_pattern.search(expression, pos)
+        match = register_pattern.search(expression, pos)
         if match is None:
             break
         pos = match.end()
-        vector = Vector(**match.groupdict())
-        regs.append(vector)
+        register = Register(**match.groupdict())
+        regs.append(register)
     return regs
 
 def expression_as_single_register(expression):
-        match = vector_pattern.search(expression)
+        match = register_pattern.search(expression)
         if match is None:
             return None
         if expression[:match.start()].strip() or expression[match.end():].strip():
             return None
-        return Vector(**match.groupdict())
+        return Register(**match.groupdict())
 
-def regs_overlap(vector, variable, components):
-    if vector.variable != variable:
+def regs_overlap(register, variable, components):
+    if register.variable != variable:
         return False
 
     if components is None:
         return True
 
-    return set(components).intersection(set(vector.components))
+    return set(components).intersection(set(register.components))
 
 def expression_is_register(expression, variable, components):
     if components is None and expression == variable:
         return True
 
-    match = vector_pattern.match(expression)
+    match = register_pattern.match(expression)
     if match is None:
         return False
 
-    vector = Vector(**match.groupdict())
-    return regs_overlap(vector, variable, components)
+    register = Register(**match.groupdict())
+    return regs_overlap(register, variable, components)
 
 def register_in_expression(expression, variable, components=None):
     for reg in find_regs_in_expression(expression):
@@ -166,16 +231,19 @@ class HLSLShader(object):
     parameter_pattern = re.compile(r'''
         \s*
         (?P<output>out\s+)?
+        (?P<modifiers>(?:(?:nointerpolation|linear|centroid|noperspective|sample)\s+)+)?
         (?P<type>(?:float|uint|int)[234]?)
         \s+
         (?P<variable>[a-zA-Z]\w*)
         \s*:\s*
-        (?P<semantic>[a-zA-Z]\w*)
+        (?P<semantic>[a-zA-Z_]\w*)
         \s*
         ,?
     ''', re.VERBOSE)
-    Parameter = collections.namedtuple('Parameter', ['output', 'type', 'variable', 'semantic'])
+    Parameter = collections.namedtuple('Parameter', ['output', 'modifiers', 'type', 'variable', 'semantic'])
     shader_model_pattern = re.compile(r'^(?:// Shader model )(?P<shader_type>[vhdgpc]s)_(?P<shader_model>[45]_[01])$', re.MULTILINE)
+
+    class ParseError(Exception): pass
 
     def __init__(self, filename):
         self.filename = os.path.basename(filename)
@@ -189,14 +257,14 @@ class HLSLShader(object):
         main_end_match = self.main_end_pattern.search(self.text, self.param_end_match.end())
 
         self.declarations_txt = self.text[:self.main_match.start()]
-        self.parameters_txt = self.text[self.main_match.end() : self.param_end_match.start()]
+        parameters_txt = self.text[self.main_match.end() : self.param_end_match.start()]
         body_txt = self.text[self.param_end_match.end() : main_end_match.start()]
         self.close_txt = self.text[main_end_match.start():main_end_match.end()]
         # Normalise ending whitespace as 3DMigoto adds an extra newline every
         # time the same shader is marked:
         self.tail_txt = self.text[main_end_match.end():].rstrip() + '\n'
 
-        self.parse_parameters()
+        self.parse_parameters(parameters_txt)
         self.split_instructions(body_txt)
 
         self.hash = None
@@ -206,6 +274,9 @@ class HLSLShader(object):
         self.get_info_from_filename()
         self.guess_shader_type_and_model()
         debug_verbose(0, "Guessed shader model %s" % self.shader_model)
+
+        self._early_insert_pos = None
+        self.inserted_stereo_params = False
 
     def get_info_from_filename(self):
         match = shader_filename_pattern.match(self.filename)
@@ -232,18 +303,31 @@ class HLSLShader(object):
         self.shader_type = d['shader_type']
         self.shader_model = '%s_%s' % (self.shader_type, d['shader_model'])
 
-    def parse_parameters(self):
-        self.parameters = {}
+    def parse_parameters(self, parameters_txt):
+        self.parameters = collections.OrderedDict()
         pos = 0
         while True:
-            match = self.parameter_pattern.match(self.parameters_txt, pos)
+            match = self.parameter_pattern.match(parameters_txt, pos)
             if match is None:
+                if parameters_txt[pos:].strip():
+                    # If we fuck this part up the shader will be damaged, so
+                    # raise an exception now
+                    raise self.ParseError(parameters_txt[pos:parameters_txt.find('\n', pos+1)].strip())
                 break
             pos = match.end()
             groups = match.groupdict()
             groups['output'] = groups['output'] and True or False
             param = self.Parameter(**groups)
             self.parameters[(param.semantic, param.output)] = param
+
+    def parameters_str(self):
+        def parameter_str(param):
+            out = ''
+            if param.output:
+                out = 'out '
+            modifiers = param.modifiers or ''
+            return '%s%s%s %s : %s' % (out, modifiers, param.type, param.variable, param.semantic)
+        return ',\n  '.join(map(parameter_str, self.parameters.values()))
 
     def split_instructions(self, body_txt):
         self.instructions = [];
@@ -274,7 +358,13 @@ class HLSLShader(object):
             except KeyError:
                 return self.lookup_semantic('POSITION0', True)
 
-    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False):
+    def add_parameter(self, output, modifiers, type, variable, semantic):
+        # TODO: Insert parameter in appropriate spot (before certain SV
+        # semantics, in order wrt other semantics of the same type)
+        param = self.Parameter(output, modifiers, type, variable, semantic)
+        self.parameters[(semantic, output)] = param
+
+    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None):
         '''
         Based on the same function in shadertool
         '''
@@ -282,6 +372,9 @@ class HLSLShader(object):
         assert(write is not None)
 
         Match = collections.namedtuple('Match', ['line', 'instruction'])
+
+        if instr_type and not isinstance(instr_type, (tuple, list)):
+            instr_type = (instr_type, )
 
         if direction == 1:
             if start is None:
@@ -294,11 +387,12 @@ class HLSLShader(object):
             if end is None:
                 end = -1
 
-        debug_verbose(1, "Scanning shader %s from instruction %i to %i for %s %s..." % (
+        debug_verbose(1, "Scanning shader %s from instruction %i to %i for %s %s%s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             start, end - direction,
             {True: 'write to', False: 'read from'}[write],
             str_reg_components(reg, components),
+            instr_type and ' (Searching for %s)' % ' or '.join([x.__name__ for x in instr_type]) or ''
             ))
 
         if isinstance(components, str):
@@ -308,6 +402,8 @@ class HLSLShader(object):
         for i in range(start, end, direction):
             instr = self.instructions[i]
             # debug('scanning %s' % instr.strip())
+            if instr_type and not isinstance(instr, instr_type):
+                continue
             if write:
                 if instr.writes(reg, components):
                     debug_verbose(1, 'Found write on instruction %s: %s' % (i, instr.strip()))
@@ -323,6 +419,71 @@ class HLSLShader(object):
 
         return ret
 
+    def find_var_component_from_row_major_matrix_multiply(self, cb):
+        results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction))
+        if len(results) != 1:
+            debug_verbose(0, '%s read from %i instructions (only exactly 1 read currently supported)' % (cb, len(results)))
+            return None
+        (line, instr) = results[0]
+
+        if instr.rargs[0].variable == cb:
+            reg = instr.rargs[1]
+        elif instr.rargs[1].variable == cb:
+            reg = instr.rargs[0]
+        else:
+            assert(False)
+
+        if reg.components:
+            assert(all([ x == reg.components[0] for x in reg.components[1:] ]))
+            var = '%s.%s' % (reg.variable, reg.components[0])
+        else:
+            var = '%s.x' % reg.variable
+
+        return var, line
+
+    def adjust_cb_size(self, cb, size):
+        search = '  float4 cb%d[' % cb
+        pos = self.declarations_txt.find(search) + len(search)
+        pos2 = self.declarations_txt.find(']', pos)
+        if pos == -1 or pos2 == -1:
+            return
+
+        old_size = int(self.declarations_txt[pos:pos2])
+        size = (size + 15) // 16
+        if (old_size >= size):
+            return
+        debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, old_size, size))
+        self.declarations_txt = self.declarations_txt[:pos] + str(size) + self.declarations_txt[pos2:]
+
+    def find_unity_cb_entry(self, pattern, type):
+        match = pattern[0].search(self.declarations_txt)
+        if match is None:
+            raise KeyError()
+
+        offset = int(match.group(type))
+
+        pos = self.declarations_txt.rfind('ConstBuffer "', 0, match.start())
+        if pos == -1:
+            raise KeyError()
+        match = unity_ConstBuffer_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        cb_name = match.group('name')
+        cb_size = int(match.group('size'))
+
+        pos = self.declarations_txt.find('BindCB "%s"' % cb_name, match.end())
+        if pos == -1:
+            raise KeyError()
+        match = unity_BindCB_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        cb = int(match.group('cb'))
+
+        self.adjust_cb_size(cb, cb_size)
+        return cb, offset
+
     non_ws_pattern = re.compile('\S')
     def comment_out_instruction(self, line, additional=None):
         instr = str(self.instructions[line])
@@ -331,6 +492,11 @@ class HLSLShader(object):
         if additional is not None:
             instr += ' // ' + additional
         self.instructions[line] = Comment(instr)
+
+    def append_comment_to_line(self, line, comment):
+        instr = str(self.instructions[line])
+        instr += ' // ' + comment
+        self.instructions[line] = Instruction(instr)
 
     def insert_vanity_comment(self, where, what):
         off = 0
@@ -344,6 +510,11 @@ class HLSLShader(object):
             self.vanity_inserted = True
         return off
 
+    def early_insert_vanity_comment(self, what):
+        off = self.insert_vanity_comment(self.early_insert_pos, what)
+        self.early_insert_pos += off
+        return off
+
     def insert_instr(self, pos, instruction=None, comment=None):
         line = '\n'
         if instruction is not None:
@@ -352,13 +523,49 @@ class HLSLShader(object):
             line += ' '
         if comment is not None:
             line += '// ' + comment
-        self.instructions.insert(pos, line)
+        self.instructions.insert(pos, Instruction(line))
         return 1
+
+    @property
+    def early_insert_pos(self):
+        if self._early_insert_pos is None:
+            # Find first blank line
+            # TODO: Should actually find first non definition line
+            for i, instr in enumerate(self.instructions):
+                if str(instr).startswith('\n\n'):
+                    self._early_insert_pos = i
+                    break
+            else:
+                self._early_insert_pos = 0
+        return self._early_insert_pos
+
+    @early_insert_pos.setter
+    def early_insert_pos(self, value):
+        self._early_insert_pos = value
+
+    def early_insert_instr(self, instruction=None, comment=None):
+        self.early_insert_pos += self.insert_instr(self.early_insert_pos, instruction, comment)
+        return 1
+
+    def insert_stereo_params(self):
+        if self.inserted_stereo_params:
+            return 0
+        off  = self.early_insert_instr()
+        off += self.early_insert_instr('float4 stereo = StereoParams.Load(0);')
+        off += self.early_insert_instr('float separation = stereo.x, convergence = stereo.y, eye = stereo.z;')
+        return off
+
+    def replace_reg(self, old, new, components=None):
+        for i, instr in enumerate(self.instructions):
+            if register_in_expression(instr.rval, old, components):
+                # FIXME: Use a regular expression replace to ensure the
+                # replacement is on a word boundary:
+                self.instructions[i] = InstructionFactory(str(instr).replace(old, new), 0)[0]
 
     def __str__(self):
         s = self.declarations_txt
         s += self.main_match.group()
-        s += self.parameters_txt
+        s += self.parameters_str()
         s += self.param_end_match.group()
         for instr in self.instructions:
             s += str(instr)
@@ -480,6 +687,110 @@ def auto_fix_vertex_halo(shader):
 
     shader.autofixed = True
 
+def cb_offset(cb, offset):
+    return 'cb%d[%d]' % (cb, offset//16)
+
+def cb_matrix(cb, offset):
+    return [ cb_offset(cb, offset + i) for i in range(0, 64, 16) ]
+
+def hlsl_matrix(a, b, c, d):
+    return 'matrix(%s, %s, %s, %s)' % (a, b, c, d)
+
+def fix_unity_lighting_ps(shader):
+    try:
+        _CameraToWorld = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_CameraToWorld, 'matrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
+
+    try:
+        _WorldSpaceCameraPos = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_WorldSpaceCameraPos, 'constant'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos - skipping environment/specular adjustment')
+        _WorldSpaceCameraPos = None
+
+    try:
+        _ZBufferParams = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_ZBufferParams, 'constant'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
+        return
+
+    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (hlsl_matrix(*_CameraToWorld), _ZBufferParams))
+
+    # Find _CameraToWorld usage - adjustment must be above this point, and this
+    # gives us the register with X that needs to be adjusted:
+    x_var, _CameraToWorld_line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[0])
+
+    # Since the compiler often places y first, for clarity use it's position to insert the correction:
+    _, line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[1])
+    _CameraToWorld_line = min(_CameraToWorld_line, line)
+
+    # And once more to find register with Z to use as depth:
+    depth, line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[2])
+
+
+    shader.append_comment_to_line(line, 'depth in %s' % depth)
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step and more can go wrong)
+    results = shader.scan_shader(_ZBufferParams, write=False, end=_CameraToWorld_line)
+    if len(results) != 1:
+        # XXX: In shadertool.py scan_shader returns the two reads on the one
+        # instruction, currently we only return one per instruction
+        debug_verbose(0, '_ZBufferParams read %i times (only exactly 1 reads currently supported)' % len(results))
+        return
+    (line, instr) = results[0]
+    reg = expression_as_single_register(instr.lval)
+
+    # We're expecting a reciprocal calculation as part of the Z buffer -> world
+    # Z scaling:
+    results = shader.scan_shader(reg.variable, components=reg.components, instr_type=ReciprocalInstruction,
+            write=False, start=line+1, end=_CameraToWorld_line, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected reciprocal instruction')
+        return
+    (line, instr) = results[0]
+    reg = expression_as_single_register(instr.lval)
+
+    # Find where the reciprocal is next used:
+    results = shader.scan_shader(reg.variable, components=reg.components, write=False,
+            start=line+1, end=_CameraToWorld_line, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected instruction')
+        return
+    (line, instr) = results[0]
+    reg = expression_as_single_register(instr.lval)
+
+    # We used to trace the function forwards more here, but Dreamfall Chapters
+    # got complicated after the Unity 5 update. Now we find the depth from the
+    # matrix multiply instead, which hopefully should be more robust.
+
+    # If we ever need the old procedure, it's in the git history of shadertool.py.
+
+    # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
+    shader.add_parameter(False, None, 'float', 'fov', 'TEXCOORD2')
+
+    offset = shader.insert_stereo_params()
+
+    # Apply a stereo correction to the world space camera position - this
+    # pushes environment reflections, specular highlights, etc to the correct
+    # depth in Unity 5. Skip adjustment for Unity 4 style shaders that don't
+    # use the world space camera position:
+    if _WorldSpaceCameraPos is not None:
+        shader.replace_reg(_WorldSpaceCameraPos, '_WorldSpaceCameraPos', 'xyz')
+        offset += shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
+        offset += shader.early_insert_instr('matrix _CameraToWorld = %s;' % hlsl_matrix(*_CameraToWorld))
+        offset += shader.early_insert_instr('float4 _WorldSpaceCameraPos = %s;' % _WorldSpaceCameraPos)
+        offset += shader.early_insert_instr('_WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;')
+
+    pos = _CameraToWorld_line + offset
+    debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos, depth, x_var))
+    pos += shader.insert_vanity_comment(pos, "Unity light/shadow fix (pixel shader stage) inserted with")
+    pos += shader.insert_instr(pos, '%s -= separation * (%s - convergence) * fov;' % (x_var, depth))
+    pos += shader.insert_instr(pos)
+
+    shader.autofixed = True
+
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
     if os.path.basename(src_dir).lower() in ('shaderfixes', 'shadercache'):
@@ -560,7 +871,7 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
         debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
-    if args.fxc:
+    if args.validate:
         validate_shader_compiles(dest, shader.shader_model)
 
     return True # Returning success will allow ini updates
@@ -603,6 +914,8 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -635,6 +948,8 @@ def main():
         try:
             if args.auto_fix_vertex_halo:
                 auto_fix_vertex_halo(shader)
+            if args.fix_unity_lighting_ps:
+                fix_unity_lighting_ps(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
