@@ -19,6 +19,27 @@ shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[v
 unity_ConstBuffer_pattern = re.compile(r'ConstBuffer\s"(?P<name>[^"]+)"\s(?P<size>[0-9]+)$', re.MULTILINE)
 unity_BindCB_pattern = re.compile(r'BindCB\s"(?P<name>[^"]+)"\s(?P<cb>[0-9]+)$', re.MULTILINE)
 
+# From CGIncludes/UnityShaderVariables.cginc:
+# TODO: Allocate the register (avoid b12 used by the driver)
+UnityPerDraw = '''
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+'''
+include_matrix_hlsl = '''
+#include <ShaderFixes/matrix.hlsl>
+'''
+
 d3dx_ini = {}
 
 class Instruction(object):
@@ -472,6 +493,9 @@ class HLSLShader(object):
 
         raise KeyError()
 
+    def append_declaration(self, declaration):
+        self.declarations_txt += '\n%s\n\n' % declaration.strip()
+
     def find_unity_cb_entry(self, pattern, type):
         match = self.find_header(pattern)
         offset = int(match.group(type))
@@ -867,6 +891,71 @@ def fix_unity_lighting_ps(shader):
 
     shader.autofixed = True
 
+def fix_unity_reflection(shader):
+    try:
+        _WorldSpaceCameraPos = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_WorldSpaceCameraPos, 'constant'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos')
+        return
+
+    shader.append_declaration(UnityPerDraw)
+    shader.append_declaration(include_matrix_hlsl)
+
+    shader.insert_stereo_params()
+
+    # Apply a stereo correction to the world space camera position - this
+    # pushes environment reflections, specular highlights, etc to the correct
+    # depth
+    shader.replace_reg(_WorldSpaceCameraPos, '_WorldSpaceCameraPos', 'xyz')
+    shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
+    shader.early_insert_instr('float4 _WorldSpaceCameraPos = %s;' % _WorldSpaceCameraPos)
+    shader.early_insert_instr('float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);')
+    shader.early_insert_instr('matrix imvp = inverse(glstate_matrix_mvp);')
+    shader.early_insert_instr('float4 local_space_adj = mul(imvp, clip_space_adj);')
+    shader.early_insert_instr('float4 world_space_adj = mul(_Object2World, local_space_adj);')
+    shader.early_insert_instr('_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;')
+
+    # We might possibly use this shader as a source of the MVP and
+    # _Object2World matrices, but only if it is rendering from the POV of the
+    # camera. Blacklist shadow casters which are rendered from the POV of a
+    # light.
+    #
+    # No longer blacklisting IGNOREPROJECTOR shaders - I was never sure what
+    # that tag signified, but it's clear that they do/can have valid matrices,
+    # and some scenes (e.g. falling Dreamer in Dreamfall chapter 1) only have
+    # the matrices we want in these shaders.
+    #
+    # This blacklisting may not be necessary - I doubt that any shadow casters
+    # will have used _WorldSpaceCameraPos and we won't have got this far.
+    try:
+        match = shader.find_header(shadertool.unity_headers_attached)
+    except KeyError:
+        debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
+        # tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
+    else:
+        try:
+            match = shader.find_header(shadertool.unity_tag_shadow_caster)
+        except KeyError:
+            try:
+                unity_glstate_matrix_mvp_cb, unity_glstate_matrix_mvp_offset = \
+                        shader.find_unity_cb_entry(shadertool.unity_glstate_matrix_mvp_pattern, 'matrix')
+                assert(unity_glstate_matrix_mvp_offset == 0) # If this fails I need to handle the variations somehow
+                _Object2World0_cb, _Object2World0_offset = \
+                        shader.find_unity_cb_entry(shadertool.unity_Object2World, 'matrix')
+                assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
+                assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
+                shader.add_shader_override_setting('Resource_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
+            except KeyError:
+                pass
+        else:
+            debug('Skipping possible matrix source - shader is a SHADOWCASTER')
+            # tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+
+    # Do this last so we can use our own resources if we are the first in the frame:
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+
+    shader.autofixed = True
+
 def fix_unity_sun_shafts(shader):
     try:
         _SunPosition = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_SunPosition, 'constant'))
@@ -914,7 +1003,7 @@ def validate_shader_compiles(filename, shader_model):
     os.chdir(os.path.dirname(os.path.realpath(filename)))
     try:
         fxc = subprocess.Popen([os.path.expanduser(args.fxc),
-            '/T', shader_model, '/Od', os.path.basename(filename)],
+            '/T', shader_model, '/Od', '/I', '..', os.path.basename(filename)],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = fxc.communicate()
     except OSError as e:
@@ -1008,6 +1097,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
+    parser.add_argument('--fix-unity-reflection', action='store_true',
+            help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-unity-sun-shafts', action='store_true',
             help="Fix Unity SunShaftsComposite")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -1046,6 +1137,8 @@ def main():
                 fix_unity_lighting_ps(shader)
             if args.fix_unity_sun_shafts:
                 fix_unity_sun_shafts(shader)
+            if args.fix_unity_reflection:
+                fix_unity_reflection(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
