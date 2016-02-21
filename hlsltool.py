@@ -244,6 +244,7 @@ class HLSLShader(object):
     shader_model_pattern = re.compile(r'^(?:// Shader model )(?P<shader_type>[vhdgpc]s)_(?P<shader_model>[45]_[01])$', re.MULTILINE)
 
     class ParseError(Exception): pass
+    class ParameterAlreadyExists(Exception): pass
 
     def __init__(self, filename):
         self.filename = os.path.basename(filename)
@@ -362,6 +363,8 @@ class HLSLShader(object):
         # TODO: Insert parameter in appropriate spot (before certain SV
         # semantics, in order wrt other semantics of the same type)
         param = self.Parameter(output, modifiers, type, variable, semantic)
+        if (semantic, output) in self.parameters:
+            raise self.ParameterAlreadyExists((semantic, output))
         self.parameters[(semantic, output)] = param
 
     def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None):
@@ -768,7 +771,7 @@ def fix_unity_lighting_ps(shader):
     # If we ever need the old procedure, it's in the git history of shadertool.py.
 
     # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
-    shader.add_parameter(False, None, 'float', 'fov', 'TEXCOORD2')
+    shader.add_parameter(False, None, 'float', 'fov', 'TEXCOORD3')
 
     offset = shader.insert_stereo_params()
 
