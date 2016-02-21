@@ -17,8 +17,8 @@ def unity_header(name, type):
         unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[' + name + '\](?:\s[34]$)?')
         unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<matrix>[0-9]+)\s+3$')
     if type == 'texture':
-        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<sampler>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler2>[0-9]+)$')
-        unity53_header = re.compile(r'//\s+' + name + '\s+s(?P<sampler>[0-9]+)\s+1$')
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<texture>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler>[0-9]+)')
+        unity53_header = re.compile(r'//\s+' + name + '\s+s(?P<texture>[0-9]+)\s+1$')
     return unity_header, unity53_header
 
 
@@ -32,7 +32,7 @@ unity_Object2World                    = unity_header('_Object2World', 'matrix')
 unity_WorldSpaceCameraPos             = unity_header('_WorldSpaceCameraPos', 'constant')
 unity_ZBufferParams                   = unity_header('_ZBufferParams', 'constant')
 
-unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<sampler>[0-9]+)\s+1$')
+unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<texture>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
@@ -1560,7 +1560,7 @@ def adjust_simple_reflection_to_infinity(tree, args, sampler_pattern, sampler_na
         debug_verbose(0, 'Shader does not use %s' % sampler_name)
         return
 
-    orig = Register('s' + match.group('sampler'))
+    orig = Register('s' + match.group('texture'))
     debug_verbose(0, '%s identified as %s' % (sampler_name, orig))
 
     results = scan_shader(tree, orig, write=False)
@@ -1907,7 +1907,7 @@ def fix_unity_lighting_ps_world(tree, args):
             except KeyError:
                 debug_verbose(0, 'Shader does not use _CameraDepthTexture')
                 return
-            _CameraDepthTexture = Register('s' + match.group('sampler'))
+            _CameraDepthTexture = Register('s' + match.group('texture'))
         else:
             _CameraDepthTexture = _ZBufferParams = None
 
@@ -2542,7 +2542,7 @@ def fix_unity_ssao(tree, args):
     except KeyError:
         debug_verbose(0, 'Shader does not use _CameraDepthTexture')
         return
-    _CameraDepthTexture = Register('s' + match.group('sampler'))
+    _CameraDepthTexture = Register('s' + match.group('texture'))
 
     try:
         match = find_header(tree, unity_ZBufferParams)
@@ -2910,7 +2910,7 @@ def do_ini_updates():
     debug('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
     debug('!' * 79)
     debug()
-    for section in dx9settings_ini:
+    for section in sorted(dx9settings_ini):
         write_ini('[%s]' % section)
         for line in dx9settings_ini[section]:
             if isinstance(line, tuple):

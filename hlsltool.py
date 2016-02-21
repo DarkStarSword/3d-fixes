@@ -19,6 +19,8 @@ shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[v
 unity_ConstBuffer_pattern = re.compile(r'ConstBuffer\s"(?P<name>[^"]+)"\s(?P<size>[0-9]+)$', re.MULTILINE)
 unity_BindCB_pattern = re.compile(r'BindCB\s"(?P<name>[^"]+)"\s(?P<cb>[0-9]+)$', re.MULTILINE)
 
+d3dx_ini = {}
+
 class Instruction(object):
     pattern = re.compile('[^;]*;')
 
@@ -278,6 +280,7 @@ class HLSLShader(object):
 
         self._early_insert_pos = None
         self.inserted_stereo_params = False
+        self.ini_settings = None
 
     def get_info_from_filename(self):
         match = shader_filename_pattern.match(self.filename)
@@ -458,11 +461,19 @@ class HLSLShader(object):
         debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, old_size, size))
         self.declarations_txt = self.declarations_txt[:pos] + str(size) + self.declarations_txt[pos2:]
 
-    def find_unity_cb_entry(self, pattern, type):
-        match = pattern[0].search(self.declarations_txt)
-        if match is None:
-            raise KeyError()
+    def find_header(self, patterns):
+        if not isinstance(patterns, (tuple, list)):
+            patterns = (patterns, )
 
+        for pattern in patterns:
+            match = pattern.search(self.declarations_txt)
+            if match is not None:
+                return match
+
+        raise KeyError()
+
+    def find_unity_cb_entry(self, pattern, type):
+        match = self.find_header(pattern)
         offset = int(match.group(type))
 
         pos = self.declarations_txt.rfind('ConstBuffer "', 0, match.start())
@@ -565,6 +576,25 @@ class HLSLShader(object):
                 # replacement is on a word boundary:
                 self.instructions[i] = InstructionFactory(str(instr).replace(old, new), 0)[0]
 
+    def add_shader_override_setting(self, setting):
+        if self.ini_settings is None:
+            self.ini_settings = []
+        self.ini_settings.append(setting)
+
+    def update_ini(self):
+        '''
+        Right now this just updates our internal data structures to note any
+        changes we need to make to the ini file and we print these out before
+        exiting. TODO: Actually update the ini file for real (still should notify
+        the user).
+        '''
+        if self.ini_settings is None or self.hash is None:
+            return
+
+        section = 'ShaderOverride_%016x' % self.hash
+        d3dx_ini.setdefault(section, ['hash = %016x' % self.hash])
+        d3dx_ini[section].extend(self.ini_settings)
+
     def __str__(self):
         s = self.declarations_txt
         s += self.main_match.group()
@@ -576,6 +606,24 @@ class HLSLShader(object):
         if not args.strip_tail:
             s += self.tail_txt
         return s
+
+def do_ini_updates():
+    if not d3dx_ini:
+        return
+
+    # TODO: Merge these into the ini file directly. Still print a message
+    # for the user so they know what we've done.
+    debug()
+    debug()
+    debug('!' * 79)
+    debug('!' * 16 + ' Please add the following lines to the d3dx.ini ' + '!' * 15)
+    debug('!' * 79)
+    debug()
+    for section in sorted(d3dx_ini):
+        shadertool.write_ini('[%s]' % section)
+        for line in d3dx_ini[section]:
+            shadertool.write_ini(line)
+        shadertool.write_ini()
 
 def auto_fix_vertex_halo(shader):
     '''
@@ -713,10 +761,31 @@ def fix_unity_lighting_ps(shader):
         _WorldSpaceCameraPos = None
 
     try:
-        _ZBufferParams = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_ZBufferParams, 'constant'))
+        _ZBufferParams_cb, _ZBufferParams_offset = shader.find_unity_cb_entry(shadertool.unity_ZBufferParams, 'constant')
+        _ZBufferParams = cb_offset(_ZBufferParams_cb, _ZBufferParams_offset)
     except KeyError:
         debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
         return
+
+    # XXX: Directional lighting shaders seem to have a bogus _ZBufferParams!
+    try:
+        match = shader.find_header(shadertool.unity_headers_attached)
+    except KeyError:
+        debug('Skipping possible depth buffer source - shader does not have Unity headers attached so unable to check what kind of lighting shader it is')
+        has_unity_headers = False
+    else:
+        has_unity_headers = True
+        try:
+            match = shader.find_header(shadertool.unity_shader_directional_lighting)
+        except KeyError:
+            try:
+                match = shader.find_header(shadertool.unity_CameraDepthTexture)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+                return
+            _CameraDepthTexture = 't' + match.group('texture')
+        else:
+            _CameraDepthTexture = None
 
     debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (hlsl_matrix(*_CameraToWorld), _ZBufferParams))
 
@@ -791,6 +860,10 @@ def fix_unity_lighting_ps(shader):
     pos += shader.insert_vanity_comment(pos, "Unity light/shadow fix (pixel shader stage) inserted with")
     pos += shader.insert_instr(pos, '%s -= separation * (%s - convergence) * fov;' % (x_var, depth))
     pos += shader.insert_instr(pos)
+
+    if has_unity_headers and _CameraDepthTexture is not None:
+        shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting('Resource_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
 
     shader.autofixed = True
 
@@ -968,27 +1041,27 @@ def main():
         if not args.only_autofixed or shader.autofixed:
             if args.output:
                 print(shader, end='', file=args.output)
-                #update_ini(shader)
+                shader.update_ini()
             if args.in_place:
                 tmp = '%s.new' % real_file
                 print(shader, end='', file=open(tmp, 'w'))
                 os.rename(tmp, real_file)
-                #update_ini(shader)
+                shader.update_ini()
             if args.install:
                 if install_shader(shader, file):
-                    #update_ini(shader)
+                    shader.update_ini()
                     pass
             if args.install_to:
                 if install_shader_to(shader, file, args, os.path.expanduser(args.install_to), True):
-                    #update_ini(shader)
+                    shader.update_ini()
                     pass
             if args.to_git:
                 a = copy.copy(args)
                 a.force = True
                 if install_shader_to_git(shader, file, a):
-                    #update_ini(shader)
-                    pass
+                    shader.update_ini()
     show_collected_errors()
+    do_ini_updates()
 
 if __name__ == '__main__':
     main()
