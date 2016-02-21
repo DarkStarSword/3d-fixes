@@ -47,8 +47,8 @@ if [ $FIX_SUN_SHAFTS -eq 1 ]; then
 fi
 
 if [ $FIX_HALO -eq 1 ]; then
-	# Vertex shader halo & reflection fix:
-	hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc "$FXC" */*vs_replace.txt | update_ini
+	# Vertex shader halo, reflection & frustum fix:
+	hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc "$FXC" */*vs_replace.txt | update_ini
 fi
 
 if [ $FIX_REFLECTION -eq 1 ]; then
