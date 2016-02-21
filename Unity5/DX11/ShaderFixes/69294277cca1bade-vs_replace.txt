@@ -1,0 +1,182 @@
+// 3DMigoto: 69294277cca1bade | Matched 26 variants of 1 shaders: Hidden/Internal-DeferredShading
+// 
+//          Unity headers extracted from Internal-DeferredShading.shader
+//          Shader "Hidden/Internal-DeferredShading" {
+//            Properties {
+//             _LightTexture0 ("", any) = "" { }
+//             _LightTextureB0 ("", 2D) = "" { }
+//             _ShadowMapTexture ("", any) = "" { }
+//             _SrcBlend ("", Float) = 1
+//             _DstBlend ("", Float) = 1
+//            }
+//            Fallback Off
+//            SubShader 1/1 {
+//              Pass 1/2 {
+//                Tags { "SHADOWSUPPORT"="true" }
+//                ZWrite Off
+//                Blend [_SrcBlend] [_DstBlend]
+//                GpuProgramID 32647
+//                Program "vp" {
+//                  SubProgram "d3d11 " {
+// 0004000:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" "UNITY_HDR_ON" }
+// 0000002:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
+// 0080000:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "UNITY_HDR_ON" }
+// 0000040:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
+// 0020000:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" "UNITY_HDR_ON" }
+// 0000010:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+// 0100000:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" "UNITY_HDR_ON" }
+// 0000080:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
+// 1000000:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" "UNITY_HDR_ON" }
+// 0000800:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 0200000:           Keywords { "POINT" "SHADOWS_CUBE" "UNITY_HDR_ON" }
+// 0000100:           Keywords { "POINT" "SHADOWS_CUBE" }
+// 0002000:           Keywords { "POINT" "SHADOWS_OFF" "UNITY_HDR_ON" }
+// 0000001:           Keywords { "POINT" "SHADOWS_OFF" }
+// 2000000:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" "UNITY_HDR_ON" }
+// 0001000:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
+// 0400000:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "UNITY_HDR_ON" }
+// 0000200:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" }
+// 0010000:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" "UNITY_HDR_ON" }
+// 0000008:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+// 0800000:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" "UNITY_HDR_ON" }
+// 0000400:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" }
+// 0040000:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" "UNITY_HDR_ON" }
+// 0000020:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" }
+// 0008000:           Keywords { "SHADOWS_OFF" "SPOT" "UNITY_HDR_ON" }
+// 0000004:           Keywords { "SHADOWS_OFF" "SPOT" }
+//                    Bind "vertex" Vertex
+//                    Bind "normal" Normal
+// 37ffbff:           ConstBuffer "$Globals" 304
+// 0800400:           ConstBuffer "$Globals" 368
+//                    Float 112 [_LightAsQuad]
+//                    ConstBuffer "UnityPerCamera" 144
+//                    Vector 80 [_ProjectionParams]
+//                    ConstBuffer "UnityPerDraw" 352
+//                    Matrix 0 [glstate_matrix_mvp]
+//                    Matrix 64 [glstate_matrix_modelview0]
+//                    BindCB "$Globals" 0
+//                    BindCB "UnityPerCamera" 1
+//                    BindCB "UnityPerDraw" 2
+//                  }
+//                }
+//              }
+//            }
+//          }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// Replace definition with UnityPerDraw from Unity Cg source code:
+// Note that matrix order is transposed between Cg and HLSL, so add row_major
+// keywords to each float4x4 entry
+cbuffer cb2 : register(b2)
+{
+  // float4 cb2[8];
+
+  row_major float4x4 glstate_matrix_mvp;
+  row_major float4x4 glstate_matrix_modelview0;
+  row_major float4x4 glstate_matrix_invtrans_modelview0;
+  #define UNITY_MATRIX_MVP glstate_matrix_mvp
+  #define UNITY_MATRIX_MV glstate_matrix_modelview0
+  #define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+  row_major uniform float4x4 _Object2World;
+  row_major uniform float4x4 _World2Object;
+  uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[8];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float3 v1 : NORMAL0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float3 o2 : TEXCOORD1,
+  out float fov : TEXCOORD2) // New output to pass FOV to pixel shaders
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x; float convergence = stereo.y;
+
+  r0.xyzw = UNITY_MATRIX_MVP[1].xyzw * v0.yyyy;
+  r0.xyzw = UNITY_MATRIX_MVP[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = UNITY_MATRIX_MVP[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = UNITY_MATRIX_MVP[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+bool full_screen = (r0.w == 1);
+float depth = r0.w;
+
+if (!full_screen) {
+	r0.x += separation * (depth - convergence);
+}
+
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o1.zw = r0.zw;
+  o1.xy = r1.xw + r1.zz;
+  r0.xyz = UNITY_MATRIX_MV[1].xyz * v0.yyy;
+  r0.xyz = UNITY_MATRIX_MV[0].xyz * v0.xxx + r0.xyz;
+  r0.xyz = UNITY_MATRIX_MV[2].xyz * v0.zzz + r0.xyz;
+  r0.xyz = UNITY_MATRIX_MV[3].xyz * v0.www + r0.xyz;
+
+if (!full_screen) {
+	// Looks like UNITY_MATRIX_IT_MV is 0, so we can't just do this:
+	//    float4x4 projection = mul(UNITY_MATRIX_IT_MV, UNITY_MATRIX_MVP);
+	//    fov = 1 / projection[0].x;
+
+	// Instead, we have to calculate this the long way:
+
+	// I already have an optimised version of this calculation in assembler for
+	// Unity 4 (the committed version is for column-major order, but the optimised
+	// row-major version was only slightly longer). I'm guessing the HLSL
+	// determinant() function won't be optimised because it can't make assumptions
+	// about the matrix (and that is a *large* amount of multiplications that could
+	// be eliminated), so we can probably do better, but for now this is clearer:
+	float det = 1 / determinant(UNITY_MATRIX_MV);
+
+	float3 mvi;
+	mvi.x = ((UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m22) - (UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m12)) * det;
+	mvi.y = ((UNITY_MATRIX_MV._m21 * UNITY_MATRIX_MV._m02) - (UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m22)) * det;
+	mvi.z = ((UNITY_MATRIX_MV._m01 * UNITY_MATRIX_MV._m12) - (UNITY_MATRIX_MV._m11 * UNITY_MATRIX_MV._m02)) * det;
+
+	fov = 1 / dot(mvi, UNITY_MATRIX_MVP._m00_m10_m20);
+
+	r0.x += separation * (depth - convergence) * fov;
+} else {
+	// FIXME: Will need support in 3Dmigoto to copy in the matrices from
+	// elsewhere to determine this!
+	// NOTE that this is used for physical lighting effects, including
+	// specular reflections and some other shadow-like effects on the
+	// ground (not direct shadows), which may be only look slightly broken.
+	fov = 1;
+}
+
+  r1.xyz = float3(-1,-1,1) * r0.xyz;
+  r0.xyz = -r0.xyz * float3(-1,-1,1) + v1.xyz;
+  o2.xyz = cb0[7].xxx * r0.xyz + r1.xyz;
+  return;
+}
