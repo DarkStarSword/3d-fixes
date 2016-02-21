@@ -1,4 +1,5 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 2c3105d25d4c7d98-vs_replace.txt
+// Conversation text
+
 // 3DMigoto: 2c3105d25d4c7d98 | Unity headers extracted from TMPro_SDF ScreenBlend.shader
 // Shader "TMPro/Distance Field ScreenBlend" {
 //   Properties {
@@ -162,7 +163,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
-
+#include <ShaderFixes/crosshair.hlsl>
 
 cbuffer UnityPerDraw : register(b11) {
 	float4x4 glstate_matrix_mvp;
@@ -204,8 +205,6 @@ void main(
 float4 stereo = StereoParams.Load(0);
 float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
 
-// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 2c3105d25d4c7d98-vs_replace.txt
 float4 _WorldSpaceCameraPos = cb1[4];
 float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
 float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
@@ -293,5 +292,21 @@ if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
   r0.xyz = float3(0.5,0.5,-0.5) * r1.xwy;
   o7.zw = r1.zw;
   o7.xy = r0.xz + r0.yy;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+float4 crosshair_settings = IniParams.Load(int2(2, 0));
+if (crosshair_settings.z)
+	o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }
