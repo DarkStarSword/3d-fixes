@@ -152,13 +152,20 @@ class MADInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, lval, rval)
         self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
+specific_instructions = (
+        MADInstruction,
+        MultiplyInstruction,
+        ReciprocalInstruction,
+        AssignmentInstruction,
+)
+
 def InstructionFactory(text, pos):
 
     match = Comment.pattern.match(text, pos)
     if match is not None:
         return Comment(match.group()), match.end()
 
-    for specific_instruction in (MADInstruction, MultiplyInstruction, ReciprocalInstruction):
+    for specific_instruction in specific_instructions:
         match = specific_instruction.pattern.match(text, pos)
         if match is not None:
             return specific_instruction(match.group(), **match.groupdict()), match.end()
