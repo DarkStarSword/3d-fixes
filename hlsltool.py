@@ -36,6 +36,45 @@ cbuffer UnityPerDraw : register(b11) {
 	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
 }
 '''
+
+UnityPerCamera = '''
+cbuffer UnityPerCamera : register(b13)
+{
+	// Time (t = time since current level load) values from Unity
+	uniform float4 _Time; // (t/20, t, t*2, t*3)
+	uniform float4 _SinTime; // sin(t/8), sin(t/4), sin(t/2), sin(t)
+	uniform float4 _CosTime; // cos(t/8), cos(t/4), cos(t/2), cos(t)
+	uniform float4 unity_DeltaTime; // dt, 1/dt, smoothdt, 1/smoothdt
+
+	uniform float3 _WorldSpaceCameraPos;
+
+	// x = 1 or -1 (-1 if projection is flipped)
+	// y = near plane
+	// z = far plane
+	// w = 1/far plane
+	uniform float4 _ProjectionParams;
+
+	// x = width
+	// y = height
+	// z = 1 + 1.0/width
+	// w = 1 + 1.0/height
+	uniform float4 _ScreenParams;
+
+	// Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
+	// x = 1-far/near
+	// y = far/near
+	// z = x/far
+	// w = y/far
+	uniform float4 _ZBufferParams;
+
+	// x = orthographic camera's width
+	// y = orthographic camera's height
+	// z = unused
+	// w = 1.0 if camera is ortho, 0.0 if perspective
+	uniform float4 unity_OrthoParams;
+}
+'''
+
 include_matrix_hlsl = '''
 #include <ShaderFixes/matrix.hlsl>
 '''
@@ -918,8 +957,7 @@ def fix_unity_reflection(shader):
     shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
     shader.early_insert_instr('float4 _WorldSpaceCameraPos = %s;' % _WorldSpaceCameraPos)
     shader.early_insert_instr('float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);')
-    shader.early_insert_instr('matrix imvp = inverse(glstate_matrix_mvp);')
-    shader.early_insert_instr('float4 local_space_adj = mul(imvp, clip_space_adj);')
+    shader.early_insert_instr('float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);')
     shader.early_insert_instr('float4 world_space_adj = mul(_Object2World, local_space_adj);')
     shader.early_insert_instr('_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;')
 
@@ -961,6 +999,39 @@ def fix_unity_reflection(shader):
 
     # Do this last so we can use our own resources if we are the first in the frame:
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+
+    shader.autofixed = True
+
+def fix_unity_frustrum_world(shader):
+    try:
+        _FrustumCornersWS = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_FrustumCornersWS, 'matrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _FrustumCornersWS, or is missing headers (my other scripts can extract these)')
+        return
+
+    shader.append_declaration(UnityPerDraw)
+    shader.append_declaration(UnityPerCamera)
+    shader.append_declaration(include_matrix_hlsl)
+
+    shader.insert_stereo_params()
+
+    for i in range(4):
+        shader.replace_reg(_FrustumCornersWS[i], '_FrustumCornersWS[%d]' % i, 'xyz')
+
+    # Apply a stereo correction to the world space frustrum corners - this
+    # fixes the glow around the sun in The Forest (shaders called Sunshine
+    # PostProcess Scatter)
+    shader.early_insert_vanity_comment("Unity _FrustumCornersWS fix inserted with")
+    shader.early_insert_instr('float far = 1 / (_ZBufferParams.z + _ZBufferParams.w);')
+    shader.early_insert_instr('float4 clip_space_adj = float4(separation * (far - convergence), 0, 0, 0);')
+    shader.early_insert_instr('float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);')
+    shader.early_insert_instr('float4 world_space_adj = mul(_Object2World, local_space_adj);')
+    shader.early_insert_instr('float4x4 _FrustumCornersWS = %s;' % hlsl_matrix(*_FrustumCornersWS))
+    for i in range(4):
+        shader.early_insert_instr('_FrustumCornersWS[%d].xyz -= world_space_adj.xyz;' % i)
+
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
 
     shader.autofixed = True
 
@@ -1107,6 +1178,8 @@ def parse_args():
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
+    parser.add_argument('--fix-unity-frustrum-world', action='store_true',
+            help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-unity-sun-shafts', action='store_true',
             help="Fix Unity SunShaftsComposite")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -1143,10 +1216,12 @@ def main():
                 auto_fix_vertex_halo(shader)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(shader)
-            if args.fix_unity_sun_shafts:
-                fix_unity_sun_shafts(shader)
             if args.fix_unity_reflection:
                 fix_unity_reflection(shader)
+            if args.fix_unity_frustrum_world:
+                fix_unity_frustrum_world(shader)
+            if args.fix_unity_sun_shafts:
+                fix_unity_sun_shafts(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
