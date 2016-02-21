@@ -15,6 +15,9 @@ Installation
 ------------
 1. Extract the zip file to the game directory
 
+2. If you are on a 32bit OS, replace the DLLs with those in the 32bit
+   directory.
+
 Keys
 ----
 - x: Toggle crosshair on and off
