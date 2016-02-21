@@ -1,5 +1,5 @@
-Firewatch
-=========
+Firewatch (DX11)
+================
 
 Fixed
 -----
@@ -9,6 +9,7 @@ Fixed
 - Glow around lights
 - Light shafts
 - Automatically adjust crosshair depth
+- Fog
 
 Installation
 ------------
