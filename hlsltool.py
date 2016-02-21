@@ -1002,7 +1002,7 @@ def fix_unity_reflection(shader):
 
     shader.autofixed = True
 
-def fix_unity_frustrum_world(shader):
+def fix_unity_frustum_world(shader):
     try:
         _FrustumCornersWS = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_FrustumCornersWS, 'matrix'))
     except KeyError:
@@ -1018,7 +1018,7 @@ def fix_unity_frustrum_world(shader):
     for i in range(4):
         shader.replace_reg(_FrustumCornersWS[i], '_FrustumCornersWS[%d]' % i, 'xyz')
 
-    # Apply a stereo correction to the world space frustrum corners - this
+    # Apply a stereo correction to the world space frustum corners - this
     # fixes the glow around the sun in The Forest (shaders called Sunshine
     # PostProcess Scatter)
     shader.early_insert_vanity_comment("Unity _FrustumCornersWS fix inserted with")
@@ -1178,7 +1178,7 @@ def parse_args():
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
-    parser.add_argument('--fix-unity-frustrum-world', action='store_true',
+    parser.add_argument('--fix-unity-frustum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-unity-sun-shafts', action='store_true',
             help="Fix Unity SunShaftsComposite")
@@ -1218,8 +1218,8 @@ def main():
                 fix_unity_lighting_ps(shader)
             if args.fix_unity_reflection:
                 fix_unity_reflection(shader)
-            if args.fix_unity_frustrum_world:
-                fix_unity_frustrum_world(shader)
+            if args.fix_unity_frustum_world:
+                fix_unity_frustum_world(shader)
             if args.fix_unity_sun_shafts:
                 fix_unity_sun_shafts(shader)
         except Exception as e:

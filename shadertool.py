@@ -2454,7 +2454,7 @@ def fix_unity_reflection(tree, args):
 
     tree.autofixed = True
 
-def fix_unity_frustrum_world(tree, args):
+def fix_unity_frustum_world(tree, args):
     try:
         match = find_header(tree, unity_FrustumCornersWS)
     except KeyError:
@@ -2475,10 +2475,10 @@ def fix_unity_frustrum_world(tree, args):
     _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
     _ZBufferParams = tree._find_free_reg('c', None, desired=150)
 
-    repl_frustrum = []
+    repl_frustum = []
     for i in range(4):
-        repl_frustrum.append( tree._find_free_reg('r', None))
-        replace_regs = {_FrustumCornersWS[i]: repl_frustrum[i]}
+        repl_frustum.append( tree._find_free_reg('r', None))
+        replace_regs = {_FrustumCornersWS[i]: repl_frustum[i]}
         tree.do_replacements(replace_regs, False)
 
     t = tree._find_free_reg('r', None, desired=31)
@@ -2495,10 +2495,10 @@ def fix_unity_frustrum_world(tree, args):
     local_space_adj = tree._find_free_reg('r', None, desired=28)
     world_space_adj = clip_space_adj # Reuse the same register
 
-    # Apply a stereo correction to the world space frustrum corners - this
+    # Apply a stereo correction to the world space frustum corners - this
     # fixes the glow around the sun in The Forest (shaders called Sunshine
     # PostProcess Scatter)
-    pos += insert_vanity_comment(args, tree, pos, "Unity _FrustrumCornerWS fix inserted with")
+    pos += insert_vanity_comment(args, tree, pos, "Unity _FrustumCornerWS fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
     pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, _ZBufferParams.z, _ZBufferParams.w]), comment='Derive 1/far from _ZBufferParams')
     pos += tree.insert_instr(pos, NewInstruction('rcp', [clip_space_adj.x, clip_space_adj.x]))
@@ -2520,13 +2520,13 @@ def fix_unity_frustrum_world(tree, args):
     pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
     for i in range(4):
-        pos += tree.insert_instr(pos, NewInstruction('add', [repl_frustrum[i], _FrustumCornersWS[i], -world_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [repl_frustum[i], _FrustumCornersWS[i], -world_space_adj]))
     pos += tree.insert_instr(pos)
 
     if not hasattr(tree, 'ini'):
         tree.ini = []
     tree.ini.append(('UseMatrix', 'true',
-        'Copy inversed MVP matrix, _Object2World and _ZBufferParams in for Unity _FrustrumCornerWS fix'))
+        'Copy inversed MVP matrix, _Object2World and _ZBufferParams in for Unity _FrustumCornerWS fix'))
     tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
     tree.ini.append(('UseMatrix1', 'true', None))
     tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
@@ -2998,7 +2998,7 @@ def parse_args():
             help="Variant the above that calculates the adjustment in the vertex shader and passes it through to the pixel shader (does not require matrices copied from elsewhere, but does require a spare output)")
     parser.add_argument('--fix-unity-reflection-ps', action='store_true',
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
-    parser.add_argument('--fix-unity-frustrum-world', action='store_true',
+    parser.add_argument('--fix-unity-frustum-world', '--fix-unity-frustrum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
     parser.add_argument('--fix-unity-ssao', action='store_true',
             help="(WORK IN PROGRESS) Attempts to autofix various 3rd party SSAO shaders found in certain Unity games")
@@ -3095,7 +3095,7 @@ def args_require_reg_analysis(args):
                 args.fix_unity_reflection or \
                 args.fix_unity_reflection_vs or \
                 args.fix_unity_reflection_ps or \
-                args.fix_unity_frustrum_world or \
+                args.fix_unity_frustum_world or \
                 args.fix_unity_ssao
 
         # Also needs register analysis, but earlier than this test:
@@ -3224,8 +3224,8 @@ def main():
                 fix_unity_reflection_vs(tree, args)
             if args.fix_unity_reflection_ps:
                 fix_unity_reflection_ps_variant(tree, args)
-            if args.fix_unity_frustrum_world:
-                fix_unity_frustrum_world(tree, args)
+            if args.fix_unity_frustum_world:
+                fix_unity_frustum_world(tree, args)
             if args.fix_unity_ssao:
                 fix_unity_ssao(tree, args)
             if args.adjust_ui_depth:
