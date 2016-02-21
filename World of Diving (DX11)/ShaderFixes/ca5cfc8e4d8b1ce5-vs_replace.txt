@@ -163,10 +163,13 @@ cbuffer UnityPerCameraRare : register(b13)
   row_major uniform float4x4 unity_CameraInvProjection;
 }
 
-Texture2D<float4> StereoParams : register(t125);
+// 3Dmigoto declarations
+#define cmp -
 Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
-void main(
+
+void main( 
   float4 v0 : POSITION0,
   float3 v1 : NORMAL0,
   out float4 o0 : SV_POSITION0,
@@ -195,7 +198,7 @@ if (!full_screen) {
 }
 
   r0.y = cb1[5].x * r0.y;
-  r1.xzw = float3(5.000000e-001,5.000000e-001,5.000000e-001) * r0.xwy;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
   o1.zw = r0.zw;
   o1.xy = r1.xw + r1.zz;
   r0.xyz = UNITY_MATRIX_MV[1].xyz * v0.yyy;
@@ -235,8 +238,8 @@ if (!full_screen) {
 	fov = unity_CameraInvProjection[0].x;
 }
 
-  r1.xyz = float3(-1.000000e+000,-1.000000e+000,1.000000e+000) * r0.xyz;
-  r0.xyz = -r0.xyz * float3(-1.000000e+000,-1.000000e+000,1.000000e+000) + v1.xyz;
+  r1.xyz = float3(-1,-1,1) * r0.xyz;
+  r0.xyz = -r0.xyz * float3(-1,-1,1) + v1.xyz;
   o2.xyz = cb0[6].xxx * r0.xyz + r1.xyz;
   return;
 }

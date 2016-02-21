@@ -98,6 +98,17 @@ cbuffer cb0 : register(b0)
 }
 
 
+// Copied from the directional lighting shader using 3DMigoto
+cbuffer UnityPerCameraRare : register(b13)
+{
+  uniform float4 unity_CameraWorldClipPlanes[6];
+
+  // Projection matrices of the camera. Note that this might be different from projection matrix
+  // that is set right now, e.g. while rendering shadows the matrices below are still the projection
+  // of original camera.
+  row_major uniform float4x4 unity_CameraProjection;
+  row_major uniform float4x4 unity_CameraInvProjection;
+}
 
 
 // 3Dmigoto declarations
@@ -167,12 +178,12 @@ if (!full_screen) {
 
 	r0.x += separation * (depth - convergence) * fov;
 } else {
-	// FIXME: Will need support in 3Dmigoto to copy in the matrices from
-	// elsewhere to determine this!
-	// NOTE that this is used for physical lighting effects, including
-	// specular reflections and some other shadow-like effects on the
-	// ground (not direct shadows), which may be only look slightly broken.
-	fov = 1;
+	// Can't determine the FOV from the values passed to this shader, so
+	// use the FOV copied from directional lighting shader with 3DMigoto.
+	// We could probably get away with using only this and scrapping the
+	// above code for games that always have directional lighting enabled.
+
+	fov = unity_CameraInvProjection[0].x;
 }
 
   r1.xyz = float3(-1,-1,1) * r0.xyz;
