@@ -117,16 +117,43 @@ rarer than the model-view matrix in many Unity games.
 
 DX11
 ----
-This template is in need of an update to bring it to parity with the latest
-advancements in the DX9 templates and needs to be scripted.
+This template is mostly on parity with the DX9-New template. It applies a
+view-space correction to the lighting pixel shades and a world-space correction
+to the camera position everywhere else.
 
-It includes lighting vertex shaders and a collection of hand-fixed lighting
-pixel shaders. Due to the fact that Unity 5's lighting shaders keep getting
-updated in new versions it will likely be necessary to find and fix additional
-lighting pixel shaders.
+It includes lighting vertex shaders and a script to fix lighting pixel shaders.
 
-There is a slightly more up to date version of this in the DX11 version of the
-World of Diving fix that will also partially fix physical lighting (specular
-highlights and reflections moved to surface depth), but even it is lacking the
-recent advancements made to the DX9 templates (e.g. correct placement of
-specular highlights and reflections).
+Advantages
+
+- Avoids the limitations of Helix Mod, nicer environment to work in, more
+  features possible in the future thanks to 3DMigoto.
+
+- Accurate fix for all specular highlights and reflections
+
+- Also pops certain parallax shaders into 3D (e.g. Rocks + sand in The Forest)
+
+- Able to use multiple matrices for both view and world space corrections.
+
+- Adds directives to copy the depth buffer to the DX9Settings.ini to make it
+  easier to add an auto-UI adjustment later (Note that this does not add a UI
+  adjustment as that is very game-specific, it just adds the depth buffer
+  copy).
+
+- Directional, point and spot lights should always be fixed.
+
+Disadvantages:
+
+- CURRENTLY BROKEN IN UNITY 5.3
+
+- Subject to 3DMigoto decompiler bugs. The script uses fxc to verify that the
+  shaders will at least compile and renames any that fail, but it cannot detect
+  subtle bugs the decompiler may introduce. In practice, Unity does not trigger
+  many decompile bugs so this may not be a significant issue.
+
+- If directional lighting is not enabled, physical lighting may be broken as it
+  currently lacks the fallbacks that the DX9 version has.
+
+- Adjusts a *lot* of shaders.
+
+- Includes a *lot* of matrix copy directives in the DX9Settings.ini, which can
+  make it hard to track down a single bad source if things are broken.
