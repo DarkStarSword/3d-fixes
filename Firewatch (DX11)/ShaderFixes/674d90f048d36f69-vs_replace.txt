@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 674d90f048d36f69-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 674d90f048d36f69-vs_replace.txt
 // 3DMigoto: 674d90f048d36f69 | Matched 2 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Cross Cards
 // 
 //    Unity headers extracted from Marmoset Bumped Diffuse IBL Cross Cards.shader
@@ -58,7 +58,7 @@
 // ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:31:42 2016
 cbuffer cb2 : register(b2)
 {
-  float4 cb2[19];
+  float4 cb2[22];
 }
 
 cbuffer cb1 : register(b1)
@@ -68,7 +68,7 @@ cbuffer cb1 : register(b1)
 
 cbuffer cb0 : register(b0)
 {
-  float4 cb0[6];
+  float4 cb0[9];
 }
 
 
@@ -79,6 +79,24 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -103,6 +121,17 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 674d90f048d36f69-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb0[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
   r0.xyzw = cb2[1].xyzw * v0.yyyy;
   r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
   r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
@@ -110,9 +139,8 @@ void main(
   o0.xyzw = r0.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 674d90f048d36f69-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 674d90f048d36f69-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
 
   r1.x = cb2[5].z * v0.y;
   r1.x = cb2[4].z * v0.x + r1.x;
@@ -126,7 +154,7 @@ if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
   r1.xyz = cb2[12].xyz * v0.xxx + r1.xyz;
   r1.xyz = cb2[14].xyz * v0.zzz + r1.xyz;
   r1.xyz = cb2[15].xyz * v0.www + r1.xyz;
-  r2.xyz = cb0[4].xyz + -r1.xyz;
+  r2.xyz = _WorldSpaceCameraPos.xyz + -r1.xyz;
   o2.xyz = r1.xyz;
   r1.x = dot(r2.xyz, r2.xyz);
   r1.x = rsqrt(r1.x);
@@ -170,6 +198,6 @@ if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
 }
 
 /****************************** COMPILE WARNINGS ******************************
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\674d90f048d36f69-vs_replace.txt(98,14-15): warning X3578: Output value 'o4' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\674d90f048d36f69-vs_replace.txt(116,14-15): warning X3578: Output value 'o4' is not completely initialized
 
 ****************************** COMPILE WARNINGS ******************************/

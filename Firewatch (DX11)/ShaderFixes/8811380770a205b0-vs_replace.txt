@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 8811380770a205b0-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 8811380770a205b0-vs_replace.txt
 // 3DMigoto: 8811380770a205b0 | Matched 2 variants of 1 shaders: Marmoset/Transparent/Cutout/Billboard Diffuse IBL
 // 
 //    Unity headers extracted from Marmoset Billboard Diffuse IBL.shader
@@ -75,7 +75,7 @@ cbuffer cb3 : register(b3)
 
 cbuffer cb2 : register(b2)
 {
-  float4 cb2[19];
+  float4 cb2[22];
 }
 
 cbuffer cb1 : register(b1)
@@ -85,7 +85,7 @@ cbuffer cb1 : register(b1)
 
 cbuffer cb0 : register(b0)
 {
-  float4 cb0[5];
+  float4 cb0[9];
 }
 
 
@@ -96,6 +96,24 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -117,7 +135,18 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xy = -cb2[15].xz + cb0[4].xz;
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 8811380770a205b0-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb0[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xy = -cb2[15].xz + _WorldSpaceCameraPos.xz;
   r0.z = dot(r0.xy, r0.xy);
   r0.z = rsqrt(r0.z);
   r0.xy = r0.xy * r0.zz;
@@ -151,9 +180,8 @@ void main(
   o0.xyzw = r2.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 8811380770a205b0-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r2.w != 1.0) { r2.x += stereo.x * (r2.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 8811380770a205b0-vs_replace.txt
+if (r2.w != 1.0) { r2.x += separation * (r2.w - convergence); }
 
   r0.w = cb3[1].x * r2.z;
   r0.w = -r0.w * r0.w;
@@ -222,6 +250,6 @@ if (r2.w != 1.0) { r2.x += stereo.x * (r2.w - stereo.y); }
 }
 
 /****************************** COMPILE WARNINGS ******************************
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\8811380770a205b0-vs_replace.txt(112,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\8811380770a205b0-vs_replace.txt(130,14-15): warning X3578: Output value 'o2' is not completely initialized
 
 ****************************** COMPILE WARNINGS ******************************/

@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe fd05676d2334e31d-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe fd05676d2334e31d-vs_replace.txt
 // 3DMigoto: fd05676d2334e31d | Unity headers extracted from Marmoset Bumped Diffuse IBL Swaying.shader
 // Shader "Marmoset/Bumped Diffuse IBL Swaying" {
 //   Properties {
@@ -108,6 +108,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.xy = cb3[13].xz * v0.yy;
   r0.xy = cb3[12].xz * v0.xx + r0.xy;
   r0.xy = cb3[14].xz * v0.zz + r0.xy;
@@ -127,9 +130,8 @@ void main(
   o0.xyzw = r1.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe fd05676d2334e31d-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe fd05676d2334e31d-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
 
   r2.xyz = cb3[13].xyz * r0.yyy;
   r0.xyw = cb3[12].xyz * r0.xxx + r2.xyz;

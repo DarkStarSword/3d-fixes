@@ -1,0 +1,257 @@
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 18328226baa3efe8-ps_replace.txt
+// 3DMigoto: 18328226baa3efe8 | Matched 2 variants of 1 shaders: Marmoset/Self-Illumin/Specular IBL
+// 
+//    Unity headers extracted from Marmoset Specular IBL.shader
+//    Shader "Marmoset/Self-Illumin/Specular IBL" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//       _SpecInt ("Specular Intensity", Float) = 1
+//       _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//       _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//       _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//       _GlowStrength ("Glow Strength", Float) = 1
+//       _EmissionLM ("Diffuse Emission Strength", Float) = 0
+//       _Illum ("Glow(RGB) Diffuse Emission(A)", 2D) = "white" { }
+//      }
+//      Fallback "Marmoset/Specular IBL"
+//      SubShader 1/1 {
+//        LOD 250
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//        Pass 2/5 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 103463
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" }
+// 2:           Keywords { "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" }
+//              SetTexture 0 [_MainTex] 2D 3
+//              SetTexture 1 [_SpecTex] 2D 4
+//              SetTexture 2 [_LightTexture0] 2D 1
+//              SetTexture 3 [_LightTextureB0] 2D 2
+//              SetTexture 4 [_ShadowMapTexture] 2D 0
+//              ConstBuffer "$Globals" 752
+//              Matrix 208 [_LightMatrix0]
+//              Vector 0 [unity_ColorSpaceGrey]
+//              Vector 96 [_LightColor0]
+//              Vector 112 [_SpecColor]
+//              Vector 144 [_ShadowOffsets0]
+//              Vector 160 [_ShadowOffsets1]
+//              Vector 176 [_ShadowOffsets2]
+//              Vector 192 [_ShadowOffsets3]
+//              Vector 272 [_Color]
+//              Vector 288 [_MainTex_ST]
+//              Float 304 [_SpecInt]
+//              Float 308 [_Shininess]
+//              Float 312 [_Fresnel]
+//              Vector 320 [_SpecTex_ST]
+//              Vector 400 [_ExposureIBL]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 64 [_WorldSpaceCameraPos] 3
+//              ConstBuffer "UnityLighting" 720
+//              Vector 0 [_WorldSpaceLightPos0]
+//              ConstBuffer "UnityShadows" 416
+//              Vector 384 [_LightShadowData]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityLighting" 2
+//              BindCB "UnityShadows" 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:31:37 2016
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerComparisonState s0_s : register(s0);
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[25];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[26];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  float4 v3 : TEXCOORD2,
+  float4 v4 : TEXCOORD3,
+  float4 v5 : TEXCOORD4,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 18328226baa3efe8-ps_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.x = dot(v1.xyz, v1.xyz);
+  r0.x = rsqrt(r0.x);
+  r0.xyz = v1.xyz * r0.xxx;
+  r1.xyz = _WorldSpaceCameraPos.xyz + -v2.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r1.xyz * r0.www;
+  r0.x = saturate(dot(r0.xyz, r2.xyz));
+  r0.x = 1 + -r0.x;
+  r1.w = r0.x * r0.x;
+  r0.z = r1.w * r0.x;
+  r2.xy = cb0[19].zz * float2(-1,1) + float2(1,0);
+  r3.y = dot(r0.xz, r2.xy);
+  r0.y = 1;
+  r3.x = dot(r0.yx, r2.xy);
+  r0.x = dot(r3.xy, r2.xy);
+  r0.x = r0.x * 0.949999988 + 0.0500000007;
+  r0.y = cb0[19].x * r0.x;
+  r0.y = sqrt(r0.y);
+  r0.x = r0.x * cb0[19].x + -r0.y;
+  r0.z = cb0[0].x * -3.22581005 + 1.61290002;
+  r0.x = r0.z * r0.x + r0.y;
+  r0.x = cb0[25].w * r0.x;
+  r0.yz = v3.xy * cb0[20].xy + cb0[20].zw;
+  r2.xyzw = t1.Sample(s4_s, r0.yz).xyzw;
+  r2.xyz = cb0[7].xyz * r2.xyz;
+  r0.y = 1 + -r2.w;
+  r0.yz = -r0.yy * r0.yy + float2(1,8);
+  r0.y = -cb0[19].y * r0.y + r0.z;
+  r0.y = 8 + -r0.y;
+  r0.y = exp2(r0.y);
+  r2.xyz = r2.xyz * r0.xxx;
+  r0.x = r0.y * 0.159154937 + 0.318309873;
+  r0.y = r0.y + r0.y;
+  r2.xyz = r2.xyz * r0.xxx;
+  r3.xyz = cb2[0].xyz + -v2.xyz;
+  r0.x = dot(r3.xyz, r3.xyz);
+  r0.x = rsqrt(r0.x);
+  r3.xyz = r3.xyz * r0.xxx;
+  r0.xzw = r1.xyz * r0.www + r3.xyz;
+  r1.x = saturate(dot(v1.xyz, r3.xyz));
+  r1.y = dot(r0.xzw, r0.xzw);
+  r1.y = rsqrt(r1.y);
+  r0.xzw = r1.yyy * r0.xzw;
+  r0.x = saturate(dot(v1.xyz, r0.xzw));
+  r0.x = log2(r0.x);
+  r0.x = r0.y * r0.x;
+  r0.x = exp2(r0.x);
+  r0.y = 10 * r1.x;
+  r0.z = r1.x + r1.x;
+  r0.y = min(1, r0.y);
+  r0.x = r0.x * r0.y;
+  r0.xyw = cb0[6].xyz * r0.xxx;
+  r0.xyw = r2.xyz * r0.xyw;
+  r0.xyw = float3(0.5,0.5,0.5) * r0.xyw;
+  r1.xy = v3.xy * cb0[18].xy + cb0[18].zw;
+  r1.xyzw = t0.Sample(s3_s, r1.xy).xyzw;
+  r1.xyz = cb0[17].xyz * r1.xyz;
+  r1.xyz = cb0[25].www * r1.xyz;
+  r1.xyz = r1.xyz * r0.zzz;
+  r0.xyz = r1.xyz * cb0[6].xyz + r0.xyw;
+  r1.xyzw = cb0[14].xyzw * v2.yyyy;
+  r1.xyzw = cb0[13].xyzw * v2.xxxx + r1.xyzw;
+  r1.xyzw = cb0[15].xyzw * v2.zzzz + r1.xyzw;
+  r1.xyzw = cb0[16].xyzw + r1.xyzw;
+  r2.xy = r1.xy / r1.ww;
+  r2.xy = float2(0.5,0.5) + r2.xy;
+  r2.xyzw = t2.Sample(s1_s, r2.xy).xyzw;
+  r0.w = cmp(0 < r1.z);
+  r1.x = dot(r1.xyz, r1.xyz);
+  r1.xyzw = t3.Sample(s2_s, r1.xx).xyzw;
+  r0.w = r0.w ? 1.000000 : 0;
+  r0.w = r0.w * r2.w;
+  r0.w = r0.w * r1.x;
+  r1.x = 1 + -cb3[24].x;
+  r1.yzw = v5.xyz / v5.www;
+  r2.xyz = cb0[9].xyz + r1.yzw;
+  r2.x = t4.SampleCmpLevelZero(s0_s, r2.xy, r2.z).x;
+  r3.xyz = cb0[10].xyz + r1.yzw;
+  r2.y = t4.SampleCmpLevelZero(s0_s, r3.xy, r3.z).x;
+  r3.xyz = cb0[11].xyz + r1.yzw;
+  r1.yzw = cb0[12].xyz + r1.yzw;
+  r2.w = t4.SampleCmpLevelZero(s0_s, r1.yz, r1.w).x;
+  r2.z = t4.SampleCmpLevelZero(s0_s, r3.xy, r3.z).x;
+  r1.xyzw = r2.xyzw * r1.xxxx + cb3[24].xxxx;
+  r1.x = dot(r1.xyzw, float4(0.25,0.25,0.25,0.25));
+  r0.w = r1.x * r0.w;
+  o0.xyz = r0.xyz * r0.www;
+  o0.w = 1;
+  return;
+}

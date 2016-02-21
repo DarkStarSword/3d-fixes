@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 721c96289ea12037-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 721c96289ea12037-vs_replace.txt
 // 3DMigoto: 721c96289ea12037 | Matched 2 variants of 1 shaders: TMPro/Distance Field (Surface)
 // 
 //    Unity headers extracted from TMPro_SDF-Surface.shader
@@ -124,7 +124,7 @@ cbuffer cb2 : register(b2)
 
 cbuffer cb1 : register(b1)
 {
-  float4 cb1[7];
+  float4 cb1[9];
 }
 
 cbuffer cb0 : register(b0)
@@ -140,6 +140,24 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -165,6 +183,17 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 721c96289ea12037-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
   r0.xy = cb0[30].zw + v0.xy;
   r1.xyzw = cb2[1].xyzw * r0.yyyy;
   r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
@@ -173,9 +202,8 @@ void main(
   o0.xyzw = r1.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 721c96289ea12037-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 721c96289ea12037-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
 
   p7.x = r1.z;
   r0.w = floor(v4.x);
@@ -184,9 +212,9 @@ if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
   r1.w = cb0[37].y * r0.w;
   o1.zw = r1.zw * float2(0.00122070313,5) + cb0[37].zw;
   o1.xy = v3.xy * cb0[36].xy + cb0[36].zw;
-  r1.xyz = cb2[17].xyz * cb1[4].yyy;
-  r1.xyz = cb2[16].xyz * cb1[4].xxx + r1.xyz;
-  r1.xyz = cb2[18].xyz * cb1[4].zzz + r1.xyz;
+  r1.xyz = cb2[17].xyz * _WorldSpaceCameraPos.yyy;
+  r1.xyz = cb2[16].xyz * _WorldSpaceCameraPos.xxx + r1.xyz;
+  r1.xyz = cb2[18].xyz * _WorldSpaceCameraPos.zzz + r1.xyz;
   r1.xyz = cb2[19].xyz + r1.xyz;
   r0.z = v0.z;
   r1.xyz = r1.xyz + -r0.xyz;
@@ -235,7 +263,7 @@ if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
   r2.xyz = cb2[14].xyz * v0.zzz + r2.xyz;
   r2.xyz = cb2[15].xyz * v0.www + r2.xyz;
   o5.xyz = r2.xyz;
-  r2.xyz = cb1[4].xyz + -r2.xyz;
+  r2.xyz = _WorldSpaceCameraPos.xyz + -r2.xyz;
   o6.xyzw = v7.xyzw;
   r0.y = cb2[1].w * r0.y;
   r0.x = cb2[0].w * r0.x + r0.y;
@@ -272,8 +300,8 @@ if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
 }
 
 /****************************** COMPILE WARNINGS ******************************
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(155,14-15): warning X3578: Output value 'o2' is not completely initialized
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(156,14-15): warning X3578: Output value 'o3' is not completely initialized
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(157,14-15): warning X3578: Output value 'o4' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(173,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(174,14-15): warning X3578: Output value 'o3' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\721c96289ea12037-vs_replace.txt(175,14-15): warning X3578: Output value 'o4' is not completely initialized
 
 ****************************** COMPILE WARNINGS ******************************/

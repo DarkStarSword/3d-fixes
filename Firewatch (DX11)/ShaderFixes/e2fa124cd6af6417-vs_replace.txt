@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe e2fa124cd6af6417-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe e2fa124cd6af6417-vs_replace.txt
 // 3DMigoto: e2fa124cd6af6417 | Unity headers extracted from WavingGrassBillboard.shader
 // Shader "Hidden/TerrainEngine/Details/BillboardWavingDoublePass" {
 //   Properties {
@@ -138,6 +138,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.x = cb4[16].x * v2.x;
   r0.y = cb4[17].x * v2.x;
   r0.z = cb4[18].x * v2.x;
@@ -214,9 +217,8 @@ void main(
 o0.xyw = r0.xyw; // Relocated to here with hlsltool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe e2fa124cd6af6417-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe e2fa124cd6af6417-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
 
   r1.x = saturate(cb3[5].x / r0.w);
   r0.z = r1.x + r0.z;

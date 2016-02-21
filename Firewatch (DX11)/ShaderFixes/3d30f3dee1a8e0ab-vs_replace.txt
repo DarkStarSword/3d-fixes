@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 3d30f3dee1a8e0ab-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 3d30f3dee1a8e0ab-vs_replace.txt
 // 3DMigoto: 3d30f3dee1a8e0ab | Matched 24 variants of 3 shaders: Marmoset/Bumped Diffuse IBL, Marmoset/Bumped Diffuse IBL Lightened Shadows, Marmoset/Transparent/Cutout/Bumped Diffuse IBL Double Faces
 // 
 //     Unity headers extracted from Marmoset Bumped Diffuse IBL.shader
@@ -192,6 +192,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.xyzw = cb1[1].xyzw * v0.yyyy;
   r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
   r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
@@ -199,9 +202,8 @@ void main(
   o0.xyzw = r0.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 3d30f3dee1a8e0ab-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 3d30f3dee1a8e0ab-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
 
   p1.x = r0.z;
   r0.y = cb1[16].x * v2.x;

@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 7ea5dd92aac67ce5-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 7ea5dd92aac67ce5-vs_replace.txt
 // 3DMigoto: 7ea5dd92aac67ce5 | Matched 34 variants of 9 shaders: Hidden/Amplify Color/Base, Hidden/Amplify Color/BaseLinear, Hidden/Amplify Color/Blend, Hidden/Amplify Color/BlendCache, Hidden/Amplify Color/BlendLinear, Hidden/Amplify Color/BlendMask, Hidden/Amplify Color/BlendMaskLinear, Hidden/Amplify Color/Mask, Hidden/Amplify Color/MaskLinear
 // 
 //    Unity headers extracted from Base.shader
@@ -356,6 +356,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.xyzw = cb2[1].xyzw * v0.yyyy;
   r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
   r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
@@ -363,9 +366,8 @@ void main(
   o0.xyzw = r0.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 7ea5dd92aac67ce5-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 7ea5dd92aac67ce5-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
 
   r1.x = cmp(cb0[6].y < 0);
   r1.y = 1 + -v1.y;
@@ -383,7 +385,7 @@ if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
 }
 
 /****************************** COMPILE ERRORS ******************************
-C:\Steam\SteamApps\common\Firewatch\ShaderFixes\7ea5dd92aac67ce5-vs_replace.txt(373,3-8): error X3018: invalid subscript 'xyz'
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\7ea5dd92aac67ce5-vs_replace.txt(375,3-8): error X3018: invalid subscript 'xyz'
 
 compilation failed; no code produced
 ****************************** COMPILE ERRORS ******************************/

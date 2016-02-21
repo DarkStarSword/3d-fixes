@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 25bd466e38b77358-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 25bd466e38b77358-vs_replace.txt
 // 3DMigoto: 25bd466e38b77358 | Unity headers extracted from Marmoset Bumped Diffuse IBL Trees.shader
 // Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees" {
 //   Properties {
@@ -106,6 +106,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.xyz = cb2[13].xyz * v0.yyy;
   r0.xyz = cb2[12].xyz * v0.xxx + r0.xyz;
   r0.xyz = cb2[14].xyz * v0.zzz + r0.xyz;
@@ -135,9 +138,8 @@ void main(
   o0.xyzw = r1.xyzw;
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 25bd466e38b77358-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r1.w != 1.0) { r1.x += stereo.x * (r1.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 25bd466e38b77358-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
 
   r2.y = cb2[16].x * v2.x;
   r2.z = cb2[17].x * v2.x;

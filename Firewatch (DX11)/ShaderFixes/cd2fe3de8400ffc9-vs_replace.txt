@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe cd2fe3de8400ffc9-vs_replace.txt
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe cd2fe3de8400ffc9-vs_replace.txt
 // 3DMigoto: cd2fe3de8400ffc9 | Matched 2 variants of 1 shaders: Hidden/Internal-DeferredReflections
 // 
 //    Unity headers extracted from Internal-DeferredReflections.shader
@@ -64,6 +64,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
   r0.xyzw = cb1[1].xyzw * v0.yyyy;
   r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
   r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
@@ -72,9 +75,8 @@ void main(
 o1.xyzw = r0.xyzw; // Relocated to here with hlsltool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe cd2fe3de8400ffc9-vs_replace.txt
-float4 stereo = StereoParams.Load(0);
-if (r0.w != 1.0) { r0.x += stereo.x * (r0.w - stereo.y); }
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe cd2fe3de8400ffc9-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
 
   r1.x = cb0[5].x * r0.y;
   r1.w = 0.5 * r1.x;
