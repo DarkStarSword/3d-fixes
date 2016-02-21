@@ -1,0 +1,154 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 8141938ee1490928-vs_replace.txt
+// 3DMigoto: 8141938ee1490928 | Matched 2 variants of 1 shaders: _Shaders/StylisticFog
+// 
+//    Unity headers extracted from vgStylisticFog.shader
+//    Shader "_Shaders/StylisticFog" {
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 24972
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 2:           Keywords { "DONT_INTERPOLATE_DUAL_FOG" }
+// 1:           Keywords { "INTERPOLATE_DUAL_FOG" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 336
+//              Matrix 256 [_FrustumCornersWS]
+//              Vector 96 [_MainTex_TexelSize]
+//              BindCB "$Globals" 0
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:36:27 2016
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[21];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+cbuffer UnityPerCamera : register(b13)
+{
+	// Time (t = time since current level load) values from Unity
+	uniform float4 _Time; // (t/20, t, t*2, t*3)
+	uniform float4 _SinTime; // sin(t/8), sin(t/4), sin(t/2), sin(t)
+	uniform float4 _CosTime; // cos(t/8), cos(t/4), cos(t/2), cos(t)
+	uniform float4 unity_DeltaTime; // dt, 1/dt, smoothdt, 1/smoothdt
+
+	uniform float3 _WorldSpaceCameraPos;
+
+	// x = 1 or -1 (-1 if projection is flipped)
+	// y = near plane
+	// z = far plane
+	// w = 1/far plane
+	uniform float4 _ProjectionParams;
+
+	// x = width
+	// y = height
+	// z = 1 + 1.0/width
+	// w = 1 + 1.0/height
+	uniform float4 _ScreenParams;
+
+	// Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
+	// x = 1-far/near
+	// y = far/near
+	// z = x/far
+	// w = y/far
+	uniform float4 _ZBufferParams;
+
+	// x = orthographic camera's width
+	// y = orthographic camera's height
+	// z = unused
+	// w = 1.0 if camera is ortho, 0.0 if perspective
+	uniform float4 unity_OrthoParams;
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD0,
+  out float2 p1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2)
+{
+  const float4 icb[] = { { 1.000000, 0, 0, 0},
+                              { 0, 1.000000, 0, 0},
+                              { 0, 0, 1.000000, 0},
+                              { 0, 0, 0, 1.000000} };
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity _FrustumCornersWS fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 8141938ee1490928-vs_replace.txt
+float far = 1 / (_ZBufferParams.z + _ZBufferParams.w);
+float4 clip_space_adj = float4(separation * (far - convergence), 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+// GOTCHA: _FrustumCornersWS is TRANSPOSED vs DX9!
+float4x4 _FrustumCornersWS = matrix(cb0[16], cb0[17], cb0[18], cb0[19]);
+_FrustumCornersWS[0].xyz -= world_space_adj.x;
+_FrustumCornersWS[1].xyz -= world_space_adj.y;
+_FrustumCornersWS[2].xyz -= world_space_adj.z;
+
+  o0.xy = v0.xy;
+  o0.zw = float2(0.100000001,1);
+  r0.x = cmp(cb0[6].y < 0);
+  r0.y = 1 + -v1.y;
+  o1.y = r0.x ? r0.y : v1.y;
+  o1.xzw = v1.xxy * float3(1,1,-1) + float3(0,0,1);
+  o2.w = v0.z;
+  r0.x = (int)v0.z;
+  o2.x = dot(_FrustumCornersWS[0].xyzw, icb[r0.x+0].xyzw);
+  o2.y = dot(_FrustumCornersWS[1].xyzw, icb[r0.x+0].xyzw);
+  o2.z = dot(_FrustumCornersWS[2].xyzw, icb[r0.x+0].xyzw);
+  return;
+}
+
+/****************************** COMPILE ERRORS ******************************
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\8141938ee1490928-vs_replace.txt(141,3-8): error X3018: invalid subscript 'xzw'
+
+compilation failed; no code produced
+****************************** COMPILE ERRORS ******************************/
