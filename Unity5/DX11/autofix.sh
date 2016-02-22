@@ -28,7 +28,7 @@ if [ $EXTRACT -eq 1 ]; then
 	unity_asset_extractor.py *_Data/Resources/* *_Data/*.assets
 	cd extracted
 	extract_unity_shaders.py */*.shader --type=d3d11
-	cd ShaderCRCs
+	cd ShaderFNVs
 fi
 
 # TODO: DX11 version of:
