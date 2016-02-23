@@ -63,3 +63,5 @@ Troubleshooting
   mention what graphics settings you are using (especially water and "visual
   quality"). For reference, I have most settings set to either High or Very
   High.
+
+*Special thanks to Flugan for his work on the assembler, used in this fix.*
