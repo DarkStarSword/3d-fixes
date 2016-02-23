@@ -1,0 +1,212 @@
+// 3DMigoto: 9feab39d3aac9239 | Matched 4 variants of 1 shaders: Marmoset/Transparent/Marmo Water IBL
+// 
+//    Unity headers extracted from Marmoset Water IBL.shader
+//    Shader "Marmoset/Transparent/Marmo Water IBL" {
+//      Properties {
+//       _Wave ("[Water Params] Wave Normal Map", 2D) = "wave" { }
+//       _NoiseMap ("[Water Params] NoiseMap", 2D) = "noisemap" { }
+//       _FlowDirectionSign ("[Water Params] Flow Direction", Vector) = (1,1,1,1)
+//       _NormalMapIntensity ("[Water Params] Wave Intensity", Range(0.01,1)) = 0.25
+//       _OpacityMultiplier ("[Water Params] Water Opacity Multiplier", Float) = 2.4
+//       _WaterSpeed ("[Water Params] WaterSpeed", Float) = 0.05
+//       _NoisePanningSpeed ("[Water Params][Noise] NoisePanningSpeed", Float) = 0.1
+//       _StretchIntensity ("[Water Params][Noise] StretchIntensity", Float) = 0.25
+//       _DirtOpacity ("[Water Params] Dirt Transparency", Range(0,1)) = 0.5
+//       _DirtBrightness ("[Water Params] Dirt Brightness", Range(0,1)) = 1
+//       _EdgeBlending ("[Water Params] Water to Geometry Edge Fade", Float) = 2
+//       _FresnelWater ("[Water Params] Opacity to Reflection", Range(0,15)) = 2.15
+//      [HideInInspector]  _Color ("Diffuse Color", Color) = (1,1,1,1)
+//      [HideInInspector]  _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//      [HideInInspector]  _SpecInt ("Specular Intensity", Float) = 1
+//      [HideInInspector]  _Shininess ("Specular Sharpness", Range(2,8)) = 8
+//      [HideInInspector]  _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry+449" "IGNOREPROJECTOR"="true" }
+//        GrabPass {
+//          Name "BASE"
+//          Tags { "LIGHTMODE"="Always" }
+//         }
+//        Pass 2/2 {
+//          Name "META"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry+449" "IGNOREPROJECTOR"="true" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 118344
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" }
+// 2:           Keywords { "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" }
+// 4:           Keywords { "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_OFF" }
+// 8:           Keywords { "MARMO_BOX_PROJECTION_ON" "MARMO_SKY_BLEND_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "texcoord2" TexCoord2
+//              Bind "tangent" TexCoord4
+// a:           ConstBuffer "$Globals" 1056
+// 5:           ConstBuffer "$Globals" 704
+//              Vector 144 [_Wave_ST]
+//              Vector 160 [_NoiseMap_ST]
+//              Float 204 [_NoisePanningSpeed]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 0 [_Time]
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              Matrix 256 [_World2Object]
+//              Vector 336 [unity_WorldTransformParams]
+//              ConstBuffer "UnityLightmaps" 32
+//              Vector 0 [unity_LightmapST]
+//              Vector 16 [unity_DynamicLightmapST]
+//              ConstBuffer "UnityMetaPass" 32
+//              VectorBool 0 [unity_MetaVertexControl] 4
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//              BindCB "UnityLightmaps" 3
+//              BindCB "UnityMetaPass" 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:32:06 2016
+cbuffer cb4 : register(b4)
+{
+  float4 cb4[1];
+}
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[2];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[22];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[13];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = cmp(0 < v0.z);
+  r0.z = r0.x ? 0.000100 : 0;
+  r0.xy = v4.xy * cb3[0].xy + cb3[0].zw;
+  r0.xyz = cb4[0].xxx ? r0.xyz : v0.xyz;
+  r0.w = cmp(0 < r0.z);
+  r1.z = r0.w ? 0.000100 : 0;
+  r1.xy = v5.xy * cb3[1].xy + cb3[1].zw;
+  r0.xyz = cb4[0].yyy ? r1.xyz : r0.xyz;
+  r1.xyzw = cb2[1].xyzw * r0.yyyy;
+  r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
+  r0.xyzw = cb2[2].xyzw * r0.zzzz + r1.xyzw;
+  o0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  r0.y = cb2[16].x * v2.x;
+  r0.z = cb2[17].x * v2.x;
+  r0.x = cb2[18].x * v2.x;
+  r1.y = cb2[16].y * v2.y;
+  r1.z = cb2[17].y * v2.y;
+  r1.x = cb2[18].y * v2.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.y = cb2[16].z * v2.z;
+  r1.z = cb2[17].z * v2.z;
+  r1.x = cb2[18].z * v2.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  o1.z = r0.y;
+  r1.xyz = cb2[13].yzx * v1.yyy;
+  r1.xyz = cb2[12].yzx * v1.xxx + r1.xyz;
+  r1.xyz = cb2[14].yzx * v1.zzz + r1.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+  r2.xyz = r1.xyz * r0.xyz;
+  r2.xyz = r0.zxy * r1.yzx + -r2.xyz;
+  r0.y = cb2[21].w * v1.w;
+  r2.xyz = r2.xyz * r0.yyy;
+  o1.y = r2.x;
+  o1.x = r1.z;
+  r3.xyz = cb2[13].xyz * v0.yyy;
+  r3.xyz = cb2[12].xyz * v0.xxx + r3.xyz;
+  r3.xyz = cb2[14].xyz * v0.zzz + r3.xyz;
+  r3.xyz = cb2[15].xyz * v0.www + r3.xyz;
+  o1.w = r3.x;
+  o2.z = r0.z;
+  o3.z = r0.x;
+  o2.x = r1.x;
+  o3.x = r1.y;
+  o2.y = r2.y;
+  o3.y = r2.z;
+  o2.w = r3.y;
+  o3.w = r3.z;
+  o5.xyz = r3.xyz;
+  r0.xy = v3.xy * cb0[10].xy + cb0[10].zw;
+  o4.zw = cb1[0].yy * cb0[12].ww + r0.xy;
+  o4.xy = v3.xy * cb0[9].xy + cb0[9].zw;
+  o5.w = 0;
+  r0.xyz = cb2[1].xyw * v0.yyy;
+  r0.xyz = cb2[0].xyw * v0.xxx + r0.xyz;
+  r0.xyz = cb2[2].xyw * v0.zzz + r0.xyz;
+  r0.xyz = cb2[3].xyw * v0.www + r0.xyz;
+
+// Pre-emptive halo fix:
+float4 stereo = StereoParams.Load(0);
+r0.x += stereo.x * (r0.z - stereo.y);
+
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xzy;
+  o6.zw = r0.zz;
+  o6.xy = r1.xw + r1.zz;
+  return;
+}

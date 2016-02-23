@@ -280,7 +280,7 @@ d3d9_pixel_formats = {
 	fourcc("RGBG"): ("D3DFMT_R8G8_B8G8",           ),
 	fourcc("YUY2"): ("D3DFMT_YUY2",                ),
 	fourcc("GRGB"): ("D3DFMT_G8R8_G8B8",           ),
-	fourcc("DXT1"): ("D3DFMT_DXT1",                ),
+	fourcc("DXT1"): ("D3DFMT_DXT1",                np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
 	fourcc("DXT2"): ("D3DFMT_DXT2",                ),
 	fourcc("DXT3"): ("D3DFMT_DXT3",                ),
 	fourcc("DXT4"): ("D3DFMT_DXT4",                ),
@@ -329,14 +329,14 @@ dxgi_formats = {
 	22:         ("DXGI_FORMAT_X32_TYPELESS_G8X24_UINT",    ),
 
 	23:         ("DXGI_FORMAT_R10G10B10A2_TYPELESS",       np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
-	24:         ("DXGI_FORMAT_R10G10B10A2_UNORM",          ),
-	25:         ("DXGI_FORMAT_R10G10B10A2_UINT",           ),
+	24:         ("DXGI_FORMAT_R10G10B10A2_UNORM",          np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
+	25:         ("DXGI_FORMAT_R10G10B10A2_UINT",           np.dtype("<u4"),            "RGBA", convert_R10G10B10A2_UINT),
 
 	26:         ("DXGI_FORMAT_R11G11B10_FLOAT",            np.dtype("<u4"),            "RGB",  convert_R11G11B10_FLOAT),
 
 	27:         ("DXGI_FORMAT_R8G8B8A8_TYPELESS",          np.dtype("u1, u1, u1, u1"), "RGBA", None),
 	28:         ("DXGI_FORMAT_R8G8B8A8_UNORM",             ),
-	29:         ("DXGI_FORMAT_R8G8B8A8_UNORM_SRGB",        ),
+	29:         ("DXGI_FORMAT_R8G8B8A8_UNORM_SRGB",        np.dtype("u1, u1, u1, u1"), "RGBA", None),
 	30:         ("DXGI_FORMAT_R8G8B8A8_UINT",              ),
 	31:         ("DXGI_FORMAT_R8G8B8A8_SNORM",             ),
 	32:         ("DXGI_FORMAT_R8G8B8A8_SINT",              ),
@@ -390,14 +390,14 @@ dxgi_formats = {
 	69:         ("DXGI_FORMAT_G8R8_G8B8_UNORM",            ),
 
 	70:         ("DXGI_FORMAT_BC1_TYPELESS",               np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
-	71:         ("DXGI_FORMAT_BC1_UNORM",                  ),
-	72:         ("DXGI_FORMAT_BC1_UNORM_SRGB",             ),
+	71:         ("DXGI_FORMAT_BC1_UNORM",                  np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
+	72:         ("DXGI_FORMAT_BC1_UNORM_SRGB",             np.dtype([('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGB", convert_dxt1),
 	73:         ("DXGI_FORMAT_BC2_TYPELESS",               ),
 	74:         ("DXGI_FORMAT_BC2_UNORM",                  ),
 	75:         ("DXGI_FORMAT_BC2_UNORM_SRGB",             ),
 	76:         ("DXGI_FORMAT_BC3_TYPELESS",               np.dtype([('alpha', '<u8'), ('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGBA", convert_dxt5),
-	77:         ("DXGI_FORMAT_BC3_UNORM",                  ),
-	78:         ("DXGI_FORMAT_BC3_UNORM_SRGB",             ),
+	77:         ("DXGI_FORMAT_BC3_UNORM",                  np.dtype([('alpha', '<u8'), ('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGBA", convert_dxt5),
+	78:         ("DXGI_FORMAT_BC3_UNORM_SRGB",             np.dtype([('alpha', '<u8'), ('c0', '<u2'), ('c1', '<u2'), ('clookup', '<u4')]), "RGBA", convert_dxt5),
 	79:         ("DXGI_FORMAT_BC4_TYPELESS",               ),
 	80:         ("DXGI_FORMAT_BC4_UNORM",                  ),
 	81:         ("DXGI_FORMAT_BC4_SNORM",                  ),
@@ -536,7 +536,8 @@ class DDSPixelFormat(object):
 		if self.flags & self.Flags.YUV:
 			raise UnsupportedFile("YUV")
 		if self.flags & self.Flags.LUMINANCE:
-			raise UnsupportedFile("LUMINANCE")
+			self.rgb_bit_count = rgb_bit_count
+			self.r_bit_mask = r_bit_mask
 
 
 	def __str__(self):
@@ -763,26 +764,55 @@ def convert_fourcc(fp, header):
 	convert(fp, header, dtype)
 
 def convert_pixelformat_alpha(fp, header):
-	assert(header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA)
-	assert(not header.pixel_format.flags & DDSPixelFormat.Flags.RGB)
-	assert(not header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS)
-	assert(header.pixel_format.rgb_bit_count == 8)
-	assert(header.pixel_format.a_bit_mask == 0xff)
+	if header.pixel_format.flags & DDSPixelFormat.Flags.RGB:
+		raise UnsupportedFile("Alpha pixel format has RGB")
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
+		raise UnsupportedFile("Alpha pixel format has alpha pixels")
+	if header.pixel_format.rgb_bit_count != 8:
+		raise UnsupportedFile("Alpha pixel format is not 8bpp")
+	if header.pixel_format.a_bit_mask != 0xff:
+		raise UnsupportedFile("Alpha pixel format unsupported alpha mask")
 
 	convert(fp, header, (None, np.uint8, 'L', None))
+
+def convert_pixelformat_luminance(fp, header):
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA:
+		raise UnsupportedFile("Luminance pixel format has alpha")
+	if header.pixel_format.flags & DDSPixelFormat.Flags.RGB:
+		raise UnsupportedFile("Luminance pixel format has RGB")
+	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
+		# TODO: This is a valid format with 2 channels
+		raise UnsupportedFile("Luminance pixel format has alpha pixels")
+	if header.pixel_format.rgb_bit_count != 8:
+		raise UnsupportedFile("Luminance pixel format is not 8bpp")
+	if header.pixel_format.r_bit_mask != 0xff:
+		raise UnsupportedFile("Luminance pixel format unsupported alpha mask")
+
+	convert(fp, header, (None, np.uint8, 'L', None))
+
 
 def convert_pixelformat(fp, header):
 	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHA:
 		return convert_pixelformat_alpha(fp, header)
 
+	if header.pixel_format.flags & DDSPixelFormat.Flags.LUMINANCE:
+		return convert_pixelformat_luminance(fp, header)
+
 	# If these fail I will need a converter:
-	assert(header.pixel_format.flags & DDSPixelFormat.Flags.RGB)
-	assert(header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS)
-	assert(header.pixel_format.rgb_bit_count == 32)
-	assert(header.pixel_format.r_bit_mask == 0x000000ff)
-	assert(header.pixel_format.g_bit_mask == 0x0000ff00)
-	assert(header.pixel_format.b_bit_mask == 0x00ff0000)
-	assert(header.pixel_format.a_bit_mask == 0xff000000)
+	if not header.pixel_format.flags & DDSPixelFormat.Flags.RGB:
+		raise UnsupportedFile("Pixel format has no RGB")
+	if not header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
+		raise UnsupportedFile("Pixel format has no alpha")
+	if header.pixel_format.rgb_bit_count != 32:
+		raise UnsupportedFile("Pixel format is not 32bpp")
+	if header.pixel_format.r_bit_mask != 0x000000ff:
+		raise UnsupportedFile("Pixel format unsupported red mask")
+	if header.pixel_format.g_bit_mask != 0x0000ff00:
+		raise UnsupportedFile("Pixel format unsupported green mask")
+	if header.pixel_format.b_bit_mask != 0x00ff0000:
+		raise UnsupportedFile("Pixel format unsupported blue mask")
+	if header.pixel_format.a_bit_mask != 0xff000000:
+		raise UnsupportedFile("Pixel format unsupported alpha mask")
 
 	if header.pixel_format.flags & DDSPixelFormat.Flags.ALPHAPIXELS:
 		img_type = 'RGBA'
@@ -838,23 +868,22 @@ def main():
 		fp = open(file, 'rb')
 		try:
 			header = DDSHeader(fp)
+			print(header)
+
+			if Image is None or args.no_convert: # PIL not installed
+				continue
+
+			if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
+				if header.dx10_header is not None:
+					convert_dx10(fp, header)
+				else:
+					convert_fourcc(fp, header)
+			else:
+				convert_pixelformat(fp, header)
+
 		except UnsupportedFile as e:
 			print('Unsupported file (%s)!' % str(e))
 			continue
-
-		print(header)
-
-		if Image is None or args.no_convert: # PIL not installed
-			continue
-
-		if header.pixel_format.flags & DDSPixelFormat.Flags.FOURCC:
-			if header.dx10_header is not None:
-				convert_dx10(fp, header)
-			else:
-				convert_fourcc(fp, header)
-		else:
-			convert_pixelformat(fp, header)
-
 	if pool:
 		pool.close()
 		print('\nWaiting for worker processes to finish...')

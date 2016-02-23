@@ -1,0 +1,122 @@
+// CRC32: 4FA8DD70 | Unity headers extracted from Terrain Block.shader
+// Shader "Custom/Terrain Block" {
+//   Properties {
+//    _MainTex ("Wall Texture (RGB)", 2D) = "white" { }
+//    _GroundTex ("Floor Texture (RGB)", 2D) = "white" { }
+//    _CeilingTex ("Ceiling Texture (RGB)", 2D) = "white" { }
+//    _EdgeTex ("Edge Texture", 2D) = "" { }
+//    _WallGlossinessTex ("Wall Glossiness (R)", 2D) = "black" { }
+//    _GroundGlossinessTex ("Floor Glossiness (R)", 2D) = "black" { }
+//    _CeilingGlossinessTex ("Ceiling Glossiness (R)", 2D) = "black" { }
+//    _EmissiveTex ("Emissive (RGB)", 2D) = "black" { }
+//    _SpecularPower ("Specular Power", Float) = 1
+//    _Tiling ("Tiling - width of texture in tiles", Float) = 8
+//    _StretchDownwardUV ("Downward Texture Stretching", Range(0,1)) = 1
+//    _OriginalPosition ("Internal Use Only", Vector) = (0,0,0,0)
+//    _OriginalPositionOffset ("Internal Use Only", Vector) = (0,0,0,0)
+//    _OriginalRotation ("Internal Use Only", Float) = 0
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 1/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 30851
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 23 [_EdgeTex_ST]
+//           Vector 22 [_MainTex_ST]
+//           Vector 18 [_OriginalPosition]
+//           Vector 19 [_OriginalPositionOffset]
+//           Float 20 [_OriginalRotation]
+//           Float 17 [_StretchDownwardUV]
+//           Float 21 [_ZI_LevelBottomBound]
+//           Vector 12 [unity_SHAb]
+//           Vector 11 [unity_SHAg]
+//           Vector 10 [unity_SHAr]
+//           Vector 15 [unity_SHBb]
+//           Vector 14 [unity_SHBg]
+//           Vector 13 [unity_SHBr]
+//           Vector 16 [unity_SHC]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c24, 0, 30, 0.159154937, 0.5
+    def c25, 6.28318548, -3.14159274, 1, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord6 o6
+    add r0.x, c21.x, -v0.y
+    slt r0.y, c24.x, r0.x
+    mov r1.yzw, c24
+    mad r0.x, r0.x, -r1.y, c21.x
+    lrp r2.y, r0.y, r0.x, v0.y
+    mov r2.xzw, v0
+    dp4 o0.x, c0, r2
+    dp4 o0.y, c1, r2
+    dp4 o0.z, c2, r2
+    dp4 o0.w, c3, r2
+    mad o1.xy, v2, c22, c22.zwzw
+    mad o1.zw, v3.xyxy, c23.xyxy, c23
+    dp4 o3.x, c4, r2
+    dp4 o3.y, c5, r2
+    dp4 o3.z, c6, r2
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    nrm r3.xyz, r0
+    mul r0.x, r3.y, r3.y
+    mad r0.x, r3.x, r3.x, -r0.x
+    mul r4, r3.yzzx, r3.xyzz
+    dp4 r5.x, c13, r4
+    dp4 r5.y, c14, r4
+    dp4 r5.z, c15, r4
+    mad r0.xyz, c16, r0.x, r5
+    mov r3.w, c25.z
+    dp4 r4.x, c10, r3
+    dp4 r4.y, c11, r3
+    dp4 r4.z, c12, r3
+    mov o2.xyz, r3
+    add o5.xyz, r0, r4
+    mad r0.x, c20.x, r1.z, r1.w
+    frc r0.x, r0.x
+    mad r0.x, r0.x, c25.x, c25.y
+    sincos r1.xy, r0.x
+    mul r0.xyz, r1.yxyw, v0.zxxw
+    mad r2.z, v0.z, r1.x, -r0.z
+    add r2.x, r0.y, r0.x
+    mov r0.xyz, c18
+    add r0.xyz, r0, c19
+    add r0.xyz, r2, r0
+    add r1.x, -r0.y, c21.x
+    pow r2.x, r1.x, c17.x
+    slt r1.x, c24.x, r1.x
+    add r1.y, -r2.x, c21.x
+    add r1.y, -r0.y, r1.y
+    mad r0.w, r1.x, r1.y, r0.y
+    mov o4.xyz, r0.xwzw
+    mov o6, c24.x

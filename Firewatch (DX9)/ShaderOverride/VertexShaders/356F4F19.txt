@@ -1,0 +1,169 @@
+// CRC32: 356F4F19 | Matched 2 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Cross Cards
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Cross Cards.shader
+//    Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Cross Cards" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _GIBoost ("Global Illumination Scale", Float) = 1
+//      }
+//      Fallback "Transparent/Cutout/Diffuse"
+//      SubShader 1/2 {
+//        LOD 350
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 1/5 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+//          Cull Off
+//          ColorMask RGB
+//          GpuProgramID 22307
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_ON" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 11 [_Object2World] 3
+//              Matrix 14 [_World2Object] 3
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 4 [glstate_matrix_mvp]
+//              Vector 18 [_ProjectionParams]
+//              Vector 19 [_ScreenParams]
+//              Vector 17 [_WorldSpaceCameraPos]
+//              Vector 23 [unity_4LightAtten0]
+//              Vector 20 [unity_4LightPosX0]
+//              Vector 21 [unity_4LightPosY0]
+//              Vector 22 [unity_4LightPosZ0]
+//              Vector 0 [unity_LightColor0]
+//              Vector 1 [unity_LightColor1]
+//              Vector 2 [unity_LightColor2]
+//              Vector 3 [unity_LightColor3]
+//              Vector 26 [unity_SHAb]
+//              Vector 25 [unity_SHAg]
+//              Vector 24 [unity_SHAr]
+//              Vector 29 [unity_SHBb]
+//              Vector 28 [unity_SHBg]
+//              Vector 27 [unity_SHBr]
+//              Vector 30 [unity_SHC]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c31, 0.0399999991, 0.649999976, 1, 0
+    def c32, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4.x
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+    dcl_texcoord7 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r5, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Transparent_Cutout_Bumped Diffuse IBL Cross Cards/vp/356F4F19.txt
+mov r30, c17
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 r0.x, c10, v0
+    mul r0.x, r0_abs.x, c31.x
+    min r0.x, r0.x, c31.y
+    mul r0.y, r0.x, r0.x
+    mul o4.x, r0.y, r0.x
+    dp4 r0.x, c11, v0
+    add r1, -r0.x, c20
+    dp4 r0.y, c12, v0
+    add r2, -r0.y, c21
+    dp4 r0.z, c13, v0
+    add r3.xyz, -r0, r30
+    mov o2.xyz, r0
+    add r0, -r0.z, c22
+    nrm r4.xyz, r3
+    mul r3.xyz, r4.y, c15
+    mad r3.xyz, c14, r4.x, r3
+    mad r3.xyz, c16, r4.z, r3
+    nrm r4.xyz, r3
+    mul r3, r2, r4.y
+    mul r2, r2, r2
+    mad r2, r1, r1, r2
+    mad r1, r1, r4.x, r3
+    mad r1, r0, r4.z, r1
+    mad r0, r0, r0, r2
+    rsq r2.x, r0.x
+    rsq r2.y, r0.y
+    rsq r2.z, r0.z
+    rsq r2.w, r0.w
+    mov r3.z, c31.z
+    mad r0, r0, c23, r3.z
+    mul r1, r1, r2
+    max r1, r1, c31.w
+    rcp r2.x, r0.x
+    rcp r2.y, r0.y
+    rcp r2.z, r0.z
+    rcp r2.w, r0.w
+    mul r0, r1, r2
+    mul r1.xyz, r0.y, c1
+    mad r1.xyz, c0, r0.x, r1
+    mad r0.xyz, c2, r0.z, r1
+    mad r0.xyz, c3, r0.w, r0
+    mul r0.w, r4.y, r4.y
+    mad r0.w, r4.x, r4.x, -r0.w
+    mul r1, r4.yzzx, r4.xyzz
+    dp4 r2.x, c27, r1
+    dp4 r2.y, c28, r1
+    dp4 r2.z, c29, r1
+    mad r1.xyz, c30, r0.w, r2
+    mov r4.w, c31.z
+    dp4 r2.x, c24, r4
+    dp4 r2.y, c25, r4
+    dp4 r2.z, c26, r4
+    mov o1.xyz, r4
+    add r1.xyz, r1, r2
+    add o5.xyz, r0, r1
+    dp4 r0.y, c5, v0
+    mul r1.x, r0.y, c18.x
+    mul r1.w, r1.x, c32.x
+    dp4 r0.x, c4, v0
+    dp4 r0.w, c7, v0
+
+mov o0, r0 // Relocated from line 134 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Transparent_Cutout_Bumped Diffuse IBL Cross Cards/vp/356F4F19.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c32.x
+    mad o6.xy, r1.z, c19.zwzw, r1.xwzw
+    dp4 r0.z, c6, v0
+
+//     mov o0, r0 // Relocated to line 131 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o6.zw, r0
+    mul o3, c31.zzww, v1.xyxx
+    mov o7, c31.w

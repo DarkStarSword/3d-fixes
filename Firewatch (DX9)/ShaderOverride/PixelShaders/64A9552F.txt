@@ -1,0 +1,231 @@
+// CRC32: 64A9552F | Unity headers extracted from Marmoset Specular IBL.shader
+// Shader "Marmoset/Self-Illumin/Specular IBL" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//    _SpecInt ("Specular Intensity", Float) = 1
+//    _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//    _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//    _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//    _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//    _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//    _GlowStrength ("Glow Strength", Float) = 1
+//    _EmissionLM ("Diffuse Emission Strength", Float) = 0
+//    _Illum ("Glow(RGB) Diffuse Emission(A)", 2D) = "white" { }
+//   }
+//   Fallback "Marmoset/Specular IBL"
+//   SubShader 1/1 {
+//     LOD 250
+//     Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//     Pass 5/5 {
+//       Name "DEFERRED"
+//       Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry" "RenderType"="Opaque" }
+//       GpuProgramID 289051
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" "UNITY_HDR_ON" }
+//           Matrix 0 [_SkyMatrix] 3
+//           Matrix 3 [_SkyMatrix1] 3
+//           Float 30 [_BlendWeightIBL]
+//           Vector 9 [_Color]
+//           Float 18 [_EmissionLM]
+//           Vector 19 [_ExposureIBL]
+//           Vector 31 [_ExposureIBL1]
+//           Float 13 [_Fresnel]
+//           Vector 16 [_GlowColor]
+//           Float 17 [_GlowStrength]
+//           Vector 15 [_Illum_ST]
+//           Vector 10 [_MainTex_ST]
+//           Vector 21 [_SH0]
+//           Vector 32 [_SH01]
+//           Vector 22 [_SH1]
+//           Vector 33 [_SH11]
+//           Vector 23 [_SH2]
+//           Vector 34 [_SH21]
+//           Vector 24 [_SH3]
+//           Vector 35 [_SH31]
+//           Vector 25 [_SH4]
+//           Vector 36 [_SH41]
+//           Vector 26 [_SH5]
+//           Vector 37 [_SH51]
+//           Vector 27 [_SH6]
+//           Vector 38 [_SH61]
+//           Vector 28 [_SH7]
+//           Vector 39 [_SH71]
+//           Vector 29 [_SH8]
+//           Vector 40 [_SH81]
+//           Float 12 [_Shininess]
+//           Vector 8 [_SpecColor]
+//           Float 11 [_SpecInt]
+//           Vector 14 [_SpecTex_ST]
+//           Vector 20 [_UniformOcclusion]
+//           Vector 6 [_WorldSpaceCameraPos]
+//           Vector 7 [unity_ColorSpaceGrey]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_SpecTex] 2D 1
+//           SetTexture 2 [_Illum] 2D 2
+//           SetTexture 3 [_SpecCubeIBL] CUBE 3
+//           SetTexture 4 [_SpecCubeIBL1] CUBE 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c41, 0.949999988, 0.0500000007, -3.22581005, 1.61290002
+    def c42, 0.159154937, 0.318309873, 6, 0.000585937523
+    def c43, 0.753199995, 0.246800005, 3, -1
+    def c44, 1, -1, 0, 8
+    def c45, 0.5, 0, 1, 0
+    dcl_texcoord_pp v0.xyz
+    dcl_texcoord2 v1.xy
+    dcl_texcoord3 v2.xyz
+    dcl_texcoord4_pp v3.xyz
+    dcl_texcoord6 v4.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_cube s3
+    dcl_cube s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Marmoset_Self-Illumin_Specular IBL/fp/64A9552F.txt
+mov r30, c6
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0.xy, v1, c14, c14.zwzw
+    texld_pp r0, r0, s1
+    add_pp r0.w, -r0.w, c44.x
+    mul_pp r0.xyz, r0, c8
+    mad_pp r1.xy, r0.w, -r0.w, c44.xwzw
+    mad_pp r1.w, c12.x, -r1.x, r1.y
+    add_pp r0.w, -r1.w, c44.w
+    exp_pp r0.w, r0.w
+    mad r2.x, r0.w, c42.x, c42.y
+    mul_pp oC1.w, r0.w, c42.w
+    mov r3.xyz, c44
+    mad_pp r2.yz, c13.x, r3.xyxw, r3.xxzw
+    nrm_pp r3.xyz, v3
+    nrm r4.xyz, v0
+    dp3_sat r0.w, r4, r3
+    add_pp r3.x, -r0.w, c44.x
+    mul_pp r0.w, r3.x, r3.x
+    mul_pp r3.z, r3.x, r0.w
+    dp2add_pp r5.y, r3.xzzw, r2.yzzw, c44.z
+    mov_pp r3.y, c44.x
+    dp2add_pp r5.x, r3.yxzw, r2.yzzw, c44.z
+    dp2add_pp r0.w, r5, r2.yzzw, c44.z
+    mad_pp r0.w, r0.w, c41.x, c41.y
+    mul_pp r2.y, r0.w, c11.x
+    rsq_pp r2.y, r2.y
+    rcp_pp r2.y, r2.y
+    mad_pp r0.w, r0.w, c11.x, -r2.y
+    mov r2.zw, c41
+    mad_pp r2.z, c7.x, r2.z, r2.w
+    mad_pp r0.w, r2.z, r0.w, r2.y
+    mov r3.xyw, c31
+    add_pp r5.xyz, -r3.xyww, c19.xyww
+    mad_pp r3.xyz, c30.x, r5, r3.xyww
+    mul_pp r0.w, r0.w, r3.z
+    mul_pp r0.xyz, r0.w, r0
+    mul_pp oC1.xyz, r2.x, r0
+    add r2.xyw, r30.xyzz, -v2.xyzz
+    nrm r5.xyz, r2.xyww
+    dp3 r0.w, -r5, r4
+    add r0.w, r0.w, r0.w
+    mad r2.xyw, r4.xyzz, -r0.w, -r5.xyzz
+    mul r5.xyz, r2.w, c5
+    mad r5.xyz, c4, r2.y, r5
+    mad_pp r1.xyz, c3, r2.x, r5
+    texldl_pp r5, r1, s4
+    mul_pp r0.w, r5.w, c42.z
+    mul_pp r6.x, r0.w, r0.w
+    mul_pp r6.y, r0.w, r6.x
+    dp2add_pp r3.w, c43, r6, -r0.w
+    mad_pp r0.w, r2.z, r3.w, r0.w
+    mul_pp r5.xyz, r0.w, r5
+    mul r6.xyz, r2.w, c2
+    mad r6.xyz, c1, r2.y, r6
+    mad_pp r1.xyz, c0, r2.x, r6
+    texldl_pp r1, r1, s3
+    mul_pp r0.w, r1.w, c42.z
+    mul_pp r2.x, r0.w, r0.w
+    mul_pp r2.y, r0.w, r2.x
+    dp2add_pp r1.w, c43, r2, -r0.w
+    mad_pp r0.w, r2.z, r1.w, r0.w
+    mad_pp r1.xyz, r1, r0.w, -r5
+    mad_pp r1.xyz, c30.x, r1, r5
+    mul_pp r0.xyz, r0, r1
+    mad r1.xy, v1, c15, c15.zwzw
+    texld_pp r1, r1, s2
+    mul_pp r1.xyz, r1, c16
+    mul_pp r0.w, r1.w, c18.x
+    mul_pp r1.xyz, r1, c17.x
+    mad r2.xy, v1, c10, c10.zwzw
+    texld_pp r2, r2, s0
+    mul_pp r2.xyz, r2, c9
+    mul_pp r2.xyz, r3.z, r2
+    mul_pp r5.xyz, r0.w, r2
+    mad_pp r1.xyz, r1, r3.z, r5
+    mul_pp r3.xy, r3, c20
+    mad_pp r0.xyz, r0, r3.y, r1
+    mul r1.xyz, r4.z, c2
+    mad r1.xyz, c1, r4.y, r1
+    mad r1.xyz, c0, r4.x, r1
+    nrm r5.xyz, r1
+    mov r1.xyz, c22
+    mad r1.xyz, r1, r5.y, c21
+    mad r1.xyz, c23, r5.z, r1
+    mad r1.xyz, c24, r5.x, r1
+    mul r3.yzw, r5.xxzx, r5.xyyz
+    mad r1.xyz, c25, r3.y, r1
+    mad r1.xyz, c26, r3.z, r1
+    mad r1.xyz, c28, r3.w, r1
+    mul r3.yz, r5, r5
+    mad r0.w, r5.x, r5.x, -r3.y
+    mad r1.w, r3.z, c43.z, c43.w
+    mad r1.xyz, c27, r1.w, r1
+    mad r1.xyz, c29, r0.w, r1
+    mul r3.yzw, r4.z, c5.xxyz
+    mad r3.yzw, c4.xxyz, r4.y, r3
+    mad r3.yzw, c3.xxyz, r4.x, r3
+    nrm r4.xyz, r3.yzww
+    mov r5.xyz, c33
+    mad r3.yzw, r5.xxyz, r4.y, c32.xxyz
+    mad r3.yzw, c34.xxyz, r4.z, r3
+    mad r3.yzw, c35.xxyz, r4.x, r3
+    mul r5.xyz, r4.xzxw, r4.yyzw
+    mad r3.yzw, c36.xxyz, r5.x, r3
+    mad r3.yzw, c37.xxyz, r5.y, r3
+    mad r3.yzw, c39.xxyz, r5.z, r3
+    mul r4.yz, r4, r4
+    mad r0.w, r4.x, r4.x, -r4.y
+    mad r1.w, r4.z, c43.z, c43.w
+    mad r3.yzw, c38.xxyz, r1.w, r3
+    mad r3.yzw, c40.xxyz, r0.w, r3
+    lrp_pp r4.xyz, c30.x, r1_abs, r3_abs.yzww
+    mul_pp r1.xyz, r2, r4
+    mad_pp r0.xyz, r1, r3.x, r0
+    mad_pp oC3.xyz, v4, r2, r0
+    mov_pp oC0.xyz, r2
+    mov_pp oC0.w, c44.x
+    mad_pp oC2, v0.xyzx, c45.xxxy, c45.xxxz
+    mov_pp oC3.w, c44.x

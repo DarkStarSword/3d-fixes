@@ -1,0 +1,108 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe b87da83e23c21294-vs_replace.txt
+// 3DMigoto: b87da83e23c21294 | Matched 2 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Double Faces
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Double Faces.shader
+//    Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Double Faces" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      Fallback "Marmoset/Transparent/Cutout/Diffuse IBL"
+// 1:   SubShader 1/2 {
+// 2:   SubShader 2/2 {
+//        LOD 350
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 6/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+//          ZTest Less
+//          Cull Off
+//          Offset 1, 1
+// 1:       GpuProgramID 417882
+// 2:       GpuProgramID 876852
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "UnityShadows" 416
+//              Vector 80 [unity_LightShadowBias]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              BindCB "UnityShadows" 0
+//              BindCB "UnityPerDraw" 1
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:35:57 2016
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[4];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[6];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD1)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb1[1].xyzw * v0.yyyy;
+  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb1[3].xyzw + r0.xyzw;
+
+o0.xyw = r0.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe b87da83e23c21294-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r1.x = saturate(cb0[5].x / r0.w);
+  r0.z = r1.x + r0.z;
+
+  // o0.xyw = r0.xyw; // Relocated from here with hlsltool.py
+
+  r0.x = max(0, r0.z);
+  r0.x = r0.x + -r0.z;
+  o0.z = cb0[5].y * r0.x + r0.z;
+  o1.xy = v3.xy;
+  return;
+}

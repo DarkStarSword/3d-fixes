@@ -1,0 +1,104 @@
+// CRC32: C9378E9F | Matched 8 variants of 1 shaders: Hidden/FogVolume
+// 
+//     Unity headers extracted from FogVolume.shader
+//     Shader "Hidden/FogVolume" {
+//       SubShader 1/1 {
+//         Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//         Pass 1/1 {
+//           Tags { "QUEUE"="Overlay" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//           ZTest Always
+//           ZWrite Off
+//           Cull Front
+//           Fog { Mode Off }
+//           Blend SrcAlpha OneMinusSrcAlpha
+//           GpuProgramID 9065
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 80:           Keywords { "_FOG_GRADIENT" "_FOG_VOLUME_INSCATTERING" "_FOG_VOLUME_NOISE" }
+// 20:           Keywords { "_FOG_GRADIENT" "_FOG_VOLUME_INSCATTERING" }
+// 08:           Keywords { "_FOG_GRADIENT" "_FOG_VOLUME_NOISE" }
+// 02:           Keywords { "_FOG_GRADIENT" }
+// 40:           Keywords { "_FOG_VOLUME_INSCATTERING" "_FOG_VOLUME_NOISE" }
+// 10:           Keywords { "_FOG_VOLUME_INSCATTERING" }
+// 04:           Keywords { "_FOG_VOLUME_NOISE" }
+//               Bind "vertex" Vertex
+//               Matrix 7 [_Object2World] 3
+//               Matrix 10 [_World2Object] 3
+//               Matrix 4 [glstate_matrix_modelview0] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 14 [_ProjectionParams]
+//               Vector 15 [_ScreenParams]
+//               Vector 13 [_WorldSpaceCameraPos]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c16, 1, 0, 0.5, 0
+    dcl_position v0
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r3, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_FogVolume/vp/C9378E9F.txt
+mov r30, c13
+mov r29, c220.x
+mul r29.x, r3.x, -r3.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0, v0.xyzx, c16.xxxy, c16.yyyx
+    dp4 o1.x, c7, r0
+    dp4 o1.y, c8, r0
+    dp4 o1.z, c9, r0
+    dp4 r1.y, c1, v0
+    mul r2.x, r1.y, c14.x
+    mul r2.w, r2.x, c16.z
+    dp4 r1.x, c0, v0
+    dp4 r1.w, c3, v0
+
+mov o0, r1 // Relocated from line 70 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_FogVolume/vp/C9378E9F.txt
+texldl r31, c220.z, s3
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c16.z
+    mad o2.xy, r2.z, c15.zwzw, r2.xwzw
+    dp4 o4.x, c4, r0
+    dp4 o4.y, c5, r0
+    dp4 o4.z, c6, r0
+    mov r0.xy, c16
+    mad r0, r30.xyzx, r0.xxxy, r0.yyyx
+    dp4 o5.x, c10, r0
+    dp4 o5.y, c11, r0
+    dp4 o5.z, c12, r0
+    dp4 r1.z, c2, v0
+
+//     mov o0, r1 // Relocated to line 59 with shadertool.py
+mov o0.z, r1 // Inserted by shadertool.py
+
+    mov o2.zw, r1
+    mov o3.xyz, v0

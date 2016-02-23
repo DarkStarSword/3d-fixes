@@ -1,0 +1,73 @@
+// CRC32: C101D607 | Matched 4 variants of 1 shaders: Custom/FX/Distortion
+// 
+//    Unity headers extracted from Distortion.shader
+//    Shader "Custom/FX/Distortion" {
+//      Properties {
+//       _Alpha ("Alpha", Float) = 0
+//       _Mask ("Mask", 2D) = "white" { }
+//       _Normal ("Normal", 2D) = "white" { }
+//       _RefractionStrenght ("Refraction_Strenght", Float) = 0
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        GrabPass {
+//         }
+//        Pass 1/1 {
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 31862
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 4 [_ProjectionParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c5, 0, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_color v2
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_color o3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    dp4 o0.z, c2, v0
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.w, c3, v0
+    mov o0.xyw, r0
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_Distortion/vp/C101D607.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    rcp r0.z, r0.w
+    mul r0.xy, r0.z, r0
+    mov o1, v1
+    mul r0.z, r0.y, c4.x
+    mov r0.w, c5.x
+    mov o2, r0.xzww
+    mov o3, v2

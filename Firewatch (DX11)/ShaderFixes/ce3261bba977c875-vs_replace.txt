@@ -1,0 +1,211 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ce3261bba977c875-vs_replace.txt
+// 3DMigoto: ce3261bba977c875 | Unity headers extracted from Marmoset Bumped Diffuse IBL Trees.shader
+// Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//    _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//    _GIBoost ("Global Illumination Scale", Float) = 1
+//    _OcclusionLength ("Occlusion Length", Float) = 1
+//    _BrightnessOffset ("Brightness Scalar", Float) = 1
+//    _BrightnessAdd ("Brightness Offset", Float) = 0
+//   }
+//   SubShader 2/2 {
+//     LOD 350
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//     Pass 2/6 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 587326
+//       Program "vp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "DIRECTIONAL_COOKIE" "FOG_EXP2" "MARMO_SKY_BLEND_OFF" "SHADOWS_SCREEN" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           ConstBuffer "$Globals" 688
+//           Float 208 [_OcclusionLength]
+//           Float 212 [_BrightnessOffset]
+//           Float 216 [_BrightnessAdd]
+//           Float 220 [_SwayingRandomnessOffset]
+//           Vector 656 [_WindDirectionFrequencyIntensity]
+//           Vector 672 [_WindLeafParameters]
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 0 [_Time]
+//           Vector 80 [_ProjectionParams]
+//           ConstBuffer "UnityPerDraw" 352
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 64 [glstate_matrix_modelview0]
+//           Matrix 192 [_Object2World]
+//           Matrix 256 [_World2Object]
+//           Vector 336 [unity_WorldTransformParams]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityPerDraw" 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:31:49 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[22];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[43];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float2 o6 : TEXCOORD5,
+  out float p6 : TEXCOORD7,
+  out float4 o7 : TEXCOORD6)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyz = cb2[13].xyz * v0.yyy;
+  r0.xyz = cb2[12].xyz * v0.xxx + r0.xyz;
+  r0.xyz = cb2[14].xyz * v0.zzz + r0.xyz;
+  r0.xyz = cb2[15].xyz * v0.www + r0.xyz;
+  r0.w = dot(r0.xz, float2(1,1));
+  r0.x = dot(r0.xyz, float3(1,10,100));
+  r0.y = cb0[13].w * r0.w;
+  r0.y = cb1[0].y * cb0[41].z + r0.y;
+  r0.y = sin(r0.y);
+  r1.xz = cb0[41].xy * r0.yy;
+  r0.y = cb1[0].y * cb0[42].x;
+  r0.x = r0.x * cb0[42].y + r0.y;
+  r0.xy = sin(r0.xy);
+  r0.yzw = v2.xyz * r0.yyy;
+  r2.xyz = v2.xyz * r0.xxx;
+  r3.xy = cb0[42].zw * v7.zy;
+  r2.xyz = r3.xxx * r2.xyz;
+  r1.y = 0;
+  r0.x = cb0[41].w * v7.x;
+  r1.xyz = r1.xyz * r0.xxx + r2.xyz;
+  r0.xyz = r0.yzw * r3.yyy + r1.xyz;
+  r0.xyz = v0.xyz + r0.xyz;
+  r1.xyzw = cb2[1].xyzw * r0.yyyy;
+  r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = cb2[2].xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = cb2[3].xyzw * v0.wwww + r1.xyzw;
+  o0.xyzw = r1.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ce3261bba977c875-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
+
+  r2.y = cb2[16].x * v2.x;
+  r2.z = cb2[17].x * v2.x;
+  r2.x = cb2[18].x * v2.x;
+  r3.y = cb2[16].y * v2.y;
+  r3.z = cb2[17].y * v2.y;
+  r3.x = cb2[18].y * v2.y;
+  r2.xyz = r3.xyz + r2.xyz;
+  r3.y = cb2[16].z * v2.z;
+  r3.z = cb2[17].z * v2.z;
+  r3.x = cb2[18].z * v2.z;
+  r2.xyz = r3.xyz + r2.xyz;
+  r0.w = dot(r2.xyz, r2.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r2.xyz * r0.www;
+  o1.z = r2.y;
+  r3.xyz = cb2[13].yzx * v1.yyy;
+  r3.xyz = cb2[12].yzx * v1.xxx + r3.xyz;
+  r3.xyz = cb2[14].yzx * v1.zzz + r3.xyz;
+  r0.w = dot(r3.xyz, r3.xyz);
+  r0.w = rsqrt(r0.w);
+  r3.xyz = r3.xyz * r0.www;
+  r4.xyz = r3.xyz * r2.xyz;
+  r4.xyz = r2.zxy * r3.yzx + -r4.xyz;
+  r0.w = cb2[21].w * v1.w;
+  r4.xyz = r4.xyz * r0.www;
+  o1.y = r4.x;
+  o1.x = r3.z;
+  o2.z = r2.z;
+  o3.z = r2.x;
+  o2.x = r3.x;
+  o3.x = r3.y;
+  o2.y = r4.y;
+  o3.y = r4.z;
+  r2.xyz = cb2[13].xyz * r0.yyy;
+  r2.xyz = cb2[12].xyz * r0.xxx + r2.xyz;
+  r2.xyz = cb2[14].xyz * r0.zzz + r2.xyz;
+  o4.xyz = cb2[15].xyz * v0.www + r2.xyz;
+  o5.xy = v3.xy;
+  o5.zw = float2(0,0);
+  r0.y = cb2[5].z * r0.y;
+  r0.x = cb2[4].z * r0.x + r0.y;
+  r0.x = cb2[6].z * r0.z + r0.x;
+  r0.x = cb2[7].z * v0.w + r0.x;
+  r0.x = 0.0399999991 * abs(r0.x);
+  r0.x = min(0.649999976, r0.x);
+  r0.y = r0.x * r0.x;
+  o6.x = r0.x * r0.y;
+  r0.x = log2(v3.y);
+  r0.x = cb0[13].x * r0.x;
+  r0.x = exp2(r0.x);
+  o6.y = saturate(r0.x * cb0[13].y + cb0[13].z);
+  p6.x = r1.z;
+  o7.zw = r1.zw;
+  r0.x = cb1[5].x * r1.y;
+  r1.xz = float2(0.5,0.5) * r1.xw;
+  r1.w = 0.5 * r0.x;
+  o7.xy = r1.xw + r1.zz;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\ce3261bba977c875-vs_replace.txt(97,14-15): warning X3578: Output value 'o1' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\ce3261bba977c875-vs_replace.txt(98,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\ce3261bba977c875-vs_replace.txt(99,14-15): warning X3578: Output value 'o3' is not completely initialized
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\ce3261bba977c875-vs_replace.txt(100,14-15): warning X3578: Output value 'o4' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

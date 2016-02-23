@@ -1,0 +1,145 @@
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe 7db32922464c4204-ps_replace.txt
+// 3DMigoto: 7db32922464c4204 | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/2 {
+//     Pass 1/1 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 58189
+//       Program "fp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "SHADOWS_NATIVE" }
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 112 [_ZBufferParams]
+//           Vector 128 [unity_OrthoParams]
+//           ConstBuffer "UnityShadows" 416
+//           Matrix 128 [unity_World2Shadow0]
+//           Matrix 192 [unity_World2Shadow1]
+//           Matrix 256 [unity_World2Shadow2]
+//           Matrix 320 [unity_World2Shadow3]
+//           Vector 96 [_LightSplitsNear]
+//           Vector 112 [_LightSplitsFar]
+//           Vector 384 [_LightShadowData]
+//           ConstBuffer "UnityPerCamera2" 64
+//           Matrix 0 [_CameraToWorld]
+//           BindCB "UnityPerCamera" 0
+//           BindCB "UnityShadows" 1
+//           BindCB "UnityPerCamera2" 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:31:22 2016
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerComparisonState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[4];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[25];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[9];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : TEXCOORD0,
+  float4 v1 : TEXCOORD1,
+  float4 v2 : TEXCOORD2,
+  float4 v3 : SV_POSITION0,
+  out float4 o0 : SV_Target0,
+  float fov : TEXCOORD3)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = t0.Sample(s0_s, v0.xy).xyzw;
+  r0.y = cb0[7].x * r0.x + cb0[7].y;
+  r0.y = 1 / r0.y;
+  r0.z = r0.x + -r0.y;
+  r0.y = cb0[8].w * r0.z + r0.y;
+  r1.xy = v2.xy;
+  r0.z = v2.w + -v2.z;
+  r1.z = r0.x * r0.z + v2.z;
+  r0.xzw = -v1.xyz * r0.yyy + r1.xyz;
+  r1.xyz = v1.xyz * r0.yyy;
+  r0.xyz = cb0[8].www * r0.xzw + r1.xyz;
+  r1.xyzw = cmp(r0.zzzz >= cb1[6].xyzw);
+  r1.xyzw = r1.xyzw ? 1.000000 : 0;
+  r2.xyzw = cmp(r0.zzzz < cb1[7].xyzw);
+  r2.xyzw = r2.xyzw ? 1.000000 : 0;
+  r1.xyzw = r2.xyzw * r1.xyzw;
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe 7db32922464c4204-ps_replace.txt
+r0.x -= separation * (r0.z - convergence) * fov;
+
+  r2.xyzw = cb2[1].xyzw * r0.yyyy;
+  r2.xyzw = cb2[0].xyzw * r0.xxxx + r2.xyzw;
+  r2.xyzw = cb2[2].xyzw * r0.zzzz + r2.xyzw; // depth in r0.z
+  r0.x = saturate(r0.z * cb1[24].z + cb1[24].w);
+  r2.xyzw = cb2[3].xyzw + r2.xyzw;
+  r0.yzw = cb1[13].xyz * r2.yyy;
+  r0.yzw = cb1[12].xyz * r2.xxx + r0.yzw;
+  r0.yzw = cb1[14].xyz * r2.zzz + r0.yzw;
+  r0.yzw = cb1[15].xyz * r2.www + r0.yzw;
+  r0.yzw = r0.yzw * r1.yyy;
+  r3.xyz = cb1[9].xyz * r2.yyy;
+  r3.xyz = cb1[8].xyz * r2.xxx + r3.xyz;
+  r3.xyz = cb1[10].xyz * r2.zzz + r3.xyz;
+  r3.xyz = cb1[11].xyz * r2.www + r3.xyz;
+  r0.yzw = r3.xyz * r1.xxx + r0.yzw;
+  r3.xyz = cb1[17].xyz * r2.yyy;
+  r3.xyz = cb1[16].xyz * r2.xxx + r3.xyz;
+  r3.xyz = cb1[18].xyz * r2.zzz + r3.xyz;
+  r3.xyz = cb1[19].xyz * r2.www + r3.xyz;
+  r0.yzw = r3.xyz * r1.zzz + r0.yzw;
+  r1.xyz = cb1[21].xyz * r2.yyy;
+  r1.xyz = cb1[20].xyz * r2.xxx + r1.xyz;
+  r1.xyz = cb1[22].xyz * r2.zzz + r1.xyz;
+  r1.xyz = cb1[23].xyz * r2.www + r1.xyz;
+  r0.yzw = r1.xyz * r1.www + r0.yzw;
+  r0.y = t1.SampleCmpLevelZero(s1_s, r0.yz, r0.w).x;
+  r0.z = 1 + -cb1[24].x;
+  r0.y = r0.y * r0.z + cb1[24].x;
+  o0.xyzw = r0.yyyy + r0.xxxx;
+  return;
+}

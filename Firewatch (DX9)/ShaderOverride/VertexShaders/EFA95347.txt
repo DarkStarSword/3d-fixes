@@ -1,0 +1,125 @@
+// CRC32: EFA95347 | Matched 2 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Trees.shader
+//    Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _GIBoost ("Global Illumination Scale", Float) = 1
+//       _OcclusionLength ("Occlusion Length", Float) = 1
+//       _BrightnessOffset ("Brightness Scalar", Float) = 1
+//       _BrightnessAdd ("Brightness Offset", Float) = 0
+//      }
+// 1:   SubShader 1/2 {
+// 2:   SubShader 2/2 {
+//        LOD 350
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 6/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+//          ZTest Less
+//          Cull Off
+//          Offset 1, 1
+// 1:       GpuProgramID 421500
+// 2:       GpuProgramID 910344
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 9 [_SwayingRandomnessOffset]
+//              Vector 7 [_Time]
+//              Vector 10 [_WindDirectionFrequencyIntensity]
+//              Vector 11 [_WindLeafParameters]
+//              Vector 8 [unity_LightShadowBias]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c12, 1, 0, 10, 100
+    def c13, 0.159154937, 0.25, 6.28318548, -3.14159274
+    def c14, -2.52398507e-007, 2.47609005e-005, -0.00138883968, 0.0416666418
+    def c15, -0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_color v3
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad r0, v0.xyzx, c12.xxxy, c12.yyyx
+    dp4 r1.x, c4, r0
+    dp4 r1.y, c5, r0
+    dp4 r1.z, c6, r0
+    dp3 r0.x, r1.xzyw, c12.xxyw
+    dp3 r0.y, r1, c12.xzww
+    mul r0.x, r0.x, c9.x
+    mov r0.z, c10.z
+    mad r1.x, c7.y, r0.z, r0.x
+    mov r0.x, c11.x
+    mul r1.z, r0.x, c7.y
+    mad r1.y, r0.y, c11.y, r1.z
+    mad r0.xyz, r1, c13.x, c13.y
+    frc r0.xyz, r0
+    mad r0.xyz, r0, c13.z, c13.w
+    mul r0.xyz, r0, r0
+    mad r1.xyz, r0, c14.x, c14.y
+    mad r1.xyz, r0, r1, c14.z
+    mad r1.xyz, r0, r1, c14.w
+    mad r1.xyz, r0, r1, c15.x
+    mad r0.xyz, r0, r1, c12.x
+    mul r1.xz, r0.x, c10.xyyw
+    mul r0.xyw, r0.y, v1.xyzz
+    mul r2.xyz, r0.z, v1
+    mul r3.xy, v3.zyzw, c11.zwzw
+    mul r0.xyz, r0.xyww, r3.x
+    mov r1.y, c12.y
+    mul r0.w, v3.x, c10.w
+    mad r0.xyz, r1, r0.w, r0
+    mad r0.xyz, r2, r3.y, r0
+    add r0.xyz, r0, v0
+    mov r0.w, c12.x
+    dp4 r1.x, c2, r0
+    dp4 r2.w, c3, r0
+    rcp r1.y, r2.w
+    mul r1.y, r1.y, c8.x
+    max r1.y, r1.y, c12.y
+    min r1.y, r1.y, c12.x
+    add r1.x, r1.y, r1.x
+    max r1.y, r1.x, c12.y
+    lrp r2.z, c8.y, r1.y, r1.x
+    dp4 r2.x, c0, r0
+    dp4 r2.y, c1, r0
+
+mov o2, r2 // Relocated from line 109 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Transparent_Cutout_Bumped Diffuse IBL Trees/vp/EFA95347.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    mov o0, r2
+
+//     mov o2, r2 // Relocated to line 108 with shadertool.py
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.xy, v2

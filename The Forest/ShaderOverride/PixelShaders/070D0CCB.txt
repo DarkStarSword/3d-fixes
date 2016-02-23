@@ -1,0 +1,164 @@
+// CRC32: 070D0CCB | Unity headers extracted from Internal-PrePassCollectShadows.shader
+// Shader "Hidden/Internal-PrePassCollectShadows" {
+//   Properties {
+//    _ShadowMapTexture ("", any) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 2/2 {
+//     Tags { "ShadowmapFilter"="PCF_5x5" }
+//     Pass 1/1 {
+//       Tags { "ShadowmapFilter"="PCF_5x5" }
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       GpuProgramID 83303
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_NATIVE" "SHADOWS_SINGLE_CASCADE" }
+//           Matrix 0 [_CameraToWorld]
+//           Matrix 4 [unity_World2Shadow0] 3
+//           Vector 12 [_FarCascadeBlendValues]
+//           Vector 9 [_LightShadowData]
+//           Vector 11 [_ShadowMapTexture_TexelSize]
+//           Vector 7 [_ZBufferParams]
+//           Vector 8 [unity_OrthoParams]
+//           Vector 10 [unity_ShadowFadeCenterAndType]
+//           SetTexture 0 [_CameraDepthTexture] 2D 0
+//           SetTexture 1 [_ShadowMapTexture] 2D 1
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c13, 1, 0.5, -0.5, 3
+    def c14, 3, 4, 2, -2
+    def c15, 1, 0, 0.142857149, -1
+    def c16, 4, 7, 1, 49
+    def c17, 0.0069444445, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+    mov r0, c11
+    mad r1.xyz, r0.yxyw, c15.xyxw, c15.yzyw
+    texld r2, v0, s0
+    mad r0.y, c7.x, r2.x, c7.y
+    rcp r0.y, r0.y
+    lrp r1.w, c8.w, r2.x, r0.y
+    mov r3.xyz, v2
+    add r2.yzw, -r3.xxyz, v3.xxyz
+    mad r2.xyz, r2.x, r2.yzww, v2
+    mad r2.xyz, v1, -r1.w, r2
+    mul r3.xyz, r1.w, v1
+    mad r2.xyz, c8.w, r2, r3
+    mov r2.w, c13.x
+    dp4 r3.w, c3, r2
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2 // depth in r2.z
+
+// Unity light/shadow fix (pixel shader stage, world-space variant) inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-lighting-ps-world --only-autofixed ./Hidden_Internal-PrePassCollectShadows/fp/070D0CCB.txt
+mov r29, c220.x
+add r29.x, r2.z, -r31.y
+mul r29.x, r29.x, r31.x
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r3.xyz, r3, -r29
+
+    mad_sat r0.y, r2.z, c9.z, c9.w
+    dp4 r2.x, c4, r3
+    dp4 r2.y, c5, r3
+    dp4 r4.z, c6, r3
+    add r3.xyz, r3, -c10
+    dp3 r1.w, r3, r3
+    rsq r1.w, r1.w
+    rcp r1.w, r1.w
+    add r1.w, -r1.w, c12.x
+    mad r0.zw, r2.xyxy, r0, c13.y
+    frc r2.xy, r0.zwzw
+    add r0.zw, r0, -r2.xyxy
+    add r0.zw, r0, c13.z
+    mad r2.zw, r2.xyxy, c13.w, c13.x
+    rcp r3.x, r2.w
+    mad r3.z, r2.y, r3.x, c14.z
+    add r5.xy, r2, c13.w
+    mul r5.yz, r5.xxyw, c11.xxyw
+    mov r3.y, r5.z
+    mad r6.xy, r2, -c14.z, c14.x
+    mad r6.zw, r2.xyxy, -c14.x, c14.y
+    rcp r2.y, r6.w
+    mad r3.x, r6.y, r2.y, c14.w
+    mul r3.xyz, r1, r3
+    mov r7.w, r3.x
+    rcp r1.x, r2.z
+    mad r5.w, r2.x, r1.x, c14.z
+    mul r1.x, r2.x, c13.w
+    mov r8.xyw, c15
+    mad r1.xyz, r1.x, r8.wyxw, c16
+    rcp r2.x, r6.z
+    mul_pp r6.yzw, r6.w, r1.xxyz
+    mad r5.x, r6.x, r2.x, c14.w
+    mad r2.xyz, r0.x, c15.xyxw, c15.yzyw
+    mul r7.xyz, r2.yxzw, r5.yxww
+    mad r5.xy, r0.zwzw, c11, r7.xwzw
+    mov r4.w, c13.x
+    mov r5.zw, r4
+    texldp r8, r5, s1
+    mul r0.x, r6.z, r8.x
+    mad r4.xy, r0.zwzw, c11, r7.ywzw
+    mad r5.xy, r0.zwzw, c11, r7.zwzw
+    texldp r8, r5, s1
+    texldp r4, r4, s1
+    mad_pp r0.x, r6.y, r4.x, r0.x
+    mad_pp r0.x, r6.w, r8.x, r0.x
+    mov r3.w, r7.y
+    mad r5.xy, r0.zwzw, c11, r3.wyzw
+    mad r4.xy, r0.zwzw, c11, r3.wzzw
+    mov r7.yw, r3.xyzz
+    texldp r3, r5, s1
+    mul_pp r2.xy, r1.xzzw, c16.y
+    mul_pp r1.xyz, r2.w, r1
+    mad_pp r0.x, r2.x, r3.x, r0.x
+    mad r5.xy, r0.zwzw, c11, r7
+    texldp r3, r5, s1
+    mad_pp r0.x, r3.x, c16.w, r0.x
+    mad r5.xy, r0.zwzw, c11, r7.zyzw
+    texldp r3, r5, s1
+    mov r4.zw, r5
+    mad_pp r0.x, r2.y, r3.x, r0.x
+    texldp r2, r4, s1
+    mad_pp r0.x, r1.x, r2.x, r0.x
+    mad r4.xy, r0.zwzw, c11, r7.xwzw
+    mad r2.xy, r0.zwzw, c11, r7.zwzw
+    texldp r3, r4, s1
+    mov r2.zw, r4
+    texldp r2, r2, s1
+    mad_pp r0.x, r1.y, r3.x, r0.x
+    mad_pp r0.x, r1.z, r2.x, r0.x
+    mul_pp r0.x, r0.x, c17.x
+    mov r1.x, c13.x
+    lrp_pp r2.x, r0.x, r1.x, c9.x
+    add_pp r0.x, r0.y, r2.x
+    add_pp r0.x, r0.x, -c13.x
+    rcp r0.y, c12.y
+    mul_sat_pp r0.y, r0.y, r1.w
+    mad_pp oC0, r0.y, r0.x, c13.x

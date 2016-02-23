@@ -39,8 +39,9 @@ Installation
 ------------
 1. Extract the contents of the zip file to the game directory.
 
-2. If you are running a 32bit OS, replace the d3d9.dll with the one from the
-   32bit directory.
+2. If you are running the 32bit version of the game (the GOG version recently
+   switched to 32bit, and Steam will install the 32bit version if your OS is
+   32bit), replace the d3d9.dll with the one from the 32bit directory.
 
 Fixed
 -----

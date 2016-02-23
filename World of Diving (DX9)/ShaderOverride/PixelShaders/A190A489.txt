@@ -1,0 +1,1174 @@
+// CRC32: A190A489 | Matched 2 variants of 2 shaders: Relief Pack/ReliefTerrain-FarOnly, Relief Pack/ReliefTerrain-FirstPass
+// 
+//    Unity headers extracted from ReliefTerrain-FarOnly.shader
+//    Shader "Relief Pack/ReliefTerrain-FarOnly" {
+//      Properties {
+//       _Control ("Control (RGBA)", 2D) = "red" { }
+//       _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//       _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//       _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//       _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//       _MainTex ("BaseMap (RGB)", 2D) = "white" { }
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//      [HideInInspector]  _Control1 ("Control1 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Control2 ("Control2 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Control3 ("Control3 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _SplatAtlasA ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatAtlasB ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatAtlasC ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatA0 ("Detailmap 0 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA1 ("Detailmap 1 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA2 ("Detailmap 2 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA3 ("Detailmap 3 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB0 ("Detailmap 4 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB1 ("Detailmap 5 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB2 ("Detailmap 6 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB3 ("Detailmap 7 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC0 ("Detailmap 8 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC1 ("Detailmap 9 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC2 ("Detailmap 10 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC3 ("Detailmap 11 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _BumpMap01 ("Bumpmap combined 0+1 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap23 ("Bumpmap combined 2+3 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap45 ("Bumpmap combined 4+5 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap67 ("Bumpmap combined 6+7 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap89 ("Bumpmap combined 8+9 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMapAB ("Bumpmap combined 10+11 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _TERRAIN_HeightMap ("Heightmap combined (RGBA - layers 0-3)", 2D) = "white" { }
+//      [HideInInspector]  _TERRAIN_HeightMap2 ("Heightmap combined (RGBA - layers 4-7)", 2D) = "white" { }
+//      [HideInInspector]  _TERRAIN_HeightMap3 ("Heightmap combined (RGBA - layers 8-11)", 2D) = "white" { }
+//      [HideInInspector]  _ColorMapGlobal ("Global colormap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _NormalMapGlobal ("Global normalmap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _TreesMapGlobal ("Global pixel treesmap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _AmbientEmissiveMapGlobal ("Global  ambient emissive map (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _BumpMapGlobal ("Perlin normal combined w. water & reflection map (RG+B+A)", 2D) = "black" { }
+//      [HideInInspector]  _VerticalTexture ("Vertical texture", 2D) = "grey" { }
+//      [HideInInspector]  TERRAIN_RippleMap ("Water ripplemap", 2D) = "black" { }
+//      [HideInInspector]  _SSColorCombinedA ("Color combined fo supersimple mode", 2D) = "black" { }
+//      [HideInInspector]  _CubemapDiff ("IBL Diff cube", CUBE) = "black" { }
+//      [HideInInspector]  _CubemapSpec ("IBL Spec cube", CUBE) = "black" { }
+//      [HideInInspector]  _DiffCubeIBL ("IBL Diff cube", CUBE) = "black" { }
+//      [HideInInspector]  _SpecCubeIBL ("IBL Spec cube", CUBE) = "black" { }
+//      [HideInInspector]  terrainTileSize ("terrainTileSize", Vector) = (600,200,600,1)
+//      [HideInInspector]  _Phong ("_Phong", Float) = 0.5
+//      [HideInInspector]  _BumpMapGlobalScale ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBlendValues ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorMapSaturation ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapSaturationFar ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBrightness ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBrightnessFar ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapNearMIP ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapDistortByPerlin ("", Float) = 1
+//      [HideInInspector]  EmissionRefractFiltering ("", Float) = 1
+//      [HideInInspector]  EmissionRefractAnimSpeed ("", Float) = 1
+//      [HideInInspector]  RTP_DeferredAddPassSpec ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ReliefTransform ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _TERRAIN_ReliefTransformTriplanarZ ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_DIST_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_WAVELENGTH ("", Float) = 1
+//      [HideInInspector]  _blend_multiplier ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ExtrudeHeight ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_LightmapShading ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SHADOW_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_WAVELENGTH_SHADOWS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SHADOW_SMOOTH_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SelfShadowStrength ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ShadowSmoothing ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_color ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_bump ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_height ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_superdetail ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_flow ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_ripple ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_globalnorm ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_caustics ("", Float) = 1
+//      [HideInInspector]  TERRAIN_CausticsAnimSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_CausticsColor ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_CausticsTilingScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflColorA ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflColorB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflectionRotSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflGlossAttenuation ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflColorC ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflColorCenter ("", Float) = 1
+//      [HideInInspector]  TERRAIN_RippleScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowCycleScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowMipOffset ("", Float) = 1
+//      [HideInInspector]  TERRAIN_DropletsSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetDarkening ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetDropletsStrength ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetHeight_Treshold ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetHeight_Transition ("", Float) = 1
+//      [HideInInspector]  TERRAIN_mipoffset_flowSpeed ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_start ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_transition ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_start_bumpglobal ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_transition_bumpglobal ("", Float) = 1
+//      [HideInInspector]  rtp_perlin_start_val ("", Float) = 1
+//      [HideInInspector]  _FarNormalDamp ("", Float) = 1
+//      [HideInInspector]  _RTP_MIP_BIAS ("", Float) = 1
+//      [HideInInspector]  _SuperDetailTiling ("", Float) = 1
+//      [HideInInspector]  _VerticalTextureTiling ("", Float) = 1
+//      [HideInInspector]  _VerticalTextureGlobalBumpInfluence ("", Float) = 1
+//      [HideInInspector]  RTP_AOamp ("", Float) = 1
+//      [HideInInspector]  RTP_AOsharpness ("", Float) = 1
+//      [HideInInspector]  _MixScale0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixScale4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixScale89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _TessSubdivisions ("", Float) = 1
+//      [HideInInspector]  _TessSubdivisionsFar ("", Float) = 1
+//      [HideInInspector]  _TessYOffset ("", Float) = 0
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/2 {
+//        LOD 700
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="12" }
+//        Pass 4/7 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="12" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          GpuProgramID 212219
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "RTP_PM_SHADING" }
+//              Float 11 [RTP_DeferredAddPassSpec]
+//              Vector 51 [RTP_DiffFresnel0123]
+//              Vector 52 [RTP_DiffFresnel4567]
+//              Vector 45 [RTP_gloss2mask0123]
+//              Vector 46 [RTP_gloss2mask4567]
+//              Vector 47 [RTP_gloss_mult0123]
+//              Vector 48 [RTP_gloss_mult4567]
+//              Vector 49 [RTP_gloss_shaping0123]
+//              Vector 50 [RTP_gloss_shaping4567]
+//              Float 32 [TERRAIN_CausticsAnimSpeed]
+//              Vector 33 [TERRAIN_CausticsColor]
+//              Float 38 [TERRAIN_CausticsTilingScale]
+//              Float 36 [TERRAIN_CausticsWaterDeepFadeLength]
+//              Float 34 [TERRAIN_CausticsWaterLevel]
+//              Float 35 [TERRAIN_CausticsWaterLevelByAngle]
+//              Float 37 [TERRAIN_CausticsWaterShallowFadeLength]
+//              Float 3 [_BumpMapGlobalScale]
+//              Vector 24 [_FarSpecCorrection0123]
+//              Vector 25 [_FarSpecCorrection4567]
+//              Vector 4 [_GlobalColorMapBlendValues]
+//              Float 7 [_GlobalColorMapBrightness]
+//              Float 8 [_GlobalColorMapBrightnessFar]
+//              Float 10 [_GlobalColorMapDistortByPerlin]
+//              Float 9 [_GlobalColorMapNearMIP]
+//              Float 5 [_GlobalColorMapSaturation]
+//              Float 6 [_GlobalColorMapSaturationFar]
+//              Vector 12 [_GlobalColorPerLayer0123]
+//              Vector 13 [_GlobalColorPerLayer4567]
+//              Vector 17 [_LayerAlbedo2SpecColor0123]
+//              Vector 21 [_LayerAlbedo2SpecColor4567]
+//              Vector 14 [_LayerBrightness0123]
+//              Vector 16 [_LayerBrightness2Spec0123]
+//              Vector 20 [_LayerBrightness2Spec4567]
+//              Vector 18 [_LayerBrightness4567]
+//              Vector 15 [_LayerSaturation0123]
+//              Vector 19 [_LayerSaturation4567]
+//              Float 43 [_RTP_MIP_BIAS]
+//              Vector 22 [_Spec0123]
+//              Vector 23 [_Spec4567]
+//              Vector 2 [_SpecColor]
+//              Vector 26 [_SplatAtlasA_TexelSize]
+//              Float 28 [_TERRAIN_ExtrudeHeight]
+//              Vector 27 [_TERRAIN_ReliefTransform]
+//              Float 39 [_TERRAIN_distance_start]
+//              Float 41 [_TERRAIN_distance_start_bumpglobal]
+//              Float 40 [_TERRAIN_distance_transition]
+//              Float 42 [_TERRAIN_distance_transition_bumpglobal]
+//              Vector 0 [_Time]
+//              Vector 1 [_WorldSpaceCameraPos]
+//              Vector 44 [rtp_customAmbientCorrection]
+//              Float 31 [rtp_mipoffset_caustics]
+//              Float 29 [rtp_mipoffset_color]
+//              Float 30 [rtp_mipoffset_globalnorm]
+//              SetTexture 0 [_Control1] 2D 0
+//              SetTexture 1 [_Control2] 2D 1
+//              SetTexture 2 [_SplatAtlasA] 2D 2
+//              SetTexture 3 [_SplatAtlasB] 2D 3
+//              SetTexture 4 [_ColorMapGlobal] 2D 4
+//              SetTexture 5 [_BumpMapGlobal] 2D 5
+//              SetTexture 6 [_TERRAIN_HeightMap] 2D 6
+//              SetTexture 7 [_TERRAIN_HeightMap2] 2D 7
+//              SetTexture 8 [TERRAIN_CausticsTex] 2D 8
+//              SetTexture 9 [_LightBuffer] 2D 9
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from ReliefTerrain-FirstPass.shader
+//    Shader "Relief Pack/ReliefTerrain-FirstPass" {
+//      Properties {
+//       _Control ("Control (RGBA)", 2D) = "red" { }
+//       _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//       _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//       _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//       _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//       _MainTex ("BaseMap (RGB)", 2D) = "white" { }
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//      [HideInInspector]  _Control1 ("Control1 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Control2 ("Control2 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Control3 ("Control3 (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _SplatAtlasA ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatAtlasB ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatAtlasC ("atlas", 2D) = "black" { }
+//      [HideInInspector]  _SplatA0 ("Detailmap 0 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA1 ("Detailmap 1 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA2 ("Detailmap 2 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatA3 ("Detailmap 3 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB0 ("Detailmap 4 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB1 ("Detailmap 5 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB2 ("Detailmap 6 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatB3 ("Detailmap 7 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC0 ("Detailmap 8 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC1 ("Detailmap 9 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC2 ("Detailmap 10 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _SplatC3 ("Detailmap 11 (RGB+A spec)", 2D) = "black" { }
+//      [HideInInspector]  _BumpMap01 ("Bumpmap combined 0+1 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap23 ("Bumpmap combined 2+3 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap45 ("Bumpmap combined 4+5 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap67 ("Bumpmap combined 6+7 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMap89 ("Bumpmap combined 8+9 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _BumpMapAB ("Bumpmap combined 10+11 (RG+BA)", 2D) = "grey" { }
+//      [HideInInspector]  _TERRAIN_HeightMap ("Heightmap combined (RGBA - layers 0-3)", 2D) = "white" { }
+//      [HideInInspector]  _TERRAIN_HeightMap2 ("Heightmap combined (RGBA - layers 4-7)", 2D) = "white" { }
+//      [HideInInspector]  _TERRAIN_HeightMap3 ("Heightmap combined (RGBA - layers 8-11)", 2D) = "white" { }
+//      [HideInInspector]  _ColorMapGlobal ("Global colormap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _NormalMapGlobal ("Global normalmap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _TreesMapGlobal ("Global pixel treesmap (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _AmbientEmissiveMapGlobal ("Global  ambient emissive map (RGBA)", 2D) = "white" { }
+//      [HideInInspector]  _BumpMapGlobal ("Perlin normal combined w. water & reflection map (RG+B+A)", 2D) = "black" { }
+//      [HideInInspector]  _VerticalTexture ("Vertical texture", 2D) = "grey" { }
+//      [HideInInspector]  TERRAIN_RippleMap ("Water ripplemap", 2D) = "black" { }
+//      [HideInInspector]  _SSColorCombinedA ("Color combined fo supersimple mode", 2D) = "black" { }
+//      [HideInInspector]  _CubemapDiff ("IBL Diff cube", CUBE) = "black" { }
+//      [HideInInspector]  _CubemapSpec ("IBL Spec cube", CUBE) = "black" { }
+//      [HideInInspector]  _DiffCubeIBL ("IBL Diff cube", CUBE) = "black" { }
+//      [HideInInspector]  _SpecCubeIBL ("IBL Spec cube", CUBE) = "black" { }
+//      [HideInInspector]  terrainTileSize ("terrainTileSize", Vector) = (600,200,600,1)
+//      [HideInInspector]  _Phong ("_Phong", Float) = 0.5
+//      [HideInInspector]  _BumpMapGlobalScale ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBlendValues ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorMapSaturation ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapSaturationFar ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBrightness ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapBrightnessFar ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapNearMIP ("", Float) = 1
+//      [HideInInspector]  _GlobalColorMapDistortByPerlin ("", Float) = 1
+//      [HideInInspector]  EmissionRefractFiltering ("", Float) = 1
+//      [HideInInspector]  EmissionRefractAnimSpeed ("", Float) = 1
+//      [HideInInspector]  RTP_DeferredAddPassSpec ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ReliefTransform ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _TERRAIN_ReliefTransformTriplanarZ ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_DIST_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_WAVELENGTH ("", Float) = 1
+//      [HideInInspector]  _blend_multiplier ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ExtrudeHeight ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_LightmapShading ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SHADOW_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_WAVELENGTH_SHADOWS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SHADOW_SMOOTH_STEPS ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_SelfShadowStrength ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_ShadowSmoothing ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_color ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_bump ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_height ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_superdetail ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_flow ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_ripple ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_globalnorm ("", Float) = 1
+//      [HideInInspector]  rtp_mipoffset_caustics ("", Float) = 1
+//      [HideInInspector]  TERRAIN_CausticsAnimSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_CausticsColor ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_CausticsTilingScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflColorA ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflColorB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflectionRotSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflGlossAttenuation ("", Float) = 1
+//      [HideInInspector]  TERRAIN_ReflColorC ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_ReflColorCenter ("", Float) = 1
+//      [HideInInspector]  TERRAIN_RippleScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowCycleScale ("", Float) = 1
+//      [HideInInspector]  TERRAIN_FlowMipOffset ("", Float) = 1
+//      [HideInInspector]  TERRAIN_DropletsSpeed ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetDarkening ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetDropletsStrength ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetHeight_Treshold ("", Float) = 1
+//      [HideInInspector]  TERRAIN_WetHeight_Transition ("", Float) = 1
+//      [HideInInspector]  TERRAIN_mipoffset_flowSpeed ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_start ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_transition ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_start_bumpglobal ("", Float) = 1
+//      [HideInInspector]  _TERRAIN_distance_transition_bumpglobal ("", Float) = 1
+//      [HideInInspector]  rtp_perlin_start_val ("", Float) = 1
+//      [HideInInspector]  _FarNormalDamp ("", Float) = 1
+//      [HideInInspector]  _RTP_MIP_BIAS ("", Float) = 1
+//      [HideInInspector]  _SuperDetailTiling ("", Float) = 1
+//      [HideInInspector]  _VerticalTextureTiling ("", Float) = 1
+//      [HideInInspector]  _VerticalTextureGlobalBumpInfluence ("", Float) = 1
+//      [HideInInspector]  RTP_AOamp ("", Float) = 1
+//      [HideInInspector]  RTP_AOsharpness ("", Float) = 1
+//      [HideInInspector]  _MixScale0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_0123 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixScale4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_4567 ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixScale89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorPerLayer89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerSaturation89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerBrightness2Spec89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerAlbedo2SpecColor89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixSaturation89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixBrightness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MixReplace89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmission89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionRefractHBedge89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorR89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorG89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _LayerEmissionColorA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorBottom89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorTop89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapLoSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorColormapHiSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerLoSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLayerHiSat89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorLoBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _GlobalColorHiBlend89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _Spec89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _FarSpecCorrection89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _MIPmult89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_LayerWetStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterLevelSlopeDamp89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEdge89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterOpacity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Refraction89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetRefraction89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_Flow89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetSpecularity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetFlow89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WetGloss89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterSpecularity89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGloss89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterGlossDamper89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterEmission89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorR89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorG89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterColorA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _BumpMapGlobalStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  PER_LAYER_HEIGHT_MODIFIER89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultA89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultB89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthNormal89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskNear89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultASelfMaskFar89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskNear89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _SuperDetailStrengthMultBSelfMaskFar89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _VerticalTexture89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss2mask89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_mult89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_gloss_shaping89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_Fresnel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_FresnelAtten89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_DiffFresnel89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_bump_smoothness89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_DiffuseStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_IBL_SpecStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWetStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  TERRAIN_WaterIBL_SpecWaterStrength89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  RTP_AO_89AB ("", Vector) = (1,1,1,1)
+//      [HideInInspector]  _TessSubdivisions ("", Float) = 1
+//      [HideInInspector]  _TessSubdivisionsFar ("", Float) = 1
+//      [HideInInspector]  _TessYOffset ("", Float) = 0
+//      }
+//      Dependency "AddPassShader" = "Relief Pack/ReliefTerrain-AddPass"
+//      Dependency "BaseMapShader" = "Relief Pack/ReliefTerrain-FarOnly"
+//      Fallback "Diffuse"
+//      SubShader 1/2 {
+//        LOD 700
+//        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="8" }
+//        Pass 4/7 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="8" }
+//          ZWrite Off
+//          Fog { Mode Off }
+//          GpuProgramID 247660
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+//              Keywords { "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" "RTP_PM_SHADING" }
+//              Float 11 [RTP_DeferredAddPassSpec]
+//              Vector 51 [RTP_DiffFresnel0123]
+//              Vector 52 [RTP_DiffFresnel4567]
+//              Vector 45 [RTP_gloss2mask0123]
+//              Vector 46 [RTP_gloss2mask4567]
+//              Vector 47 [RTP_gloss_mult0123]
+//              Vector 48 [RTP_gloss_mult4567]
+//              Vector 49 [RTP_gloss_shaping0123]
+//              Vector 50 [RTP_gloss_shaping4567]
+//              Float 32 [TERRAIN_CausticsAnimSpeed]
+//              Vector 33 [TERRAIN_CausticsColor]
+//              Float 38 [TERRAIN_CausticsTilingScale]
+//              Float 36 [TERRAIN_CausticsWaterDeepFadeLength]
+//              Float 34 [TERRAIN_CausticsWaterLevel]
+//              Float 35 [TERRAIN_CausticsWaterLevelByAngle]
+//              Float 37 [TERRAIN_CausticsWaterShallowFadeLength]
+//              Float 3 [_BumpMapGlobalScale]
+//              Vector 24 [_FarSpecCorrection0123]
+//              Vector 25 [_FarSpecCorrection4567]
+//              Vector 4 [_GlobalColorMapBlendValues]
+//              Float 7 [_GlobalColorMapBrightness]
+//              Float 8 [_GlobalColorMapBrightnessFar]
+//              Float 10 [_GlobalColorMapDistortByPerlin]
+//              Float 9 [_GlobalColorMapNearMIP]
+//              Float 5 [_GlobalColorMapSaturation]
+//              Float 6 [_GlobalColorMapSaturationFar]
+//              Vector 12 [_GlobalColorPerLayer0123]
+//              Vector 13 [_GlobalColorPerLayer4567]
+//              Vector 17 [_LayerAlbedo2SpecColor0123]
+//              Vector 21 [_LayerAlbedo2SpecColor4567]
+//              Vector 14 [_LayerBrightness0123]
+//              Vector 16 [_LayerBrightness2Spec0123]
+//              Vector 20 [_LayerBrightness2Spec4567]
+//              Vector 18 [_LayerBrightness4567]
+//              Vector 15 [_LayerSaturation0123]
+//              Vector 19 [_LayerSaturation4567]
+//              Float 43 [_RTP_MIP_BIAS]
+//              Vector 22 [_Spec0123]
+//              Vector 23 [_Spec4567]
+//              Vector 2 [_SpecColor]
+//              Vector 26 [_SplatAtlasA_TexelSize]
+//              Float 28 [_TERRAIN_ExtrudeHeight]
+//              Vector 27 [_TERRAIN_ReliefTransform]
+//              Float 39 [_TERRAIN_distance_start]
+//              Float 41 [_TERRAIN_distance_start_bumpglobal]
+//              Float 40 [_TERRAIN_distance_transition]
+//              Float 42 [_TERRAIN_distance_transition_bumpglobal]
+//              Vector 0 [_Time]
+//              Vector 1 [_WorldSpaceCameraPos]
+//              Vector 44 [rtp_customAmbientCorrection]
+//              Float 31 [rtp_mipoffset_caustics]
+//              Float 29 [rtp_mipoffset_color]
+//              Float 30 [rtp_mipoffset_globalnorm]
+//              SetTexture 0 [_Control1] 2D 0
+//              SetTexture 1 [_Control2] 2D 1
+//              SetTexture 2 [_SplatAtlasA] 2D 2
+//              SetTexture 3 [_SplatAtlasB] 2D 3
+//              SetTexture 4 [_ColorMapGlobal] 2D 4
+//              SetTexture 5 [_BumpMapGlobal] 2D 5
+//              SetTexture 6 [_TERRAIN_HeightMap] 2D 6
+//              SetTexture 7 [_TERRAIN_HeightMap2] 2D 7
+//              SetTexture 8 [TERRAIN_CausticsTex] 2D 8
+//              SetTexture 9 [_LightBuffer] 2D 9
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c53, 1024, 1, 0, 0.5
+    def c54, 0.400000006, 0.600000024, 0.00100000005, -0.666666687
+    def c55, 8, 1, 0, 3
+    def c56, 9.99999975e-005, 10000, 0.349999994, -8.65620041
+    def c57, 16, -32, 0.5, 6
+    def c58, 0.419999987, 0.333330005, 4, 0.00999999978
+    def c59, -1, -0.873000026, 1.10000002, -0.829999983
+    def c60, 0.5, -1, -1.54999995, 0.99000001
+    def c61, 10, 1, -1.75, 0.00208333344
+    def c62, 2, 1, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_color_pp v4.xyz
+    dcl_texcoord4 v5
+    dcl_texcoord6 v6.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_2d s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Relief Pack_ReliefTerrain-FarOnly/fp/A190A489.txt
+mov r30, c1
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    rcp r0.xz, c27.x
+    rcp r0.yw, c27.y
+    mov r1.x, v1.w
+    mov r1.z, v3.w
+    mad r0, r1.xzxz, r0, c27.zwzw
+    dsx r2.xy, r0.zwzw
+    dsy r2.zw, r0
+    mul r3.xy, r0.zwzw, c53.x
+    mov r4.yw, c53
+    add r1.w, r4.y, c43.x
+    mul r3.xy, r1.w, r3
+    dsx r3.zw, r3.xyxy
+    dsy r3.xy, r3
+    texld_pp r5, v0, s0
+    dp4 r1.w, r5, c53.y
+    texld_pp r6, v0, s1
+    dp4 r4.x, r6, c53.y
+    add r1.w, r1.w, r4.x
+    dp2add r3.z, r3.zwzw, r3.zwzw, c53.z
+    dp2add r3.x, r3, r3, c53.z
+    max r4.x, r3.z, r3.x
+    log r3.x, r4.x
+    mul r7.xy, r0.zwzw, c3.x
+    mad r7.zw, r3.x, r4.w, c30.x
+    texldl r8, r7.xyww, s5
+    mad r7, r7, c55.xxyy, c55.zzww
+    texldl r7, r7, s5
+    mul r3.yz, r7.xxyw, c54.x
+    mad r3.yz, r8.xxyw, c54.y, r3
+    add r3.yz, r3, -c53.w
+    mad r7.xy, r3.yzzw, c10.x, v0
+    texld_pp r8, r7, s4
+    if_lt r1.w, c54.z
+    mov_pp r3.yzw, c53.z
+    mov r4.xyz, c53.z
+    mov_pp r9.xyz, c53.z
+    else
+    mov r1.y, v2.w
+    add r1.xyz, -r1, r30
+    dp3 r9.w, r1, r1
+    rsq r9.w, r9.w
+    mul_pp r1.xyz, r1, r9.w
+    mul r10.xyz, r1.y, v2
+    mad r10.xyz, v1, r1.x, r10
+    mad_pp r1.xyz, v3, r1.z, r10
+    rcp r9.w, r9.w
+    mov r10.w, c54.w
+    mul r10.x, r10.w, c43.x
+    exp r10.x, r10.x
+    rcp r10.x, r10.x
+    mul r2, r2, r10.x
+    add r10.x, r9.w, -c41.x
+    rcp r10.y, c42.x
+    mul_sat r10.x, r10.y, r10.x
+    add r9.w, r9.w, -c39.x
+    rcp r10.y, c40.x
+    mul_sat r9.w, r9.w, r10.y
+    add r9.w, -r9.w, c53.y
+    dp3 r10.y, r1, r1
+    rsq r10.y, r10.y
+    rcp r10.z, r10.y
+    add r10.z, -r10.z, c56.x
+    cmp r10.y, r10.z, c56.y, r10.y
+    mul_pp r11.xyz, r1, r10.y
+    mov_sat_pp r11.w, r11.z
+    mul r1.x, r9.w, r9.w
+    lrp r10.y, r1.x, c4.x, c4.y
+    lrp r1.x, r10.x, c4.z, r10.y
+    mov r7.zw, c9.x
+    texldl r7, r7, s4
+    lrp r12, r10.x, r8, r7
+    mov r7.x, c5.x
+    add r1.y, -r7.x, c6.x
+    mad r1.y, r10.x, r1.y, c5.x
+    dp3 r1.z, r12, c56.z
+    lrp r7.xyz, r1.y, r12, r1.z
+    mov r8.x, c7.x
+    add r1.y, -r8.x, c8.x
+    mad r1.y, r10.x, r1.y, c7.x
+    texldd_pp r8, r0.zwzw, s6, r2, r2.zwzw
+    add_sat r8, r8, c54.z
+    mul r5, r5, r8
+    mul r5, r5, r5
+    texldd_pp r2, r0.zwzw, s7, r2, r2.zwzw
+    add_sat r2, r2, c54.z
+    mul r6, r2, r6
+    mul r6, r6, r6
+    dp4 r1.z, r5, c53.y
+    dp4 r7.w, r6, c53.y
+    add r1.z, r1.z, r7.w
+    rcp r1.z, r1.z
+    mul r5, r1.z, r5
+    mul r6, r1.z, r6
+    mul r13, r5, r5
+    mul r14, r6, r6
+    dp4 r1.z, r13, c53.y
+    dp4 r7.w, r14, c53.y
+    add r1.z, r1.z, r7.w
+    rcp r1.z, r1.z
+    mad r13, r13, r1.z, -r5
+    mad r5, r9.w, r13, r5
+    mad r13, r14, r1.z, -r6
+    mad r6, r9.w, r13, r6
+    mul r1.z, r11.w, c56.w
+    exp r1.z, r1.z
+    add_sat r7.w, c53.y, -v2.z
+    mul r7.w, r7.w, r7.w
+    mul r7.w, r7.w, r7.w
+    mov r12.x, c35.x
+    mad r7.w, r7.w, r12.x, c34.x
+    add r7.w, -r7.w, v2.w
+    add r10.y, r7.w, c36.x
+    rcp r10.z, c36.x
+    mul_sat r10.y, r10.z, r10.y
+    add r7.w, r7.w, -c37.x
+    rcp r10.z, c37.x
+    mul_sat r7.w, -r7.w, r10.z
+    mul r7.w, r7.w, r10.y
+    mov r12.x, c26.x
+    mul r10.y, r12.x, c57.x
+    mad r10.z, r12.x, c57.y, c57.z
+    mad r10.w, r3.x, r4.w, c29.x
+    min r13.z, r10.w, c57.w
+    exp r10.w, r13.z
+    mul r11.z, r10.w, c26.x
+    mad r10.z, r10.w, -c26.x, r10.z
+    mad r10.y, r11.z, c53.w, r10.y
+    dp4 r8.x, r5, r8
+    dp4 r2.x, r6, r2
+    add_pp r2.x, r2.x, r8.x
+    mul r2.y, r9.w, c28.x
+    mul_pp r2.y, r12.w, r2.y
+    mul_pp r2.z, r2.y, c53.w
+    mad_pp r2.x, r2.x, r2.y, -r2.z
+    dp3_pp r2.y, r11.xyww, r11.xyww
+    rsq_pp r2.y, r2.y
+    mul r2.zw, r2.y, r11.xyxy
+    mad r2.y, r11.w, r2.y, c58.x
+    rcp r2.y, r2.y
+    mul r8, r2.y, r2.zwzw
+    mad r0, r2.x, r8, r0
+    frc r2.xy, r0.zwzw
+    mad r13.xy, r2, r10.z, r10.y
+    texldl_pp r2, r13.xyzz, s2
+    add r13.w, r13.x, c53.w
+    texldl_pp r8, r13.wyzz, s2
+    mul r8.xyz, r5.y, r8
+    mad_pp r2.xyz, r5.x, r2, r8
+    add r11, r13.xyzz, c53.zwzz
+    texldl_pp r12, r11.xyww, s2
+    mad_pp r2.xyz, r5.z, r12, r2
+    add r14, r13.xyzz, c53.wwzz
+    texldl_pp r15, r14.xyww, s2
+    mad_pp r2.xyz, r5.w, r15, r2
+    mov_pp r15.x, r2.w
+    mov_pp r15.y, r8.w
+    mov_pp r15.z, r12.w
+    dp4 r2.w, r15, r5
+    texldl_pp r8, r13.xyzz, s3
+    mad_pp r2.xyz, r6.x, r8, r2
+    add r12, r13.xyzz, c53.wzzz
+    texldl_pp r12, r12, s3
+    mad_pp r2.xyz, r6.y, r12, r2
+    texldl_pp r11, r11, s3
+    mad_pp r2.xyz, r6.z, r11, r2
+    texldl_pp r13, r14, s3
+    mad_pp r2.xyz, r6.w, r13, r2
+    mov_pp r13.x, r8.w
+    mov_pp r13.y, r12.w
+    mov_pp r13.z, r11.w
+    dp4 r8.x, r13, r6
+    add r2.w, r2.w, r8.x
+    dp4 r8.x, r5, c45
+    dp4 r8.y, r6, c46
+    add r8.x, r8.y, r8.x
+    dp4 r8.y, r5, c22
+    dp4 r8.z, r6, c23
+    add r8.y, r8.z, r8.y
+    dp4 r8.z, r5, c47
+    dp4 r8.w, r6, c48
+    add r8.z, r8.w, r8.z
+    dp4 r8.w, r5, c49
+    dp4 r9.w, r6, c50
+    add r8.w, r8.w, r9.w
+    mul_sat r11.y, r2.w, r8.z
+    add r2.w, r11.y, -c53.y
+    mad r2.w, r8.x, r2.w, c53.y
+    mul_pp r2.w, r8.y, r2.w
+    add r11.x, -r11.y, c53.y
+    mul r8.xy, r11, r11
+    mul r8.z, r11.y, r8.y
+    mad r8.x, r8.x, -r11.x, c53.y
+    mad r8.x, r8.y, -r11.y, r8.x
+    mad_sat_pp r8.x, r8.w, r8.x, r8.z
+    dp3_pp r8.y, r2, c58.y
+    dp4 r8.z, r5, c16
+    dp4 r8.w, r6, c20
+    add r8.z, r8.w, r8.z
+    add r8.w, r8.y, -c53.y
+    mad r8.z, r8.z, r8.w, c53.y
+    mul_pp r8.w, r2.w, r8.z
+    dp4 r9.w, r5, c15
+    dp4 r10.y, r6, c19
+    add r9.w, r9.w, r10.y
+    add r10.yzw, r2.xxyz, -r8.y
+    mad_pp r10.yzw, r9.w, r10, r8.y
+    dp4 r8.y, r5, c14
+    dp4 r9.w, r6, c18
+    add r8.y, r8.y, r9.w
+    mul_pp r10.yzw, r8.y, r10
+    dp4 r8.y, r5, c24
+    dp4 r9.w, r6, c25
+    add r8.y, r8.y, r9.w
+    mad_sat r8.y, r8.y, c58.z, r8.w
+    add r8.w, -r10.x, c53.y
+    mul r9.w, r8.w, r8.w
+    mad r2.w, r2.w, r8.z, -r8.y
+    mad_pp r2.w, r9.w, r2.w, r8.y
+    dp4 r8.y, r5, c12
+    dp4 r8.z, r6, c13
+    add r8.y, r8.z, r8.y
+    mul r1.x, r1.x, r8.y
+    mad r7.xyz, r7, r1.y, -r10.yzww
+    mad_pp r7.xyz, r1.x, r7, r10.yzww
+    dp4 r1.x, r5, c51
+    dp4 r1.y, r6, c52
+    add r1.x, r1.y, r1.x
+    mad r1.x, r1.z, r1.x, c53.y
+    dp4 r1.y, r5, c17
+    dp4 r1.z, r6, c21
+    add r1.y, r1.z, r1.y
+    max_pp r1.z, r2.x, r2.y
+    max r5.x, r1.z, r2.z
+    max r1.z, r5.x, c58.w
+    rcp r5.x, r1.z
+    mul_sat r1.z, r1.z, c58.z
+    mul r1.y, r1.y, r1.z
+    mad r2.xyz, r2, r5.x, -c53.y
+    mad r2.xyz, r1.y, r2, c53.y
+    mul r5.xyz, r2.w, c2
+    mul r2.xyz, r2, r2
+    mul_pp r2.xyz, r5, r2
+    add r1.y, r10.x, -c53.y
+    cmp r1.y, r1.y, c53.z, c53.y
+    cmp r1.y, -r7.w, c53.z, r1.y
+    if_ne r1.y, -r1.y
+    mov r5.x, c0.x
+    mul r5.x, r5.x, c32.x
+    mul r6, r0, c38.x
+    mad r0.xy, r0.zwzw, c38.x, r5.x
+    mad r0.zw, r3.x, r4.w, c31.x
+    texldl r10, r0, s8
+    mad r11.xy, r5.x, c59, r6.zwzw
+    mov r11.zw, r0.w
+    texldl r0, r11, s8
+    add r0.xyz, r0, r10
+    mul r1.yz, r6.xzww, c53.w
+    mov r5.w, c53.z
+    mad r6.xy, r6, c59.z, r5.xwzw
+    mov r6.zw, r11.w
+    texldl r6, r6, s8
+    add r0.xyz, r0, r6
+    mad r5.xy, r5.wxzw, -c59.xwzw, r1.yzzw
+    mad r0.w, r3.x, c60.x, c60.y
+    add r5.zw, r0.w, c31.x
+    texldl r5, r5, s8
+    add r0.xyz, r0, r5
+    add_sat r0.xyz, r0, c60.z
+    mul r0.xyz, r0, r0
+    mul r0.xyz, r0, r0
+    mov r3.x, c55.x
+    mul r5.xyz, r3.x, c33
+    mul r0.xyz, r0, r5
+    mul r0.xyz, r7.w, r0
+    mul_pp r4.xyz, r8.w, r0
+    else
+    mov r4.xyz, c53.z
+    endif
+    lrp_pp r0.x, r1.w, r8.x, c11.x
+    add_pp r0.x, -r0.x, c53.y
+    min_pp r1.y, c60.w, r0.x
+    mad_pp r0.x, r1.y, -r1.y, c53.y
+    mad_pp r0.x, r0.x, c61.x, c61.y
+    exp_pp r0.x, r0.x
+    add r0.x, r0.x, c61.z
+    mul r0.x, r0.x, c61.w
+    mul_pp r9.xyz, r0.x, r2
+    mul_pp r0.xyz, c56.x, v4
+    mad_pp r3.yzw, r7.xxyz, r1.x, r0.xxyz
+    endif
+    texldp_pp r0, v5, s9
+    log_pp r1.x, r0.x
+    log_pp r1.y, r0.y
+    log_pp r1.z, r0.z
+    log_pp r0.x, r0.w
+    add_pp r0.yzw, -r1.xxyz, v6.xxyz
+    mov r1.xyz, c44
+    mad_pp r1.xyz, r1, c62.x, c62.y
+    mul_pp r1.xyz, r1, r3.yzww
+    mul_pp r2.xyz, r9, r0.yzww
+    mul_pp r2.xyz, -r0.x, r2
+    mad r0.xyz, r1, r0.yzww, r2
+    mad_pp r0.xyz, c44, r4.w, r0
+    add_pp oC0.xyz, r4, r0
+    mov_pp oC0.w, c53.y

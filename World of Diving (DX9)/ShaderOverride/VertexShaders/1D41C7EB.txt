@@ -1,0 +1,91 @@
+// CRC32: 1D41C7EB | Matched 4 variants of 1 shaders: Custom/FX/Dust
+// 
+//    Unity headers extracted from Dust.shader
+//    Shader "Custom/FX/Dust" {
+//      Properties {
+//       _MainTex ("MainTex", 2D) = "white" { }
+//       _Noise ("Noise", 2D) = "white" { }
+//       _SoftParticlesFactor ("Soft Particles Factor", Range(0,1)) = 0
+//      [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Particles/Alpha Blended"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent-10" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/2 {
+//          Name "FORWARDBASE"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent-10" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 22941
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Object2World]
+//              Matrix 8 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_color v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3.xyz
+    dcl_color o4
+    dcl_texcoord3 o5
+    dcl_texcoord5 o6.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    dp3 o3.x, c4, v1
+    dp3 o3.y, c5, v1
+    dp3 o3.z, c6, v1
+    dp4 o2.x, c4, v0
+    dp4 o2.y, c5, v0
+    dp4 o2.z, c6, v0
+    dp4 o2.w, c7, v0
+    dp4 o0.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c11.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0.xyw, r0 // Relocated from line 70 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_Dust/vp/1D41C7EB.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xzw, r0.xywz, c13.x
+
+//     mov o0.xyw, r0 // Relocated to line 69 with shadertool.py
+    mov o5.w, r0.w
+    mad o5.xy, r1.z, c12.zwzw, r1.xwzw
+    dp4 r0.x, c10, v0
+    mov o5.z, -r0.x
+    mov o1.xy, v2
+    mov o4, v3
+    mov o6.xyz, c13.y

@@ -1,0 +1,169 @@
+// CRC32: 4576FEF8 | Unity headers extracted from TreeCreatorLeavesOptimized.shader
+// Shader "Hidden/Nature/Tree Creator Leaves Optimized" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _TranslucencyColor ("Translucency Color", Color) = (0.73,0.85,0.41,1)
+//    _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//    _TranslucencyViewDependency ("View dependency", Range(0,1)) = 0.7
+//    _ShadowStrength ("Shadow Strength", Range(0,1)) = 0.8
+//    _ShadowOffsetScale ("Shadow Offset Scale", Float) = 1
+//    _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//    _ShadowTex ("Shadow (RGB)", 2D) = "white" { }
+//    _BumpSpecMap ("Normalmap (GA) Spec (R) Shadow Offset (B)", 2D) = "bump" { }
+//    _TranslucencyMap ("Trans (B) Gloss(A)", 2D) = "white" { }
+//   [HideInInspector]  _TreeInstanceColor ("TreeInstanceColor", Vector) = (1,1,1,1)
+//   [HideInInspector]  _TreeInstanceScale ("TreeInstanceScale", Vector) = (1,1,1,1)
+//   [HideInInspector]  _SquashAmount ("Squash", Float) = 1
+//   }
+//   Dependency "BillboardShader" = "Hidden/Nature/Tree Creator Leaves Rendertex"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "IGNOREPROJECTOR"="true" "RenderType"="TreeLeaf" }
+//     Pass 2/2 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TreeLeaf" }
+//       GpuProgramID 115243
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Bind "tangent" TexCoord4
+//           Matrix 4 [_Object2World]
+//           Matrix 15 [_World2Object] 3
+//           Matrix 12 [glstate_matrix_invtrans_modelview0] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 8 [unity_MatrixVP]
+//           Vector 25 [_ShadowTex_ST]
+//           Float 23 [_SquashAmount]
+//           Vector 22 [_SquashPlaneNormal]
+//           Vector 18 [_Time]
+//           Vector 21 [_TreeInstanceScale]
+//           Vector 24 [_Wind]
+//           Vector 19 [_WorldSpaceLightPos0]
+//           Vector 20 [unity_LightShadowBias]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c26, 1.97500002, 0.792999983, 0.375, 0.193000004
+    def c27, 1, 2, -0.5, -1
+    def c28, 2, 3, 0.100000001, 0.300000012
+    def c29, 0, 0, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_color v5
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_position o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mad o1.xy, v3, c25, c25.zwzw
+    mov r0.x, c27.x
+    dp3 r0.x, c7, r0.x
+    add r0.y, r0.x, v5.x
+    add r0.z, r0.y, v5.y
+    abs r0.w, v1.w
+    add r0.w, -r0.w, c27.x
+    mul r1, v2.y, c13
+    mad r1, v2.x, c12, r1
+    mad r2.xyz, r1, r0.w, v0
+    mad r1, v2.z, c14, r1
+    mul r2.xyz, r2, c21
+    dp3 r0.x, r2, r0.z
+    add r3, r0.xxyy, c18.y
+    mul r3, r3, c26
+    frc r3, r3
+    mad r3, r3, c27.y, c27.z
+    frc r3, r3
+    mad r3, r3, c27.y, c27.w
+    abs r3, r3
+    mul r4, r3, r3
+    mad r3, r3, -c28.x, c28.y
+    mul r3, r3, r4
+    add r0.xy, r3.ywzw, r3.xzzw
+    mul r3.xyz, r0.y, c24
+    mul r3.xyz, r3, v4.y
+    mul r4.y, r0.y, v4.y
+    dp4 r0.y, r1, r1
+    rsq r0.y, r0.y
+    mad r1.xyz, r1, r0.y, -v2
+    mad r1.xyz, r0.w, r1, v2
+    mul r0.y, v5.y, c28.z
+    mul r4.xz, r1, r0.y
+    nrm r5.xyz, r1
+    mov r0.z, c28.w
+    mad r0.xyz, r0.xzxw, r4, r3
+    mad r0.xyz, r0, c24.w, r2
+    mad r0.xyz, v4.x, c24, r0
+    dp3 r0.w, c22, r0
+    add r0.w, r0.w, c22.w
+    mad r1.xyz, r0.w, -c22, r0
+    lrp r2.xyz, c23.x, r0, r1
+    mov r2.w, c27.x
+    dp4 r0.x, c4, r2
+    dp4 r0.y, c5, r2
+    dp4 r0.z, c6, r2
+    mad r1.xyz, r0, -c19.w, c19
+    nrm r3.xyz, r1
+    mul r1.xyz, r5.y, c16
+    mad r1.xyz, c15, r5.x, r1
+    mad r1.xyz, c17, r5.z, r1
+    nrm r4.xyz, r1
+    dp3 r0.w, r4, r3
+    mad r0.w, r0.w, -r0.w, c27.x
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    mul r0.w, r0.w, c20.z
+    mad r0.xyz, r4, -r0.w, r0
+    mov r0.w, c27.x
+    dp4 r1.x, c8, r0
+    dp4 r1.y, c9, r0
+    dp4 r1.z, c10, r0
+    dp4 r1.w, c11, r0
+    mul r0.x, c20.z, c20.z
+    slt r0.x, -r0.x, r0.x
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2
+    dp4 r3.w, c3, r2
+    lrp r2, r0.x, r1, r3
+
+mov o2, r2 // Relocated from line 152 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_Nature_Tree Creator Leaves Optimized/vp/4576FEF8.txt
+texldl r31, c220.z, s3
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    rcp r0.x, r2.w
+    mul r0.x, r0.x, c20.x
+    max r0.x, r0.x, c29.x
+    min r0.x, r0.x, c27.x
+    add r0.x, r0.x, r2.z
+    max r0.y, r0.x, c29.x
+    lrp r2.z, c20.y, r0.y, r0.x
+    mov o0, r2
+
+//     mov o2, r2 // Relocated to line 144 with shadertool.py
+mov o2.z, r2 // Inserted by shadertool.py
+
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0

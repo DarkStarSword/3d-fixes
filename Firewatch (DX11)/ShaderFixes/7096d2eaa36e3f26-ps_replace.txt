@@ -1,0 +1,341 @@
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 7096d2eaa36e3f26-ps_replace.txt
+// 3DMigoto: 7096d2eaa36e3f26 | Unity headers extracted from Marmoset Specular IBL.shader
+// Shader "Marmoset/Self-Illumin/Specular IBL" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//    _SpecInt ("Specular Intensity", Float) = 1
+//    _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//    _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//    _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//    _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//    _GlowColor ("Glow Color", Color) = (1,1,1,1)
+//    _GlowStrength ("Glow Strength", Float) = 1
+//    _EmissionLM ("Diffuse Emission Strength", Float) = 0
+//    _Illum ("Glow(RGB) Diffuse Emission(A)", 2D) = "white" { }
+//   }
+//   Fallback "Marmoset/Specular IBL"
+//   SubShader 1/1 {
+//     LOD 250
+//     Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//     Pass 1/5 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 47503
+//       Program "fp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_ON" "SHADOWS_OFF" }
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_SpecTex] 2D 1
+//           SetTexture 2 [_Illum] 2D 2
+//           SetTexture 3 [_SpecCubeIBL] CUBE 3
+//           SetTexture 4 [_SpecCubeIBL1] CUBE 4
+//           ConstBuffer "$Globals" 976
+//           Matrix 304 [_SkyMatrix]
+//           Matrix 656 [_SkyMatrix1]
+//           Vector 0 [unity_ColorSpaceGrey]
+//           Vector 96 [_LightColor0]
+//           Vector 112 [_SpecColor]
+//           Vector 144 [_Color]
+//           Vector 160 [_MainTex_ST]
+//           Float 176 [_SpecInt]
+//           Float 180 [_Shininess]
+//           Float 184 [_Fresnel]
+//           Vector 192 [_SpecTex_ST]
+//           Vector 224 [_Illum_ST]
+//           Vector 240 [_GlowColor]
+//           Float 256 [_GlowStrength]
+//           Float 260 [_EmissionLM]
+//           Vector 272 [_ExposureIBL]
+//           Vector 296 [_UniformOcclusion] 2
+//           Vector 480 [_SH0] 3
+//           Vector 496 [_SH1] 3
+//           Vector 512 [_SH2] 3
+//           Vector 528 [_SH3] 3
+//           Vector 544 [_SH4] 3
+//           Vector 560 [_SH5] 3
+//           Vector 576 [_SH6] 3
+//           Vector 592 [_SH7] 3
+//           Vector 608 [_SH8] 3
+//           Float 620 [_BlendWeightIBL]
+//           Vector 624 [_ExposureIBL1]
+//           Vector 832 [_SH01] 3
+//           Vector 848 [_SH11] 3
+//           Vector 864 [_SH21] 3
+//           Vector 880 [_SH31] 3
+//           Vector 896 [_SH41] 3
+//           Vector 912 [_SH51] 3
+//           Vector 928 [_SH61] 3
+//           Vector 944 [_SH71] 3
+//           Vector 960 [_SH81] 3
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 64 [_WorldSpaceCameraPos] 3
+//           ConstBuffer "UnityLighting" 720
+//           Vector 0 [_WorldSpaceLightPos0]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityLighting" 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model ps_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:31:12 2016
+TextureCube<float4> t4 : register(t4);
+
+TextureCube<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[61];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  float4 v3 : TEXCOORD2,
+  float4 v4 : TEXCOORD3,
+  float4 v5 : TEXCOORD4,
+  float4 v6 : TEXCOORD7,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 7096d2eaa36e3f26-ps_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xy = v3.xy * cb0[12].xy + cb0[12].zw;
+  r0.xyzw = t1.Sample(s1_s, r0.xy).xyzw;
+  r0.w = 1 + -r0.w;
+  r0.xyz = cb0[7].xyz * r0.xyz;
+  r1.xy = -r0.ww * r0.ww + float2(1,8);
+  r0.w = -cb0[11].y * r1.x + r1.y;
+  r1.x = cb0[41].y;
+  r1.y = cb0[42].y;
+  r1.z = cb0[43].y;
+  r2.x = cb0[41].z;
+  r2.y = cb0[42].z;
+  r2.z = cb0[43].z;
+  r3.xyz = _WorldSpaceCameraPos.xyz + -v4.xyz;
+  r1.w = dot(r3.xyz, r3.xyz);
+  r1.w = rsqrt(r1.w);
+  r3.xyz = r3.xyz * r1.www;
+  r1.w = dot(v1.xyz, v1.xyz);
+  r1.w = rsqrt(r1.w);
+  r4.xyz = v1.xyz * r1.www;
+  r1.w = dot(-r3.xyz, r4.xyz);
+  r1.w = r1.w + r1.w;
+  r3.xyz = r4.xyz * -r1.www + -r3.xyz;
+  r5.xyz = r3.zzz * r2.xyz;
+  r2.xyz = r4.zzz * r2.xyz;
+  r2.xyz = r1.xyz * r4.yyy + r2.xyz;
+  r1.xyz = r1.xyz * r3.yyy + r5.xyz;
+  r5.x = cb0[41].x;
+  r5.y = cb0[42].x;
+  r5.z = cb0[43].x;
+  r1.xyz = r5.xyz * r3.xxx + r1.xyz;
+  r2.xyz = r5.xyz * r4.xxx + r2.xyz;
+  r1.xyzw = t4.SampleLevel(s4_s, r1.xyz, r0.w).xyzw;
+  r2.w = 6 * r1.w;
+  r5.x = r2.w * r2.w;
+  r5.y = r5.x * r2.w;
+  r3.w = dot(float2(0.753199995,0.246800005), r5.xy);
+  r1.w = -r1.w * 6 + r3.w;
+  r3.w = cb0[0].x * -3.22581005 + 1.61290002;
+  r1.w = r3.w * r1.w + r2.w;
+  r1.xyz = r1.xyz * r1.www;
+  r5.x = cb0[19].z;
+  r5.y = cb0[20].z;
+  r5.z = cb0[21].z;
+  r6.xyz = r5.xyz * r3.zzz;
+  r5.xyz = r5.xyz * r4.zzz;
+  r7.x = cb0[19].y;
+  r7.y = cb0[20].y;
+  r7.z = cb0[21].y;
+  r6.xyz = r7.xyz * r3.yyy + r6.xyz;
+  r5.xyz = r7.xyz * r4.yyy + r5.xyz;
+  r7.x = cb0[19].x;
+  r7.y = cb0[20].x;
+  r7.z = cb0[21].x;
+  r3.xyz = r7.xyz * r3.xxx + r6.xyz;
+  r5.xyz = r7.xyz * r4.xxx + r5.xyz;
+  r6.xyzw = t3.SampleLevel(s3_s, r3.xyz, r0.w).xyzw;
+  r0.w = 8 + -r0.w;
+  r0.w = exp2(r0.w);
+  r1.w = 6 * r6.w;
+  r3.x = r1.w * r1.w;
+  r3.y = r3.x * r1.w;
+  r2.w = dot(float2(0.753199995,0.246800005), r3.xy);
+  r2.w = -r6.w * 6 + r2.w;
+  r1.w = r3.w * r2.w + r1.w;
+  r3.xyz = r6.xyz * r1.www + -r1.xyz;
+  r1.xyz = cb0[38].www * r3.xyz + r1.xyz;
+  r3.xyz = _WorldSpaceCameraPos.xyz + -v2.xyz;
+  r1.w = dot(r3.xyz, r3.xyz);
+  r1.w = rsqrt(r1.w);
+  r6.xyz = r3.xyz * r1.www;
+  r2.w = saturate(dot(r4.xyz, r6.xyz));
+  r4.x = 1 + -r2.w;
+  r2.w = r4.x * r4.x;
+  r4.z = r2.w * r4.x;
+  r6.xy = cb0[11].zz * float2(-1,1) + float2(1,0);
+  r7.y = dot(r4.xz, r6.xy);
+  r4.y = 1;
+  r7.x = dot(r4.yx, r6.xy);
+  r2.w = dot(r7.xy, r6.xy);
+  r2.w = r2.w * 0.949999988 + 0.0500000007;
+  r4.x = cb0[11].x * r2.w;
+  r4.x = sqrt(r4.x);
+  r2.w = r2.w * cb0[11].x + -r4.x;
+  r2.w = r3.w * r2.w + r4.x;
+  r4.xyz = -cb0[39].xyw + cb0[17].xyw;
+  r4.xyz = cb0[38].www * r4.xyz + cb0[39].xyw;
+  r2.w = r4.z * r2.w;
+  r0.xyz = r2.www * r0.xyz;
+  r1.xyz = r1.xyz * r0.xyz;
+  r6.xy = v3.xy * cb0[14].xy + cb0[14].zw;
+  r6.xyzw = t2.Sample(s2_s, r6.xy).xyzw;
+  r6.xyz = cb0[15].xyz * r6.xyz;
+  r2.w = cb0[16].y * r6.w;
+  r6.xyz = cb0[16].xxx * r6.xyz;
+  r7.xy = v3.xy * cb0[10].xy + cb0[10].zw;
+  r7.xyzw = t0.Sample(s0_s, r7.xy).xyzw;
+  r7.xyz = cb0[9].xyz * r7.xyz;
+  r7.xyz = r7.xyz * r4.zzz;
+  r8.xyz = r7.xyz * r2.www;
+  r6.xyz = r6.xyz * r4.zzz + r8.xyz;
+  r4.xy = cb0[18].zw * r4.xy;
+  r1.xyz = r1.xyz * r4.yyy + r6.xyz;
+  r2.w = dot(r5.xyz, r5.xyz);
+  r2.w = rsqrt(r2.w);
+  r4.yzw = r5.xyz * r2.www;
+  r5.xyz = cb0[31].xyz * r4.zzz + cb0[30].xyz;
+  r5.xyz = cb0[32].xyz * r4.www + r5.xyz;
+  r5.xyz = cb0[33].xyz * r4.yyy + r5.xyz;
+  r6.xyz = r4.zzw * r4.ywy;
+  r5.xyz = cb0[34].xyz * r6.xxx + r5.xyz;
+  r5.xyz = cb0[35].xyz * r6.yyy + r5.xyz;
+  r5.xyz = cb0[37].xyz * r6.zzz + r5.xyz;
+  r4.zw = r4.zw * r4.zw;
+  r2.w = r4.y * r4.y + -r4.z;
+  r3.w = r4.w * 3 + -1;
+  r4.yzw = cb0[36].xyz * r3.www + r5.xyz;
+  r4.yzw = cb0[38].xyz * r2.www + r4.yzw;
+  r2.w = dot(r2.xyz, r2.xyz);
+  r2.w = rsqrt(r2.w);
+  r2.xyz = r2.xyz * r2.www;
+  r5.xyz = cb0[53].xyz * r2.yyy + cb0[52].xyz;
+  r5.xyz = cb0[54].xyz * r2.zzz + r5.xyz;
+  r5.xyz = cb0[55].xyz * r2.xxx + r5.xyz;
+  r6.xyz = r2.yyz * r2.xzx;
+  r5.xyz = cb0[56].xyz * r6.xxx + r5.xyz;
+  r5.xyz = cb0[57].xyz * r6.yyy + r5.xyz;
+  r5.xyz = cb0[59].xyz * r6.zzz + r5.xyz;
+  r2.yz = r2.yz * r2.yz;
+  r2.x = r2.x * r2.x + -r2.y;
+  r2.y = r2.z * 3 + -1;
+  r2.yzw = cb0[58].xyz * r2.yyy + r5.xyz;
+  r2.xyz = cb0[60].xyz * r2.xxx + r2.yzw;
+  r4.yzw = abs(r4.yzw) + -abs(r2.xyz);
+  r2.xyz = cb0[38].www * r4.yzw + abs(r2.xyz);
+  r2.xyz = r2.xyz * r7.xyz;
+  r1.xyz = r2.xyz * r4.xxx + r1.xyz;
+  r2.x = dot(cb2[0].xyz, cb2[0].xyz);
+  r2.x = rsqrt(r2.x);
+  r2.xyz = cb2[0].xyz * r2.xxx;
+  r3.xyz = r3.xyz * r1.www + r2.xyz;
+  r1.w = saturate(dot(v1.xyz, r2.xyz));
+  r2.x = dot(r3.xyz, r3.xyz);
+  r2.x = rsqrt(r2.x);
+  r2.xyz = r3.xyz * r2.xxx;
+  r2.x = saturate(dot(v1.xyz, r2.xyz));
+  r2.x = log2(r2.x);
+  r2.y = r0.w + r0.w;
+  r0.w = r0.w * 0.159154937 + 0.318309873;
+  r0.xyz = r0.xyz * r0.www;
+  r0.w = r2.y * r2.x;
+  r0.w = exp2(r0.w);
+  r2.x = 10 * r1.w;
+  r1.w = r1.w + r1.w;
+  r2.yzw = r1.www * r7.xyz;
+  r1.w = min(1, r2.x);
+  r0.w = r1.w * r0.w;
+  r3.xyz = cb0[6].xyz * r0.www;
+  r0.xyz = r3.xyz * r0.xyz;
+  r0.xyz = float3(0.5,0.5,0.5) * r0.xyz;
+  r0.xyz = r2.yzw * cb0[6].xyz + r0.xyz;
+  r0.xyz = r7.xyz * v5.xyz + r0.xyz;
+  o0.xyz = r0.xyz + r1.xyz;
+  o0.w = 1;
+  return;
+}

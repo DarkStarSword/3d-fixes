@@ -7,23 +7,45 @@ import sys, os, re, argparse, json, itertools, glob, shutil, copy, collections
 
 import shaderutil
 
+tool_name = os.path.basename(sys.argv[0])
+
+def unity_header(name, type):
+    if type == 'constant':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Vector\s(?P<constant>[0-9]+)\s\[' + name + '\](?:\s[1234]$)?')
+        unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<constant>[0-9]+)\s+1$')
+    if type == 'matrix':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[' + name + '\](?:\s[34]$)?')
+        unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<matrix>[0-9]+)\s+3$')
+    if type == 'texture':
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<texture>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler>[0-9]+)')
+        unity53_header = re.compile(r'//\s+' + name + '\s+s(?P<texture>[0-9]+)\s+1$')
+    return unity_header, unity53_header
+
+
 # Regular expressions to match various shader headers:
-unity_Ceto_Reflections                = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[Ceto_Reflections\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraDepthTexture              = re.compile(r'//\s+SetTexture\s(?P<sampler>[0-9]+)\s\[_CameraDepthTexture\]\s2D\s(?P<sampler2>[0-9]+)$')
-unity_CameraToWorld                   = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_CameraToWorld\](?:\s3$)?')
-unity_FrustumCornersWS                = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_FrustumCornersWS\]$')
-unity_glstate_matrix_mvp_pattern      = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[glstate_matrix_mvp\]$')
-unity_Object2World                    = re.compile(r'//\s+Matrix\s(?P<matrix>[0-9]+)\s\[_Object2World\](?:\s3$)?')
-unity_WorldSpaceCameraPos             = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_WorldSpaceCameraPos\]$')
-unity_ZBufferParams                   = re.compile(r'//\s+Vector\s(?P<constant>[0-9]+)\s\[_ZBufferParams\]$')
-unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<sampler>[0-9]+)\s+1$')
+unity_Ceto_Reflections                = unity_header('Ceto_Reflections', 'texture')
+unity_CameraDepthTexture              = unity_header('_CameraDepthTexture', 'texture')
+unity_CameraToWorld                   = unity_header('_CameraToWorld', 'matrix')
+unity_FrustumCornersWS                = unity_header('_FrustumCornersWS', 'matrix')
+unity_glstate_matrix_mvp_pattern      = unity_header('glstate_matrix_mvp', 'matrix')
+unity_Object2World                    = unity_header('_Object2World', 'matrix')
+unity_WorldSpaceCameraPos             = unity_header('_WorldSpaceCameraPos', 'constant')
+unity_ZBufferParams                   = unity_header('_ZBufferParams', 'constant')
+unity_SunPosition                     = unity_header('_SunPosition', 'constant')
+
+unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<texture>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 
+# WARNING: THESE REQUIRE THE UNITY HEADERS ATTACHED TO THE SHADER (not a
+# problem in 5.2 or older because everything requires that, but starting with
+# 5.3 the shaders are no longer stripped and we might be running on a shader
+# without Unity headers attached)
 unity_shader_directional_lighting     = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Shader\s".*PrePassCollectShadows.*"\s{$')
 unity_tag_shadow_caster               = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"LIGHTMODE"="SHADOWCASTER".*"\s}$')
+unity_headers_attached                = re.compile(r"// Headers extracted with DarkStarSword's extract_unity_shaders.py")
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
@@ -964,7 +986,13 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     if hasattr(tree, 'stereo_const'):
         return tree.stereo_const, 0
 
-    if isinstance(tree, VertexShader) and args.stereo_sampler_vs:
+    if isinstance(tree, VertexShader) and args.use_nv_stereo_reg_vs:
+        # When using the undocumented stereo register we don't insert a texture
+        # declaration, but we still insert c220 because a bunch of code will
+        # try to use it
+        tree.stereo_sampler = None
+        tree.nv_stereo_reg = Register(args.use_nv_stereo_reg_vs)
+    elif isinstance(tree, VertexShader) and args.stereo_sampler_vs:
         tree.stereo_sampler = args.stereo_sampler_vs
         if 's' in tree.reg_types and tree.stereo_sampler in tree.reg_types['s']:
             raise StereoSamplerAlreadyInUse(tree.stereo_sampler)
@@ -1006,7 +1034,8 @@ def insert_stereo_declarations(tree, args, x=0, y=1, z=0.0625, w=0.5):
     offset = 0
     offset += tree.insert_decl()
     offset += tree.insert_decl('def', [tree.stereo_const, x, y, z, w])
-    offset += tree.insert_decl('dcl_2d', [tree.stereo_sampler])
+    if tree.stereo_sampler is not None:
+        offset += tree.insert_decl('dcl_2d', [tree.stereo_sampler])
     offset += tree.insert_decl()
     return tree.stereo_const, offset
 
@@ -1022,7 +1051,7 @@ def vanity_comment(args, tree, what):
         vanity_args = list(filter(lambda x: x not in file_set and '*' not in x, sys.argv[1:]))
 
     return [
-        "%s DarkStarSword's shadertool.py:" % what,
+        "%s DarkStarSword's %s:" % (what, tool_name),
         '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(vanity_args + [tree.filename])),
     ]
 
@@ -1069,6 +1098,7 @@ def adjust_ui_depth(tree, args):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('mad', [pos_reg.x, separation, args.adjust_ui_depth, pos_reg.x])
@@ -1092,10 +1122,11 @@ def _adjust_output(tree, reg, args, stereo_const, tmp_reg):
     if args.condition:
         tree.add_inst('mov', [tmp_reg.x, args.condition])
         tree.add_inst('if_eq', [tmp_reg.x, stereo_const.x])
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x; convergence = tmp_reg.y
     tree.add_inst('add', [tmp_reg.w, pos_reg.w, -convergence])
-    if args.use_mad and not args.adjust_multiply:
+    if not args.adjust_multiply:
         tree.add_inst('mad', [pos_reg.x, tmp_reg.w, separation, pos_reg.x])
     else:
         tree.add_inst('mul', [tmp_reg.w, tmp_reg.w, separation])
@@ -1165,10 +1196,11 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
     if args.condition:
         pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
         pos += tree.insert_instr(pos, NewInstruction('if_eq', [tmp_reg.x, stereo_const.x]))
+    # TODO: Add support for --use-nv-stereo-reg-vs
     pos += tree.insert_instr(pos, NewInstruction('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler]))
     separation = tmp_reg.x; convergence = tmp_reg.y
     pos += tree.insert_instr(pos, NewInstruction('add', [tmp_reg.w, repl_reg.w, -convergence]))
-    if args.use_mad and not args.adjust_multiply:
+    if not args.adjust_multiply:
         pos += tree.insert_instr(pos, NewInstruction('mad', [repl_reg.x, tmp_reg.w, separation, repl_reg.x]))
     else:
         pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg.w, tmp_reg.w, separation]))
@@ -1417,23 +1449,35 @@ def auto_fix_vertex_halo(tree, args):
     debug_verbose(-1, 'Line %i: Applying stereo correction formula to %s' % (pos_to_line(tree, pos), temp_reg.reg))
     pos += insert_vanity_comment(args, tree, pos, "Automatic vertex shader halo fix inserted with")
 
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
-    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
-    pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
+        pos += tree.insert_instr(pos, NewInstruction('add', [t.w, temp_reg.w, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, t.w, separation, temp_reg.x]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mad', [temp_reg.x, temp_reg.w, neg_sep_conv, temp_reg.x]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [temp_reg.x, temp_reg.x, separation]))
+
     pos += tree.insert_instr(pos)
 
     tree.autofixed = True
 
-def find_header(tree, comment_pattern):
+def find_header(tree, comment_patterns):
     for line in range(tree.shader_start):
         for token in tree[line]:
             if not isinstance(token, CPPStyleComment):
                 continue
 
-            match = comment_pattern.match(token)
-            if match is not None:
-                return match
+            if not isinstance(comment_patterns, (tuple, list)):
+                comment_patterns = (comment_patterns, )
+
+            for comment_pattern in comment_patterns:
+                match = comment_pattern.match(token)
+                if match is not None:
+                    return match
     raise KeyError()
 
 def disable_unreal_correction(tree, args, redundant_check):
@@ -1517,7 +1561,7 @@ def adjust_simple_reflection_to_infinity(tree, args, sampler_pattern, sampler_na
         debug_verbose(0, 'Shader does not use %s' % sampler_name)
         return
 
-    orig = Register('s' + match.group('sampler'))
+    orig = Register('s' + match.group('texture'))
     debug_verbose(0, '%s identified as %s' % (sampler_name, orig))
 
     results = scan_shader(tree, orig, write=False)
@@ -1843,23 +1887,30 @@ def fix_unity_lighting_ps_world(tree, args):
 
     # XXX: Directional lighting shaders seem to have a bogus _ZBufferParams!
     try:
-        match = find_header(tree, unity_shader_directional_lighting)
+        match = find_header(tree, unity_headers_attached)
     except KeyError:
-        try:
-            match = find_header(tree, unity_ZBufferParams)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _ZBufferParams')
-            return
-        _ZBufferParams = Register('c' + match.group('constant'))
-
-        try:
-            match = find_header(tree, unity_CameraDepthTexture)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _CameraDepthTexture')
-            return
-        _CameraDepthTexture = Register('s' + match.group('sampler'))
+        debug('Skipping possible depth buffer source - shader does not have Unity headers attached so unable to check what kind of lighting shader it is')
+        has_unity_headers = False
     else:
-        _CameraDepthTexture = _ZBufferParams = None
+        has_unity_headers = True
+        try:
+            match = find_header(tree, unity_shader_directional_lighting)
+        except KeyError:
+            try:
+                match = find_header(tree, unity_ZBufferParams)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _ZBufferParams')
+                return
+            _ZBufferParams = Register('c' + match.group('constant'))
+
+            try:
+                match = find_header(tree, unity_CameraDepthTexture)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+                return
+            _CameraDepthTexture = Register('s' + match.group('texture'))
+        else:
+            _CameraDepthTexture = _ZBufferParams = None
 
     # Find _CameraToWorld usage - adjustment must be below this point, and this
     # gives us the register with X that needs to be adjusted:
@@ -1969,12 +2020,15 @@ def fix_unity_lighting_ps_world(tree, args):
     tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
     tree.ini.append(('UseMatrix1', 'true', None))
     tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
-    if _CameraDepthTexture is not None:
-        tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
-            'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
-        tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+    if has_unity_headers:
+        if _CameraDepthTexture is not None:
+            tree.ini.append(('GetSampler1FromReg', str(_CameraDepthTexture.num),
+                'Copy _CameraDepthTexture and _ZBufferParams for auto HUD adjustment'))
+            tree.ini.append(('GetConst1FromReg', str(_ZBufferParams.num), None))
+        else:
+            tree.ini.append((None, None, 'Directional lighting shader, _ZBufferParams may be bogus'))
     else:
-        tree.ini.append((None, None, 'Directional lighting shader, _ZBufferParams may be bogus'))
+            tree.ini.append((None, None, 'No Unity headers attached, skipping possible depth buffer source'))
 
     tree.autofixed = True
 
@@ -2317,8 +2371,10 @@ def fix_unity_reflection(tree, args):
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     pos = tree.decl_end
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
+
+    if tree.stereo_sampler is not None:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
 
     clip_space_adj = tree._find_free_reg('r', None, desired=29)
     local_space_adj = tree._find_free_reg('r', None, desired=28)
@@ -2333,7 +2389,15 @@ def fix_unity_reflection(tree, args):
     pos += insert_vanity_comment(args, tree, pos, "Unity reflection/specular fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('mov', [repl_cam_pos, _WorldSpaceCameraPos]))
     pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
-    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, separation, -convergence]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj.x, neg_sep_conv]))
+
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
@@ -2366,25 +2430,31 @@ def fix_unity_reflection(tree, args):
     # will have used _WorldSpaceCameraPos and we won't have got this far.
     unity_glstate_matrix_mvp = _Object2World0 = None
     try:
-        match = find_header(tree, unity_tag_shadow_caster)
+        match = find_header(tree, unity_headers_attached)
     except KeyError:
-        try:
-            match = find_header(tree, unity_glstate_matrix_mvp_pattern)
-            unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
-            match = find_header(tree, unity_Object2World)
-            _Object2World0 = Register('c' + match.group('matrix'))
-            tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
-                'Candidate to obtain MVP and _Object2World matrices:'))
-            tree.ini.append(('InverseMatrix', 'true', None))
-            tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
-        except KeyError:
-            pass
+        debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
+        tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
     else:
-        tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+        try:
+            match = find_header(tree, unity_tag_shadow_caster)
+        except KeyError:
+            try:
+                match = find_header(tree, unity_glstate_matrix_mvp_pattern)
+                unity_glstate_matrix_mvp = Register('c' + match.group('matrix'))
+                match = find_header(tree, unity_Object2World)
+                _Object2World0 = Register('c' + match.group('matrix'))
+                tree.ini.append(('GetMatrixFromReg', str(unity_glstate_matrix_mvp.num),
+                    'Candidate to obtain MVP and _Object2World matrices:'))
+                tree.ini.append(('InverseMatrix', 'true', None))
+                tree.ini.append(('GetMatrixFromReg1', str(_Object2World0.num), None))
+            except KeyError:
+                pass
+        else:
+            tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
 
     tree.autofixed = True
 
-def fix_unity_frustrum_world(tree, args):
+def fix_unity_frustum_world(tree, args):
     try:
         match = find_header(tree, unity_FrustumCornersWS)
     except KeyError:
@@ -2405,32 +2475,43 @@ def fix_unity_frustrum_world(tree, args):
     _Object2World2 = Register('c%i' % (_Object2World0.num + 2))
     _ZBufferParams = tree._find_free_reg('c', None, desired=150)
 
-    repl_frustrum = []
+    repl_frustum = []
     for i in range(4):
-        repl_frustrum.append( tree._find_free_reg('r', None))
-        replace_regs = {_FrustumCornersWS[i]: repl_frustrum[i]}
+        repl_frustum.append( tree._find_free_reg('r', None))
+        replace_regs = {_FrustumCornersWS[i]: repl_frustum[i]}
         tree.do_replacements(replace_regs, False)
 
     t = tree._find_free_reg('r', None, desired=31)
     stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
 
     pos = tree.decl_end
-    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
-    separation = t.x; convergence = t.y
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
 
     clip_space_adj = tree._find_free_reg('r', None, desired=29)
     local_space_adj = tree._find_free_reg('r', None, desired=28)
     world_space_adj = clip_space_adj # Reuse the same register
 
-    # Apply a stereo correction to the world space frustrum corners - this
+    # Apply a stereo correction to the world space frustum corners - this
     # fixes the glow around the sun in The Forest (shaders called Sunshine
     # PostProcess Scatter)
-    pos += insert_vanity_comment(args, tree, pos, "Unity _FrustrumCornerWS fix inserted with")
+    pos += insert_vanity_comment(args, tree, pos, "Unity _FrustumCornerWS fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('mov', [clip_space_adj, tree.stereo_const.x]))
     pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, _ZBufferParams.z, _ZBufferParams.w]), comment='Derive 1/far from _ZBufferParams')
     pos += tree.insert_instr(pos, NewInstruction('rcp', [clip_space_adj.x, clip_space_adj.x]))
-    pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, clip_space_adj.x, -convergence]))
-    pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        pos += tree.insert_instr(pos, NewInstruction('add', [clip_space_adj.x, clip_space_adj.x, -convergence]))
+        pos += tree.insert_instr(pos, NewInstruction('mul', [clip_space_adj.x, clip_space_adj.x, separation]))
+    else:
+        # Use undocumented register injected by 3D Vision driver:
+        neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+        pos += tree.insert_instr(pos, NewInstruction('mad', [clip_space_adj.x, clip_space_adj.x, neg_sep_conv, separation]))
+
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.x, inv_mvp0, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.y, inv_mvp1, clip_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [local_space_adj.z, inv_mvp2, clip_space_adj]))
@@ -2439,17 +2520,143 @@ def fix_unity_frustrum_world(tree, args):
     pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.y, _Object2World1, local_space_adj]))
     pos += tree.insert_instr(pos, NewInstruction('dp4', [world_space_adj.z, _Object2World2, local_space_adj]))
     for i in range(4):
-        pos += tree.insert_instr(pos, NewInstruction('add', [repl_frustrum[i], _FrustumCornersWS[i], -world_space_adj]))
+        pos += tree.insert_instr(pos, NewInstruction('add', [repl_frustum[i], _FrustumCornersWS[i], -world_space_adj]))
     pos += tree.insert_instr(pos)
 
     if not hasattr(tree, 'ini'):
         tree.ini = []
     tree.ini.append(('UseMatrix', 'true',
-        'Copy inversed MVP matrix, _Object2World and _ZBufferParams in for Unity _FrustrumCornerWS fix'))
+        'Copy inversed MVP matrix, _Object2World and _ZBufferParams in for Unity _FrustumCornerWS fix'))
     tree.ini.append(('MatrixReg', str(inv_mvp0.num), None))
     tree.ini.append(('UseMatrix1', 'true', None))
     tree.ini.append(('MatrixReg1', str(_Object2World0.num), None))
     tree.ini.append(('SetConst1ToReg', str(_ZBufferParams.num), None))
+
+    tree.autofixed = True
+
+def fix_unity_ssao(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unity SSAO fix is only applicable to pixel shaders!')
+
+    try:
+        match = find_header(tree, unity_CameraDepthTexture)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+        return
+    _CameraDepthTexture = Register('s' + match.group('texture'))
+
+    try:
+        match = find_header(tree, unity_ZBufferParams)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _ZBufferParams, or is missing headers (my other scripts can extract these)')
+        return
+    _ZBufferParams = Register('c' + match.group('constant'))
+
+    debug_verbose(0, '_CameraDepthTexture in %s, _ZBufferParams in %s' % (_CameraDepthTexture, _ZBufferParams))
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step)
+    results = scan_shader(tree, _ZBufferParams, write=False)
+    if len(results) == 0:
+        debug_verbose(0, '_ZBufferParams read 0 times')
+        return
+
+    # Insert the stereo declarations and sampler. FIXME: We don't know for sure
+    # yet that we will be modifying the shader - we should do this once we have
+    # confirmed that we will
+    t = tree._find_free_reg('r', PS3, desired=31)
+    tmp = tree._find_free_reg('r', PS3, desired=30)
+    pos = tree.decl_end
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+
+    if tree.stereo_sampler is not None:
+        # Use Helix Mod stereo texture:
+        offset += tree.insert_instr(pos + offset, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+        separation = t.x; convergence = t.y
+
+    offset += tree.insert_instr(pos + offset)
+
+    vanity_inserted = False
+    lines_done = set()
+    for (line, linepos, instr) in results:
+        if line in lines_done:
+            continue
+        lines_done.add(line)
+
+        line += offset
+        reg = instr.args[0]
+
+        # We're expecting a reciprocal calculation as part of the Z buffer -> world
+        # Z scaling:
+        results = scan_shader(tree, reg.reg, components=reg.swizzle, opcode='rcp',
+                write=False, start=line+1, stop=True)
+        if not results:
+            debug_verbose(0, 'Could not find expected rcp instruction')
+            continue
+        (line, linepos, instr) = results[0]
+        reg = instr.args[0]
+
+        # Find where the reciprocal is next used:
+        results = scan_shader(tree, reg.reg, components=reg.swizzle, write=False,
+                start=line+1, stop=True, opcode=('mad', 'mul'))
+        if not results:
+            debug_verbose(0, 'Could not find expected instruction')
+            continue
+        (line, linepos, instr) = results[0]
+        reg = instr.args[0]
+
+        if len(reg.swizzle) != 3:
+            debug_verbose(0, 'Instruction has wrong dimensional swizzle - skipping')
+            continue
+
+        start_pos = pos = next_line_pos(tree, line)
+
+        debug('Inserting stereo uncorrection at line %i: %s' % (line, instr))
+
+        if not vanity_inserted:
+            pos += insert_vanity_comment(args, tree, pos, "Unity SSAO fix inserted with")
+            vanity_inserted = True
+        else:
+            pos += tree.insert_instr(pos);
+
+        if instr.opcode == 'mul':
+            x_reg = Register('%s.%s' % (reg.reg, reg.swizzle[0]))
+            depth = Register('%s.%s' % (reg.reg, reg.swizzle[2]))
+
+            if tree.stereo_sampler is not None:
+                # Use Helix Mod stereo texture:
+                pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+            else:
+                # Use undocumented register injected by 3D Vision driver:
+                neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, depth, neg_sep_conv, x_reg]))
+                pos += tree.insert_instr(pos, NewInstruction('add', [x_reg, x_reg, separation]))
+
+        else:
+            tree[line].insert(0, CPPStyleComment('// '))
+            tree[line].append(WhiteSpace(' '))
+            tree[line].append(CPPStyleComment('// Instruction split into mul and add with shadertool.py'))
+            tmp_reg = Register('%s.%s' % (tmp.reg, reg.swizzle))
+            pos += tree.insert_instr(pos, NewInstruction('mul', [tmp_reg, instr.args[1], instr.args[2]]))
+            x_reg = Register('%s.%s' % (tmp.reg, reg.swizzle[0]))
+            depth = Register('%s.%s' % (tmp.reg, reg.swizzle[2]))
+
+            if tree.stereo_sampler is not None:
+                # Use Helix Mod stereo texture:
+                pos += tree.insert_instr(pos, NewInstruction('add', [t.w, depth, -convergence]))
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, t.w, separation, x_reg]))
+            else:
+                # Use undocumented register injected by 3D Vision driver:
+                neg_sep_conv = tree.nv_stereo_reg.x; separation = tree.nv_stereo_reg.y
+                pos += tree.insert_instr(pos, NewInstruction('mad', [x_reg, depth, neg_sep_conv, x_reg]))
+                pos += tree.insert_instr(pos, NewInstruction('add', [x_reg, x_reg, separation]))
+
+            pos += tree.insert_instr(pos, NewInstruction('add', [instr.args[0], tmp, instr.args[3]]))
+
+        pos += tree.insert_instr(pos);
+
+        offset += pos - start_pos
 
     tree.autofixed = True
 
@@ -2573,6 +2780,7 @@ def _disable_output(tree, reg, args, stereo_const, tmp_reg):
     disabled = stereo_const.xxxx
 
     append_vanity_comment(args, tree, 'Texcoord disabled by')
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -2633,6 +2841,7 @@ def disable_shader(tree, args):
     if args.disable == '1':
         disabled = stereo_const.yyyy
 
+    # TODO: Add support for --use-nv-stereo-reg-vs
     tree.add_inst('texldl', [tmp_reg, stereo_const.z, tree.stereo_sampler])
     separation = tmp_reg.x
     tree.add_inst('if_ne', [separation, -separation]) # Only disable in 3D
@@ -2702,7 +2911,7 @@ def do_ini_updates():
     debug('!' * 12 + ' Please add the following lines to the DX9Settings.ini ' + '!' * 12)
     debug('!' * 79)
     debug()
-    for section in dx9settings_ini:
+    for section in sorted(dx9settings_ini):
         write_ini('[%s]' % section)
         for line in dx9settings_ini[section]:
             if isinstance(line, tuple):
@@ -2746,6 +2955,8 @@ def parse_args():
             help='Specify the sampler to read the stereo parameters from in vertex shaders')
     parser.add_argument('--stereo-sampler-ps',
             help='Specify the sampler to read the stereo parameters from in pixel shaders')
+    parser.add_argument('--use-nv-stereo-reg-vs', nargs='?', default=None, const='c255',
+            help='Use the undocumented stereo register injected by the driver instead of the stereo texture injected by Helix Mod. This is only supported by some options in this tool, and is only available in vertex shaders that the driver adjusted, so it is not recommended for use.')
 
     parser.add_argument('--show-regs', '-r', action='store_true',
             help='Show the registers used in the shader')
@@ -2765,8 +2976,6 @@ def parse_args():
             help="Unadjust the output. Equivalent to --adjust=<output> --adjust-multiply=-1")
     parser.add_argument('--condition',
             help="Make adjustments conditional on the given register passed in from DX9Settings.ini")
-    parser.add_argument('--no-mad', action='store_false', dest='use_mad',
-            help="Use mad instruction to make stereo correction more concise")
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--disable-redundant-unreal-correction', action='store_true',
@@ -2789,8 +2998,10 @@ def parse_args():
             help="Variant the above that calculates the adjustment in the vertex shader and passes it through to the pixel shader (does not require matrices copied from elsewhere, but does require a spare output)")
     parser.add_argument('--fix-unity-reflection-ps', action='store_true',
             help="Variant of the above that applies the fix in the pixel shader using the _Object2World matrix passed from the vertex shader - use when neither above options are suitable and the vertex shader has three spare outputs")
-    parser.add_argument('--fix-unity-frustrum-world', action='store_true',
+    parser.add_argument('--fix-unity-frustum-world', '--fix-unity-frustrum-world', action='store_true',
             help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP obtained and inverted with GetMatrixFromReg, a valid _Object2World matrix obtained with GetMatrix1FromReg, and _ZBufferParams obtained with GetConst1FromReg")
+    parser.add_argument('--fix-unity-ssao', action='store_true',
+            help="(WORK IN PROGRESS) Attempts to autofix various 3rd party SSAO shaders found in certain Unity games")
     parser.add_argument('--adjust-unity-ceto-reflections', action='store_true',
             help="Attempt to automatically fix reflections in Unity Ceto Ocean shader")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -2884,10 +3095,21 @@ def args_require_reg_analysis(args):
                 args.fix_unity_reflection or \
                 args.fix_unity_reflection_vs or \
                 args.fix_unity_reflection_ps or \
-                args.fix_unity_frustrum_world
+                args.fix_unity_frustum_world or \
+                args.fix_unity_ssao
 
         # Also needs register analysis, but earlier than this test:
         # args.add_fog_on_sm3_update
+
+def expand_wildcards(args):
+    # Windows command prompt passes us a literal *, so expand any that we were passed:
+    f = []
+    for file in args.files:
+        if '*' in file:
+            f.extend(glob.glob(file))
+        else:
+            f.append(file)
+    args.files = f
 
 processed = set()
 
@@ -2903,14 +3125,7 @@ def main():
         address_reg_ps = RegSet()
         checked_ps = checked_vs = False
 
-    # Windows command prompt passes us a literal *, so expand any that we were passed:
-    f = []
-    for file in args.files:
-        if '*' in file:
-            f.extend(glob.glob(file))
-        else:
-            f.append(file)
-    args.files = f
+    expand_wildcards(args)
 
     for file in args.files:
         try:
@@ -3009,8 +3224,10 @@ def main():
                 fix_unity_reflection_vs(tree, args)
             if args.fix_unity_reflection_ps:
                 fix_unity_reflection_ps_variant(tree, args)
-            if args.fix_unity_frustrum_world:
-                fix_unity_frustrum_world(tree, args)
+            if args.fix_unity_frustum_world:
+                fix_unity_frustum_world(tree, args)
+            if args.fix_unity_ssao:
+                fix_unity_ssao(tree, args)
             if args.adjust_ui_depth:
                 adjust_ui_depth(tree, args)
             if args.disable_output:

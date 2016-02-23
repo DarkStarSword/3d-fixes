@@ -1,0 +1,171 @@
+// CRC32: 23D11B57 | Matched 4 variants of 1 shaders: Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Trees.shader
+//    Shader "Marmoset/Transparent/Cutout/Bumped Diffuse IBL Trees" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//       _GIBoost ("Global Illumination Scale", Float) = 1
+//       _OcclusionLength ("Occlusion Length", Float) = 1
+//       _BrightnessOffset ("Brightness Scalar", Float) = 1
+//       _BrightnessAdd ("Brightness Offset", Float) = 0
+//      }
+//      SubShader 1/2 {
+//        LOD 350
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 2/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One One
+//          ColorMask RGB
+//          GpuProgramID 100895
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "MARMO_SKY_BLEND_OFF" "SHADOWS_SCREEN" }
+// 4:           Keywords { "DIRECTIONAL" "MARMO_SKY_BLEND_ON" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL_COOKIE" "MARMO_SKY_BLEND_OFF" "SHADOWS_SCREEN" }
+// 8:           Keywords { "DIRECTIONAL_COOKIE" "MARMO_SKY_BLEND_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 7 [_Object2World] 3
+//              Matrix 10 [_World2Object] 3
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 19 [_BrightnessAdd]
+//              Float 18 [_BrightnessOffset]
+//              Float 17 [_OcclusionLength]
+//              Vector 14 [_ProjectionParams]
+//              Vector 15 [_ScreenParams]
+//              Float 20 [_SwayingRandomnessOffset]
+//              Vector 13 [_Time]
+//              Vector 21 [_WindDirectionFrequencyIntensity]
+//              Vector 22 [_WindLeafParameters]
+//              Vector 16 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c23, 1, 0, 10, 100
+    def c24, 0.159154937, 0.25, 6.28318548, -3.14159274
+    def c25, -2.52398507e-007, 2.47609005e-005, -0.00138883968, 0.0416666418
+    def c26, -0.5, 0.0399999991, 0.649999976, 0.5
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1.xyz
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6.xy
+    dcl_texcoord6 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c7, v0
+    dp4 r0.y, c8, v0
+    dp4 r0.z, c9, v0
+    dp3 r0.w, r0.xzyw, c23.xxyw
+    dp3 r0.x, r0, c23.xzww
+    mul r0.y, r0.w, c20.x
+    mov r0.z, c21.z
+    mad r1.x, c13.y, r0.z, r0.y
+    mov r2.x, c22.x
+    mul r1.z, r2.x, c13.y
+    mad r1.y, r0.x, c22.y, r1.z
+    mad r0.xyz, r1, c24.x, c24.y
+    frc r0.xyz, r0
+    mad r0.xyz, r0, c24.z, c24.w
+    mul r0.xyz, r0, r0
+    mad r1.xyz, r0, c25.x, c25.y
+    mad r1.xyz, r0, r1, c25.z
+    mad r1.xyz, r0, r1, c25.w
+    mad r1.xyz, r0, r1, c26.x
+    mad r0.xyz, r0, r1, c23.x
+    mul r1.xz, r0.x, c21.xyyw
+    mul r0.xyw, r0.y, v2.xyzz
+    mul r2.xyz, r0.z, v2
+    mul r3.xy, c22.zwzw, v4.zyzw
+    mul r0.xyz, r0.xyww, r3.x
+    mov r1.y, c23.y
+    mul r0.w, c21.w, v4.x
+    mad r0.xyz, r1, r0.w, r0
+    mad r0.xyz, r2, r3.y, r0
+    add r0.xyz, r0, v0
+    mov r0.w, v0.w
+    dp4 r1.x, c6, r0
+    mul r1.x, r1_abs.x, c26.y
+    min r1.x, r1.x, c26.z
+    mul r1.y, r1.x, r1.x
+    mul o6.x, r1.y, r1.x
+    pow r1.x, v3.y, c17.x
+    mov r2.x, c18.x
+    mad_sat o6.y, r1.x, r2.x, c19.x
+    dp4 o4.x, c7, r0
+    dp4 o4.y, c8, r0
+    dp4 o4.z, c9, r0
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 126 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Transparent_Cutout_Bumped Diffuse IBL Trees/vp/23D11B57.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c26.w
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c14.x
+
+//     mov o0, r1 // Relocated to line 122 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o7.zw, r1
+    mul r2.w, r0.x, c26.w
+    mad o7.xy, r2.z, c15.zwzw, r2.xwzw
+    dp3 r0.z, c7, v1
+    dp3 r0.x, c8, v1
+    dp3 r0.y, c9, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o1.x, r0.z
+    mul r1.xyz, c11.zxyw, v2.y
+    mad r1.xyz, c10.zxyw, v2.x, r1
+    mad r1.xyz, c12.zxyw, v2.z, r1
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mul r1.xyz, r0.w, r1
+    mul r2.xyz, r0, r1
+    mad r2.xyz, r1.zxyw, r0.yzxw, -r2
+    mul r0.z, c16.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o1.y, r2.x
+    mov o1.z, r1.y
+    mov o2.x, r0.x
+    mov o3.x, r0.y
+    mov o2.y, r2.y
+    mov o3.y, r2.z
+    mov o2.z, r1.z
+    mov o3.z, r1.x
+    mul o5, c23.xxyy, v3.xyxx

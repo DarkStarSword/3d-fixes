@@ -1,0 +1,200 @@
+// CRC32: 7D0A0D76 | Unity headers extracted from Marmoset Specular IBL.shader
+// Shader "Marmoset/Transparent/Simple Glass/Specular IBL" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (1,1,1,1)
+//    _SpecInt ("Specular Intensity", Float) = 1
+//    _Shininess ("Specular Sharpness", Range(2,8)) = 4
+//    _Fresnel ("Fresnel Strength", Range(0,1)) = 0
+//    _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//    _SpecTex ("Specular(RGB) Gloss(A)", 2D) = "white" { }
+//   }
+//   Fallback "Marmoset/Transparent/Specular IBL"
+//   SubShader 1/1 {
+//     LOD 250
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       ColorMask RGB
+//       GpuProgramID 27265
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "LIGHTMAP_OFF" "MARMO_BOX_PROJECTION_OFF" "MARMO_SKY_BLEND_OFF" }
+//           Matrix 0 [_SkyMatrix] 3
+//           Vector 10 [_Color]
+//           Vector 16 [_ExposureIBL]
+//           Float 14 [_Fresnel]
+//           Vector 8 [_LightColor0]
+//           Vector 11 [_MainTex_ST]
+//           Vector 18 [_SH0]
+//           Vector 19 [_SH1]
+//           Vector 20 [_SH2]
+//           Vector 21 [_SH3]
+//           Vector 22 [_SH4]
+//           Vector 23 [_SH5]
+//           Vector 24 [_SH6]
+//           Vector 25 [_SH7]
+//           Vector 26 [_SH8]
+//           Float 13 [_Shininess]
+//           Vector 9 [_SpecColor]
+//           Float 12 [_SpecInt]
+//           Vector 15 [_SpecTex_ST]
+//           Vector 17 [_UniformOcclusion]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 4 [_WorldSpaceLightPos0]
+//           Vector 7 [unity_ColorSpaceGrey]
+//           Vector 5 [unity_FogColor]
+//           Vector 6 [unity_FogParams]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_SpecTex] 2D 1
+//           SetTexture 2 [_SpecCubeIBL] CUBE 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c27, 1, -1, 0, 8
+    def c28, 0.949999988, 0.0500000007, -3.22581005, 1.61290002
+    def c29, 0.159154937, 0.318309873, 6, 10
+    def c30, 0.753199995, 0.246800005, 3, -1
+    def c31, 0.5, 0, 0, 0
+    dcl_texcoord_pp v0.xyz
+    dcl_texcoord1 v1.xyz
+    dcl_texcoord2 v2.xy
+    dcl_texcoord3 v3.xyz
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5 v5.x
+    dcl_2d s0
+    dcl_2d s1
+    dcl_cube s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Marmoset_Transparent_Simple Glass_Specular IBL/fp/7D0A0D76.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0.xy, v2, c15, c15.zwzw
+    texld_pp r0, r0, s1
+    add_pp r0.w, -r0.w, c27.x
+    mul_pp r0.xyz, r0, c9
+    mad_pp r1.xy, r0.w, -r0.w, c27.xwzw
+    mad_pp r1.w, c13.x, -r1.x, r1.y
+    add r2.xyz, r30, -v3
+    nrm r3.xyz, r2
+    nrm r2.xyz, v0
+    dp3 r0.w, -r3, r2
+    add r0.w, r0.w, r0.w
+    mad r3.xyz, r2, -r0.w, -r3
+    mul r4.xyz, r3.z, c2
+    mad r3.yzw, c1.xxyz, r3.y, r4.xxyz
+    mad_pp r1.xyz, c0, r3.x, r3.yzww
+    texldl_pp r3, r1, s2
+    add_pp r0.w, -r1.w, c27.w
+    exp_pp r0.w, r0.w
+    mul_pp r1.x, r3.w, c29.z
+    mul_pp r4.x, r1.x, r1.x
+    mul_pp r4.y, r1.x, r4.x
+    dp2add_pp r1.y, c30, r4, -r1.x
+    mov r1.zw, c28
+    mad_pp r1.z, c7.x, r1.z, r1.w
+    mad_pp r1.x, r1.z, r1.y, r1.x
+    mul_pp r1.xyw, r1.x, r3.xyzz
+    add r3.xyz, r30, -v1
+    dp3 r2.w, r3, r3
+    rsq r2.w, r2.w
+    mul_pp r4.xyz, r2.w, r3
+    dp3_sat r3.w, r2, r4
+    add_pp r4.x, -r3.w, c27.x
+    mul_pp r3.w, r4.x, r4.x
+    mul_pp r4.z, r4.x, r3.w
+    mov r5.xyz, c27
+    mad_pp r5.xy, c14.x, r5.yxzw, r5.xzzw
+    dp2add_pp r6.y, r4.xzzw, r5, c27.z
+    mov r4.y, c27.x
+    dp2add_pp r6.x, r4.yxzw, r5, c27.z
+    dp2add_pp r3.w, r6, r5, c27.z
+    mad_pp r3.w, r3.w, c28.x, c28.y
+    mul_pp r4.x, r3.w, c12.x
+    rsq_pp r4.x, r4.x
+    rcp_pp r4.x, r4.x
+    mad_pp r3.w, r3.w, c12.x, -r4.x
+    mad_pp r1.z, r1.z, r3.w, r4.x
+    mul_pp r1.z, r1.z, c16.w
+    mul_pp r0.xyz, r0, r1.z
+    mul_pp r1.xyz, r0, r1.xyww
+    mul r4.xyz, r2.z, c2
+    mad r4.xyz, c1, r2.y, r4
+    mad r2.xyz, c0, r2.x, r4
+    nrm r4.xyz, r2
+    mov r2.xyz, c19
+    mad r2.xyz, r2, r4.y, c18
+    mad r2.xyz, c20, r4.z, r2
+    mad r2.xyz, c21, r4.x, r2
+    mul r5.xyz, r4.xzxw, r4.yyzw
+    mad r2.xyz, c22, r5.x, r2
+    mad r2.xyz, c23, r5.y, r2
+    mad r2.xyz, c25, r5.z, r2
+    mul r4.yz, r4, r4
+    mad r1.w, r4.x, r4.x, -r4.y
+    mad r3.w, r4.z, c30.z, c30.w
+    mad r2.xyz, c24, r3.w, r2
+    mad r2.xyz, c26, r1.w, r2
+    mad r4.xy, v2, c11, c11.zwzw
+    texld_pp r4, r4, s0
+    mul_pp r4, r4, c10
+    mul_pp r5.xyz, r4, c16.w
+    mul_pp r5.xyz, r4.w, r5
+    mul_pp r2.xyz, r2_abs, r5
+    mov r6.xy, c16
+    mul_pp r6.xy, r6, c17
+    mul_pp r2.xyz, r2, r6.x
+    mad_pp r1.xyz, r1, r6.y, r2
+    nrm_pp r2.xyz, c4
+    mad_pp r3.xyz, r3, r2.w, r2
+    dp3_sat_pp r1.w, v0, r2
+    nrm_pp r2.xyz, r3
+    dp3_sat r2.x, v0, r2
+    add r2.y, r0.w, r0.w
+    mad r0.w, r0.w, c29.x, c29.y
+    mul_pp r0.xyz, r0.w, r0
+    pow_pp r0.w, r2.x, r2.y
+    mul_sat_pp r2.x, r1.w, c29.w
+    add_pp r1.w, r1.w, r1.w
+    mul_pp r2.yzw, r5.xxyz, r1.w
+    mul_pp r3.xyz, r5, v4
+    mul_pp r0.w, r0.w, r2.x
+    mul_pp r5.xyz, r0.w, c8
+    mul_pp r0.xyz, r0, r5
+    mul_pp r0.xyz, r0, c31.x
+    mad_pp r4.xyz, r2.yzww, c8, r0
+    mov_pp r3.w, c27.z
+    add_pp r0, r4, r3
+    add_pp r0.xyz, r1, r0
+    mov_pp oC0.w, r0.w
+    add r0.xyz, r0, -c5
+    mul r0.w, c6.x, v5.x
+    mul r0.w, r0.w, -r0.w
+    exp r0.w, r0.w
+    mad_pp oC0.xyz, r0.w, r0, c5

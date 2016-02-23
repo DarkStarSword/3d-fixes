@@ -52,8 +52,9 @@ Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
 
-- I'm not sure the ocean waves are acting quite right in 3D, but it doesn't
-  affect gameplay.
+- Ocean is too rough near the shoreline due to a conflict with Helix Mod.
+
+- Ocean becomes misaligned when the camera is tilted while side strafing.
 
 Notes
 -----

@@ -1,0 +1,174 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 6c75f17b9bb98973-vs_replace.txt
+// 3DMigoto: 6c75f17b9bb98973 | Matched 4 variants of 2 shaders: Marmoset/Transparent/Effects/Diffuse IBL Panning Masked Additive Fade, Marmoset/Transparent/Effects/Diffuse IBL Panning Masked Blended Fade
+// 
+//    Unity headers extracted from Marmoset IBL Panning Masked Additive Fade.shader
+//    Shader "Marmoset/Transparent/Effects/Diffuse IBL Panning Masked Additive Fade" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (1,1,1,1)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _Mask ("Mask Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _DiffusePanningXYMaskPanningZW ("DiffusePanningXYMaskPanningZW", Vector) = (0.3,0.3,0,0)
+//       _MaskChannelSelector ("MaskChannelSelector", Vector) = (1,0,0,0)
+//       _AmbientColorDesaturation ("Ambient Color Desaturation", Range(0,1)) = 0
+//       _StartFade ("Start Distance Fade In", Float) = 1
+//       _FadeDistance ("Distance to Full Alpha", Float) = 5
+//      }
+//      Fallback "Transparent/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha One
+//          ColorMask RGB
+//          GpuProgramID 47193
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "FOG_EXP2" "MARMO_TERRAIN_BLEND_ON" "SOFTPARTICLES_OFF" }
+// 2:           Keywords { "FOG_EXP2" "MARMO_TERRAIN_BLEND_ON" "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 928
+//              Vector 880 [_MainTex_ST]
+//              Vector 896 [_Mask_ST]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 64 [glstate_matrix_modelview0]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Marmoset IBL Panning Masked Blended Fade.shader
+//    Shader "Marmoset/Transparent/Effects/Diffuse IBL Panning Masked Blended Fade" {
+//      Properties {
+//       _TintColor ("Tint Color", Color) = (1,1,1,1)
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _Mask ("Mask Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _DiffusePanningXYMaskPanningZW ("DiffusePanningXYMaskPanningZW", Vector) = (0.3,0.3,0,0)
+//       _MaskChannelSelector ("MaskChannelSelector", Vector) = (1,0,0,0)
+//       _AmbientColorDesaturation ("Ambient Color Desaturation", Range(0,1)) = 0
+//       _StartFade ("Start Distance Fade In", Float) = 1
+//       _FadeDistance ("Distance to Full Alpha", Float) = 5
+//      }
+//      Fallback "Transparent/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          ColorMask RGB
+//          GpuProgramID 47193
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "FOG_EXP2" "MARMO_TERRAIN_BLEND_ON" "SOFTPARTICLES_OFF" }
+// 2:           Keywords { "FOG_EXP2" "MARMO_TERRAIN_BLEND_ON" "SOFTPARTICLES_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 928
+//              Vector 880 [_MainTex_ST]
+//              Vector 896 [_Mask_ST]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 64 [glstate_matrix_modelview0]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:32:27 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[8];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[57];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : COLOR0,
+  float2 v2 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : COLOR0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 6c75f17b9bb98973-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xyzw = v1.xyzw;
+  o2.xy = v2.xy * cb0[55].xy + cb0[55].zw;
+  o2.zw = v2.xy * cb0[56].xy + cb0[56].zw;
+  o3.x = r0.z;
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o4.w = r0.w;
+  o4.xy = r1.xw + r1.zz;
+  r0.x = cb2[5].z * v0.y;
+  r0.x = cb2[4].z * v0.x + r0.x;
+  r0.x = cb2[6].z * v0.z + r0.x;
+  r0.x = cb2[7].z * v0.w + r0.x;
+  o4.z = -r0.x;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Firewatch\ShaderFixes\6c75f17b9bb98973-vs_replace.txt(135,14-15): warning X3578: Output value 'o3' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
