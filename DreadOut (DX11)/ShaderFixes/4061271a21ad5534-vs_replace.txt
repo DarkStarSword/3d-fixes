@@ -1,0 +1,217 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 4061271a21ad5534-vs_replace.txt
+// 3DMigoto: 4061271a21ad5534 | Matched 2 variants of 2 shaders: Hidden/Nature/Tree Creator Bark Optimized, Nature/Tree Creator Bark
+// 
+//    Unity headers extracted from TreeCreatorBarkOptimized.shader
+//    Shader "Hidden/Nature/Tree Creator Bark Optimized" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//       _BumpSpecMap ("Normalmap (GA) Spec (R)", 2D) = "bump" {}
+//       _TranslucencyMap ("Trans (RGB) Gloss(A)", 2D) = "white" {}
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Scale ("Scale", Vector) = (1,1,1,1)
+//       _SquashAmount ("Squash", Float) = 1
+//      }
+//      Dependency "BillboardShader" = "Hidden/Nature/Tree Creator Bark Rendertex"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="TreeBark" }
+//        Pass 5/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="TreeBark" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset 1, 1
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord1" TexCoord1
+//              ConstBuffer "$Globals" 112
+//              Vector 48 [_Wind]
+//              ConstBuffer "UnityPerCamera" 128
+//              Vector 0 [_Time]
+//              ConstBuffer "UnityShadows" 416
+//              Vector 80 [unity_LightShadowBias]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              ConstBuffer "UnityTerrain" 256
+//              Vector 80 [_Scale]
+//              Vector 160 [_SquashPlaneNormal]
+//              Float 176 [_SquashAmount]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityShadows" 2
+//              BindCB "UnityPerDraw" 3
+//              BindCB "UnityTerrain" 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from TreeCreatorBark.shader
+//    Shader "Nature/Tree Creator Bark" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+//       _BumpMap ("Normalmap", 2D) = "bump" {}
+//       _GlossMap ("Gloss (A)", 2D) = "black" {}
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Scale ("Scale", Vector) = (1,1,1,1)
+//       _SquashAmount ("Squash", Float) = 1
+//      }
+//      Dependency "OptimizedShader" = "Hidden/Nature/Tree Creator Bark Optimized"
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="TreeBark" }
+//        Pass 5/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="TreeBark" }
+//          Cull Off
+//          Fog { Mode Off }
+//          Offset 1, 1
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord1" TexCoord1
+//              ConstBuffer "$Globals" 112
+//              Vector 48 [_Wind]
+//              ConstBuffer "UnityPerCamera" 128
+//              Vector 0 [_Time]
+//              ConstBuffer "UnityShadows" 416
+//              Vector 80 [unity_LightShadowBias]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              ConstBuffer "UnityTerrain" 256
+//              Vector 80 [_Scale]
+//              Vector 160 [_SquashPlaneNormal]
+//              Float 176 [_SquashAmount]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityShadows" 2
+//              BindCB "UnityPerDraw" 3
+//              BindCB "UnityTerrain" 4
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Mon Feb 22 16:46:11 2016
+cbuffer cb4 : register(b4)
+{
+  float4 cb4[12];
+}
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[15];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[6];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[1];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[4];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : COLOR0,
+  out float4 o0 : SV_POSITION0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.x = cb3[12].w;
+  r0.y = cb3[13].w;
+  r0.z = cb3[14].w;
+  r0.x = dot(r0.xyz, float3(1,1,1));
+  r0.y = v5.x + r0.x;
+  r0.z = v5.y + r0.y;
+  r1.xyz = cb4[5].xyz * v0.xyz;
+  r0.x = dot(r1.xyz, r0.zzz);
+  r0.xyzw = cb1[0].yyyy + r0.xxyy;
+  r0.xyzw = float4(1.97500002,0.792999983,0.375,0.193000004) * r0.xyzw;
+  r0.xyzw = frac(r0.xyzw);
+  r0.xyzw = r0.xyzw * float4(2,2,2,2) + float4(-0.5,-0.5,-0.5,-0.5);
+  r0.xyzw = frac(r0.xyzw);
+  r0.xyzw = r0.xyzw * float4(2,2,2,2) + float4(-1,-1,-1,-1);
+  r2.xyzw = abs(r0.xyzw) * abs(r0.xyzw);
+  r0.xyzw = -abs(r0.xyzw) * float4(2,2,2,2) + float4(3,3,3,3);
+  r0.xyzw = r2.xyzw * r0.xyzw;
+  r0.xy = r0.xz + r0.yw;
+  r2.xyz = cb0[3].xyz * r0.yyy;
+  r2.xyz = v4.yyy * r2.xyz;
+  r3.y = v4.y * r0.y;
+  r0.y = 0.100000001 * v5.y;
+  r3.xz = v2.xz * r0.yy;
+  r0.z = 0.300000012;
+  r0.xyz = r0.xzx * r3.xyz + r2.xyz;
+  r0.xyz = r0.xyz * cb0[3].www + r1.xyz;
+  r0.xyz = v4.xxx * cb0[3].xyz + r0.xyz;
+  r0.w = dot(cb4[10].xyz, r0.xyz);
+  r0.w = cb4[10].w + r0.w;
+  r1.xyz = -r0.www * cb4[10].xyz + r0.xyz;
+  r0.xyz = -r1.xyz + r0.xyz;
+  r0.xyz = cb4[11].xxx * r0.xyz + r1.xyz;
+  r1.xyzw = cb3[1].xyzw * r0.yyyy;
+  r1.xyzw = cb3[0].xyzw * r0.xxxx + r1.xyzw;
+  r0.xyzw = cb3[2].xyzw * r0.zzzz + r1.xyzw;
+  r0.xyzw = cb3[3].xyzw + r0.xyzw;
+
+o0.xyw = r0.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 4061271a21ad5534-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r0.z = cb2[5].x + r0.z;
+
+  // o0.xyw = r0.xyw; // Relocated from here with hlsltool.py
+
+  r0.x = max(0, r0.z);
+  r0.x = r0.x + -r0.z;
+  o0.z = cb2[5].y * r0.x + r0.z;
+  return;
+}

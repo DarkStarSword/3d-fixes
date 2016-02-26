@@ -1,0 +1,153 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9096ec9598ce0ff5-vs_replace.txt
+// 3DMigoto: 9096ec9598ce0ff5 | Matched 2 variants of 1 shaders: Specular
+// 
+//    Unity headers extracted from Normal-Glossy.shader
+//    Shader "Specular" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        LOD 300
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_ON" }
+// 2:           Keywords { "DIRLIGHTMAP_ON" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Bind "tangent" TexCoord2
+//              ConstBuffer "$Globals" 144
+//              Vector 80 [unity_LightmapST]
+//              Vector 96 [_MainTex_ST]
+//              ConstBuffer "UnityPerCamera" 128
+//              Vector 64 [_WorldSpaceCameraPos] 3
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 256 [_World2Object]
+//              Vector 320 [unity_Scale]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Mon Feb 22 16:46:43 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[21];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[8];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[7];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD0,
+  out float2 p1 : TEXCOORD2,
+  out float4 o2 : TEXCOORD1,
+  out float3 o3 : TEXCOORD3)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9096ec9598ce0ff5-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9096ec9598ce0ff5-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xy = v3.xy * cb0[6].xy + cb0[6].zw;
+  p1.xy = v4.xy * cb0[5].xy + cb0[5].zw;
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o2.zw = r0.zw;
+  o2.xy = r1.xw + r1.zz;
+  r0.xyz = v2.zxy * v1.yzx;
+  r0.xyz = v2.yzx * v1.zxy + -r0.xyz;
+  r0.xyz = v1.www * r0.xyz;
+  r1.xyz = cb2[17].xyz * _WorldSpaceCameraPos.yyy;
+  r1.xyz = cb2[16].xyz * _WorldSpaceCameraPos.xxx + r1.xyz;
+  r1.xyz = cb2[18].xyz * _WorldSpaceCameraPos.zzz + r1.xyz;
+  r1.xyz = cb2[19].xyz + r1.xyz;
+  r1.xyz = r1.xyz * cb2[20].www + -v0.xyz;
+  o3.y = dot(r0.xyz, r1.xyz);
+  o3.x = dot(v1.xyz, r1.xyz);
+  o3.z = dot(v2.xyz, r1.xyz);
+  return;
+}

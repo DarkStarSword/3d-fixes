@@ -1,0 +1,153 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe fa15c9f4a84401db-vs_replace.txt
+// 3DMigoto: fa15c9f4a84401db | Unity headers extracted from Normal-Glossy.shader
+// Shader "Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.078125
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     LOD 300
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Fog {
+//          Color (0,0,0,0)
+//         }
+//       Blend One One
+//       Program "vp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "DIRECTIONAL" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           ConstBuffer "$Globals" 96
+//           Vector 80 [_MainTex_ST]
+//           ConstBuffer "UnityPerCamera" 128
+//           Vector 64 [_WorldSpaceCameraPos] 3
+//           ConstBuffer "UnityLighting" 720
+//           Vector 0 [_WorldSpaceLightPos0]
+//           ConstBuffer "UnityPerDraw" 336
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 192 [_Object2World]
+//           Vector 320 [unity_Scale]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityLighting" 2
+//           BindCB "UnityPerDraw" 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Mon Feb 22 16:46:53 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[21];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[8];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[6];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float3 o4 : TEXCOORD3)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe fa15c9f4a84401db-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = cb3[1].xyzw * v0.yyyy;
+  r0.xyzw = cb3[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb3[2].xyzw * v0.zzzz + r0.xyzw;
+  o0.xyzw = cb3[3].xyzw * v0.wwww + r0.xyzw;
+  o1.xy = v3.xy * cb0[5].xy + cb0[5].zw;
+  r0.xyz = cb3[20].www * v2.xyz;
+  r1.xyz = cb3[13].xyz * r0.yyy;
+  r0.xyw = cb3[12].xyz * r0.xxx + r1.xyz;
+  o2.xyz = cb3[14].xyz * r0.zzz + r0.xyw;
+  o3.xyz = cb2[0].xyz;
+  r0.xyz = cb3[13].xyz * v0.yyy;
+  r0.xyz = cb3[12].xyz * v0.xxx + r0.xyz;
+  r0.xyz = cb3[14].xyz * v0.zzz + r0.xyz;
+  r0.xyz = cb3[15].xyz * v0.www + r0.xyz;
+  o4.xyz = _WorldSpaceCameraPos.xyz + -r0.xyz;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\DreadOut\ShaderFixes\fa15c9f4a84401db-vs_replace.txt(110,14-15): warning X3578: Output value 'o1' is not completely initialized
+C:\Steam\SteamApps\common\DreadOut\ShaderFixes\fa15c9f4a84401db-vs_replace.txt(111,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\DreadOut\ShaderFixes\fa15c9f4a84401db-vs_replace.txt(112,14-15): warning X3578: Output value 'o3' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

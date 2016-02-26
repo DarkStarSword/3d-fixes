@@ -1,0 +1,192 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe a1fbfe434aaec54d-vs_replace.txt
+// 3DMigoto: a1fbfe434aaec54d | Matched 4 variants of 2 shaders: Diffuse, Transparent/Cutout/Diffuse
+// 
+//    Unity headers extracted from Normal-Diffuse.shader
+//    Shader "Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB)", 2D) = "white" {}
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 96
+//              Vector 64 [_MainTex_ST]
+//              ConstBuffer "UnityPerCamera" 128
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityLighting" 720
+//              Vector 608 [unity_SHAr]
+//              Vector 624 [unity_SHAg]
+//              Vector 640 [unity_SHAb]
+//              Vector 656 [unity_SHBr]
+//              Vector 672 [unity_SHBg]
+//              Vector 688 [unity_SHBb]
+//              Vector 704 [unity_SHC]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              Vector 320 [unity_Scale]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityLighting" 2
+//              BindCB "UnityPerDraw" 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from AlphaTest-Diffuse.shader
+//    Shader "Transparent/Cutout/Diffuse" {
+//      Properties {
+//       _Color ("Main Color", Color) = (1,1,1,1)
+//       _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Transparent/Cutout/VertexLit"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//        Pass 4/4 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 1:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_OFF" "LIGHTMAP_OFF" }
+// 2:           Keywords { "DIRLIGHTMAP_OFF" "HDR_LIGHT_PREPASS_ON" "LIGHTMAP_OFF" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 112
+//              Vector 64 [_MainTex_ST]
+//              ConstBuffer "UnityPerCamera" 128
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityLighting" 720
+//              Vector 608 [unity_SHAr]
+//              Vector 624 [unity_SHAg]
+//              Vector 640 [unity_SHAb]
+//              Vector 656 [unity_SHBr]
+//              Vector 672 [unity_SHBg]
+//              Vector 688 [unity_SHBb]
+//              Vector 704 [unity_SHC]
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              Vector 320 [unity_Scale]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityLighting" 2
+//              BindCB "UnityPerDraw" 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Mon Feb 22 16:46:38 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[21];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[45];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[5];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float3 o3 : TEXCOORD2)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb3[1].xyzw * v0.yyyy;
+  r0.xyzw = cb3[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb3[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb3[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe a1fbfe434aaec54d-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xy = v3.xy * cb0[4].xy + cb0[4].zw;
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o2.zw = r0.zw;
+  o2.xy = r1.xw + r1.zz;
+  r0.xyz = cb3[20].www * v2.xyz;
+  r1.xyz = cb3[13].xyz * r0.yyy;
+  r0.xyw = cb3[12].xyz * r0.xxx + r1.xyz;
+  r0.xyz = cb3[14].xyz * r0.zzz + r0.xyw;
+  r0.w = 1;
+  r1.x = dot(cb2[38].xyzw, r0.xyzw);
+  r1.y = dot(cb2[39].xyzw, r0.xyzw);
+  r1.z = dot(cb2[40].xyzw, r0.xyzw);
+  r2.xyzw = r0.xyzz * r0.yzzx;
+  r3.x = dot(cb2[41].xyzw, r2.xyzw);
+  r3.y = dot(cb2[42].xyzw, r2.xyzw);
+  r3.z = dot(cb2[43].xyzw, r2.xyzw);
+  r1.xyz = r3.xyz + r1.xyz;
+  r0.y = r0.y * r0.y;
+  r0.x = r0.x * r0.x + -r0.y;
+  o3.xyz = cb2[44].xyz * r0.xxx + r1.xyz;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\DreadOut\ShaderFixes\a1fbfe434aaec54d-vs_replace.txt(144,14-15): warning X3578: Output value 'o1' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
