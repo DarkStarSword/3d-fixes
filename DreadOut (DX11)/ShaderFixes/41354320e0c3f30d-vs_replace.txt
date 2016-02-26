@@ -1,0 +1,75 @@
+// 3DMigoto: 41354320e0c3f30d | Matched 2 variants of 1 shaders: Hidden/Internal-PrePassCollectShadows
+// 
+//    Unity headers extracted from Internal-PrePassCollectShadows.shader
+//    Shader "Hidden/Internal-PrePassCollectShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" {}
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          Fog { Mode Off }
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+// 2:           Keywords { "SHADOWS_NATIVE" "SHADOWS_SPLIT_SPHERES" }
+// 1:           Keywords { "SHADOWS_NATIVE" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "UnityPerDraw" 336
+//              Matrix 0 [glstate_matrix_mvp]
+//              BindCB "UnityPerDraw" 0
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Mon Feb 22 16:46:11 2016
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[4];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  float3 v2 : NORMAL0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float3 o2 : TEXCOORD1)
+{
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = cb0[1].xyzw * v0.yyyy;
+  r0.xyzw = cb0[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb0[2].xyzw * v0.zzzz + r0.xyzw;
+  o0.xyzw = cb0[3].xyzw * v0.wwww + r0.xyzw;
+  o1.xy = v1.xy;
+  o2.xyz = v2.xyz;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\DreadOut\ShaderFixes\41354320e0c3f30d-vs_replace.txt(56,14-15): warning X3578: Output value 'o1' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
