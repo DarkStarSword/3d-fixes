@@ -7,19 +7,38 @@ for orig in "$@"; do
 	base=$(basename "$orig" | sed 's/\.[^\.]*$//')
 	echo "$orig"
 
+	height=$(identify -format '%h' "$orig")
+
 	if echo "$orig" | grep -i '.mpo$' > /dev/null; then
 		width=$(identify -format '%w' "$orig")
-		rjpg=/tmp/$$_r.jpg
-		ljpg=/tmp/$$_l.jpg
-		exiftool $orig -o $ljpg
-		exiftool $orig -mpimage2 -b > $rjpg
+		tmp_rjpg=/tmp/$$_r.jpg
+		tmp_ljpg=/tmp/$$_l.jpg
+		exiftool $orig -o $tmp_ljpg
+		exiftool $orig -mpimage2 -b > $tmp_rjpg
+
+		parallax=$(exiftool $tmp_rjpg -Parallax -b)
+		offset=$(echo "$width * $parallax / 100" | bc)
+
+		if [ "$offset" -ge 0 ]; then
+			width=$(($width - $offset))
+			ljpg="$tmp_ljpg[${width}x${height}+${offset}+0]"
+			rjpg="$tmp_rjpg[${width}x${height}+0+0]"
+
+			echo "Positive Parallax: $parallax%, Offset: $offset"
+		else
+			offset=$((-${offset}))
+			width=$(($width - $offset))
+			ljpg="$tmp_ljpg[${width}x${height}+0+0]"
+			rjpg="$tmp_rjpg[${width}x${height}+${offset}+0]"
+
+			echo "Negative Parallax: $parallax%, Offset: $offset"
+		fi
 	else
 		width=$(($(identify -format '%w' "$orig")/2))
 		ljpg="$orig[${width}x${height}+${width}+0]"
 		rjpg="$orig[${width}x${height}+0+0]"
 	fi
 
-	height=$(identify -format '%h' "$orig")
 	white=$((width / 3))
 
 	convert $rjpg $ljpg +append -quality 85% jps/${base}.jps
@@ -38,7 +57,7 @@ for orig in "$@"; do
 	rm $r1jpg $l1jpg
 
 	if echo "$orig" | grep -i '.mpo$' > /dev/null; then
-		rm $rjpg $ljpg
+		rm $tmp_rjpg $tmp_ljpg
 	fi
 done
 
