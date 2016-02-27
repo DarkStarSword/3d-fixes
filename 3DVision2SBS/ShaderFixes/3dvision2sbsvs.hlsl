@@ -1,7 +1,15 @@
+Texture2D<float4> StereoParams : register(t125);
+
 void main(
 		out float4 pos : SV_Position0,
 		uint vertex : SV_VertexID)
 {
+	float4 stereo = StereoParams.Load(0);
+	if (stereo.x == 0) {
+		pos = 0;
+		return;
+	}
+
 	// Not using vertex buffers so manufacture our own coordinates.
 	// You may have to adjust this depending on whether the game is using
 	// clockwise or counterclockwise for front-facing surfaces:
