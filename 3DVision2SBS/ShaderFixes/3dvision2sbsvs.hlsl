@@ -1,11 +1,13 @@
 Texture2D<float4> StereoParams : register(t125);
+Texture1D<float4> IniParams : register(t120);
 
 void main(
 		out float4 pos : SV_Position0,
 		uint vertex : SV_VertexID)
 {
 	float4 stereo = StereoParams.Load(0);
-	if (stereo.x == 0) {
+	float mode = IniParams.Load(int2(7, 0)).x;
+	if (stereo.x == 0 || mode == 0) {
 		pos = 0;
 		return;
 	}
