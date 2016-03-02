@@ -1,0 +1,188 @@
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe d67afaa49abaacf5-vs_replace.txt
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 07:36:13 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CSceneTransformParameterProvider : register(b1)
+{
+  float4x4 WorldMatrix : packoffset(c0);
+  float3 WorldPositionFractions : packoffset(c4);
+}
+
+cbuffer CSceneGeometry : register(b2)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MeshDecompression : packoffset(c1);
+  float4 NormalizedXYBBox : packoffset(c2);
+}
+
+cbuffer CBlendMatricesCurrentParameterProvider : register(b3)
+{
+  float4x3 BlendMatrices[48] : packoffset(c0);
+}
+
+cbuffer InkAndPaint : register(b4)
+{
+  float4 BehindObjectColor : packoffset(c0);
+  float4 InkAndPaintParams : packoffset(c1);
+  float4 InteriorColor : packoffset(c2);
+  float4 MaterialPickingID : packoffset(c3);
+  float4 OutlineColor : packoffset(c4);
+  float2 OutlineShapePatternTiling : packoffset(c5);
+  float2 OutlineVisualTiling : packoffset(c5.z);
+  bool AlphaInRedChannel : packoffset(c6);
+  float HuntingInvestigationLerpFactor : packoffset(c6.y);
+  float HuntingInvestigationWorldSpaceZOffset : packoffset(c6.z);
+  float ShowThroughWallsAlpha : packoffset(c6.w);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  int2 v1 : texcoord0,
+  float4 v2 : blendweight0,
+  uint4 v3 : blendindices0,
+  float4 v4 : normal0,
+  float4 v5 : color0,
+  out float4 o0 : SV_Position0,
+  out float o1 : SV_ClipDistance0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2,
+  out float o5 : TEXCOORD3)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyz = (int3)v0.xyz;
+  r0.xyz = r0.xyz * MeshDecompression.yyy + MeshDecompression.xxx;
+  r0.w = 1;
+  r1.xyzw = (int4)v3.zyxw * int4(3,3,3,3);
+  r2.xyzw = BlendMatrices[v3.y]._m00_m10_m20_m30 * v2.yyyy;
+  r2.xyzw = v2.xxxx * BlendMatrices[v3.z]._m00_m10_m20_m30 + r2.xyzw;
+  r2.xyzw = v2.zzzz * BlendMatrices[v3.x]._m00_m10_m20_m30 + r2.xyzw;
+  r2.xyzw = v2.wwww * BlendMatrices[v3.w]._m00_m10_m20_m30 + r2.xyzw;
+  r3.x = dot(r0.xyzw, r2.xyzw);
+  r4.xyzw = BlendMatrices[v3.y]._m01_m11_m21_m31 * v2.yyyy;
+  r4.xyzw = v2.xxxx * BlendMatrices[v3.z]._m01_m11_m21_m31 + r4.xyzw;
+  r4.xyzw = v2.zzzz * BlendMatrices[v3.x]._m01_m11_m21_m31 + r4.xyzw;
+  r4.xyzw = v2.wwww * BlendMatrices[v3.w]._m01_m11_m21_m31 + r4.xyzw;
+  r3.y = dot(r0.xyzw, r4.xyzw);
+  r5.xyzw = BlendMatrices[v3.y]._m02_m12_m22_m32 * v2.yyyy;
+  r5.xyzw = v2.xxxx * BlendMatrices[v3.z]._m02_m12_m22_m32 + r5.xyzw;
+  r5.xyzw = v2.zzzz * BlendMatrices[v3.x]._m02_m12_m22_m32 + r5.xyzw;
+  r1.xyzw = v2.wwww * BlendMatrices[v3.w]._m02_m12_m22_m32 + r5.xyzw;
+  r3.z = dot(r0.xyzw, r1.xyzw);
+  r0.x = dot(r3.xyz, WorldMatrix._m00_m10_m20);
+  r0.y = dot(r3.xyz, WorldMatrix._m01_m11_m21);
+  r0.z = dot(r3.xyz, WorldMatrix._m02_m12_m22);
+  r3.x = WorldMatrix._m30;
+  r3.y = WorldMatrix._m31;
+  r3.z = WorldMatrix._m32;
+  r5.xyz = -CameraPosition.xyz + r3.xyz;
+  r3.xyz = r3.xyz + r0.xyz;
+  r5.xyz = -CameraPositionFractions.xyz + r5.xyz;
+  r0.xyz = r5.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r5.xyz = r0.xyz * r0.www;
+  r0.xyz = r5.xyz * -AlphaInRedChannel + r0.xyz;
+  r0.w = 1;
+  r5.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  r5.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  r5.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.xyw = r5.xyw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe d67afaa49abaacf5-vs_replace.txt
+if (r5.w != 1.0) { r5.x += separation * (r5.w - convergence); }
+
+  r0.xyzw = DepthTextureScaleOffset.xyzw * r5.xyww;
+  o4.z = r5.w;
+  o4.xy = r0.xy + r0.zw;
+  o1.x = 0;
+  o2.xyzw = float4(0,0,0,0);
+  r0.xyz = v4.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r2.x = dot(r0.xyz, r2.xyz);
+  r2.y = dot(r0.xyz, r4.xyz);
+  r2.z = dot(r0.xyz, r1.xyz);
+  r0.x = dot(r2.xyz, WorldMatrix._m00_m10_m20);
+  r0.y = dot(r2.xyz, WorldMatrix._m01_m11_m21);
+  r0.z = dot(r2.xyz, WorldMatrix._m02_m12_m22);
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.xyz = -CameraPosition.xyz + r3.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+  r1.xyz = r1.xyz * -AlphaInRedChannel + r3.xyz;
+  r1.xyz = -CameraPosition.xyz + r1.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = sqrt(r0.w);
+  r2.xyz = r1.xyz / r0.www;
+  r0.w = dot(CameraDirection.xyz, r1.xyz);
+  o5.x = CameraDistances.w * r0.w;
+  o3.w = dot(r0.xyz, r2.xyz);
+  o3.xyz = float3(0,0,0);
+  r0.x = 0.5 * InkAndPaintParams.y;
+  o4.w = 1 / r0.x;
+  return;
+}
