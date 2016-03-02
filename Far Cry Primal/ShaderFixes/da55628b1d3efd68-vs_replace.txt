@@ -1,5 +1,5 @@
 // hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe da55628b1d3efd68-vs_replace.txt
-// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 07:36:14 2016
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:25 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
 {
@@ -204,6 +204,13 @@ float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
     o2.xyz = -r4.xyz * r0.yyy + r4.xyz;
     o2.w = r0.y;
   }
+
+o0.xyw = r3.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe da55628b1d3efd68-vs_replace.txt
+if (r3.w != 1.0) { r3.x += separation * (r3.w - convergence); }
+
   r4.xyzw = DepthTextureScaleOffset.xyzw * r3.xyww;
   o5.xy = r4.xy + r4.zw;
   r0.y = dot(CameraDirection.xyz, r2.xyz);
@@ -213,11 +220,8 @@ float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
   o7.xyz = v6.xyz * float3(2,2,2) + float3(-1,-1,-1);
   r1.w = 1;
   o1.x = dot(UserClipPlane.xyzw, r1.xyzw);
-  o0.xyw = r3.xyw;
 
-// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe da55628b1d3efd68-vs_replace.txt
-if (r3.w != 1.0) { r3.x += separation * (r3.w - convergence); }
+  // o0.xyw = r3.xyw; // Relocated from here with hlsltool.py
 
   o3.xyz = v1.xyz;
   o4.xyz = r1.xyz;

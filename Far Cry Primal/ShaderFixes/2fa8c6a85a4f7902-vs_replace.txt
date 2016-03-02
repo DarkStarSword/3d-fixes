@@ -1,5 +1,5 @@
 // hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 2fa8c6a85a4f7902-vs_replace.txt
-// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 07:35:30 2016
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:01:36 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
 {
@@ -339,8 +339,6 @@ float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
     r2.xyz = r2.xyz * FogUndergroundColorScale + -r5.xyz;
     o1.xyz = r0.www * r2.xyz + r5.xyz;
   }
-  r2.xy = r3.ww + -r3.xy;
-  r2.yz = float2(0.5,0.5) * r2.xy;
 
 o0.xyw = r3.xyw; // Relocated to here with hlsltool.py
 
@@ -348,6 +346,8 @@ o0.xyw = r3.xyw; // Relocated to here with hlsltool.py
 // hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 2fa8c6a85a4f7902-vs_replace.txt
 if (r3.w != 1.0) { r3.x += separation * (r3.w - convergence); }
 
+  r2.xy = r3.ww + -r3.xy;
+  r2.yz = float2(0.5,0.5) * r2.xy;
   r0.w = r3.w + r3.x;
   r2.x = 0.5 * r0.w;
 
