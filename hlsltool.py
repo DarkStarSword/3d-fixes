@@ -1087,8 +1087,13 @@ def validate_shader_compiles(filename, shader_model):
     cwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(filename)))
     try:
+        # Don't disable optimisations since doing so suppresses certain errors
+        # (e.g. 'Output variable o0 contains a system-interpreted value
+        # (SV_Position0) which must be written in every execution path of the
+        # shader.'). We want the errors to be consistent with 3DMigoto's
+        # compilation step to catch all the same failures it does.
         fxc = subprocess.Popen([os.path.expanduser(args.fxc),
-            '/T', shader_model, '/Od', '/I', '..', os.path.basename(filename)],
+            '/T', shader_model, '/I', '..', os.path.basename(filename)],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = fxc.communicate()
     except OSError as e:
