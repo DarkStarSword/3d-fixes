@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 07:36:22 2016
+// Directional lighting
+
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 19:21:56 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
 {
@@ -120,6 +122,9 @@ void main(
   r0.x = 1 / r0.x;
   r0.y = CameraDistances.x * CameraDistances.y;
   r0.x = CameraDistances.z * r0.x;
+
+float depth = r0.x;
+
   r0.x = r0.y / r0.x;
   r0.x = CameraDistances.y + -r0.x;
   r0.z = -r0.x * CameraDistances.w + 1;
@@ -130,6 +135,11 @@ void main(
   r1.z = dot(r0.xyzw, InvViewRotProjectionMatrix._m02_m12_m22_m32);
   r0.x = dot(r0.xyzw, InvViewRotProjectionMatrix._m03_m13_m23_m33);
   r0.xyz = r1.xyz / r0.xxx;
+
+float4 stereo = StereoParams.Load(0);
+float4 adj = float4(stereo.x * (depth - stereo.y), 0, 0, 0);
+r0.xyz -= mul(mul(adj, InvProjectionMatrix), InvViewMatrix);
+
   r1.xyz = CameraPosition.xyz + r0.xyz;
   r1.w = 1;
   r2.x = dot(r1.xyzw, CSMSlice2_0.xyzw);
