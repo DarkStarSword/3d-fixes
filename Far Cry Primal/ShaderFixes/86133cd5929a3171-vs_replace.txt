@@ -208,13 +208,6 @@ float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
   r0.w = dot(r0.xy, r0.xy);
   r0.w = sqrt(r0.w);
   r1.z = dot(r0.xyz, r0.xyz);
-
-o0.xyw = r1.xyw; // Relocated to here with hlsltool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 86133cd5929a3171-vs_replace.txt
-if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
-
   r1.z = rsqrt(r1.z);
   r3.yzw = r1.zzz * r0.yzx;
   r0.x = dot(r3.wyz, WaterReflectionPlane.xyz);
@@ -241,6 +234,13 @@ if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
   o7.zw = DiffuseTiling.xy * r5.zw;
   o1.xyzw = -r0.xyzw;
   o7.xy = -r5.xy;
+
+o0.xyw = r1.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe 86133cd5929a3171-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
+
   r0.xyzw = DepthTextureScaleOffset.xyzw * r1.xyww;
   o6.xy = r0.xy + r0.zw;
   r0.xy = cmp(float2(0,0) < HeightFogParams.zw);

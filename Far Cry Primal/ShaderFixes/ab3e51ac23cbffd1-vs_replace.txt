@@ -1,0 +1,239 @@
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe ab3e51ac23cbffd1-vs_replace.txt
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:12 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CUserClipPlaneParameterProvider : register(b1)
+{
+  float4 UserClipPlane : packoffset(c0);
+}
+
+cbuffer CSceneTerrainSkyOcclusionAtlasPrivateData : register(b2)
+{
+  float4 SectorOcclusion_OffsetScale : packoffset(c0);
+  float3 SectorOcclusion_DistanceFade : packoffset(c1);
+  float2 SectorOcclusion_HeightOffsetScale : packoffset(c2);
+}
+
+cbuffer CAmbientProvider : register(b3)
+{
+  float4 CascadeDistanceScales[5] : packoffset(c0);
+  float4 CascadeNearFarSnappedOffsetCamera[5] : packoffset(c5);
+  float4 CascadeNearFarRcpUVSize[5] : packoffset(c10);
+  float4 UndergroundSHR : packoffset(c15);
+  float4 UndergroundSHG : packoffset(c16);
+  float4 UndergroundSHB : packoffset(c17);
+  float InvUndergroundBlendEndHeight : packoffset(c18);
+  float IndirectLightingScale : packoffset(c18.y);
+}
+
+cbuffer CSceneParticleEmitterRendererParameterProvider : register(b4)
+{
+  float4 DebugColor : packoffset(c0);
+  float4 FarSoftDistanceRange_oneOverSoftRange : packoffset(c1);
+  float4 NearFadeDistanceParams : packoffset(c2);
+  float4 SHCoeffB : packoffset(c3);
+  float4 SHCoeffG : packoffset(c4);
+  float4 SHCoeffR : packoffset(c5);
+  float4 SoftClipPlane : packoffset(c6);
+  float2 EmitterAttributes : packoffset(c7);
+  float2 UVNormalScale : packoffset(c7.z);
+  float3 EmitterWorldPos : packoffset(c8);
+  bool AlphaInRedChannel : packoffset(c8.w);
+  float3 LightColorUpNormalUnderwater : packoffset(c9);
+}
+
+SamplerState SectorHemiMapSamplerStateLinear_s : register(s0);
+Texture2D<float4> SectorOcclusion_HeightTexture__TexObj__ : register(t0);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : position0,
+  float4 v1 : color0,
+  float2 v2 : texcoord0,
+  float v3 : texcoord1,
+  float4 v4 : normal0,
+  float4 v5 : fog0,
+  float4 v6 : psize0,
+  float4 v7 : blendindices0,
+  float v8 : texcoord2,
+  out float4 o0 : SV_Position0,
+  out float o1 : SV_ClipDistance0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2,
+  out float4 o5 : TEXCOORD3,
+  out float4 o6 : TEXCOORD4,
+  out float4 o7 : TEXCOORD5,
+  out float4 o8 : TEXCOORD6,
+  out float4 o9 : TEXCOORD7,
+  out float2 o10 : TEXCOORD8)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyz = CameraPosition.xyz + -v0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = sqrt(r0.w);
+  r0.xyz = r0.xyz / r0.www;
+  r0.w = -2000 + r0.w;
+  r0.w = saturate(0.00033333333 * r0.w);
+  r0.w = 250 * r0.w;
+  r0.xyz = r0.xyz * r0.www + v0.xyz;
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+  r0.xyz = r1.xyz * WorldSpaceZOffset + r0.xyz;
+  r0.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r1.x = sqrt(r0.w);
+  r1.y = -DepthRangeCompression.x + r1.x;
+  r1.y = max(0, r1.y);
+  r1.x = r1.x + -r1.y;
+  r1.x = r1.y * DepthRangeCompression.y + r1.x;
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r2.xyz = r0.xyz * r1.xxx;
+  r0.xyz = r0.xyz * r1.xxx + CameraPosition.xyz;
+  r2.w = 1;
+  r1.x = dot(r2.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  r1.y = dot(r2.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.z = dot(r2.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  r1.w = dot(r2.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  r3.xy = cmp(float2(0,0) < HeightFogParams.zw);
+  r1.z = r3.y ? r3.x : 0;
+  if (r1.z != 0) {
+    o2.xyzw = float4(0,0,0,0);
+  } else {
+    r1.z = dot(r2.xyz, r2.xyz);
+    r2.w = rsqrt(r1.z);
+    r3.yzw = r2.yzx * r2.www;
+    r3.x = 1;
+    r4.x = dot(FogSHR.xyzw, r3.xyzw);
+    r4.y = dot(FogSHG.xyzw, r3.xyzw);
+    r4.z = dot(FogSHB.xyzw, r3.xyzw);
+    r4.xyz = max(float3(0,0,0), r4.xyz);
+    r5.xy = r0.yx * SectorOcclusion_OffsetScale.yx + SectorOcclusion_OffsetScale.wz;
+    r2.w = SectorOcclusion_HeightTexture__TexObj__.SampleLevel(SectorHemiMapSamplerStateLinear_s, r5.xy, 0).y;
+    r2.w = r2.w * SectorOcclusion_HeightOffsetScale.x + SectorOcclusion_HeightOffsetScale.y;
+    r2.w = -r2.w + r0.z;
+    r2.w = saturate(InvUndergroundBlendEndHeight * -r2.w);
+    r2.w = sqrt(r2.w);
+    r4.w = dot(r2.xy, r2.xy);
+    r4.w = SectorOcclusion_DistanceFade.x * r4.w + SectorOcclusion_DistanceFade.y;
+    r4.w = saturate(3 * r4.w);
+    r2.w = r4.w * r2.w;
+    r5.x = dot(UndergroundSHR.xyzw, r3.xyzw);
+    r5.y = dot(UndergroundSHG.xyzw, r3.xyzw);
+    r5.z = dot(UndergroundSHB.xyzw, r3.xyzw);
+    r3.xyz = max(float3(0,0,0), r5.xyz);
+    r3.xyz = r3.xyz * FogUndergroundColorScale + -r4.xyz;
+    r3.xyz = r2.www * r3.xyz + r4.xyz;
+    r1.z = sqrt(r1.z);
+    r1.z = saturate(r1.z * FogParams.y + FogParams.x);
+    r2.w = HeightFogParams.y * r2.z;
+    r2.w = max(-125, r2.w);
+    r3.w = cmp(9.99999997e-007 < abs(r2.w));
+    r4.x = exp2(-r2.w);
+    r4.x = 1 + -r4.x;
+    r2.w = r4.x / r2.w;
+    r2.w = r3.w ? r2.w : 1;
+    r2.w = r2.w * HeightFogParams.x + FogParams.w;
+    r1.z = r2.w * r1.z;
+    r1.z = -FogParams.z * r1.z;
+    r1.z = exp2(r1.z);
+    o2.xyz = -r3.xyz * r1.zzz + r3.xyz;
+    o2.w = r1.z;
+  }
+
+o0.xyw = r1.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -i --auto-fix-vertex-halo --only-autofixed --fxc /home/dss/fxc.exe ab3e51ac23cbffd1-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
+
+  r3.xyzw = DepthTextureScaleOffset.xyzw * r1.xyww;
+  o5.xy = r3.xy + r3.zw;
+  r1.z = dot(CameraDirection.xyz, r2.xyz);
+  o5.w = CameraDistances.w * r1.z;
+  o3.w = v4.w * v1.w;
+  o8.xyz = v5.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  o7.xyz = v6.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = 1;
+  o1.x = dot(UserClipPlane.xyzw, r0.xyzw);
+  o9.xyz = EmitterAttributes.xxx * v7.xyz;
+
+  // o0.xyw = r1.xyw; // Relocated from here with hlsltool.py
+
+  o3.xyz = v1.xyz;
+  o4.xyz = r0.xyz;
+  o4.w = v3.x;
+  o5.z = r1.w;
+  o6.xyz = v4.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  o6.w = v8.x;
+  o10.xy = v2.xy;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Games\Far Cry Primal\bin\ShaderFixes\ab3e51ac23cbffd1-vs_replace.txt(118,14-15): warning X3578: Output value 'o7' is not completely initialized
+C:\Games\Far Cry Primal\bin\ShaderFixes\ab3e51ac23cbffd1-vs_replace.txt(119,14-15): warning X3578: Output value 'o8' is not completely initialized
+C:\Games\Far Cry Primal\bin\ShaderFixes\ab3e51ac23cbffd1-vs_replace.txt(120,14-15): warning X3578: Output value 'o9' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
