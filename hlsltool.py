@@ -702,7 +702,11 @@ def auto_fix_vertex_halo(shader):
     '''
 
     # 1. Find output position variable from declarations
-    pos_out = shader.lookup_output_position().variable
+    try:
+        pos_out = shader.lookup_output_position().variable
+    except KeyError:
+        debug("Shader has no output position (tesselation?)")
+        return
 
     # 2. Locate where in the shader the output position is set and note which
     #    temporary register was copied to it.
