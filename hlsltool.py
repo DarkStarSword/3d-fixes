@@ -82,7 +82,7 @@ include_matrix_hlsl = '''
 d3dx_ini = {}
 
 class Instruction(object):
-    pattern = re.compile('[^;]*;')
+    pattern = re.compile(r'[^;]*;')
 
     def __init__(self, text):
         self.text = text
@@ -191,11 +191,33 @@ class MADInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, lval, rval)
         self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
+class FlowControlStart(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        [^{};]+
+        {
+    ''', re.VERBOSE)
+
+class FlowControlElse(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        } \s* else \s* {
+    ''', re.VERBOSE)
+
+class FlowControlEnd(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        }
+    ''', re.VERBOSE)
+
 specific_instructions = (
         MADInstruction,
         MultiplyInstruction,
         ReciprocalInstruction,
         AssignmentInstruction,
+        FlowControlElse,
+        FlowControlStart,
+        FlowControlEnd,
 )
 
 def InstructionFactory(text, pos):
@@ -407,6 +429,7 @@ class HLSLShader(object):
             instr, pos = InstructionFactory(body_txt, pos)
             if instr is None:
                 break
+            debug_verbose(3, instr.__class__.__name__, instr.strip())
 
             if not instr.is_noop(): # No point adding noops, simplifies MGSV shaders
                 self.instructions.append(instr)
