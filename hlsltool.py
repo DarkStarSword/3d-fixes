@@ -1127,7 +1127,7 @@ def validate_shader_compiles(filename, shader_model):
 
     err_type = None
     if err:
-        debug(err)
+        debug(err.decode('cp1252'))
         err_type = 'WARNINGS'
     if fxc.returncode != 0:
         failed_filename = filename + '~failed'
