@@ -767,8 +767,9 @@ def auto_fix_vertex_halo(shader):
 
 
     # 4. Scan between the two lines identified in 2 and 3 for any reads of the
-    #    temporary register:
-    results = shader.scan_shader(temp_reg.variable, write=False, start=temp_reg_line + 1, end=output_line)
+    #    temporary register. We only consider components that were originally
+    #    output to avoid getting caught up on an unrelated variable:
+    results = shader.scan_shader(temp_reg.variable, components=temp_reg.components, write=False, start=temp_reg_line + 1, end=output_line)
     if results:
         # 5. If temporary register was read between temporary register being set
         #    and moved to output, relocate the output to just before the first
