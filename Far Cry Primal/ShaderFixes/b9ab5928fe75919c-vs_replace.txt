@@ -52,6 +52,7 @@ cbuffer CSceneFireUiPrimitiveParameterProvider : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
 
 void main( 
   float2 v0 : position0,
@@ -76,6 +77,10 @@ void main(
   o1.xyzw = float4(1,1,1,1);
   o2.z = dot(r0.xyww, UVTransform._m00_m10_m20_m30);
   o2.w = dot(r0.xyzw, UVTransform._m01_m11_m21_m31);
+
+// TODO: stereo2mono, filtering
+o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }
 
