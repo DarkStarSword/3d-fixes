@@ -136,6 +136,15 @@ feature set is more limited than shadertool:
 - Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
   fog, light shafts, etc (start with the [template](Unity/DX11) instead).
 
+### asmtool.py ###
+This is a port of shadertool.py to work with DX11 assembly shaders, (but
+internally is more similar to hlsltool and depends on both for some common
+code). It's feature set is the most limited for now:
+- Install shaders to the ShaderFixes directory.
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
+
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
 driver and write them to a CustomSettingNames_en-EN.xml which can be used with
