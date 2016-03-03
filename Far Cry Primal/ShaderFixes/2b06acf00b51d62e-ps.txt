@@ -306,6 +306,7 @@ dcl_resource_texture3d (float,float,float,float) t13
 dcl_resource_texture2darray (float,float,float,float) t14
 dcl_resource_texture2d (float,float,float,float) t15
 dcl_resource_texture2d (float,float,float,float) t16
+dcl_resource_texture2d (float,float,float,float) t100
 dcl_input_ps_siv linear noperspective centroid v0.xy, position
 dcl_input_ps linear v1.xyzw
 dcl_input_ps linear centroid v2.xyzw
@@ -315,7 +316,12 @@ dcl_input_ps linear v5.xyz
 dcl_input_ps linear v6.xyz
 dcl_input_ps linear v7.xyzw
 dcl_output o0.xyzw
-dcl_temps 23
+dcl_temps 26
+
+dcl_resource_texture2d (float,float,float,float) t125
+
+ld_indexable(texture2d)(float,float,float,float) r23.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 dp3 r0.x, v3.xyzx, v3.xyzx
 sqrt r0.x, r0.x
 add r0.yzw, -v4.xxzy, cb0[42].xxzy
@@ -913,6 +919,31 @@ mul r12.xy, r3.wyww, cb6[12].zzzz
 mad r12.xy, r12.xyxx, r0.xxxx, v5.xyxx
 mov r12.z, v5.z
 mov r12.w, l(1.000000)
+
+// ViewProjectionMatrix:
+dp4 r24.w, r12.xyzw, cb0[19].xyzw
+
+// Correction:
+add r23.w, r24.w, -r23.y
+mul r24.x, r23.w, r23.x
+mov r24.yzw, l(0.0)
+
+// InvProjectionMatrix:
+dp4 r25.x, r24.xyzw, cb0[0].xyzw
+dp4 r25.y, r24.xyzw, cb0[1].xyzw
+dp4 r25.z, r24.xyzw, cb0[2].xyzw
+dp4 r25.w, r24.xyzw, cb0[3].xyzw
+// InvViewMatrix, use output components with order matching above so the below
+// add is slightly less brainfuck:
+dp4 r24.x, r25.xyzw, cb0[4].xyzw
+dp4 r24.y, r25.xyzw, cb0[5].xyzw
+dp4 r24.z, r25.xyzw, cb0[6].xyzw
+dp4 r24.w, r25.xyzw, cb0[7].xyzw
+
+// Adjust coord:
+add r12.xyz, r12.xyz, r24.xyzw
+
+//WaterReflectionTransform:
 dp4 r13.x, r12.xyzw, cb1[0].xyzw
 dp4 r13.y, r12.xyzw, cb1[1].xyzw
 dp4 r6.w, r12.xyzw, cb1[3].xyzw
@@ -920,7 +951,23 @@ div r12.xy, r13.xyxx, r6.wwww
 mad r11.zw, -v0.xxxx, cb0[40].zzzz, l(0.000000, 0.000000, 1.000000, 1.000000)
 add r11.xz, -r11.zzyz, r12.xxyx
 mad_sat r2.xw, r11.xxxz, r2.xxxw, r11.wwwy
-sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r2.xwxx, t16.xyzw, s11, r7.y
+
+// Sample from the reversed buffer:
+//sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r2.xwxx, t16.xyzw, s11, r7.y
+sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r2.xwxx, t100.xyzw, s11, r7.y
+
+// If we can sort out the problem with mip-maps not being copied during the
+// reverse stereo blit we could switch the eyes with this code instead of the
+// custom shader:
+//// Swap reflection eyes
+//mov r24.xyzw, r2.xyzw
+//mul r24.x, r24.x, l(0.5)
+//eq r23.w, r23.z, l(-1.0)
+//if_nz r23.w
+//  add r24.x, r24.x, l(0.5)
+//endif
+//sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r24.xwxx, t100.xyzw, s11, r7.y
+
 min r11.xyz, r11.xyzx, l(16.000000, 16.000000, 16.000000, 0.000000)
 ld_structured_indexable(structured_buffer, stride=16)(mixed,mixed,mixed,mixed) r2.x, l(0), l(12), t3.xxxx
 mul r11.xyz, r2.xxxx, r11.xyzx
