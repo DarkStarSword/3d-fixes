@@ -236,3 +236,14 @@ profile format to make it easier to compare changes between driver versions.
 
 ### shaderutil.py ###
 Utility library used by shadertool and the shader database.
+
+### find_frame_analysis_candidates.py ###
+Provides statistics from a 3DMigoto frame analysis log.txt that may assist in
+selecting a suitable shader to use as a trigger to start analysis at the more
+interesting post-processing phase of the frame. Statistics include the
+percentage of draw calls and dumped render targets would be saved, as well as
+the total number of times each listed shader is used (not all shaders are
+listed), and the number of simultaneous render targets used with each listed
+shader (a series of consecutive shaders with a consistently high number of
+render targets may indicate the long and uninteresting forward rendering phase
+of the frame).
