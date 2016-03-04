@@ -8,41 +8,45 @@ these fixes.
 [1]: http://helixmod.blogspot.com.au/
 
 ### Complete Fixes ###
-- [Betrayer](Betrayer) (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
-- [The Book of Unwritten Tales 2](BoUT2) (Fixes shadows, halos, etc.)
-- [Montague's Mount](Montague's Mount) (Fixes halos, shadows, etc.)
-- [Dreamfall Chapters](Dreamfall Chapters) (First ever Unity FOV correct shadow fix)
-- World of Diving [DX9](World of Diving (DX9)) & [DX11](World of Diving (DX11)) (Fixed halos, shadows, etc.)
-- [The Forest](The Forest) (Fixed halos, shadows)
-- [Legends of Aethereus](LegendsOfAethereus) (Fixed halos, shadows, skybox, etc.)
-- [DreadOut](DreadOut) (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
-- [Eleusis](Eleusis) (Fixed shadows, light shafts, etc.)
-- [Stranded Deep](Stranded Deep) (Fixed water, light shafts, yet another shadow pattern)
-- [Life Is Strange](Life is Strange) (Fixed shadows, reflections, light shafts, bloom, etc.)
-- [Miasmata](Miasmata) (Reflections, light shafts, stereo crosshair, skybox, etc.)
-- [Oddworld: New 'n' Tasty](Oddworld New n Tasty) (Shadows, halos, clipping, ripple distortion, etc.)
-- [Pineview Drive](Pineview Drive) (Halos, shadows, sun shafts, etc.)
-- [The Long Dark](TheLongDark) (Halos, shadows, etc.)
-- [Viscera Cleanup Detail](Viscera) (shadows, missing UI, etc.)
-- [Dead or Alive 5: Last Round](Dead or Alive 5 Last Round) (water, halos, lens flare)
-- [The Last Tinker: City of Colors](The Last Tinker City of Colors) (new technique to fix shadows)
-- [Euro Truck Simulator 2](Euro Truck Simulator 2) (skybox, god rays, reflections)
-- [Lichdom Battlemage](Lichdom Battlemage) (first every CryEngine 3 fix)
-- [Mad Max](Mad Max) (Collaboration with DHR. Fixes shadows, bloom, decals, reflections, etc)
+- [Betrayer](Betrayer) (Improvements on Eqzitara's fix) - fixes water, god rays, etc.
+- [The Book of Unwritten Tales 2](BoUT2) - Fixes shadows, halos, etc.
+- [Montague's Mount](Montague's Mount) - Fixes halos, shadows, etc.
+- [Dreamfall Chapters](Dreamfall Chapters) - First ever Unity FOV correct shadow fix
+- World of Diving [DX9](World of Diving (DX9)) & [DX11](World of Diving (DX11)) - Fixed halos, shadows, etc.
+- [The Forest](The Forest) - Fixed halos, shadows, reflections, parallax sand/rocks, etc.
+- [Legends of Aethereus](LegendsOfAethereus) - Fixed halos, shadows, skybox, etc.
+- [DreadOut](DreadOut) - Fix for missing fog after shader model upgrade, stereo cameraphone, etc.
+- [Eleusis](Eleusis) - Fixed shadows, light shafts, etc.
+- [Stranded Deep](Stranded Deep) - Fixed water, light shafts, yet another shadow pattern, auto-crosshair, etc.
+- [Life Is Strange](Life is Strange) - Fixed shadows, reflections, light shafts, bloom, etc.
+- [Miasmata](Miasmata) - Reflections, light shafts, stereo crosshair, skybox, etc.
+- [Oddworld: New 'n' Tasty](Oddworld New n Tasty) - Shadows, halos, clipping, ripple distortion, etc.
+- [Pineview Drive](Pineview Drive) - Halos, shadows, sun shafts, etc.
+- [The Long Dark](TheLongDark) - Halos, shadows, etc.
+- [Viscera Cleanup Detail](Viscera) - shadows, missing UI, etc.
+- [Dead or Alive 5: Last Round](Dead or Alive 5 Last Round) - water, halos, lens flares
+- [The Last Tinker: City of Colors](The Last Tinker City of Colors) - new technique to fix shadows
+- [Euro Truck Simulator 2](Euro Truck Simulator 2) - skybox, god rays, reflections
+- [Lichdom Battlemage](Lichdom Battlemage) - first every CryEngine 3 fix
+- [Mad Max](Mad Max) (Collaboration with DHR) - Fixes shadows, bloom, decals, reflections, etc.
+- [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) - New 3DMigoto hooking mode, accurate specular highlight fix, etc.
+- [The Witness](The Witness) - Automatic stereo mouse cursor, reflections, etc.
+- [Firewatch](Firewatch) - First game to use the DX11 port of my Unity scripts
 
 Several of my fixes can be found in the 3DMigoto repository instead:
-- [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69 - fixes pretty much everything, adds an auto HUD)
-- [Witcher 3](https://github.com/bo3b/3Dmigoto/tree/master/Witcher3) (with mike_ar69 & others - Highlight: physical lighting compute shaders)
+- [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69) - fixes pretty much everything, adds an auto HUD
+- [Witcher 3](https://github.com/bo3b/3Dmigoto/tree/master/Witcher3) (with mike_ar69 & others) - Highlight: physical lighting compute shaders
 
 ### Works In Progress ###
-- [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) (WIP)
 - [Submerged](Submerged) (UE4 3DMigoto approach WIP, fixes shadows)
-- [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar64 - fixes tile lighting compute shaders and halos)
-- [Demonicon](demonicon) - Quick fix to make the game playable - fixes lights and some halos
+- [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar69) - fixes tile lighting compute shaders and halos
+- [Demonicon](demonicon) - Quick fix to make the game playable, fixes lights and some halos
+- [Akiba's Trip](Akiba's Trip Undead & Undressed) - Adds a toggle for an auto UI depth adjustment (unpolished)
+- [Far Cry Primal](Far Cry Primal)
 
 ### Minor Improvements ###
-- [Far Cry 2](Far Cry 2) (Adds auto-convergence while holding RMB)
-- [Infinifactory](Infinifactory) (fixes shadows from bo3b's fix)
+- [Far Cry 2](Far Cry 2) - Adds auto-convergence while holding RMB
+- [Infinifactory](Infinifactory) - fixes shadows from bo3b's fix
 
 ### Other Branches ###
 There's a couple of fixes that aren't in the master branch for various reasons:
@@ -50,10 +54,10 @@ There's a couple of fixes that aren't in the master branch for various reasons:
 - [Glare](https://github.com/DarkStarSword/3d-fixes/tree/glare/Glare) - Was unable to resolve clipping issue on lights at the time (I should revisit this - I believe I now know how to solve this)
 
 ### Templates ###
-- Unity 4
-- Unity 5 DX9 Old view-space style fix
-- Unity 5 DX9 New world-space style fix
-- Unity 5 DX11 Old view-space style fix
+- [Unity 4](Unity)
+- [Unity 5 DX9 Old view-space style fix](Unity5/DX9)
+- [Unity 5 DX9 New world-space style fix](Unity5/DX9-New)
+- [Unity 5 DX11 Hybrid style fix](Unity5/DX11)
 
 Misc
 ====
@@ -119,7 +123,8 @@ current features):
 - Automatically fix certain types of reflective surfaces in Unreal games (those
   using a 2D DNEReflectionTexture, used in Life Is Strange).
 - Automatically fix shadows in Unreal Engine games.
-- Apply the tedious part of a Unity shadow fix (but not the difficult part!)
+- Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
+  fog, SSAO, etc (start with the [templates](Unity) instead).
 
 ### hlsltool.py ###
 This is similar to shadertool.py, but works on HLSL shaders instead. It's
@@ -128,6 +133,8 @@ feature set is more limited than shadertool:
 - Attempt to automatically fix common issues in vertex shaders where the output
   position has been copied, often resulting in halos (Very helpful for Unity
   games).
+- Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
+  fog, light shafts, etc (start with the [template](Unity/DX11) instead).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
