@@ -952,21 +952,24 @@ mad r11.zw, -v0.xxxx, cb0[40].zzzz, l(0.000000, 0.000000, 1.000000, 1.000000)
 add r11.xz, -r11.zzyz, r12.xxyx
 mad_sat r2.xw, r11.xxxz, r2.xxxw, r11.wwwy
 
+// Swap reflection eyes:
+mov r24.xyzw, r2.xyzw
+mul r24.x, r24.x, l(0.5)
+eq r23.w, r23.z, l(-1.0)
+if_nz r23.w
+  add r24.x, r24.x, l(0.5)
+endif
+
+// The reverse stereo blit seems to only work for the first mip-map level, and
+// subsequent mip-maps will only get one eye worth of data. As a temporary
+// workaround, limit the below sample to the first mip-map. This increases the
+// detail on the ripples, so I might revisit it again later, but they look fine
+// to me (actually I maybe even prefer them a little) so this will do for now:
+mov r7.y, l(0.0)
+
 // Sample from the reversed buffer:
 //sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r2.xwxx, t16.xyzw, s11, r7.y
-sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r2.xwxx, t100.xyzw, s11, r7.y
-
-// If we can sort out the problem with mip-maps not being copied during the
-// reverse stereo blit we could switch the eyes with this code instead of the
-// custom shader:
-//// Swap reflection eyes
-//mov r24.xyzw, r2.xyzw
-//mul r24.x, r24.x, l(0.5)
-//eq r23.w, r23.z, l(-1.0)
-//if_nz r23.w
-//  add r24.x, r24.x, l(0.5)
-//endif
-//sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r24.xwxx, t100.xyzw, s11, r7.y
+sample_l_indexable(texture2d)(float,float,float,float) r11.xyz, r24.xwxx, t100.xyzw, s11, r7.y
 
 min r11.xyz, r11.xyzx, l(16.000000, 16.000000, 16.000000, 0.000000)
 ld_structured_indexable(structured_buffer, stride=16)(mixed,mixed,mixed,mixed) r2.x, l(0), l(12), t3.xxxx
