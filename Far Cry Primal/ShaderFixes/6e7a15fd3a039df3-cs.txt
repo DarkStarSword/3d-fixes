@@ -262,7 +262,17 @@ endif
 mul r0.z, r2.w, l(0.125000)
 mad r0.z, r3.x, -r0.z, l(1.000000)
 mad r0.xy, r0.xyxx, cb1[1].zwzz, r2.xyxx
-sample_l_indexable(texture2d)(float,float,float,float) r0.w, r0.xyxx, t5.yzwx, s1, l(0.000000)
+
+// SSBCHistoryTexture
+//sample_l_indexable(texture2d)(float,float,float,float) r0.w, r0.xyxx, t5.yzwx, s1, l(0.000000)
+
+// The velocity buffer is broken by a bunch of forward pass shaders. The fix is
+// straight forward (e.g. see the pattern in PS c644573b2e962d5d), but doesn't
+// seem to add much vs just disabling the velocity buffer here, and this way we
+// can skip shipping another 400 shaders. If there are any other more serious
+// problems associated with disabling the velocity buffer I might revisit this.
+mov r0.w, l(0)
+
 f16tof32 r1.x, r0.w
 ushr r0.w, r0.w, l(24)
 utof r0.w, r0.w
