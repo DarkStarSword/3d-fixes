@@ -190,6 +190,26 @@ class MADInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, lval, rval)
         self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
+class DotInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        dot\(
+            (?P<rval>
+                (?P<arg1>\S+)
+                \s* , \s*
+                (?P<arg2>\S+)
+            )
+        \)
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2)))
+
 class FlowControlStart(Instruction):
     pattern = re.compile(r'''
         \s*
@@ -211,6 +231,7 @@ class FlowControlEnd(Instruction):
 
 specific_instructions = (
         MADInstruction,
+        DotInstruction,
         MultiplyInstruction,
         ReciprocalInstruction,
         AssignmentInstruction,
@@ -305,8 +326,9 @@ class Shader(object):
 
     shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[vhdgpc]s)', re.IGNORECASE)
 
-    def __init__(self, filename):
+    def __init__(self, filename, args):
         self.filename = os.path.basename(filename)
+        self.args = args
         self.autofixed = False
         self.vanity_inserted = False
         self.hash = None
@@ -315,6 +337,7 @@ class Shader(object):
         self._early_insert_pos = None
         self.inserted_stereo_params = False
         self.ini_settings = None
+        self.ini_name = ''
         self.text = open(filename, 'r').read()
         self.get_info_from_filename()
         self.stereo_params_reg = None
@@ -399,6 +422,17 @@ class Shader(object):
 
         return ret
 
+    def find_header(self, patterns):
+        if not isinstance(patterns, (tuple, list)):
+            patterns = (patterns, )
+
+        for pattern in patterns:
+            match = pattern.search(self.declarations_txt)
+            if match is not None:
+                return match
+
+        raise KeyError()
+
     non_ws_pattern = re.compile('\S')
     def comment_out_instruction(self, line, additional=None):
         instr = str(self.instructions[line])
@@ -408,6 +442,18 @@ class Shader(object):
             instr += ' // ' + additional
         self.instructions[line] = Comment(instr)
 
+    def insert_vanity_comment(self, where, what):
+        off = 0
+        off += self.insert_instr(where + off)
+        comments = vanity_comment(self.args, self, what)
+        for comment in comments:
+            off += self.insert_instr(where + off, comment = comment)
+        #self.declarations_txt = ''.join([ '// %s\n' % comment for comment in comments ]) + self.declarations_txt
+        if not self.vanity_inserted:
+            self.declarations_txt = '// %s\n' % comments[1] + self.declarations_txt
+            self.vanity_inserted = True
+        return off
+
     def early_insert_vanity_comment(self, what):
         off = self.insert_vanity_comment(self.early_insert_pos, what)
         self.early_insert_pos += off
@@ -416,6 +462,14 @@ class Shader(object):
     def early_insert_instr(self, instruction=None, comment=None):
         self.early_insert_pos += self.insert_instr(self.early_insert_pos, instruction, comment)
         return 1
+
+    def set_ini_name(self, name):
+            self.ini_name = name + '_'
+
+    def add_shader_override_setting(self, setting, name=None):
+        if self.ini_settings is None:
+            self.ini_settings = []
+        self.ini_settings.append(setting)
 
     def update_ini(self):
         '''
@@ -427,7 +481,7 @@ class Shader(object):
         if self.ini_settings is None or self.hash is None:
             return
 
-        section = 'ShaderOverride_%016x' % self.hash
+        section = 'ShaderOverride_%s%016x' % (self.ini_name, self.hash)
         d3dx_ini.setdefault(section, ['hash = %016x' % self.hash])
         d3dx_ini[section].extend(self.ini_settings)
 
@@ -454,7 +508,7 @@ class HLSLShader(Shader):
     class ParameterAlreadyExists(Exception): pass
 
     def __init__(self, filename):
-        Shader.__init__(self, filename)
+        Shader.__init__(self, filename, args)
 
         self.main_match = self.main_start_pattern.search(self.text)
         self.param_end_match = self.param_end_pattern.search(self.text, self.main_match.end())
@@ -599,17 +653,6 @@ class HLSLShader(Shader):
         debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, old_size, size))
         self.declarations_txt = self.declarations_txt[:pos] + str(size) + self.declarations_txt[pos2:]
 
-    def find_header(self, patterns):
-        if not isinstance(patterns, (tuple, list)):
-            patterns = (patterns, )
-
-        for pattern in patterns:
-            match = pattern.search(self.declarations_txt)
-            if match is not None:
-                return match
-
-        raise KeyError()
-
     def append_declaration(self, declaration):
         self.declarations_txt += '\n%s\n\n' % declaration.strip()
 
@@ -643,18 +686,6 @@ class HLSLShader(Shader):
         instr = str(self.instructions[line])
         instr += ' // ' + comment
         self.instructions[line] = Instruction(instr)
-
-    def insert_vanity_comment(self, where, what):
-        off = 0
-        off += self.insert_instr(where + off)
-        comments = vanity_comment(args, self, what)
-        for comment in comments:
-            off += self.insert_instr(where + off, comment = comment)
-        #self.declarations_txt = ''.join([ '// %s\n' % comment for comment in comments ]) + self.declarations_txt
-        if not self.vanity_inserted:
-            self.declarations_txt = '// %s\n' % comments[1] + self.declarations_txt
-            self.vanity_inserted = True
-        return off
 
     def insert_instr(self, pos, instruction=None, comment=None):
         line = '\n'
@@ -703,11 +734,6 @@ class HLSLShader(Shader):
                 # FIXME: Use a regular expression replace to ensure the
                 # replacement is on a word boundary:
                 self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
-
-    def add_shader_override_setting(self, setting):
-        if self.ini_settings is None:
-            self.ini_settings = []
-        self.ini_settings.append(setting)
 
     def __str__(self):
         s = self.declarations_txt

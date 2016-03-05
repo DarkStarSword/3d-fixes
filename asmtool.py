@@ -16,6 +16,53 @@ import shadertool, hlsltool
 from shadertool import debug, debug_verbose, component_set_to_string
 from shadertool import vanity_comment, tool_name, expand_wildcards
 from shadertool import game_git_dir, collected_errors, show_collected_errors
+from hlsltool import cb_offset, cb_matrix
+
+cbuffer_entry_pattern_cache = {}
+def cbuffer_entry_pattern(type, name):
+    try:
+        return cbuffer_entry_pattern_cache[(type, name)]
+    except KeyError:
+        pattern = re.compile(r'''
+            ^ \s* // \s*
+            {0} \s+ {1};
+            \s* // \s*
+            Offset: \s+ (?P<offset>\d+)
+            \s+
+            Size: \s+ (?P<size>\d+)
+            (?: \s+ \[unused\] )?
+            \s* $
+        '''.format(type, name), re.VERBOSE | re.MULTILINE)
+        cbuffer_entry_pattern_cache[(type, name)] = pattern
+        return pattern
+
+resource_bind_pattern_cache = {}
+def resource_bind_pattern(name, type=None, format=None, dim=None):
+    try:
+        return resource_bind_pattern_cache[name]
+    except KeyError:
+        pattern = re.compile(r'''
+            ^ \s* //
+            \s* {0} (?#name)
+            \s+ {1} (?#type)
+            \s+ {2} (?#format)
+            \s+ {3} (?#dim)
+            \s+ (?P<slot>\d+)
+            \s+ (?P<elements>\d+)
+            \s* $
+        '''.format(
+            name,
+            type or r'(?P<type>\S+)',
+            format or r'(?P<format>\S+)',
+            dim or r'(?P<dim>\S+)'
+        ), re.VERBOSE | re.MULTILINE)
+        resource_bind_pattern_cache[name] = pattern
+        return pattern
+
+def cbuffer_bind_pattern(cb_name):
+    return resource_bind_pattern(cb_name, 'cbuffer', 'NA', 'NA')
+
+cbuffer_pattern = re.compile(r'// cbuffer (?P<name>.+)\n// {$', re.MULTILINE)
 
 class Instruction(hlsltool.Instruction):
     pattern = re.compile(r'''
@@ -49,7 +96,7 @@ class AssignmentInstruction(hlsltool.AssignmentInstruction, Instruction):
 class ResourceLoadInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
         \s*
-        (?P<instruction>[a-zA-Z_]+)
+        (?P<instruction>[a-zA-Z_]+
             \s*
             \(
                 [^)]+
@@ -57,15 +104,66 @@ class ResourceLoadInstruction(AssignmentInstruction):
             \(
                 [^)]+
             \)
+        )
         \s*
         (?P<lval>\S+)
-        \s*
-        ,
-        \s*
+        \s* , \s*
         (?P<rval>\S.*)
         \s*
         $
     ''', re.MULTILINE | re.VERBOSE)
+
+class SampleLIndexableInstruction(ResourceLoadInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>sample_l_indexable
+            \s*
+            \(
+                [^)]+
+            \)
+            \(
+                [^)]+
+            \)
+        )
+        \s*
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+            \s* , \s*
+            (?P<arg3>\S+)
+            \s* , \s*
+            (?P<arg4>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2, arg3, arg4):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3, arg4)))
+
+class DP4Instruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>dp4)
+        \s+
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
 
 class Declaration(Instruction):
     pattern = re.compile(r'''
@@ -136,7 +234,9 @@ specific_instructions = (
     SVOutputDeclaration,
     Declaration,
     ReturnInstruction,
+    SampleLIndexableInstruction,
     ResourceLoadInstruction,
+    DP4Instruction,
     AssignmentInstruction,
 )
 
@@ -144,7 +244,7 @@ class ASMShader(hlsltool.Shader):
     shader_model_pattern = re.compile(r'^[vhdgpc]s_[45]_[01]$', re.MULTILINE)
 
     def __init__(self, filename):
-        hlsltool.Shader.__init__(self, filename)
+        hlsltool.Shader.__init__(self, filename, args)
 
         self.temps = None
         self.early_insert_pos = 0
@@ -152,7 +252,7 @@ class ASMShader(hlsltool.Shader):
         self.shader_model_match = self.shader_model_pattern.search(self.text)
         self.shader_model = self.shader_model_match.group()
 
-        self.header_txt = self.text[:self.shader_model_match.start()]
+        self.declarations_txt = self.text[:self.shader_model_match.start()]
         body_txt = self.text[self.shader_model_match.end() : ]
 
         self.split_instructions(body_txt)
@@ -195,6 +295,22 @@ class ASMShader(hlsltool.Shader):
             if isinstance(instruction, Declaration):
                 raise SyntaxError("Bad shader: Mixed declarations with code: %s" % instruction)
 
+    def find_reg_from_column_major_matrix_multiply(self, cb):
+        results = self.scan_shader(cb, write=False, instr_type=DP4Instruction)
+        if len(results) != 1:
+            debug_verbose(0, '%s read from %i instructions (only exactly 1 read currently supported)' % (cb, len(results)))
+            return None
+        (line, instr) = results[0]
+
+        if instr.rargs[0].variable == cb:
+            reg = instr.rargs[1]
+        elif instr.rargs[1].variable == cb:
+            reg = instr.rargs[0]
+        else:
+            assert(False)
+
+        return reg, line
+
     def lookup_output_position(self):
         return self.sv_outputs['position'].register.variable
 
@@ -214,14 +330,34 @@ class ASMShader(hlsltool.Shader):
             }[component]
         return ret
 
-    def insert_vanity_comment(self, where, what):
-        off = 0
-        off += self.insert_instr(where + off)
-        comments = vanity_comment(args, self, what)
-        for comment in comments:
-            off += self.insert_instr(where + off, comment = comment)
-        self.vanity_inserted = True
-        return off
+    def find_cb_entry(self, type, name):
+        match = self.find_header(cbuffer_entry_pattern(type, name))
+        debug_verbose(2, match.group())
+        offset = int(match.group('offset'))
+
+        pos = self.declarations_txt.rfind('// cbuffer ', 0, match.start())
+        if pos == -1:
+            raise KeyError()
+        match = cbuffer_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        cb_name = match.group('name')
+        # TODO: cb_size = find last offset + size
+
+        match = cbuffer_bind_pattern(cb_name).search(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+        debug_verbose(2, match.group())
+
+        cb = int(match.group('slot'))
+
+        # TODO: self.adjust_cb_size(cb, cb_size)
+        return cb, offset
+
+    def find_texture(self, name, type='texture', format=None, dim=None):
+        match = self.find_header(resource_bind_pattern(name, type, format, dim))
+        return 't' + match.group('slot')
 
     def insert_instr(self, pos, instruction=None, comment=None):
         off = 0
@@ -274,13 +410,83 @@ class ASMShader(hlsltool.Shader):
         return off
 
     def __str__(self):
-        s = self.header_txt
+        s = self.declarations_txt
         s += self.shader_model_match.group()
         for instr in self.declarations:
             s += str(instr)
         for instr in self.instructions:
             s += str(instr)
         return s
+
+def fix_fcprimal_reflection(shader):
+    try:
+        WaterReflectionTransform = cb_matrix(*shader.find_cb_entry('float4x4', 'WaterReflectionTransform'))
+        refl_texture = shader.find_texture('ReflectionRealTexture__TexObj__', format='float4', dim='2d')
+        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not have all required values for the Far Cry Primal reflection fix')
+        return
+
+    (wpos, transform_line) = shader.find_reg_from_column_major_matrix_multiply(WaterReflectionTransform[0])
+    assert(wpos.components == 'xyzw')
+
+    results = shader.scan_shader(refl_texture, write=False)
+    assert(len(results) == 1)
+    (refl_line, refl_instr) = results[0]
+
+    off = shader.insert_stereo_params()
+    tmp1 = shader.allocate_temp_reg()
+    tmp2 = shader.allocate_temp_reg()
+
+    off += shader.insert_vanity_comment(transform_line + off, 'Far Cry Primal Reflection Fix inserted with')
+    off += shader.insert_instr(transform_line + off)
+    off += shader.insert_instr(transform_line + off, comment='ViewProjectionMatrix:')
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.w, {1}.xyzw, {2}.xyzw'.format(
+        shader.stereo_params_reg, wpos.variable, ViewProjectionMatrix[3]))
+    off += shader.insert_instr(transform_line + off, comment='Stereo Correction:')
+    off += shader.insert_instr(transform_line + off, 'add {0}.w, {0}.w, -{0}.y'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(transform_line + off, 'mul {0}.x, {1}.w, {1}.x'.format(tmp1, shader.stereo_params_reg))
+    off += shader.insert_instr(transform_line + off, 'mov {0}.yzw, l(0.0)'.format(tmp1))
+    off += shader.insert_instr(transform_line + off, comment='InvProjectionMatrix:')
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.x, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvProjectionMatrix[0]))
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.y, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvProjectionMatrix[1]))
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.z, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvProjectionMatrix[2]))
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.w, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvProjectionMatrix[3]))
+    off += shader.insert_instr(transform_line + off, comment='InvViewMatrix:')
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.x, {1}.xyzw, {2}.xyzw'.format(tmp1, tmp2, InvViewMatrix[0]))
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.y, {1}.xyzw, {2}.xyzw'.format(tmp1, tmp2, InvViewMatrix[1]))
+    off += shader.insert_instr(transform_line + off, comment='Negate Z to fix alignment when camera is tilted:')
+    off += shader.insert_instr(transform_line + off, 'dp4 {0}.z, -{1}.xyzw, {2}.xyzw'.format(tmp1, tmp2, InvViewMatrix[2]))
+    off += shader.insert_instr(transform_line + off, comment='Adjust Coord:')
+    off += shader.insert_instr(transform_line + off, 'add {0}.xyz, {0}.xyz, {1}.xyzw'.format(wpos.variable, tmp1))
+    off += shader.insert_instr(transform_line + off)
+
+    coord, texture, sampler, lod = refl_instr.rargs
+    coord_x = coord.components[0]
+
+    off += shader.insert_instr(refl_line + off)
+    off += shader.insert_instr(refl_line + off, comment='Swap reflection eyes from stereo2mono reflection copy.')
+    off += shader.insert_instr(refl_line + off, comment='Mip-maps disabled as the reverse stereo blit only copies them in one eye')
+    off += shader.insert_instr(refl_line + off, 'mov {0}.xyzw, {1}.xyzw'.format(tmp1, coord.variable))
+    off += shader.insert_instr(refl_line + off, 'mul {0}.{1}, {0}.{1}, l(0.5)'.format(tmp1, coord_x))
+    off += shader.insert_instr(refl_line + off, 'eq {0}.w, {0}.z, l(-1.0)'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(refl_line + off, 'if_nz {0}.w'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(refl_line + off, '  add {0}.{1}, {0}.{1}, l(0.5)'.format(tmp1, coord_x))
+    off += shader.insert_instr(refl_line + off, 'endif')
+    off += shader.insert_instr(refl_line + off)
+    shader.comment_out_instruction(refl_line + off)
+    shader.insert_decl('dcl_resource_texture2d (float,float,float,float) t100', 'stereo2mono copy of %s:' % texture.variable)
+    off += shader.insert_instr(refl_line + off + 1, '{0} {1}, {2}.{3}, t100.xyzw, {4}, l(0.0)'.format(
+        refl_instr.instruction, refl_instr.lval, tmp1, coord.components, sampler.variable))
+    off += shader.insert_instr(refl_line + off + 1)
+
+    shader.set_ini_name('Reflection')
+    shader.add_shader_override_setting('ps-t100 = stereo2mono ps-{0}'.format(texture.variable))
+    shader.add_shader_override_setting('post ps-t100 = null')
+
+    shader.autofixed = True
 
 def parse_args():
     global args
@@ -304,6 +510,8 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--fix-fcprimal-reflection', action='store_true',
+            help="Fix a reflection shader in Far Cry Primal")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -333,7 +541,8 @@ def main():
         try:
             if args.auto_fix_vertex_halo:
                 hlsltool.auto_fix_vertex_halo(shader)
-            pass
+            if args.fix_fcprimal_reflection:
+                fix_fcprimal_reflection(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
