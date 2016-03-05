@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:19 2016
+// Hands (forward pass velocity buffer glitch - AO smearing)
+// ---- Created with 3Dmigoto v1.2.32 on Sat Mar 05 23:16:43 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
 {
@@ -256,7 +257,14 @@ void main(
   o3.yzw = r0.xyz * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
   r0.x = TranslucencyIntensity * v3.x;
   o3.x = v4.w * r0.x;
-  r0.xy = -MotionVectorOffsets.xy + v0.xy;
+
+// Use the 2D position for the velocity buffer to avoid AO getting smeared on
+// these surfaces (and possibly other glitches):
+float4 stereo = StereoParams.Load(0);
+float4 velocity_v0 = v0;
+velocity_v0.x -= stereo.x * (v5.z - stereo.y) * ViewportSize.x;
+
+  r0.xy = -MotionVectorOffsets.xy + velocity_v0.xy;
   r0.xy = r0.xy * ViewportSize.zw + float2(-0.5,-0.5);
   r0.z = rcp(v5.z);
   r0.zw = v5.xy * r0.zz;
