@@ -242,7 +242,6 @@ dp4 r3.y, r2.xyzw, cb3[1].xyzw
 dp4 r3.z, r2.xyzw, cb3[2].xyzw
 dp4 r0.x, r2.xyzw, cb3[3].xyzw
 div r2.xyz, r3.yzwy, r0.xxxx
-add r3.xyz, r2.zxyz, cb0[42].xyzx
 
 // Correction:
 add r17.w, r18.w, -r17.y
@@ -261,9 +260,10 @@ dp4 r18.y, r19.xyzw, cb0[5].xyzw
 dp4 r18.z, r19.xyzw, cb0[6].xyzw
 dp4 r18.w, r19.xyzw, cb0[7].xyzw
 
-// Adjust coord:
-add r3.xyz, r3.xyz, -r18.xyzw
+// Adjust coord (swizzle is brainfuck):
+add r2.xyz, r2.xyzw, -r18.yzxw
 
+add r3.xyz, r2.zxyz, cb0[42].xyzx
 mad r4.xy, r3.yxyy, cb1[0].yxyy, cb1[0].wzww
 sample_l_indexable(texture2d)(float,float,float,float) r4.zw, r4.xyxx, t5.zwxy, s1, l(0.000000)
 mad r4.zw, r4.zzzw, cb1[2].xxxx, cb1[2].yyyy
