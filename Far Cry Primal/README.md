@@ -15,7 +15,7 @@ Fixed
 
 Installation
 ------------
-1. Assign the game to the Max Payne 3 profile
+1. Assign the game to the Far Cry 4 profile
 
 Like my Work?
 -------------
