@@ -528,6 +528,40 @@ def fix_fcprimal_physical_lighting(shader):
 
     shader.autofixed = True
 
+def fix_fcprimal_camera_pos(shader):
+    try:
+        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the Far Cry Primal camera position adjustment')
+        return
+
+    results = shader.scan_shader(CameraPosition, write=False)
+    if not results:
+        debug_verbose(0, 'Shader does not use CameraPosition')
+        return
+
+    off = shader.insert_stereo_params()
+    tmp1 = shader.allocate_temp_reg()
+    tmp2 = shader.allocate_temp_reg()
+
+    off += shader.early_insert_vanity_comment('Camera Position (environment reflections, etc) adjustment inserted with')
+    shader.early_insert_instr('mul {0}.x, {1}.x, {1}.y'.format(tmp1, shader.stereo_params_reg))
+    shader.early_insert_instr('mul {0}.x, {0}.x, {1}.x'.format(tmp1, InvProjectionMatrix[0]))
+    shader.early_insert_instr('mov {0}.yzw, l(0.0)'.format(tmp1))
+
+    shader.early_insert_instr('dp4 {0}.x, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvViewMatrix[0]))
+    shader.early_insert_instr('dp4 {0}.y, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvViewMatrix[1]))
+    shader.early_insert_instr('dp4 {0}.z, {1}.xyzw, {2}.xyzw'.format(tmp2, tmp1, InvViewMatrix[2]))
+
+    shader.replace_reg(CameraPosition, tmp1, 'xyz')
+    shader.early_insert_instr('mov {0}.xyzw, {1}.xyzw'.format(tmp1, CameraPosition))
+    shader.early_insert_instr('add {0}.xyz, {0}.xyz, {1}.xyz'.format(tmp1, tmp2))
+    shader.early_insert_instr()
+
+    shader.autofixed = True
+
 def parse_args():
     global args
 
@@ -554,6 +588,8 @@ def parse_args():
             help="Fix a reflection shader in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-physical-lighting', action='store_true',
             help="Fix a physical lighting compute shader in Far Cry Primal")
+    parser.add_argument('--fix-fcprimal-camera-pos', action='store_true',
+            help="Fix reflections, specular highlights, etc. by adjusting the camera position in Far Cry Primal")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -587,6 +623,8 @@ def main():
                 fix_fcprimal_reflection(shader)
             if args.fix_fcprimal_physical_lighting:
                 fix_fcprimal_physical_lighting(shader)
+            if args.fix_fcprimal_camera_pos:
+                fix_fcprimal_camera_pos(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))

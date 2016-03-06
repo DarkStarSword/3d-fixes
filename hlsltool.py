@@ -471,6 +471,13 @@ class Shader(object):
             self.ini_settings = []
         self.ini_settings.append(setting)
 
+    def replace_reg(self, old, new, components=None):
+        for i, instr in enumerate(self.instructions):
+            if register_in_expression(instr.rval, old, components):
+                # FIXME: Use a regular expression replace to ensure the
+                # replacement is on a word boundary:
+                self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+
     def update_ini(self):
         '''
         Right now this just updates our internal data structures to note any
@@ -727,13 +734,6 @@ class HLSLShader(Shader):
 
     def insert_halo_fix_code(self, pos, temp_reg):
         return self.insert_instr(pos, 'if ({0}.w != 1.0) {{ {0}.x += separation * ({0}.w - convergence); }}'.format(temp_reg.variable))
-
-    def replace_reg(self, old, new, components=None):
-        for i, instr in enumerate(self.instructions):
-            if register_in_expression(instr.rval, old, components):
-                # FIXME: Use a regular expression replace to ensure the
-                # replacement is on a word boundary:
-                self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
 
     def __str__(self):
         s = self.declarations_txt
