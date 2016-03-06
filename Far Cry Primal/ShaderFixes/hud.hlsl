@@ -10,9 +10,9 @@ bool is_subtitle(float4 pos)
 	return pos.y < -0.7;
 }
 
-bool is_goals(float4 pos)
+bool is_goals(float4 pos, float4 params1)
 {
-	return pos.x < 0.15 && pos.y > 0.2;
+	return params1.y == 3 && pos.x < 0.15 && pos.y > 0.2;
 }
 
 bool is_crosshair(float4 pos, float4 params1)
@@ -34,14 +34,21 @@ float adjust_hud(float4 pos, bool crosshair_shader)
 	if (params1.z == 2) // Video playing
 		return 0;
 
-	if (params1.z) // Menu background
+	if (params1.z == 1) // Menu background
 		return stereo.x * params0.x;
 
 	ZBuffer.GetDimensions(width, height);
 	if (!width)
 		return stereo.x * params0.x;
 
-	return adjust_from_stereo2mono_depth_buffer(0, 0);
+	float adj = adjust_from_stereo2mono_depth_buffer(0, 0);
+
+	if (is_goals(pos, params1)) {
+		// return stereo.x * params0.z - abs(stereo.x);
+		return adj - abs(stereo.x);
+	}
+
+	return adj;
 
 // Hunting tutorial is messed up - will really need texture
 // filtering to whitelist elements.
@@ -51,9 +58,6 @@ float adjust_hud(float4 pos, bool crosshair_shader)
 
 	if (is_subtitle(pos))
 		return stereo.x * params0.w;
-
-	if (is_goals(pos))
-		return stereo.x * params0.z - abs(stereo.x);
 
 	if (crosshair_shader && is_crosshair(pos, params1))
 		return adjust_from_stereo2mono_depth_buffer(0, 0);
