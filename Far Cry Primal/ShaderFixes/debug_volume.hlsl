@@ -12,7 +12,8 @@ void main(float4 pos : SV_Position0, float4 spos: TEXCOORD0, float2 tpos: TEXCOO
 	p.x = pos.x % width;
 	p.y = pos.y % height;
 	result = volume.Load(p);
-	result.w = (p.z < depth) * (pos.x < width * 5) * 0.75;
+	//result.w = (p.z < depth) * (pos.x < width * 5) * 0.75;
+	result.w = (p.z < depth) * 0.75;
 
 	if (spos.x >= 0.5) {
 		shadow.GetDimensions(width, height, depth);
