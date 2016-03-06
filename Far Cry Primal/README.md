@@ -4,9 +4,10 @@ Far Cry Primal
 Fixed
 -----
 - Halos
-- Directional lighting / shadows
+- Tile Lighting / shadows
+- Specular highlights
 - Volumetric fog around point lights
-- Light shafts (Accurate 3D shadow volumes)
+- Light shafts & shadow volumes (Accurate!)
 - Lens flares
 - Auto crosshair added
 - Water reflections
