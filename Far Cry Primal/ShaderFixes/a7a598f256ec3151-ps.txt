@@ -336,7 +336,7 @@ dcl_input_ps linear v5.xyz
 dcl_input_ps linear v6.xyz
 dcl_input_ps linear v7.xy
 dcl_output o0.xyzw
-dcl_temps 23
+dcl_temps 25
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
@@ -345,9 +345,21 @@ dcl_resource_texture2d (float,float,float,float) t100
 
 ld_indexable(texture2d)(float,float,float,float) r20.xyzw, l(0, 0, 0, 0), t125.xyzw
 
+
+// Camera Position (environment reflections, etc) adjustment inserted with DarkStarSword's asmtool.py:
+// asmtool.py -i --fix-fcprimal-reflection --only-autofixed -fq a7a598f256ec3151-ps.txt
+mul r23.x, r20.x, r20.y
+mul r23.x, r23.x, cb0[0].x
+mov r23.yzw, l(0.0)
+dp4 r24.x, r23.xyzw, cb0[4].xyzw
+dp4 r24.y, r23.xyzw, cb0[5].xyzw
+dp4 r24.z, r23.xyzw, cb0[6].xyzw
+mov r23.xyzw, cb0[42].xyzw
+add r23.xyz, r23.xyz, r24.xyz
+
 dp3 r0.x, v3.xyzx, v3.xyzx
 sqrt r0.x, r0.x
-add r0.yzw, -v4.xxzy, cb0[42].xxzy
+add r0.yzw, -v4.xxzy, r23.xxzy
 dp3 r1.x, r0.yzwy, r0.yzwy
 rsq r1.x, r1.x
 mul r1.yzw, r0.yyzw, r1.xxxx
@@ -489,7 +501,7 @@ mad r4.w, r4.w, cb2[2].x, cb2[2].y
 add r4.w, -r4.w, v4.z
 mul_sat r4.w, -r4.w, cb3[18].x
 sqrt r4.w, r4.w
-add r8.xy, v4.xyxx, -cb0[42].xyxx
+add r8.xy, v4.xyxx, -r23.xyxx
 dp2 r6.w, r8.xyxx, r8.xyxx
 mad r7.w, cb2[1].x, r6.w, cb2[1].y
 mul_sat r7.w, r7.w, l(3.000000)
@@ -546,7 +558,7 @@ mul r10.yzw, r7.zzzz, r10.yyzw
 mul r10.xyz, r10.xxxx, r10.yzwy
 mul r10.xyz, r5.xxxx, r10.xyzx
 mul r8.xyz, r8.xyzx, r7.zzzz
-mad r11.xyz, -r1.ywzy, r3.xxxx, cb0[42].xyzx
+mad r11.xyz, -r1.ywzy, r3.xxxx, r23.xyzx
 mul_sat r12.xyz, cb8[11].xyzx, -cb8[12].zzzz
 add r5.x, -r11.z, v4.z
 max r5.x, r5.x, l(0.000000)
@@ -804,7 +816,7 @@ mad r1.xyz, r4.xyzx, r0.yyyy, r1.xyzx
 lt r0.yw, l(0.000000, 0.000000, 0.000000, 0.000000), cb0[39].zzzw
 and r0.y, r0.w, r0.y
 if_nz r0.y
-  add r3.xyz, v4.xyzx, -cb0[42].xyzx
+  add r3.xyz, v4.xyzx, -r23.xyzx
   dp3 r0.y, r3.xyzx, r3.xyzx
   sqrt r0.y, r0.y
   utof r3.xy, r7.xyxx
@@ -823,7 +835,7 @@ if_nz r0.y
   sample_l_indexable(texture3d)(float,float,float,float) r0.y, r3.xyzx, t12.yxzw, s8, l(0.000000)
   mul r3.xyz, r0.zzzz, r4.xyzx
 else 
-  add r4.xyz, v4.xyzx, -cb0[42].xyzx
+  add r4.xyz, v4.xyzx, -r23.xyzx
   dp3 r0.z, r4.xyzx, r4.xyzx
   sqrt r0.z, r0.z
   mad_sat r0.z, r0.z, cb0[35].y, cb0[35].x

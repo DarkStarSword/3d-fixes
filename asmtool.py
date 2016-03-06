@@ -482,6 +482,8 @@ def fix_fcprimal_reflection(shader):
         refl_instr.instruction, refl_instr.lval, tmp1, coord.components, sampler.variable))
     off += shader.insert_instr(refl_line + off + 1)
 
+    fix_fcprimal_camera_pos(shader)
+
     shader.set_ini_name('Reflection')
     shader.add_shader_override_setting('ps-t100 = stereo2mono ps-{0}'.format(texture.variable))
     shader.add_shader_override_setting('post ps-t100 = null')
