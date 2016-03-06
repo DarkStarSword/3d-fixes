@@ -488,6 +488,46 @@ def fix_fcprimal_reflection(shader):
 
     shader.autofixed = True
 
+def fix_fcprimal_physical_lighting(shader):
+    if shader.shader_type != 'cs':
+        debug_verbose(0, 'Far Cry Primal physical lighting fix only applies to compute shaders')
+        return
+    try:
+        Depth = shader.find_texture('Depth', format='float', dim='2d')
+        DepthScale = cb_offset(*shader.find_cb_entry('float4', 'DepthScale'))
+        CameraDistances = cb_offset(*shader.find_cb_entry('float4', 'CameraDistances'))
+        InvViewProjection = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewProjection'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not have all required values for the Far Cry Primal physical lighting fix')
+        return
+
+    (spos, ivp_line) = shader.find_reg_from_column_major_matrix_multiply(InvViewProjection[0])
+    assert(spos.components == 'xyzw')
+
+    results = shader.scan_shader(Depth, write=False)
+    assert(len(results) == 1)
+    (depth_line, depth_instr) = results[0]
+    depth_reg = hlsltool.expression_as_single_register(depth_instr.lval)
+
+    off = shader.insert_stereo_params()
+
+    off += shader.insert_instr(depth_line + off)
+    off += shader.insert_instr(depth_line + 1 + off)
+    off += shader.insert_instr(depth_line + 1 + off, comment='Use DepthScale & CameraDistances.z to get world Z:')
+    off += shader.insert_instr(depth_line + 1 + off, 'mad {0}.z, {1}.{2}, {3}.y, {3}.x'.format(
+        shader.stereo_params_reg, depth_reg.variable, depth_reg.components[0], DepthScale))
+    off += shader.insert_instr(depth_line + 1 + off, 'div {0}.z, l(1.0), {0}.z'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(depth_line + 1 + off, 'mul {0}.z, {0}.z, {1}.z'.format(shader.stereo_params_reg, CameraDistances))
+    off += shader.insert_instr(depth_line + 1 + off)
+
+    off += shader.insert_vanity_comment(ivp_line + off, 'Far Cry Primal Physical Lighting Fix inserted with')
+    off += shader.insert_instr(ivp_line + off, 'add {0}.w, {0}.z, -{0}.y'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(ivp_line + off, 'div {0}.w, {0}.w, {0}.z'.format(shader.stereo_params_reg))
+    off += shader.insert_instr(ivp_line + off, 'mad {0}.x, {1}.w, -{1}.x, {0}.x'.format(spos.variable, shader.stereo_params_reg))
+    off += shader.insert_instr(ivp_line + off)
+
+    shader.autofixed = True
+
 def parse_args():
     global args
 
@@ -512,6 +552,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-fcprimal-reflection', action='store_true',
             help="Fix a reflection shader in Far Cry Primal")
+    parser.add_argument('--fix-fcprimal-physical-lighting', action='store_true',
+            help="Fix a physical lighting compute shader in Far Cry Primal")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -543,6 +585,8 @@ def main():
                 hlsltool.auto_fix_vertex_halo(shader)
             if args.fix_fcprimal_reflection:
                 fix_fcprimal_reflection(shader)
+            if args.fix_fcprimal_physical_lighting:
+                fix_fcprimal_physical_lighting(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
