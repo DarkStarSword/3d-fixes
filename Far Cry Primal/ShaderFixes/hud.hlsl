@@ -38,6 +38,11 @@ float adjust_hud(float4 pos, bool crosshair_shader)
 	if (!width)
 		return stereo.x * params0.x;
 
+	return adjust_from_stereo2mono_depth_buffer(0, 0);
+
+// Hunting tutorial is messed up - will really need texture
+// filtering to whitelist elements.
+#if 0
 	if (is_minimap(pos, params1))
 		return stereo.x * params0.y;
 
@@ -51,4 +56,5 @@ float adjust_hud(float4 pos, bool crosshair_shader)
 		return adjust_from_stereo2mono_depth_buffer(0, 0);
 
 	return stereo.x * params0.x;
+#endif
 }
