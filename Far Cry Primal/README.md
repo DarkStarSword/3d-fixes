@@ -38,3 +38,5 @@ until I have improved the performance of tracking texture hash updates.
 Like my Work?
 -------------
 Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
+
+_Special thanks to Flugan for his work on the assembler, used in this fix_
