@@ -883,8 +883,12 @@ def auto_fix_vertex_halo(shader):
 
     shader.autofixed = True
 
-def cb_offset(cb, offset):
-    return 'cb%d[%d]' % (cb, offset//16)
+class cb_offset(str):
+    def __new__(cls, cb, offset):
+        return str.__new__(cls, 'cb%d[%d]' % (cb, offset//16))
+    def __init__(self, cb, offset):
+        self.cb = cb
+        self.offset = offset
 
 def cb_matrix(cb, offset):
     return [ cb_offset(cb, offset + i) for i in range(0, 64, 16) ]
