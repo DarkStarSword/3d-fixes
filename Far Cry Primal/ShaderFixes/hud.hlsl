@@ -31,6 +31,9 @@ float adjust_hud(float4 pos, bool crosshair_shader)
 	float4 params1 = IniParams.Load(int2(1, 0));
 	float width, height;
 
+	if (params1.z == 2) // Video playing
+		return 0;
+
 	if (params1.z) // Menu background
 		return stereo.x * params0.x;
 
