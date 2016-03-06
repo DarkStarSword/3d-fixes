@@ -296,13 +296,25 @@ dcl_resource_texture2d (float,float,float,float) t16
 dcl_uav_typed_texture2d (float,float,float,float) u0
 dcl_input vThreadGroupID.xy
 dcl_input vThreadIDInGroup.xy
-dcl_temps 45
+dcl_temps 47
 dcl_thread_group 8, 8, 1
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 
 ld_indexable(texture2d)(float,float,float,float) r44.xyzw, l(0, 0, 0, 0), t125.xyzw
+
+
+// Camera Position (environment reflections, etc) adjustment inserted with DarkStarSword's asmtool.py:
+// asmtool.py -i --fix-fcprimal-physical-lighting --only-autofixed -f b39644b5a1bf1391-cs.txt
+mul r45.x, r44.x, r44.y
+mul r45.x, r45.x, cb0[0].x
+mov r45.yzw, l(0.0)
+dp4 r46.x, r45.xyzw, cb0[4].xyzw
+dp4 r46.y, r45.xyzw, cb0[5].xyzw
+dp4 r46.z, r45.xyzw, cb0[6].xyzw
+mov r45.xyzw, cb0[42].xyzw
+add r45.xyz, r45.xyz, r46.xyz
 
 imad r0.xy, vThreadGroupID.xyxx, l(8, 8, 0, 0), vThreadIDInGroup.xyxx
 ftou r1.xy, cb2[5].xyxx
@@ -451,7 +463,7 @@ mad r2.x, r44.w, -r44.x, r2.x
   mov r14.y, r5.x
   mov r15.x, r11.x
   movc r11.xyzw, r13.xxxx, r14.xyzw, r15.xyzw
-  add r5.xyw, -r2.xzxy, cb0[42].xzxy
+  add r5.xyw, -r2.xzxy, r45.xzxy
   dp3 r3.w, r5.xywx, r5.xywx
   sqrt r3.w, r3.w
   div r5.xyw, r5.xyxw, r3.wwww
@@ -2490,7 +2502,7 @@ mad r2.x, r44.w, -r44.x, r2.x
   and r0.z, r13.x, l(0x3e800000)
   mov r2.yzw, -r5.wwyx
   mul r8.xyz, r3.wwww, r2.wyzw
-  mad r11.xzw, r2.wwyz, r3.wwww, cb0[42].xxyz
+  mad r11.xzw, r2.wwyz, r3.wwww, r45.xxyz
   mov r2.x, l(1.000000)
   dp4 r16.x, cb0[38].xyzw, r2.xyzw
   dp4 r16.y, cb0[37].xyzw, r2.xyzw

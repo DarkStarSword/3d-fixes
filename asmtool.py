@@ -526,6 +526,8 @@ def fix_fcprimal_physical_lighting(shader):
     off += shader.insert_instr(ivp_line + off, 'mad {0}.x, {1}.w, -{1}.x, {0}.x'.format(spos.variable, shader.stereo_params_reg))
     off += shader.insert_instr(ivp_line + off)
 
+    fix_fcprimal_camera_pos(shader)
+
     shader.autofixed = True
 
 def fix_fcprimal_camera_pos(shader):
