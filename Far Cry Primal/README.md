@@ -29,6 +29,7 @@ Fixed
 Installation
 ------------
 1. Assign the game to the Far Cry 4 profile
+2. Unpack the zip file to the Far Cry Primal\bin directory
 
 Notes
 -----
