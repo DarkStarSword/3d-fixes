@@ -25,6 +25,7 @@ Fixed
 	- Disabled velocity smearing
 - Vignette
 - Hunter vision yellow outline fade out
+- Underwater caustics
 
 Installation
 ------------
