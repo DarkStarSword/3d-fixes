@@ -32,6 +32,18 @@ Installation
 1. Assign the game to the Far Cry 4 profile
 2. Unpack the zip file to the Far Cry Primal\bin directory
 
+Convergence Presets
+-------------------
+Press backslash to cycle between two convergence presets - a low preset
+recommended for most of the game, and a high preset for use with the owl &
+mammoth.
+
+The high preset may also be activated by holding the Z key for 1.4 seconds
+while calling the owl. Tapping Z will return to the recommended convergence.
+
+You may customise these values by editing the d3dx.ini under
+\[KeyConvergenceCycle\], \[KeyOwlConvergence\] and \[KeyOwlConvergenceLeave\].
+
 Notes
 -----
 The auto HUD adjustment is applied to the entire HUD as a temporary measure
