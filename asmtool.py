@@ -530,6 +530,11 @@ def fix_fcprimal_physical_lighting(shader):
 
     fix_fcprimal_camera_pos(shader)
 
+    # Copying from these shaders is not working - need to investigate why:
+    # shader.set_ini_name('PhysicalLighting')
+    # shader.add_shader_override_setting('ResourceDepthBuffer = stereo2mono ps-%s' % Depth)
+    # shader.add_shader_override_setting('ResourceCViewportShaderParameterProvider = ps-cb%d' % DepthScale.cb)
+
     shader.autofixed = True
 
 def fix_fcprimal_camera_pos(shader):

@@ -59,8 +59,10 @@ float world_z_from_depth_buffer(float x, float y)
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
 	z = ZBuffer.Load(int3(x, y, 0)).x;
 
-	// Z buffer scaling copied from the lighting shaders:
-	return CameraDistances.z / (DepthScale.y * z + DepthScale.x);
+	// Z buffer scaling copied from the directional lighting shaders (using DepthVPSampler__TexObj__):
+	//return CameraDistances.z / (DepthScale.y * z + DepthScale.x);
+	// Z buffer scaling copied from the ambient lighting shaders (using DownsampledDepthTexture__TexObj__):
+	return abs(z) * CameraDistances.z;
 }
 
 float adjust_from_depth_buffer(float x, float y)
