@@ -482,7 +482,11 @@ def fix_fcprimal_reflection(shader):
         refl_instr.instruction, refl_instr.lval, tmp1, coord.components, sampler.variable))
     off += shader.insert_instr(refl_line + off + 1)
 
-    fix_fcprimal_camera_pos(shader)
+    # Do not adjust camra position. Fixes the reflection of the sun, but
+    # damages some water shades with caustics (e.g. c9999f0efe46b6cb in first
+    # mammoth mission). May be able to use corrected + uncorrected coordinates
+    # to fix both, but trickier to script.
+    # fix_fcprimal_camera_pos(shader)
 
     shader.set_ini_name('Reflection')
     shader.add_shader_override_setting('ps-t100 = stereo2mono ps-{0}'.format(texture.variable))

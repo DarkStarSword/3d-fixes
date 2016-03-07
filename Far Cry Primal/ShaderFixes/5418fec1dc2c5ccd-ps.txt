@@ -336,7 +336,7 @@ dcl_input_ps linear v5.xyz
 dcl_input_ps linear v6.xyz
 dcl_input_ps linear v7.xyzw
 dcl_output o0.xyzw
-dcl_temps 25
+dcl_temps 23
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
@@ -345,21 +345,9 @@ dcl_resource_texture2d (float,float,float,float) t100
 
 ld_indexable(texture2d)(float,float,float,float) r20.xyzw, l(0, 0, 0, 0), t125.xyzw
 
-
-// Camera Position (environment reflections, etc) adjustment inserted with DarkStarSword's asmtool.py:
-// asmtool.py -i --fix-fcprimal-reflection --only-autofixed -fq 5418fec1dc2c5ccd-ps.txt
-mul r23.x, r20.x, r20.y
-mul r23.x, r23.x, cb0[0].x
-mov r23.yzw, l(0.0)
-dp4 r24.x, r23.xyzw, cb0[4].xyzw
-dp4 r24.y, r23.xyzw, cb0[5].xyzw
-dp4 r24.z, r23.xyzw, cb0[6].xyzw
-mov r23.xyzw, cb0[42].xyzw
-add r23.xyz, r23.xyz, r24.xyz
-
 dp3 r0.x, v3.xyzx, v3.xyzx
 sqrt r0.x, r0.x
-add r0.yzw, -v4.xxzy, r23.xxzy
+add r0.yzw, -v4.xxzy, cb0[42].xxzy
 dp3 r1.x, r0.yzwy, r0.yzwy
 rsq r1.x, r1.x
 mul r1.yzw, r0.yyzw, r1.xxxx
@@ -503,7 +491,7 @@ mad r5.w, r5.w, cb2[2].x, cb2[2].y
 add r5.w, -r5.w, v4.z
 mul_sat r5.w, -r5.w, cb3[18].x
 sqrt r5.w, r5.w
-add r9.xy, v4.xyxx, -r23.xyxx
+add r9.xy, v4.xyxx, -cb0[42].xyxx
 dp2 r7.w, r9.xyxx, r9.xyxx
 mad r8.w, cb2[1].x, r7.w, cb2[1].y
 mul_sat r8.w, r8.w, l(3.000000)
@@ -789,7 +777,7 @@ mad r0.yzw, r2.xxzw, r0.yyzw, r1.yyzw
 lt r1.yz, l(0.000000, 0.000000, 0.000000, 0.000000), cb0[39].zzwz
 and r1.y, r1.z, r1.y
 if_nz r1.y
-  add r1.yzw, v4.xxyz, -r23.xxyz
+  add r1.yzw, v4.xxyz, -cb0[42].xxyz
   dp3 r1.y, r1.yzwy, r1.yzwy
   sqrt r1.y, r1.y
   utof r1.zw, r8.xxxy
@@ -808,7 +796,7 @@ if_nz r1.y
   sample_l_indexable(texture3d)(float,float,float,float) r2.x, r2.xyzx, t12.xyzw, s8, l(0.000000)
   mul r1.xyz, r1.xxxx, r1.yzwy
 else 
-  add r2.yzw, v4.xxyz, -r23.xxyz
+  add r2.yzw, v4.xxyz, -cb0[42].xxyz
   dp3 r1.w, r2.yzwy, r2.yzwy
   sqrt r1.w, r1.w
   mad_sat r1.w, r1.w, cb0[35].y, cb0[35].x
