@@ -12,3 +12,6 @@ asmtool.py -i --fix-fcprimal-physical-lighting --only-autofixed ShaderCache/*-cs
 # physical lighting fix implies it, so no need to do so explicitly there. Apply
 # it to all shaders that include a cube map reflection:
 asmtool.py -i --fix-fcprimal-camera-pos $(grep -l ReflectionCubeTexture__TexObj__ ShaderCache/*-ps.txt)
+
+echo Duplicate shaders:
+ls ShaderFixes/*.txt | sed 's/_replace//' | sort | uniq -d
