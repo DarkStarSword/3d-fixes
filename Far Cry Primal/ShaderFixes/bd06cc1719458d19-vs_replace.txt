@@ -1,0 +1,155 @@
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:17 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer Decal : register(b1)
+{
+  float4 DiffuseAndNormalTiling1 : packoffset(c0);
+  float4 DiffuseColor1 : packoffset(c1);
+  float4 MaterialPickingID : packoffset(c2);
+  float4 ParallaxScale : packoffset(c3);
+  float4 Settings : packoffset(c4);
+  float2 AlphaTiling1 : packoffset(c5);
+  float2 ParallaxHeightAndOffset : packoffset(c5.z);
+  float2 SpecularTiling1 : packoffset(c6);
+  bool AlbedoOnly : packoffset(c6.z);
+  float DepthOffset : packoffset(c6.w);
+  bool DisableAlbedo : packoffset(c7);
+  bool TerrainDecal : packoffset(c7.y);
+}
+
+cbuffer CSceneTransformParameterProvider : register(b2)
+{
+  float4x4 WorldMatrix : packoffset(c0);
+  float3 WorldPositionFractions : packoffset(c4);
+}
+
+cbuffer CSceneGeometry : register(b3)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MeshDecompression : packoffset(c1);
+  float4 NormalizedXYBBox : packoffset(c2);
+}
+
+cbuffer CTerrainDecalLayerOffsetProvider : register(b4)
+{
+  float LayerOffset : packoffset(c0);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  int2 v1 : texcoord0,
+  float4 v2 : normal0,
+  float4 v3 : color0,
+  float4 v4 : fog0,
+  float4 v5 : psize0,
+  out float4 o0 : SV_Position0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float2 o5 : TEXCOORD4)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = (int3)v0.xyz;
+  r0.xyz = r0.xyz * MeshDecompression.yyy + MeshDecompression.xxx;
+  r0.w = 1;
+  r1.x = dot(r0.xyzw, WorldMatrix._m00_m10_m20_m30);
+  r1.y = dot(r0.xyzw, WorldMatrix._m01_m11_m21_m31);
+  r1.z = dot(r0.xyzw, WorldMatrix._m02_m12_m22_m32);
+  r0.xyz = -CameraPosition.xyz + r1.xyz;
+  r0.w = dot(-r0.xyz, -r0.xyz);
+  r0.w = sqrt(r0.w);
+  r1.w = 0.03125 * r0.w;
+  r0.xyz = -r0.xyz / r0.www;
+  r0.w = min(1, r1.w);
+  r0.w = r0.w * DepthOffset + LayerOffset;
+  r0.xyz = r0.www * r0.xyz + r1.xyz;
+  o4.xyz = r1.xyz;
+  r0.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = 1;
+  o0.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  r0.xyz = v2.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  o1.x = dot(r0.xyz, WorldMatrix._m00_m10_m20);
+  o1.y = dot(r0.xyz, WorldMatrix._m01_m11_m21);
+  o1.z = dot(r0.xyz, WorldMatrix._m02_m12_m22);
+  r0.xyz = v5.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  o2.x = dot(r0.xyz, WorldMatrix._m00_m10_m20);
+  o2.y = dot(r0.xyz, WorldMatrix._m01_m11_m21);
+  o2.z = dot(r0.xyz, WorldMatrix._m02_m12_m22);
+  r0.xyz = v4.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  o3.x = dot(r0.xyz, WorldMatrix._m00_m10_m20);
+  o3.y = dot(r0.xyz, WorldMatrix._m01_m11_m21);
+  o3.z = dot(r0.xyz, WorldMatrix._m02_m12_m22);
+  r0.xy = (int2)v1.xy;
+  r0.xy = r0.xy * MeshDecompression.ww + MeshDecompression.zz;
+  r0.xy = float2(-0.5,-0.5) + r0.xy;
+  r0.z = 0.0174532924 * Settings.z;
+  sincos(r0.z, r1.x, r2.x);
+  r3.z = r1.x;
+  r3.y = r2.x;
+  r3.x = -r1.x;
+  r1.y = dot(r0.xy, r3.xy);
+  r1.x = dot(r0.xy, r3.yz);
+  o5.xy = float2(0.5,0.5) + r1.xy;
+  return;
+}

@@ -1,0 +1,179 @@
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:30 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CGlobalShaderParameterProvider : register(b1)
+{
+  float4 BurnColor : packoffset(c0);
+  float4 BurnParams : packoffset(c1);
+  float4 BurnParams2 : packoffset(c2);
+  float4 BurnParams3 : packoffset(c3);
+  float4 CascadedShadowScaleOffsetTile0 : packoffset(c4);
+  float4 CascadedShadowScaleOffsetTile1 : packoffset(c5);
+  float4 WindSimParamsX : packoffset(c6);
+  float4 WindSimParamsY : packoffset(c7);
+  float VistaNoiseIntensity : packoffset(c8);
+  float Time : packoffset(c8.y);
+  float WindFactor : packoffset(c8.z);
+  float FireGlowEV : packoffset(c8.w);
+  float BurnSpeedScale : packoffset(c9);
+  float BurnlineMaskScale : packoffset(c9.y);
+  float BurnlineMaskInfluence : packoffset(c9.z);
+  float WorldSpaceProgressionMaskScale : packoffset(c9.w);
+  float WorldSpaceProgressionMaskInfluence : packoffset(c10);
+  float MaskTransitionSpeedModifier : packoffset(c10.y);
+  float GlowMaskScale : packoffset(c10.z);
+  float FireGlowMaskInfluence : packoffset(c10.w);
+  float CenterBurnlineWidth : packoffset(c11);
+  float TransitionToBurnlineWidth : packoffset(c11.y);
+  float DissolveCutoffPoint : packoffset(c11.z);
+  float DissolveBlendDistance : packoffset(c11.w);
+  float EyeGlossinessScale : packoffset(c12);
+  float EyeSpecIntensityScale : packoffset(c12.y);
+  float EyeIrisGlossinessScale : packoffset(c12.z);
+  float EyeIrisSpecIntensityScale : packoffset(c12.w);
+  float EyeReflectionBoostScale : packoffset(c13);
+  bool EyeReflectionMaskEnable : packoffset(c13.y);
+  float4 BurnParams4 : packoffset(c14);
+  float4 BurnParams5 : packoffset(c15);
+}
+
+cbuffer CSceneDecalMaterial : register(b2)
+{
+  float4 Settings : packoffset(c0);
+  float3 DiffuseColor1 : packoffset(c1);
+  float3 DiffuseColor2 : packoffset(c2);
+  float3 ShowThroughWallsHighLightColor : packoffset(c3);
+  float2 ParallaxHeightAndOffset : packoffset(c4);
+  float AnimAmplitude : packoffset(c4.z);
+  float AnimFreq : packoffset(c4.w);
+  float AnimOffset : packoffset(c5);
+  float AnimBlend : packoffset(c5.y);
+  float MaxLifeTime : packoffset(c5.z);
+  float FadeInDuration : packoffset(c5.w);
+  float RcpFadeInDuration : packoffset(c6);
+  float RcpFadeOutDuration : packoffset(c6.y);
+  float ShowThroughWallsAlpha : packoffset(c6.z);
+  float HuntingInvestigationLerpFactor : packoffset(c6.w);
+}
+
+cbuffer CTerrainDecalLayerOffsetProvider : register(b3)
+{
+  float LayerOffset : packoffset(c0);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : position0,
+  int2 v1 : texcoord0,
+  float4 v2 : normal0,
+  float v3 : color0,
+  float4 v4 : fog0,
+  float4 v5 : psize0,
+  float2 v6 : texcoord3,
+  out float4 o0 : SV_Position0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = -CameraPosition.xyz + v0.xyz;
+  r0.w = dot(-r0.xyz, -r0.xyz);
+  r0.w = sqrt(r0.w);
+  r0.xyz = -r0.xyz / r0.www;
+  r0.w = 0.03125 * r0.w;
+  r0.w = min(1, r0.w);
+  r0.w = r0.w * 0.375 + LayerOffset;
+  r0.xyz = r0.www * r0.xyz + v0.xyz;
+  r0.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = 1;
+  o0.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  r0.x = Time + -v3.x;
+  r0.y = -MaxLifeTime + r0.x;
+  r0.yw = saturate(RcpFadeOutDuration * r0.yx);
+  r0.y = 1 + -r0.y;
+  r0.z = cmp(r0.x < FadeInDuration);
+  r0.x = AnimFreq * r0.x;
+  r0.x = sin(r0.x);
+  r0.x = AnimAmplitude * r0.x + AnimOffset;
+  o1.w = r0.z ? r0.w : r0.y;
+  o1.xyz = v2.xyz;
+  o2.xyz = v5.xyz;
+  o3.xyz = v4.xyz;
+  r0.yzw = DiffuseColor2.xyz + -DiffuseColor1.xyz;
+  o4.xyz = r0.xxx * r0.yzw + DiffuseColor1.xyz;
+  o5.xyz = v0.xyz;
+  r0.xy = (int2)v1.xy;
+  r0.xy = r0.xy * float2(0.000488296151,0.000488296151) + float2(-0.5,-0.5);
+  r0.z = 0.0174532924 * Settings.z;
+  sincos(r0.z, r1.x, r2.x);
+  r3.z = r1.x;
+  r3.y = r2.x;
+  r3.x = -r1.x;
+  r1.y = dot(r0.xy, r3.xy);
+  r1.x = dot(r0.xy, r3.yz);
+  o6.xy = float2(0.5,0.5) + r1.xy;
+  o6.zw = v6.xy;
+  return;
+}
