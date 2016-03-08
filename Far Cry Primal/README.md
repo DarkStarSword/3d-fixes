@@ -26,6 +26,7 @@ Fixed
 - Vignette
 - Hunter vision yellow outline fade out
 - Underwater caustics
+- Decals
 
 Installation
 ------------

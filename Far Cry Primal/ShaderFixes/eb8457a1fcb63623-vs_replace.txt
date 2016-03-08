@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:30 2016
+// Decals (pattern: already in world space) - blood from animals
+// ---- Created with 3Dmigoto v1.2.34 on Tue Mar 08 23:10:28 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
 {
@@ -135,6 +136,12 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+
+float4 tmp = mul(float4(v0.xyz, 1), ViewProjectionMatrix);
+float4 adj = float4(stereo.x * (tmp.w - stereo.y) * InvProjectionMatrix._m00, 0, 0, 0);
+v0.xyz += mul(adj, InvViewMatrix);
+
   r0.xyz = -CameraPosition.xyz + v0.xyz;
   r0.w = dot(-r0.xyz, -r0.xyz);
   r0.w = sqrt(r0.w);
@@ -149,6 +156,9 @@ void main(
   o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
   o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
   o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+
+o0.x -= stereo.x * (o0.w - stereo.y);
+
   r0.x = Time + -v3.x;
   r0.y = -MaxLifeTime + r0.x;
   r0.yw = saturate(RcpFadeOutDuration * r0.yx);

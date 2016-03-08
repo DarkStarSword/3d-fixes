@@ -1,3 +1,4 @@
+// Decals (pattern: WorldMatrix._m30_m31_m32 not in multiply) - hunter vision foot prints, etc
 // ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:01:23 2016
 
 cbuffer CViewportShaderParameterProvider : register(b0)
@@ -110,18 +111,36 @@ void main(
   r3.x = dot(r2.xyz, WorldMatrix._m00_m10_m20);
   r3.y = dot(r2.xyz, WorldMatrix._m01_m11_m21);
   r3.z = dot(r2.xyz, WorldMatrix._m02_m12_m22);
+
+r3.xyz += WorldMatrix._m30_m31_m32;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(float4(r3.xyz, 1), ViewProjectionMatrix);
+tmp = float4(stereo.x * (tmp.w - stereo.y) * InvProjectionMatrix._m00, 0, 0, 0);
+r3.xyz += mul(tmp, InvViewMatrix);
+
+r3.xyz -= WorldMatrix._m30_m31_m32;
+
   r1.xyz = r3.xyz + r1.xyz;
   r0.xyz = r3.xyz + r0.xyz;
+
   r0.w = dot(r1.xyz, r1.xyz);
   r0.w = rsqrt(r0.w);
   r2.xyz = r1.xyz * r0.www;
-  r1.xyz = r2.xyz * -AlphaInRedChannel + r1.xyz;
+
+// Decompiler bug:
+  //r1.xyz = r2.xyz * -AlphaInRedChannel + r1.xyz;
+  r1.xyz = r2.xyz * -HuntingInvestigationWorldSpaceZOffset + r1.xyz;
+
   r1.w = 1;
   r2.x = dot(r1.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
   r2.y = dot(r1.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
   r2.w = dot(r1.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
   o0.z = dot(r1.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
   o0.xyw = r2.xyw;
+
+o0.x -= stereo.x * (o0.w - stereo.y);
+
   r1.xyzw = DepthTextureScaleOffset.xyzw * r2.xyww;
   o5.z = r2.w;
   o5.xy = r1.xy + r1.zw;
@@ -134,7 +153,11 @@ void main(
   r0.w = dot(r1.xyz, r1.xyz);
   r0.w = rsqrt(r0.w);
   r1.xyz = r1.xyz * r0.www;
-  r0.xyz = r1.xyz * -AlphaInRedChannel + r0.xyz;
+
+// Decompiler bug:
+  //r0.xyz = r1.xyz * -AlphaInRedChannel + r0.xyz;
+  r0.xyz = r1.xyz * - HuntingInvestigationWorldSpaceZOffset + r0.xyz;
+
   r0.xyz = -CameraPosition.xyz + r0.xyz;
   r0.w = dot(r0.xyz, r0.xyz);
   r0.w = sqrt(r0.w);
