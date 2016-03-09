@@ -1,4 +1,4 @@
-#include <ShaderFixes/crosshair.hlsl>
+#include <crosshair.hlsl>
 
 bool is_minimap(float4 pos, float4 params1)
 {
