@@ -15,7 +15,6 @@ from shadertool import debug, debug_verbose, component_set_to_string
 from shadertool import vanity_comment, tool_name, expand_wildcards
 from shadertool import game_git_dir, collected_errors, show_collected_errors
 
-shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[vhdgpc]s)', re.IGNORECASE)
 unity_ConstBuffer_pattern = re.compile(r'ConstBuffer\s"(?P<name>[^"]+)"\s(?P<size>[0-9]+)$', re.MULTILINE)
 unity_BindCB_pattern = re.compile(r'BindCB\s"(?P<name>[^"]+)"\s(?P<cb>[0-9]+)$', re.MULTILINE)
 
@@ -82,7 +81,7 @@ include_matrix_hlsl = '''
 d3dx_ini = {}
 
 class Instruction(object):
-    pattern = re.compile('[^;]*;')
+    pattern = re.compile(r'[^;]*;')
 
     def __init__(self, text):
         self.text = text
@@ -191,29 +190,55 @@ class MADInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, lval, rval)
         self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
+class DotInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        dot\(
+            (?P<rval>
+                (?P<arg1>\S+)
+                \s* , \s*
+                (?P<arg2>\S+)
+            )
+        \)
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2)))
+
+class FlowControlStart(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        [^{};]+
+        {
+    ''', re.VERBOSE)
+
+class FlowControlElse(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        } \s* else \s* {
+    ''', re.VERBOSE)
+
+class FlowControlEnd(Instruction):
+    pattern = re.compile(r'''
+        \s*
+        }
+    ''', re.VERBOSE)
+
 specific_instructions = (
         MADInstruction,
+        DotInstruction,
         MultiplyInstruction,
         ReciprocalInstruction,
         AssignmentInstruction,
+        FlowControlElse,
+        FlowControlStart,
+        FlowControlEnd,
 )
-
-def InstructionFactory(text, pos):
-
-    match = Comment.pattern.match(text, pos)
-    if match is not None:
-        return Comment(match.group()), match.end()
-
-    for specific_instruction in specific_instructions:
-        match = specific_instruction.pattern.match(text, pos)
-        if match is not None:
-            return specific_instruction(match.group(), **match.groupdict()), match.end()
-
-    match = Instruction.pattern.match(text, pos)
-    if match is not None:
-        return Instruction(match.group()), match.end()
-
-    return None, pos
 
 
 # Tried to get rid of all the edge cases, probably still some left...
@@ -293,7 +318,181 @@ def str_reg_components(register, components):
     else:
         return register + '.%s' % component_set_to_string(components)
 
-class HLSLShader(object):
+class Shader(object):
+    '''
+    Common code shared between HLSLShader in this file and ASMShader in
+    asmtool.py
+    '''
+
+    shader_filename_pattern = re.compile(r'(?P<hash>[0-9a-f]{16})-(?P<shader_type>[vhdgpc]s)', re.IGNORECASE)
+
+    def __init__(self, filename, args):
+        self.filename = os.path.basename(filename)
+        self.args = args
+        self.autofixed = False
+        self.vanity_inserted = False
+        self.hash = None
+        self.shader_type = None
+        self.shader_model = None
+        self._early_insert_pos = None
+        self.inserted_stereo_params = False
+        self.ini_settings = None
+        self.ini_name = ''
+        self.text = open(filename, 'r').read()
+        self.get_info_from_filename()
+        self.stereo_params_reg = None
+
+    def get_info_from_filename(self):
+        match = self.shader_filename_pattern.match(self.filename)
+        if match is None:
+            return None
+        d = match.groupdict()
+        self.hash = int(d['hash'], 16)
+        self.shader_type = d['shader_type'].lower()
+
+    def split_instructions(self, body_txt):
+        self.instructions = [];
+        pos = 0
+        while True:
+            instr, pos = self.InstructionFactory(body_txt, pos)
+            if instr is None:
+                break
+            debug_verbose(3, instr.__class__.__name__, instr.strip())
+
+            if not instr.is_noop(): # No point adding noops, simplifies MGSV shaders
+                self.instructions.append(instr)
+
+            # Alternative noop handling - add line but comment it out:
+            # if instr.is_noop(): # No point adding noops, simplifies MGSV shaders
+            #     self.comment_out_instruction(-1, 'noop')
+        return pos
+
+    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None):
+        '''
+        Based on the same function in shadertool
+        '''
+        assert(direction == 1 or direction == -1)
+        assert(write is not None)
+
+        Match = collections.namedtuple('Match', ['line', 'instruction'])
+
+        if instr_type and not isinstance(instr_type, (tuple, list)):
+            instr_type = (instr_type, )
+
+        if direction == 1:
+            if start is None:
+                start = 0
+            if end is None:
+                end = len(self.instructions)
+        else:
+            if start is None:
+                start = len(self.instructions) - 1
+            if end is None:
+                end = -1
+
+        debug_verbose(1, "Scanning shader %s from instruction %i to %i for %s %s%s..." % (
+            {1: 'downwards', -1: 'upwards'}[direction],
+            start, end - direction,
+            {True: 'write to', False: 'read from'}[write],
+            str_reg_components(reg, components),
+            instr_type and ' (Searching for %s)' % ' or '.join([x.__name__ for x in instr_type]) or ''
+            ))
+
+        if isinstance(components, str):
+            components = set(components)
+
+        ret = []
+        for i in range(start, end, direction):
+            instr = self.instructions[i]
+            debug_verbose(2, 'scanning %s' % instr.strip())
+            if instr_type and not isinstance(instr, instr_type):
+                continue
+            if write:
+                if instr.writes(reg, components):
+                    debug_verbose(1, 'Found write on instruction %s: %s' % (i, instr.strip()))
+                    ret.append(Match(i, instr))
+                    if stop:
+                        return ret
+            else:
+                if instr.reads(reg, components):
+                    debug_verbose(1, 'Found read on instruction %s: %s' % (i, instr.strip()))
+                    ret.append(Match(i, instr))
+                    if stop:
+                        return ret
+
+        return ret
+
+    def find_header(self, patterns):
+        if not isinstance(patterns, (tuple, list)):
+            patterns = (patterns, )
+
+        for pattern in patterns:
+            match = pattern.search(self.declarations_txt)
+            if match is not None:
+                return match
+
+        raise KeyError()
+
+    non_ws_pattern = re.compile('\S')
+    def comment_out_instruction(self, line, additional=None):
+        instr = str(self.instructions[line])
+        match = self.non_ws_pattern.search(instr)
+        instr = instr[:match.start()] + '// ' + instr[match.start():]
+        if additional is not None:
+            instr += ' // ' + additional
+        self.instructions[line] = Comment(instr)
+
+    def insert_vanity_comment(self, where, what):
+        off = 0
+        off += self.insert_instr(where + off)
+        comments = vanity_comment(self.args, self, what)
+        for comment in comments:
+            off += self.insert_instr(where + off, comment = comment)
+        #self.declarations_txt = ''.join([ '// %s\n' % comment for comment in comments ]) + self.declarations_txt
+        if not self.vanity_inserted:
+            self.declarations_txt = '// %s\n' % comments[1] + self.declarations_txt
+            self.vanity_inserted = True
+        return off
+
+    def early_insert_vanity_comment(self, what):
+        off = self.insert_vanity_comment(self.early_insert_pos, what)
+        self.early_insert_pos += off
+        return off
+
+    def early_insert_instr(self, instruction=None, comment=None):
+        self.early_insert_pos += self.insert_instr(self.early_insert_pos, instruction, comment)
+        return 1
+
+    def set_ini_name(self, name):
+            self.ini_name = name + '_'
+
+    def add_shader_override_setting(self, setting, name=None):
+        if self.ini_settings is None:
+            self.ini_settings = []
+        self.ini_settings.append(setting)
+
+    def replace_reg(self, old, new, components=None):
+        for i, instr in enumerate(self.instructions):
+            if register_in_expression(instr.rval, old, components):
+                # FIXME: Use a regular expression replace to ensure the
+                # replacement is on a word boundary:
+                self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+
+    def update_ini(self):
+        '''
+        Right now this just updates our internal data structures to note any
+        changes we need to make to the ini file and we print these out before
+        exiting. TODO: Actually update the ini file for real (still should notify
+        the user).
+        '''
+        if self.ini_settings is None or self.hash is None:
+            return
+
+        section = 'ShaderOverride_%s%016x' % (self.ini_name, self.hash)
+        d3dx_ini.setdefault(section, ['hash = %016x' % self.hash])
+        d3dx_ini[section].extend(self.ini_settings)
+
+class HLSLShader(Shader):
     main_start_pattern = re.compile(r'void main\(\s*')
     param_end_pattern = re.compile(r'\)\s*{')
     main_end_pattern = re.compile(r'^}$', re.MULTILINE)
@@ -316,11 +515,7 @@ class HLSLShader(object):
     class ParameterAlreadyExists(Exception): pass
 
     def __init__(self, filename):
-        self.filename = os.path.basename(filename)
-        self.autofixed = False
-        self.vanity_inserted = False
-
-        self.text = open(filename, 'r').read()
+        Shader.__init__(self, filename, args)
 
         self.main_match = self.main_start_pattern.search(self.text)
         self.param_end_match = self.param_end_pattern.search(self.text, self.main_match.end())
@@ -337,25 +532,11 @@ class HLSLShader(object):
         self.parse_parameters(parameters_txt)
         self.split_instructions(body_txt)
 
-        self.hash = None
-        self.shader_type = None
-        self.shader_model = None
-
-        self.get_info_from_filename()
         self.guess_shader_type_and_model()
         debug_verbose(0, "Guessed shader model %s" % self.shader_model)
 
-        self._early_insert_pos = None
-        self.inserted_stereo_params = False
-        self.ini_settings = None
-
     def get_info_from_filename(self):
-        match = shader_filename_pattern.match(self.filename)
-        if match is None:
-            return None
-        d = match.groupdict()
-        self.hash = int(d['hash'], 16)
-        self.shader_type = d['shader_type'].lower()
+        Shader.get_info_from_filename(self)
         self.shader_model = '%s_5_0' % self.shader_type
 
     def guess_shader_type_and_model(self):
@@ -400,21 +581,24 @@ class HLSLShader(object):
             return '%s%s%s %s : %s' % (out, modifiers, param.type, param.variable, param.semantic)
         return ',\n  '.join(map(parameter_str, self.parameters.values()))
 
+    def InstructionFactory(self, text, pos):
+        match = Comment.pattern.match(text, pos)
+        if match is not None:
+            return Comment(match.group()), match.end()
+
+        for specific_instruction in specific_instructions:
+            match = specific_instruction.pattern.match(text, pos)
+            if match is not None:
+                return specific_instruction(match.group(), **match.groupdict()), match.end()
+
+        match = Instruction.pattern.match(text, pos)
+        if match is not None:
+            return Instruction(match.group()), match.end()
+
+        return None, pos
+
     def split_instructions(self, body_txt):
-        self.instructions = [];
-        pos = 0
-        while True:
-            instr, pos = InstructionFactory(body_txt, pos)
-            if instr is None:
-                break
-
-            if not instr.is_noop(): # No point adding noops, simplifies MGSV shaders
-                self.instructions.append(instr)
-
-            # Alternative noop handling - add line but comment it out:
-            # if instr.is_noop(): # No point adding noops, simplifies MGSV shaders
-            #     self.comment_out_instruction(-1, 'noop')
-
+        pos = Shader.split_instructions(self, body_txt)
         self.close_txt = body_txt[pos:] + self.close_txt
 
     def lookup_semantic(self, semantic, output):
@@ -422,12 +606,12 @@ class HLSLShader(object):
 
     def lookup_output_position(self):
         try:
-            return self.lookup_semantic('SV_Position0', True)
+            return self.lookup_semantic('SV_Position0', True).variable
         except KeyError:
             try:
-                return self.lookup_semantic('SV_POSITION0', True)
+                return self.lookup_semantic('SV_POSITION0', True).variable
             except KeyError:
-                return self.lookup_semantic('POSITION0', True)
+                return self.lookup_semantic('POSITION0', True).variable
 
     def add_parameter(self, output, modifiers, type, variable, semantic):
         # TODO: Insert parameter in appropriate spot (before certain SV
@@ -436,61 +620,6 @@ class HLSLShader(object):
         if (semantic, output) in self.parameters:
             raise self.ParameterAlreadyExists((semantic, output))
         self.parameters[(semantic, output)] = param
-
-    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None):
-        '''
-        Based on the same function in shadertool
-        '''
-        assert(direction == 1 or direction == -1)
-        assert(write is not None)
-
-        Match = collections.namedtuple('Match', ['line', 'instruction'])
-
-        if instr_type and not isinstance(instr_type, (tuple, list)):
-            instr_type = (instr_type, )
-
-        if direction == 1:
-            if start is None:
-                start = 0
-            if end is None:
-                end = len(self.instructions)
-        else:
-            if start is None:
-                start = len(self.instructions) - 1
-            if end is None:
-                end = -1
-
-        debug_verbose(1, "Scanning shader %s from instruction %i to %i for %s %s%s..." % (
-            {1: 'downwards', -1: 'upwards'}[direction],
-            start, end - direction,
-            {True: 'write to', False: 'read from'}[write],
-            str_reg_components(reg, components),
-            instr_type and ' (Searching for %s)' % ' or '.join([x.__name__ for x in instr_type]) or ''
-            ))
-
-        if isinstance(components, str):
-            components = set(components)
-
-        ret = []
-        for i in range(start, end, direction):
-            instr = self.instructions[i]
-            # debug('scanning %s' % instr.strip())
-            if instr_type and not isinstance(instr, instr_type):
-                continue
-            if write:
-                if instr.writes(reg, components):
-                    debug_verbose(1, 'Found write on instruction %s: %s' % (i, instr.strip()))
-                    ret.append(Match(i, instr))
-                    if stop:
-                        return ret
-            else:
-                if instr.reads(reg, components):
-                    debug_verbose(1, 'Found read on instruction %s: %s' % (i, instr.strip()))
-                    ret.append(Match(i, instr))
-                    if stop:
-                        return ret
-
-        return ret
 
     def find_var_component_from_row_major_matrix_multiply(self, cb):
         results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction))
@@ -514,6 +643,9 @@ class HLSLShader(object):
 
         return var, line
 
+    def effective_swizzle(self, mask, swizzle):
+        return swizzle
+
     def adjust_cb_size(self, cb, size):
         search = '  float4 cb%d[' % cb
         pos = self.declarations_txt.find(search) + len(search)
@@ -527,17 +659,6 @@ class HLSLShader(object):
             return
         debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, old_size, size))
         self.declarations_txt = self.declarations_txt[:pos] + str(size) + self.declarations_txt[pos2:]
-
-    def find_header(self, patterns):
-        if not isinstance(patterns, (tuple, list)):
-            patterns = (patterns, )
-
-        for pattern in patterns:
-            match = pattern.search(self.declarations_txt)
-            if match is not None:
-                return match
-
-        raise KeyError()
 
     def append_declaration(self, declaration):
         self.declarations_txt += '\n%s\n\n' % declaration.strip()
@@ -568,36 +689,10 @@ class HLSLShader(object):
         self.adjust_cb_size(cb, cb_size)
         return cb, offset
 
-    non_ws_pattern = re.compile('\S')
-    def comment_out_instruction(self, line, additional=None):
-        instr = str(self.instructions[line])
-        match = self.non_ws_pattern.search(instr)
-        instr = instr[:match.start()] + '// ' + instr[match.start():]
-        if additional is not None:
-            instr += ' // ' + additional
-        self.instructions[line] = Comment(instr)
-
     def append_comment_to_line(self, line, comment):
         instr = str(self.instructions[line])
         instr += ' // ' + comment
         self.instructions[line] = Instruction(instr)
-
-    def insert_vanity_comment(self, where, what):
-        off = 0
-        off += self.insert_instr(where + off)
-        comments = vanity_comment(args, self, what)
-        for comment in comments:
-            off += self.insert_instr(where + off, comment = comment)
-        #self.declarations_txt = ''.join([ '// %s\n' % comment for comment in comments ]) + self.declarations_txt
-        if not self.vanity_inserted:
-            self.declarations_txt = '// %s\n' % comments[1] + self.declarations_txt
-            self.vanity_inserted = True
-        return off
-
-    def early_insert_vanity_comment(self, what):
-        off = self.insert_vanity_comment(self.early_insert_pos, what)
-        self.early_insert_pos += off
-        return off
 
     def insert_instr(self, pos, instruction=None, comment=None):
         line = '\n'
@@ -627,10 +722,6 @@ class HLSLShader(object):
     def early_insert_pos(self, value):
         self._early_insert_pos = value
 
-    def early_insert_instr(self, instruction=None, comment=None):
-        self.early_insert_pos += self.insert_instr(self.early_insert_pos, instruction, comment)
-        return 1
-
     def insert_stereo_params(self):
         if self.inserted_stereo_params:
             return 0
@@ -638,33 +729,11 @@ class HLSLShader(object):
         off  = self.early_insert_instr()
         off += self.early_insert_instr('float4 stereo = StereoParams.Load(0);')
         off += self.early_insert_instr('float separation = stereo.x, convergence = stereo.y, eye = stereo.z;')
+        self.stereo_params_reg = 'stereo'
         return off
 
-    def replace_reg(self, old, new, components=None):
-        for i, instr in enumerate(self.instructions):
-            if register_in_expression(instr.rval, old, components):
-                # FIXME: Use a regular expression replace to ensure the
-                # replacement is on a word boundary:
-                self.instructions[i] = InstructionFactory(str(instr).replace(old, new), 0)[0]
-
-    def add_shader_override_setting(self, setting):
-        if self.ini_settings is None:
-            self.ini_settings = []
-        self.ini_settings.append(setting)
-
-    def update_ini(self):
-        '''
-        Right now this just updates our internal data structures to note any
-        changes we need to make to the ini file and we print these out before
-        exiting. TODO: Actually update the ini file for real (still should notify
-        the user).
-        '''
-        if self.ini_settings is None or self.hash is None:
-            return
-
-        section = 'ShaderOverride_%016x' % self.hash
-        d3dx_ini.setdefault(section, ['hash = %016x' % self.hash])
-        d3dx_ini[section].extend(self.ini_settings)
+    def insert_halo_fix_code(self, pos, temp_reg):
+        return self.insert_instr(pos, 'if ({0}.w != 1.0) {{ {0}.x += separation * ({0}.w - convergence); }}'.format(temp_reg.variable))
 
     def __str__(self):
         s = self.declarations_txt
@@ -702,7 +771,11 @@ def auto_fix_vertex_halo(shader):
     '''
 
     # 1. Find output position variable from declarations
-    pos_out = shader.lookup_output_position().variable
+    try:
+        pos_out = shader.lookup_output_position()
+    except KeyError:
+        debug("Shader has no output position (tesselation?)")
+        return
 
     # 2. Locate where in the shader the output position is set and note which
     #    temporary register was copied to it.
@@ -726,7 +799,7 @@ def auto_fix_vertex_halo(shader):
     if not temp_reg.variable.startswith('r'):
         debug_verbose(-1, 'Output not moved from a temporary register: %s' % output_instr.strip())
         return
-    if temp_reg.components and temp_reg.components != out_reg.components:
+    if temp_reg.components and shader.effective_swizzle(out_reg.components, temp_reg.components) != out_reg.components:
         debug_verbose(-1, 'Temporary register has unexpected swizzle: %s' % output_instr.strip())
         return
 
@@ -740,8 +813,9 @@ def auto_fix_vertex_halo(shader):
 
 
     # 4. Scan between the two lines identified in 2 and 3 for any reads of the
-    #    temporary register:
-    results = shader.scan_shader(temp_reg.variable, write=False, start=temp_reg_line + 1, end=output_line)
+    #    temporary register. We only consider components that were originally
+    #    output to avoid getting caught up on an unrelated variable:
+    results = shader.scan_shader(temp_reg.variable, components=temp_reg.components, write=False, start=temp_reg_line + 1, end=output_line)
     if results:
         # 5. If temporary register was read between temporary register being set
         #    and moved to output, relocate the output to just before the first
@@ -779,8 +853,8 @@ def auto_fix_vertex_halo(shader):
         shader.insert_instr(output_line)
         debug_verbose(-1, "Line %i: Relocating '%s' to here" % (relocate_to, output_instr.strip()))
         relocate_to += shader.insert_instr(relocate_to)
-        shader.insert_instr(relocate_to, output_instr.strip(), 'Relocated to here with %s' % tool_name)
-        output_line = relocate_to
+        relocate_to += shader.insert_instr(relocate_to, output_instr.strip(), 'Relocated to here with %s' % tool_name)
+        output_line = relocate_to - 1
     else:
         # 7. No reads above, scan downwards until temporary register X
         #    component is next set:
@@ -804,13 +878,17 @@ def auto_fix_vertex_halo(shader):
     pos += shader.insert_vanity_comment(pos, "Automatic vertex shader halo fix inserted with")
 
     pos += shader.insert_stereo_params()
-    pos += shader.insert_instr(pos, 'if ({0}.w != 1.0) {{ {0}.x += separation * ({0}.w - convergence); }}'.format(temp_reg.variable))
+    pos += shader.insert_halo_fix_code(pos, temp_reg)
     pos += shader.insert_instr(pos)
 
     shader.autofixed = True
 
-def cb_offset(cb, offset):
-    return 'cb%d[%d]' % (cb, offset//16)
+class cb_offset(str):
+    def __new__(cls, cb, offset):
+        return str.__new__(cls, 'cb%d[%d]' % (cb, offset//16))
+    def __init__(self, cb, offset):
+        self.cb = cb
+        self.offset = offset
 
 def cb_matrix(cb, offset):
     return [ cb_offset(cb, offset + i) for i in range(0, 64, 16) ]
@@ -1083,8 +1161,13 @@ def validate_shader_compiles(filename, shader_model):
     cwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(filename)))
     try:
+        # Don't disable optimisations since doing so suppresses certain errors
+        # (e.g. 'Output variable o0 contains a system-interpreted value
+        # (SV_Position0) which must be written in every execution path of the
+        # shader.'). We want the errors to be consistent with 3DMigoto's
+        # compilation step to catch all the same failures it does.
         fxc = subprocess.Popen([os.path.expanduser(args.fxc),
-            '/T', shader_model, '/Od', '/I', '..', os.path.basename(filename)],
+            '/T', shader_model, '/I', '..', os.path.basename(filename)],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = fxc.communicate()
     except OSError as e:
@@ -1095,7 +1178,7 @@ def validate_shader_compiles(filename, shader_model):
 
     err_type = None
     if err:
-        debug(err)
+        debug(err.decode('cp1252'))
         err_type = 'WARNINGS'
     if fxc.returncode != 0:
         failed_filename = filename + '~failed'
@@ -1133,12 +1216,12 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
         debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
     print(shader, end='', file=open(dest, 'w'))
 
-    if args.validate and args.fxc:
+    if hasattr(args, 'validate') and args.validate and args.fxc:
         validate_shader_compiles(dest, shader.shader_model)
 
     return True # Returning success will allow ini updates
 
-def install_shader(shader, file):
+def install_shader(shader, file, args):
     src_dir = os.path.dirname(os.path.join(os.path.realpath(os.curdir), file))
     if os.path.basename(src_dir).lower() != 'shadercache':
         raise Exception("Not installing %s - not in a ShaderCache directory" % file)
@@ -1246,7 +1329,7 @@ def main():
                 os.rename(tmp, real_file)
                 shader.update_ini()
             if args.install:
-                if install_shader(shader, file):
+                if install_shader(shader, file, args):
                     shader.update_ini()
                     pass
             if args.install_to:
