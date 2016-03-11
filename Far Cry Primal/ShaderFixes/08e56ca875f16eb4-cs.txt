@@ -1,5 +1,4 @@
-// Volumetric fog - combines all fog buffers together. No fix, but useful to
-// track which kind of fog is broken by disabling inputs:
+// Volumetric fog - combines all fog buffers together. Fix fog near cliffs & in sky.
 // t7 - VFDensityVolumeTexture (general fog aruond landscape)
 // t8 - VFShadowVolumeTexture (tree shadows / outdoor light shafts)
 // Related shaders:
@@ -10,7 +9,7 @@
 // CS 8b431e0726c6115e - VFShadowVolumeTexture (light shafts outside)
 // CS 6bdcbf1223c89177 - VFShadowVolumeTexture (as above, but for cutscenes)
 // CS 5b5e5a3ac5bc8145 - VFDensityVolumeTexture (bad density near mountains)
-// CS ac73802804100e3f - combines fog buffers together
+// CS ac73802804100e3f - combines fog buffers together (Fix fog near cliffs & in sky)
 // CS 08e56ca875f16eb4 - combines fog buffers together (No light volumes)
 // CS b353330000eff5ed - intermediate stage
 // CS 30f0ac937c0b3451 - intermediate stage x 2
@@ -220,8 +219,13 @@ dcl_uav_typed_texture3d (float,float,float,float) u0
 dcl_uav_typed_texture3d (float,float,float,float) u1
 dcl_input vThreadGroupID.xyz
 dcl_input vThreadIDInGroup.xy
-dcl_temps 7
+dcl_temps 10
 dcl_thread_group 16, 16, 1
+
+dcl_resource_texture2d (float,float,float,float) t125
+
+ld_indexable(texture2d)(float,float,float,float) r7.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 imad r0.xy, vThreadGroupID.xyxx, l(16, 16, 0, 0), vThreadIDInGroup.xyxx
 ult r1.xy, r0.xyxx, cb1[22].xyxx
 and r1.x, r1.y, r1.x
@@ -254,6 +258,26 @@ if_nz r1.x
   mul r3.xyz, r1.wwww, r1.xyzx
   mul r2.yw, r3.xxxy, l(0.000000, 0.500000, 0.000000, 0.500000)
   mad r3.xyz, r3.xyzx, l(0.500000, 0.500000, 0.500000, 0.000000), cb0[42].xyzx
+
+mov r6.xyz, r3.xyz
+mov r6.w, l(1.0)
+
+// ViewProjectionMatrix:
+dp4 r9.w, r6.xyzw, cb0[19].xyzw
+// Adjustment amount:
+add r7.w, r9.w, -r7.y
+mul r9.x, -r7.w, r7.x
+mul r9.x, r9.x, cb0[0].x
+mov r9.yzw, l(0.0)
+// InvViewMatrix:
+dp4 r8.x, r9.xyzw, cb0[4].xyzw
+dp4 r8.y, r9.xyzw, cb0[5].xyzw
+dp4 r8.z, r9.xyzw, cb0[6].xyzw
+// Add adjustment:
+add r6.xyz, r6.xyz, r8.xyz
+
+mov r3.xyz, r6.xyz
+
   iadd r4.xy, cb1[22].xyxx, l(-1, -1, 0, 0)
   umin r4.xy, r0.xyxx, r4.xyxx
   mov r4.zw, l(0,0,0,0)
