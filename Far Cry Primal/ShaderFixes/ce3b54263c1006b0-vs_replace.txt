@@ -1,0 +1,193 @@
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:02:22 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CUserClipPlaneParameterProvider : register(b1)
+{
+  float4 UserClipPlane : packoffset(c0);
+}
+
+cbuffer CSceneTransformParameterProvider : register(b2)
+{
+  float4x4 WorldMatrix : packoffset(c0);
+  float3 WorldPositionFractions : packoffset(c4);
+}
+
+cbuffer CSceneGeometry : register(b3)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MeshDecompression : packoffset(c1);
+  float4 NormalizedXYBBox : packoffset(c2);
+}
+
+cbuffer CSceneTransformPreviousParameterProvider : register(b4)
+{
+  float4x4 WorldMatrix_Previous : packoffset(c0);
+  float3 WorldPositionFractions_Previous : packoffset(c4);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  int2 v1 : texcoord0,
+  int2 v2 : texcoord1,
+  float4 v3 : normal0,
+  float4 v4 : color0,
+  float4 v5 : fog0,
+  float4 v6 : psize0,
+  out float4 o0 : SV_Position0,
+  out float o1 : SV_ClipDistance0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2,
+  out float4 o5 : TEXCOORD3,
+  out float4 o6 : TEXCOORD4,
+  out float4 o7 : TEXCOORD5,
+  out float4 o8 : TEXCOORD6,
+  out float4 o9 : TEXCOORD7,
+  out float3 o10 : TEXCOORD8)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = WorldPositionFractions.xyz + -CameraPositionFractions.xyz;
+  r1.x = WorldMatrix._m30;
+  r1.y = WorldMatrix._m31;
+  r1.z = WorldMatrix._m32;
+  r2.xyz = -CameraPosition.xyz + r1.xyz;
+  r3.xyz = (int3)v0.xyz;
+  r3.xyz = MeshDecompression.yyy * r3.xyz;
+  r3.xyz = MeshDecompression.xxx + r3.xyz;
+  r4.x = dot(r3.xyz, WorldMatrix._m00_m10_m20);
+  r4.y = dot(r3.xyz, WorldMatrix._m01_m11_m21);
+  r4.z = dot(r3.xyz, WorldMatrix._m02_m12_m22);
+  r2.xyz = r4.xyz + r2.xyz;
+  r1.xyz = r4.xyz + r1.xyz;
+  r0.xyz = r2.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r0.xyz * r0.www;
+  r0.xyz = r2.xyz * WorldSpaceZOffset + r0.xyz;
+  r0.w = 1;
+  o0.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  r0.xyz = -CameraPosition.xyz + r1.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r0.xyz = r0.xyz * WorldSpaceZOffset + r1.xyz;
+  r0.w = 1;
+  o1.x = dot(UserClipPlane.xyzw, r0.xyzw);
+  r1.xy = (int2)v1.xy;
+  o2.xy = r1.xy * MeshDecompression.ww + MeshDecompression.zz;
+  r1.xy = (int2)v2.xy;
+  o2.zw = r1.xy * MeshDecompression.ww + MeshDecompression.zz;
+  r0.w = max(AmbientOcclusionRanges.x, v4.w);
+  r0.w = min(AmbientOcclusionRanges.y, r0.w);
+  r0.w = -AmbientOcclusionRanges.x + r0.w;
+  o3.w = saturate(AmbientOcclusionRanges.z * r0.w);
+  o3.xyz = saturate(v4.xyz);
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  o5.xyz = r0.xyz;
+  r0.xyz = WorldMatrix._m01_m11_m21 * r1.yyy;
+  r0.xyz = WorldMatrix._m00_m10_m20 * r1.xxx + r0.xyz;
+  r0.xyz = WorldMatrix._m02_m12_m22 * r1.zzz + r0.xyz;
+  r1.xyz = v5.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r1.xyz * r0.www;
+  o4.x = dot(r2.xyz, r0.xyz);
+  r2.xyz = v6.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r2.xyz, r2.xyz);
+  r0.w = rsqrt(r0.w);
+  r4.xyz = r2.xyz * r0.www;
+  o4.y = dot(r4.xyz, r0.xyz);
+  r4.xyz = v3.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r4.xyz, r4.xyz);
+  r0.w = rsqrt(r0.w);
+  r5.xyz = r4.xyz * r0.www;
+  o4.z = dot(r5.xyz, r0.xyz);
+  r0.x = WorldMatrix_Previous._m30 + -CameraPosition_Previous.x;
+  r0.y = WorldMatrix_Previous._m31 + -CameraPosition_Previous.y;
+  r0.z = WorldMatrix_Previous._m32 + -CameraPosition_Previous.z;
+  r5.x = dot(r3.xyz, WorldMatrix_Previous._m00_m10_m20);
+  r5.y = dot(r3.xyz, WorldMatrix_Previous._m01_m11_m21);
+  r5.z = dot(r3.xyz, WorldMatrix_Previous._m02_m12_m22);
+  o10.xyz = r3.xyz;
+  r0.xyz = r5.xyz + r0.xyz;
+  r3.xyz = WorldPositionFractions_Previous.xyz + -CameraPositionFractions_Previous.xyz;
+  r0.xyz = r3.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r3.xyz = r0.xyz * r0.www;
+  r0.xyz = r3.xyz * WorldSpaceZOffset + r0.xyz;
+  r0.w = 1;
+  o6.x = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m00_m10_m20_m30);
+  o6.y = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m01_m11_m21_m31);
+  o6.z = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m03_m13_m23_m33);
+  o7.x = dot(r4.xyz, WorldMatrix._m00_m10_m20);
+  o7.y = dot(r4.xyz, WorldMatrix._m01_m11_m21);
+  o7.z = dot(r4.xyz, WorldMatrix._m02_m12_m22);
+  o8.x = dot(r2.xyz, WorldMatrix._m00_m10_m20);
+  o8.y = dot(r2.xyz, WorldMatrix._m01_m11_m21);
+  o8.z = dot(r2.xyz, WorldMatrix._m02_m12_m22);
+  o9.x = dot(r1.xyz, WorldMatrix._m00_m10_m20);
+  o9.y = dot(r1.xyz, WorldMatrix._m01_m11_m21);
+  o9.z = dot(r1.xyz, WorldMatrix._m02_m12_m22);
+  return;
+}
