@@ -659,6 +659,59 @@ def fix_fcprimal_camera_pos(shader):
 
     shader.autofixed = True
 
+def fix_fcprimal_volumetric_fog(shader):
+    try:
+        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
+        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the Far Cry Primal light position adjustment')
+        return
+
+    results = shader.scan_shader(CameraPosition, write=False)
+    if not results:
+        debug_verbose(0, 'Shader does not use CameraPosition')
+        return
+
+    (line, instr) = results[0]
+
+    off = shader.insert_stereo_params()
+    tmp1 = shader.allocate_temp_reg()
+    tmp2 = shader.allocate_temp_reg()
+
+    pos = hlsltool.expression_as_single_register(instr.lval)
+
+    off += shader.insert_vanity_comment(line + off + 1, 'Volumetric Fog fix inserted with')
+    off += shader.insert_multiple_lines(line + off + 1, '''
+        mov {tmp1}.xyz, {pos}.{pos_swizzle}
+        mov {tmp1}.w, l(1.0)
+        dp4 {tmp2}.w, {tmp1}.xyzw, {ViewProjectionMatrix3}.xyzw
+        add {tmp2}.x, {tmp2}.w, -{stereo}.y
+        mul {tmp2}.x, {tmp2}.x, -{stereo}.x
+        mul {tmp2}.x, {tmp2}.x, {InvProjectionMatrix0}.x
+        mov {tmp2}.yzw, l(0.0)
+        dp4 {tmp1}.x, {tmp2}.xyzw, {InvViewMatrix0}.xyzw
+        dp4 {tmp1}.y, {tmp2}.xyzw, {InvViewMatrix1}.xyzw
+        dp4 {tmp1}.z, {tmp2}.xyzw, {InvViewMatrix2}.xyzw
+        add {pos}.{pos_mask}, {pos}.xyzw, {tmp1}.{adj_swizzle}
+    '''.format(
+        pos = pos.variable,
+        pos_mask = pos.components,
+        pos_swizzle = shader.remap_components(pos.components, 'xyz'),
+        adj_swizzle = shader.remap_components('xyz', pos.components),
+        stereo = shader.stereo_params_reg,
+        ViewProjectionMatrix3 = ViewProjectionMatrix[3],
+        InvProjectionMatrix0 = InvProjectionMatrix[0],
+        InvViewMatrix0 = InvViewMatrix[0],
+        InvViewMatrix1 = InvViewMatrix[1],
+        InvViewMatrix2 = InvViewMatrix[2],
+        tmp1=tmp1,
+        tmp2=tmp2
+    ))
+
+    shader.autofixed = True
+
 def fix_fcprimal_light_pos(shader):
     try:
         LightingData_pos = shader.find_struct_entry('LightingData', 'float4', 'pos')
@@ -736,6 +789,8 @@ def parse_args():
             help="Fix a physical lighting compute shader in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-camera-pos', action='store_true',
             help="Fix reflections, specular highlights, etc. by adjusting the camera position in Far Cry Primal")
+    parser.add_argument('--fix-fcprimal-volumetric-fog', action='store_true',
+            help="Fix various volumetric fog shaders (WARNING: do not apply to shadow volume shaders - their pattern is slightly different and this will lead to smearing)")
     parser.add_argument('--fix-fcprimal-light-pos', action='store_true',
             help="Fix light position, for volumetric fog around point lights (WARNING: this might break some cave light shaft shaders)")
     parser.add_argument('--only-autofixed', action='store_true',
@@ -773,6 +828,8 @@ def main():
                 fix_fcprimal_physical_lighting(shader)
             if args.fix_fcprimal_camera_pos:
                 fix_fcprimal_camera_pos(shader)
+            if args.fix_fcprimal_volumetric_fog:
+                fix_fcprimal_volumetric_fog(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
         except Exception as e:
