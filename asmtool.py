@@ -737,7 +737,7 @@ def parse_args():
     parser.add_argument('--fix-fcprimal-camera-pos', action='store_true',
             help="Fix reflections, specular highlights, etc. by adjusting the camera position in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-light-pos', action='store_true',
-            help="Fix light position, for volumetric fog around point lights")
+            help="Fix light position, for volumetric fog around point lights (WARNING: this might break some cave light shaft shaders)")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
