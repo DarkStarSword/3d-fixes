@@ -33,6 +33,20 @@ Installation
 1. Assign the game to the Far Cry 4 profile
 2. Unpack the zip file to the Far Cry Primal\bin directory
 
+HUD Modes
+---------
+Two different automatic HUD modes are provided:
+
+The default mode will adjust the entire HUD based on the center of the screen,
+which is well suited to general gameplay so that the crosshair will line up
+with the target.
+
+The second mode will try to adjust the HUD to be mostly in front of anything on
+the screen. This mode is intended for use in cutscenes to help make the
+subtitles easier to read.
+
+The ~ key can be used to toggle between both of these modes.
+
 Convergence Presets
 -------------------
 Press backslash to cycle between two convergence presets - a low preset
