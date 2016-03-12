@@ -463,6 +463,12 @@ class Shader(object):
         self.early_insert_pos += self.insert_instr(self.early_insert_pos, instruction, comment)
         return 1
 
+    def insert_multiple_lines(self, pos, lines):
+        off = 0
+        for line in map(str.strip, lines.split('\n')):
+            off += self.insert_instr(pos + off, line)
+        return off
+
     def set_ini_name(self, name):
             self.ini_name = name + '_'
 
@@ -643,7 +649,7 @@ class HLSLShader(Shader):
 
         return var, line
 
-    def effective_swizzle(self, mask, swizzle):
+    def hlsl_swizzle(self, mask, swizzle):
         return swizzle
 
     def adjust_cb_size(self, cb, size):
@@ -799,7 +805,7 @@ def auto_fix_vertex_halo(shader):
     if not temp_reg.variable.startswith('r'):
         debug_verbose(-1, 'Output not moved from a temporary register: %s' % output_instr.strip())
         return
-    if temp_reg.components and shader.effective_swizzle(out_reg.components, temp_reg.components) != out_reg.components:
+    if temp_reg.components and shader.hlsl_swizzle(out_reg.components, temp_reg.components) != out_reg.components:
         debug_verbose(-1, 'Temporary register has unexpected swizzle: %s' % output_instr.strip())
         return
 

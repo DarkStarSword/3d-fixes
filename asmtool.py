@@ -36,6 +36,27 @@ def cbuffer_entry_pattern(type, name):
         cbuffer_entry_pattern_cache[(type, name)] = pattern
         return pattern
 
+struct_entry_pattern_cache = {}
+def struct_entry_pattern(struct, type, entry):
+    try:
+        return struct_entry_pattern_cache[(struct, type, entry)]
+    except KeyError:
+        pattern = re.compile(r'''
+            // \s Resource \s bind \s info \s for \s (?P<bind_name>\S+) \s* \n
+            // \s* {{ \s* \n
+            //   \s* \n
+            //   \s* struct \s+ {0} \s* \n
+            //   \s* {{ \s* \n
+                   [^}}]*
+            //     \s* {1} \s+ {2}; \s* // \s* Offset: \s+ (?P<offset>\d+) \s* \n
+                   [^}}]*
+            //   \s* }} \s+ [$]Element; \s* // \s* Offset: \s+ 0 \s+ Size: \s+ (?P<size>\d+) \s* \n
+            //   \s* \n
+            // \s* }}
+        '''.format(struct, type, entry), re.VERBOSE | re.MULTILINE)
+        struct_entry_pattern_cache[(struct, type, entry)] = pattern
+        return pattern
+
 resource_bind_pattern_cache = {}
 def resource_bind_pattern(name, type=None, format=None, dim=None):
     try:
@@ -61,8 +82,11 @@ def resource_bind_pattern(name, type=None, format=None, dim=None):
 
 def cbuffer_bind_pattern(cb_name):
     return resource_bind_pattern(cb_name, 'cbuffer', 'NA', 'NA')
+def struct_bind_pattern(cb_name):
+    return resource_bind_pattern(cb_name, 'texture', 'struct', 'r/o')
 
 cbuffer_pattern = re.compile(r'// cbuffer (?P<name>.+)\n// {$', re.MULTILINE)
+struct_pattern = re.compile(r'// Resource bind info for (?P<name>.+)\n// {$', re.MULTILINE)
 
 class Instruction(hlsltool.Instruction):
     pattern = re.compile(r'''
@@ -144,6 +168,36 @@ class SampleLIndexableInstruction(ResourceLoadInstruction):
     def __init__(self, text, instruction, lval, rval, arg1, arg2, arg3, arg4):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3, arg4)))
+
+class LoadStructuredInstruction(ResourceLoadInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>ld_structured_indexable
+            \s*
+            \(
+                [^)]+
+            \)
+            \(
+                [^)]+
+            \)
+        )
+        \s*
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+            \s* , \s*
+            (?P<arg3>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2, arg3):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
 class DP4Instruction(AssignmentInstruction):
     pattern = re.compile(r'''
@@ -235,6 +289,7 @@ specific_instructions = (
     Declaration,
     ReturnInstruction,
     SampleLIndexableInstruction,
+    LoadStructuredInstruction,
     ResourceLoadInstruction,
     DP4Instruction,
     AssignmentInstruction,
@@ -314,7 +369,14 @@ class ASMShader(hlsltool.Shader):
     def lookup_output_position(self):
         return self.sv_outputs['position'].register.variable
 
-    def effective_swizzle(self, mask, swizzle):
+    def remap_components(self, frm, to):
+        ret = ['x'] * 4
+        assert(len(frm) == len(to))
+        for i in range(len(to)):
+            ret[{'x': 0, 'y': 1, 'z': 2, 'w': 3}[to[i]]] = frm[i]
+        return ''.join(ret)
+
+    def hlsl_swizzle(self, mask, swizzle):
         if mask and not swizzle:
             return mask
         swizzle4 = swizzle + swizzle[-1] * (4-len(swizzle))
@@ -354,6 +416,28 @@ class ASMShader(hlsltool.Shader):
 
         # TODO: self.adjust_cb_size(cb, cb_size)
         return cb, offset
+
+    def find_struct_entry(self, struct, type, entry):
+        match = self.find_header(struct_entry_pattern(struct, type, entry))
+        debug_verbose(2, match.group())
+        offset = int(match.group('offset'))
+        bind_name = match.group('bind_name')
+
+        match = struct_bind_pattern(bind_name).search(self.declarations_txt, match.end())
+        if match is None:
+            raise KeyError()
+        debug_verbose(2, match.group())
+
+        slot = int(match.group('slot'))
+
+        return slot, offset
+
+    def scan_structure_loads(self, slot, offset):
+        results = self.scan_shader('t%d' % slot, write=False, instr_type=LoadStructuredInstruction)
+        loff = 'l(%d)' % offset
+        for (line, instr) in results:
+            if instr.rargs[1] == loff:
+                yield (line, instr)
 
     def find_texture(self, name, type='texture', format=None, dim=None):
         match = self.find_header(resource_bind_pattern(name, type, format, dim))
@@ -575,6 +659,55 @@ def fix_fcprimal_camera_pos(shader):
 
     shader.autofixed = True
 
+def fix_fcprimal_light_pos(shader):
+    try:
+        LightingData_pos = shader.find_struct_entry('LightingData', 'float4', 'pos')
+        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the Far Cry Primal light position adjustment')
+        return
+
+    off = 0
+    for (i, (line, instr)) in enumerate(shader.scan_structure_loads(*LightingData_pos)):
+        if i == 0:
+            off += shader.insert_stereo_params()
+            tmp1 = shader.allocate_temp_reg()
+            tmp2 = shader.allocate_temp_reg()
+
+        pos = hlsltool.expression_as_single_register(instr.lval)
+
+        off += shader.insert_vanity_comment(line + off + 1, 'LightsLightingData.pos (Volumetric Fog) adjustment inserted with')
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            mov {tmp1}.xyz, {pos}.{pos_swizzle}
+            mov {tmp1}.w, l(1.0)
+            dp4 {tmp2}.w, {tmp1}.xyzw, {ViewProjectionMatrix3}.xyzw
+            add {tmp2}.x, {tmp2}.w, -{stereo}.y
+            mul {tmp2}.x, {tmp2}.x, {stereo}.x
+            mul {tmp2}.x, {tmp2}.x, {InvProjectionMatrix0}.x
+            mov {tmp2}.yzw, l(0.0)
+            dp4 {tmp1}.x, {tmp2}.xyzw, {InvViewMatrix0}.xyzw
+            dp4 {tmp1}.y, {tmp2}.xyzw, {InvViewMatrix1}.xyzw
+            dp4 {tmp1}.z, {tmp2}.xyzw, {InvViewMatrix2}.xyzw
+            add {pos}.{pos_mask}, {pos}.xyzw, {tmp1}.{adj_swizzle}
+        '''.format(
+            pos = pos.variable,
+            pos_mask = pos.components,
+            pos_swizzle = shader.remap_components(pos.components, 'xyz'),
+            adj_swizzle = shader.remap_components('xyz', pos.components),
+            stereo = shader.stereo_params_reg,
+            ViewProjectionMatrix3 = ViewProjectionMatrix[3],
+            InvProjectionMatrix0 = InvProjectionMatrix[0],
+            InvViewMatrix0 = InvViewMatrix[0],
+            InvViewMatrix1 = InvViewMatrix[1],
+            InvViewMatrix2 = InvViewMatrix[2],
+            tmp1=tmp1,
+            tmp2=tmp2
+        ))
+
+        shader.autofixed = True
+
 def parse_args():
     global args
 
@@ -603,6 +736,8 @@ def parse_args():
             help="Fix a physical lighting compute shader in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-camera-pos', action='store_true',
             help="Fix reflections, specular highlights, etc. by adjusting the camera position in Far Cry Primal")
+    parser.add_argument('--fix-fcprimal-light-pos', action='store_true',
+            help="Fix light position, for volumetric fog around point lights")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -638,6 +773,8 @@ def main():
                 fix_fcprimal_physical_lighting(shader)
             if args.fix_fcprimal_camera_pos:
                 fix_fcprimal_camera_pos(shader)
+            if args.fix_fcprimal_light_pos:
+                fix_fcprimal_light_pos(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
