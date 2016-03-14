@@ -32,6 +32,7 @@ these fixes.
 - [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) - New 3DMigoto hooking mode, accurate specular highlight fix, etc.
 - [The Witness](The Witness) - Automatic stereo mouse cursor, reflections, etc.
 - [Firewatch](Firewatch) - First game to use the DX11 port of my Unity scripts
+- [Far Cry Primal](Far Cry Primal) - Volumetric fog / light shafts / shadow volumes, accurate specular highlights, etc.
 
 Several of my fixes can be found in the 3DMigoto repository instead:
 - [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69) - fixes pretty much everything, adds an auto HUD
@@ -42,7 +43,6 @@ Several of my fixes can be found in the 3DMigoto repository instead:
 - [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar69) - fixes tile lighting compute shaders and halos
 - [Demonicon](demonicon) - Quick fix to make the game playable, fixes lights and some halos
 - [Akiba's Trip](Akiba's Trip Undead & Undressed) - Adds a toggle for an auto UI depth adjustment (unpolished)
-- [Far Cry Primal](Far Cry Primal)
 
 ### Minor Improvements ###
 - [Far Cry 2](Far Cry 2) - Adds auto-convergence while holding RMB
