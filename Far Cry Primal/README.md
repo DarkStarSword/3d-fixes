@@ -3,34 +3,47 @@ Far Cry Primal
 
 Fixed
 -----
-- Halos
+- Volumetric fog completely and accurately fixed and looks awesome in 3D :)
+	- Shadow volumes (e.g. cast from trees)
+	- Light volumes (e.g. in caves)
+	- Camp fires
+	- Density near mountains
+	- Density near cliffs
+	- Density in sky
+- Specular highlights are fixed accurately!
 - Lights / Shadows
 	- Tile Lighting
 	- Directional
 	- Ambient
 	- Physical
-- Volumetric fog
-	- Shadow volumes (e.g. cast from trees)
-	- Light volumes (e.g. in caves)
-	- Camp fires
-	- Density near mountains
-- Specular highlights (Accurate!)
-- Lens flares
-- Auto crosshair added
 - Water reflections
 	- Real reflections outdoors (using stereo reversal technique)
 	- Environment map reflections in caves
 - Ambient Occlusion
 	- Normal map artefacts
-	- Disabled velocity smearing
-- Vignette
-- Hunter vision yellow outline fade out
+	- Disabled false velocity smearing
+- Auto crosshair added
+- Enemy & animal tags
+- Mask of Krati crystals around edge of screen moved to fixed depth
+- Halos
+- Lens flares
+- Vignette pushed to depth
+- Hunter vision yellow outline fade out at edge of screen lined up better
 - Underwater caustics
 - Decals
+- Bloom
 
 Installation
 ------------
-1. Assign the game to the Far Cry 4 profile
+1. Use nvidia inspector to assign the game to the Far Cry 4 profile. Refer to
+   [this guide][1] for instructions on how to do this. This step will need to
+   be repeated whenever the driver is updated or reinstalled (and Windows 10
+   users should keep in mind that this includes any time Windows updates the
+   driver in the background). If the game renders all white in one eye, you
+   need to do this step again!
+
+[1]: http://helixmod.blogspot.com/2013/03/how-to-change-3d-vision-profile-and.html
+
 2. Unpack the zip file to the Far Cry Primal\bin directory
 
 HUD Modes
@@ -45,27 +58,54 @@ The second mode will try to adjust the HUD to be mostly in front of anything on
 the screen. This mode is intended for use in cutscenes to help make the
 subtitles easier to read.
 
-The ~ key can be used to toggle between both of these modes.
+The ~ key can be used to toggle between both of these modes. If you would
+prefer to use a fixed depth HUD, you can do so by editing the d3dx.ini - x2
+sets the mode and x sets the fixed depth for mode 0.
 
 Convergence Presets
 -------------------
 Press backslash to cycle between two convergence presets - a low preset
-recommended for most of the game, and a high preset for use with the owl &
-mammoth.
+recommended for most of the game, and a high preset intended for use in the
+Legend of the Mammoth DLC.
 
-The high preset may also be activated by holding the Z key for 1.4 seconds
-while calling the owl. Tapping Z will return to the recommended convergence.
+Side-by-Side / Top-and-Bottom Output Modes
+------------------------------------------
+This fix is bundled with the new SBS / TAB output mode support in 3DMigoto. To
+enable it, edit the d3dx.ini, find the [Present] section and uncomment the line
+that reads:
 
-You may customise these values by editing the d3dx.ini under
-\[KeyConvergenceCycle\], \[KeyOwlConvergence\] and \[KeyOwlConvergenceLeave\].
+    run = CustomShader3DVision2SBS
+
+Then, in game press F11 to cycle output modes. If using 3D TV Play, set the
+nvidia control panel to output checkerboard to remove the 720p limitation.
 
 Notes
 -----
-The auto HUD adjustment is applied to the entire HUD as a temporary measure
-until I have improved the performance of tracking texture hash updates.
+There are some reports that recent drivers are causing issues for some people.
+If you have trouble, 361.91 and 362.00 are known to work for this game.
+
+I may revisit the game later to improve the HUD like I did in FC4, but this is
+quite playable as is.
+
+Known Issues
+------------
+- Vignette underwater is not lined up with the edge of the screen (related to
+  the HUD), but is a pretty minor issue.
+
+- Some of the cutscenes have excessive sparkles at the far left of the screen.
+
+- Some of the reflections are not accurate in 2D, and therefore not accurate in
+  3D either. The river near the village is probably the worst for this as from
+  certain camera angles plants can be seen stretched across the water. This is
+  a game bug.
+
+- If you use an unusual resolution, the fog in some areas (such as while
+  obtaining the Owl guide) may be cut off the right of the screen. This occurs
+  even in 2D and is a game bug. 1920x1080 and 1280x720 both work fine.
 
 Like my Work?
 -------------
 Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
 
-_Special thanks to Flugan for his work on the assembler, used in this fix_
+_This mod is created with 3DMigoto (by Bo3b, Chiri & myself) and uses Flugan's
+assembler_
