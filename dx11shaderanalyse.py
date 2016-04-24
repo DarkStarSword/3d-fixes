@@ -164,12 +164,16 @@ def get_chunk_info(stream, offset):
 
 def decode_chunk_at(stream, offset):
     (signature, size) = get_chunk_info(stream, offset)
+    buf = stream.read(size)
+    hash = ''
+    if args.hash_chunks:
+        hash = ' ' + hashlib.sha1(buf).hexdigest()
     if verbosity >= 1:
-        print("{} chunk at 0x{:08x} size {}".format(signature.decode('ASCII'), offset, size))
-    elif verbosity >= 0:
-        print(signature.decode('ASCII'))
+        print("{} chunk at 0x{:08x} size {}{}".format(signature.decode('ASCII'), offset, size, hash))
+    elif verbosity >= 0 or args.hash_chunks:
+        print('{}{}'.format(signature.decode('ASCII'), hash))
     if signature in chunks:
-        chunks[signature](stream.read(size))
+        chunks[signature](buf)
 
 def get_chunk(stream, name):
     header = parse_dxbc_header(stream)
@@ -212,6 +216,8 @@ def parse_args():
             help='Level of verbosity')
     parser.add_argument('--quiet', '-q', action='count', default=0,
             help='Surpress informational messages')
+    parser.add_argument('--hash-chunks', action='store_true',
+            help='Calculate a hash of each chunk, e.g. use to correlate shaders that only differ by debug info, etc.')
     args = parser.parse_args()
     verbosity = args.verbose - args.quiet
 
