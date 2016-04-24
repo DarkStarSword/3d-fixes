@@ -458,7 +458,7 @@ def export_filename_combined(sub_programs, args):
     else:
         ret = export_filename_combined_long(shaders, args)
     if ret is not None:
-        return [x.replace('/', '_') for x in ret]
+        return [x.replace('/', '_').replace('\\', '_') for x in ret]
     return None
 
 def _collect_headers(tree):
