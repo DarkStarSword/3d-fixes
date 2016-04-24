@@ -46,6 +46,8 @@ Installation
 
 2. Unpack the zip file to the Far Cry Primal\bin directory
 
+3. Disable Motion Blur in the settings
+
 HUD Modes
 ---------
 Two different automatic HUD modes are provided:
