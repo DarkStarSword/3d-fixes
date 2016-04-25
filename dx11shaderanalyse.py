@@ -3,6 +3,8 @@
 import sys, os, argparse
 import struct, hashlib, codecs
 from collections import namedtuple
+import numpy as np
+import math
 
 system_values = {
     0: 'NONE', # or TARGET, or SPRs: COVERAGE, DEPTH, DEPTHGE, DEPTHLE, ...
@@ -183,25 +185,138 @@ def get_chunk(stream, name):
         if signature == name:
             return stream.read(size)
 
-def brute_hash(stream):
-    # Try MD5 on every possible subset of the file to see if it matches anything
-    # Despite the algorithm looking *VERY* similar to MD5, I don't get a match
-    size = os.fstat(stream.fileno()).st_size
-    for i in range(0, size, 1):
-        for j in range(size, i, -1):
-            stream.seek(i)
-            print(i, j, j-1, hashlib.md5(stream.read(j - i)).hexdigest())
+def shader_hash(message, real_md5=False):
+    '''
+    Follows the MD5 psuedocode from:
+      https://en.wikipedia.org/wiki/Md5
+
+    If real_md5=False, will use a slight modification to the padding method to
+    generate the same obfuscated MD5 hashes as d3dcompiler.
+    '''
+
+    np.seterr(over='ignore')
+
+    message = bytearray(message)
+
+    # leftrotate function definition
+    def leftrotate (x, c):
+        return np.uint32(x << c) | np.uint32(x >> (32-c))
+
+    # Gotcha: length is in bits, not bytes:
+    orig_len_bytes = len(message)
+    orig_len_bits = np.uint64(orig_len_bytes * 8)
+
+    # Note: All variables are unsigned 32 bit and wrap modulo 2^32 when calculating
+
+    # s specifies the per-round shift amounts
+    s = [7, 12, 17, 22]*4 + [5, 9, 14, 20]*4 + [4, 11, 16, 23]*4 + [6, 10, 15, 21]*4
+
+    # Use binary integer part of the sines of integers (Radians) as constants:
+    K = []
+    for i in range(64):
+        K.append(np.uint32(math.floor(2**32 * abs(math.sin(i + 1)))))
+
+    # Initialize variables:
+    a0 = np.uint32(0x67452301) # A
+    b0 = np.uint32(0xefcdab89) # B
+    c0 = np.uint32(0x98badcfe) # C
+    d0 = np.uint32(0x10325476) # D
+
+    # Pre-processing: adding a single 1 bit
+    # append "1" bit to message /* Notice: the input bytes are considered as bits
+    # strings, where the first bit is the most significant bit of the byte.
+    message.append(0x80)
+
+    # Pre-processing: padding with zeros
+    # append "0" bit until message length in bits ≡ 448 (mod 512)
+    pad = 64 - (len(message) % 64)
+    if pad < 8:
+        message.extend([0] * (64 + pad - 8))
+    else:
+        message.extend([0] * (pad - 8))
+
+    # append original length in bits mod (2 pow 64) to message
+
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # XXX
+    # XXX MS Implementation differs from RSA MD5 only in the way the size is
+    # XXX used to pad the final block.
+    # XXX
+    # XXX The Real MD5 Implementation would use:
+    # XXX     message.extend(struct.pack('<Q', orig_len_bits)) # 64bit size
+    # XXX
+    # XXX But here they *insert* that at the *start* of the final 512bit block
+    # XXX as a *32bit* little-endian value, and add a second *31bit* size in
+    # XXX *bytes* at the end of the block shifted left with a final 1 added.
+    # XXX
+    # XXX I was wondering if they had simply made an error when implementing
+    # XXX it, however, while standards can be hard to read and the reference
+    # XXX implementation is needlessly complex - the part on padding with the
+    # XXX size is pretty damn clear, and this is a little too bizzare to be by
+    # XXX accident. Therefore, it appears they intentionally obfuscated it, for
+    # XXX whatever pointless and misguided reason they thought they had.
+    # XXX
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    if real_md5:
+        message.extend(struct.pack('<Q', orig_len_bits))
+    else:
+        message = message[:-56] + struct.pack('<I', orig_len_bits) + message[-56:]
+        message.extend(struct.pack('<I', (orig_len_bytes << 1) | 1))
+
+    assert(len(message) % 64 == 0)
+
+    # Process the message in successive 512-bit chunks:
+    # for each 512-bit chunk of message
+    while message:
+        # break chunk into sixteen 32-bit words M[j], 0 ≤ j ≤ 15
+        M = struct.unpack('<16I', message[:64])
+        message = message[64:]
+
+        # Initialize hash value for this chunk:
+        A = a0
+        B = b0
+        C = c0
+        D = d0
+
+        # Main loop:
+        for i in range(64):
+            if i < 16:
+                F = (B & C) | (~B & D)
+                g = i
+            elif i < 32:
+                F = (D & B) | (~D & C)
+                g = np.uint32((5*i + 1) % 16)
+            elif i < 48:
+                F = B ^ C ^ D
+                g = np.uint32((3*i + 5) % 16)
+            else:
+                F = C ^ (B | ~D)
+                g = np.uint32((7*i) % 16)
+            dTemp = D
+            D = C
+            C = B
+            B = np.uint32(B + leftrotate(np.uint32(A + F + K[i] + M[g]), s[i]))
+            A = dTemp
+
+        # Add this chunk's hash to result so far:
+        a0 = np.uint32(a0 + A)
+        b0 = np.uint32(b0 + B)
+        c0 = np.uint32(c0 + C)
+        d0 = np.uint32(d0 + D)
+
+    # var char digest[16] := a0 append b0 append c0 append d0 //(Output is in little-endian)
+    return '%08x%08x%08x%08x' % struct.unpack('>4I', struct.pack('<4I', a0, b0, c0, d0))
 
 def parse(stream):
     header = parse_dxbc_header(stream)
     pr_verbose(header, verbosity=2)
     chunk_offsets = get_chunk_offsets(stream, header)
 
-    # A few experiments on the hash:
     pr_verbose('Embedded hash:', codecs.encode(header.hash, 'hex').decode('ascii'))
-    # stream.seek(20)
-    # print('MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
-    # brute_hash(stream)
+    stream.seek(20)
+    # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
+    print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
 
     for idx in range(header.chunks):
         decode_chunk_at(stream, chunk_offsets[idx])
