@@ -314,9 +314,10 @@ def parse(stream):
     chunk_offsets = get_chunk_offsets(stream, header)
 
     pr_verbose('Embedded hash:', codecs.encode(header.hash, 'hex').decode('ascii'))
-    stream.seek(20)
-    # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
-    print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
+    if args.hash:
+        stream.seek(20)
+        # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
+        print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
 
     for idx in range(header.chunks):
         decode_chunk_at(stream, chunk_offsets[idx])
@@ -331,6 +332,8 @@ def parse_args():
             help='Level of verbosity')
     parser.add_argument('--quiet', '-q', action='count', default=0,
             help='Surpress informational messages')
+    parser.add_argument('--hash', action='store_true',
+            help='Calculate the obfuscated MD5-like hash used by DX shaders')
     parser.add_argument('--hash-chunks', action='store_true',
             help='Calculate a hash of each chunk, e.g. use to correlate shaders that only differ by debug info, etc.')
     args = parser.parse_args()
