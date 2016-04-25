@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, argparse
-import struct, hashlib, codecs
+import struct, hashlib, codecs, zlib
 from collections import namedtuple
 import numpy as np
 import math
@@ -169,7 +169,9 @@ def decode_chunk_at(stream, offset):
     buf = stream.read(size)
     hash = ''
     if args.hash_chunks:
-        hash = ' ' + hashlib.sha1(buf).hexdigest()
+        # crc32c is not available in Python's standard libraries yet, use crcmod:
+        import crcmod.predefined
+        hash = ' %08x' % crcmod.predefined.mkPredefinedCrcFun("crc-32c")(buf)
     if verbosity >= 1:
         print("{} chunk at 0x{:08x} size {}{}".format(signature.decode('ASCII'), offset, size, hash))
     elif verbosity >= 0 or args.hash_chunks:
