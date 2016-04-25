@@ -1,4 +1,6 @@
-// HUD: Crosshair, Target icons and part of the ammo info
+// (FNV 944944f802088d72) HUD: Crosshair, Target icons and part of the ammo info
+// (FNV c0a2b1d790493cb2) HUD - waypoint circle on map
+// (FNV edae0f70c37e2627) HUD - left/right arrows in setting menu
 
 cbuffer cVSObject : register(b5)
 {
@@ -84,7 +86,9 @@ void main(
   out float4 o1 : COLOR0,
   out float2 o2 : TEXCOORD0,
   out float2 p2 : TEXCOORD1,
-  out float2 o3 : TEXCOORD2)
+  out float2 o3 : TEXCOORD2,
+  out float offset : TEXCOORD3 // new output to fix opacity in pixel shader for waypoint circle on map
+  )
 {
   float4 r0,r1,r2,r3,r4,r5,r6;
   uint4 bitmask, uiDest;
@@ -186,16 +190,20 @@ if (filter.y && all(abs(o0.xy) >= 1.0)) {
 	action = 1;
 }
 
+offset = 0;
+
 switch (action) {
 	case -1: // Disable
 		o0 = 0;
 		break;
 	case 1: // Move to 2D HUD depth
 	case 3: // Doing this for now until I rework texture hashes to make track_texture_updates less expensive
-		o0.x += stereo.x * params.x * o0.w;
+		offset = stereo.x * params.x * o0.w;
+		o0.x += offset;
 		break;
 	case 2: // Auto adjust from center of screen
-		o0.x += adjust_from_depth_buffer(0, 0) * o0.w;
+		offset = adjust_from_depth_buffer(0, 0) * o0.w;
+		o0.x += offset;
 		break;
 	// This case is too unreliable without using track_texture_updates, and
 	// that has a significant performance cost due to the way we designed
@@ -203,15 +211,19 @@ switch (action) {
 	// changing the hashes again, so until then forget about this case:
 	//case 3: // Adjust floating icon
 	//	// TODO: Find icon center if possible
-	//	o0.x += adjust_from_depth_buffer(o0.x, o0.y) * o0.w;
+	//	offset = adjust_from_depth_buffer(o0.x, o0.y) * o0.w;
+	//	o0.x += offset;
 	//	break;
 	case 4: // Override convergence for 3D HUD
 		// This formula removes the convergence from the driver and
 		// replaces it with a custom one:
 		if (o0.w < params.y) { // 3D main menu after progressing a little way into the game
 			o0.x += stereo.x * (stereo.y - params.w);
+			// The offset to fix the opacity is just the custom convergence formula:
+			offset = (stereo.x * (o0.w - params.w)) / o0.w;
 		} else {
 			o0.x += stereo.x * (stereo.y - params.z);
+			offset = (stereo.x * (o0.w - params.z)) / o0.w;
 		}
 		break;
 }
