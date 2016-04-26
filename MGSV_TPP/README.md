@@ -1,6 +1,16 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.3
+-----------
+- Fixed several more shadows
+- Partially fixed MGO, but some lights are still broken in most maps. NOTE:
+  like any multi-player game, your use of this fix or any other mod with MGO is
+  at your own risk.
+- Bundled with latest 3DMigoto to enable SBS/TAB output modes (uncomment the
+  'run = CustomShader3DVision2SBS' line to enable then press F11 in game to
+  cycle output modes).
+
 Update v1.2
 -----------
 - Fixed several more shadows, specular highlights & reflections
