@@ -164,20 +164,27 @@ def get_chunk_info(stream, offset):
     (signature, size) = struct.unpack('<4sI', stream.read(8))
     return (signature, size)
 
-def decode_chunk_at(stream, offset):
+hash_sections = (
+	b"SHDR", b"SHEX",          # Bytecode
+	b"ISGN",          b"ISG1", # Input signature
+	b"PCSG",          b"PSG1", # Patch constant signature
+	b"OSGN", b"OSG5", b"OSG1", # Output signature
+)
+
+def decode_chunk_at(stream, offset, bytecode_hash):
     (signature, size) = get_chunk_info(stream, offset)
     buf = stream.read(size)
-    hash = ''
-    if args.hash_chunks:
+    if args.bytecode_hash and signature in hash_sections:
         # crc32c is not available in Python's standard libraries yet, use crcmod:
         import crcmod.predefined
-        hash = ' %08x' % crcmod.predefined.mkPredefinedCrcFun("crc-32c")(buf)
+        bytecode_hash = crcmod.predefined.mkPredefinedCrcFun("crc-32c")(buf, bytecode_hash)
     if verbosity >= 1:
-        print("{} chunk at 0x{:08x} size {}{}".format(signature.decode('ASCII'), offset, size, hash))
-    elif verbosity >= 0 or args.hash_chunks:
-        print('{}{}'.format(signature.decode('ASCII'), hash))
+        print("{} chunk at 0x{:08x} size {}".format(signature.decode('ASCII'), offset, size))
+    elif verbosity >= 0 or args.byetcode_hash:
+        print('{}'.format(signature.decode('ASCII')))
     if signature in chunks:
         chunks[signature](buf)
+    return bytecode_hash
 
 def get_chunk(stream, name):
     header = parse_dxbc_header(stream)
@@ -321,8 +328,11 @@ def parse(stream):
         # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
         print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
 
+    bytecode_hash = 0
     for idx in range(header.chunks):
-        decode_chunk_at(stream, chunk_offsets[idx])
+        bytecode_hash = decode_chunk_at(stream, chunk_offsets[idx], bytecode_hash)
+    if args.bytecode_hash:
+        print('Bytecode hash: %08x' % bytecode_hash)
 
 def parse_args():
     global args, verbosity
@@ -336,8 +346,8 @@ def parse_args():
             help='Surpress informational messages')
     parser.add_argument('--hash', action='store_true',
             help='Calculate the obfuscated MD5-like hash used by DX shaders')
-    parser.add_argument('--hash-chunks', action='store_true',
-            help='Calculate a hash of each chunk, e.g. use to correlate shaders that only differ by debug info, etc.')
+    parser.add_argument('--bytecode-hash', action='store_true',
+            help='Calculate the bytecode+signature hash, e.g. use to correlate shaders that only differ by debug info, etc.')
     args = parser.parse_args()
     verbosity = args.verbose - args.quiet
 

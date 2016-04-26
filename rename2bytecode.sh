@@ -19,8 +19,8 @@ for shader_txt in ????????????????-*.txt; do
 		continue
 	fi
 
-	new_hash=$(dx11shaderanalyse.py --hash-chunks "$orig_bin" | \
-		awk '/SHEX|SHDR/ {print $2}')
+	new_hash=$(dx11shaderanalyse.py --bytecode-hash "$orig_bin" | \
+		awk '/Bytecode hash/ {print $3}')
 
 	new_file="00000000$new_hash$suffix"
 
