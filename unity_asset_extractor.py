@@ -34,7 +34,73 @@ def align(file, alignment):
         return
     file.seek(alignment - mod, 1)
 
-def extract_shader(file, base_offset, offset, size):
+def repeat_extend(s, target_length):
+    '''
+    Expands (or shrinks) a string to an arbitrary length by repeating it.
+    '''
+    return s*(target_length // len(s)) + s[:target_length % len(s)]
+
+# http://cyan4973.github.io/lz4/lz4_Block_format.html
+# https://en.wikipedia.org/wiki/LZ4_(compression_algorithm)
+# Plus a bunch of experimentation and comparing against the result of reference
+# implementations, because while the documentation is relatively clear, it
+# fails to unambiguously describe the entire algorithm.
+#
+# Not using any of the the available Python libraries to do this because the
+# format isn't exactly what the first one I looked at expected (though we could
+# potentially munge it to match), but mostly because they all include a C
+# module which complicates installation on Windows.
+def lz4_decompress(file, decompressed_size):
+    decoded = bytearray()
+
+    while True:
+        (token,) = struct.unpack('B', file.read(1))
+
+        num_literals = token >> 4
+        if num_literals == 15:
+            while True:
+                (tmp,) = struct.unpack('B', file.read(1))
+                num_literals += tmp
+                if tmp != 255:
+                    break
+        tmp = file.read(num_literals)
+        assert(len(tmp) == num_literals)
+        decoded.extend(tmp)
+
+        if len(decoded) == decompressed_size:
+            return decoded
+        assert(len(decoded) < decompressed_size)
+
+        (match_offset,) = struct.unpack('<H', file.read(2))
+        match_len = (token & 0xf) + 4
+        if match_len == 19:
+            while True:
+                (tmp,) = struct.unpack('B', file.read(1))
+                match_len += tmp
+                if tmp != 255:
+                    break
+
+        assert(match_offset != 0)
+        assert(match_offset <= len(decoded))
+
+        # len()- is necessary here since match_offset may equal match_len
+        tmp = decoded[-match_offset : len(decoded) - match_offset + match_len]
+        tmp = repeat_extend(tmp, match_len)
+        decoded.extend(tmp)
+
+def unity_53_or_higher(unity_version):
+    '''
+    Shader asset format changed in this version to use LZ4 compression and a
+    binary format packed after the Unity shader metadata (which is now of very
+    little use, though may still be useful to identify shadow casters). As far
+    as I can tell they neglected to bump the file version or add any flags to
+    signify this change, and some old files contain stack garbage that might be
+    mistaken for compressed data, so check the Unity version string.
+    '''
+    (major, minor, point) = unity_version.split(b'.')
+    return int(major) > 5 or (int(major) == 5 and int(minor) >= 3)
+
+def extract_shader(file, base_offset, offset, size, unity_version):
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
@@ -50,6 +116,17 @@ def extract_shader(file, base_offset, offset, size):
         with open(path, 'wb') as out:
             out.write(file.read(shader_len))
 
+        if unity_53_or_higher(unity_version):
+            align(file, 4)
+            (zero, decompressed_size, compressed_size) = struct.unpack('<III', file.read(12))
+            assert(zero == 0)
+            print("Decompressed size: {}, Compressed size: {}".format(decompressed_size, compressed_size))
+            if decompressed_size and compressed_size:
+                decompressed = lz4_decompress(file, decompressed_size)
+                print('Extracting {}.decompressed...'.format(repr(path)))
+                with open(path + '.decompressed', 'wb') as out:
+                    out.write(decompressed)
+
     except:
         file.seek(saved_off)
         raise
@@ -60,9 +137,9 @@ extractors = {
     48: extract_shader,
 }
 
-def extract_resource(file, base_offset, offset, size, type):
+def extract_resource(file, base_offset, offset, size, type, unity_version):
     if type in extractors:
-        extractors[type](file, base_offset, offset, size)
+        extractors[type](file, base_offset, offset, size, unity_version)
 
 def parse_version_9(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -89,7 +166,7 @@ def parse_version_9(file, version):
         print("   Resource {}: offset 0x{:08x}, size {}, type(?) {}, type: {}".format(id, offset, size, type1, type2))
         # assert(id == i+1) - no
 
-        extract_resource(file, data_off, offset, size, type2)
+        extract_resource(file, data_off, offset, size, type2, unity_version)
 
 def parse_version_14(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -138,7 +215,7 @@ def parse_version_14(file, version):
         print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, {}, {}, {}".format(id, offset, size, type1, type2, type3, name))
         assert(u1 == 0)
 
-        extract_resource(file, data_off, offset, size, type2)
+        extract_resource(file, data_off, offset, size, type2, unity_version)
 
 def parse_version_15(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -190,7 +267,7 @@ def parse_version_15(file, version):
         assert(u1 == 0)
         # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
 
-        extract_resource(file, data_off, offset, size, type2)
+        extract_resource(file, data_off, offset, size, type2, unity_version)
 
 def unsupported_version(file, version):
     print("Unsupported file version {}".format(version))
