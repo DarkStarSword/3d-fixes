@@ -41,3 +41,7 @@ I played the game on the highest available quality setting ("Fantastic") at
 1920x1080. If you see any rendering issues or the camera is in 2D, switch to
 these settings (I don't know if there are any issues on other settings - I
 haven't checked).
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

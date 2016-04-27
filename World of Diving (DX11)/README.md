@@ -38,3 +38,7 @@ Notes
 
 - If you get really bad graphical glitches (flickering lights, dots appearing
   in one eye, etc), quit and restart the game.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

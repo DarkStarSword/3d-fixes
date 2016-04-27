@@ -32,3 +32,7 @@ Some of the fixes were a little tricky to separate out from other effects. If
 you spot something at infinity that shouldn't be (such as headlights), or
 something that should be at infinity that isn't (like the sun or clouds) please
 let me know.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

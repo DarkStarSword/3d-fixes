@@ -27,3 +27,7 @@ and look [here][2] for a script that may help.
 
 [1]: https://forums.geforce.com/default/topic/758587/3d-vision/steam-update-breaks-helixmod-on-some-games
 [2]: https://forums.geforce.com/default/topic/796649/3d-vision/auto-steamoverlaydisable-beta-/
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

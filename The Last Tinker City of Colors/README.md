@@ -12,3 +12,7 @@ Known Issues
 ------------
 - Mouse cursor depth cannot be adjusted
 - Fog is slightly off (looks a bit weird even in 2D)
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

@@ -64,4 +64,9 @@ Troubleshooting
   quality"). For reference, I have most settings set to either High or Very
   High.
 
-*Special thanks to Flugan for his work on the assembler, used in this fix.*
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
+
+_This mod is created with 3DMigoto (by Bo3b, Chiri & myself) and uses Flugan's
+assembler_

@@ -29,3 +29,7 @@ Notes
 -----
 - This is an early access game with new content being developed all the time.
   Please check back for updates to the fix for any issues in future content.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

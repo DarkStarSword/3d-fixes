@@ -216,3 +216,7 @@ Update 2015-05-18
 
 - Automatic stereo crosshair will now work on objects popped out of the screen
   with high convergence settings.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

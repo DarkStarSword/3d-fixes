@@ -42,3 +42,7 @@ Known Issues
 There is no automatic convergence preset for the main menu, as everything I
 could match on that menu also triggered in-game. You can manually activate
 preset 1 or 2 when in the menu instead.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

@@ -86,3 +86,7 @@ may be interested in reading through [this thread][3] for background on the
 original technique.
 
 [3]: https://forums.geforce.com/default/topic/781954/3d-vision/dreamfall-chapters
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

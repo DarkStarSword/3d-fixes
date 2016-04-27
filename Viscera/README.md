@@ -54,3 +54,7 @@ Known Issues
 - Some of the default nvidia key bindings affect this game, e.g. adjusting
   separation with Ctrl+F4 will freeze the physics (press F4 a second time to
   fix)
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

@@ -33,7 +33,7 @@ should remove it from any profiles it is in.
 - Forced shadow maps to mono, which fixes some shadow alignment issues on the
   spot lights on the dock.
 - Fixed minor halo in water near rocks
-- Added two convergence presets on [ and ] keys for convienience.
+- Added two convergence presets on [ and ] keys for convenience.
 
 I have checked most areas, but haven't replayed the entire game with this
 update, so please let me know if you see any surfaces rendering incorrectly.
@@ -62,3 +62,7 @@ Notes
 - Two convergence presets are provided on the [ and ] keys for convienience.
 - If the FOV is set very high the lens flare may look a bit off when it is near
   the side of the screen.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

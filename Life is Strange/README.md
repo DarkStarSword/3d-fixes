@@ -60,3 +60,7 @@ return to the game's default depth.
 Notes
 -----
 - I played on high quality and have not checked for issues on lower settings.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

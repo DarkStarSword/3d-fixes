@@ -88,3 +88,7 @@ look through the commit history to see exactly what I changed and why.
 
 [1]: https://forums.geforce.com/default/topic/766890/3d-vision/bo3bs-school-for-shaderhackers
 [2]: https://github.com/DarkStarSword/3d-fixes
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

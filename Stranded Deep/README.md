@@ -60,3 +60,7 @@ Notes
 -----
 - This is an early access game and the fix is likely to be broken by updates,
   so be sure to check back regularly, and report any broken effects.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

@@ -49,3 +49,7 @@ Notes
 -----
 This is an early access game with regular updates, and as such the fix may get
 Broken by an update. Please let me know if you see any issues after an update.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
