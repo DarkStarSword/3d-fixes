@@ -677,8 +677,9 @@ def save_header_index():
 def add_vanity_tag(headers):
     if headers[-1] != '':
         headers.append('')
-    headers.append("Headers extracted with DarkStarSword's {}".format(os.path.basename(sys.argv[0])))
-    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
+    tool_name = os.path.basename(sys.argv[0])
+    headers.append("Headers extracted with DarkStarSword's {}".format(tool_name))
+    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/{}".format(tool_name))
 
 def decode_unity_byte(upper, lower):
         upper = ord(upper) - ord('a')

@@ -16,12 +16,8 @@ def add_header(headers, header):
     headers.append(header)
     print(header)
 
-def decode_cb_definition(file, headers):
-    (name_len,) = struct.unpack('<I', file.read(4))
-    cb_name = file.read(name_len).decode('ascii')
-    align(file, 4)
-    (cb_size, num_entries) = struct.unpack('<2I', file.read(8))
-    add_header(headers, 'ConstBuffer "{}" {}'.format(cb_name, cb_size))
+def decode_consts(file, headers, is_dx11):
+    (num_entries,) = struct.unpack('<I', file.read(4))
     for j in range(num_entries):
         (name_len,) = struct.unpack('<I', file.read(4))
         entry_name = file.read(name_len).decode('ascii')
@@ -43,32 +39,56 @@ def decode_cb_definition(file, headers):
             assert(type3 == 1)
             if type_size2 == 4:
                 add_header(headers, 'Matrix {} [{}]'.format(offset, entry_name))
-            elif type_size2 == 3:
+            elif type_size2 in (2, 3): # 2x4 unconfirmed for DX11
                 add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size2))
+                assert(is_dx11) # Need to check syntax for other way around
             else:
-                # matrix of size 2 might be valid as well
                 assert(False)
+        elif type_size1 in (2, 3):
+            assert(type_size2 == 4)
+            assert(type3 == 1)
+            add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size1))
+            assert(not is_dx11) # Need to check syntax for other way around
+        else:
+            raise ParseError('Unknown name: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type_size1, type_size2, type3, offset))
+
+def decode_constbuffers(file, num_cbs, headers, is_dx11):
+    for i in range(num_cbs):
+        (name_len,) = struct.unpack('<I', file.read(4))
+        cb_name = file.read(name_len).decode('ascii')
+        align(file, 4)
+        (cb_size,) = struct.unpack('<I', file.read(4))
+        add_header(headers, 'ConstBuffer "{}" {}'.format(cb_name, cb_size))
+        decode_consts(file, headers, is_dx11)
+
+def decode_binds(file, headers):
+    (num_binds,) = struct.unpack('<I', file.read(4))
+    for i in range(num_binds):
+        (name_len,) = struct.unpack('<I', file.read(4))
+        bind_name = file.read(name_len).decode('ascii')
+        align(file, 4)
+        (bind_type, bind_slot, texture_type, sampler_slot, zero) = struct.unpack('<2I2BH', file.read(12))
+        assert(zero == 0)
+        if bind_type == 0:
+            texture_type = {
+                    2: '2D',
+                    4: 'CUBE',
+            }[texture_type]
+            add_header(headers, 'SetTexture {} [{}] {} {}'.format(bind_slot, bind_name, texture_type, sampler_slot))
+        elif bind_type == 1:
+            assert(texture_type == 0)
+            assert(sampler_slot == 0)
+            add_header(headers, 'BindCB "{}" {}'.format(bind_name, bind_slot))
         else:
             assert(False)
 
-def decode_bind(file, headers):
-    (name_len,) = struct.unpack('<I', file.read(4))
-    bind_name = file.read(name_len).decode('ascii')
-    align(file, 4)
-    (bind_type, bind_slot, texture_type, sampler_slot, zero) = struct.unpack('<2I2BH', file.read(12))
-    assert(zero == 0)
-    if bind_type == 0:
-        texture_type = {
-                2: '2D',
-                4: 'CUBE',
-        }[texture_type]
-        add_header(headers, 'SetTexture {} [{}] {} {}'.format(bind_slot, bind_name, texture_type, sampler_slot))
-    elif bind_type == 1:
-        assert(texture_type == 0)
-        assert(sampler_slot == 0)
-        add_header(headers, 'BindCB "{}" {}'.format(bind_name, bind_slot))
-    else:
-        assert(False)
+def decode_dx9_bind_info(file, headers):
+    decode_consts(file, headers, False)
+    decode_binds(file, headers)
+
+def decode_dx11_bind_info(file, num_sections, headers):
+    decode_constbuffers(file, num_sections-1, headers, True)
+    decode_binds(file, headers)
 
 def extract_shader_at(file, offset, size):
     saved_offset = file.tell()
@@ -103,13 +123,13 @@ def extract_shader_at(file, offset, size):
         with open(dest + '.bin', 'wb') as out:
             out.write(shader)
 
-        bind_info_size = size - (file.tell() - offset)
-        print('  Remaining %i bytes' % bind_info_size)
-        pos = file.tell()
-        with open(dest + '.rem', 'wb') as out:
-            out.write(file.read(bind_info_size))
-        file.seek(pos)
-        # print(file.read(bind_info_size))
+        if False: # Useful for debugging
+            bind_info_size = size - (file.tell() - offset)
+            print('  Remaining %i bytes' % bind_info_size)
+            pos = file.tell()
+            with open(dest + '.rem', 'wb') as out:
+                out.write(file.read(bind_info_size))
+            file.seek(pos)
 
         # Have not fully deciphered the data around this point, and depending
         # on the values the size can vary. For now use many asserts to catch
@@ -120,20 +140,23 @@ def extract_shader_at(file, offset, size):
             (u11,) = struct.unpack('<I', file.read(4))
             print('  u11: {0}'.format(u11))
             if u11 == 0: # DX9 only?
-                (u12, u13, u14, u15, u16, u17) = struct.unpack('<6I', file.read(24))
+                # DX9 Vertex shades?
+                (u12, u13, u14, u15, u16) = struct.unpack('<5I', file.read(20))
                 print('  u12: {0}'.format(u12))
                 print('  u13: {0}'.format(u13))
                 print('  u14: {0}'.format(u14))
                 print('  u15: {0}'.format(u15))
                 print('  u16: {0}'.format(u16))
-                print('  u17: {0}'.format(u17))
                 assert(u12 in (1, 3))
                 assert(u13 in (2, 3, 4))
                 assert(u14 == 1)
                 assert(u15 == 0)
                 assert(u16 == 0)
-                assert(u17 in (1, 5))
+
+                decode_dx9_bind_info(file, headers)
+                assert(file.tell() - size - offset == 0)
             else:
+                # DX11 Pixel shaders?
                 num_sections = u11
                 (u12, u13, u14) = struct.unpack('<3I', file.read(12))
                 print('  num_sections: {0}'.format(num_sections))
@@ -144,41 +167,40 @@ def extract_shader_at(file, offset, size):
                 assert(u13 == 0)
                 assert(u14 == 0)
 
-                for i in range(num_sections-1):
-                    decode_cb_definition(file, headers)
-
-                (num_binds,) = struct.unpack('<I', file.read(4))
-                for i in range(num_binds):
-                    decode_bind(file, headers)
-
+                decode_dx11_bind_info(file, num_sections, headers)
                 assert(file.tell() - size - offset == 0)
 
         elif (u10 == 1): # DX9 only?
-                (u11, u12, u13) = struct.unpack('<3I', file.read(12))
-                print('  u11: {0}'.format(u11))
-                print('  u12: {0}'.format(u12))
-                print('  u13: {0}'.format(u13))
-                assert(u11 == 0)
-                assert(u12 == 0)
-                assert(u13 in (0, 7, 8, 9, 10, 11, 15))
+            # DX9 Pixel shaders?
+            (u11, u12) = struct.unpack('<2I', file.read(8))
+            print('  u11: {0}'.format(u11))
+            print('  u12: {0}'.format(u12))
+            assert(u11 == 0)
+            assert(u12 == 0)
+
+            decode_dx9_bind_info(file, headers)
+            assert(file.tell() - size - offset == 0)
         elif (u10 == 2):
-                (u11, u12, u13, u14, u15, u16, u17, u18) = struct.unpack('<8I', file.read(32))
-                print('  u11: {0}'.format(u11))
-                print('  u12: {0}'.format(u12))
-                print('  u13: {0}'.format(u13))
-                print('  u14: {0}'.format(u14))
-                print('  u15: {0}'.format(u15))
-                print('  u16: {0}'.format(u16))
-                print('  u17: {0}'.format(u17))
-                print('  u18: {0}'.format(u18))
-                assert(u11 == 0)
-                assert(u12 == 0)
-                assert(u13 in (1, 3))
-                assert(u14 in (2, 4))
-                assert(u15 in (4, 2))
-                assert(u16 == 0)
-                assert(u17 == 0)
-                assert(u18 == 0)
+            # DX11 Vertex Shaders?
+            (u11, u12, u13, u14, num_sections, u16, u17, u18) = struct.unpack('<8I', file.read(32))
+            print('  u11: {0}'.format(u11))
+            print('  u12: {0}'.format(u12))
+            print('  u13: {0}'.format(u13))
+            print('  u14: {0}'.format(u14))
+            print('  num_sections: {0}'.format(num_sections))
+            print('  u16: {0}'.format(u16))
+            print('  u17: {0}'.format(u17))
+            print('  u18: {0}'.format(u18))
+            assert(u11 == 0)
+            assert(u12 == 0)
+            assert(u13 in (1, 3))
+            assert(u14 in (2, 4))
+            assert(u16 == 0)
+            assert(u17 == 0)
+            assert(u18 == 0)
+
+            decode_dx11_bind_info(file, num_sections, headers)
+            assert(file.tell() - size - offset == 0)
         else:
             assert(False)
 
