@@ -102,13 +102,14 @@ def extract_shader_at(file, offset, size):
         print('  u3: {0} (0x{0:08x})'.format(u3)) # Anything between 1 and 94?
         print('  u4: {0} (0x{0:08x})'.format(u4)) # Anything between 0 and 9?, sometimes 0xffffffff
         print('  u5: {0} (0x{0:08x})'.format(u5)) # usually 0, sometimes 1?, sometimes 0xffffffff
-        print('  num_keywords: {0} (0x{0:08x})'.format(num_keywords))
 
+        keywords = []
         for i in range(num_keywords):
             (keyword_len,) = struct.unpack('<I', file.read(4))
-            keyword = file.read(keyword_len).decode('ascii')
-            print('    Keyword %i: "%s"' % (i, keyword))
+            keywords.append(file.read(keyword_len).decode('ascii'))
             align(file, 4)
+        if keywords:
+            add_header(headers, 'Keywords { "%s" }' % '" "'.join(keywords))
 
         (shader_size, u8a, u8b, u8c, u8d, u8e) = struct.unpack('<I5B', file.read(9))
         print('  shader size: {0} (0x{0:08x})'.format(shader_size))
