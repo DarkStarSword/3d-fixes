@@ -334,6 +334,15 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
+def get_opengl_filename_base(program_name, hash, hash_fmt='%x'):
+    if program_name == 'fp': # Pixel Shader ("Fragment Program")
+        shader_type = 'Pixel'
+    elif program_name == 'vp': # Vertex Shader
+        shader_type = 'Vertex'
+    else:
+        raise Exception("Unknown program type: %s" % program_name)
+    return ('%s_' + hash_fmt) % (shader_type, hash)
+
 def get_hash_filename_base(shader):
     if shader.sub_program.hash_type == 'asm_crc32':
         return shader.sub_program.hash_fmt % shader.sub_program.hash
@@ -356,13 +365,7 @@ def get_hash_filename_base(shader):
         return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
 
     if shader.sub_program.hash_type == 'gl_crc32':
-        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
-            shader_type = 'Pixel'
-        elif shader.program.name == 'vp': # Vertex Shader
-            shader_type = 'Vertex'
-        else:
-            raise Exception("Unknown program type: %s" % shader.program.name)
-        return ('%s_' + shader.sub_program.hash_fmt) % (shader_type, shader.sub_program.hash)
+        return get_opengl_filename_base(shader.program.name, shader.sub_program.hash, shader.sub_program.hash_fmt)
 
     assert(False)
 
@@ -616,10 +619,13 @@ def add_shader_hash_fnv(sub_program):
 
     sub_program.hash_fmt = '%.16x'
 
-def add_shader_hash_gl_crc(sub_program):
+def hash_gl_crc(shader_asm, shader_type):
     import zlib
-    glsl = fixup_glsl_like_unity(sub_program)
-    sub_program.hash = zlib.crc32(glsl.encode('utf-8'))
+    glsl = _fixup_glsl_like_unity(shader_asm, shader_type)
+    return zlib.crc32(glsl.encode('utf-8'))
+
+def add_shader_hash_gl_crc(sub_program):
+    sub_program.hash = hash_gl_crc(sub_program.shader_asm, sub_program.parent.name)
     sub_program.hash_type = 'gl_crc32'
     # Looks like the OpenGL wrapper does not pad these in the filenames:
     sub_program.hash_fmt = '%x'
@@ -732,24 +738,27 @@ def strip_glsl_tag(glsl):
 
 class BogusShader(Exception): pass
 
-def fixup_glsl_like_unity(sub_program):
-    glsl = strip_glsl_tag(sub_program.shader_asm)
+def _fixup_glsl_like_unity(shader_asm, shader_type):
+    glsl = strip_glsl_tag(shader_asm)
     if not glsl:
         # Fragment shaders appear to be bogus empty placeholders since they are
         # really combined with vertex shaders. If this shader is empty raise an
         # exception so we will throw it away. We will duplicate the vertex
         # shaders elsewhere and rehash them to get pixel shaders.
         raise BogusShader()
-    if sub_program.parent.name == 'vp':
+    if shader_type == 'vp':
         define = '#define VERTEX'
-    elif sub_program.parent.name == 'fp':
+    elif shader_type == 'fp':
         define = '#define FRAGMENT'
     else:
-        raise Exception("Unknown program type: %s" % shader.program.name)
+        raise Exception("Unknown program type: %s" % shader_type)
     if glsl.startswith("#version"):
         version, glsl = glsl.split('\n', 1)
         return '\n'.join((version, define, glsl))
     return '\n'.join((define, glsl))
+
+def fixup_glsl_like_unity(sub_program):
+    return _fixup_glsl_like_unity(sub_program.shader_asm, sub_program.parent.name)
 
 def disassemble_and_decompile_binary_shader(bin_filename):
     import subprocess
