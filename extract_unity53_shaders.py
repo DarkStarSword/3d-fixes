@@ -132,15 +132,17 @@ def save_external_headers(dest, headers):
 def extract_opengl_shader(file, shader_size, headers):
     shader = file.read(shader_size)
     try:
+        hash = {}
         for program_name in ('fp', 'vp'):
-            hash = extract_unity_shaders.hash_gl_crc(shader.decode('ascii'), program_name)
-            add_header(headers, ('{} hash: {:x}'.format(program_name, hash)))
-            dest = extract_unity_shaders.get_opengl_filename_base(program_name, hash)
+            hash[program_name] = extract_unity_shaders.hash_gl_crc(shader.decode('ascii'), program_name)
+            add_header(headers, ('{} hash: {:x}'.format(program_name, hash[program_name])))
+        for program_name in ('fp', 'vp'):
+            dest = extract_unity_shaders.get_opengl_filename_base(program_name, hash[program_name])
             print('Extracting %s.glsl...' % dest)
             with open('%s.glsl' % dest, 'wb') as out:
                 out.write(shader)
-            # FIXME: Not really headers - just info about undeciphered data:
-            save_external_headers(dest, headers)
+            with open('%s.info' % dest, 'w') as f:
+                f.write('\n'.join(headers))
     except extract_unity_shaders.BogusShader:
         return
 
@@ -218,7 +220,13 @@ def extract_shader_at(file, offset, size):
     try:
         (u1, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
         assert(u1 == 0x0c02c8a6)
-        add_header(headers, 'shader_type: {}'.format(shader_type))
+        shader_type_txt = {
+                1: "OpenGL version 120",
+                4: "OpenGL version 300 es",
+                5: "OpenGL version 100",
+                6: "OpenGL version 150",
+        }.get(shader_type, 'Unknown: {}'.format(shader_type))
+        add_header(headers, 'shader_type: {}'.format(shader_type_txt))
         add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
 
         keywords = []
@@ -237,12 +245,10 @@ def extract_shader_at(file, offset, size):
             extract_directx_shader(file, shader_size, headers, shader_type, offset, size)
 
         print()
-
+        file.seek(saved_offset)
     except:
         file.seek(saved_offset)
         raise
-    else:
-        file.seek(saved_offset)
 
 def parse_unity53_shader(file):
     (num_shaders,) = struct.unpack('<I', file.read(4))
