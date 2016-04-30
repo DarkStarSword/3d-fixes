@@ -806,6 +806,21 @@ def path_components_to_dest(path_components):
     mkdir_recursive(path_components[:-1])
     return os.path.join(os.curdir, *path_components)
 
+def export_dx11_shader(dest, bin, headers, extra_headers=''):
+    bin_filename = '%s.bin' % dest
+    print('Extracting %s' % bin_filename)
+    with open(bin_filename, 'wb') as f:
+        f.write(bin)
+
+    if disassemble_and_decompile_binary_shader(bin_filename):
+        attach_headers('%s.asm' % dest, '%s.txt' % dest, headers)
+        attach_headers('%s.hlsl' % dest, '%s_replace.txt' % dest, headers + extra_headers)
+    else:
+        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
+            f.write(extra_headers)
+
 def _export_shader(sub_program, headers, path_components):
     dest = path_components_to_dest(path_components)
     headers = commentify(headers)
@@ -813,19 +828,8 @@ def _export_shader(sub_program, headers, path_components):
     index_headers(headers, sub_program)
 
     if sub_program.name.startswith('d3d11'):
-        bin_filename = '%s.bin' % dest
-        print('Extracting %s' % bin_filename)
-        with open(bin_filename, 'wb') as f:
-            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
-
-        if disassemble_and_decompile_binary_shader(bin_filename):
-            attach_headers('%s.asm' % dest, '%s.txt' % dest, headers)
-            attach_headers('%s.hlsl' % dest, '%s_replace.txt' % dest, headers + extra_headers)
-        else:
-            print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
-            with open('%s_headers.txt' % dest, 'w') as f:
-                f.write(headers)
-                f.write(extra_headers)
+        bin = decode_unity_d3d11_shader(sub_program.shader_asm)
+        export_dx11_shader(dest, bin, headers, extra_headers)
 
     elif is_opengl_shader(sub_program):
         print('Extracting %s.glsl...' % dest)

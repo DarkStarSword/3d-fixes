@@ -165,6 +165,11 @@ def save_external_headers(dest, headers):
     with open('%s_headers.txt' % dest, 'w') as f:
         f.write(headers)
 
+def finalise_headers(headers, sub_program):
+    extract_unity_shaders.add_header_hash(headers, sub_program)
+    extract_unity_shaders.add_vanity_tag(headers)
+    return extract_unity_shaders.commentify(headers)
+
 def extract_opengl_shader(file, shader_size, headers, shader):
     shader.sub_program.shader_asm = file.read(shader_size).decode('utf-8')
     try:
@@ -250,7 +255,7 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     decode_dx11_bind_info(file, num_sections, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
-    save_external_headers(dest, headers)
+    extract_unity_shaders.export_dx11_shader(dest, bin, finalise_headers(headers, shader.sub_program))
 
 def extract_shader_at(file, offset, size, filename, sub_programs):
     sub_program = sub_programs[0]
