@@ -1,0 +1,117 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 011d296e8db52fe6-vs_replace.txt
+// 3DMigoto: 011d296e8db52fe6 |    Unity headers extracted from TLD_StandardTransparent.shader
+//    Shader "Shader Forge/TLD_StandardTransparent" {
+//      Properties {
+//       _MainTex ("MainTex", 2D) = "gray" { }
+//       _DetailOverlay ("DetailOverlay", 2D) = "gray" { }
+//       _DetailStrength ("DetailStrength", Range(-1,1)) = 0
+//       _AmbientOcclusion ("Ambient Occlusion", 2D) = "white" { }
+//       _AOBlackness ("AO Blackness", Range(0,1)) = 1
+//       _Emissive ("Emissive", 2D) = "black" { }
+//       _EmissiveStrength ("EmissiveStrength", Range(0,1)) = 0
+//      [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Legacy Shaders/Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 44787
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 15
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from TLD_StandardTransparent.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 22 0 0
+//   Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "LIGHTMAP_OFF" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "FOG_EXP2" "VERTEXLIGHT_ON" }
+//   undeciphered2: 1 0 1 0 0
+//   undeciphered3: 31 5 0 0 2 1 1 2 3 4 4 5
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   Matrix 256 [_World2Object]
+//   BindCB "UnityPerDraw" 0
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:46:44 2016
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[19];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float3 v1 : NORMAL0,
+  float4 v2 : TEXCOORD0,
+  float2 v3 : TEXCOORD1,
+  float4 v4 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD0,
+  out float2 p1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2,
+  out float3 o3 : TEXCOORD3,
+  out float p3 : TEXCOORD4,
+  out float4 o4 : COLOR0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb0[1].xyzw * v0.yyyy;
+  r0.xyzw = cb0[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb0[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb0[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 011d296e8db52fe6-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  p3.x = r0.z;
+  o1.xy = v2.xy;
+  p1.xy = v3.xy;
+  r0.xyzw = cb0[13].xyzw * v0.yyyy;
+  r0.xyzw = cb0[12].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb0[14].xyzw * v0.zzzz + r0.xyzw;
+  o2.xyzw = cb0[15].xyzw * v0.wwww + r0.xyzw;
+  r0.x = cb0[16].x * v1.x;
+  r0.y = cb0[17].x * v1.x;
+  r0.z = cb0[18].x * v1.x;
+  r1.x = cb0[16].y * v1.y;
+  r1.y = cb0[17].y * v1.y;
+  r1.z = cb0[18].y * v1.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.x = cb0[16].z * v1.z;
+  r1.y = cb0[17].z * v1.z;
+  r1.z = cb0[18].z * v1.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  o3.xyz = r0.xyz * r0.www;
+  o4.xyzw = v4.xyzw;
+  return;
+}

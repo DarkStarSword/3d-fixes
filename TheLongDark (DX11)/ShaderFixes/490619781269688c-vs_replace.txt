@@ -1,0 +1,86 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 490619781269688c-vs_replace.txt
+// 3DMigoto: 490619781269688c |    Unity headers extracted from FinalInterpolation.shader
+//    Shader "Hidden/Final Interpolation" {
+//      Properties {
+//       _ZTest ("", Float) = 8
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZTest [_ZTest]
+//          ZWrite Off
+//          Blend One SrcAlpha
+//          GpuProgramID 18403
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 31
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from FinalInterpolation.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 5 0 0
+//   Keywords { "SPOT_SHAFTS" "FRUSTUM_SHAFTS" "SHOW_SAMPLES_ON" "LIGHT_OFF_SCREEN" }
+//   undeciphered2: 1 0 2 0 0
+//   undeciphered3: 1 1 0 0
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   BindCB "UnityPerCamera" 0
+//   BindCB "UnityPerDraw" 1
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:46:35 2016
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[4];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[6];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_Position0,
+  out float3 o1 : TEXCOORD0)
+{
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb1[1].xyzw * v0.yyyy;
+  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb1[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 490619781269688c-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.y = cb0[5].x * r0.y;
+  o1.xz = r0.xw;
+  return;
+}

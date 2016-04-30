@@ -1,0 +1,253 @@
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 6b26cdf368f199b7-ps_replace.txt
+// 3DMigoto: 6b26cdf368f199b7 |    Unity headers extracted from Specular-AddPass.shader
+//    Shader "Hidden/TerrainEngine/Splatmap/Specular-AddPass" {
+//      Properties {
+//       _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//       _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//      [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//      [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//      [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//      [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//      [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//      [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//      }
+//      Fallback "Hidden/TerrainEngine/Splatmap/Diffuse-AddPass"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" }
+//        Pass 2/5 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 66118
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 119
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Specular-AddPass.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 55 10 0
+//   Keywords { "POINT" "FOG_EXP2" "_TERRAIN_NORMAL_MAP" }
+//   undeciphered2: 1 10 4 10 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 288
+//   Vector 96 [_LightColor0]
+//   Vector 112 [_SpecColor]
+//   Float 208 [_Shininess]
+//   Matrix 128 [_LightMatrix0]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   ConstBuffer "UnityLighting" 720
+//   Vector 0 [_WorldSpaceLightPos0]
+//   ConstBuffer "UnityFog" 32
+//   Vector 16 [unity_FogParams]
+//   SetTexture 0 [_Control] 2D 1
+//   SetTexture 1 [_Splat0] 2D 2
+//   SetTexture 2 [_Splat1] 2D 3
+//   SetTexture 3 [_Splat2] 2D 4
+//   SetTexture 4 [_Splat3] 2D 5
+//   SetTexture 5 [_Normal0] 2D 6
+//   SetTexture 6 [_Normal1] 2D 7
+//   SetTexture 7 [_Normal2] 2D 8
+//   SetTexture 8 [_Normal3] 2D 9
+//   SetTexture 9 [_LightTexture0] 2D 0
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityLighting" 2
+//   BindCB "UnityFog" 3
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:41:44 2016
+Texture2D<float4> t9 : register(t9);
+
+Texture2D<float4> t8 : register(t8);
+
+Texture2D<float4> t7 : register(t7);
+
+Texture2D<float4> t6 : register(t6);
+
+Texture2D<float4> t5 : register(t5);
+
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s9_s : register(s9);
+
+SamplerState s8_s : register(s8);
+
+SamplerState s7_s : register(s7);
+
+SamplerState s6_s : register(s6);
+
+SamplerState s5_s : register(s5);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[2];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[14];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  float4 v3 : TEXCOORD2,
+  float4 v4 : TEXCOORD3,
+  float4 v5 : TEXCOORD4,
+  float4 v6 : TEXCOORD5,
+  float4 v7 : TEXCOORD6,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 6b26cdf368f199b7-ps_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = t0.Sample(s1_s, v7.xy).xyzw;
+  r1.x = dot(r0.xyzw, float4(1,1,1,1));
+  r1.yz = float2(-0.00389999989,0.00100000005) + r1.xx;
+  r1.y = cmp(r1.y < 0);
+  r0.xyzw = r0.xyzw / r1.zzzz;
+  if (r1.y != 0) discard;
+  r1.yzw = cb2[0].xyz + -v6.xyz;
+  r2.x = dot(r1.yzw, r1.yzw);
+  r2.x = rsqrt(r2.x);
+  r1.yzw = r2.xxx * r1.yzw;
+  r2.xyz = _WorldSpaceCameraPos.xyz + -v6.xyz;
+  r2.w = dot(r2.xyz, r2.xyz);
+  r2.w = rsqrt(r2.w);
+  r2.xyz = r2.xyz * r2.www + r1.yzw;
+  r2.w = dot(r2.xyz, r2.xyz);
+  r2.w = rsqrt(r2.w);
+  r2.xyz = r2.xyz * r2.www;
+  r3.xyzw = t7.Sample(s8_s, v2.xy).xyzw;
+  r4.xyzw = t5.Sample(s6_s, v1.xy).xyzw;
+  r5.xyzw = t6.Sample(s7_s, v1.zw).xyzw;
+  r3.xz = r5.wy * r0.yy;
+  r3.xz = r0.xx * r4.wy + r3.xz;
+  r3.xy = r0.zz * r3.wy + r3.xz;
+  r4.xyzw = t8.Sample(s9_s, v2.zw).xyzw;
+  r3.xy = r0.ww * r4.wy + r3.xy;
+  r3.xy = r3.xy * float2(2,2) + float2(-1,-1);
+  r2.w = dot(r3.xy, r3.xy);
+  r2.w = min(1, r2.w);
+  r2.w = 1 + -r2.w;
+  r3.z = sqrt(r2.w);
+  r4.x = dot(v3.xyz, r3.xyz);
+  r4.y = dot(v4.xyz, r3.xyz);
+  r4.z = dot(v5.xyz, r3.xyz);
+  r2.x = dot(r4.xyz, r2.xyz);
+  r1.y = dot(r4.xyz, r1.yzw);
+  r1.y = max(0, r1.y);
+  r1.z = max(0, r2.x);
+  r1.z = log2(r1.z);
+  r1.w = 128 * cb0[13].x;
+  r1.z = r1.w * r1.z;
+  r1.z = exp2(r1.z);
+  r2.xyzw = t1.Sample(s2_s, v1.xy).xyzw;
+  r3.xyzw = t2.Sample(s3_s, v1.zw).xyzw;
+  r3.xyzw = r3.xyzw * r0.yyyy;
+  r2.xyzw = r0.xxxx * r2.xyzw + r3.xyzw;
+  r3.xyzw = t3.Sample(s4_s, v2.xy).xyzw;
+  r2.xyzw = r0.zzzz * r3.xyzw + r2.xyzw;
+  r3.xyzw = t4.Sample(s5_s, v2.zw).xyzw;
+  r0.xyzw = r0.wwww * r3.xyzw + r2.xyzw;
+  r0.w = r1.z * r0.w;
+  r2.xyz = cb0[9].xyz * v6.yyy;
+  r2.xyz = cb0[8].xyz * v6.xxx + r2.xyz;
+  r2.xyz = cb0[10].xyz * v6.zzz + r2.xyz;
+  r2.xyz = cb0[11].xyz + r2.xyz;
+  r1.z = dot(r2.xyz, r2.xyz);
+  r2.xyzw = t9.Sample(s0_s, r1.zz).xyzw;
+  r2.xyz = cb0[6].xyz * r2.xxx;
+  r3.xyz = cb0[7].xyz * r2.xyz;
+  r0.xyz = r2.xyz * r0.xyz;
+  r2.xyz = r3.xyz * r0.www;
+  r0.xyz = r0.xyz * r1.yyy + r2.xyz;
+  r0.xyz = r0.xyz * r1.xxx;
+  r0.w = cb3[1].x * v7.z;
+  r0.w = -r0.w * r0.w;
+  r0.w = exp2(r0.w);
+  o0.xyz = r0.www * r0.xyz;
+  o0.w = 1;
+  return;
+}

@@ -1,0 +1,120 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe f51c2a7085326040-vs_replace.txt
+// 3DMigoto: f51c2a7085326040 |    Unity headers extracted from Internal-PrePassCollectShadows.shader
+//    Shader "Hidden/Internal-PrePassCollectShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          GpuProgramID 23332
+//          Program "vp" {
+//            SubProgram "d3d11_9x " {
+//              GpuProgramIndex 29
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Internal-PrePassCollectShadows.shader.decompressed:
+//   API d3d11_9x
+//   Shader model vs_4_0_level_9_1
+//   undeciphered1: 13 0 0
+//   Keywords { "SHADOWS_SPLIT_SPHERES" "SHADOWS_NATIVE" "SHADOWS_SINGLE_CASCADE" }
+//   undeciphered2: 1 0 3 0 0
+//   undeciphered3: 11 3 0 0 1 2 3 4
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityPerCameraRare" 224
+//   Matrix 160 [unity_CameraInvProjection]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   BindCB "UnityPerCamera" 0
+//   BindCB "UnityPerCameraRare" 1
+//   BindCB "UnityPerDraw" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:48:46 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[4];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[14];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[6];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  float3 v2 : NORMAL0,
+  out float4 o0 : TEXCOORD0,
+  out float4 o1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2,
+  out float3 o3 : TEXCOORD3,
+  out float4 o4 : SV_POSITION0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  o0.xy = v1.xy;
+  o1.xyz = v2.xyz;
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+
+o4.xyzw = r0.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe f51c2a7085326040-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r1.x = cb0[5].x * r0.y;
+  r1.xyz = cb1[11].xyz * r1.xxx;
+  r1.xyz = cb1[10].xyz * r0.xxx + r1.xyz;
+
+  // o4.xyzw = r0.xyzw; // Relocated from here with hlsltool.py
+
+  r0.xyz = -cb1[12].xyz + r1.xyz;
+  r1.xyz = cb1[12].xyz + r1.xyz;
+  r1.xyz = cb1[13].xyz + r1.xyz;
+  r0.xyz = cb1[13].xyz + r0.xyz;
+  r0.w = -r0.z;
+  o2.xyz = r0.xyw;
+  r1.w = -r1.z;
+  o3.xyz = r1.xyw;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\f51c2a7085326040-vs_replace.txt(72,14-15): warning X3578: Output value 'o0' is not completely initialized
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\f51c2a7085326040-vs_replace.txt(73,14-15): warning X3578: Output value 'o1' is not completely initialized
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\f51c2a7085326040-vs_replace.txt(74,14-15): warning X3578: Output value 'o2' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
