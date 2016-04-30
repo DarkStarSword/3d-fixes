@@ -623,9 +623,9 @@ def add_shader_hash_fnv(sub_program):
 
     _add_shader_hash_fnv(bin)
 
-def hash_gl_crc(shader_asm, shader_type):
+def hash_gl_crc(sub_program):
     import zlib
-    glsl = _fixup_glsl_like_unity(shader_asm, shader_type)
+    glsl = fixup_glsl_like_unity(sub_program)
     return zlib.crc32(glsl.encode('utf-8'))
 
 def _add_shader_hash_gl_crc(sub_program, hash):
@@ -635,7 +635,7 @@ def _add_shader_hash_gl_crc(sub_program, hash):
     sub_program.hash_fmt = '%x'
 
 def add_shader_hash_gl_crc(sub_program):
-    _add_shader_hash_gl_crc(hash_gl_crc(sub_program.shader_asm, sub_program.parent.name))
+    _add_shader_hash_gl_crc(hash_gl_crc(sub_program))
 
 
 def is_opengl_shader(sub_program):
@@ -745,27 +745,24 @@ def strip_glsl_tag(glsl):
 
 class BogusShader(Exception): pass
 
-def _fixup_glsl_like_unity(shader_asm, shader_type):
-    glsl = strip_glsl_tag(shader_asm)
+def fixup_glsl_like_unity(sub_program):
+    glsl = strip_glsl_tag(sub_program.shader_asm)
     if not glsl:
         # Fragment shaders appear to be bogus empty placeholders since they are
         # really combined with vertex shaders. If this shader is empty raise an
         # exception so we will throw it away. We will duplicate the vertex
         # shaders elsewhere and rehash them to get pixel shaders.
         raise BogusShader()
-    if shader_type == 'vp':
+    if sub_program.parent.name == 'vp':
         define = '#define VERTEX'
-    elif shader_type == 'fp':
+    elif sub_program.parent.name == 'fp':
         define = '#define FRAGMENT'
     else:
-        raise Exception("Unknown program type: %s" % shader_type)
+        raise Exception("Unknown program type: %s" % sub_program.parent.name)
     if glsl.startswith("#version"):
         version, glsl = glsl.split('\n', 1)
         return '\n'.join((version, define, glsl))
     return '\n'.join((define, glsl))
-
-def fixup_glsl_like_unity(sub_program):
-    return _fixup_glsl_like_unity(sub_program.shader_asm, sub_program.parent.name)
 
 def disassemble_and_decompile_binary_shader(bin_filename):
     import subprocess
@@ -890,15 +887,21 @@ def parse_tree(filename, data=None, args=None):
     return parse_keywords(tree, filename=os.path.basename(filename), args=args)
 
 def walk_sub_programs(tree): # Used by extract_unity53_shaders
+    trees = {}
+
     i = 0
     for shader in filter(lambda shader: shader.keyword == 'Shader', tree):
         for sub_shader in filter(lambda sub_shader: sub_shader.keyword == 'SubShader', shader):
             for Pass in filter(lambda Pass: Pass.keyword == 'Pass', sub_shader):
                 for program in filter(lambda program: program.keyword == 'Program', Pass):
                     for sub_program in filter(lambda sub_program: sub_program.keyword == 'SubProgram', program):
-                        assert(int(sub_program.keywords['GpuProgramIndex'][0].line) == i)
-                        yield(sub_program)
-                        i += 1
+                        if int(sub_program.keywords['GpuProgramIndex'][0].line) == i:
+                            if i not in trees:
+                                trees[i] = []
+                            trees[i].append(sub_program)
+                            i += 1
+    for i in trees:
+        yield trees[i]
 
 def parse_args():
     global shadertool

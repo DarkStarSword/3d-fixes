@@ -5,9 +5,9 @@ import extract_unity_shaders
 
 shader_type_mapping = {
      1: (None, "opengl", "version 120"),
-     4: (None, "opengl", "version 300 es"),
-     5: (None, "opengl", "version 100"),
-     6: (None, "opengl", "version 150"),
+     4: (None, "gles3",  "version 300 es"),
+     5: (None, "gles",   "version 100"),
+     6: (None, "glcore", "version 150"),
 
      9: ("vp", "d3d9", "vs_2_0"),
     10: ("vp", "d3d9", "vs_3_0"),
@@ -166,21 +166,22 @@ def save_external_headers(dest, headers):
         f.write(headers)
 
 def extract_opengl_shader(file, shader_size, headers, shader):
-    bin = file.read(shader_size)
+    shader.sub_program.shader_asm = file.read(shader_size).decode('utf-8')
     try:
         hash = {}
-        shader_txt = bin.decode('utf-8')
         for program_name in ('fp', 'vp'):
-            hash[program_name] = extract_unity_shaders.hash_gl_crc(shader_txt, program_name)
+            shader.program.name = program_name;
+            hash[program_name] = extract_unity_shaders.hash_gl_crc(shader.sub_program)
             add_header(headers, ('{} hash: {:x}'.format(program_name, hash[program_name])))
         for program_name in ('fp', 'vp'):
-            extract_unity_shaders._add_shader_hash_gl_crc32(shader.sub_program, hash[program_name])
+            shader.program.name = program_name;
+            extract_unity_shaders._add_shader_hash_gl_crc(shader.sub_program, hash[program_name])
             path_components = extract_unity_shaders.export_filename_combined_short(shader)
             dest = extract_unity_shaders.path_components_to_dest(path_components)
 
             print('Extracting %s.glsl...' % dest)
             with open('%s.glsl' % dest, 'w') as out:
-                out.write(extract_unity_shaders._fixup_glsl_like_unity(shader_txt, program_name))
+                out.write(extract_unity_shaders.fixup_glsl_like_unity(shader.sub_program))
             with open('%s.info' % dest, 'w') as f:
                 f.write('\n'.join(headers))
     except extract_unity_shaders.BogusShader:
@@ -251,8 +252,9 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
 
     save_external_headers(dest, headers)
 
-def extract_shader_at(file, offset, size, filename, sub_program):
-    headers = extract_unity_shaders.collect_headers(sub_program)
+def extract_shader_at(file, offset, size, filename, sub_programs):
+    sub_program = sub_programs[0]
+    headers = extract_unity_shaders.combine_similar_headers(sub_programs)
     headers.extend(['', 'Unity 5.3 headers extracted from %s:' % filename])
     shader = extract_unity_shaders.get_parents(sub_program)
 
@@ -266,7 +268,7 @@ def extract_shader_at(file, offset, size, filename, sub_program):
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
         add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
-        assert(shader.program.name == program_name)
+        assert(shader.program.name == program_name or program_name is None)
         assert(shader.sub_program.name == api)
 
         keywords = []
@@ -279,12 +281,15 @@ def extract_shader_at(file, offset, size, filename, sub_program):
 
         (shader_size,) = struct.unpack('<i', file.read(4))
 
-        if api == 'opengl':
+        if extract_unity_shaders.is_opengl_shader(sub_program):
             extract_opengl_shader(file, shader_size, headers, shader)
         elif api == 'd3d9':
             extract_directx9_shader(file, shader_size, headers, offset, size, shader)
         elif api in ('d3d11', 'd3d11_9x'):
             extract_directx11_shader(file, shader_size, headers, offset, size, shader)
+        elif api in ('gles', 'gles3'):
+            # See explanation in is_opengl_shader
+            pass
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 
@@ -303,10 +308,10 @@ def parse_unity53_shader(filename):
     (num_shaders,) = struct.unpack('<I', file.read(4))
     print('Num shaders: %i' % num_shaders)
     for i in range(num_shaders):
-        sub_program = next(sub_program_generator)
+        sub_programs = next(sub_program_generator)
         (offset, size) = struct.unpack('<II', file.read(8))
         print('Shader %i offset: %i, size: %i' % (i, offset, size))
-        extract_shader_at(file, offset, size, os.path.basename(filename), sub_program)
+        extract_shader_at(file, offset, size, os.path.basename(filename), sub_programs)
 
 def parse_args():
     global args
