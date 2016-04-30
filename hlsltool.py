@@ -1215,6 +1215,9 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     if not args.force and (os.path.exists(dest) or os.path.exists(dest + '~failed')):
         debug_verbose(0, 'Skipping %s - already installed' % file)
         return False
+    if os.path.exists(dest + '~bad'):
+        debug_verbose(0, 'Skipping %s - marked bad' % file)
+        return False
 
     if show_full_path:
         debug_verbose(0, 'Installing to %s...' % dest)
