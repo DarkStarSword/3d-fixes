@@ -1,4 +1,5 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 02759aa75e0ca149-vs_replace.txt
+// Do not use reflection fix - screws up lighting on snow
+
 // 3DMigoto: 02759aa75e0ca149 |    Unity headers extracted from FirstPass_Custom.shader
 //    Shader "_LongDark/Terrain/Diffuse" {
 //      Properties {
@@ -143,16 +144,7 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-float4 stereo = StereoParams.Load(0);
-float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
-
-// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 02759aa75e0ca149-vs_replace.txt
 float4 _WorldSpaceCameraPos = cb1[4];
-float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
-float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
-float4 world_space_adj = mul(_Object2World, local_space_adj);
-_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
 
   r0.xyzw = cb3[1].xyzw * v0.yyyy;
   r0.xyzw = cb3[0].xyzw * v0.xxxx + r0.xyzw;
