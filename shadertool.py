@@ -45,7 +45,7 @@ unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin
 # without Unity headers attached)
 unity_shader_directional_lighting     = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Shader\s".*PrePassCollectShadows.*"\s{$')
 unity_tag_shadow_caster               = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Tags\s{\s.*"LIGHTMODE"="SHADOWCASTER".*"\s}$')
-unity_headers_attached                = re.compile(r"// Headers extracted with DarkStarSword's extract_unity_shaders.py")
+unity_headers_attached                = re.compile(r"// Headers extracted with DarkStarSword's extract_unity(53)?_shaders.py")
 
 preferred_stereo_const = 220
 dx9settings_ini = {}
