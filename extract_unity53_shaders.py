@@ -3,6 +3,34 @@
 import sys, os, argparse, glob, struct, zlib
 import extract_unity_shaders
 
+def get_shader_type_name(shader_type):
+    return {
+         1: "OpenGL version 120",
+         4: "OpenGL version 300 es",
+         5: "OpenGL version 100",
+         6: "OpenGL version 150",
+
+         9: "DirectX9 vs_2_0",
+        10: "DirectX9 vs_3_0",
+        11: "DirectX9 ps_2_0",
+        12: "DirectX9 ps_3_0",
+
+        13: "DirectX11 13",
+        14: "DirectX11 14",
+        15: "DirectX11 15",
+        16: "DirectX11 16",
+        17: "DirectX11 17",
+        18: "DirectX11 18",
+    }.get(shader_type, 'Unknown: {}'.format(shader_type))
+
+def get_program_name(shader_type):
+    return {
+         9: 'vp',
+        10: 'vp',
+        11: 'fp',
+        12: 'fp',
+    }[shader_type]
+
 class ParseError(Exception): pass
 
 class ShaderType(object):
@@ -151,44 +179,19 @@ def extract_opengl_shader(file, shader_size, headers, shader_name):
     except extract_unity_shaders.BogusShader:
         return
 
-def extract_directx_shader(file, shader_size, headers, shader_type, section_offset, section_size, shader_name):
-    (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
-    # print('  shader size: {0} (0x{0:08x})'.format(shader_size))
-    add_header(headers, 'undeciphered2: {} {} {} {} {}'.format(u8a, u8b, u8c, u8d, u8e)) # Think this is related to the bindings
-
+def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader_name, program_name):
     shader = file.read(shader_size)
-    align(file, 4)
-    if shader[:4] == b'DXBC': # FIXME: Better way to detect this?
-        shader_type = ShaderType.dx11
-        assert(u8c >= 0)
-        assert(u8d >= 0)
-        assert(u8e >= 0)
+    # align(file, 4)
+    assert(shader[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
 
-        hash = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
-        path_components = extract_unity_shaders._export_filename_combined_short(
-                hash, '3Dmigoto', '%016x', shader_name, 'FIXME')
-        dest = extract_unity_shaders.path_components_to_dest(path_components)
+    hash = zlib.crc32(shader)
+    path_components = extract_unity_shaders._export_filename_combined_short(
+            hash, 'asm_crc32', '%08X', shader_name, program_name)
+    dest = extract_unity_shaders.path_components_to_dest(path_components)
 
-        print('Extracting %s.bin...' % dest)
-        with open('%s.bin' % dest, 'wb') as out:
-            out.write(shader)
-    elif shader[3:7] == b'CTAB': # DX9
-        shader_type = ShaderType.dx9
-        # assert(u5 == -1) - no, there are exceptions
-        assert(u8d == -1)
-        assert(u8e == -2)
-        # if u4 == -1: - no, these are independent
-        #   assert(u8c == -2)
-        assert(u8c == -1 or u8c == -2)
-
-        hash = zlib.crc32(shader)
-        path_components = extract_unity_shaders._export_filename_combined_short(
-                hash, 'asm_crc32', '%08X', shader_name, 'FIXME')
-        dest = extract_unity_shaders.path_components_to_dest(path_components)
-
-        print('Extracting %s.bin...' % dest)
-        with open('%s.bin' % dest, 'wb') as out:
-            out.write(shader)
+    print('Extracting %s.bin...' % dest)
+    with open('%s.bin' % dest, 'wb') as out:
+        out.write(shader)
 
     if True: # Useful for debugging
         bind_info_size = section_size - (file.tell() - section_offset)
@@ -199,30 +202,61 @@ def extract_directx_shader(file, shader_size, headers, shader_type, section_offs
 
     # Have not fully deciphered the data around this point, and depending
     # on the values the size can vary. Making a best guess based on
-    # obsevations that DX9 ends in 0, 0 and DX11 ends in num_sections, 0,
-    # 0, 0. If first value != 0 in DX11, it is followed by two 0s.
-    # Values seem to be in pairs. Suspect they are related to the generic
-    # "Bind" statements in previous Unity versions, but can't make heads or
-    # tails of them.
+    # obsevations that DX9 ends in 0, 0. Values seem to be in pairs. Suspect
+    # they are related to the generic "Bind" statements in previous Unity
+    # versions, but can't make heads or tails of them.
     undeciphered3 = list(struct.unpack('<I', file.read(4)))
+    undeciphered3.extend(consume_until_double_zero(file))
+    add_header(headers, ('undeciphered3 (DX 9):' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
 
-    if shader_type == ShaderType.dx11:
-        if undeciphered3[0]:
-            undeciphered3.extend(struct.unpack('<2I', file.read(8)))
+    decode_dx9_bind_info(file, headers)
+    assert(file.tell() - section_size - section_offset == 0)
 
-        num_sections = consume_until_dx11_num_sections(file, undeciphered3)
+    save_external_headers(dest, headers)
 
-        add_header(headers, ('undeciphered3 (DX11):' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
-        decode_dx11_bind_info(file, num_sections, headers)
-        assert(file.tell() - section_size - section_offset == 0)
-    elif shader_type == ShaderType.dx9:
-        undeciphered3.extend(consume_until_double_zero(file))
+def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader_name):
+    (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
+    # print('  shader size: {0} (0x{0:08x})'.format(shader_size))
+    add_header(headers, 'undeciphered2: {} {} {} {} {}'.format(u8a, u8b, u8c, u8d, u8e)) # Think this is related to the bindings
 
-        add_header(headers, ('undeciphered3 (DX 9):' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
-        decode_dx9_bind_info(file, headers)
-        assert(file.tell() - section_size - section_offset == 0)
-    else:
-        assert(False)
+    shader = file.read(shader_size)
+    align(file, 4)
+    assert(shader[:4] == b'DXBC')
+    assert(u8c >= 0)
+    assert(u8d >= 0)
+    assert(u8e >= 0)
+
+    hash = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
+    path_components = extract_unity_shaders._export_filename_combined_short(
+            hash, '3Dmigoto', '%016x', shader_name, 'FIXME')
+    dest = extract_unity_shaders.path_components_to_dest(path_components)
+
+    print('Extracting %s.bin...' % dest)
+    with open('%s.bin' % dest, 'wb') as out:
+        out.write(shader)
+
+    if True: # Useful for debugging
+        bind_info_size = section_size - (file.tell() - section_offset)
+        pos = file.tell()
+        with open(dest + '.rem', 'wb') as out:
+            out.write(file.read(bind_info_size))
+        file.seek(pos)
+
+    # Have not fully deciphered the data around this point, and depending
+    # on the values the size can vary. Making a best guess based on
+    # obsevations that DX11 ends in num_sections, 0, 0, 0. If first value != 0
+    # it is followed by two 0s. Values seem to be in pairs. Suspect they are
+    # related to the generic "Bind" statements in previous Unity versions, but
+    # can't make heads or tails of them.
+    undeciphered3 = list(struct.unpack('<I', file.read(4)))
+    if undeciphered3[0]:
+        undeciphered3.extend(struct.unpack('<2I', file.read(8)))
+
+    num_sections = consume_until_dx11_num_sections(file, undeciphered3)
+    add_header(headers, ('undeciphered3 (DX11):' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
+
+    decode_dx11_bind_info(file, num_sections, headers)
+    assert(file.tell() - section_size - section_offset == 0)
 
     save_external_headers(dest, headers)
 
@@ -233,13 +267,7 @@ def extract_shader_at(file, offset, size, shader_name):
     try:
         (u1, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
         assert(u1 == 0x0c02c8a6)
-        shader_type_txt = {
-                1: "OpenGL version 120",
-                4: "OpenGL version 300 es",
-                5: "OpenGL version 100",
-                6: "OpenGL version 150",
-        }.get(shader_type, 'Unknown: {}'.format(shader_type))
-        add_header(headers, 'shader_type: {}'.format(shader_type_txt))
+        add_header(headers, 'shader_type: {}'.format(get_shader_type_name(shader_type)))
         add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
 
         keywords = []
@@ -254,8 +282,12 @@ def extract_shader_at(file, offset, size, shader_name):
 
         if shader_type in (1, 4, 5, 6):
             extract_opengl_shader(file, shader_size, headers, shader_name)
+        elif shader_type in (9, 10, 11, 12):
+            extract_directx9_shader(file, shader_size, headers, offset, size, shader_name, get_program_name(shader_type))
+        elif shader_type in (13, 14, 15, 16, 17, 18):
+            extract_directx11_shader(file, shader_size, headers, offset, size, shader_name)
         else:
-            extract_directx_shader(file, shader_size, headers, shader_type, offset, size, shader_name)
+            raise ParseError('Unknown shader type %i' % shader_type)
 
         print()
         file.seek(saved_offset)
