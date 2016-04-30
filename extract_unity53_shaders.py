@@ -3,33 +3,31 @@
 import sys, os, argparse, glob, struct, zlib
 import extract_unity_shaders
 
+shader_type_mapping = {
+     1: (None, "OpenGL version 120"),
+     4: (None, "OpenGL version 300 es"),
+     5: (None, "OpenGL version 100"),
+     6: (None, "OpenGL version 150"),
+
+     9: ("vp", "DirectX9 vs_2_0"),
+    10: ("vp", "DirectX9 vs_3_0"),
+    11: ("fp", "DirectX9 ps_2_0"),
+    12: ("fp", "DirectX9 ps_3_0"),
+
+    13: ("vp", "DirectX11 (Feature Level 9) vs_4_0 + vs_2_0"),
+    14: ("fp", "DirectX11 (Feature Level 9) ps_4_0 + ps_2_0"),
+
+    15: ("vp", "DirectX11 vs_4_0"),
+    16: ("vp", "DirectX11 vs_5_0"),
+    17: ("fp", "DirectX11 ps_4_0"),
+    18: ("fp", "DirectX11 ps_5_0"),
+}
+
 def get_shader_type_name(shader_type):
-    return {
-         1: "OpenGL version 120",
-         4: "OpenGL version 300 es",
-         5: "OpenGL version 100",
-         6: "OpenGL version 150",
-
-         9: "DirectX9 vs_2_0",
-        10: "DirectX9 vs_3_0",
-        11: "DirectX9 ps_2_0",
-        12: "DirectX9 ps_3_0",
-
-        13: "DirectX11 13",
-        14: "DirectX11 14",
-        15: "DirectX11 15",
-        16: "DirectX11 16",
-        17: "DirectX11 17",
-        18: "DirectX11 18",
-    }.get(shader_type, 'Unknown: {}'.format(shader_type))
+    return shader_type_mapping[shader_type][1]
 
 def get_program_name(shader_type):
-    return {
-         9: 'vp',
-        10: 'vp',
-        11: 'fp',
-        12: 'fp',
-    }[shader_type]
+    return shader_type_mapping[shader_type][0]
 
 class ParseError(Exception): pass
 
@@ -181,7 +179,7 @@ def extract_opengl_shader(file, shader_size, headers, shader_name):
 
 def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader_name, program_name):
     shader = file.read(shader_size)
-    # align(file, 4)
+    align(file, 4) # Seems ok without this - looks like the shader binary is always a multiple of 4 bytes
     assert(shader[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
 
     hash = zlib.crc32(shader)
@@ -214,12 +212,11 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
 
     save_external_headers(dest, headers)
 
-def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader_name):
+def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader_name, program_name):
     (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
-    # print('  shader size: {0} (0x{0:08x})'.format(shader_size))
     add_header(headers, 'undeciphered2: {} {} {} {} {}'.format(u8a, u8b, u8c, u8d, u8e)) # Think this is related to the bindings
 
-    shader = file.read(shader_size)
+    shader = file.read(shader_size - 5)
     align(file, 4)
     assert(shader[:4] == b'DXBC')
     assert(u8c >= 0)
@@ -228,7 +225,7 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
 
     hash = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
     path_components = extract_unity_shaders._export_filename_combined_short(
-            hash, '3Dmigoto', '%016x', shader_name, 'FIXME')
+            hash, '3Dmigoto', '%016x', shader_name, program_name)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
     print('Extracting %s.bin...' % dest)
@@ -248,8 +245,8 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     # it is followed by two 0s. Values seem to be in pairs. Suspect they are
     # related to the generic "Bind" statements in previous Unity versions, but
     # can't make heads or tails of them.
-    undeciphered3 = list(struct.unpack('<I', file.read(4)))
-    if undeciphered3[0]:
+    undeciphered3 = list(struct.unpack('<2I', file.read(8)))
+    if undeciphered3[1]:
         undeciphered3.extend(struct.unpack('<2I', file.read(8)))
 
     num_sections = consume_until_dx11_num_sections(file, undeciphered3)
@@ -285,7 +282,7 @@ def extract_shader_at(file, offset, size, shader_name):
         elif shader_type in (9, 10, 11, 12):
             extract_directx9_shader(file, shader_size, headers, offset, size, shader_name, get_program_name(shader_type))
         elif shader_type in (13, 14, 15, 16, 17, 18):
-            extract_directx11_shader(file, shader_size, headers, offset, size, shader_name)
+            extract_directx11_shader(file, shader_size, headers, offset, size, shader_name, get_program_name(shader_type))
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 

@@ -334,15 +334,6 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
-def get_opengl_filename_base(program_name, hash, hash_fmt='%x'):
-    if program_name == 'fp': # Pixel Shader ("Fragment Program")
-        shader_type = 'Pixel'
-    elif program_name == 'vp': # Vertex Shader
-        shader_type = 'Vertex'
-    else:
-        raise Exception("Unknown program type: %s" % program_name)
-    return ('%s_' + hash_fmt) % (shader_type, hash)
-
 def _get_hash_filename_base(hash, hash_type, hash_fmt, program_name):
     if hash_type == 'asm_crc32':
         return hash_fmt % hash
@@ -359,15 +350,19 @@ def _get_hash_filename_base(hash, hash_type, hash_fmt, program_name):
             shader_type = 'hs'
         elif program_name == 'dp': # Domain Shader
             shader_type = 'ds'
-        elif program_name == 'FIXME': # Delete this once extract_unity53_shaders knows the correct type
-            shader_type = 'FIXME'
         # Still missing compute shaders from this list
         else:
             raise Exception("Unknown program type: %s" % program_name)
         return (hash_fmt + '-%s') % (hash, shader_type)
 
     if hash_type == 'gl_crc32':
-        return get_opengl_filename_base(program_name, hash, hash_fmt)
+        if program_name == 'fp': # Pixel Shader ("Fragment Program")
+            shader_type = 'Pixel'
+        elif program_name == 'vp': # Vertex Shader
+            shader_type = 'Vertex'
+        else:
+            raise Exception("Unknown program type: %s" % program_name)
+        return ('%s_' + hash_fmt) % (shader_type, hash)
 
     assert(False)
 
