@@ -659,7 +659,7 @@ def add_shader_hash(sub_program):
 def add_header_hash(headers, sub_program):
     if sub_program.hash:
         if sub_program.hash_type == 'asm_crc32':
-            if sub_program.fog:
+            if hasattr(sub_program, 'fog') and sub_program.fog:
                 headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
             else:
                 headers[0] = 'CRC32: %.8X | %s' % (sub_program.hash, headers[0])
@@ -764,7 +764,7 @@ def fixup_glsl_like_unity(sub_program):
         return '\n'.join((version, define, glsl))
     return '\n'.join((define, glsl))
 
-def disassemble_and_decompile_binary_shader(bin_filename):
+def disassemble_and_decompile_binary_shader(bin_filename, disassemble_flugan=True, disassemble_ms=False, decompile=True):
     import subprocess
 
     # TODO: Batch these to reduce overhead. Remember:
@@ -778,8 +778,17 @@ def disassemble_and_decompile_binary_shader(bin_filename):
     cwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(bin_filename)))
 
+    args = [cmd_Decompiler]
+    if disassemble_flugan:
+        args.append('-d')
+    if disassemble_ms:
+        args.append('--disassemble-ms')
+    if decompile:
+        args.append('-D')
+    args.append(os.path.basename(bin_filename))
+
     try:
-        subprocess.call([cmd_Decompiler, '-d', '-D', os.path.basename(bin_filename)])
+        subprocess.call(args)
     except FileNotFoundError:
         os.chdir(cwd)
         return False
@@ -805,6 +814,23 @@ def attach_headers(old_file_path, new_file_path, headers, remove=True):
 def path_components_to_dest(path_components):
     mkdir_recursive(path_components[:-1])
     return os.path.join(os.curdir, *path_components)
+
+def export_dx9_shader_binary(dest, bin, headers):
+    '''
+    Used for Unity 5.3 and later by export_unity53_shaders which store DX9
+    shaders as binary instead of assembly.
+    '''
+    bin_filename = '%s.bin' % dest
+    print('Extracting %s' % bin_filename)
+    with open(bin_filename, 'wb') as f:
+        f.write(bin)
+
+    if disassemble_and_decompile_binary_shader(bin_filename, decompile=False, disassemble_flugan=False, disassemble_ms=True):
+        attach_headers('%s.msasm' % dest, '%s.txt' % dest, headers)
+    else:
+        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
 
 def export_dx11_shader(dest, bin, headers, extra_headers=''):
     bin_filename = '%s.bin' % dest

@@ -159,12 +159,6 @@ def dump_raw_bind_info(file, dest, section_offset, section_size):
         out.write(file.read(bind_info_size))
     file.seek(pos)
 
-def save_external_headers(dest, headers):
-    extract_unity_shaders.add_vanity_tag(headers)
-    headers = extract_unity_shaders.commentify(headers)
-    with open('%s_headers.txt' % dest, 'w') as f:
-        f.write(headers)
-
 def finalise_headers(headers, sub_program):
     extract_unity_shaders.add_header_hash(headers, sub_program)
     extract_unity_shaders.add_vanity_tag(headers)
@@ -201,10 +195,6 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     path_components = extract_unity_shaders.export_filename_combined_short(shader)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
-    print('Extracting %s.bin...' % dest)
-    with open('%s.bin' % dest, 'wb') as out:
-        out.write(bin)
-
     dump_raw_bind_info(file, dest, section_offset, section_size)
 
     # Have not fully deciphered the data around this point, and depending
@@ -219,7 +209,7 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     decode_dx9_bind_info(file, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
-    save_external_headers(dest, headers)
+    extract_unity_shaders.export_dx9_shader_binary(dest, bin, finalise_headers(headers, shader.sub_program))
 
 def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader):
     (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
