@@ -343,31 +343,44 @@ def get_opengl_filename_base(program_name, hash, hash_fmt='%x'):
         raise Exception("Unknown program type: %s" % program_name)
     return ('%s_' + hash_fmt) % (shader_type, hash)
 
-def get_hash_filename_base(shader):
-    if shader.sub_program.hash_type == 'asm_crc32':
-        return shader.sub_program.hash_fmt % shader.sub_program.hash
+def _get_hash_filename_base(hash, hash_type, hash_fmt, program_name):
+    if hash_type == 'asm_crc32':
+        return hash_fmt % hash
 
-    if shader.sub_program.hash_type == '3Dmigoto':
+    if hash_type == '3Dmigoto':
         # Emulate 3Dmigto style naming
-        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
+        if program_name == 'fp': # Pixel Shader ("Fragment Program")
             shader_type = 'ps'
-        elif shader.program.name == 'vp': # Vertex Shader
+        elif program_name == 'vp': # Vertex Shader
             shader_type = 'vs'
-        elif shader.program.name == 'gp': # Geometry Shader
+        elif program_name == 'gp': # Geometry Shader
             shader_type = 'gs'
-        elif shader.program.name == 'hp': # Hull Shader
+        elif program_name == 'hp': # Hull Shader
             shader_type = 'hs'
-        elif shader.program.name == 'dp': # Domain Shader
+        elif program_name == 'dp': # Domain Shader
             shader_type = 'ds'
+        elif program_name == 'FIXME': # Delete this once extract_unity53_shaders knows the correct type
+            shader_type = 'FIXME'
         # Still missing compute shaders from this list
         else:
-            raise Exception("Unknown program type: %s" % shader.program.name)
-        return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
+            raise Exception("Unknown program type: %s" % program_name)
+        return (hash_fmt + '-%s') % (hash, shader_type)
 
-    if shader.sub_program.hash_type == 'gl_crc32':
-        return get_opengl_filename_base(shader.program.name, shader.sub_program.hash, shader.sub_program.hash_fmt)
+    if hash_type == 'gl_crc32':
+        return get_opengl_filename_base(program_name, hash, hash_fmt)
 
     assert(False)
+
+def get_hash_filename_base(shader):
+    return _get_hash_filename_base(
+            shader.sub_program.hash,
+            shader.sub_program.hash_type,
+            shader.sub_program.hash_fmt,
+            shader.program.name)
+
+def sanitise_filename(path_components):
+    if path_components is not None:
+        return [x.replace('/', '_').replace('\\', '_') for x in path_components]
 
 def export_filename_combined_long(shaders, args):
     ret = []
@@ -410,36 +423,44 @@ def export_filename_combined_long(shaders, args):
     if shaders[0].sub_program.fog:
         ret[-1] = '%s %s' % (ret[-1], shaders[0].sub_program.fog)
 
-    return ret
+    return sanitise_filename(ret)
 
-def export_filename_combined_short(shader, args):
-    if not shader.sub_program.hash:
+def _export_filename_combined_short(hash, hash_type, hash_fmt, shader_name, program_name):
+    if not hash:
         return None
 
-    if shader.sub_program.hash_type == 'asm_crc32':
-        return (
+    if hash_type == 'asm_crc32':
+        return sanitise_filename([
             'ShaderCRCs',
-            shader.shader.name,
-            shader.program.name,
-            get_hash_filename_base(shader),
-        )
+            shader_name,
+            program_name,
+            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+        ])
 
-    if shader.sub_program.hash_type == '3Dmigoto':
-        return (
+    if hash_type == '3Dmigoto':
+        return sanitise_filename([
             'ShaderFNVs',
-            shader.shader.name,
-            get_hash_filename_base(shader),
-        )
+            shader_name,
+            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+        ])
 
-    if shader.sub_program.hash_type == 'gl_crc32':
-        return (
+    if hash_type == 'gl_crc32':
+        return sanitise_filename([
             'ShaderGL',
-            shader.shader.name,
-            shader.sub_program.name,
-            get_hash_filename_base(shader),
-        )
+            shader_name,
+            program_name,
+            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+        ])
 
     assert(False)
+
+def export_filename_combined_short(shader):
+    return _export_filename_combined_short(
+            shader.sub_program.hash,
+            shader.sub_program.hash_type,
+            shader.sub_program.hash_fmt,
+            shader.shader.name,
+            shader.program.name)
 
 def export_filename_combined(sub_programs, args):
     shaders = list(map(get_parents, sub_programs))
@@ -457,11 +478,9 @@ def export_filename_combined(sub_programs, args):
     assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
 
     if not args.deep_dir:
-        ret = export_filename_combined_short(shaders[0], args)
+        ret = export_filename_combined_short(shaders[0])
     else:
         ret = export_filename_combined_long(shaders, args)
-    if ret is not None:
-        return [x.replace('/', '_').replace('\\', '_') for x in ret]
     return None
 
 def _collect_headers(tree):
@@ -798,9 +817,12 @@ def attach_headers(old_file_path, new_file_path, headers, remove=True):
     except OSError as e:
         print('Error attaching headers to %s' % old_file_path)
 
-def _export_shader(sub_program, headers, path_components):
+def path_components_to_dest(path_components):
     mkdir_recursive(path_components[:-1])
-    dest = os.path.join(os.curdir, *path_components)
+    return os.path.join(os.curdir, *path_components)
+
+def _export_shader(sub_program, headers, path_components):
+    dest = path_components_to_dest(path_components)
     headers = commentify(headers)
     extra_headers = '\n//\n// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0]
     index_headers(headers, sub_program)
