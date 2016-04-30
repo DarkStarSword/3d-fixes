@@ -60,7 +60,7 @@ def consume_until_dx11_num_sections(file, undeciphered3):
     return num_sections
 
 def add_header(headers, header):
-    headers.append(header)
+    headers.append('  ' + header)
     # print(header)
 
 def decode_consts(file, headers, shader_type):
@@ -209,7 +209,7 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     # versions, but can't make heads or tails of them.
     undeciphered3 = list(struct.unpack('<I', file.read(4)))
     undeciphered3.extend(consume_until_double_zero(file))
-    add_header(headers, ('undeciphered3:' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
+    add_header(headers, ('undeciphered3:' + ' {}'*len(undeciphered3)).format(*undeciphered3))
 
     decode_dx9_bind_info(file, headers)
     assert(file.tell() - section_size - section_offset == 0)
@@ -246,24 +246,30 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
         undeciphered3.extend(struct.unpack('<2I', file.read(8)))
 
     num_sections = consume_until_dx11_num_sections(file, undeciphered3)
-    add_header(headers, ('undeciphered3:' + ' {:x}'*len(undeciphered3)).format(*undeciphered3))
+    add_header(headers, ('undeciphered3:' + ' {}'*len(undeciphered3)).format(*undeciphered3))
 
     decode_dx11_bind_info(file, num_sections, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
     save_external_headers(dest, headers)
 
-def extract_shader_at(file, offset, size, shader_name):
+def extract_shader_at(file, offset, size, filename, sub_program):
+    headers = extract_unity_shaders.collect_headers(sub_program)
+    headers.extend(['', 'Unity 5.3 headers extracted from %s:' % filename])
+    shader = extract_unity_shaders.get_parents(sub_program)
+
     saved_offset = file.tell()
-    headers = []
     file.seek(offset)
     try:
         (u1, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
         assert(u1 == 0x0c02c8a6)
         api = get_shader_api(shader_type)
+        program_name = get_program_name(shader_type)
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
         add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
+        assert(shader.program.name == program_name)
+        assert(shader.sub_program.name == api)
 
         keywords = []
         for i in range(num_keywords):
@@ -276,11 +282,11 @@ def extract_shader_at(file, offset, size, shader_name):
         (shader_size,) = struct.unpack('<i', file.read(4))
 
         if api == 'opengl':
-            extract_opengl_shader(file, shader_size, headers, shader_name)
+            extract_opengl_shader(file, shader_size, headers, shader.shader.name)
         elif api == 'd3d9':
-            extract_directx9_shader(file, shader_size, headers, offset, size, shader_name, get_program_name(shader_type))
+            extract_directx9_shader(file, shader_size, headers, offset, size, shader.shader.name, program_name)
         elif api in ('d3d11', 'd3d11_9x'):
-            extract_directx11_shader(file, shader_size, headers, offset, size, shader_name, get_program_name(shader_type))
+            extract_directx11_shader(file, shader_size, headers, offset, size, shader.shader.name, program_name)
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 
@@ -293,15 +299,16 @@ def extract_shader_at(file, offset, size, shader_name):
 def parse_unity53_shader(filename):
     file = open(filename, 'rb')
 
-    # FIXME: Use name from .shader file for consistency with extract_unity_shaders:
-    shader_name = os.path.splitext(os.path.splitext(os.path.basename(filename))[0])[0]
+    shader_tree = extract_unity_shaders.parse_tree(os.path.splitext(filename)[0])
+    sub_program_generator = extract_unity_shaders.walk_sub_programs(shader_tree)
 
     (num_shaders,) = struct.unpack('<I', file.read(4))
     print('Num shaders: %i' % num_shaders)
     for i in range(num_shaders):
+        sub_program = next(sub_program_generator)
         (offset, size) = struct.unpack('<II', file.read(8))
         print('Shader %i offset: %i, size: %i' % (i, offset, size))
-        extract_shader_at(file, offset, size, shader_name)
+        extract_shader_at(file, offset, size, os.path.basename(filename), sub_program)
 
 def parse_args():
     global args

@@ -515,7 +515,7 @@ class HLSLShader(Shader):
         ,?
     ''', re.VERBOSE)
     Parameter = collections.namedtuple('Parameter', ['output', 'modifiers', 'type', 'variable', 'semantic'])
-    shader_model_pattern = re.compile(r'^(?:// Shader model )(?P<shader_type>[vhdgpc]s)_(?P<shader_model>[45]_[01])$', re.MULTILINE)
+    shader_model_pattern = re.compile(r'^(?://\s+Shader model )(?P<shader_type>[vhdgpc]s)_(?P<shader_model>[45]_[01])$', re.MULTILINE)
 
     class ParseError(Exception): pass
     class ParameterAlreadyExists(Exception): pass

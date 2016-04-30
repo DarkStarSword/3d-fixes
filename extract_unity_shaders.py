@@ -251,7 +251,7 @@ def parse_keywords(tree, parent=None, filename=None, args=None):
 
         if isinstance(token, String):
             parent.fog = None
-            if args.type and parent.name not in args.type:
+            if args is not None and args.type and parent.name not in args.type:
                 continue
             handle_shader_asm(token, parent, strip_quotes(token))
             continue
@@ -552,7 +552,7 @@ def combine_similar_headers(trees):
     return ret
 
 def commentify(headers):
-    return '\n'.join([ '// %s' % x for x in headers ])
+    return '\n'.join([ ('// %s' % x).rstrip() for x in headers ])
 
 def indent_like_helix(assembly):
     return '\n'.join([ '%s%s' % (' '*4, x) for x in assembly.split('\n') ]) + '\n'
@@ -889,6 +889,24 @@ def dedupe_shaders(shader_list, args):
             return
         _export_shader(shader_list[0], headers, path_components)
 
+def parse_tree(filename, data=None, args=None):
+    if data is None:
+        data = open(filename, 'rb').read()
+    tree = list(tokenise(data.decode('utf-8'))) # Wasn't sure of the encoding until I found a utf8 character in The Forest
+    tree = curly_scope(tree)
+    return parse_keywords(tree, filename=os.path.basename(filename), args=args)
+
+def walk_sub_programs(tree): # Used by extract_unity53_shaders
+    i = 0
+    for shader in filter(lambda shader: shader.keyword == 'Shader', tree):
+        for sub_shader in filter(lambda sub_shader: sub_shader.keyword == 'SubShader', shader):
+            for Pass in filter(lambda Pass: Pass.keyword == 'Pass', sub_shader):
+                for program in filter(lambda program: program.keyword == 'Program', Pass):
+                    for sub_program in filter(lambda sub_program: sub_program.keyword == 'SubProgram', program):
+                        assert(int(sub_program.keywords['GpuProgramIndex'][0].line) == i)
+                        yield(sub_program)
+                        i += 1
+
 def parse_args():
     global shadertool
     import argparse
@@ -939,9 +957,7 @@ def main():
         if digest in processed:
             continue
         processed.add(digest)
-        tree = list(tokenise(data.decode('utf-8'))) # Wasn't sure of the encoding until I found a utf8 character in The Forest
-        tree = curly_scope(tree)
-        tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
+        tree = parse_tree(filename, data, args)
 
     if args.vs_fog or args.ps_fog:
         for shaders in list(shader_index.values()):
