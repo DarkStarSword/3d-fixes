@@ -995,7 +995,7 @@ def fix_unity_lighting_ps(shader):
     # If we ever need the old procedure, it's in the git history of shadertool.py.
 
     # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
-    shader.add_parameter(False, None, 'float', 'fov', 'TEXCOORD3')
+    shader.add_parameter(False, None, 'float', 'fov', args.fix_unity_lighting_ps)
 
     offset = shader.insert_stereo_params()
 
@@ -1265,7 +1265,7 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
-    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+    parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
