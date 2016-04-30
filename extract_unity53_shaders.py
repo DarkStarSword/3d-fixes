@@ -165,17 +165,17 @@ def save_external_headers(dest, headers):
     with open('%s_headers.txt' % dest, 'w') as f:
         f.write(headers)
 
-def extract_opengl_shader(file, shader_size, headers, shader_name):
-    shader = file.read(shader_size)
+def extract_opengl_shader(file, shader_size, headers, shader):
+    bin = file.read(shader_size)
     try:
         hash = {}
-        shader_txt = shader.decode('utf-8')
+        shader_txt = bin.decode('utf-8')
         for program_name in ('fp', 'vp'):
             hash[program_name] = extract_unity_shaders.hash_gl_crc(shader_txt, program_name)
             add_header(headers, ('{} hash: {:x}'.format(program_name, hash[program_name])))
         for program_name in ('fp', 'vp'):
-            path_components = extract_unity_shaders._export_filename_combined_short(
-                    hash[program_name], 'gl_crc32', '%x', shader_name, program_name)
+            extract_unity_shaders._add_shader_hash_gl_crc32(shader.sub_program, hash[program_name])
+            path_components = extract_unity_shaders.export_filename_combined_short(shader)
             dest = extract_unity_shaders.path_components_to_dest(path_components)
 
             print('Extracting %s.glsl...' % dest)
@@ -186,19 +186,18 @@ def extract_opengl_shader(file, shader_size, headers, shader_name):
     except extract_unity_shaders.BogusShader:
         return
 
-def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader_name, program_name):
-    shader = file.read(shader_size)
+def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader):
+    bin = file.read(shader_size)
     align(file, 4) # Seems ok without this - looks like the shader binary is always a multiple of 4 bytes
-    assert(shader[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
+    assert(bin[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
 
-    hash = zlib.crc32(shader)
-    path_components = extract_unity_shaders._export_filename_combined_short(
-            hash, 'asm_crc32', '%08X', shader_name, program_name)
+    extract_unity_shaders._add_shader_hash_asm_crc(shader.sub_program, zlib.crc32(bin))
+    path_components = extract_unity_shaders.export_filename_combined_short(shader)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
     print('Extracting %s.bin...' % dest)
     with open('%s.bin' % dest, 'wb') as out:
-        out.write(shader)
+        out.write(bin)
 
     dump_raw_bind_info(file, dest, section_offset, section_size)
 
@@ -216,22 +215,21 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
 
     save_external_headers(dest, headers)
 
-def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader_name, program_name):
+def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader):
     (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
     add_header(headers, 'undeciphered2: {} {} {} {} {}'.format(u8a, u8b, u8c, u8d, u8e)) # Think this is related to the bindings
 
-    shader = file.read(shader_size - 5)
+    bin = file.read(shader_size - 5)
     align(file, 4)
-    assert(shader[:4] == b'DXBC')
+    assert(bin[:4] == b'DXBC')
 
-    hash = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
-    path_components = extract_unity_shaders._export_filename_combined_short(
-            hash, '3Dmigoto', '%016x', shader_name, program_name)
+    extract_unity_shaders._add_shader_hash_fnv(shader.sub_program, bin)
+    path_components = extract_unity_shaders.export_filename_combined_short(shader)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
     print('Extracting %s.bin...' % dest)
     with open('%s.bin' % dest, 'wb') as out:
-        out.write(shader)
+        out.write(bin)
 
     dump_raw_bind_info(file, dest, section_offset, section_size)
 
@@ -282,11 +280,11 @@ def extract_shader_at(file, offset, size, filename, sub_program):
         (shader_size,) = struct.unpack('<i', file.read(4))
 
         if api == 'opengl':
-            extract_opengl_shader(file, shader_size, headers, shader.shader.name)
+            extract_opengl_shader(file, shader_size, headers, shader)
         elif api == 'd3d9':
-            extract_directx9_shader(file, shader_size, headers, offset, size, shader.shader.name, program_name)
+            extract_directx9_shader(file, shader_size, headers, offset, size, shader)
         elif api in ('d3d11', 'd3d11_9x'):
-            extract_directx11_shader(file, shader_size, headers, offset, size, shader.shader.name, program_name)
+            extract_directx11_shader(file, shader_size, headers, offset, size, shader)
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 

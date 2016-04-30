@@ -334,44 +334,37 @@ def compress_keywords(keywords):
             ret.append('%s_(%s)' % (word, '+'.join(remaining)))
     return ' '.join(sorted(ret))
 
-def _get_hash_filename_base(hash, hash_type, hash_fmt, program_name):
-    if hash_type == 'asm_crc32':
-        return hash_fmt % hash
+def get_hash_filename_base(shader):
+    if shader.sub_program.hash_type == 'asm_crc32':
+        return shader.sub_program.hash_fmt % shader.sub_program.hash
 
-    if hash_type == '3Dmigoto':
+    if shader.sub_program.hash_type == '3Dmigoto':
         # Emulate 3Dmigto style naming
-        if program_name == 'fp': # Pixel Shader ("Fragment Program")
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
             shader_type = 'ps'
-        elif program_name == 'vp': # Vertex Shader
+        elif shader.program.name == 'vp': # Vertex Shader
             shader_type = 'vs'
-        elif program_name == 'gp': # Geometry Shader
+        elif shader.program.name == 'gp': # Geometry Shader
             shader_type = 'gs'
-        elif program_name == 'hp': # Hull Shader
+        elif shader.program.name == 'hp': # Hull Shader
             shader_type = 'hs'
-        elif program_name == 'dp': # Domain Shader
+        elif shader.program.name == 'dp': # Domain Shader
             shader_type = 'ds'
         # Still missing compute shaders from this list
         else:
-            raise Exception("Unknown program type: %s" % program_name)
-        return (hash_fmt + '-%s') % (hash, shader_type)
+            raise Exception("Unknown program type: %s" % shader.program.name)
+        return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
 
-    if hash_type == 'gl_crc32':
-        if program_name == 'fp': # Pixel Shader ("Fragment Program")
+    if shader.sub_program.hash_type == 'gl_crc32':
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
             shader_type = 'Pixel'
-        elif program_name == 'vp': # Vertex Shader
+        elif shader.program.name == 'vp': # Vertex Shader
             shader_type = 'Vertex'
         else:
-            raise Exception("Unknown program type: %s" % program_name)
-        return ('%s_' + hash_fmt) % (shader_type, hash)
+            raise Exception("Unknown program type: %s" % shader.program.name)
+        return ('%s_' + shader.sub_program.hash_fmt) % (shader_type, shader.sub_program.hash)
 
     assert(False)
-
-def get_hash_filename_base(shader):
-    return _get_hash_filename_base(
-            shader.sub_program.hash,
-            shader.sub_program.hash_type,
-            shader.sub_program.hash_fmt,
-            shader.program.name)
 
 def sanitise_filename(path_components):
     if path_components is not None:
@@ -420,42 +413,34 @@ def export_filename_combined_long(shaders, args):
 
     return sanitise_filename(ret)
 
-def _export_filename_combined_short(hash, hash_type, hash_fmt, shader_name, program_name):
-    if not hash:
+def export_filename_combined_short(shader):
+    if not shader.sub_program.hash:
         return None
 
-    if hash_type == 'asm_crc32':
+    if shader.sub_program.hash_type == 'asm_crc32':
         return sanitise_filename([
             'ShaderCRCs',
-            shader_name,
-            program_name,
-            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
         ])
 
-    if hash_type == '3Dmigoto':
+    if shader.sub_program.hash_type == '3Dmigoto':
         return sanitise_filename([
             'ShaderFNVs',
-            shader_name,
-            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+            shader.shader.name,
+            get_hash_filename_base(shader),
         ])
 
-    if hash_type == 'gl_crc32':
+    if shader.sub_program.hash_type == 'gl_crc32':
         return sanitise_filename([
             'ShaderGL',
-            shader_name,
-            program_name,
-            _get_hash_filename_base(hash, hash_type, hash_fmt, program_name),
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
         ])
 
     assert(False)
-
-def export_filename_combined_short(shader):
-    return _export_filename_combined_short(
-            shader.sub_program.hash,
-            shader.sub_program.hash_type,
-            shader.sub_program.hash_fmt,
-            shader.shader.name,
-            shader.program.name)
 
 def export_filename_combined(sub_programs, args):
     shaders = list(map(get_parents, sub_programs))
@@ -590,11 +575,14 @@ def calc_shader_asm_crc(shader_asm):
 
     return zlib.crc32(blob)
 
+def _add_shader_hash_asm_crc(sub_program, hash):
+    sub_program.hash = hash
+    sub_program.hash_type = 'asm_crc32'
+    sub_program.hash_fmt = '%.8X'
+
 def add_shader_hash_asm_crc(sub_program):
     try:
-        sub_program.hash = calc_shader_asm_crc(sub_program.shader_asm)
-        sub_program.hash_type = 'asm_crc32'
-        sub_program.hash_fmt = '%.8X'
+        _add_shader_hash_asm_crc(sub_program, calc_shader_asm_crc(sub_program.shader_asm))
     except:
         pass
     if not sub_program.hash:
@@ -621,6 +609,11 @@ def fnv_3Dmigoto_shader(input):
         hash = hash ^ octet
     return hash
 
+def _add_shader_hash_fnv(sub_program, bin):
+    sub_program.hash = fnv_3Dmigoto_shader(bin)
+    sub_program.hash_type = '3Dmigoto'
+    sub_program.hash_fmt = '%.16x'
+
 def add_shader_hash_fnv(sub_program):
     bin = decode_unity_d3d11_shader(sub_program.shader_asm)
 
@@ -628,21 +621,21 @@ def add_shader_hash_fnv(sub_program):
     # sub_program.hash = fnv64_1(bin)
     # sub_program.hash_type = 'fnv64'
 
-    sub_program.hash = fnv_3Dmigoto_shader(bin)
-    sub_program.hash_type = '3Dmigoto'
-
-    sub_program.hash_fmt = '%.16x'
+    _add_shader_hash_fnv(bin)
 
 def hash_gl_crc(shader_asm, shader_type):
     import zlib
     glsl = _fixup_glsl_like_unity(shader_asm, shader_type)
     return zlib.crc32(glsl.encode('utf-8'))
 
-def add_shader_hash_gl_crc(sub_program):
-    sub_program.hash = hash_gl_crc(sub_program.shader_asm, sub_program.parent.name)
+def _add_shader_hash_gl_crc(sub_program, hash):
+    sub_program.hash = hash
     sub_program.hash_type = 'gl_crc32'
     # Looks like the OpenGL wrapper does not pad these in the filenames:
     sub_program.hash_fmt = '%x'
+
+def add_shader_hash_gl_crc(sub_program):
+    _add_shader_hash_gl_crc(hash_gl_crc(sub_program.shader_asm, sub_program.parent.name))
 
 
 def is_opengl_shader(sub_program):
