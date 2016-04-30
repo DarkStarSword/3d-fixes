@@ -1,4 +1,5 @@
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe c5b88250a3854dc7-vs_replace.txt
+// Footprint decals VS c5b88250a3854dc7 PS 5a445e92009a5c20
+
 // 3DMigoto: c5b88250a3854dc7 |    Unity headers extracted from TLD_DecalNormals.shader
 //    Shader "_LongDark/Decal/DecalShader Normals" {
 //      Properties {
@@ -57,6 +58,17 @@ cbuffer cb0 : register(b0)
 }
 
 
+// Copied from the directional lighting shader using 3DMigoto
+cbuffer UnityPerCameraRare : register(b13)
+{
+  uniform float4 unity_CameraWorldClipPlanes[6];
+
+  // Projection matrices of the camera. Note that this might be different from projection matrix
+  // that is set right now, e.g. while rendering shadows the matrices below are still the projection
+  // of original camera.
+  row_major uniform float4x4 unity_CameraProjection;
+  row_major uniform float4x4 unity_CameraInvProjection;
+}
 
 
 // 3Dmigoto declarations
@@ -88,9 +100,8 @@ float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
   r0.xyzw = cb2[3].xyzw + r0.xyzw;
   o0.xyzw = r0.xyzw;
 
-// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe c5b88250a3854dc7-vs_replace.txt
-if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+float adj = separation * (r0.w - convergence);
+r0.x += adj;
 
   r0.y = cb1[5].x * r0.y;
   r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
@@ -110,6 +121,9 @@ if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
   r0.xyz = cb2[4].xyz * v0.xxx + r0.xyz;
   r0.xyz = cb2[6].xyz * v0.zzz + r0.xyz;
   r0.xyz = cb2[7].xyz + r0.xyz;
+
+r0.x += adj * unity_CameraInvProjection[0].x;
+
   o2.xyz = float3(-1,-1,1) * r0.xyz;
   o3.xyz = cb2[12].xyz;
   o4.xyz = cb2[13].xyz;
