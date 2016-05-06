@@ -105,9 +105,13 @@ def decode_consts(file, headers, shader_type):
             add_header(headers, 'VectorInt {} [{}] {}'.format(offset, entry_name, type_size2))
         elif type1 == 2: # Bool
             assert(type_size1 == 1)
-            assert(type_size2 == 1)
             assert(type3 == 0)
-            add_header(headers, 'ScalarBool {} [{}]'.format(offset, entry_name))
+            if type_size2 == 1:
+                add_header(headers, 'ScalarBool {} [{}]'.format(offset, entry_name))
+            elif type_size2 in (2, 3, 4):
+                add_header(headers, 'VectorBool {} [{}] {}'.format(offset, entry_name, type_size2))
+            else:
+                raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
         else:
             raise ParseError('Unknown name: {} type1: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type1, type_size1, type_size2, type3, offset))
 
