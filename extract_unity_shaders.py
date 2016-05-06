@@ -609,8 +609,8 @@ def fnv_3Dmigoto_shader(input):
         hash = hash ^ octet
     return hash
 
-def _add_shader_hash_fnv(sub_program, bin):
-    sub_program.hash = fnv_3Dmigoto_shader(bin)
+def _add_shader_hash_fnv(sub_program, hash):
+    sub_program.hash = hash
     sub_program.hash_type = '3Dmigoto'
     sub_program.hash_fmt = '%.16x'
 
@@ -621,7 +621,7 @@ def add_shader_hash_fnv(sub_program):
     # sub_program.hash = fnv64_1(bin)
     # sub_program.hash_type = 'fnv64'
 
-    _add_shader_hash_fnv(bin)
+    _add_shader_hash_fnv(sub_program, fnv_3Dmigoto_shader(bin))
 
 def hash_gl_crc(sub_program):
     import zlib

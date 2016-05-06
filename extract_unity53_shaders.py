@@ -183,6 +183,8 @@ def finalise_headers(headers, sub_program):
     extract_unity_shaders.add_vanity_tag(headers)
     return extract_unity_shaders.commentify(headers)
 
+processed = set()
+
 def extract_opengl_shader(file, shader_size, headers, shader):
     shader.sub_program.shader_asm = file.read(shader_size).decode('utf-8')
     try:
@@ -192,6 +194,10 @@ def extract_opengl_shader(file, shader_size, headers, shader):
             hash[program_name] = extract_unity_shaders.hash_gl_crc(shader.sub_program)
             add_header(headers, ('{} hash: {:x}'.format(program_name, hash[program_name])))
         for program_name in ('fp', 'vp'):
+            if hash[program_name] in processed:
+                continue
+            processed.add(hash[program_name])
+
             shader.program.name = program_name;
             extract_unity_shaders._add_shader_hash_gl_crc(shader.sub_program, hash[program_name])
             path_components = extract_unity_shaders.export_filename_combined_short(shader)
@@ -209,6 +215,11 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     bin = file.read(shader_size)
     align(file, 4) # Seems ok without this - looks like the shader binary is always a multiple of 4 bytes
     assert(bin[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
+
+    hash = zlib.crc32(bin)
+    if hash in processed:
+        return
+    processed.add(hash)
 
     extract_unity_shaders._add_shader_hash_asm_crc(shader.sub_program, zlib.crc32(bin))
     path_components = extract_unity_shaders.export_filename_combined_short(shader)
@@ -238,7 +249,12 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     align(file, 4)
     assert(bin[:4] == b'DXBC')
 
-    extract_unity_shaders._add_shader_hash_fnv(shader.sub_program, bin)
+    hash = extract_unity_shaders.fnv_3Dmigoto_shader(bin)
+    if hash in processed:
+        return
+    processed.add(hash)
+
+    extract_unity_shaders._add_shader_hash_fnv(shader.sub_program, hash)
     path_components = extract_unity_shaders.export_filename_combined_short(shader)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
