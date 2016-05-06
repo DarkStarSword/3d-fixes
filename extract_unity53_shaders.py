@@ -21,6 +21,9 @@ shader_type_mapping = {
     16: ("vp", "d3d11", "vs_5_0"),
     17: ("fp", "d3d11", "ps_4_0"),
     18: ("fp", "d3d11", "ps_5_0"),
+
+    21: ("hp", "d3d11", "hs_5_0"),
+    22: ("dp", "d3d11", "ds_5_0"),
 }
 
 def get_program_name(shader_type):
@@ -100,9 +103,13 @@ def decode_consts(file, headers, shader_type):
                 raise ParseError('Unknown name: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type_size1, type_size2, type3, offset))
         elif type1 == 1: # Int
             assert(type_size1 == 1)
-            assert(type_size2 == 4)
             assert(type3 == 0)
-            add_header(headers, 'VectorInt {} [{}] {}'.format(offset, entry_name, type_size2))
+            if type_size2 == 1:
+                add_header(headers, 'ScalarInt {} [{}]'.format(offset, entry_name))
+            elif type_size2 in (2, 3, 4):
+                add_header(headers, 'VectorInt {} [{}] {}'.format(offset, entry_name, type_size2))
+            else:
+                raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
         elif type1 == 2: # Bool
             assert(type_size1 == 1)
             assert(type3 == 0)
@@ -146,6 +153,10 @@ def decode_binds(file, headers):
             assert(texture_type == 0)
             assert(sampler_slot == 0)
             add_header(headers, 'BindCB "{}" {}'.format(bind_name, bind_slot))
+        elif bind_type == 2:
+            assert(texture_type == 0)
+            assert(sampler_slot == 0)
+            add_header(headers, 'SetBuffer {} [{}]'.format(bind_slot, bind_name))
         else:
             assert(False)
 
