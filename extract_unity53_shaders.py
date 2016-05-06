@@ -138,6 +138,7 @@ def decode_binds(file, headers):
         if bind_type == 0:
             texture_type = {
                     2: '2D',
+                    3: '3D',
                     4: 'CUBE',
             }[texture_type]
             add_header(headers, 'SetTexture {} [{}] {} {}'.format(bind_slot, bind_name, texture_type, sampler_slot))
