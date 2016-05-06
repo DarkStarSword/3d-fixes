@@ -1,4 +1,4 @@
-// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe 2f797e7390805358-ps_replace.txt
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe -f 2f797e7390805358-ps_replace.txt
 // 3DMigoto: 2f797e7390805358 |    Unity headers extracted from Internal-PrePassLighting.shader
 //    Shader "Hidden/Internal-PrePassLighting" {
 //      Properties {
@@ -55,7 +55,7 @@
 // Headers extracted with DarkStarSword's extract_unity53_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
 
-// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 10:07:10 2016
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 15:21:12 2016
 Texture2D<float4> t3 : register(t3);
 
 TextureCube<float4> t2 : register(t2);
@@ -101,6 +101,24 @@ Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
 
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <matrix.hlsl>
+
 void main( 
   float4 v0 : SV_POSITION0,
   float4 v1 : TEXCOORD0,
@@ -116,10 +134,17 @@ float4 stereo = StereoParams.Load(0);
 float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
 
 // Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe 2f797e7390805358-ps_replace.txt
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe -f 2f797e7390805358-ps_replace.txt
 matrix _CameraToWorld = matrix(cb3[0], cb3[1], cb3[2], cb3[3]);
 float4 _WorldSpaceCameraPos = cb1[4];
-_WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;
+if (fov) {
+  _WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;
+} else {
+  float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+  float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+  float4 world_space_adj = mul(_Object2World, local_space_adj);
+  _WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+}
 
   r0.xyz = cb0[9].xyz * cb0[3].xyz;
   r0.xz = r0.xx + r0.yz;
@@ -136,15 +161,27 @@ _WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0)
   r0.z = cb1[5].z / v2.z;
   r1.xyz = v2.xyz * r0.zzz;
   r1.xyw = r1.xyz * r0.yyy;
+float depth = r1.w;
 
 // Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's hlsltool.py:
-// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe 2f797e7390805358-ps_replace.txt
-r1.x -= separation * (r1.w - convergence) * fov;
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe -f 2f797e7390805358-ps_replace.txt
+if (fov) {
+  r1.x -= separation * (depth - convergence) * fov;
+}
 
   r3.xyz = cb3[1].xyz * r1.yyy;
   r3.xyz = cb3[0].xyz * r1.xxx + r3.xyz;
   r3.xyz = cb3[2].xyz * r1.www + r3.xyz; // depth in r1.w
   r3.xyz = cb3[3].xyz + r3.xyz;
+
+// Fallback adjustment if the FOV was not passed from the VS:
+if (!fov) {
+  float4 clip_space_adj = float4(separation * (depth - convergence), 0, 0, 0);
+  float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+  float4 world_space_adj = mul(_Object2World, local_space_adj);
+  r3.xyz -= world_space_adj.xyz;
+}
+
   r4.xyz = -_WorldSpaceCameraPos.xyz + r3.xyz;
   r0.z = dot(r4.xyz, r4.xyz);
   r0.z = rsqrt(r0.z);
