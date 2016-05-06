@@ -75,7 +75,7 @@ cbuffer UnityPerCamera : register(b13)
 '''
 
 include_matrix_hlsl = '''
-#include <ShaderFixes/matrix.hlsl>
+#include <matrix.hlsl>
 '''
 
 d3dx_ini = {}
