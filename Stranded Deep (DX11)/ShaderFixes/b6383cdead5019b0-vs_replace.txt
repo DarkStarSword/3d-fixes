@@ -1,0 +1,178 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe b6383cdead5019b0-vs_replace.txt
+// 3DMigoto: b6383cdead5019b0 |    Unity headers extracted from CumulusCloudVer2.shader
+//    Shader "Beam Team/Sky/Cumulus Particle Ver 2" {
+//      Properties {
+//       _MainTex ("Particle Texture", 2D) = "white" { }
+//       _InvFade ("Soft Particles Factor", Range(0.01,3)) = 1
+//       _OneOverGamma ("Gamma", Float) = 1
+//       _DayBrightness ("Day Brightness", Float) = 1
+//       _DayHaziness ("Day Haziness", Float) = 0.1
+//       _NightHaziness ("Night Haziness", Float) = 0.1
+//       _SunColor ("Sun Color", Color) = (0,0,0,0)
+//       _DayColor ("Day Color", Color) = (0,0,0,0)
+//       _NightColor ("Night Color", Color) = (0,0,0,0)
+//       _NightHazeColor ("Night Haze Color", Color) = (0,0,0,0)
+//       _SunDirection ("Sun Direction", Vector) = (0,0,0,0)
+//       _BetaRayleigh ("Beta Rayleigh", Vector) = (0,0,0,0)
+//       _BetaRayleighTheta ("Beta Rayleigh Theta", Vector) = (0,0,0,0)
+//       _BetaMie ("Beta Mie", Vector) = (0,0,0,0)
+//       _BetaMieTheta ("Beta Mie Theta", Vector) = (0,0,0,0)
+//       _HenyeyGreenstein ("Henyey Greenstein", Vector) = (0,0,0,0)
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Cull Off
+//          Blend One OneMinusSrcAlpha
+//          GpuProgramID 61456
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 4
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from CumulusCloudVer2.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 48 0 0
+//   Keywords { "SOFTPARTICLES_ON" }
+//   undeciphered2: 1 0 3 0 0
+//   undeciphered3: 15 4 0 0 2 1 1 2 3 4
+//   ConstBuffer "$Globals" 304
+//   Float 96 [_OneOverGamma]
+//   Float 100 [_DayBrightness]
+//   Float 104 [_DayHaziness]
+//   Float 108 [_NightHaziness]
+//   Vector 112 [_SunColor]
+//   Vector 128 [_DayColor] 3
+//   Vector 144 [_NightColor] 3
+//   Vector 160 [_NightHazeColor] 3
+//   Vector 176 [_SunDirection] 3
+//   Vector 192 [_BetaRayleigh] 3
+//   Vector 208 [_BetaRayleighTheta] 3
+//   Vector 224 [_BetaMie] 3
+//   Vector 240 [_BetaMieTheta] 3
+//   Vector 256 [_HenyeyGreenstein] 3
+//   Vector 272 [_MainTex_ST]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 64 [glstate_matrix_modelview0]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityPerDraw" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:01:44 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[8];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[18];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : COLOR0,
+  float3 v2 : NORMAL0,
+  float2 v3 : TEXCOORD0,
+  out float4 o0 : SV_Position0,
+  out float4 o1 : COLOR0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe b6383cdead5019b0-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r0.z = dot(-v2.xyz, cb0[11].xyz);
+  r1.x = -cb0[16].z * r0.z + cb0[16].y;
+  r0.z = r0.z * r0.z;
+  r0.z = r0.z * 0.5 + 2;
+  r1.x = log2(r1.x);
+  r1.x = 1.5 * r1.x;
+  r1.x = exp2(r1.x);
+  r1.yzw = cb0[16].xxx * cb0[15].xyz;
+  r1.xyz = r1.yzw / r1.xxx;
+  r1.xyz = cb0[13].xyz * r0.zzz + r1.xyz;
+  r1.xyz = cb0[6].yyy * r1.xyz;
+  r2.xyz = cb0[14].xyz + cb0[12].xyz;
+  r1.xyz = r1.xyz / r2.xyz;
+  r2.xyz = cb0[8].xyz + -r1.xyz;
+  r0.z = max(0.00100000005, v2.y);
+  r0.z = log2(r0.z);
+  r3.xy = cb0[6].zw * r0.zz;
+  r3.xy = exp2(r3.xy);
+  r3.zw = -r3.xx * float2(190000,190000) + float2(360000,372000);
+  r3.xz = -r3.xx * r3.zw + float2(190000,190000);
+  r4.xyz = cb0[14].xyz * r3.zzz;
+  r3.xzw = r3.xxx * cb0[12].xyz + r4.xyz;
+  r3.xzw = float3(-1.44269502,-1.44269502,-1.44269502) * r3.xzw;
+  r3.xzw = exp2(r3.xzw);
+  r1.xyz = r3.xzw * r2.xyz + r1.xyz;
+  r0.z = 1 + -r3.y;
+  r2.xyz = r0.zzz * cb0[10].xyz + cb0[9].xyz;
+  r1.xyz = cb0[7].xyz * r1.xyz + -r2.xyz;
+  r1.xyz = cb0[7].www * r1.xyz + r2.xyz;
+  r1.xyz = log2(r1.xyz);
+  r0.z = 1 + -cb0[7].w;
+  r0.z = -r0.z * r3.y + 1;
+  r1.w = log2(r0.z);
+  r1.xyzw = cb0[6].xxxx * r1.xyzw;
+  o1.xyzw = exp2(r1.xyzw);
+  o2.xy = v3.xy * cb0[17].xy + cb0[17].zw;
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o3.w = r0.w;
+  o3.xy = r1.xw + r1.zz;
+  r0.x = cb2[5].z * v0.y;
+  r0.x = cb2[4].z * v0.x + r0.x;
+  r0.x = cb2[6].z * v0.z + r0.x;
+  r0.x = cb2[7].z * v0.w + r0.x;
+  o3.z = -r0.x;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\b6383cdead5019b0-vs_replace.txt(107,14-15): warning X3578: Output value 'o2' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

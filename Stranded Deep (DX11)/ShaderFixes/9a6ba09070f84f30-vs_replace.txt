@@ -1,0 +1,216 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9a6ba09070f84f30-vs_replace.txt
+// 3DMigoto: 9a6ba09070f84f30 |    Unity headers extracted from Glass - Bumped Specular Refractive Forward.shader
+//    Shader "Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward" {
+//      Properties {
+//       _Color ("Glass Color (RGB)", Color) = (1,1,1,1)
+//       _NormalStrength ("Normal Map Strength", Range(0,128)) = 64
+//       _Abberation ("Abberation", Float) = 0.0015
+//       _MainTex ("Diffuse Albedo (NOT IN USE)", 2D) = "white" { }
+//       _SpecTex ("Specular Albedo (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpTex ("Normal Map", 2D) = "bump" { }
+//       _HighlightRimColor ("Highlight Rim Color", Color) = (0,0,0,0)
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "RenderType"="Transparent" }
+//        GrabPass {
+//         }
+//        Pass 2/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 81760
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 87
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Glass - Bumped Specular Refractive Forward.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 44 0 0
+//   Keywords { "DIRECTIONAL_COOKIE" "SUNSHINE_FILTER_HARD" }
+//   undeciphered2: 1 0 3 0 0
+//   undeciphered3: 143 5 0 0 2 1 1 2 3 4 7 8
+//   ConstBuffer "$Globals" 672
+//   Vector 624 [_HighlightRimColor]
+//   Float 640 [_HighlightRimPower]
+//   Vector 656 [_MainTex_ST]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   ConstBuffer "UnityPerDraw" 352
+//   Vector 336 [unity_WorldTransformParams]
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   Matrix 256 [_World2Object]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityPerDraw" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:03:51 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[22];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[42];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5,
+  out float4 o7 : TEXCOORD6,
+  out float4 o8 : TEXCOORD7)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9a6ba09070f84f30-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 9a6ba09070f84f30-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xy = v3.xy * cb0[41].xy + cb0[41].zw;
+  r1.y = cb2[16].y;
+  r1.z = cb2[17].y;
+  r1.x = cb2[18].y;
+  r1.xyz = v2.yyy * r1.xyz;
+  r2.y = cb2[16].x;
+  r2.z = cb2[17].x;
+  r2.x = cb2[18].x;
+  r1.xyz = r2.xyz * v2.xxx + r1.xyz;
+  r2.y = cb2[16].z;
+  r2.z = cb2[17].z;
+  r2.x = cb2[18].z;
+  r1.xyz = r2.xyz * v2.zzz + r1.xyz;
+  r1.w = dot(r1.xyz, r1.xyz);
+  r1.w = rsqrt(r1.w);
+  r1.xyz = r1.xyz * r1.www;
+  o2.z = r1.y;
+  r2.xyz = cb2[13].yzx * v1.yyy;
+  r2.xyz = cb2[12].yzx * v1.xxx + r2.xyz;
+  r2.xyz = cb2[14].yzx * v1.zzz + r2.xyz;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r2.xyz * r1.www;
+  r3.xyz = r2.xyz * r1.xyz;
+  r3.xyz = r1.zxy * r2.yzx + -r3.xyz;
+  r1.y = cb2[21].w * v1.w;
+  r3.xyz = r3.xyz * r1.yyy;
+  o2.y = r3.x;
+  o2.x = r2.z;
+  o3.z = r1.z;
+  o4.z = r1.x;
+  o3.x = r2.x;
+  o4.x = r2.y;
+  o3.y = r3.y;
+  o4.y = r3.z;
+  r1.xyz = cb2[13].xyz * v0.yyy;
+  r1.xyz = cb2[12].xyz * v0.xxx + r1.xyz;
+  r1.xyz = cb2[14].xyz * v0.zzz + r1.xyz;
+  o5.xyz = cb2[15].xyz * v0.www + r1.xyz;
+  r1.xyz = float3(0.5,0.5,-0.5) * r0.xwy;
+  o6.zw = r0.zw;
+  o6.xy = r1.xz + r1.yy;
+  r0.xyz = cb2[17].xyz * _WorldSpaceCameraPos.yyy;
+  r0.xyz = cb2[16].xyz * _WorldSpaceCameraPos.xxx + r0.xyz;
+  r0.xyz = cb2[18].xyz * _WorldSpaceCameraPos.zzz + r0.xyz;
+  r0.xyz = cb2[19].xyz + r0.xyz;
+  r0.xyz = -v0.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r0.w = dot(v2.xyz, v2.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = v2.xyz * r0.www;
+  r0.x = saturate(dot(r1.xyz, r0.xyz));
+  r0.x = 1 + -r0.x;
+  r0.xyz = cb0[39].xyz * r0.xxx;
+  r0.xyz = log2(r0.xyz);
+  r0.xyz = cb0[40].xxx * r0.xyz;
+  o7.xyz = exp2(r0.xyz);
+  o7.w = 0;
+  o8.xyzw = float4(0,0,0,0);
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\9a6ba09070f84f30-vs_replace.txt(111,14-15): warning X3578: Output value 'o1' is not completely initialized
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\9a6ba09070f84f30-vs_replace.txt(112,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\9a6ba09070f84f30-vs_replace.txt(113,14-15): warning X3578: Output value 'o3' is not completely initialized
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\9a6ba09070f84f30-vs_replace.txt(114,14-15): warning X3578: Output value 'o4' is not completely initialized
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\9a6ba09070f84f30-vs_replace.txt(115,14-15): warning X3578: Output value 'o5' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

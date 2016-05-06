@@ -1,0 +1,186 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 5767f080bafa9aff-vs_replace.txt
+// 3DMigoto: 5767f080bafa9aff |    Unity headers extracted from AddPass.shader
+//    Shader "Hidden/TerrainEngine/Splatmap/Diffuse-AddPass" {
+//      Properties {
+//      [HideInInspector]  _Control ("Control (RGBA)", 2D) = "black" { }
+//      [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//      [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//      [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//      [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//      [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//      [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Tags { "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 58605
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 63
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from AddPass.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 41 0 0
+//   Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "LIGHTMAP_OFF" "DIRLIGHTMAP_SEPARATE" "DYNAMICLIGHTMAP_ON" "VERTEXLIGHT_ON" "_TERRAIN_NORMAL_MAP" }
+//   undeciphered2: 1 0 4 0 0
+//   undeciphered3: 47 5 0 0 2 1 1 2 3 4 5 6
+//   ConstBuffer "$Globals" 208
+//   Vector 128 [_Control_ST]
+//   Vector 144 [_Splat0_ST]
+//   Vector 160 [_Splat1_ST]
+//   Vector 176 [_Splat2_ST]
+//   Vector 192 [_Splat3_ST]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityPerDraw" 352
+//   Vector 336 [unity_WorldTransformParams]
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   Matrix 256 [_World2Object]
+//   ConstBuffer "UnityLightmaps" 32
+//   Vector 16 [unity_DynamicLightmapST]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityPerDraw" 2
+//   BindCB "UnityLightmaps" 3
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 10:58:06 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[2];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[22];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[13];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5,
+  out float4 o7 : TEXCOORD7,
+  out float4 o8 : TEXCOORD8)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 5767f080bafa9aff-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xy = v3.xy * cb0[9].xy + cb0[9].zw;
+  o1.zw = v3.xy * cb0[10].xy + cb0[10].zw;
+  o2.xy = v3.xy * cb0[11].xy + cb0[11].zw;
+  o2.zw = v3.xy * cb0[12].xy + cb0[12].zw;
+  r1.y = cb2[16].x * v2.x;
+  r1.z = cb2[17].x * v2.x;
+  r1.x = cb2[18].x * v2.x;
+  r2.y = cb2[16].y * v2.y;
+  r2.z = cb2[17].y * v2.y;
+  r2.x = cb2[18].y * v2.y;
+  r1.xyz = r2.xyz + r1.xyz;
+  r2.y = cb2[16].z * v2.z;
+  r2.z = cb2[17].z * v2.z;
+  r2.x = cb2[18].z * v2.z;
+  r1.xyz = r2.xyz + r1.xyz;
+  r1.w = dot(r1.xyz, r1.xyz);
+  r1.w = rsqrt(r1.w);
+  r1.xyz = r1.xyz * r1.www;
+  o3.z = r1.y;
+  r2.xy = float2(0,1) * v2.zx;
+  r2.xy = v2.yz * float2(1,0) + -r2.xy;
+  r2.yzw = cb2[13].yzx * r2.yyy;
+  r2.xyz = cb2[12].yzx * r2.xxx + r2.yzw;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r2.xyz * r1.www;
+  r3.xyz = r2.xyz * r1.xyz;
+  r3.xyz = r1.zxy * r2.yzx + -r3.xyz;
+  r3.xyz = -cb2[21].www * r3.xyz;
+  o3.y = r3.x;
+  r4.xyz = cb2[13].xyz * v0.yyy;
+  r4.xyz = cb2[12].xyz * v0.xxx + r4.xyz;
+  r4.xyz = cb2[14].xyz * v0.zzz + r4.xyz;
+  r4.xyz = cb2[15].xyz * v0.www + r4.xyz;
+  o3.w = r4.x;
+  o3.x = r2.z;
+  o4.z = r1.z;
+  o5.z = r1.x;
+  o4.x = r2.x;
+  o5.x = r2.y;
+  o4.w = r4.y;
+  o5.w = r4.z;
+  o4.y = r3.y;
+  o5.y = r3.z;
+  o6.xy = v3.xy * cb0[8].xy + cb0[8].zw;
+  r0.y = cb1[5].x * r0.y;
+  r1.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o7.zw = r0.zw;
+  o7.xy = r1.xw + r1.zz;
+  o8.zw = v5.xy * cb3[1].xy + cb3[1].zw;
+  o8.xy = float2(0,0);
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\5767f080bafa9aff-vs_replace.txt(108,14-15): warning X3578: Output value 'o6' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

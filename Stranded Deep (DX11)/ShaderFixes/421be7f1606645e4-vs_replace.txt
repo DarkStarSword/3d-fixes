@@ -1,0 +1,114 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 421be7f1606645e4-vs_replace.txt
+// 3DMigoto: 421be7f1606645e4 |    Unity headers extracted from Skydome.shader
+//    Shader "Beam Team/Atmosphere/Skydome" {
+//      Properties {
+//       _Color ("Stars Color", Color) = (0,0,0,1)
+//       _StarTex ("Stars (RGB)", 2D) = "white" { }
+//       _Speed ("Stars Rotation Speed", Float) = 0.1
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Background" "RenderType"="Opaque" }
+//          ZWrite Off
+//          Cull Front
+//          GpuProgramID 380
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 1
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Skydome.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 14 0 0
+//   undeciphered2: 1 0 3 0 0
+//   undeciphered3: 1 1 0 0
+//   ConstBuffer "$Globals" 224
+//   Float 176 [_Speed]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 0 [_Time]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityPerDraw" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:07:48 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[16];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[1];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[12];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float3 v1 : NORMAL0,
+  float4 v2 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2,
+  out float4 o3 : TEXCOORD3)
+{
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 421be7f1606645e4-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o3.xyzw = r0.xyzw;
+  r0.xyz = cb2[13].xyz * v0.yyy;
+  r0.xyz = cb2[12].xyz * v0.xxx + r0.xyz;
+  r0.xyz = cb2[14].xyz * v0.zzz + r0.xyz;
+  o1.xyz = cb2[15].xyz * v0.www + r0.xyz;
+  r0.x = dot(v0.xyz, v0.xyz);
+  r0.x = rsqrt(r0.x);
+  r0.xyz = v0.xyz * r0.xxx;
+  r0.y = max(0.0500000007, r0.y);
+  r0.xy = r0.zx / r0.yy;
+  o2.xy = cb1[0].xx * cb0[11].xx + r0.xy;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\421be7f1606645e4-vs_replace.txt(75,14-15): warning X3578: Output value 'o1' is not completely initialized
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\421be7f1606645e4-vs_replace.txt(76,14-15): warning X3578: Output value 'o2' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

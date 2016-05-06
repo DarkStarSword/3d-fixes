@@ -1,0 +1,275 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe cc2495206f5e65dc-vs_replace.txt
+// 3DMigoto: cc2495206f5e65dc |    Unity headers extracted from Eye.shader
+//    Shader "Eisko/Eye" {
+//      Properties {
+//      [NoScaleOffset]  _AlbedoTex ("RGB= Albedo map, A= Height map", 2D) = "white" { }
+//       _AlbedoDesaturation ("Light luminance", Range(0,1)) = 0.5
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _MicrostructureV ("Microstructure RG - Variance B", 2D) = "bump" { }
+//       _VarianceDetailMultiplier ("Variance Detail Multiplier", Range(0,50)) = 1
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//      [NoScaleOffset]  _SpecularMap ("Multimap: (R=Specular, G=Thickness, B=AO, A=Roughness)", 2D) = "white" { }
+//       _thickness ("Thickness", Range(0.0001,2)) = 1
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       AOsaturation ("AO Strenght", Range(0.01,3)) = 0.5
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       _ColorAlbedo ("RGB: Color Sclera", Color) = (1,1,1,0.02)
+//       Roughness ("Roughness Sclera", Range(0.0001,8)) = 1
+//       _SpecStrength ("Specular Strength Sclera", Range(0,10)) = 1
+//      [NoScaleOffset]  _EyeMask ("Iris mask", 2D) = "white" { }
+//       _ColorIris ("RGB: Color Iris", Color) = (0.737,0.737,0.737,1)
+//       RoughnessIris ("Roughness Iris", Range(0.0001,12)) = 1
+//       _SpecStrengthIris ("Specular Strength Iris", Range(0,20)) = 0.02
+//       Refraction ("Refraction", Range(0,2)) = 0.06
+//       Dilation ("Pupil dilation", Range(0,2)) = 0.05
+//      [HideInInspector]  _DispMap ("Displacement Map", 2D) = "bump" { }
+//       _EyeLeftRight ("Eye Left or Right", Range(0,1)) = 0
+//      [HideInInspector]  _isSkin ("HIDDEN--IS SKIN", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 1/3 {
+//          Name "FORWARD_BASE_EYE"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          GpuProgramID 14303
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 25
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Eye.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 76 0 3
+//   Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "LIGHTMAP_OFF" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "VERTEXLIGHT_ON" }
+//   undeciphered2: 1 2 4 0 0
+//   undeciphered3: 207 6 0 0 2 1 1 2 3 4 6 7 7 8
+//   ConstBuffer "$Globals" 512
+//   Vector 304 [unity_ColorSpaceLuminance]
+//   ScalarInt 496 [_blendShapeCount]
+//   ScalarInt 500 [_blendShape]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityLighting" 720
+//   Vector 32 [unity_4LightPosX0]
+//   Vector 48 [unity_4LightPosY0]
+//   Vector 64 [unity_4LightPosZ0]
+//   Vector 80 [unity_4LightAtten0]
+//   Vector 96 [unity_LightColor0]
+//   Vector 112 [unity_LightColor1]
+//   Vector 128 [unity_LightColor2]
+//   Vector 144 [unity_LightColor3]
+//   Vector 160 [unity_LightColor4]
+//   Vector 176 [unity_LightColor5]
+//   Vector 192 [unity_LightColor6]
+//   Vector 208 [unity_LightColor7]
+//   Vector 656 [unity_SHBr]
+//   Vector 672 [unity_SHBg]
+//   Vector 688 [unity_SHBb]
+//   Vector 704 [unity_SHC]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityLighting" 2
+//   BindCB "UnityPerDraw" 3
+//   SetBuffer 0 [_bs_weights]
+//   SetBuffer 1 [_bufferVColor]
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:02:03 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[16];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[45];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[32];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : NORMAL0,
+  float4 v2 : TEXCOORD0,
+  float4 v3 : TEXCOORD1,
+  float4 v4 : TEXCOORD2,
+  float4 v5 : TEXCOORD3,
+  float4 v6 : TANGENT0,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5,
+  out float4 o7 : TEXCOORD9,
+  out float4 o8 : TEXCOORD8,
+  out float4 o9 : TEXCOORD7)
+{
+// Needs manual fix for instruction: 
+// unknown dcl_: dcl_resource_structured t0, 4 
+// Needs manual fix for instruction: 
+// unknown dcl_: dcl_resource_structured t1, 16 
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb3[1].xyzw * v0.yyyy;
+  r0.xyzw = cb3[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb3[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb3[3].xyzw + r0.xyzw;
+  r1.xyz = cb3[13].xyz * v0.yyy;
+  r1.xyz = cb3[12].xyz * v0.xxx + r1.xyz;
+  r1.xyz = cb3[14].xyz * v0.zzz + r1.xyz;
+  r1.xyz = cb3[15].xyz + r1.xyz;
+  r1.w = asint(cb0[31].y);
+  r1.w = cmp(r1.w == 1.000000);
+  if (r1.w != 0) {
+    r1.w = (int)v5.x;
+    r2.x = (int)r1.w * asint(cb0[31].x);
+    r1.w = mad((int)r1.w, asint(cb0[31].x), asint(cb0[31].x));
+    r2.yz = float2(0,0);
+    r3.x = 0;
+    r3.y = r2.x;
+    while (true) {
+      r2.w = cmp((uint)r3.y >= (uint)r1.w);
+      if (r2.w != 0) break;
+    // Missing reflection info for shader. No names possible.
+    // Known bad code for instruction (needs manual fix):
+        ld_structured r4.x, r3.x, l(0), t0.xxxx
+    r4.x = no_StructuredBufferName[no_srcAddressRegister].no_srcByteOffsetName.swiz;
+    // Missing reflection info for shader. No names possible.
+    // Known bad code for instruction (needs manual fix):
+        ld_structured r5.xy, r3.y, l(0), t1.xyxx
+    r5.x = no_StructuredBufferName[no_srcAddressRegister].no_srcByteOffsetName.swiz;
+    r5.y = no_StructuredBufferName[no_srcAddressRegister].no_srcByteOffsetName.swiz;
+      r2.yz = r4.xx * r5.xy + r2.yz;
+      r3.xy = (int2)r3.xy + int2(1,1);
+    }
+    o7.xy = saturate(r2.yz);
+  } else {
+    o7.xy = float2(0,0);
+  }
+  r1.w = dot(v1.xyz, v1.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = v1.xyz * r1.www;
+  r3.xyz = cb3[13].xyz * r2.yyy;
+  r2.xyw = cb3[12].xyz * r2.xxx + r3.xyz;
+  r2.xyz = cb3[14].xyz * r2.zzz + r2.xyw;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r2.xyz * r1.www;
+  r1.w = dot(v6.xyz, v6.xyz);
+  r1.w = rsqrt(r1.w);
+  r3.xyz = v6.xyz * r1.www;
+  r4.xyz = cb3[13].xyz * r3.yyy;
+  r3.xyw = cb3[12].xyz * r3.xxx + r4.xyz;
+  r3.xyz = cb3[14].xyz * r3.zzz + r3.xyw;
+  r1.w = dot(r3.xyz, r3.xyz);
+  r1.w = rsqrt(r1.w);
+  r3.xyz = r3.xyz * r1.www;
+  r4.xyz = r3.yzx * r2.zxy;
+  r4.xyz = r2.yzx * r3.zxy + -r4.xyz;
+  r4.xyz = v6.www * r4.xyz;
+  r1.w = dot(r4.xyz, r4.xyz);
+  r1.w = rsqrt(r1.w);
+  o5.xyz = r4.xyz * r1.www;
+
+o0.xyzw = r0.xyzw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe cc2495206f5e65dc-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r4.xz = float2(0.5,0.5) * r0.xw;
+  r1.w = cb1[5].x * r0.y;
+  r4.w = 0.5 * r1.w;
+  r4.xy = r4.xw + r4.zz;
+  r5.xyzw = r2.xyzz * r2.yzzx;
+  r6.x = dot(cb2[41].xyzw, r5.xyzw);
+  r6.y = dot(cb2[42].xyzw, r5.xyzw);
+  r6.z = dot(cb2[43].xyzw, r5.xyzw);
+  r1.w = r2.y * r2.y;
+  r1.w = r2.x * r2.x + -r1.w;
+  r5.xyz = cb2[44].xyz * r1.www + r6.xyz;
+  r1.w = cmp(cb0[19].w == 0.000000);
+  r6.xyz = max(float3(0,0,0), r5.xyz);
+  r6.xyz = log2(r6.xyz);
+  r6.xyz = float3(0.416666657,0.416666657,0.416666657) * r6.xyz;
+  r6.xyz = exp2(r6.xyz);
+  r6.xyz = r6.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
+  r6.xyz = max(float3(0,0,0), r6.xyz);
+  r5.xyz = r1.www ? r6.xyz : r5.xyz;
+  r6.xyzw = cb2[2].xyzw + -r1.xxxx;
+  r7.xyzw = cb2[3].xyzw + -r1.yyyy;
+  r8.xyzw = cb2[4].xyzw + -r1.zzzz;
+  r9.xyzw = r7.xyzw * r7.xyzw;
+  r9.xyzw = r6.xyzw * r6.xyzw + r9.xyzw;
+  r9.xyzw = r8.xyzw * r8.xyzw + r9.xyzw;
+  r7.xyzw = r7.xyzw * r2.yyyy;
+  r6.xyzw = r6.xyzw * r2.xxxx + r7.xyzw;
+  r6.xyzw = r8.xyzw * r2.zzzz + r6.xyzw;
+  r7.xyzw = rsqrt(r9.xyzw);
+  r6.xyzw = r7.xyzw * r6.xyzw;
+  r6.xyzw = max(float4(0,0,0,0), r6.xyzw);
+  r7.xyzw = r9.xyzw * cb2[5].xyzw + float4(1,1,1,1);
+  r7.xyzw = float4(1,1,1,1) / r7.xyzw;
+  r6.xyzw = r7.xyzw * r6.xyzw;
+  r7.xyz = cb2[7].xyz * r6.yyy;
+  r7.xyz = cb2[6].xyz * r6.xxx + r7.xyz;
+  r6.xyz = cb2[8].xyz * r6.zzz + r7.xyz;
+  r6.xyz = cb2[9].xyz * r6.www + r6.xyz;
+  o6.xyz = r6.xyz + r5.xyz;
+
+  // o0.xyzw = r0.xyzw; // Relocated from here with hlsltool.py
+
+  o1.xyzw = v2.xyzw;
+  o6.w = 0;
+  r4.zw = r0.zw;
+  o8.xyzw = r4.xyzw;
+  o9.xyzw = r4.xyzw;
+  o2.xyz = r1.xyz;
+  o3.xyz = r2.xyz;
+  o4.xyz = r3.xyz;
+  return;
+}
+
+/****************************** COMPILE ERRORS ******************************
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\cc2495206f5e65dc-vs_replace.txt(172,9-21): error X3000: unrecognized identifier 'ld_structured'
+C:\Steam\SteamApps\common\Stranded Deep\ShaderFixes\cc2495206f5e65dc-vs_replace.txt(172,23-24): error X3000: unrecognized identifier 'r4'
+
+compilation failed; no code produced
+****************************** COMPILE ERRORS ******************************/

@@ -1,0 +1,232 @@
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe ea4459e5b9c6ac3e-ps_replace.txt
+// 3DMigoto: ea4459e5b9c6ac3e |    Unity headers extracted from Internal-DeferredShading.shader
+//    Shader "Hidden/Internal-DeferredShading" {
+//      Properties {
+//       _LightTexture0 ("", any) = "" { }
+//       _LightTextureB0 ("", 2D) = "" { }
+//       _ShadowMapTexture ("", any) = "" { }
+//       _SrcBlend ("", Float) = 1
+//       _DstBlend ("", Float) = 1
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 1/2 {
+//          Tags { "SHADOWSUPPORT"="true" }
+//          ZWrite Off
+//          Blend [_SrcBlend] [_DstBlend]
+//          GpuProgramID 36028
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 91
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Internal-DeferredShading.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 88 5 0
+//   Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" "UNITY_HDR_ON" }
+//   undeciphered2: 1 5 4 5 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 272
+//   Vector 48 [unity_ColorSpaceLuminance]
+//   Vector 112 [_LightDir]
+//   Vector 144 [_LightColor]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   Vector 80 [_ProjectionParams]
+//   Vector 112 [_ZBufferParams]
+//   ConstBuffer "UnityShadows" 416
+//   Vector 384 [_LightShadowData]
+//   Vector 400 [unity_ShadowFadeCenterAndType]
+//   ConstBuffer "UnityPerCamera2" 64
+//   Matrix 0 [_CameraToWorld]
+//   SetTexture 0 [_CameraDepthTexture] 2D 0
+//   SetTexture 1 [_ShadowMapTexture] 2D 1
+//   SetTexture 2 [_CameraGBufferTexture0] 2D 2
+//   SetTexture 3 [_CameraGBufferTexture1] 2D 3
+//   SetTexture 4 [_CameraGBufferTexture2] 2D 4
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityShadows" 2
+//   BindCB "UnityPerCamera2" 3
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 10:07:06 2016
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[4];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[26];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[10];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float3 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0,
+  float fov : TEXCOORD3)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe ea4459e5b9c6ac3e-ps_replace.txt
+matrix _CameraToWorld = matrix(cb3[0], cb3[1], cb3[2], cb3[3]);
+float4 _WorldSpaceCameraPos = cb1[4];
+_WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;
+
+  r0.x = cb1[5].z / v2.z;
+  r0.xyz = v2.xyz * r0.xxx;
+  r1.xy = v1.xy / v1.ww;
+  r2.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
+  r0.w = cb1[7].x * r2.x + cb1[7].y;
+  r0.w = 1 / r0.w;
+  r2.xyz = r0.xyz * r0.www;
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc /home/dss/fxc.exe ea4459e5b9c6ac3e-ps_replace.txt
+r2.x -= separation * (r2.z - convergence) * fov;
+
+  r3.xyz = cb3[1].xyz * r2.yyy;
+  r2.xyw = cb3[0].xyz * r2.xxx + r3.xyz;
+  r2.xyw = cb3[2].xyz * r2.zzz + r2.xyw; // depth in r2.z
+  r2.xyw = cb3[3].xyz + r2.xyw;
+  r3.xyz = -_WorldSpaceCameraPos.xyz + r2.xyw;
+  r2.xyw = -cb2[25].xyz + r2.xyw;
+  r0.x = dot(r2.xyw, r2.xyw);
+  r0.x = sqrt(r0.x);
+  r0.x = -r0.z * r0.w + r0.x;
+  r0.x = cb2[25].w * r0.x + r2.z;
+  r0.x = saturate(r0.x * cb2[24].z + cb2[24].w);
+  r0.y = dot(r3.xyz, r3.xyz);
+  r0.y = rsqrt(r0.y);
+  r2.xyz = r3.xyz * r0.yyy;
+  r0.yzw = -r3.xyz * r0.yyy + -cb0[7].xyz;
+  r3.xyzw = t4.Sample(s4_s, r1.xy).xyzw;
+  r3.xyz = r3.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r1.z = dot(r3.xyz, r3.xyz);
+  r1.z = rsqrt(r1.z);
+  r3.xyz = r3.xyz * r1.zzz;
+  r1.z = dot(r3.xyz, -r2.xyz);
+  r1.w = 9.99999975e-006 + -r1.z;
+  r1.z = cmp(r1.z < 0);
+  r4.xyz = -r2.xyz * r1.www + r3.xyz;
+  r3.xyz = r1.zzz ? r4.xyz : r3.xyz;
+  r1.z = dot(r0.yzw, r0.yzw);
+  r1.z = max(0.00100000005, r1.z);
+  r1.z = rsqrt(r1.z);
+  r0.yzw = r1.zzz * r0.yzw;
+  r1.z = dot(r3.xyz, r0.yzw);
+  r0.y = dot(-cb0[7].xyz, r0.yzw);
+  r0.z = max(0, r1.z);
+  r0.z = r0.z * r0.z;
+  r4.xyzw = t3.Sample(s3_s, r1.xy).xyzw;
+  r5.xyzw = float4(1,1,1,1) + -r4.wxyz;
+  r0.w = r5.x * r5.x;
+  r1.z = r0.w * r0.w + -1;
+  r0.z = r0.z * r1.z + 1;
+  r1.z = 3.14159274 * r0.z;
+  r0.z = r1.z * r0.z + 1.00000001e-007;
+  r1.z = r0.w * r0.w;
+  r0.z = r1.z / r0.z;
+  r1.z = dot(r3.xyz, -r2.xyz);
+  r1.w = dot(r3.xyz, -cb0[7].xyz);
+  r1.zw = max(float2(0,0), r1.zw);
+  r2.x = -r5.x * r5.x + 1;
+  r2.y = r1.z * r2.x + r0.w;
+  r0.w = r1.w * r2.x + r0.w;
+  r0.w = r1.z * r0.w;
+  r1.z = 1 + -r1.z;
+  r0.w = r1.w * r2.y + r0.w;
+  r0.w = 9.99999975e-006 + r0.w;
+  r0.w = 2 / r0.w;
+  r0.z = r0.w * r0.z;
+  r0.z = 0.785398185 * r0.z;
+  r0.yw = max(float2(0,9.99999975e-005), r0.yz);
+  r0.w = sqrt(r0.w);
+  r2.x = cmp(cb0[3].w == 0.000000);
+  r0.z = r2.x ? r0.w : r0.z;
+  r0.z = r0.z * r1.w;
+  r0.z = max(0, r0.z);
+  r2.xyzw = t1.Sample(s1_s, r1.xy).xyzw;
+  r3.xyzw = t2.Sample(s2_s, r1.xy).xyzw;
+  r0.x = saturate(r2.x + r0.x);
+  r2.xyz = cb0[9].xyz * r0.xxx;
+  r0.xzw = r2.xyz * r0.zzz;
+  r1.x = 1 + -r0.y;
+  r0.y = r0.y * r0.y;
+  r0.y = dot(r0.yy, r5.xx);
+  r0.y = -0.5 + r0.y;
+  r1.y = r1.x * r1.x;
+  r1.y = r1.y * r1.y;
+  r1.x = r1.y * r1.x;
+  r4.xyz = r5.yzw * r1.xxx + r4.xyz;
+  r0.xzw = r4.xyz * r0.xzw;
+  r1.x = r1.z * r1.z;
+  r1.x = r1.x * r1.x;
+  r1.x = r1.x * r1.z;
+  r1.x = r0.y * r1.x + 1;
+  r1.y = 1 + -r1.w;
+  r1.z = r1.y * r1.y;
+  r1.z = r1.z * r1.z;
+  r1.y = r1.z * r1.y;
+  r0.y = r0.y * r1.y + 1;
+  r0.y = r0.y * r1.x;
+  r0.y = r0.y * r1.w;
+  r1.xyz = r2.xyz * r0.yyy;
+  o0.xyz = r3.xyz * r1.xyz + r0.xzw;
+  o0.w = 1;
+  return;
+}

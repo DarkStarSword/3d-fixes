@@ -1,0 +1,334 @@
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ab161b3847a5cf04-ps_replace.txt
+// 3DMigoto: ab161b3847a5cf04 |    Unity headers extracted from Eye.shader
+//    Shader "Eisko/Eye" {
+//      Properties {
+//      [NoScaleOffset]  _AlbedoTex ("RGB= Albedo map, A= Height map", 2D) = "white" { }
+//       _AlbedoDesaturation ("Light luminance", Range(0,1)) = 0.5
+//      [NoScaleOffset]  _NormalMap ("NormalMap", 2D) = "bump" { }
+//      [NoScaleOffset]  _MicrostructureV ("Microstructure RG - Variance B", 2D) = "bump" { }
+//       _VarianceDetailMultiplier ("Variance Detail Multiplier", Range(0,50)) = 1
+//       _MicrostructureTile ("Microstructure tile", Float) = 0
+//      [NoScaleOffset]  _SpecularMap ("Multimap: (R=Specular, G=Thickness, B=AO, A=Roughness)", 2D) = "white" { }
+//       _thickness ("Thickness", Range(0.0001,2)) = 1
+//       _ColorAO ("RGB: Color AO", Color) = (0.4,0.15,0.13,1)
+//       AOsaturation ("AO Strenght", Range(0.01,3)) = 0.5
+//       _LobeBlend ("Lobe Blend", Range(0,1)) = 0.85
+//       _ColorAlbedo ("RGB: Color Sclera", Color) = (1,1,1,0.02)
+//       Roughness ("Roughness Sclera", Range(0.0001,8)) = 1
+//       _SpecStrength ("Specular Strength Sclera", Range(0,10)) = 1
+//      [NoScaleOffset]  _EyeMask ("Iris mask", 2D) = "white" { }
+//       _ColorIris ("RGB: Color Iris", Color) = (0.737,0.737,0.737,1)
+//       RoughnessIris ("Roughness Iris", Range(0.0001,12)) = 1
+//       _SpecStrengthIris ("Specular Strength Iris", Range(0,20)) = 0.02
+//       Refraction ("Refraction", Range(0,2)) = 0.06
+//       Dilation ("Pupil dilation", Range(0,2)) = 0.05
+//      [HideInInspector]  _DispMap ("Displacement Map", 2D) = "bump" { }
+//       _EyeLeftRight ("Eye Left or Right", Range(0,1)) = 0
+//      [HideInInspector]  _isSkin ("HIDDEN--IS SKIN", Range(0,1)) = 1
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//        Pass 2/3 {
+//          Name "FORWARD_ADD_EYE"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+//          Lighting On
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 113647
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 81
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Eye.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 135 7 2
+//   Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//   undeciphered2: 1 7 3 7 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 576
+//   Float 0 [Roughness]
+//   Float 4 [RoughnessIris]
+//   Float 8 [_MicrostructureTile]
+//   Float 12 [_LobeBlend]
+//   Float 16 [AOsaturation]
+//   Float 24 [_VarianceDetailMultiplier]
+//   Float 28 [_SpecStrength]
+//   Float 32 [_SpecStrengthIris]
+//   Float 40 [_EyeLeftRight]
+//   Float 44 [Refraction]
+//   Vector 352 [_LightColor0]
+//   Matrix 128 [_bindPose_Inv]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   ConstBuffer "UnityLighting" 720
+//   Vector 0 [_WorldSpaceLightPos0]
+//   SetTexture 0 [_AlbedoTex] 2D 0
+//   SetTexture 1 [_EyeMask] 2D 4
+//   SetTexture 2 [_NormalMap] 2D 2
+//   SetTexture 3 [_MicrostructureV] 2D 1
+//   SetTexture 4 [_SpecularMap] 2D 3
+//   SetTexture 5 [_LightTextureB0] 2D 6
+//   SetTexture 6 [_LightTexture0] CUBE 5
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityLighting" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:02:08 2016
+TextureCube<float4> t6 : register(t6);
+
+Texture2D<float4> t5 : register(t5);
+
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s6_s : register(s6);
+
+SamplerState s5_s : register(s5);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[23];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float4 v1 : TEXCOORD0,
+  float4 v2 : TEXCOORD1,
+  float4 v3 : TEXCOORD2,
+  float4 v4 : TEXCOORD3,
+  float4 v5 : TEXCOORD4,
+  float4 v6 : TEXCOORD8,
+  float3 v7 : TEXCOORD5,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ab161b3847a5cf04-ps_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = t0.Sample(s0_s, v1.xy).xyzw;
+  r0.x = cmp(0 < cb0[2].z);
+  r0.y = 1 + -v1.x;
+  r0.x = r0.x ? r0.y : v1.x;
+  r1.xyzw = _WorldSpaceCameraPos.yyyy * cb0[9].xyzw;
+  r1.xyzw = cb0[8].xyzw * _WorldSpaceCameraPos.xxxx + r1.xyzw;
+  r1.xyzw = cb0[10].xyzw * _WorldSpaceCameraPos.zzzz + r1.xyzw;
+  r1.xyzw = cb0[11].xyzw + r1.xyzw;
+  r2.xyzw = cb0[9].xyzw * v2.yyyy;
+  r2.xyzw = cb0[8].xyzw * v2.xxxx + r2.xyzw;
+  r2.xyzw = cb0[10].xyzw * v2.zzzz + r2.xyzw;
+  r2.xyzw = cb0[11].xyzw + r2.xyzw;
+  r1.xyzw = -r2.xyzw + r1.xyzw;
+  r0.z = dot(r1.xyzw, r1.xyzw);
+  r0.z = rsqrt(r0.z);
+  r1.xy = r1.xy * r0.zz;
+  r0.z = -r0.w * cb0[2].w + -0.0199999996;
+  r0.y = v1.y;
+  r0.xy = r1.xy * r0.zz + r0.xy;
+  r1.xyzw = t1.Sample(s4_s, r0.xy).xyzw;
+  r0.z = cmp(0.100000001 < r1.x);
+  r1.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
+  r1.xz = cb0[0].zz * r0.xy;
+  r2.xyzw = t3.Sample(s1_s, r1.xz).xyzw;
+  r3.xyzw = t4.Sample(s3_s, r0.xy).xyzw;
+  if (r0.z != 0) {
+    r0.xy = r1.wy * float2(2,2) + float2(-1,-1);
+    r1.x = dot(r0.xy, r0.xy);
+    r1.x = min(1, r1.x);
+    r1.x = 1 + -r1.x;
+    r0.w = sqrt(r1.x);
+    r0.z = 1 + r0.w;
+    r1.xy = float2(-0.5,-0.5) + r2.xy;
+    r1.xy = r1.xy + r1.xy;
+    r1.w = -r1.x * r1.x + 1;
+    r1.w = -r1.y * r1.y + r1.w;
+    r1.z = sqrt(r1.w);
+    r1.w = dot(r1.xyz, r1.xyz);
+    r1.w = rsqrt(r1.w);
+    r1.xyz = r1.xyz * r1.www;
+    r1.xyz = float3(-1,-1,1) * r1.xyz;
+    r2.xyw = r0.xyz / r0.zzz;
+    r0.z = dot(r0.xyz, r1.xyz);
+    r1.xyz = r2.xyw * r0.zzz + -r1.xyz;
+    r0.z = dot(r1.xyz, r1.xyz);
+    r0.z = rsqrt(r0.z);
+    r1.xyz = r1.xyz * r0.zzz + -r0.xyw;
+    r0.xyz = cb0[0].www * r1.xyz + r0.xyw;
+    r1.xyz = v5.xyz * r0.yyy;
+    r0.xyw = r0.xxx * v4.xyz + r1.xyz;
+    r0.xyz = r0.zzz * v3.xyz + r0.xyw;
+    r0.w = dot(r0.xyz, r0.xyz);
+    r0.w = rsqrt(r0.w);
+    r0.xyz = r0.xyz * r0.www;
+    r1.xyz = log2(r3.xwz);
+    r1.xz = cb0[1].wx * r1.xz;
+    r1.xz = exp2(r1.xz);
+    r0.w = cb0[0].x * r1.y;
+    r0.w = exp2(r0.w);
+    r0.w = min(1, r0.w);
+    r1.xy = min(float2(1,1), r1.xz);
+    r1.z = saturate(cb0[1].z * r2.z);
+  } else {
+    r2.xyz = log2(r3.xwz);
+    r1.w = cb0[2].x * r2.x;
+    r1.w = exp2(r1.w);
+    r1.x = min(1, r1.w);
+    r1.w = cb0[0].y * r2.y;
+    r1.w = exp2(r1.w);
+    r0.w = min(1, r1.w);
+    r1.w = cb0[1].x * r2.z;
+    r1.w = exp2(r1.w);
+    r1.y = min(1, r1.w);
+    r1.z = 0;
+    r0.xyz = float3(0,0,1);
+  }
+  r2.xyz = _WorldSpaceCameraPos.xyz + -v2.xyz;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r3.xyz = r2.xyz * r1.www;
+  r2.w = dot(v7.xyz, v7.xyz);
+  r4.xyzw = t5.Sample(s6_s, r2.ww).xyzw;
+  r5.xyzw = t6.Sample(s5_s, v7.xyz).xyzw;
+  r2.w = r5.w * r4.x;
+  r4.xyz = -v2.xyz * cb2[0].www + cb2[0].xyz;
+  r3.w = dot(r4.xyz, r4.xyz);
+  r3.w = rsqrt(r3.w);
+  r4.xyz = r4.xyz * r3.www;
+  r5.xyz = cb0[22].xyz * r2.www;
+  r2.w = dot(r0.xyz, r4.xyz);
+  r3.w = dot(r0.xyz, r3.xyz);
+  r2.xyz = r2.xyz * r1.www + r4.xyz;
+  r2.xyz = float3(0.5,0.5,0.5) * r2.xyz;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r2.xyz * r1.www;
+  r0.x = saturate(dot(r0.xyz, r2.xyz));
+  r0.y = saturate(dot(r3.xyz, r2.xyz));
+  r0.z = 1 + -r0.w;
+  r1.w = r2.w * r2.w;
+  r1.w = r0.z * r1.w + r0.w;
+  r1.w = sqrt(r1.w);
+  r1.w = r2.w + r1.w;
+  r1.w = 1 / r1.w;
+  r2.x = r3.w * r3.w;
+  r0.z = r0.z * r2.x + r0.w;
+  r0.z = sqrt(r0.z);
+  r0.z = r3.w + r0.z;
+  r0.z = 1 / r0.z;
+  r0.z = r1.w * r0.z;
+  r0.w = r0.w * r0.w;
+  r0.w = 2 / r0.w;
+  r0.w = -2 + r0.w;
+  r0.w = log2(r0.w);
+  r0.w = saturate(0.0769230798 * r0.w);
+  r1.w = 13 * r0.w;
+  r1.w = exp2(r1.w);
+  r2.x = 2 + r1.w;
+  r2.x = 0.159155071 * r2.x;
+  r0.x = log2(r0.x);
+  r2.y = r1.w * r0.x;
+  r2.y = exp2(r2.y);
+  r2.x = r2.x * r2.y;
+  r2.x = 0.78539753 * r2.x;
+  r0.w = max(r1.x, r0.w);
+  r0.w = r0.w + -r1.x;
+  r0.y = 1 + -r0.y;
+  r2.y = r0.y * r0.y;
+  r2.y = r2.y * r2.y;
+  r0.y = r2.y * r0.y;
+  r0.y = r0.w * r0.y + r1.x;
+  r0.w = r2.x * r0.y;
+  r0.w = r0.w * r0.z;
+  r1.x = r1.z * r1.z;
+  r1.x = r1.w * r1.x + 1;
+  r1.x = r1.w / r1.x;
+  r1.z = 2 + r1.x;
+  r1.z = 0.159155071 * r1.z;
+  r0.x = r1.x * r0.x;
+  r0.x = exp2(r0.x);
+  r0.x = r1.z * r0.x;
+  r0.x = r0.y * r0.x;
+  r0.x = r0.x * r0.z;
+  r0.x = 0.78539753 * r0.x;
+  r0.xw = max(float2(0,0), r0.xw);
+  r0.x = r0.x + -r0.w;
+  r0.x = cb0[0].w * r0.x + r0.w;
+  r0.xyz = r0.xxx * r5.xyz;
+  o0.xyz = r0.xyz * r1.yyy;
+  o0.w = 1;
+  return;
+}

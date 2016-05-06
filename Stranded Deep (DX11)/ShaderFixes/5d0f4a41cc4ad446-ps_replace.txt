@@ -1,0 +1,132 @@
+// hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc /home/dss/fxc.exe 5d0f4a41cc4ad446-ps_replace.txt
+// 3DMigoto: 5d0f4a41cc4ad446 |    Unity headers extracted from Internal-PrePassCollectShadows.shader
+//    Shader "Hidden/Internal-PrePassCollectShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          GpuProgramID 23332
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 59
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Internal-PrePassCollectShadows.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 24 1 0
+//   Keywords { "SHADOWS_SPLIT_SPHERES" "SHADOWS_NATIVE" "SHADOWS_SINGLE_CASCADE" }
+//   undeciphered2: 1 2 3 2 0
+//   undeciphered3: 0 0
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 112 [_ZBufferParams]
+//   Vector 128 [unity_OrthoParams]
+//   ConstBuffer "UnityShadows" 416
+//   Vector 384 [_LightShadowData]
+//   Vector 400 [unity_ShadowFadeCenterAndType]
+//   Matrix 128 [unity_World2Shadow0]
+//   Matrix 192 [unity_World2Shadow1]
+//   Matrix 256 [unity_World2Shadow2]
+//   Matrix 320 [unity_World2Shadow3]
+//   ConstBuffer "UnityPerCamera2" 64
+//   Matrix 0 [_CameraToWorld]
+//   SetTexture 0 [_CameraDepthTexture] 2D 0
+//   SetTexture 1 [_ShadowMapTexture] 2D 1
+//   BindCB "UnityPerCamera" 0
+//   BindCB "UnityShadows" 1
+//   BindCB "UnityPerCamera2" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Fri May 06 04:54:17 2016
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerComparisonState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[4];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[26];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[9];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : TEXCOORD0,
+  float4 v1 : TEXCOORD1,
+  float4 v2 : TEXCOORD2,
+  float3 v3 : TEXCOORD3,
+  float4 v4 : SV_POSITION0,
+  out float4 o0 : SV_Target0,
+  float fov : TEXCOORD4)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = t0.Sample(s0_s, v0.xy).xyzw;
+  r0.y = cb0[7].x * r0.x + cb0[7].y;
+  r0.y = 1 / r0.y;
+  r0.z = r0.x + -r0.y;
+  r0.y = cb0[8].w * r0.z + r0.y;
+  r1.xyz = v3.xyz + -v2.xyz;
+  r0.xzw = r0.xxx * r1.xyz + v2.xyz;
+  r0.xzw = -v1.xyz * r0.yyy + r0.xzw;
+  r1.xyz = v1.xyz * r0.yyy;
+  r0.xyz = cb0[8].www * r0.xzw + r1.xyz;
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc /home/dss/fxc.exe 5d0f4a41cc4ad446-ps_replace.txt
+r0.x -= separation * (r0.z - convergence) * fov;
+
+  r1.xyzw = cb2[1].xyzw * r0.yyyy;
+  r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
+  r0.xyzw = cb2[2].xyzw * r0.zzzz + r1.xyzw; // depth in r0.z
+  r0.xyzw = cb2[3].xyzw + r0.xyzw;
+  r1.xyz = cb1[9].xyz * r0.yyy;
+  r1.xyz = cb1[8].xyz * r0.xxx + r1.xyz;
+  r1.xyz = cb1[10].xyz * r0.zzz + r1.xyz;
+  r1.xyz = cb1[11].xyz * r0.www + r1.xyz;
+  r0.xyz = -cb1[25].xyz + r0.xyz;
+  r0.x = dot(r0.xyz, r0.xyz);
+  r0.x = sqrt(r0.x);
+  r0.x = saturate(r0.x * cb1[24].z + cb1[24].w);
+  r0.y = t1.SampleCmpLevelZero(s1_s, r1.xy, r1.z).x;
+  r0.z = 1 + -cb1[24].x;
+  r0.y = r0.y * r0.z + cb1[24].x;
+  o0.xyzw = r0.yyyy + r0.xxxx;
+  return;
+}
