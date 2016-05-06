@@ -153,6 +153,24 @@ class MultiplyInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, lval, rval)
         self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2)))
 
+class AddInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<lval>\S+)
+        \s* = \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* \+ \s*
+            (?P<arg2>\S+)
+        )
+        \s*
+        ;
+    ''', re.VERBOSE)
+
+    def __init__(self, text, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, lval, rval)
+        self.rargs = tuple(map(lambda x: expression_as_single_register(x) or x, (arg1, arg2)))
+
 class ReciprocalInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
         \s*
@@ -233,6 +251,7 @@ specific_instructions = (
         MADInstruction,
         DotInstruction,
         MultiplyInstruction,
+        AddInstruction,
         ReciprocalInstruction,
         AssignmentInstruction,
         FlowControlElse,
@@ -628,7 +647,7 @@ class HLSLShader(Shader):
         self.parameters[(semantic, output)] = param
 
     def find_var_component_from_row_major_matrix_multiply(self, cb):
-        results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction))
+        results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction, AddInstruction))
         if len(results) != 1:
             debug_verbose(0, '%s read from %i instructions (only exactly 1 read currently supported)' % (cb, len(results)))
             return None
@@ -641,7 +660,9 @@ class HLSLShader(Shader):
         else:
             assert(False)
 
-        if reg.components:
+        if isinstance(instr, AddInstruction):
+            var = '1'
+        elif reg.components:
             assert(all([ x == reg.components[0] for x in reg.components[1:] ]))
             var = '%s.%s' % (reg.variable, reg.components[0])
         else:
@@ -949,14 +970,19 @@ def fix_unity_lighting_ps(shader):
     x_var, _CameraToWorld_line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[0])
 
     # Since the compiler often places y first, for clarity use it's position to insert the correction:
-    _, line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[1])
-    _CameraToWorld_line = min(_CameraToWorld_line, line)
+    _, line_y = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[1])
+    _CameraToWorld_line = min(_CameraToWorld_line, line_y)
 
     # And once more to find register with Z to use as depth:
-    depth, line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[2])
+    depth, line_z = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[2])
+    shader.append_comment_to_line(line_z, 'depth in %s' % depth)
+    depth_reg = expression_as_single_register(depth)
 
+    # And to find the end for the fallback world space adjustment:
+    _, _CameraToWorld_end = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[3])
+    _CameraToWorld_end = max(_CameraToWorld_end, line_z, line_y, _CameraToWorld_line)
+    world_reg = expression_as_single_register(shader.instructions[_CameraToWorld_end].lval)
 
-    shader.append_comment_to_line(line, 'depth in %s' % depth)
 
     # Find _ZBufferParams usage to find where depth is sampled (could use
     # _CameraDepthTexture, but that takes an extra step and more can go wrong)
@@ -994,8 +1020,19 @@ def fix_unity_lighting_ps(shader):
 
     # If we ever need the old procedure, it's in the git history of shadertool.py.
 
+    # Find where the depth was set and store it in a variable:
+    results = shader.scan_shader(depth_reg.variable, components=depth_reg.components, write=True,
+            start=line_z, end=line-1, stop=True, direction=-1)
+    if not results:
+        debug_verbose(0, 'Could not find where depth was set')
+        return
+    (depth_line, _) = results[0]
+
     # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
     shader.add_parameter(False, None, 'float', 'fov', args.fix_unity_lighting_ps)
+
+    shader.append_declaration(UnityPerDraw)
+    shader.append_declaration(include_matrix_hlsl)
 
     offset = shader.insert_stereo_params()
 
@@ -1008,13 +1045,37 @@ def fix_unity_lighting_ps(shader):
         offset += shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
         offset += shader.early_insert_instr('matrix _CameraToWorld = %s;' % hlsl_matrix(*_CameraToWorld))
         offset += shader.early_insert_instr('float4 _WorldSpaceCameraPos = %s;' % _WorldSpaceCameraPos)
-        offset += shader.early_insert_instr('_WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;')
+        offset += shader.early_insert_instr('if (fov) {')
+        offset += shader.early_insert_instr('  _WorldSpaceCameraPos.xyz -= mul(float4(-separation * convergence * fov, 0, 0, 0), _CameraToWorld).xyz;')
+        offset += shader.early_insert_instr('} else {')
+        offset += shader.early_insert_instr('  float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);')
+        offset += shader.early_insert_instr('  float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);')
+        offset += shader.early_insert_instr('  float4 world_space_adj = mul(_Object2World, local_space_adj);')
+        offset += shader.early_insert_instr('  _WorldSpaceCameraPos.xyz -= world_space_adj.xyz;')
+        offset += shader.early_insert_instr('}')
+
+    offset += shader.insert_instr(depth_line + offset + 1, 'float depth = %s;' % depth);
 
     pos = _CameraToWorld_line + offset
     debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos, depth, x_var))
     pos += shader.insert_vanity_comment(pos, "Unity light/shadow fix (pixel shader stage) inserted with")
-    pos += shader.insert_instr(pos, '%s -= separation * (%s - convergence) * fov;' % (x_var, depth))
+    pos += shader.insert_instr(pos, 'if (fov) {')
+    pos += shader.insert_instr(pos, '  %s -= separation * (depth - convergence) * fov;' % (x_var))
+    pos += shader.insert_instr(pos, '}')
     pos += shader.insert_instr(pos)
+
+    pos = pos - _CameraToWorld_line + _CameraToWorld_end + 1
+    pos += shader.insert_instr(pos)
+    pos += shader.insert_instr(pos, '// Fallback adjustment if the FOV was not passed from the VS:')
+    pos += shader.insert_instr(pos, 'if (!fov) {')
+    pos += shader.insert_instr(pos, '  float4 clip_space_adj = float4(separation * (depth - convergence), 0, 0, 0);')
+    pos += shader.insert_instr(pos, '  float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);')
+    pos += shader.insert_instr(pos, '  float4 world_space_adj = mul(_Object2World, local_space_adj);')
+    pos += shader.insert_instr(pos, '  %s.%s -= world_space_adj.xyz;' % (world_reg.variable, world_reg.components[:3]))
+    pos += shader.insert_instr(pos, '}')
+    pos += shader.insert_instr(pos)
+
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
         shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
