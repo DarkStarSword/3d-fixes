@@ -126,8 +126,11 @@ def decode_binds(file, headers):
         (name_len,) = struct.unpack('<I', file.read(4))
         bind_name = file.read(name_len).decode('ascii')
         align(file, 4)
-        (bind_type, bind_slot, texture_type, sampler_slot, zero) = struct.unpack('<2I2BH', file.read(12))
-        assert(zero == 0)
+        (bind_type, bind_slot, texture_type, sampler_slot, zero) = struct.unpack('<2i2bh', file.read(12))
+
+        # Hmmm, could almost be a 3 byte integer, but that would be weird. Maybe just padding / stack garbage?
+        assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
+
         if bind_type == 0:
             texture_type = {
                     2: '2D',
