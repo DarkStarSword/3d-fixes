@@ -2,7 +2,7 @@
 
 import os, re, time
 
-pattern = re.compile(r'(?P<game>.*)\d\d_\d\d.jps', re.IGNORECASE)
+pattern = re.compile(r'(?P<game>.*)\d\d(?:_\d)?\d.(?P<extension>jps|pns)', re.IGNORECASE)
 
 def archive():
 	for filename in os.listdir(os.curdir):
@@ -28,7 +28,7 @@ def archive():
 
 		i = 0
 		while True:
-			new_filename = os.path.join(game, '%s - %s.%i.jps' % (game, timestamp_str, i))
+			new_filename = os.path.join(game, '%s - %s.%i.%s' % (game, timestamp_str, i, match.group('extension')))
 			if not os.path.exists(new_filename):
 				break
 			i += 1
