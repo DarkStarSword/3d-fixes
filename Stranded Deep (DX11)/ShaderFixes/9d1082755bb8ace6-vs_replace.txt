@@ -96,19 +96,23 @@ void main(
   o3.xyzw = v0.xyzw;
 
 float4 params = IniParams.Load(0);
-int action = !params.y;
-if (params.x) { // Crosshair texture
-	if (all(abs(v0.xy) < 4.2)) { // Center of screen
-		switch (params.z) {
-		case 0: // Auto show
-			if (v1.w < 0.5) // Faded out
+
+int action = 0;
+if (!params.y) { // Mouse cursor hidden
+	action = 1; // Auto adjust
+	if (params.x) { // Crosshair texture
+		if (all(abs(v0.xy) < 4.2)) { // Center of screen
+			switch (params.z) {
+			case 0: // Auto show
+				if (v1.w < 0.5) // Faded out
+					action = 2; // Hide
+				break;
+			case 1: // Show
+				break;
+			case 2: // Hide
 				action = 2;
-			break;
-		case 1: // Show
-			break;
-		case 2: // Hide
-			action = 2;
-			break;
+				break;
+			}
 		}
 	}
 }
