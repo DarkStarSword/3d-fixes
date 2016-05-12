@@ -95,7 +95,32 @@ void main(
   o2.xy = v2.xy;
   o3.xyzw = v0.xyzw;
 
-o0.x += adjust_from_depth_buffer(0, 0);
+float4 params = IniParams.Load(0);
+int action = !params.y;
+if (params.x) { // Crosshair texture
+	if (all(abs(v0.xy) < 4.2)) { // Center of screen
+		switch (params.z) {
+		case 0: // Auto show
+			if (v1.w < 0.5) // Faded out
+				action = 2;
+			break;
+		case 1: // Show
+			break;
+		case 2: // Hide
+			action = 2;
+			break;
+		}
+	}
+}
+
+switch(action) {
+case 1:
+	o0.x += adjust_from_depth_buffer(0, 0);
+	break;
+case 2:
+	o0 = 0;
+	break;
+}
 
   return;
 }
