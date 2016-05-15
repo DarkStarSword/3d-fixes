@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, argparse, glob, struct, zlib
+import sys, os, argparse, glob, struct, zlib, itertools
 import extract_unity_shaders
 
 shader_type_mapping = {
@@ -282,10 +282,37 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
 
     extract_unity_shaders.export_dx11_shader(dest, bin, finalise_headers(headers, shader.sub_program))
 
+def synthesize_sub_program(name):
+    class Shader(object):
+        keyword = 'Shader'
+        def __init__(self, name):
+            self.name = name
+    class SubShader(object):
+        keyword = 'SubShader'
+        def __init__(self, name):
+            self.parent = Shader(name)
+    class Pass(object):
+        keyword = 'Pass'
+        def __init__(self, name):
+            self.parent = SubShader(name)
+    class Program(object):
+        keyword = 'Program'
+        def __init__(self, name):
+            self.parent = Pass(name)
+    class SubProgram(object):
+        keyword = 'SubProgram'
+        def __init__(self, name):
+            self.parent = Program(name)
+    return SubProgram(name)
+
 def extract_shader_at(file, offset, size, filename, sub_programs):
-    sub_program = sub_programs[0]
-    headers = extract_unity_shaders.combine_similar_headers(sub_programs)
-    headers.extend(['', 'Unity 5.3 headers extracted from %s:' % filename])
+    headers = []
+    if args.skip_classic_headers:
+        sub_program = synthesize_sub_program(os.path.splitext(os.path.splitext(filename)[0])[0])
+    else:
+        sub_program = sub_programs[0]
+        headers.extend(extract_unity_shaders.combine_similar_headers(sub_programs) + [''])
+    headers.append('Unity 5.3 headers extracted from %s:' % filename)
     shader = extract_unity_shaders.get_parents(sub_program)
 
     saved_offset = file.tell()
@@ -298,8 +325,12 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
         add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
-        assert(shader.program.name == program_name or program_name is None)
-        assert(shader.sub_program.name == api)
+        if args.skip_classic_headers:
+            shader.program.name = program_name
+            shader.sub_program.name = api
+        else:
+            assert(shader.program.name == program_name or program_name is None)
+            assert(shader.sub_program.name == api)
 
         keywords = []
         for i in range(num_keywords):
@@ -332,8 +363,11 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
 def parse_unity53_shader(filename):
     file = open(filename, 'rb')
 
-    shader_tree = extract_unity_shaders.parse_tree(os.path.splitext(filename)[0])
-    sub_program_generator = extract_unity_shaders.walk_sub_programs(shader_tree)
+    if args.skip_classic_headers:
+        sub_program_generator = itertools.repeat(None)
+    else:
+        shader_tree = extract_unity_shaders.parse_tree(os.path.splitext(filename)[0])
+        sub_program_generator = extract_unity_shaders.walk_sub_programs(shader_tree)
 
     (num_shaders,) = struct.unpack('<I', file.read(4))
     print('Num shaders: %i' % num_shaders)
@@ -348,6 +382,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Unity 5.3 Shader Extractor')
     parser.add_argument('shaders', nargs='+',
             help='List of compiled Unity shader files to parse')
+    parser.add_argument('--skip-classic-headers', action='store_true',
+            help='Skip extracting the classic Unity headers from a corresponding .shader file (not recommended)')
     args = parser.parse_args()
 
 def main():
