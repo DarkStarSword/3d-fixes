@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.39 on Sun May 22 23:34:10 2016
+// Light Shafts
+// ---- Created with 3Dmigoto v1.2.39 on Mon May 23 03:48:07 2016
 Texture2D<float4> t0 : register(t0);
 
 SamplerState s0_s : register(s0);
@@ -29,7 +30,11 @@ void main(
   r0.x = exp2(r0.x);
   r0.x = cb0[10].y * r0.x;
   r0.x = min(1, r0.x);
-  r0.yz = -v0.xy * cb0[6].zw + cb0[0].xy;
+
+// Exactly the same as UE3 light shafts (and a common pattern in general), only
+// challenge is identifying the right constant to adjust without the headers:
+  r0.yz = -v0.xy * cb0[6].zw + cb0[0].xy + float2(StereoParams.Load(0).x / 2, 0);
+
   r0.xy = r0.yz * r0.xx;
   r0.zw = cb0[6].zw * v0.xy;
   r1.xyzw = r0.xyxy * float4(0.0833333358,0.0833333358,0.166666672,0.166666672) + r0.zwzw;
