@@ -1,3 +1,4 @@
+// ScreenSpaceReflections.usf + ScreenSpaceRayCast.usf
 // ---- Created with 3Dmigoto v1.2.39 on Sun May 22 23:33:46 2016
 Texture2D<float4> t4 : register(t4);
 
@@ -46,6 +47,9 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float p = IniParams.Load(0).x;
+
   r0.xy = t1.SampleLevel(s1_s, v0.xy, 0).zw;
   r0.z = cmp(0.5 < r0.y);
   r0.z = r0.z ? -0.5 : -0;
@@ -68,17 +72,27 @@ void main(
   r1.w = dot(r1.xyz, r1.xyz);
   r1.w = rsqrt(r1.w);
   r1.xyz = r1.xyz * r1.www;
+
+// const float SceneDepth = CalcSceneDepth(UV);
   r1.w = t2.SampleLevel(s2_s, v0.xy, 0).x;
   r1.w = r1.w * cb1[40].z + -cb1[40].w;
   r1.w = 1 / r1.w;
+
+// const float3 PositionTranslatedWorld = mul( float4( ScreenPos * SceneDepth, SceneDepth, 1 ), View.ScreenToTranslatedWorld ).xyz;
   r2.xy = v0.zw * r1.ww;
+
+r2.x -= stereo.x * (r1.w - stereo.y);
+
   r2.yzw = cb1[33].xyz * r2.yyy;
   r2.xyz = r2.xxx * cb1[32].xyz + r2.yzw;
   r2.xyz = r1.www * cb1[34].xyz + r2.xyz;
   r3.xyz = cb1[45].xyz + -r2.xyz;
+
+// const float3 V = normalize(View.TranslatedViewOrigin.xyz - PositionTranslatedWorld);
   r2.w = dot(r3.xyz, r3.xyz);
   r2.w = rsqrt(r2.w);
   r3.xyz = r3.xyz * r2.www;
+
   r2.w = cmp(1 < cb1[74].y);
   r3.w = 1551 * cb1[74].x;
   r3.w = (uint)r3.w;
@@ -128,23 +142,41 @@ void main(
   r0.w = dot(-r3.xyz, r1.xyz);
   r0.w = r0.w + r0.w;
   r1.xyz = r1.xyz * -r0.www + -r3.xyz;
+
+// float4 RayStartClip	= mul( float4( PositionTranslatedWorld, 1 ), View.TranslatedWorldToClip );
   r3.xyzw = cb1[1].xyzw * r2.yyyy;
   r3.xyzw = r2.xxxx * cb1[0].xyzw + r3.xyzw;
   r3.xyzw = r2.zzzz * cb1[2].xyzw + r3.xyzw;
   r3.xyzw = cb1[3].xyzw + r3.xyzw;
+
+// float4 RayEndClip	= mul( float4( PositionTranslatedWorld + R * SceneDepth, 1 ), View.TranslatedWorldToClip );
   r1.xyz = r1.xyz * r1.www + r2.xyz;
   r2.xyzw = cb1[1].xyzw * r1.yyyy;
   r2.xyzw = r1.xxxx * cb1[0].xyzw + r2.xyzw;
   r1.xyzw = r1.zzzz * cb1[2].xyzw + r2.xyzw;
   r1.xyzw = cb1[3].xyzw + r1.xyzw;
+
+// Correct ray start + end position:
+r3.x += stereo.x * (r3.w - stereo.y);
+r1.x += stereo.x * (r1.w - stereo.y);
+
+// float3 RayStartScreen = RayStartClip.xyz / RayStartClip.w;
   r2.xyz = r3.zxy / r3.www;
+
+// float3 RayEndScreen = RayEndClip.xyz / RayEndClip.w;
   r1.xyz = r1.zxy / r1.www;
+
+// float3 RayStepScreen = ( RayEndScreen - RayStartScreen ) / length( RayEndScreen.xy - RayStartScreen.xy );
   r1.xyz = r1.xyz + -r2.xyz;
   r0.w = dot(r1.yz, r1.yz);
   r0.w = sqrt(r0.w);
   r1.xyz = r1.xyz / r0.www;
+
   r2.yz = r2.yz * float2(0.5,-0.5) + float2(0.5,0.5);
+
+// RayStepScreen *= 0.75;
   r1.xyz = float3(1.5,0.75,-0.75) * r1.xyz;
+
   r0.w = 0.117647059 * abs(r1.x);
   r3.xyzw = r0.yyyy * float4(0.0666666701,0.0666666701,0.0666666701,0.0666666701) + float4(0.5,1.5,2.5,3.5);
   r3.xyzw = float4(0.0588235296,0.0588235296,0.0588235296,0.0588235296) * r3.xyzw;
