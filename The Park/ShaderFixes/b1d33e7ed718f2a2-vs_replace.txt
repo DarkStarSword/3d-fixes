@@ -1,3 +1,4 @@
+// Sun reflection, ambient lighting, etc.
 // ---- Created with 3Dmigoto v1.2.39 on Sun May 22 23:34:01 2016
 cbuffer cb1 : register(b1)
 {
@@ -35,9 +36,13 @@ void main(
   r0.xy = cb1[2].xy * r0.xy;
   r0.xy = r0.xy * float2(2,2) + float2(-1,-1);
   r0.xy = float2(1,-1) * r0.xy;
+  o2.xy = r0.xy;
+
+// Move sun reflection to infinity:
+  r0.x -= StereoParams.Load(0).x;
+
   r1.xyz = cb0[33].xyz * r0.yyy;
   r1.xyz = r0.xxx * cb0[32].xyz + r1.xyz;
-  o2.xy = r0.xy;
   o1.xyz = cb0[34].xyz + r1.xyz;
   o2.zw = float2(0,1);
   return;
