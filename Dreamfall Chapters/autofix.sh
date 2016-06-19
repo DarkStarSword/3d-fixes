@@ -5,7 +5,7 @@ PATH="$DIR:$PATH"
 
 unity_asset_extractor.py Dreamfall\ Chapters_Data/Resources/* Dreamfall\ Chapters_Data/*.assets
 cd extracted
-extract_unity_shaders.py */*.shader --type=d3d9
+extract_unity53_shaders.py */*.shader.decompressed
 cd ShaderCRCs
 
 cleanup_unity_shaders.py ../..
