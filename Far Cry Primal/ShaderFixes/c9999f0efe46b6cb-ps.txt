@@ -276,6 +276,8 @@ dcl_constantbuffer cb5[3], immediateIndexed
 dcl_constantbuffer cb6[13], immediateIndexed
 dcl_constantbuffer cb7[3], immediateIndexed
 dcl_constantbuffer cb8[13], immediateIndexed
+// New input with the inversed view matrix:
+dcl_constantbuffer cb13[4], immediateIndexed
 dcl_sampler s0, mode_default
 dcl_sampler s1, mode_default
 dcl_sampler s2, mode_default
@@ -931,9 +933,17 @@ dp4 r24.x, r23.xyzw, cb0[0].xyzw
 dp4 r24.y, r23.xyzw, cb0[1].xyzw
 dp4 r24.z, r23.xyzw, cb0[2].xyzw
 dp4 r24.w, r23.xyzw, cb0[3].xyzw
+
 // InvViewMatrix:
-dp4 r23.x, r24.xyzw, cb0[4].xyzw
-dp4 r23.y, r24.xyzw, cb0[5].xyzw
+
+// Original code using the InvViewMatrix already in this shader:
+//dp4 r23.x, r24.xyzw, cb0[4].xyzw
+//dp4 r23.y, r24.xyzw, cb0[5].xyzw
+
+// Demo using the inverse of ViewMatrix calculated via a custom compute shader:
+dp4 r23.x, r24.xyzw, cb13[0].xyzw
+dp4 r23.y, r24.xyzw, cb13[1].xyzw
+
 // Negate Z to fix alignment when camera is tilted:
 dp4 r23.z, -r24.xyzw, cb0[6].xyzw
 // Adjust Coord:
