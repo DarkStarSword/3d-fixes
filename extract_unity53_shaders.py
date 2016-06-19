@@ -219,6 +219,7 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
 
     hash = zlib.crc32(bin)
     if hash in processed:
+        # FIXME: Merge headers and write it.
         return
     processed.add(hash)
 
