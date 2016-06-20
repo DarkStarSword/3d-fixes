@@ -1,5 +1,11 @@
-Dreamfall Chapters (Books 1-4)
+Dreamfall Chapters (All Books)
 ==============================
+
+Update 2016-06-20
+-----------------
+- Re-fixed game from scratch (again!) for the Unity 5.3 update
+
+- Fixed Book 5
 
 Update 2015-12-10
 -----------------
@@ -55,9 +61,6 @@ Fixed
 
 - Automatic HUD depth (toggle with Q)
 
-- UI depth (except the mouse cursor and automatic HUD) is adjustable with the
-  keys on the number row and tilde to return to screen depth.
-
 Known Issues
 ------------
 - Volumetric ray-marched light shafts are at screen depth and are disabled. You
@@ -71,12 +74,9 @@ Known Issues
 
 Additional Notes
 ----------------
-- I have not completely replayed the first three chapters since the Unity 5
-  update. If you find something broken (especially things like glass or heat
-  distortions), please let me know.
-
-- I expect that I will need to update the fix as more books are released, so
-  check back for updates.
+- I have not replayed the entire game since the Unity 5.3 update. If you find
+  something broken (especially things like glass or heat distortions), please
+  let me know.
 
 
 Thanks to everyone who helped out on the forum to make the original Book 1 fix
