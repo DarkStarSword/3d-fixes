@@ -1,3 +1,5 @@
+// Non-trivial halo fix (unverified)
+
 // CRC32: A66C2AE6 |    Unity headers extracted from Glass-Stained-BumpDistort.shader
 //    Shader "FX/Glass/Stained BumpDistort" {
 //      Properties {
@@ -72,20 +74,32 @@ dcl_texcoord2 o2
 dcl_texcoord3 o3
 dcl_position o4
 
-    dp4 r0.y, c1, v0
-    mov r1.y, -r0.y
+def c220, 0, 1, 0.0625, 1
+dcl_2d s0
+
+    // Rearranged instructions to put MVP matrix multiply in one spot:
     dp4 r1.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.z, c2, v0
     dp4 r0.w, c3, v0
-    add r1.yz, r0.w, r1.xxyw
+
+    // Rearranged instructions to put output position move in one spot:
     mov o4.x, r1.x
+    mov o4.yzw, r0
+
+// Inserted stereo correction using X = r1.x, and W = r0.w:
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mov r1.y, -r0.y
+    add r1.yz, r0.w, r1.xxyw
     mul o0.xy, r1.yzzw, c7.x
     mad o1.xy, v1, c5, c5.zwzw
     mad o2.xy, v1, c6, c6.zwzw
-    dp4 r0.z, c2, v0
     mul r0.x, r0.z, c4.x
     mul r0.x, r0.x, -r0.x
     exp o3.x, r0.x
-    mov o4.yzw, r0
     mov o0.zw, r0
 
 // approximately 15 instruction slots used
