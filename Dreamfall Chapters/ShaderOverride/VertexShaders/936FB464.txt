@@ -1,3 +1,5 @@
+// DO NOT DO HALO FIX - Causes a new halo.
+
 // CRC32: 936FB464 |    Unity headers extracted from Internal-DeferredReflections.shader
 //    Shader "Hidden/Internal-DeferredReflections" {
 //      Properties {
@@ -58,27 +60,13 @@
     dcl_position v0
     dcl_texcoord o0.xy
     dcl_position o1
-
-def c220, 0, 1, 0.0625, 0.5
-dcl_2d s0
-
     dp4 o1.z, c2, v0
     dp4 r0.y, c1, v0
     mul r0.z, r0.y, c4.x
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
-
-mov o1.xyw, r0 // Relocated from line 67 with shadertool.py
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_Internal-DeferredReflections/vp/936FB464.txt
-texldl r31, c220.z, s0
-add r31.w, r0.w, -r31.y
-mad r0.x, r31.w, r31.x, r0.x
-
     mul r1.xzw, r0.xywz, c6.x
-
-//     mov o1.xyw, r0 // Relocated to line 66 with shadertool.py
+    mov o1.xyw, r0
     mad o0.xy, r1.z, c5.zwzw, r1.xwzw
 
 // approximately 8 instruction slots used
