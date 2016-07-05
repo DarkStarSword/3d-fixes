@@ -221,9 +221,7 @@ def shader_hash(message, real_md5=False):
     s = [7, 12, 17, 22]*4 + [5, 9, 14, 20]*4 + [4, 11, 16, 23]*4 + [6, 10, 15, 21]*4
 
     # Use binary integer part of the sines of integers (Radians) as constants:
-    K = []
-    for i in range(64):
-        K.append(np.uint32(math.floor(2**32 * abs(math.sin(i + 1)))))
+    K = [ np.uint32(math.floor(2**32 * abs(math.sin(i)))) for i in range(1, 65) ]
 
     # Initialize variables:
     a0 = np.uint32(0x67452301) # A
