@@ -7,14 +7,14 @@ var current_screenshot_cols;
 var current_screenshot_row;
 var view_mode_html_fn;
 
-function add_screenshot_to_table(id)
+function add_screenshot_to_table(id, block)
 {
 	if (current_screenshot_row.childNodes.length == current_screenshot_cols) {
 		current_screenshot_row = document.createElement('tr');
 		current_screenshot_table.appendChild(current_screenshot_row);
 	}
 	cell = document.createElement('td');
-	cell.innerHTML = view_mode_html_fn(id);
+	cell.innerHTML = view_mode_html_fn(id, block);
 	current_screenshot_row.appendChild(cell);
 }
 
@@ -26,7 +26,7 @@ function create_screenshot_table(container, screenshot_list)
 	current_screenshot_row = document.createElement('tr');
 	current_screenshot_table.appendChild(current_screenshot_row);
 	for (var i in screenshot_list)
-		add_screenshot_to_table(screenshot_list[i]);
+		add_screenshot_to_table(screenshot_list[i], i);
 	container.appendChild(current_screenshot_table);
 }
 
@@ -55,7 +55,7 @@ function save_view_mode(mode)
 function view_mode_plugin()
 {
 	save_view_mode('plugin');
-	update_all_screenshot_blocks(function(id) {
+	update_all_screenshot_blocks(function(id, block) {
 		return '<iframe src="http://photos.3dvisionlive.com/e/embed/' + id + '/nvidia/' + screenshot_width + '.' + screenshot_height + '/important" width="' + screenshot_width + '" height="' + screenshot_height + '" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on  <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>';
 	}, 2);
 }
@@ -63,7 +63,7 @@ function view_mode_plugin()
 function view_mode_crosseyed()
 {
 	save_view_mode('crosseyed');
-	update_all_screenshot_blocks(function(id) {
+	update_all_screenshot_blocks(function(id, block) {
 		return '<img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./' + screenshot_width + '.' + screenshot_height + '/">';
 	}, 1);
 }
@@ -84,20 +84,21 @@ function reverse_eyes(img, id)
 function view_mode_distance()
 {
 	save_view_mode('distance');
-	update_all_screenshot_blocks(function(id) {
+	update_all_screenshot_blocks(function(id, block) {
 		var img = new Image();
-		img.onload = function() { reverse_eyes(this, id) };
-		img.id = 'screenshot_' + id;
+		var uniq_id = block + '_' + id;
+		img.onload = function() { reverse_eyes(this, uniq_id) };
+		img.id = 'screenshot_' + uniq_id
 		var ratio = screenshot_width / screenshot_height * distance_multiplier;
 		img.src = 'http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./' + screenshot_width * distance_multiplier + '.' + screenshot_height * ratio + '/';
-		return '<div><canvas id="canvas_' + id + '"></canvas></div>';
+		return '<div><canvas id="canvas_' + uniq_id + '"></canvas></div>';
 	}, 1);
 }
 
 function view_mode_anaglyph()
 {
 	save_view_mode('anaglyph');
-	update_all_screenshot_blocks(function(id) {
+	update_all_screenshot_blocks(function(id, block) {
 		return '<img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/anaglyph./' + screenshot_width + '.' + screenshot_height + '/">';
 	} , 2);
 }
@@ -132,7 +133,7 @@ function new_screenshot_block()
 function embed_3dvisionlive(id)
 {
 	current_screenshot_list.push(id);
-	add_screenshot_to_table(id);
+	add_screenshot_to_table(id, screenshot_lists.length - 1);
 }
 
 document.write('<p style="text-align: center;">Select viewing method: <a href="javascript:view_mode_plugin();">3D Vision Plugin</a> - <a href="javascript:view_mode_crosseyed();">Cross-eyed</a> - <a href="javascript:view_mode_distance();">Distance</a> - <a href="javascript:view_mode_anaglyph();">Anaglyph</a></p>');
