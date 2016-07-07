@@ -121,19 +121,27 @@ function restore_view_mode() {
 	}
 }
 
+function new_screenshot_block()
+{
+	document.write('<div class="screenshot_block"></div>');
+	current_screenshot_list = [];
+	screenshot_lists.push(current_screenshot_list);
+	create_current_screenshot_table();
+}
+
 function embed_3dvisionlive(id)
 {
 	current_screenshot_list.push(id);
 	add_screenshot_to_table(id);
 }
 
-document.write('<p style="text-align: center;">Select viewing method: <a href="javascript:view_mode_plugin();">3D Vision Plugin</a> - <a href="javascript:view_mode_crosseyed();">Cross-eyed</a> - <a href="javascript:view_mode_distance();">Distance</a> - <a href="javascript:view_mode_anaglyph();">Anaglyph</a></p><div class="screenshot_block"></div>');
+document.write('<p style="text-align: center;">Select viewing method: <a href="javascript:view_mode_plugin();">3D Vision Plugin</a> - <a href="javascript:view_mode_crosseyed();">Cross-eyed</a> - <a href="javascript:view_mode_distance();">Distance</a> - <a href="javascript:view_mode_anaglyph();">Anaglyph</a></p>');
 
 // Check if the script has been called already on this page (blog front page shows multiple posts)
 if (typeof screenshot_lists === 'undefined') {
+	document.write('<div class="screenshot_block"></div>');
 	var screenshot_lists = [current_screenshot_list];
 	restore_view_mode();
 } else {
-	screenshot_lists.push(current_screenshot_list);
-	create_current_screenshot_table();
+	new_screenshot_block();
 }
