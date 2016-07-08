@@ -52,6 +52,16 @@ function save_view_mode(mode)
 	document.cookie = 'screenshot_view_mode=' + mode + '; expires=' + d.toGMTString() + '; path=/';
 }
 
+function jps_download_url(id)
+{
+	return 'http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./';
+}
+
+function anaglyph_download_url(id)
+{
+	return 'http://api.photos.3dvisionlive.com/imagestore/' + id + '/anaglyph./';
+}
+
 function view_mode_plugin()
 {
 	save_view_mode('plugin');
@@ -64,7 +74,7 @@ function view_mode_crosseyed()
 {
 	save_view_mode('crosseyed');
 	update_all_screenshot_blocks(function(id, block) {
-		return '<img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./' + screenshot_width + '.' + screenshot_height + '/">';
+		return '<a href="' + jps_download_url(id) + '" target="_blank"><img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./' + screenshot_width + '.' + screenshot_height + '/"></a>';
 	}, 1);
 }
 
@@ -91,7 +101,7 @@ function view_mode_distance()
 		img.id = 'screenshot_' + uniq_id
 		var ratio = screenshot_width / screenshot_height * distance_multiplier;
 		img.src = 'http://api.photos.3dvisionlive.com/imagestore/' + id + '/nvidia./' + screenshot_width * distance_multiplier + '.' + screenshot_height * ratio + '/';
-		return '<div><canvas id="canvas_' + uniq_id + '"></canvas></div>';
+		return '<div><a href="' + jps_download_url(id) + '" target="_blank"><canvas id="canvas_' + uniq_id + '"></canvas></a></div>';
 	}, 1);
 }
 
@@ -99,7 +109,7 @@ function view_mode_anaglyph()
 {
 	save_view_mode('anaglyph');
 	update_all_screenshot_blocks(function(id, block) {
-		return '<img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/anaglyph./' + screenshot_width + '.' + screenshot_height + '/">';
+		return '<a href="' + anaglyph_download_url(id) + '" target="_blank"><img src="http://api.photos.3dvisionlive.com/imagestore/' + id + '/anaglyph./' + screenshot_width + '.' + screenshot_height + '/"></a>';
 	} , 2);
 }
 
