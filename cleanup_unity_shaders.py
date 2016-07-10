@@ -14,9 +14,11 @@ def cleanup_dx9_ini(path, ini_prefix, removed_hashes):
 	last_line = 0
 	output = []
 	section = []
+	last_was_blank = False
 	for line in lines:
 		match = section_pattern.match(line)
 		if match:
+			last_was_blank = False
 			if current_section in sections:
 				output.extend(section[last_line:])
 				current_section = match.group(0)
@@ -31,6 +33,12 @@ def cleanup_dx9_ini(path, ini_prefix, removed_hashes):
 			section.append(line)
 			if line.strip() and line[0] != ';':
 				last_line = len(section)
+			if not last_was_blank and line.strip() == '' and last_line == len(section) - 1:
+				# Allows stripping exactly 1 line of whitespace after the section
+				last_line = len(section)
+				last_was_blank = True
+			else:
+				last_was_blank = False
 
 	if current_section not in sections:
 		output.extend(section)
@@ -50,8 +58,10 @@ def cleanup_dx11_ini(path, removed_hashes):
 	last_line = 0
 	output = []
 	section = []
+	last_was_blank = False
 	for line in lines:
 		if section_pattern.match(line):
+			last_was_blank = False
 			is_shaderoverride_section = not not shaderoverride_pattern.match(line)
 			if current_shaderoverride_hash in hashes:
 				output.extend(section[last_line:])
@@ -71,6 +81,12 @@ def cleanup_dx11_ini(path, removed_hashes):
 			section.append(line)
 			if line.strip() and line[0] != ';':
 				last_line = len(section)
+			if not last_was_blank and line.strip() == '' and last_line == len(section) - 1:
+				# Allows stripping exactly 1 line of whitespace after the section
+				last_line = len(section)
+				last_was_blank = True
+			else:
+				last_was_blank = False
 
 	if current_shaderoverride_hash not in hashes:
 		output.extend(section)
