@@ -5,6 +5,7 @@ FXC=~/fxc.exe
 PATH="$DIR:$PATH"
 
 EXTRACT=1
+CLEANUP=1
 UPDATE_INI=1
 
 FIX_LIGHTING=1
@@ -31,10 +32,9 @@ if [ $EXTRACT -eq 1 ]; then
 	cd ShaderFNVs
 fi
 
-# TODO: DX11 version of:
-# if [ $CLEANUP -eq 1 ]; then
-# 	cleanup_unity_shaders.py ../..
-# fi
+if [ $CLEANUP -eq 1 ]; then
+	cleanup_unity_shaders.py ../..
+fi
 
 if [ $FIX_LIGHTING -eq 1 ]; then
 	# Lighting fix - match any shaders that use known lighting vertex shaders:
