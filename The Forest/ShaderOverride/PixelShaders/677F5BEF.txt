@@ -1,0 +1,225 @@
+// CRC32: 677F5BEF | Matched 2 variants of 1 shaders: Lux/Human/Skin Deferred
+//
+//    Unity headers extracted from Lux Skin Deferred.shader
+//    Shader "Lux/Human/Skin Deferred" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//      [NoScaleOffset]  _SpecTex ("Smoothness (G) SSS Mask (B), AO (A)", 2D) = "gray" { }
+//      [NoScaleOffset]  _BumpMap ("Bump Map", 2D) = "bump" { }
+//      [Header(Bump Settings)] [Space(4)]  _SimpleBumpBias ("Diffuse Normal Map Blur Bias", Float) = 1.5
+//      [Header(Preintegrated Skin Lighting)] [Space(4)]  _CurvatureInfluence ("Curvature Influence", Range(0,1)) = 0.5
+//       _CurvatureScale ("Curvature Scale", Float) = 0.02
+//      [Header(Damage)] [Space(4)] [Toggle(_SPECGLOSSMAP)]  _UseDamage ("Enable Damage", Float) = 0
+//       _BloodColor ("Blood Color", Color) = (0.56,0.1,0,1)
+//      [NoScaleOffset]  _BloodTex ("Blood Detail Map: Smoothness(G) Brightness(B) Mask(A)", 2D) = "black" { }
+//       _BloodTiling ("Blood Detail Tiling", Float) = 5
+//       _Sharpness ("Blood Spread", Range(0.5,8)) = 2
+//      [NoScaleOffset] [Space(8)]  _BloodSplat ("Blood Splatmap: Top(R) Left(G) Right(B) Enemy(A)", 2D) = "white" { }
+//      [Space(8)]  _Damage1 ("Damage Top (R)", Range(0,1)) = 0
+//       _Damage2 ("Damage Left (G)", Range(0,1)) = 0
+//       _Damage3 ("Damage Right (B)", Range(0,1)) = 0
+//       _Damage4 ("Damage Enemy (A)", Range(0,1)) = 0
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "RenderType"="Opaque" }
+//        Pass 1/3 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 23577
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "LUX_AREALIGHTS" "SHADOWS_OFF" "_SPECGLOSSMAP" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "_SPECGLOSSMAP" }
+//              Vector 12 [_BloodColor]
+//              Float 18 [_BloodTiling]
+//              Vector 8 [_Color]
+//              Float 11 [_CurvatureInfluence]
+//              Float 10 [_CurvatureScale]
+//              Float 14 [_Damage1]
+//              Float 15 [_Damage2]
+//              Float 16 [_Damage3]
+//              Float 17 [_Damage4]
+//              Vector 6 [_LightColor0]
+//              Float 13 [_Sharpness]
+//              Float 9 [_SimpleBumpBias]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [_WorldSpaceLightPos0]
+//              Vector 5 [unity_ColorSpaceDielectricSpec]
+//              Vector 7 [unity_LightGammaCorrectionConsts]
+//              Vector 4 [unity_SHAb]
+//              Vector 3 [unity_SHAg]
+//              Vector 2 [unity_SHAr]
+//              SetTexture 0 [_BRDFTex] 2D 0
+//              SetTexture 1 [_MainTex] 2D 1
+//              SetTexture 2 [_BumpMap] 2D 2
+//              SetTexture 3 [_SpecTex] 2D 3
+//              SetTexture 4 [_BloodTex] 2D 4
+//              SetTexture 5 [_BloodSplat] 2D 5
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c19, 2, -1, 0, 1
+    def c20, 9.99999975e-006, 100000, 0.5, 1
+    def c21, -5.55472994, -6.98316002, 9.99999975e-005, 3.14159274
+    dcl_texcoord v0.xy
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3
+    dcl_texcoord4_pp v4.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Lux_Human_Skin Deferred/fp/677F5BEF.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mul r0.xyz, c19.wwzw, v0.xyxw
+    mov r0.w, c9.x
+    texldl_pp r0, r0, s2
+    mad_pp r0.xy, r0.wyzw, c19.x, c19.y
+    dp2add_sat_pp r0.w, r0, r0, c19.z
+    add_pp r0.w, -r0.w, c19.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    dp3_pp r1.x, v1, r0
+    dp3_pp r1.y, v2, r0
+    dp3_pp r1.z, v3, r0
+    dsx_pp r0.xyz, r1
+    dsy_pp r2.xyz, r1
+    dp3 r0.w, r1, c1
+    mad_sat r1.x, r0.w, c20.z, c20.z
+    add_pp r0.xyz, r0_abs, r2_abs
+    dp3_pp r0.x, r0, r0
+    rsq_pp r0.x, r0.x
+    rcp r0.x, r0.x
+    mov r2.x, v1.w
+    mov r2.y, v2.w
+    mov r2.z, v3.w
+    dsx r0.yzw, r2.xxyz
+    dsy r3.xyz, r2
+    add r2.xyz, -r2, r30
+    add r0.yzw, r0_abs, r3_abs.xxyz
+    max r3.xyz, c20.x, r0.yzww
+    dp3 r0.y, r3, r3
+    rsq r0.y, r0.y
+    rcp r0.z, r0.y
+    cmp r0.y, -r0.z, c20.y, r0.y
+    mul r0.x, r0.y, r0.x
+    texld_pp r3, v0, s3
+    mad_pp r0.x, r0.x, c10.x, -r3.z
+    mad_pp r0.x, c11.x, r0.x, r3.z
+    cmp_pp r1.y, -c11.x, r3.z, r0.x
+    mov r1.zw, c19.z
+    texldl_pp r0, r1, s0
+    mul_pp r0.xyz, r0, c6
+    texld_pp r1, v0, s2
+    mad_pp r1.xy, r1.wyzw, c19.x, c19.y
+    dp2add_sat_pp r0.w, r1, r1, c19.z
+    add_pp r0.w, -r0.w, c19.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r1.z, r0.w
+    dp3_pp r4.x, v1, r1
+    dp3_pp r4.y, v2, r1
+    dp3_pp r4.z, v3, r1
+    mov r4.w, c19.w
+    dp4_pp r1.x, c2, r4
+    dp4_pp r1.y, c3, r4
+    dp4_pp r1.z, c4, r4
+    add_pp r1.xyz, r1, v4
+    mad_pp r0.xyz, r1, r3.w, r0
+    texld_pp r1, v0, s5
+    mov_pp r5.x, c14.x
+    mov_pp r5.y, c15.x
+    mov_pp r5.z, c16.x
+    mov_pp r5.w, c17.x
+    mad_pp r6, r5, c19.x, c19.w
+    mul_pp r1, r1, r6
+    mul r3.xz, c18.x, v0.xyyw
+    texld_pp r6, r3.xzzw, s4
+    mul_pp r1, r1, r6.w
+    mad_sat_pp r1, r1, -c19.x, c19.w
+    add_pp r1, -r1, r5
+    mul_sat_pp r1, r1, c13.x
+    dp4_sat_pp r0.w, r1, c19.w
+    texld r1, v0, s1
+    mul_pp r1.xyz, r1, c8
+    mad_pp r3.xzw, c12.xyyz, r6.z, -r1.xyyz
+    mad_pp r1.xyz, r0.w, r3.xzww, r1
+    lrp_pp r1.w, r0.w, r6.y, r3.y
+    add_pp r0.w, -r1.w, c19.w
+    mul_pp r0.w, r0.w, r0.w
+    max_pp r1.w, c5.x, c5.y
+    max_pp r2.w, r1.w, c5.z
+    add_pp r1.w, -r2.w, c19.w
+    mul_pp r1.xyz, r1.w, r1
+    dp3 r2.w, r2, r2
+    rsq r2.w, r2.w
+    mul_pp r3.xyz, r2.w, r2
+    mad_pp r2.xyz, r2, r2.w, c1
+    nrm_pp r5.xyz, r2
+    nrm_pp r2.xyz, r4
+    dp3_pp r2.w, r4, c1
+    max_pp r3.w, r2.w, c19.z
+    dp3_pp r2.w, r2, r3
+    dp3_pp r2.x, r2, r5
+    dp3_pp r2.y, c1, r5
+    max_pp r3.x, r2.y, c19.z
+    max_pp r3.y, r2.x, c19.z
+    mul r2.x, r3.y, r3.y
+    max_pp r3.y, r2.w, c19.z
+    mul_pp r2.y, r0.w, c20.z
+    mad_pp r2.z, r0.w, -c20.z, c20.w
+    mad_pp r2.w, r3.y, r2.z, r2.y
+    mad_pp r2.y, r3.w, r2.z, r2.y
+    mad r2.y, r2.y, r2.w, c21.z
+    rcp_pp r2.y, r2.y
+    mad r2.z, r0.w, r0.w, c19.y
+    mul_pp r0.w, r0.w, r0.w
+    mad_pp r2.x, r2.x, r2.z, c19.w
+    mul r2.z, r2.x, c21.w
+    mul r2.x, r2.x, r2.z
+    rcp r2.x, r2.x
+    mul_pp r0.w, r0.w, r2.x
+    mul_pp r0.w, r0.w, r2.y
+    mul_pp r0.w, r3.w, r0.w
+    mul_pp r0.w, r0.w, c7.x
+    max_pp r2.x, r0.w, c19.z
+    mad_pp r0.w, r3.x, c21.x, c21.y
+    mul_pp r0.w, r3.x, r0.w
+    exp_pp r0.w, r0.w
+    add_pp r2.y, -r1.w, c19.w
+    mad_pp r0.w, r1.w, r0.w, r2.y
+    mul_pp r0.w, r0.w, r2.x
+    mul_pp r2.xyz, r0.w, c6
+    mul_pp r2.xyz, r3.w, r2
+    mad_pp oC0.xyz, r1, r0, r2
+    mov_pp oC0.w, c19.w
