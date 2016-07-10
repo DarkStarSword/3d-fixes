@@ -16,7 +16,7 @@ def cleanup_dx9_ini(path, ini_prefix, removed_hashes):
 	section = []
 	for line in lines:
 		match = section_pattern.match(line)
-		if section_pattern.match(line):
+		if match:
 			if current_section in sections:
 				output.extend(section[last_line:])
 				current_section = match.group(0)
@@ -39,8 +39,45 @@ def cleanup_dx9_ini(path, ini_prefix, removed_hashes):
 
 	open(path, 'w', newline='\n').write(''.join(output))
 
+shaderoverride_pattern = re.compile('^\[ShaderOverride.*\]', re.IGNORECASE)
+hash_pattern = re.compile(r'^\s*hash\s*=\s*([0-9a-f]+)\s*$', re.IGNORECASE)
 def cleanup_dx11_ini(path, removed_hashes):
-	pass
+	hashes = set([ x.split('-', 1)[0] for x in removed_hashes ])
+	lines = open(path, newline='\n').readlines()
+
+	is_shaderoverride_section = False
+	current_shaderoverride_hash = None
+	last_line = 0
+	output = []
+	section = []
+	for line in lines:
+		if section_pattern.match(line):
+			is_shaderoverride_section = not not shaderoverride_pattern.match(line)
+			if current_shaderoverride_hash in hashes:
+				output.extend(section[last_line:])
+				current_shaderoverride_hash = None
+				section = [line]
+				last_line = 0
+				continue
+			output.extend(section)
+			section = [line]
+			current_shaderoverride_hash = None
+			last_line = 0
+		else:
+			if is_shaderoverride_section:
+				match = hash_pattern.match(line)
+				if match:
+					current_shaderoverride_hash = match.group(1)
+			section.append(line)
+			if line.strip() and line[0] != ';':
+				last_line = len(section)
+
+	if current_shaderoverride_hash not in hashes:
+		output.extend(section)
+	else:
+		output.extend(section[last_line:])
+
+	open(path, 'w', newline='\n').write(''.join(output))
 
 def cleanup_common(game_dir, git_path, extracted_glob, shader_path, ini_filename, cleanup_ini):
 	# TODO: Make case insensitive
