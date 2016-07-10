@@ -117,7 +117,7 @@ def cleanup_common(game_dir, git_path, extracted_glob, shader_path, ini_filename
 	ini_path = os.path.join(git_path, ini_filename)
 	cleanup_ini(ini_path, removed_hashes)
 
-	command = ['git', '-C', git_path, 'add', ini_path]
+	command = ['git', '-C', git_path, 'add', ini_filename]
 	print("Running '%s'..." % ' '.join(command))
 	subprocess.call(command)
 
