@@ -458,10 +458,8 @@ def export_filename_combined(sub_programs, args):
     assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
 
     if not args.deep_dir:
-        ret = export_filename_combined_short(shaders[0])
-    else:
-        ret = export_filename_combined_long(shaders, args)
-    return None
+        return export_filename_combined_short(shaders[0])
+    return export_filename_combined_long(shaders, args)
 
 def _collect_headers(tree):
     headers = []
