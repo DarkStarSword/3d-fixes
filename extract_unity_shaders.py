@@ -635,7 +635,7 @@ def _add_shader_hash_gl_crc(sub_program, hash):
     sub_program.hash_fmt = '%x'
 
 def add_shader_hash_gl_crc(sub_program):
-    _add_shader_hash_gl_crc(hash_gl_crc(sub_program))
+    _add_shader_hash_gl_crc(sub_program, hash_gl_crc(sub_program))
 
 
 def is_opengl_shader(sub_program):
