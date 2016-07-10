@@ -6,7 +6,8 @@ import subprocess, re
 import shadertool
 
 section_pattern=re.compile('^\[(.*)\]')
-def cleanup_dx9_ini(path, sections):
+def cleanup_dx9_ini(path, ini_prefix, removed_hashes):
+	sections = set([ '[%s%s]' % (ini_prefix, os.path.splitext(x)[0]) for x in removed_hashes ])
 	lines = open(path, newline='\n').readlines()
 
 	current_section = None
@@ -38,18 +39,20 @@ def cleanup_dx9_ini(path, sections):
 
 	open(path, 'w', newline='\n').write(''.join(output))
 
+def cleanup_dx11_ini(path, removed_hashes):
+	pass
 
-def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
+def cleanup_common(game_dir, git_path, extracted_glob, shader_path, ini_filename, cleanup_ini):
 	# TODO: Make case insensitive
 
-	tmp = glob.glob(os.path.join(game_dir, 'extracted/ShaderCRCs/*/%s/*.txt' % unity_type))
-	crcs = set([ os.path.basename(x) for x in tmp ])
+	tmp = glob.glob(os.path.join(game_dir, extracted_glob))
+	hashes = set([ os.path.basename(x) for x in tmp ])
 
-	tmp = glob.glob(os.path.join(git_path, 'ShaderOverride/%s/*.txt' % helix_type))
+	tmp = glob.glob(os.path.join(git_path, shader_path, '*.txt'))
 	installed = set([ os.path.basename(x) for x in tmp ])
 
-	removed_crcs = installed.difference(crcs)
-	removed_files = [ 'ShaderOverride/%s/%s' % (helix_type, x) for x in removed_crcs ]
+	removed_hashes = installed.difference(hashes)
+	removed_files = [ os.path.join(shader_path, x) for x in removed_hashes ]
 
 	if not removed_files:
 		return
@@ -58,33 +61,55 @@ def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
 	print("Running '%s'..." % ' '.join(command))
 	subprocess.call(command)
 
-	sections = set([ '[%s%s]' % (ini_prefix, os.path.splitext(x)[0]) for x in removed_crcs ])
-	ini_path = os.path.join(git_path, 'DX9Settings.ini')
-	cleanup_dx9_ini(ini_path, sections)
+	ini_path = os.path.join(git_path, ini_filename)
+	cleanup_ini(ini_path, removed_hashes)
 
 	command = ['git', '-C', git_path, 'add', ini_path]
 	print("Running '%s'..." % ' '.join(command))
 	subprocess.call(command)
 
-	for file in removed_crcs:
-		path = os.path.join(game_dir, 'ShaderOverride', helix_type, file)
+	for file in removed_hashes:
+		path = os.path.join(game_dir, shader_path, file)
 		print("rm '%s'" % path)
 		try:
 			os.remove(path)
 		except FileNotFoundError:
 			pass
 
-	cleanup_dx9_ini(os.path.join(game_dir, 'DX9Settings.ini'), sections)
+	cleanup_ini(os.path.join(game_dir, ini_filename), removed_hashes)
+
+def cleanup_dx9(game_dir, git_path, unity_type, ini_prefix, helix_type):
+	extracted_glob = 'extracted/ShaderCRCs/*/%s/*.txt' % unity_type
+	shader_path = os.path.join('ShaderOverride', helix_type)
+	ini_filename = 'DX9Settings.ini'
+	cleanup_ini = lambda path, removed_hashes : cleanup_dx9_ini(path, ini_prefix, removed_hashes)
+	return cleanup_common(game_dir, git_path, extracted_glob, shader_path, ini_filename, cleanup_ini)
+
+def cleanup_dx11(game_dir, git_path):
+	extracted_glob = 'extracted/ShaderFNVs/*/*.txt'
+	shader_path = 'ShaderFixes'
+	ini_filename = 'd3dx.ini'
+	cleanup_ini = lambda path, removed_hashes : cleanup_dx11_ini(path, removed_hashes)
+	return cleanup_common(game_dir, git_path, extracted_glob, shader_path, ini_filename, cleanup_ini)
 
 def main():
 	for game_dir in map(os.path.realpath, sys.argv[1:]):
 		git_path = shadertool.game_git_dir(game_dir)
-		cleanup_dx9(game_dir, git_path, 'vp', 'VS', 'VertexShaders')
-		cleanup_dx9(game_dir, git_path, 'fp', 'PS', 'PixelShaders')
+		found = False
+		if os.path.exists(os.path.join(git_path, 'DX9Settings.ini')):
+			cleanup_dx9(game_dir, git_path, 'vp', 'VS', 'VertexShaders')
+			cleanup_dx9(game_dir, git_path, 'fp', 'PS', 'PixelShaders')
+			found = True
+		if os.path.exists(os.path.join(git_path, 'd3dx.ini')):
+			cleanup_dx11(game_dir, git_path)
+			found = True
 
-		command = [ 'git', '-C', git_path, 'commit', '-m', '%s: run cleanup_unity_shaders.py' % os.path.basename(git_path) ]
-		print("Running '%s'..." % ' '.join(command))
-		subprocess.call(command)
+		if found:
+			command = [ 'git', '-C', git_path, 'commit', '-m', '%s: run cleanup_unity_shaders.py' % os.path.basename(git_path) ]
+			print("Running '%s'..." % ' '.join(command))
+			subprocess.call(command)
+		else:
+			print('cleanup_unity_shaders WARNING: Unable to determine modding tool for %s' % game_dir)
 
 if __name__ == '__main__':
 	main()
