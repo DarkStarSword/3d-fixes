@@ -51,7 +51,8 @@ def parse_custom_setting_names_xml():
 	# bogus. It claims to be utf-16, but is actually utf-8. I haven't tried
 	# checking if I am able to use a correctly encoded file with it, but in
 	# order to work with the original I'll decode it myself here:
-	xml = open('../CustomSettingNames_en-EN.xml', 'rb').read().decode('utf-8')
+	path = os.path.join(os.path.dirname(sys.argv[0]), '..', 'CustomSettingNames_en-EN.xml')
+	xml = open(path, 'rb').read().decode('utf-8')
 	dom = minidom.parseString(xml)
 	# print('\n'.join(dir(dom)))
 	for CustomSetting in dom.getElementsByTagName('CustomSetting'):
