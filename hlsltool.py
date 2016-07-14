@@ -1273,6 +1273,23 @@ def validate_shader_compiles(filename, shader_model):
             print(err.decode('ascii').replace('\r', ''), end='', file=f)
             print('****************************** COMPILE %s ******************************/' % err_type, file=f)
 
+def alt_filenames(filename):
+    ''' Returns iterator over alternate filenames for a shader - HLSL, ASM, and ~failed '''
+    yield (filename, True)
+    yield (filename + '~bad', False)
+    f = filename.lower()
+    if f.endswith('_replace.txt'):
+        yield (filename + '~failed', True)
+        f =  filename.rsplit('_', 1)[0] + '.txt'
+        yield (f, True)
+        yield (f + '~bad', False)
+    elif f.endswith('.txt'):
+        f = os.path.splitext(filename)[0] + '_replace.txt'
+        yield (f, True)
+        yield (f + '~bad', False)
+    else:
+        debug('Unable to determine alternate filename of %s' % filename)
+
 def install_shader_to(shader, file, args, base_dir, show_full_path=False):
     try:
         os.mkdir(base_dir)
@@ -1286,13 +1303,24 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
         pass
 
     dest_name = os.path.basename(file)
+    for (check_name, force_allowed) in alt_filenames(dest_name):
+        check_dest = os.path.join(shader_dir, check_name)
+        if os.path.exists(check_dest):
+            if not force_allowed:
+                debug_verbose(0, 'Skipping %s - marked bad' % dest_name)
+                return False
+            if args.force:
+                if dest_name != check_name:
+                    debug_verbose(0, 'Removing shader with alternate filename %s' % check_dest)
+                    os.remove(check_dest)
+            elif dest_name == check_name:
+                debug_verbose(0, 'Skipping %s - already installed' % dest_name)
+                return False
+            else:
+                debug_verbose(0, 'Skipping %s - shader with alternate filename %s already installed' % (dest_name, check_name))
+                return False
+
     dest = os.path.join(shader_dir, dest_name)
-    if not args.force and (os.path.exists(dest) or os.path.exists(dest + '~failed')):
-        debug_verbose(0, 'Skipping %s - already installed' % file)
-        return False
-    if os.path.exists(dest + '~bad'):
-        debug_verbose(0, 'Skipping %s - marked bad' % file)
-        return False
 
     if show_full_path:
         debug_verbose(0, 'Installing to %s...' % dest)
