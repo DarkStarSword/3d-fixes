@@ -1,14 +1,14 @@
 Stranded Deep
 =============
 
-Update 2015-07-14
+Update 2016-07-14
 -----------------
 The fix has been updated to work with the latest version of the game (0.13.H1).
 This update switches many shaders to assembly to fix certain rendering issues -
 **be sure to remove the old version of the fix with the provided uninstall.bat
 before installing this version.**
 
-Update 2015-05-22
+Update 2016-05-22
 -----------------
 The entire fix has been redone from scratch after an engine update to Unity 5.3
 completely broke the previous version of the fix along with my unity scripts
