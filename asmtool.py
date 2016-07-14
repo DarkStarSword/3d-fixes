@@ -238,6 +238,30 @@ class ICBDeclaration(Declaration):
         $
     ''', re.MULTILINE | re.VERBOSE | re.DOTALL)
 
+class CBDeclaration(Declaration):
+    pattern = re.compile(r'''
+        \s*
+        dcl_constantbuffer
+        \s*
+        cb(?P<cb>\d+)
+        \[
+            (?P<size>\d+)
+        \],
+        \s*
+        (?P<access_pattern>\S+)
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+    def __init__(self, text, cb, size, access_pattern):
+        Declaration.__init__(self, text)
+        self.cb = int(cb)
+        self.size = int(size)
+        self.access_pattern = access_pattern
+
+    def __str__(self):
+        return '\ndcl_constantbuffer cb%d[%d], %s' % (self.cb, self.size, self.access_pattern)
+
 class TempsDeclaration(Declaration):
     pattern = re.compile(r'''
         \s*
@@ -284,6 +308,7 @@ class ReturnInstruction(Instruction):
 
 specific_instructions = (
     ICBDeclaration,
+    CBDeclaration,
     TempsDeclaration,
     SVOutputDeclaration,
     Declaration,
@@ -391,6 +416,20 @@ class ASMShader(hlsltool.Shader):
                 'w': swizzle4[3],
             }[component]
         return ret
+
+    def adjust_cb_size(self, cb, size):
+        search = 'dcl_constantbuffer cb%d[' % cb
+        for declaration in self.declarations:
+            if not isinstance(declaration, CBDeclaration):
+                continue
+            if declaration.cb != cb:
+                continue
+
+            size = (size + 15) // 16
+            if (declaration.size >= size):
+                return
+            debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, declaration.size, size))
+            declaration.size = size
 
     def find_cb_entry(self, type, name):
         match = self.find_header(cbuffer_entry_pattern(type, name))
@@ -501,6 +540,144 @@ class ASMShader(hlsltool.Shader):
         for instr in self.instructions:
             s += str(instr)
         return s
+
+def fix_unity_reflection(shader):
+    try:
+        _WorldSpaceCameraPos = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_WorldSpaceCameraPos, 'constant'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos')
+        return
+
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
+    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+
+    shader.insert_stereo_params()
+
+    repl_WorldSpaceCameraPos = shader.allocate_temp_reg()
+    clip_space_adj = shader.allocate_temp_reg()
+    world_space_adj = shader.allocate_temp_reg()
+    local_space_adj = shader.allocate_temp_reg()
+
+    # Apply a stereo correction to the world space camera position - this
+    # pushes environment reflections, specular highlights, etc to the correct
+    # depth
+    shader.replace_reg(_WorldSpaceCameraPos, repl_WorldSpaceCameraPos, 'xyz')
+    shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
+    shader.early_insert_multiple_lines('''
+        mov {repl_WorldSpaceCameraPos}.xyzw, {_WorldSpaceCameraPos}.xyzw
+        mov {clip_space_adj}.xyzw, l(0)
+        mul {clip_space_adj}.x, -{stereo}.x, {stereo}.y
+        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
+        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
+        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        add {repl_WorldSpaceCameraPos}.xyz, {repl_WorldSpaceCameraPos}.xyz, -{world_space_adj}.xyz
+    '''.lstrip().format(
+        _WorldSpaceCameraPos = _WorldSpaceCameraPos,
+        repl_WorldSpaceCameraPos = repl_WorldSpaceCameraPos,
+        stereo = shader.stereo_params_reg,
+        clip_space_adj = clip_space_adj,
+        world_space_adj = world_space_adj,
+        local_space_adj = local_space_adj,
+        InvMVPMatrix0 = 'cb10[0]',
+        InvMVPMatrix1 = 'cb10[1]',
+        InvMVPMatrix2 = 'cb10[2]',
+        InvMVPMatrix3 = 'cb10[3]',
+        _Object2World0 = 'cb11[12]',
+        _Object2World1 = 'cb11[13]',
+        _Object2World2 = 'cb11[14]',
+        _Object2World3 = 'cb11[15]'
+    ))
+
+    if hlsltool.possibly_copy_unity_world_matrices(shader):
+        shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_MVP')
+
+    # Do this last so we can use our own resources if we are the first in the frame:
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    # "copy" is important since constant buffers cannot be used for other
+    # purposes. FIXME: Each copy is lightweight, but with so many they may add
+    # up. Consider using a shader resource slot instead - accesses will be
+    # marginally slower, but may be overall faster than copying to CB memory:
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
+
+    shader.autofixed = True
+
+def fix_unity_frustum_world(shader):
+    try:
+        _FrustumCornersWS = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_FrustumCornersWS, 'matrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not use _FrustumCornersWS, or is missing headers (my other scripts can extract these)')
+        return
+
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
+    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+    shader.insert_decl('dcl_constantbuffer cb13[9], immediateIndexed') # UnityPerCamera
+
+    shader.insert_stereo_params()
+
+    repl_FrustumCornersWS = []
+    for i in range(3):
+        repl_FrustumCornersWS.append(shader.allocate_temp_reg())
+        shader.replace_reg(_FrustumCornersWS[i], repl_FrustumCornersWS[i], 'xyzw')
+
+    far = shader.allocate_temp_reg()
+    clip_space_adj = shader.allocate_temp_reg()
+    world_space_adj = shader.allocate_temp_reg()
+    local_space_adj = shader.allocate_temp_reg()
+
+    # Apply a stereo correction to the world space frustum corners - this
+    # fixes the glow around the sun in The Forest (shaders called Sunshine
+    # PostProcess Scatter)
+    shader.early_insert_vanity_comment("Unity _FrustumCornersWS fix inserted with")
+    shader.early_insert_multiple_lines('''
+        add {far}.x, {_ZBufferParams}.z, {_ZBufferParams}.w
+        rcp {far}.x, {far}.x
+        mov {clip_space_adj}.xyzw, l(0)
+        add {clip_space_adj}.x, {far}.x, -{stereo}.y
+        mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
+        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
+        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
+        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        // GOTCHA: _FrustumCornersWS is TRANSPOSED vs DX9!
+        add {repl_FrustumCornersWS0}.xyzw, {_FrustumCornersWS0}.xyzw, -{world_space_adj}.xxxx
+        add {repl_FrustumCornersWS1}.xyzw, {_FrustumCornersWS1}.xyzw, -{world_space_adj}.yyyy
+        add {repl_FrustumCornersWS2}.xyzw, {_FrustumCornersWS2}.xyzw, -{world_space_adj}.zzzz
+    '''.lstrip().format(
+        far = far,
+        _ZBufferParams = 'cb13[7]',
+        stereo = shader.stereo_params_reg,
+        clip_space_adj = clip_space_adj,
+        world_space_adj = world_space_adj,
+        local_space_adj = local_space_adj,
+        InvMVPMatrix0 = 'cb10[0]',
+        InvMVPMatrix1 = 'cb10[1]',
+        InvMVPMatrix2 = 'cb10[2]',
+        InvMVPMatrix3 = 'cb10[3]',
+        _Object2World0 = 'cb11[12]',
+        _Object2World1 = 'cb11[13]',
+        _Object2World2 = 'cb11[14]',
+        _Object2World3 = 'cb11[15]',
+        repl_FrustumCornersWS0 = repl_FrustumCornersWS[0],
+        repl_FrustumCornersWS1 = repl_FrustumCornersWS[1],
+        repl_FrustumCornersWS2 = repl_FrustumCornersWS[2],
+        _FrustumCornersWS0 = _FrustumCornersWS[0],
+        _FrustumCornersWS1 = _FrustumCornersWS[1],
+        _FrustumCornersWS2 = _FrustumCornersWS[2],
+    ))
+
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
+
+    shader.autofixed = True
 
 def fix_fcprimal_reflection(shader):
     try:
@@ -783,6 +960,10 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--fix-unity-reflection', action='store_true',
+            help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
+    parser.add_argument('--fix-unity-frustum-world', action='store_true',
+            help="Applies a world-space correction to _FrustumCornersWS. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-fcprimal-reflection', action='store_true',
             help="Fix a reflection shader in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-physical-lighting', action='store_true',
@@ -822,6 +1003,10 @@ def main():
         try:
             if args.auto_fix_vertex_halo:
                 hlsltool.auto_fix_vertex_halo(shader)
+            if args.fix_unity_reflection:
+                fix_unity_reflection(shader)
+            if args.fix_unity_frustum_world:
+                fix_unity_frustum_world(shader)
             if args.fix_fcprimal_reflection:
                 fix_fcprimal_reflection(shader)
             if args.fix_fcprimal_physical_lighting:

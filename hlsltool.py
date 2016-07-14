@@ -452,6 +452,32 @@ class Shader(object):
 
         raise KeyError()
 
+    def find_unity_cb_entry(self, pattern, type):
+        match = self.find_header(pattern)
+        offset = int(match.group(type))
+
+        pos = self.declarations_txt.rfind('ConstBuffer "', 0, match.start())
+        if pos == -1:
+            raise KeyError()
+        match = unity_ConstBuffer_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        cb_name = match.group('name')
+        cb_size = int(match.group('size'))
+
+        pos = self.declarations_txt.find('BindCB "%s"' % cb_name, match.end())
+        if pos == -1:
+            raise KeyError()
+        match = unity_BindCB_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        cb = int(match.group('cb'))
+
+        self.adjust_cb_size(cb, cb_size)
+        return cb, offset
+
     non_ws_pattern = re.compile('\S')
     def comment_out_instruction(self, line, additional=None):
         instr = str(self.instructions[line])
@@ -484,8 +510,14 @@ class Shader(object):
 
     def insert_multiple_lines(self, pos, lines):
         off = 0
-        for line in map(str.strip, lines.split('\n')):
+        for line in map(str.strip, lines.splitlines()):
             off += self.insert_instr(pos + off, line)
+        return off
+
+    def early_insert_multiple_lines(self, lines):
+        off = 0
+        for line in map(str.strip, lines.splitlines()):
+            off += self.early_insert_instr(line)
         return off
 
     def set_ini_name(self, name):
@@ -689,32 +721,6 @@ class HLSLShader(Shader):
 
     def append_declaration(self, declaration):
         self.declarations_txt += '\n%s\n\n' % declaration.strip()
-
-    def find_unity_cb_entry(self, pattern, type):
-        match = self.find_header(pattern)
-        offset = int(match.group(type))
-
-        pos = self.declarations_txt.rfind('ConstBuffer "', 0, match.start())
-        if pos == -1:
-            raise KeyError()
-        match = unity_ConstBuffer_pattern.match(self.declarations_txt, pos)
-        if match is None:
-            raise KeyError()
-
-        cb_name = match.group('name')
-        cb_size = int(match.group('size'))
-
-        pos = self.declarations_txt.find('BindCB "%s"' % cb_name, match.end())
-        if pos == -1:
-            raise KeyError()
-        match = unity_BindCB_pattern.match(self.declarations_txt, pos)
-        if match is None:
-            raise KeyError()
-
-        cb = int(match.group('cb'))
-
-        self.adjust_cb_size(cb, cb_size)
-        return cb, offset
 
     def append_comment_to_line(self, line, comment):
         instr = str(self.instructions[line])
@@ -1083,6 +1089,48 @@ def fix_unity_lighting_ps(shader):
 
     shader.autofixed = True
 
+def possibly_copy_unity_world_matrices(shader):
+    # We might possibly use this shader as a source of the MVP and
+    # _Object2World matrices, but only if it is rendering from the POV of the
+    # camera. Blacklist shadow casters which are rendered from the POV of a
+    # light.
+    #
+    # No longer blacklisting IGNOREPROJECTOR shaders - I was never sure what
+    # that tag signified, but it's clear that they do/can have valid matrices,
+    # and some scenes (e.g. falling Dreamer in Dreamfall chapter 1) only have
+    # the matrices we want in these shaders.
+    #
+    # This blacklisting may not be necessary - I doubt that any shadow casters
+    # will have used _WorldSpaceCameraPos and we won't have got this far.
+    try:
+        match = shader.find_header(shadertool.unity_headers_attached)
+    except KeyError:
+        debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
+        # tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
+        return False
+
+    try:
+        match = shader.find_header(shadertool.unity_tag_shadow_caster)
+    except KeyError:
+        pass
+    else:
+        debug('Skipping possible matrix source - shader is a SHADOWCASTER')
+        # tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+        return False
+
+    try:
+        unity_glstate_matrix_mvp_cb, unity_glstate_matrix_mvp_offset = \
+                shader.find_unity_cb_entry(shadertool.unity_glstate_matrix_mvp_pattern, 'matrix')
+        assert(unity_glstate_matrix_mvp_offset == 0) # If this fails I need to handle the variations somehow
+        _Object2World0_cb, _Object2World0_offset = \
+                shader.find_unity_cb_entry(shadertool.unity_Object2World, 'matrix')
+        assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
+        assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
+        shader.add_shader_override_setting('Resource_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
+        return True
+    except KeyError:
+        return False
+
 def fix_unity_reflection(shader):
     try:
         _WorldSpaceCameraPos = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_WorldSpaceCameraPos, 'constant'))
@@ -1106,41 +1154,7 @@ def fix_unity_reflection(shader):
     shader.early_insert_instr('float4 world_space_adj = mul(_Object2World, local_space_adj);')
     shader.early_insert_instr('_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;')
 
-    # We might possibly use this shader as a source of the MVP and
-    # _Object2World matrices, but only if it is rendering from the POV of the
-    # camera. Blacklist shadow casters which are rendered from the POV of a
-    # light.
-    #
-    # No longer blacklisting IGNOREPROJECTOR shaders - I was never sure what
-    # that tag signified, but it's clear that they do/can have valid matrices,
-    # and some scenes (e.g. falling Dreamer in Dreamfall chapter 1) only have
-    # the matrices we want in these shaders.
-    #
-    # This blacklisting may not be necessary - I doubt that any shadow casters
-    # will have used _WorldSpaceCameraPos and we won't have got this far.
-    try:
-        match = shader.find_header(shadertool.unity_headers_attached)
-    except KeyError:
-        debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
-        # tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
-    else:
-        try:
-            match = shader.find_header(shadertool.unity_tag_shadow_caster)
-        except KeyError:
-            try:
-                unity_glstate_matrix_mvp_cb, unity_glstate_matrix_mvp_offset = \
-                        shader.find_unity_cb_entry(shadertool.unity_glstate_matrix_mvp_pattern, 'matrix')
-                assert(unity_glstate_matrix_mvp_offset == 0) # If this fails I need to handle the variations somehow
-                _Object2World0_cb, _Object2World0_offset = \
-                        shader.find_unity_cb_entry(shadertool.unity_Object2World, 'matrix')
-                assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
-                assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
-                shader.add_shader_override_setting('Resource_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
-            except KeyError:
-                pass
-        else:
-            debug('Skipping possible matrix source - shader is a SHADOWCASTER')
-            # tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+    possibly_copy_unity_world_matrices(shader)
 
     # Do this last so we can use our own resources if we are the first in the frame:
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
