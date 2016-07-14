@@ -50,10 +50,10 @@ fi
 
 if [ $FIX_HALO -eq 1 ]; then
 	# Vertex shader halo, reflection & frustum fix:
-	hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc "$FXC" */*vs_replace.txt | update_ini
+	asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed */*vs.txt | update_ini
 fi
 
 if [ $FIX_REFLECTION -eq 1 ]; then
 	# Reflection fix:
-	hlsltool.py -I ../.. --fix-unity-reflection --only-autofixed --fxc "$FXC" */*ps_replace.txt | update_ini
+	asmtool.py -I ../.. --fix-unity-reflection --only-autofixed */*ps.txt | update_ini
 fi
