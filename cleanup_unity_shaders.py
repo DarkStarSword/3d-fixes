@@ -117,28 +117,29 @@ def cleanup_dx11_ini(path, removed_basenames, preserve_basenames):
 
 	open(path, 'w', newline='\n').write(''.join(output))
 
-def cleanup_ini_from_installed_only(game_dir, git_path, profile):
-	tmp = glob.glob(os.path.join(git_path, profile.shader_path, '*.txt'))
+def cleanup_ini_from_installed_only(game_dir, git_path, master_path, profile):
+	tmp = glob.glob(os.path.join(master_path, profile.shader_path, '*.txt'))
 	installed_basenames = set([ os.path.basename(x) for x in tmp ])
 
-	ini_path = os.path.join(git_path, profile.ini_filename)
-	profile.cleanup_ini(ini_path, None, installed_basenames)
+	if args.use_git:
+		ini_path = os.path.join(git_path, profile.ini_filename)
+		profile.cleanup_ini(ini_path, None, installed_basenames)
 
-	command = ['git', '-C', git_path, 'add', profile.ini_filename]
-	print("Running '%s'..." % ' '.join(command))
-	subprocess.call(command)
+		command = ['git', '-C', git_path, 'add', profile.ini_filename]
+		print("Running '%s'..." % ' '.join(command))
+		subprocess.call(command)
 
 	profile.cleanup_ini(os.path.join(game_dir, profile.ini_filename), None, installed_basenames)
 
-def cleanup(game_dir, git_path, profile):
+def cleanup(game_dir, git_path, master_path, profile):
 	if args.remove_ini_sections_for_uninstalled_shaders:
-		return cleanup_ini_from_installed_only(game_dir, git_path, profile)
+		return cleanup_ini_from_installed_only(game_dir, git_path, master_path, profile)
 
 	# TODO: Make case insensitive
 	tmp = glob.glob(os.path.join(game_dir, profile.extracted_glob))
 	extracted_basenames = set([ os.path.basename(x) for x in tmp ])
 
-	tmp = glob.glob(os.path.join(git_path, profile.shader_path, '*.txt'))
+	tmp = glob.glob(os.path.join(master_path, profile.shader_path, '*.txt'))
 	installed_basenames = set([ os.path.basename(x) for x in tmp ])
 
 	removed_basenames = installed_basenames.difference(extracted_basenames)
@@ -147,16 +148,17 @@ def cleanup(game_dir, git_path, profile):
 	if not removed_files:
 		return
 
-	command = ['git', '-C', git_path, 'rm'] + removed_files
-	print("Running '%s'..." % ' '.join(command))
-	subprocess.call(command)
+	if args.use_git:
+		command = ['git', '-C', git_path, 'rm'] + removed_files
+		print("Running '%s'..." % ' '.join(command))
+		subprocess.call(command)
 
-	ini_path = os.path.join(git_path, profile.ini_filename)
-	profile.cleanup_ini(ini_path, removed_basenames, None)
+		ini_path = os.path.join(git_path, profile.ini_filename)
+		profile.cleanup_ini(ini_path, removed_basenames, None)
 
-	command = ['git', '-C', git_path, 'add', profile.ini_filename]
-	print("Running '%s'..." % ' '.join(command))
-	subprocess.call(command)
+		command = ['git', '-C', git_path, 'add', profile.ini_filename]
+		print("Running '%s'..." % ' '.join(command))
+		subprocess.call(command)
 
 	for file in removed_basenames:
 		path = os.path.join(game_dir, profile.shader_path, file)
@@ -189,26 +191,43 @@ def parse_args():
 		help='List of game directories to process')
 	parser.add_argument('--remove-ini-sections-for-uninstalled-shaders', action='store_true',
 		help='Remove any ini sections for shaders not found in ShaderFixes/ShaderOverride. CAUTION: 3DMigoto does not require shaders to be installed to use with ini sections - this option will remove these!')
+	parser.add_argument('--check-installed-from-game-dir', action='store_true',
+		help='Use the game directory instead of the git directory to determine which shaders are installed')
+	parser.add_argument('--no-git', dest='use_git', action='store_false',
+		help="Do not update the copy of the fix tracked in git. CAUTION: If you aren't tracking the fix in git, make sure you have your own backup in case this script removes more than expected!")
 	args = parser.parse_args()
 
 def main():
 	parse_args()
 	for game_dir in map(os.path.realpath, args.games):
-		git_path = shadertool.game_git_dir(game_dir)
+		if args.use_git:
+			git_path = shadertool.game_git_dir(game_dir)
+			if args.check_installed_from_game_dir:
+				master_path = game_dir
+			else:
+				master_path = git_path
+			if not os.path.exists(git_path):
+				print('cleanup_unity_shaders: %s not tracked in git, skipping' % game_dir)
+				continue
+		else:
+			git_path = None
+			master_path = game_dir
+
 		found = False
-		if os.path.exists(os.path.join(git_path, 'DX9Settings.ini')):
-			cleanup(game_dir, git_path, CleanupDX9('vp', 'VS', 'VertexShaders'))
-			cleanup(game_dir, git_path, CleanupDX9('fp', 'PS', 'PixelShaders'))
+		if os.path.exists(os.path.join(master_path, 'DX9Settings.ini')):
+			cleanup(game_dir, git_path, master_path, CleanupDX9('vp', 'VS', 'VertexShaders'))
+			cleanup(game_dir, git_path, master_path, CleanupDX9('fp', 'PS', 'PixelShaders'))
 			found = True
-		if os.path.exists(os.path.join(git_path, 'd3dx.ini')):
-			cleanup(game_dir, git_path, CleanupDX11())
+		if os.path.exists(os.path.join(master_path, 'd3dx.ini')):
+			cleanup(game_dir, git_path, master_path, CleanupDX11())
 			found = True
 
 		if found:
-			command = [ 'git', '-C', git_path, 'commit', '-m', '%s: run %s' %
-					(os.path.basename(git_path), ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])) ]
-			print("Running '%s'..." % ' '.join(command))
-			subprocess.call(command)
+			if args.use_git:
+				command = [ 'git', '-C', git_path, 'commit', '-m', '%s: run %s' %
+						(os.path.basename(git_path), ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])) ]
+				print("Running '%s'..." % ' '.join(command))
+				subprocess.call(command)
 		else:
 			print('cleanup_unity_shaders WARNING: Unable to determine modding tool for %s' % game_dir)
 
