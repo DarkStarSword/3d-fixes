@@ -52,11 +52,11 @@ if [ -f "$dir/d3dx.ini" ]; then
 fi
 
 if [ "$tag" != "--no-repo" ]; then
-	status=$(git status --porcelain "$dir")
+	status=$(git status --porcelain --ignored "$dir")
 	if [ -n "$status" ]; then
 		echo
 		echo "ABORTING: Working directory is not clean!"
-		git status -s "$dir"
+		git status -s "$dir" --ignored
 		exit 1
 	fi
 fi
