@@ -5,7 +5,7 @@ The encoding of the files exported from Geforce 3D Profile Manager are totally
 wacko. This program cleans them up. Note that for now this process is one way.
 '''
 
-import sys, os, codecs
+import sys, os, codecs, argparse
 import io, itertools, re, struct
 from xml.dom import minidom
 
@@ -70,6 +70,12 @@ def decrypt_strings_utf16(i):
 
 	return o.getvalue()
 
+def decrypt_dword(id, value):
+	off = (id << 1) % 256
+	k, = struct.unpack('<I', ((key[off:] + key[:off])[:4]))
+	# print('Deciphered', hex(id), hex(value), '->', hex(deciphered))
+	return value ^ k
+
 # I could merge this with the above if I wanted to do everything in one pass,
 # but the above routine is dealing with binary data, whereas doing this later
 # allows us to use the decoded strings, which is nicer. The key is used
@@ -83,10 +89,7 @@ def decrypt_dwords(i):
 			id = int(match.group('SettingID'), 16)
 			span = match.span('Value')
 			value = int(line[span[0]:span[1]], 16)
-			off = (id << 1) % 256
-			k, = struct.unpack('<I', ((key[off:] + key[:off])[:4]))
-			deciphered = value ^ k
-			# print('Deciphered', hex(id), hex(value), '->', hex(deciphered))
+			deciphered = decrypt_dword(id, value)
 			o.write(line[:span[0]])
 			o.write('%08x' % deciphered)
 			o.write(line[span[1]:])
@@ -150,9 +153,20 @@ def sort_profiles(data):
 		pos = end
 	return data[:first] + ''.join(sorted(profiles))
 
+def parse_args():
+	global args
+	parser = argparse.ArgumentParser()
+	parser.add_argument('files', nargs='*',
+			help='NVIDIA profile text files to process')
+	parser.add_argument('-d', nargs=2,
+			help='Decrypt a specific DWORD setting')
+	args = parser.parse_args()
+
+
 def main():
+	parse_args()
 	parse_custom_setting_names_xml()
-	for filename in sys.argv[1:]:
+	for filename in args.files:
 		dest = '{}-cleaned.txt'.format(filename[:filename.rfind('.')])
 		i = open(filename, 'rb').read()
 
@@ -163,6 +177,9 @@ def main():
 		buf = make_ids_friendly(buf)
 		buf = sort_profiles(buf)
 		open(dest, 'wb').write(buf.encode('utf16'))
+	if args.d:
+		id, val = int(args.d[0], 16), int(args.d[1], 16)
+		print('0x%08x' % decrypt_dword(id, val))
 
 if __name__ == '__main__':
 	main()
