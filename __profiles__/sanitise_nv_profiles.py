@@ -160,6 +160,8 @@ def parse_args():
 			help='NVIDIA profile text files to process')
 	parser.add_argument('-d', nargs=2,
 			help='Decrypt a specific DWORD setting')
+	parser.add_argument('-u', '--utf8', dest='encoding', action='store_const', const='utf8', default='utf16',
+			help='Use utf8 to encode the resulting file instead of utf16')
 	args = parser.parse_args()
 
 
@@ -176,7 +178,7 @@ def main():
 		buf = decrypt_dwords(buf)
 		buf = make_ids_friendly(buf)
 		buf = sort_profiles(buf)
-		open(dest, 'wb').write(buf.encode('utf16'))
+		open(dest, 'wb').write(buf.encode(args.encoding))
 	if args.d:
 		id, val = int(args.d[0], 16), int(args.d[1], 16)
 		print('0x%08x' % decrypt_dword(id, val))
