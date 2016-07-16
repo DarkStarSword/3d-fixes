@@ -64,7 +64,7 @@ def decrypt_strings_utf16(i):
 			# print('Deciphered', hex(id), repr(deciphered.decode('utf16')))
 			o.write(line[:match1.end()].decode('utf16'))
 			o.write(deciphered.decode('utf16'))
-			o.write(line[match2.start():].decode('utf16'))
+			o.write('"\r\n') # Strip InternalSettingFlag=V0
 		else:
 			o.write(line.decode('utf16'))
 
@@ -92,7 +92,7 @@ def decrypt_dwords(i):
 			deciphered = decrypt_dword(id, value)
 			o.write(line[:span[0]])
 			o.write('%08x' % deciphered)
-			o.write(line[span[1]:])
+			o.write('\r\n') # Strip InternalSettingFlag=V0
 		else:
 			o.write(line)
 	return o.getvalue()
