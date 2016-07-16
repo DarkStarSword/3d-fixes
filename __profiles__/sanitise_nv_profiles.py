@@ -97,7 +97,7 @@ def decrypt_dwords(i):
 			o.write(line)
 	return o.getvalue()
 
-replace_map = []
+setting_name_map = {}
 
 def parse_custom_setting_names_xml():
 	# The encoding specified in the nvidia inspector XML document is
@@ -112,7 +112,7 @@ def parse_custom_setting_names_xml():
 		nodes = CustomSetting.getElementsByTagName('HexSettingID')
 		assert(len(nodes) == 1)
 		assert(len(nodes[0].childNodes) == 1)
-		HexSettingID = 'ID_' + nodes[0].childNodes[0].data.lower()
+		HexSettingID = int(nodes[0].childNodes[0].data, 16)
 
 		# I've never understood why XML parsing libraries all lack this basic functionality:
 		nodes = [ x for x in CustomSetting.childNodes if x.nodeName == 'UserfriendlyName' ]
@@ -120,12 +120,21 @@ def parse_custom_setting_names_xml():
 		assert(len(nodes[0].childNodes) == 1)
 		UserfriendlyName = nodes[0].childNodes[0].data
 
-		replace_map.append((HexSettingID, '{} ({})'.format(HexSettingID, UserfriendlyName)))
+		setting_name_map[HexSettingID] = UserfriendlyName
 
+setting_pattern = re.compile(r'''\s*Setting(?:String)? ID_0x(?P<SettingID>[0-9a-fA-F]{8})''')
 def make_ids_friendly(data):
-	for (id, name) in replace_map:
-		data = data.replace(id, name)
-	return data
+	out = []
+	for line in data.splitlines():
+		match = setting_pattern.match(line)
+		if match:
+			id = int(match.group('SettingID'), 16)
+			try:
+				line = line + ' // ' + setting_name_map[id]
+			except KeyError:
+				pass
+		out.append(line)
+	return '\r\n'.join(out)
 
 def sort_settings(profile):
 	# FIXME: This is pretty rigid at the moment. Tries to preserve first
