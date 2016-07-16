@@ -59,11 +59,18 @@ def decrypt_strings_utf16(i):
 			off = (id << 1) % 256
 			k = itertools.cycle(itertools.chain(key[off:], key[:off]))
 			deciphered = xor_strings(string, k)
-			if deciphered[-2:] == b'\0\0':
-				deciphered = deciphered[:-2]
 			# print('Deciphered', hex(id), repr(deciphered.decode('utf16')))
 			o.write(line[:match1.end()].decode('utf16'))
-			o.write(deciphered.decode('utf16'))
+			if len(deciphered) > 2 and deciphered[:2] == b'\0\0':
+				info = 'Corrupt string in profile: %s -> %s' % (
+					codecs.encode(string, 'hex').decode('ascii'),
+					codecs.encode(deciphered, 'hex').decode('ascii'))
+				print('INFO:', info)
+				o.write(info)
+			else:
+				if deciphered[-2:] == b'\0\0':
+					deciphered = deciphered[:-2]
+				o.write(deciphered.decode('utf16'))
 			o.write('"\r\n') # Strip InternalSettingFlag=V0
 		else:
 			o.write(line.decode('utf16'))
