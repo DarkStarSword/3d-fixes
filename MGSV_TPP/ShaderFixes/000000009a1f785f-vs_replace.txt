@@ -1,4 +1,4 @@
-// Heat distortion in Africa through binoculars - flickering due to driver heuristics
+// Heat distortion in Africa through binoculars - flickering due to driver heuristics. Update: Now also grenade throw line
 // ---- Created with 3Dmigoto v1.2.27 on Fri Feb 05 01:32:53 2016
 
 cbuffer cVSScene : register(b2)
@@ -103,9 +103,19 @@ void main(
   o4.xyz = r2.xyz;
   o5.xyz = float3(1,1,1);
 
-// 2D Post processing effect, but the driver can't decide what to do with it.
-// Normalise such that W == convergence to neutralise the driver's correction.
+// This shader is used for both a 2D post processing effect (shimmer in Africa
+// during strong heat - use phantom cigar to advance time looking for the
+// shimmer, unqeuip when seen then use binoculars), and the line showing where
+// a throwable item will be tossed. We want to stereo correct the line (which
+// the driver already did), but not the post processing effect 2D Post
+// processing effect, but the driver can't decide whether to stereo correct it
+// or not causing a flicker.
+// Normalise such that W == convergence to neutralise the driver's correction
+// and perform our own. We use a similar W == 1 heuristic, but we allow for
+// some slack on either side to match the shimmer effect.
 float4 stereo = StereoParams.Load(0);
+if (abs(o2.w - 1) > 0.1)
+	o2.x += stereo.x * (o2.w - stereo.y);
 if (stereo.x && o2.w > 0)
 	o2 = o2 / o2.w * stereo.y;
 
