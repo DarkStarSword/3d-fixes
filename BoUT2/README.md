@@ -2,8 +2,8 @@ The Book of Unwritten Tales 2
 =============================
 
 The fix has been updated for the final release with all five chapters. Special
-thanks to KING Art for granting me access to the Chapter 5 private beta to get
-this fix ready ahead of time :)
+thanks to KING Art and Nordic Games for granting me access to the Chapter 5
+private beta to get this fix ready ahead of time :)
 
 Shadows are now fixed. If you have installed a previous version of this fix, be
 sure to delete the ShaderOverride folder before installing the new version,
