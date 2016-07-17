@@ -1,6 +1,12 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.4
+-----------
+- Re-fixed red dot sight
+- Unbroke targetting arc when throwing items
+- Updated 3DMigoto to 1.2.40
+
 Update v1.3
 -----------
 - Fixed several more shadows
