@@ -1,6 +1,11 @@
 Stranded Deep
 =============
 
+Update 2016-07-18
+-----------------
+Fix is updated to work with version 0.14 of the game. The fix will now force
+exclusive mode full screen since this was broken in the 0.14 update.
+
 Update 2016-07-14
 -----------------
 The fix has been updated to work with the latest version of the game (0.13.H1).
@@ -64,6 +69,10 @@ Keys
 
 - V: Cycles crosshair modes between automatic, always enabled and always
   disabled (crosshair must be enabled in the settings).
+
+Known Issues
+------------
+- The vignette for damage / out of breath is misaligned.
 
 Troubleshooting
 ---------------
