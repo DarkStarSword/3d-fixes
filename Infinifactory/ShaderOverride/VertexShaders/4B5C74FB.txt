@@ -1,0 +1,99 @@
+// CRC32: 4B5C74FB | Unity headers extracted from Normal-VertexLit.shader
+// Shader "Legacy Shaders/VertexLit" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Spec Color", Color) = (1,1,1,1)
+//    _Emission ("Emissive Color", Color) = (0,0,0,0)
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.7
+//    _MainTex ("Base (RGB)", 2D) = "white" { }
+//   }
+//   SubShader 1/1 {
+//     LOD 100
+//     Tags { "RenderType"="Opaque" }
+//     Pass 4/4 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       GpuProgramID 33459
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Matrix 8 [_Object2World] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [unity_MatrixVP]
+//           Vector 14 [_WorldSpaceLightPos0]
+//           Vector 15 [unity_LightShadowBias]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c16, 1, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+
+dcl_texcoord o0
+dcl_position o1
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mul r0.x, c15.z, c15.z
+    slt r0.x, -r0.x, r0.x
+    mul r0.yzw, v1.y, c12.xxyz
+    mad r0.yzw, c11.xxyz, v1.x, r0
+    mad r0.yzw, c13.xxyz, v1.z, r0
+    nrm r1.xyz, r0.yzww
+    mad r2, v0.xyzx, c16.xxxy, c16.yyyx
+    dp4 r3.x, c8, r2
+    dp4 r3.y, c9, r2
+    dp4 r3.z, c10, r2
+    mad r0.yzw, r3.xxyz, -c14.w, c14.xxyz
+    nrm r4.xyz, r0.yzww
+    dp3 r0.y, r1, r4
+    mad r0.y, r0.y, -r0.y, c16.x
+    rsq r0.y, r0.y
+    rcp r0.y, r0.y
+    mul r0.y, r0.y, c15.z
+    mad r1.xyz, r1, -r0.y, r3
+    mov r1.w, c16.x
+    dp4 r3.x, c4, r1
+    dp4 r3.y, c5, r1
+    dp4 r3.z, c6, r1
+    dp4 r3.w, c7, r1
+    dp4 r1.x, c0, r2
+    dp4 r1.y, c1, r2
+    dp4 r1.z, c2, r2
+    dp4 r1.w, c3, r2
+    lrp r2, r0.x, r3, r1
+
+mov o1, r2 // Relocated from line 82 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Legacy Shaders_VertexLit/vp/4B5C74FB.txt
+texldl r31, c220.z, s0
+add r31.w, r2.w, -r31.y
+mad r2.x, r31.w, r31.x, r2.x
+
+    rcp r0.x, r2.w
+    mul r0.x, r0.x, c15.x
+    max r0.x, r0.x, c16.y
+    min r0.x, r0.x, c16.x
+    add r0.x, r0.x, r2.z
+    max r0.y, r0.x, c16.y
+    lrp r2.z, c15.y, r0.y, r0.x
+    mov o0, r2
+
+//     mov o1, r2 // Relocated to line 74 with shadertool.py
+mov o1.z, r2 // Inserted by shadertool.py
+
+mov o9, r2.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0

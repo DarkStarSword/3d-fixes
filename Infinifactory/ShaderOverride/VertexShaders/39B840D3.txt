@@ -1,0 +1,145 @@
+// CRC32: 39B840D3 | Matched 3 variants of 3 shaders: Custom/Spherical Billboard, Custom/Spherical Billboard (Additive), Custom/Spherical Billboard (Heat Glow)
+// 
+//    Unity headers extracted from Billboard, Spherical.shader
+//    Shader "Custom/Spherical Billboard" {
+//      Properties {
+//       _MainTex ("Base (RGBA)", 2D) = "white" { }
+//       _RadiusTex ("Radius (R)", 2D) = "white" { }
+//       _ParticleRadius ("Radius (must match particle size!)", Float) = 1.5
+//       _Density ("Density", Float) = 0.4
+//       _FadeOutDistance ("Fade-out Distance", Float) = 7.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//          ZTest Always
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 53058
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Camera2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Billboard, Spherical (Additive).shader
+//    Shader "Custom/Spherical Billboard (Additive)" {
+//      Properties {
+//       _MainTex ("Base (RGBA)", 2D) = "white" { }
+//       _RadiusTex ("Radius (R)", 2D) = "white" { }
+//       _ParticleRadius ("Radius (must match particle size!)", Float) = 1.5
+//       _Density ("Density", Float) = 0.4
+//       _FadeOutDistance ("Fade-out Distance", Float) = 7.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//          ZTest Always
+//          ZWrite Off
+//          Blend SrcAlpha One
+//          GpuProgramID 53058
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Camera2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from Spherical Billboard (Heat Glow).shader
+//    Shader "Custom/Spherical Billboard (Heat Glow)" {
+//      Properties {
+//       _MainTex ("Base (RGBA)", 2D) = "white" { }
+//       _RadiusTex ("Radius (R)", 2D) = "white" { }
+//       _ParticleRadius ("Radius (must match particle size!)", Float) = 1.5
+//       _Density ("Density", Float) = 0.4
+//       _FadeOutDistance ("Fade-out Distance", Float) = 7.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent+5" "RenderType"="Transparent" }
+//          ZTest Always
+//          ZWrite Off
+//          Blend SrcAlpha One
+//          GpuProgramID 48618
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_Camera2World] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c9, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_texcoord3 o3
+dcl_position o4
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.y, c1, v0
+    mul r1.x, r0.y, c7.x
+    mul r1.w, r1.x, c9.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o4, r0 // Relocated from line 125 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_Spherical Billboard (Additive)/vp/39B840D3.txt
+texldl r31, c220.z, s0
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xz, r0.xyww, c9.x
+    mad o1.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 o3.x, c4, v0
+    dp4 o3.y, c5, v0
+    dp4 o3.z, c6, v0
+    dp4 r0.z, c2, v0
+
+//     mov o4, r0 // Relocated to line 119 with shadertool.py
+mov o4.z, r0 // Inserted by shadertool.py
+
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.zw, r0
+    mov o2.x, r0.z
+    mov o0.xy, v1

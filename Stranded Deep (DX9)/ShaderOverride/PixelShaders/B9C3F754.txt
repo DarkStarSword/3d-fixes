@@ -1,0 +1,335 @@
+// CRC32: B9C3F754 | Unity headers extracted from Ocean.shader
+// Shader "Beam Team/Ocean/Ocean" {
+//   Properties {
+//    _Map0 ("Base (RGB)", 2D) = "black" { }
+//    _Map1 ("Base (RGB)", 2D) = "black" { }
+//    _Map2 ("Base (RGB)", 2D) = "black" { }
+//    _Map3 ("Base (RGB)", 2D) = "black" { }
+//    _Map4 ("Base (RGB)", 2D) = "black" { }
+//    _MaxLod ("Max LOD level", Float) = 0
+//    _LodFadeDist ("LOD fade distance", Float) = 128
+//    _FourierSize ("Computed FFT size", Float) = 0
+//   [HideInInspector]  _MainTex ("Base (RGB)", 2D) = "black" { }
+//    _Bump ("Normal Map (RGB)", 2D) = "bump" { }
+//    _FoamTex ("Foam: Sparse (R) Medium (G) Coarse (B)", 2D) = "white" { }
+//    _FoamRampTex ("Foam Ramp: Sparse (R) Medium (G) Coarse (B)", 2D) = "white" { }
+//    _Reflection ("Reflection (RGB)", 2D) = "white" { }
+//    _Tile ("UV Tiling", Float) = 40
+//    _DetailFresnelLevel ("Fresnel: Detail normal contribution", Float) = 0.5
+//    _ReflectionLevel ("Reflection: Amount of distortion", Float) = 3
+//    _RefractionLevel ("Refraction: Amount of distortion", Float) = 0.44
+//    _SunSpec ("Sun specular 'hardness'", Float) = 1000
+//    _WaveBlend ("Wave Edge Blending", Float) = 0.5
+//    _FoamBlend ("Foam Blending", Float) = 1
+//    _FoamInt ("Foam Intensity", Float) = 5
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent-200" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//     GrabPass {
+//       "_Refraction"
+//      }
+//     Pass 1/1 {
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent-200" "FORCENOSHADOWCASTING"="true" "IGNOREPROJECTOR"="true" "RenderType"="Ocean" }
+//       GpuProgramID 45504
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SUNSHINE_FILTER_HARD" }
+//           Matrix 0 [sunshine_CascadeRanges]
+//           Vector 19 [_BigWaves]
+//           Float 23 [_DetailFresnelLevel]
+//           Vector 20 [_Direction]
+//           Float 28 [_FoamBlend]
+//           Float 29 [_FoamInt]
+//           Vector 30 [_LightColor0]
+//           Float 24 [_RefractionLevel]
+//           Float 15 [_ShadowFade]
+//           Vector 4 [_SinTime]
+//           Float 21 [_Speed]
+//           Float 27 [_StormFade]
+//           Vector 22 [_SunDirection]
+//           Vector 26 [_SunPosition]
+//           Float 25 [_SunSpec]
+//           Float 16 [_Tile]
+//           Float 18 [_Timer]
+//           Float 17 [_WaveBlend]
+//           Vector 5 [_WorldSpaceCameraPos]
+//           Vector 6 [_ZBufferParams]
+//           Vector 13 [sunshine_CascadeFarRatiosSq]
+//           Vector 12 [sunshine_CascadeNearRatiosSq]
+//           Vector 8 [sunshine_OvercastCoord]
+//           Vector 9 [sunshine_OvercastVectorsUV]
+//           Vector 10 [sunshine_ShadowCoordDepthStart]
+//           Vector 14 [sunshine_ShadowFadeParams]
+//           Vector 7 [sunshine_ShadowParamsAndHalfTexel]
+//           Vector 11 [sunshine_ShadowToWorldScale]
+//           SetTexture 0 [sunshine_Lightmap] 2D 0
+//           SetTexture 1 [sunshine_OvercastMap] 2D 1
+//           SetTexture 2 [_SkyMap] 2D 2
+//           SetTexture 3 [_EdgeBlendDepthTexture] 2D 3
+//           SetTexture 4 [_CameraDepthTexture] 2D 4
+//           SetTexture 5 [_Bump] 2D 5
+//           SetTexture 6 [_Map1] 2D 6
+//           SetTexture 7 [_Refraction] 2D 7
+//           SetTexture 8 [_FoamTex] 2D 8
+//           SetTexture 9 [_FoamRampTex] 2D 9
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c31, 4, -0.100000001, -0.0599999987, -0.0112710549
+    def c32, 1, 0, 0.300000012, 0.768900156
+    def c33, 0.5, 0.784000039, 0.0199999996, 0.453999996
+    def c34, -50, -100, 0.0199999996, 0.00669999979
+    def c35, 123456792, 1.5, 0.400000006, 10
+    def c36, 1, 0.00392156886, 1.53787005e-005, 6.03086292e-008
+    def c37, 2, -1, 0, 1
+    def c38, 2, -1.20000005, 0.699999988, 0.300000012
+    def c39, 0.0299999993, -0.245258152, 0.998000026, 0
+    def c40, 0, 2, 1.60000002, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1
+    dcl_texcoord2 v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4_pp v4.xyz
+    dcl_texcoord5_pp v5.xyz
+    dcl_texcoord6_pp v6
+    dcl_texcoord8 v7.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+    dcl_2d s9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../../.. -f --stereo-sampler-ps=s15 --adjust-input=v0 --adjust-input=v1 --adjust-multiply=0.5 B9C3F754.txt
+mov r9, v1
+texldl r31, c220.z, s15
+add r31.w, r9.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r9.x, r9.x, r31.w
+
+// Input adjustment inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../../../.. -f --stereo-sampler-ps=s15 --adjust-input=v0 --adjust-input=v1 --adjust-multiply=0.5 B9C3F754.txt
+mov r30, v0
+texldl r31, c220.z, s15
+add r31.w, r30.w, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, c220.w
+add r30.x, r30.x, r31.w
+
+    mul_pp r0, c37.wwzw, v3.xyxz
+    texldl_pp r0, r0, s6
+    mov_pp r1.xz, -r0.xyyw
+    mad_pp r0.xyz, r0.xyxw, c32.xxyw, c32.yyzw
+    mov_pp r1.y, c35.z
+    nrm_pp r2.xyz, r1
+    nrm_pp r1.xyz, c22
+    dp3_pp r1.w, -r1, r2
+    add_pp r2.w, r1.w, r1.w
+    mad_sat_pp r1.w, r1.w, c38.z, c38.w
+    mad_pp r1.xyz, r2, -r2.w, -r1
+    dp3_pp r1.x, r1.xzyw, v4
+    mad_sat_pp r1.x, r1.x, c38.x, c38.y
+    mul r1.x, r1.x, r1.w
+    add r1.yzw, -c10.xxyz, v7.xxyz
+    mul r1.yzw, r1, c11.xxyz
+    dp3 r1.y, r1.yzww, r1.yzww
+    mul r1.z, r1.y, c35.x
+    frc r1.z, r1.z
+    mov r1.w, c37.w
+    mad r1.z, r1.z, -c7.y, r1.w
+    mad r2, r1.y, -r1.z, c13
+    mad r3, r1.y, r1.z, -c12
+    mad_sat r1.y, r1.y, -c14.y, c14.x
+    add r1.y, -r1.y, c37.w
+    cmp r2, r2, c37.w, c37.z
+    cmp r2, r3, r2, c37.z
+    mul r3, r2.y, c1
+    mad r3, c0, r2.x, r3
+    mad r3, c2, r2.z, r3
+    mad r2, c3, r2.w, r3
+    mad r2.xy, r2.zwzw, v7, r2
+    texld r2, r2, s0
+    dp4 r1.z, r2, c36
+    add r1.z, -r1.z, v7.z
+    cmp r1.y, r1.z, r1.y, c37.w
+    mov r2.xy, c9
+    mad r2.xy, r2, v7.x, c8
+    mad r2.xy, c9.zwzw, v7.y, r2
+    texld r2, r2, s1
+    add r1.z, r1.w, -c15.x
+    max r3.x, r1.z, r2.w
+    mad r1.y, r1.y, -r3.x, c37.w
+    mov r2.y, c35.y
+    mad_pp r1.y, r1.y, -c7.x, r2.y
+    mov r2.xy, c34
+    add_pp r2.xy, r2, c26.y
+    mul_sat_pp r2.xy, r2, c34.zwzw
+    add_pp r1.z, -r2.x, c37.w
+    mul_pp r2.xyz, r2.y, c40
+    max r2.w, r1.z, r1.y
+    texldp r3, r30, s3
+    mad r1.y, c6.z, r3.x, c6.w
+    rcp r1.y, r1.y
+    add r1.yz, r1.y, -r30.xwzw
+    mul_sat r1.y, r1.y, c17.x
+    mul r1.z, r1_abs.z, c39.y
+    exp r1.z, r1.z
+    add r1.z, -r1.z, c37.w
+    add r3.x, -r1.y, c37.w
+    add_sat r2.w, r2.w, r3.x
+    mul r3.x, r3.x, c28.x
+    max r4.x, r3.x, c33.z
+    min r3.x, r4.x, c39.z
+    mul r1.x, r1.x, r2.w
+    mul r1.x, r1.z, r1.x
+    add r1.z, r1.w, -c27.x
+    mul r1.x, r1.z, r1.x
+    mov r4.x, c18.x
+    mul r3.zw, r4.x, c20.xyxy
+    add r1.w, c21.x, c21.x
+    mul_pp r4.yz, c16.x, v3.xxyw
+    mul r5.xy, r4.yzzw, c31.x
+    mad_pp r3.zw, r3, r1.w, r5.xyxy
+    mad_pp r3.zw, r4.x, c31.xyyz, r3
+    texld_pp r5, r3.zwzw, s5
+    mad_pp r5.xy, r5.wyzw, c37.x, c37.y
+    dp2add_sat_pp r1.w, r5, r5, c37.z
+    add_pp r1.w, -r1.w, c37.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r5.z, r1.w
+    texld_pp r6, v6.zwzw, s5
+    mad_pp r6.xy, r6.wyzw, c37.x, c37.y
+    dp2add_sat_pp r1.w, r6, r6, c37.z
+    add_pp r1.w, -r1.w, c37.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r6.z, r1.w
+    mul_pp r6.xyz, r6, c19.y
+    texld_pp r7, v6, s5
+    mad_pp r7.xy, r7.wyzw, c37.x, c37.y
+    dp2add_sat_pp r1.w, r7, r7, c37.z
+    add_pp r1.w, -r1.w, c37.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r7.z, r1.w
+    mad_pp r6.xyz, r7, c19.x, r6
+    mul_pp r7.xyz, r6, c23.x
+    mov_pp r8.z, r7.z
+    mov_pp r8.xy, r0
+    mad_pp r5.xyz, r5, c39.x, r8
+    mov_pp r7.w, c37.w
+    add_pp r5.xyz, r5, r7.xyww
+    dp3_pp r1.w, r5, r5
+    rsq_pp r1.w, r1.w
+    mul_pp r3.zw, r1.w, r5.xyxy
+    mul r3.zw, r3, c24.x
+    mul r5.xy, r1.y, r3.zwzw
+    mov r5.zw, c37.z
+    add r5, r5, r9
+    texldp r7, r5, s4
+    texldp_pp r5, r5, s7
+    mad r1.w, c6.z, r7.x, c6.w
+    rcp r1.w, r1.w
+    add r1.w, r1.w, -r9.z
+    texldp_pp r7, r9, s7
+    cmp_pp r5.xyz, r1.w, r5, r7
+    mad_pp r2.xyz, r1.x, r2, r5
+    mov_pp r0.w, c37.w
+    mad_pp r5.xyz, r6, c23.x, r0.xyww
+    add r0.xyz, r0, r6
+    nrm_pp r6.xyz, r0
+    dp3_pp r0.x, r5, r5
+    rsq_pp r0.x, r0.x
+    mul_pp r0.xy, r0.x, r5
+    mov_pp r0.xz, -r0.xyyw
+    mov_pp r0.y, c37.w
+    nrm_pp r5.xyz, r0
+    dp3 r0.x, r5.xzyw, v4
+    add r0.x, r0.x, r0.x
+    mad r0.xyz, r0.x, r5, -v4.xzyw
+    dp3_pp r0.w, -v4.xzyw, r5
+    add r0.y, r0.y, c37.w
+    rcp r0.y, r0.y
+    mul r0.xy, r0.y, r0.xzzw
+    mad r0.xy, r0, c33.w, c33.x
+    texld r5, r0, s2
+    mad r0.xyz, r5, r1.y, -r2
+    mad r1.x, r0_abs.w, r0_abs.w, c32.w
+    rsq r1.x, r1.x
+    rcp r1.x, r1.x
+    add r1.w, -r0_abs.w, r1.x
+    add r1.x, r0_abs.w, r1.x
+    mad r3.z, r0_abs.w, r1.w, c37.w
+    mad r0.w, r0_abs.w, r1.x, c37.y
+    rcp r1.x, r1.x
+    mul r1.x, r1.x, r1.w
+    mul r1.x, r1.x, r1.x
+    mul r1.x, r1.x, c33.x
+    rcp r1.w, r3.z
+    mul r0.w, r0.w, r1.w
+    mad r0.w, r0.w, r0.w, c37.w
+    mul_sat_pp r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c33.y
+    mul r0.w, r1.y, r0.w
+    add r5.xyz, -c5, v2
+    dp3 r1.x, r5, r5
+    rsq r1.x, r1.x
+    rcp r1.x, r1.x
+    mul r1.x, r1.x, c31.w
+    exp r1.x, r1.x
+    mad r0.w, r0.w, r1.x, c33.z
+    mad_pp r0.xyz, r0.w, r0, r2
+    mov r2.xyz, v4
+    add_pp r2.xyz, r2, v5
+    nrm_pp r5.xyz, r2
+    dp3_pp r0.w, r6, r5
+    max r1.x, r0.w, c37.z
+    pow r0.w, r1.x, c25.x
+    mul r0.w, r0.w, c35.w
+    min r1.x, r0.w, c35.w
+    mul_pp r2.xyz, r1.x, c30
+    mul r2.xyz, r1.x, r2
+    mul r1.xzw, r1.z, r2.xyyz
+    mad_pp r0.xyz, r1.xzww, r1.y, r0
+    mov r3.y, c37.z
+    texld_pp r3, r3, s9
+    mov r1.x, c20.x
+    mul r0.w, r1.x, c4.y
+    mul r0.w, r0.w, c21.x
+    mad r1.xz, r4.yyzw, c33.x, r0.w
+    mad r2.xy, v3, c16.x, r0.w
+    texld_pp r4, r2, s8
+    texld_pp r5, r1.xzzw, s8
+    mul_pp r1.xz, r3.xyyw, r5.xyyw
+    add_pp r0.w, r1.z, r1.x
+    mad r0.w, r5.z, r3.z, r0.w
+    add r1.x, -r0.w, c37.w
+    mul_pp r1.zw, r3.xyxy, r4.xyxy
+    add r1.xz, r1.xyww, r1
+    mad r1.z, r4.z, r3.z, r1.z
+    add r1.w, -r1.z, c37.w
+    mad r1.x, r1.x, -r1.w, c37.w
+    add r1.w, r0.w, r0.w
+    add r0.w, r0.w, -c33.x
+    mul r1.z, r1.z, r1.w
+    cmp r0.w, r0.w, r1.x, r1.z
+    mul r0.w, r0.w, c29.x
+    mul r0.w, r1.y, r0.w
+    mad_pp r0.xyz, r0.w, c30, r0
+    mul_pp oC0.xyz, r2.w, r0
+    mov_pp oC0.w, c37.w

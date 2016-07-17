@@ -1,0 +1,132 @@
+// CRC32: C14071DE | Matched 4 variants of 2 shaders: Hidden/Amplify Motion/ClothVectors, Hidden/Amplify Motion/SkinnedVectors
+// 
+//    Unity headers extracted from ClothVectors.shader
+//    Shader "Hidden/Amplify Motion/ClothVectors" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.25
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+// 1:     Pass 3/4 {
+// 2:     Pass 4/4 {
+// 2:       Name "STD_CUTOUT"
+// 1:       Name "STD_OPAQUE"
+//          Tags { "RenderType"="Opaque" }
+//          ZTest Less
+//          Cull Off
+//          Offset -1, -1
+// 1:       GpuProgramID 164760
+// 2:       GpuProgramID 235003
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_EFLOW_MATRIX_PREV_MVP]
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 10 [_EFLOW_MOTION_SCALE]
+//              Vector 11 [_MainTex_ST]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+//    Unity headers extracted from SkinnedVectors.shader
+//    Shader "Hidden/Amplify Motion/SkinnedVectors" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.25
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Tags { "RenderType"="Opaque" }
+// 1:     Pass 3/4 {
+// 2:     Pass 4/4 {
+// 2:       Name "STD_CUTOUT"
+// 1:       Name "STD_OPAQUE"
+//          Tags { "RenderType"="Opaque" }
+//          ZTest Less
+//          Cull Off
+//          Offset -1, -1
+// 1:       GpuProgramID 133851
+// 2:       GpuProgramID 246285
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [_EFLOW_MATRIX_PREV_MVP]
+//              Matrix 0 [glstate_matrix_mvp]
+//              Float 10 [_EFLOW_MOTION_SCALE]
+//              Vector 11 [_MainTex_ST]
+//              Vector 8 [_ProjectionParams]
+//              Vector 9 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c12, 1, 0, -2, 0.5
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_texcoord1 o1
+dcl_texcoord2 o2
+dcl_position o3
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    mad r0, v1.xyzx, c12.xxxy, c12.yyyx
+    dp4 r1.x, c5, r0
+    mov r1.y, -r1.x
+    dp4 r1.w, c7, r0
+    rcp r1.w, r1.w
+    dp4 r1.x, c4, r0
+    dp4 r1.z, c6, r0
+    mul r0.xyz, r1.w, r1
+    dp4 r1.x, c0, v0
+    dp4 r1.z, c2, v0
+    dp4 r2.z, c3, v0
+    rcp r0.w, r2.z
+    dp4 r3.y, c1, v0
+    mov r1.y, -r3.y
+    mad r0.xyz, r1, r0.w, -r0
+    mov r2.x, r1.x
+    mov r3.z, r1.z
+    mul o0.xyz, r0, c10.x
+    mov r0.xyw, c12
+    slt r0.z, r0.y, c8.x
+    mul r0.z, r0.z, r3.y
+    mad r2.y, r0.z, c12.z, r3.y
+    mad r0.xyz, c8.x, r0.yxyw, r0.wyww
+    mul r0.xyz, r0, r2
+    mov r3.xw, r2.xyzz
+    mul r0.w, r0.y, c12.w
+    mad o1.xy, r0.z, c9.zwzw, r0.xwzw
+    mad o2.xy, v2, c11, c11.zwzw
+    mov o3, r3
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Hidden_Amplify Motion_ClothVectors/vp/C14071DE.txt
+texldl r31, c220.z, s0
+add r31.w, r3.w, -r31.y
+mad r3.x, r31.w, r31.x, r3.x
+
+mov o9, r3.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    mov o1.zw, r3
+    mov o0.w, c12.y

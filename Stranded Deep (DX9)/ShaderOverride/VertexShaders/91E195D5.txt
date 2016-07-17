@@ -1,0 +1,159 @@
+// CRC32: 91E195D5 | Unity headers extracted from Glass - Bumped Specular Refractive Forward.shader
+// Shader "Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward" {
+//   Properties {
+//    _Color ("Glass Color (RGB)", Color) = (1,1,1,1)
+//    _NormalStrength ("Normal Map Strength", Range(0,128)) = 64
+//    _Abberation ("Abberation", Float) = 0.0015
+//    _MainTex ("Diffuse Albedo (NOT IN USE)", 2D) = "white" { }
+//    _SpecTex ("Specular Albedo (RGB) Gloss (A)", 2D) = "white" { }
+//    _BumpTex ("Normal Map", 2D) = "bump" { }
+//    _HighlightRimColor ("Highlight Rim Color", Color) = (0,0,0,0)
+//   }
+//   Fallback "VertexLit"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "RenderType"="Transparent" }
+//     GrabPass {
+//      }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//       GpuProgramID 38609
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "SUNSHINE_DISABLED" }
+//           Bind "vertex" Vertex
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "tangent" TexCoord4
+//           Matrix 4 [_Object2World] 3
+//           Matrix 7 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Vector 16 [_HighlightRimColor]
+//           Float 17 [_HighlightRimPower]
+//           Vector 18 [_MainTex_ST]
+//           Vector 10 [_WorldSpaceCameraPos]
+//           Vector 13 [unity_SHBb]
+//           Vector 12 [unity_SHBg]
+//           Vector 11 [unity_SHBr]
+//           Vector 14 [unity_SHC]
+//           Vector 15 [unity_WorldTransformParams]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c19, 0.5, -0.5, 1, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5
+    dcl_texcoord5 o6
+    dcl_texcoord6 o7
+    dcl_texcoord7 o8.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r5, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/vp/91E195D5.txt
+mov r30, c10
+mov r29, c220.x
+mul r29.x, r5.x, -r5.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp4 r0.x, c0, v0
+    dp4 r0.y, c1, v0
+    dp4 r0.w, c3, v0
+
+mov o0, r0 // Relocated from line 105 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors ./Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/vp/91E195D5.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xyz, r0.xwyw, c19.xxyw
+    add o5.xy, r1.y, r1.xzzw
+    mov r1.zw, c19
+    mad r1, r30.xyzx, r1.zzzw, r1.wwwz
+    dp4 r2.x, c7, r1
+    dp4 r2.y, c8, r1
+    dp4 r2.z, c9, r1
+    add r1.xyz, r2, -v0
+    nrm r2.xyz, r1
+    nrm r1.xyz, v2
+    dp3_sat r1.x, r1, r2
+    add r1.x, -r1.x, c19.z
+    mul r1.xyz, r1.x, c16
+    log r2.x, r1.x
+    log r2.y, r1.y
+    log r2.z, r1.z
+    mul r1.xyz, r2, c17.x
+    exp o6.x, r1.x
+    exp o6.y, r1.y
+    exp o6.z, r1.z
+    mad o1.xy, v3, c18, c18.zwzw
+    dp4 o2.w, c4, v0
+    dp4 o3.w, c5, v0
+    dp4 o4.w, c6, v0
+    mul r1, c8.xyzz, v2.y
+    mad r1, c7.xyzz, v2.x, r1
+    mad r1, c9.xyzz, v2.z, r1
+    dp3 r2.x, r1.xyww, r1.xyww
+    rsq r2.x, r2.x
+    mul r1, r1, r2.x
+    mul r2.x, r1.y, r1.y
+    mad r2.x, r1.x, r1.x, -r2.x
+    mul r3, r1.ywzx, r1
+    dp4 r4.x, c11, r3
+    dp4 r4.y, c12, r3
+    dp4 r4.z, c13, r3
+    mad o8.xyz, c14, r2.x, r4
+    dp4 r0.z, c2, v0
+
+//     mov o0, r0 // Relocated to line 67 with shadertool.py
+mov o0.z, r0 // Inserted by shadertool.py
+
+    mov o5.zw, r0
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o2.x, r0.z
+    mul r2.xyz, r0, r1.wxyw
+    mad r2.xyz, r1.ywxw, r0.yzxw, -r2
+    mul r0.z, c15.w, v1.w
+    mul r2.xyz, r0.z, r2
+    mov o2.y, r2.x
+    mov o2.z, r1.x
+    mov o3.x, r0.x
+    mov o4.x, r0.y
+    mov o3.y, r2.y
+    mov o4.y, r2.z
+    mov o3.z, r1.y
+    mov o4.z, r1.w
+    mov o6.w, c19.w
+    mov o7, c19.w

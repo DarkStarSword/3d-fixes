@@ -1,0 +1,254 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ffeef90b3230cbf6-vs_replace.txt
+// 3DMigoto: ffeef90b3230cbf6 | Unity headers extracted from WavingGrass.shader
+// Shader "Hidden/TerrainEngine/Details/WavingDoublePass" {
+//   Properties {
+//    _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//    _Cutoff ("Cutoff", Float) = 0.5
+//   }
+//   Fallback Off
+//   SubShader 1/2 {
+//     LOD 200
+//     Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="Grass" }
+//     Pass 2/2 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "DisableBatching"="true" "RenderType"="Grass" }
+//       Cull Off
+//       GpuProgramID 127649
+//       Program "vp" {
+//         SubProgram "d3d11 " {
+//           Keywords { "MARMO_TERRAIN_BLEND_OFF" "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           ConstBuffer "$Globals" 528
+//           Matrix 192 [_SkyMatrix]
+//           Vector 160 [_ExposureIBL]
+//           Vector 184 [_UniformOcclusion] 2
+//           Vector 368 [_SH0] 3
+//           Vector 384 [_SH1] 3
+//           Vector 400 [_SH2] 3
+//           Vector 416 [_SH3] 3
+//           Vector 432 [_SH4] 3
+//           Vector 448 [_SH5] 3
+//           Vector 464 [_SH6] 3
+//           Vector 480 [_SH7] 3
+//           Vector 496 [_SH8] 3
+//           Vector 512 [_MainTex_ST]
+//           ConstBuffer "UnityPerCamera" 144
+//           Vector 0 [_Time]
+//           ConstBuffer "UnityLighting" 720
+//           Vector 0 [_WorldSpaceLightPos0]
+//           ConstBuffer "UnityShadows" 416
+//           Vector 80 [unity_LightShadowBias]
+//           ConstBuffer "UnityPerDraw" 352
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 192 [_Object2World]
+//           Matrix 256 [_World2Object]
+//           ConstBuffer "UnityPerFrame" 256
+//           Matrix 144 [unity_MatrixVP]
+//           ConstBuffer "UnityTerrain" 272
+//           Vector 16 [_WaveAndDistance]
+//           Vector 32 [_CameraPosition]
+//           BindCB "$Globals" 0
+//           BindCB "UnityPerCamera" 1
+//           BindCB "UnityLighting" 2
+//           BindCB "UnityShadows" 3
+//           BindCB "UnityPerDraw" 4
+//           BindCB "UnityPerFrame" 5
+//           BindCB "UnityTerrain" 6
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:35:30 2016
+cbuffer cb6 : register(b6)
+{
+  float4 cb6[3];
+}
+
+cbuffer cb5 : register(b5)
+{
+  float4 cb5[13];
+}
+
+cbuffer cb4 : register(b4)
+{
+  float4 cb4[19];
+}
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[6];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[1];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[1];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[33];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD1,
+  out float4 o2 : COLOR0,
+  out float4 o3 : TEXCOORD2)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.x = cb4[16].x * v2.x;
+  r0.y = cb4[17].x * v2.x;
+  r0.z = cb4[18].x * v2.x;
+  r1.x = cb4[16].y * v2.y;
+  r1.y = cb4[17].y * v2.y;
+  r1.z = cb4[18].y * v2.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.x = cb4[16].z * v2.z;
+  r1.y = cb4[17].z * v2.z;
+  r1.z = cb4[18].z * v2.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.xy = cb6[1].yy * v0.xz;
+  r2.xyzw = float4(0.00600000005,0.0199999996,0.0199999996,0.0500000007) * r1.yyyy;
+  r1.xyzw = r1.xxxx * float4(0.0120000001,0.0199999996,0.0599999987,0.0240000002) + r2.xyzw;
+  r1.xyzw = cb6[1].xxxx * float4(1.20000005,2,1.60000002,4.80000019) + r1.xyzw;
+  r1.xyzw = frac(r1.xyzw);
+  r1.xyzw = r1.xyzw * float4(6.40884876,6.40884876,6.40884876,6.40884876) + float4(-3.14159274,-3.14159274,-3.14159274,-3.14159274);
+  r2.xyzw = r1.xyzw * r1.xyzw;
+  r3.xyzw = r2.xyzw * r1.xyzw;
+  r1.xyzw = r3.xyzw * float4(-0.161616161,-0.161616161,-0.161616161,-0.161616161) + r1.xyzw;
+  r3.xyzw = r3.xyzw * r2.xyzw;
+  r2.xyzw = r3.xyzw * r2.xyzw;
+  r1.xyzw = r3.xyzw * float4(0.00833330024,0.00833330024,0.00833330024,0.00833330024) + r1.xyzw;
+  r1.xyzw = r2.xyzw * float4(-0.000198409994,-0.000198409994,-0.000198409994,-0.000198409994) + r1.xyzw;
+  r0.w = cb6[1].z * v7.w;
+  r2.xyzw = r1.xyzw * r0.wwww;
+  r1.xyzw = r1.xyzw * r1.xyzw;
+  r1.xyzw = r1.xyzw * r2.xyzw;
+  r2.x = dot(r1.xyzw, float4(0.0240000002,0.0399999991,-0.119999997,0.0960000008));
+  r2.z = dot(r1.xyzw, float4(0.00600000005,0.0199999996,-0.0199999996,0.100000001));
+  r1.xy = cb6[1].zz * r2.xz;
+  r0.w = cb6[1].y * cb1[0].w;
+  r1.zw = r0.ww * float2(10,10) + v0.xz;
+  r1.zw = sin(r1.zw);
+  r0.w = r1.z * r1.w;
+  r1.xz = -r1.xy * r0.ww + v0.xz;
+  r2.xyz = cb4[13].xyz * v0.yyy;
+  r2.xyz = cb4[12].xyz * r1.xxx + r2.xyz;
+  r2.xyz = cb4[14].xyz * r1.zzz + r2.xyz;
+  r2.xyz = cb4[15].xyz + r2.xyz;
+  r3.xyz = -r2.xyz * cb2[0].www + cb2[0].xyz;
+  r0.w = dot(r3.xyz, r3.xyz);
+  r0.w = rsqrt(r0.w);
+  r3.xyz = r3.xyz * r0.www;
+  r0.w = dot(r0.xyz, r3.xyz);
+  r0.w = -r0.w * r0.w + 1;
+  r0.w = sqrt(r0.w);
+  r0.w = cb3[5].z * r0.w;
+  r0.xyz = -r0.xyz * r0.www + r2.xyz;
+  r2.xyzw = cb5[10].xyzw * r0.yyyy;
+  r2.xyzw = cb5[9].xyzw * r0.xxxx + r2.xyzw;
+  r0.xyzw = cb5[11].xyzw * r0.zzzz + r2.xyzw;
+  r0.xyzw = cb5[12].xyzw + r0.xyzw;
+  r2.xyzw = cb4[1].xyzw * v0.yyyy;
+  r2.xyzw = cb4[0].xyzw * r1.xxxx + r2.xyzw;
+  r2.xyzw = cb4[2].xyzw * r1.zzzz + r2.xyzw;
+  r2.xyzw = cb4[3].xyzw + r2.xyzw;
+  r1.w = cmp(cb3[5].z != 0.000000);
+  r0.xyzw = r1.wwww ? r0.xyzw : r2.xyzw;
+
+o0.xyw = r0.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe ffeef90b3230cbf6-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r1.w = saturate(cb3[5].x / r0.w);
+  r0.z = r1.w + r0.z;
+
+  // o0.xyw = r0.xyw; // Relocated from here with hlsltool.py
+
+  r0.x = max(0, r0.z);
+  r0.x = r0.x + -r0.z;
+  o0.z = cb3[5].y * r0.x + r0.z;
+  o1.xy = v3.xy * cb0[32].xy + cb0[32].zw;
+  r1.y = v0.y;
+  r0.xyz = -cb6[2].xyz + r1.xyz;
+  r0.x = dot(r0.xyz, r0.xyz);
+  r0.x = cb6[1].w + -r0.x;
+  o2.w = saturate(dot(cb6[2].ww, r0.xx));
+  o2.xyz = v7.xyz;
+  r0.xyz = cb4[13].xyz * v2.yyy;
+  r0.xyz = cb4[12].xyz * v2.xxx + r0.xyz;
+  r0.xyz = cb4[14].xyz * v2.zzz + r0.xyz;
+  r1.x = cb0[12].y * r0.y;
+  r1.y = cb0[13].y * r0.y;
+  r1.z = cb0[14].y * r0.y;
+  r2.x = cb0[12].z * r0.z;
+  r2.y = cb0[13].z * r0.z;
+  r2.z = cb0[14].z * r0.z;
+  r0.yzw = r2.xyz + r1.xyz;
+  r1.x = cb0[12].x * r0.x;
+  r1.y = cb0[13].x * r0.x;
+  r1.z = cb0[14].x * r0.x;
+  r0.xyz = r1.xyz + r0.yzw;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.xyz = cb0[24].xyz * r0.yyy + cb0[23].xyz;
+  r1.xyz = cb0[25].xyz * r0.zzz + r1.xyz;
+  r1.xyz = cb0[26].xyz * r0.xxx + r1.xyz;
+  r2.xyz = r0.yyz * r0.xzx;
+  r1.xyz = cb0[27].xyz * r2.xxx + r1.xyz;
+  r1.xyz = cb0[28].xyz * r2.yyy + r1.xyz;
+  r1.xyz = cb0[30].xyz * r2.zzz + r1.xyz;
+  r0.yz = r0.yz * r0.yz;
+  r0.x = r0.x * r0.x + -r0.y;
+  r0.y = r0.z * 3 + -1;
+  r0.yzw = cb0[29].xyz * r0.yyy + r1.xyz;
+  r0.xyz = cb0[31].xyz * r0.xxx + r0.yzw;
+  r0.w = cb0[11].z * cb0[10].x;
+  o3.xyz = abs(r0.xyz) * r0.www;
+  o3.w = cb0[10].w;
+  return;
+}

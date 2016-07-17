@@ -1,0 +1,331 @@
+// CRC32: 49F9E475 | Unity headers extracted from TMPro_SDF.shader
+// Shader "TMPro/Distance Field" {
+//   Properties {
+//    _FaceTex ("Face Texture", 2D) = "white" { }
+//    _FaceUVSpeedX ("Face UV Speed X", Range(-5,5)) = 0
+//    _FaceUVSpeedY ("Face UV Speed Y", Range(-5,5)) = 0
+//    _FaceColor ("Face Color", Color) = (1,1,1,1)
+//    _FaceDilate ("Face Dilate", Range(-1,1)) = 0
+//    _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+//    _OutlineTex ("Outline Texture", 2D) = "white" { }
+//    _OutlineUVSpeedX ("Outline UV Speed X", Range(-5,5)) = 0
+//    _OutlineUVSpeedY ("Outline UV Speed Y", Range(-5,5)) = 0
+//    _OutlineWidth ("Outline Thickness", Range(0,1)) = 0
+//    _OutlineSoftness ("Outline Softness", Range(0,1)) = 0
+//    _Bevel ("Bevel", Range(0,1)) = 0.5
+//    _BevelOffset ("Bevel Offset", Range(-0.5,0.5)) = 0
+//    _BevelWidth ("Bevel Width", Range(-0.5,0.5)) = 0
+//    _BevelClamp ("Bevel Clamp", Range(0,1)) = 0
+//    _BevelRoundness ("Bevel Roundness", Range(0,1)) = 0
+//    _LightAngle ("Light Angle", Range(0,6.28319)) = 3.1416
+//    _SpecularColor ("Specular", Color) = (1,1,1,1)
+//    _SpecularPower ("Specular", Range(0,4)) = 2
+//    _Reflectivity ("Reflectivity", Range(5,15)) = 10
+//    _Diffuse ("Diffuse", Range(0,1)) = 0.5
+//    _Ambient ("Ambient", Range(1,0)) = 0.5
+//    _BumpMap ("Normal map", 2D) = "bump" { }
+//    _BumpOutline ("Bump Outline", Range(0,1)) = 0
+//    _BumpFace ("Bump Face", Range(0,1)) = 0
+//    _ReflectFaceColor ("Reflection Color", Color) = (0,0,0,1)
+//    _ReflectOutlineColor ("Reflection Color", Color) = (0,0,0,1)
+//    _Cube ("Reflection Cubemap", CUBE) = "black" { }
+//    _EnvMatrixRotation ("Texture Rotation", Vector) = (0,0,0,0)
+//    _UnderlayColor ("Border Color", Color) = (0,0,0,0.5)
+//    _UnderlayOffsetX ("Border OffsetX", Range(-1,1)) = 0
+//    _UnderlayOffsetY ("Border OffsetY", Range(-1,1)) = 0
+//    _UnderlayDilate ("Border Dilate", Range(-1,1)) = 0
+//    _UnderlaySoftness ("Border Softness", Range(0,1)) = 0
+//    _GlowColor ("Color", Color) = (0,1,0,0.5)
+//    _GlowOffset ("Offset", Range(-1,1)) = 0
+//    _GlowInner ("Inner", Range(0,1)) = 0.05
+//    _GlowOuter ("Outer", Range(0,1)) = 0.05
+//    _GlowPower ("Falloff", Range(1,0)) = 0.75
+//    _WeightNormal ("Weight Normal", Float) = 0
+//    _WeightBold ("Weight Bold", Float) = 0.5
+//    _ShaderFlags ("Flags", Float) = 0
+//    _ScaleRatioA ("Scale RatioA", Float) = 1
+//    _ScaleRatioB ("Scale RatioB", Float) = 1
+//    _ScaleRatioC ("Scale RatioC", Float) = 1
+//    _MainTex ("Font Atlas", 2D) = "white" { }
+//    _TextureWidth ("Texture Width", Float) = 512
+//    _TextureHeight ("Texture Height", Float) = 512
+//    _GradientScale ("Gradient Scale", Float) = 5
+//    _ScaleX ("Scale X", Float) = 1
+//    _ScaleY ("Scale Y", Float) = 1
+//    _PerspectiveFilter ("Perspective Correction", Range(0,1)) = 0.875
+//    _VertexOffsetX ("Vertex OffsetX", Float) = 0
+//    _VertexOffsetY ("Vertex OffsetY", Float) = 0
+//    _ClipRect ("Mask Coords", Vector) = (0,0,100000,100000)
+//    _MaskSoftnessX ("Mask SoftnessX", Float) = 0
+//    _MaskSoftnessY ("Mask SoftnessY", Float) = 0
+//    _StencilComp ("Stencil Comparison", Float) = 8
+//    _Stencil ("Stencil ID", Float) = 0
+//    _StencilOp ("Stencil Operation", Float) = 0
+//    _StencilWriteMask ("Stencil Write Mask", Float) = 255
+//    _StencilReadMask ("Stencil Read Mask", Float) = 255
+//   }
+//   Fallback "TMPro/Mobile/Distance Field"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZTest False
+//       ZWrite Off
+//       Cull [_CullMode]
+//       Stencil {
+//          Ref [_Stencil]
+//          ReadMask [_StencilReadMask]
+//          WriteMask [_StencilWriteMask]
+//          Comp [_StencilComp]
+//          Pass [_StencilOp]
+//         }
+//       Blend One OneMinusSrcAlpha
+//       GpuProgramID 5639
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord1" TexCoord1
+//           Matrix 14 [_EnvMatrix] 3
+//           Matrix 8 [_Object2World] 3
+//           Matrix 11 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [glstate_matrix_projection]
+//           Vector 19 [_FaceColor]
+//           Float 20 [_FaceDilate]
+//           Float 29 [_GradientScale]
+//           Vector 22 [_OutlineColor]
+//           Float 21 [_OutlineSoftness]
+//           Float 23 [_OutlineWidth]
+//           Float 32 [_PerspectiveFilter]
+//           Float 26 [_ScaleRatioA]
+//           Float 30 [_ScaleX]
+//           Float 31 [_ScaleY]
+//           Vector 18 [_ScreenParams]
+//           Float 27 [_VertexOffsetX]
+//           Float 28 [_VertexOffsetY]
+//           Float 25 [_WeightBold]
+//           Float 24 [_WeightNormal]
+//           Vector 17 [_WorldSpaceCameraPos]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c33, 0, 1.5, 1, 0.5
+    def c34, 0.00122070313, 5, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_color v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_position o0
+    dcl_color o1
+    dcl_color1 o2
+    dcl_texcoord o3.x
+    dcl_texcoord1 o4
+    dcl_texcoord2 o5
+    dcl_texcoord3 o6
+    dcl_texcoord4 o7.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+def c221, -0.999, 0.999, 0, 0 // Full screen fade to black coordinates
+dcl_2d s0
+dcl_2d s2 // Copy of _CameraDepthTexture
+
+// For loop to improve stereo cursor accuracy:
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors TMPro_Distance Field/vp/49F9E475.txt
+mov r30, c17
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.zw, v0
+    add r0.x, c27.x, v0.x
+    add r0.y, c28.x, v0.y
+    dp4 r10.x, c0, r0
+    dp4 r10.y, c1, r0
+    dp4 r10.z, c2, r0
+    dp4 r1.x, c8, r0
+    dp4 r1.y, c9, r0
+    dp4 r1.z, c10, r0
+    dp4 r0.z, c3, r0
+    mov o6.xy, r0
+    add r0.xyw, -r1.xyzz, r30.xyzz
+    nrm r1.xyz, r0.xyww
+    mul r2.xyz, c12, v1.y
+    mad r2.xyz, c11, v1.x, r2
+    mad r2.xyz, c13, v1.z, r2
+    nrm r3.xyz, r2
+    dp3 r1.x, r3, r1
+    mov r2.xy, c18
+    mul r1.yz, r2.xxyw, c4.xxyw
+    add r1.y, r1.z, r1.y
+    mul r1.y, r1_abs.y, c30.x
+    rcp r3.x, r1.y
+    mul r1.yz, r2.xxyw, c5.xxyw
+    add r1.y, r1.z, r1.y
+    mul r1.y, r1_abs.y, c31.x
+    rcp r3.y, r1.y
+    mul r1.yz, r0.z, r3.xxyw
+    mov r10.w, r0.z
+    mul r2.xy, r1.yzzw, r1.yzzw
+    add r0.z, r2.y, r2.x
+    rsq r0.z, r0.z
+    mul r1.w, c29.x, v4_abs.y
+    mul r0.z, r0.z, r1.w
+    mul r1.w, r0.z, c33.y
+    mov r2.z, c33.z
+    add r2.x, r2.z, -c32.x
+    mul r2.x, r1.w, r2.x
+    mad r2.y, r0.z, c33.y, -r2.x
+    mad r1.x, r1_abs.x, r2.y, r2.x
+    mad r0.z, r0.z, -c33.y, r1.x
+    abs r1.x, c7.w
+    sge r1.x, -r1.x, r1.x
+    mad r2.y, r1.x, r0.z, r1.w
+    rcp r0.z, r2.y
+    sge r1.x, c33.x, v4.y
+    mov r2.x, c24.x
+    add r1.w, -r2.x, c25.x
+    mad r1.x, r1.x, r1.w, c24.x
+    mov r2.x, c26.x
+    mul r1.w, r2.x, c20.x
+    mul r1.w, r1.w, c33.w
+    rcp r3.x, c29.x
+    mad r2.w, r1.x, r3.x, r1.w
+    add r1.x, -r2.w, c33.w
+    mad o5.z, r0.z, c33.w, r1.x
+    mul r0.z, r0.z, c33.w
+    mad r1.x, c23.x, -r2.x, r2.z
+    mad r1.x, c21.x, -r2.x, r1.x
+    mad r0.z, r1.x, c33.w, -r0.z
+    add o5.x, -r2.w, r0.z
+    mov o5.yw, r2
+    mul o1, c19, v2
+    mul o2.w, c22.w, v2.w
+    frc r0.z, v4.x
+    add r1.x, -r0.z, v4.x
+    mul o4.w, r0.z, c34.y
+    mul o4.z, r1.x, c34.x
+    rcp r2.z, r1.y
+    rcp r2.w, r1.z
+    mul o6.zw, r2, c33.w
+    dp3 o7.x, c14, r0.xyww
+    dp3 o7.y, c15, r0.xyww
+    dp3 o7.z, c16, r0.xyww
+    mov o2.xyz, c22
+    mov o3.x, v2.w
+    mov o4.xy, v3
+
+// Texture blacklist unusable - crosshair, fade to black, inventory, menus, etc. use the same texture
+//mov r25.x, c251.x
+//if_eq r25.x, c220.x
+
+mov r30.x, c220.w // Auto-crosshair depth
+
+// Blacklist full screen fade to black based on coordinate near corner of screen:
+if_le r10.x, c221.x
+	if_le r10.y, c221.x
+		mov r30.x, c220.x
+	endif
+	if_ge r10.y, c221.y
+		mov r30.x, c220.x
+	endif
+endif
+if_ge r10.x, c221.y
+	if_le r10.y, c221.x
+		mov r30.x, c220.x
+	endif
+	if_ge r10.y, c221.y
+		mov r30.x, c220.x
+	endif
+endif
+
+// Blacklist adjustment when render target is square to prevent adjusting watch face:
+if_eq c4.x, c4.y
+	mov r30.x, c220.x
+endif
+
+// Blacklist adjustment if w != 1.0
+if_ne r10.w, c220.y
+	mov r30.x, c220.x
+endif
+
+texldl r31, c220.z, s0
+
+if_eq r30.x, c220.w
+mov r20.w, c150.w // Check if _ZBufferParams is valid
+if_ne r20.w, c220.x
+	// Stereo cursor: To improve the accuracy of the stereo cursor, we start at the
+	// near clipping plane and work our way towards center + separation (ideally
+	// we would loop one pixel at a time, but as the loop counts must be constant
+	// we can't do that here, so we just choose a granuality in i0 and c227.
+	// Alternatively we could loop one pixel at a time with a hardcoded maximum
+	// number of pixels)
+
+	rcp r20.w, c150.w		// W = starting depth = near clipping plane
+	add r31.w, r20.w, -r31.y	// near - convergence
+	mad r20.x, r31.w, r31.x, c220.w	// X sample coord = center + separation * (near - convergence)
+	mov r20.y, c220.w		// Y sample coord = center
+	add r20.z, r20.x, -c220.w	// Z = X offset from center
+	add r31.z, r31.x, -r20.z	// Total distance to cover (separation - starting X offset)
+
+	mov r21, r20			// Working copy
+	mul r31.w, r31.x, r31.y		// separation * convergence (precompute this constant)
+	rep i0
+		mad r21.z, r31.z, c227.x, r21.z	// adjustment += (total distance to cover) / i0.x (granuality)
+
+		// Calculate W for this adjustment amount:
+		add r21.w, r31.x, -r21.z	// separation - adjustment
+		rcp r21.w, r21.w
+		mul r21.w, r31.w, r21.w		// w = (separation * convergence) / (separation - adjustment)
+
+		// Read depth texture at this pixel (divide by 2 for texture coordinates):
+		mad r21.x, r21.z, c220.w, c220.w // X = 0.5 + adjustment/2
+		texldl r5, r21.xy, s2
+
+		// scale depth buffer to world Z (game dependent - look for scaling applied to
+		// the depth buffer wherever else it is used. In the case of Unity we use
+		// _ZBufferParams):
+		mad r5.x, r5.x, c150.x, c150.y
+		add r5.y, c150.z, c150.w // Derive 1/far from _ZBufferParams
+		mul r5.x, r5.x, r5.y
+		rcp r5.x, r5.x
+
+		// If the sampled depth is closer than the calculated depth, exit the loop:
+		break_ge r21.w, r5.x
+
+		// Set the output depth to this pixel
+		mov r20, r21
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r10.x, r10.x, r20.z
+endif
+endif
+mov o0, r10
+
+if_eq r30.x, -c220.y
+	mov o0, c220.xxxx
+endif

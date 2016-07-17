@@ -26,3 +26,7 @@ Known Issues
 
 - Convergence preset does not activate automatically - press L after launching
   the game to activate it.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

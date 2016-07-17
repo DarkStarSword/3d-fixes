@@ -1,0 +1,105 @@
+// hlsltool.py -I ../.. --fix-unity-sun-shafts --only-autofixed --fxc /home/dss/fxc.exe cd21ebabc4f80033-ps_replace.txt
+// 3DMigoto: cd21ebabc4f80033 |    Unity headers extracted from NewSunshafts.shader
+//    Shader "Hidden/SunShaftsComposite" {
+//      Properties {
+//       _MainTex ("Base", 2D) = "" { }
+//       _ColorBuffer ("Color", 2D) = "" { }
+//       _Skybox ("Skybox", 2D) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 3/5 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          GpuProgramID 181592
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 13
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from NewSunshafts.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 12 2 0
+//   undeciphered2: 1 2 2 2 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 176
+//   Float 96 [_NoSkyBoxMask]
+//   Vector 144 [_SunPosition]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 112 [_ZBufferParams]
+//   SetTexture 0 [_CameraDepthTexture] 2D 1
+//   SetTexture 1 [_MainTex] 2D 0
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:04:53 2016
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[8];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[11];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : SV_Position0,
+  float2 v1 : TEXCOORD0,
+  float2 w1 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity sun position fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-sun-shafts --only-autofixed --fxc /home/dss/fxc.exe cd21ebabc4f80033-ps_replace.txt
+float4 _SunPosition = cb0[9];
+_SunPosition.x += separation / 2;
+
+  r0.xy = _SunPosition.xy + -w1.xy;
+  r0.x = dot(r0.xy, r0.xy);
+  r0.x = sqrt(r0.x);
+  r0.x = saturate(cb0[9].w + -r0.x);
+  r1.xyzw = t1.Sample(s0_s, v1.xy).xyzw;
+  r0.y = dot(r1.xyz, float3(0.589999974,0.300000012,0.109999999));
+  r0.y = cb0[6].x * r0.y;
+  r0.y = max(r1.w, r0.y);
+  r0.x = r0.y * r0.x;
+  r1.xyzw = t0.Sample(s1_s, w1.xy).xyzw;
+  r0.y = cb1[7].x * r1.x + cb1[7].y;
+  r0.y = 1 / r0.y;
+  r0.y = cmp(0.99000001 < r0.y);
+  o0.xyzw = r0.yyyy ? r0.xxxx : 0;
+  return;
+}

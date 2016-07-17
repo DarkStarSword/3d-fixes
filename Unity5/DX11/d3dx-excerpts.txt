@@ -1,0 +1,59 @@
+;;;;;;;;;;;;;;;;;;;;;;; DARKSTARSWORD'S UNITY 5 TEMPLATE ;;;;;;;;;;;;;;;;;;;;;;;
+
+; Custom resource declarations
+[Resource_UnityPerCameraRare]
+max_copies_per_frame = 1
+
+[Resource_CameraDepthTexture]
+max_copies_per_frame = 1
+
+[Resource_UnityPerCamera]
+max_copies_per_frame = 1
+
+[Resource_UnityPerDraw]
+max_copies_per_frame = 1
+
+[Resource_Inverse_MVP]
+type = Buffer
+format = R32G32B32A32_FLOAT
+array = 4
+
+; Clear custom resources on the present call to ensure we don't use stale data:
+[Present]
+; run = CustomShader3DVision2SBS
+Resource_UnityPerCameraRare = null
+Resource_CameraDepthTexture = null
+Resource_UnityPerCamera = null
+Resource_UnityPerDraw = null
+Resource_Inverse_MVP = null
+
+; Copy the FOV from the directional lighting shader to the point/spot/physical lighting shader:
+[ShaderOverrideDirectional]
+Hash = b78925705424e647
+Resource_UnityPerCameraRare = vs-cb1
+[ShaderOverrideDirectional53]
+Hash = bfae1ae6908d87a2
+Resource_UnityPerCameraRare = vs-cb1
+[ShaderOverrideDirectional53_9x]
+Hash = f51c2a7085326040
+Resource_UnityPerCameraRare = vs-cb1
+
+[ShaderOverridePhysical50]
+Hash = ca5cfc8e4d8b1ce5
+vs-cb13 = Resource_UnityPerCameraRare
+
+[ShaderOverridePhysical52]
+Hash = 69294277cca1bade
+vs-cb13 = Resource_UnityPerCameraRare
+
+[CustomShader_Inverse_Unity_MVP]
+max_executions_per_frame = 1
+cs = ShaderFixes/inverse_unity_mvp.hlsl
+cs-cb11 = Resource_UnityPerDraw
+cs-u0 = Resource_Inverse_MVP
+Dispatch = 1, 1, 1
+post cs-cb11 = null
+post cs-u0 = null
+
+;;;;;;;;;;;;;; ALL LINES BELOW THIS POINT INSERTED BY HLSLTOOL.PY ;;;;;;;;;;;;;;
+

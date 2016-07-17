@@ -37,3 +37,7 @@ Known Issues
 - Some of the text in the credits has 2x depth adjustment applied for some
   reason. Set the UI depth to 50% or lower with the number row during the
   credits to avoid text beyond infinity.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

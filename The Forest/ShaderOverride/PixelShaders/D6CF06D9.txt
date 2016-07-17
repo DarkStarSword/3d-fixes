@@ -1,0 +1,166 @@
+// CRC32: D6CF06D9 | Unity headers extracted from BillboardRenderNormalShader VFACE.shader
+// Shader "Custom/BillboardRenderNormalShader VFACE" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _Cutoff ("CutOff", Range(0,1)) = 0.3
+//    _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//    _BumpTransSpecMap ("Normal (GA) Trans(R) Smoothness(B)", 2D) = "bump" { }
+//    _BumpTex ("Normal Map", 2D) = "bump" { }
+//    _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//    _Metallic ("Metallic", Range(0,1)) = 0
+//    _IsBark ("is bark", Float) = 0
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 124928
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" }
+//           Float 6 [_Cutoff]
+//           Float 7 [_IsBark]
+//           Vector 4 [_LightColor0]
+//           Vector 1 [_ProjectionParams]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 2 [_WorldSpaceLightPos0]
+//           Vector 3 [unity_ColorSpaceDielectricSpec]
+//           Vector 5 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_MainTex] 2D 0
+//           SetTexture 1 [_BumpTransSpecMap] 2D 1
+//           SetTexture 2 [_BumpTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 1, -1, 0, 2
+    def c9, 0.5, 0.00100000005, 31.622776, 9.99999975e-005
+    def c10, 4.90740919, 3.90740919, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl vFace
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_BillboardRenderNormalShader VFACE/fp/D6CF06D9.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    cmp r0.x, vFace, c8.x, c8.y
+    add r0.yzw, r30.xxyz, -v4.xxyz
+    dp3 r1.x, r0.yzww, r0.yzww
+    rsq r1.x, r1.x
+    mul_pp r1.yzw, r0, r1.x
+    mov r2.xz, c8
+    if_eq c7.x, r2.z
+    mul r0.x, r0.x, c1.x
+    texld_pp r3, v0, s0
+    add r3, r3.w, -c6.x
+    texkill r3
+    texld_pp r3, v0, s1
+    mad_pp r3.xy, r3.wyzw, c8.w, c8.y
+    dp2add_sat_pp r2.y, r3, r3, c8.z
+    add_pp r2.y, -r2.y, c8.x
+    rsq_pp r2.y, r2.y
+    rcp_pp r3.z, r2.y
+    dp3 r4.x, v1, r3
+    dp3 r4.y, v2, r3
+    dp3 r4.z, v3, r3
+    mul r2.yzw, r0.x, r4.xxyz
+    else
+    texld_pp r4, v0, s2
+    mad_pp r3.xy, r4.wyzw, c8.w, c8.y
+    dp2add_sat_pp r0.x, r3, r3, c8.z
+    add_pp r0.x, -r0.x, c8.x
+    rsq_pp r0.x, r0.x
+    rcp_pp r3.z, r0.x
+    dp3 r2.y, v1, r3
+    dp3 r2.z, v2, r3
+    dp3 r2.w, v3, r3
+    endif
+    mov r2.y, -r2.y
+    add r2.yzw, r2, c8.x
+    mul_pp r2.yzw, r2, c9.x
+    dp3_pp r4.x, v1, r3
+    dp3_pp r4.y, v2, r3
+    dp3_pp r4.z, v3, r3
+    dp3_pp r0.x, r4, c2
+    max_pp r3.x, r0.x, c8.z
+    nrm_pp r5.xyz, r4
+    mul_pp r2.yzw, r2, c3.w
+    mad_pp r0.xyz, r0.yzww, r1.x, c2
+    dp3_pp r0.w, r0, r0
+    add r1.x, -r0.w, c9.y
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r1.x, c9.z, r0.w
+    mul_pp r0.xyz, r0.w, r0
+    dp3_pp r0.w, r5, r0
+    max_pp r1.x, r0.w, c8.z
+    dp3_pp r0.w, r5, r1.yzww
+    max_pp r1.y, r0.w, c8.z
+    dp3_pp r0.x, c2, r0
+    max_pp r1.z, r0.x, c8.z
+    lrp_pp r0.x, r3.x, r2.x, c5.w
+    lrp_pp r0.y, r1.y, r2.x, c5.w
+    mad r0.x, r0.x, r0.y, c9.w
+    rcp_pp r0.x, r0.x
+    mov r0.y, c5.y
+    mul_pp r0.y, r0.y, c10.x
+    pow_pp r0.z, r1.x, c10.y
+    mul_pp r0.y, r0.y, r0.z
+    add_pp r0.z, -r3.x, c8.x
+    mul_pp r0.w, r0.z, r0.z
+    mul_pp r0.w, r0.w, r0.w
+    mul_pp r0.z, r0.z, r0.w
+    add_pp r0.w, -r1.y, c8.x
+    mul_pp r1.x, r0.w, r0.w
+    mul_pp r1.x, r1.x, r1.x
+    mul_pp r0.w, r0.w, r1.x
+    dp2add_pp r1.x, r1.z, r1.z, -c9.x
+    mad_pp r0.z, r1.x, r0.z, c8.x
+    mad_pp r0.w, r1.x, r0.w, c8.x
+    mul_pp r0.xz, r0.yyww, r0
+    mul_pp r0.xy, r3.x, r0.xzzw
+    mul_pp r0.x, r0.x, c5.x
+    mul_pp r0.yzw, r0.y, c4.xxyz
+    mul_pp r1.xyw, r0.x, c4.xyzz
+    cmp_pp r1.xyw, r0.x, r1, c8.z
+    add_pp r0.x, -r1.z, c8.x
+    mul_pp r1.z, r0.x, r0.x
+    mul_pp r1.z, r1.z, r1.z
+    mul_pp r0.x, r0.x, r1.z
+    lrp_pp r3.xyz, r0.x, r2.x, c3
+    mul_pp r1.xyz, r1.xyww, r3
+    mad_pp oC0.xyz, r2.yzww, r0.yzww, r1
+    mov_pp oC0.w, c8.x

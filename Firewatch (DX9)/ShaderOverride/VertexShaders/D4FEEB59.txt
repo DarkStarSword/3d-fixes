@@ -1,0 +1,148 @@
+// CRC32: D4FEEB59 | Matched 2 variants of 1 shaders: Marmoset/Bumped Diffuse IBL Swaying
+// 
+//    Unity headers extracted from Marmoset Bumped Diffuse IBL Swaying.shader
+//    Shader "Marmoset/Bumped Diffuse IBL Swaying" {
+//      Properties {
+//       _Color ("Diffuse Color", Color) = (1,1,1,1)
+//       _MainTex ("Diffuse(RGB) Alpha(A)", 2D) = "white" { }
+//       _BumpMap ("Normalmap", 2D) = "bump" { }
+//      }
+//      SubShader 1/1 {
+//        LOD 350
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//        Pass 1/6 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//          GpuProgramID 44786
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_OFF" "SHADOWS_SCREEN" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "MARMO_SKY_BLEND_ON" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "tangent" TexCoord4
+//              Matrix 4 [_Object2World] 3
+//              Matrix 7 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 11 [_ProjectionParams]
+//              Vector 12 [_ScreenParams]
+//              Float 21 [_SwayingRandomnessOffset]
+//              Vector 10 [_Time]
+//              Vector 22 [_WindDirectionFrequencyIntensity]
+//              Vector 15 [unity_SHAb]
+//              Vector 14 [unity_SHAg]
+//              Vector 13 [unity_SHAr]
+//              Vector 18 [unity_SHBb]
+//              Vector 17 [unity_SHBg]
+//              Vector 16 [unity_SHBr]
+//              Vector 19 [unity_SHC]
+//              Vector 20 [unity_WorldTransformParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c23, 1, 0, 0.159154937, 0.5
+    def c24, 6.28318548, -3.14159274, 0, 0
+    dcl_position v0
+    dcl_tangent v1
+    dcl_normal v2
+    dcl_texcoord v3
+    dcl_color v4
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2
+    dcl_texcoord2 o3
+    dcl_texcoord3 o4
+    dcl_texcoord4 o5.xyz
+    dcl_texcoord5 o6
+    dcl_texcoord7 o7
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+    dp4 r0.x, c4, v0
+    dp4 r0.y, c5, v0
+    dp4 r0.z, c6, v0
+    dp3 r0.x, r0.xzyw, c23.xxyw
+    mul r0.x, r0.x, c21.x
+    mov r0.z, c22.z
+    mad r0.x, c10.y, r0.z, r0.x
+    mad r0.x, r0.x, c23.z, c23.w
+    frc r0.x, r0.x
+    mad r0.x, r0.x, c24.x, c24.y
+    sincos r1.y, r0.x
+    mul r0.xz, r1.y, c22.xyyw
+    mov r0.y, c23.y
+    mul r0.w, c22.w, v4.x
+    mad r0.xyz, r0, r0.w, v0
+    mov r0.w, v0.w
+    dp4 o1.w, c4, r0
+    dp4 o2.w, c5, r0
+    dp4 o3.w, c6, r0
+    mul r1.xyz, c8, v2.y
+    mad r1.xyz, c7, v2.x, r1
+    mad r1.xyz, c9, v2.z, r1
+    nrm r2.xyz, r1
+    mul r1.x, r2.y, r2.y
+    mad r1.x, r2.x, r2.x, -r1.x
+    mul r3, r2.yzzx, r2.xyzz
+    dp4 r4.x, c16, r3
+    dp4 r4.y, c17, r3
+    dp4 r4.z, c18, r3
+    mad r1.xyz, c19, r1.x, r4
+    mov r2.w, c23.x
+    dp4 r3.x, c13, r2
+    dp4 r3.y, c14, r2
+    dp4 r3.z, c15, r2
+    add o5.xyz, r1, r3
+    dp4 r1.x, c0, r0
+    dp4 r1.w, c3, r0
+
+mov o0, r1 // Relocated from line 108 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Marmoset_Bumped Diffuse IBL Swaying/vp/D4FEEB59.txt
+texldl r31, c220.z, s0
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r3.xz, r1.xyww, c23.w
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    mul r0.x, r1.y, c11.x
+
+//     mov o0, r1 // Relocated to line 104 with shadertool.py
+mov o0.yz, r1 // Inserted by shadertool.py
+
+    mov o6.zw, r1
+    mul r3.w, r0.x, c23.w
+    mad o6.xy, r3.z, c12.zwzw, r3.xwzw
+    dp3 r0.z, c4, v1
+    dp3 r0.x, c5, v1
+    dp3 r0.y, c6, v1
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul r0.xyz, r0.w, r0
+    mov o1.x, r0.z
+    mul r1.xyz, r0, r2.zxyw
+    mad r1.xyz, r2.yzxw, r0.yzxw, -r1
+    mul r0.z, c20.w, v1.w
+    mul r1.xyz, r0.z, r1
+    mov o1.y, r1.x
+    mov o1.z, r2.x
+    mov o2.x, r0.x
+    mov o3.x, r0.y
+    mov o2.y, r1.y
+    mov o3.y, r1.z
+    mov o2.z, r2.y
+    mov o3.z, r2.z
+    mul o4, c23.xxyy, v3.xyxx
+    mov o7, c23.y

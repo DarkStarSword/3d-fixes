@@ -1,9 +1,24 @@
-Life is Strange (Episode 1)
-===========================
+Life is Strange
+===============
+
+Update 2015-10-21
+-----------------
+- Fixed Episode 5
+- Added approximate fix for bloom around lights using depth buffer (press H to
+  move them to infinite depth instead)
+
+Update 2015-08-16
+-----------------
+- Fixed Episode 4
+
+Update 2015-05-24
+-----------------
+- Fixed Episode 3
+- Fixed some more lighting effects
 
 Update 2015-03-25
 -----------------
-- Fixed Chapter 2
+- Fixed Episode 2
 - Disable some fog effects that broke with SkipSetScissorRect (Press P to
   re-enable this)
 
@@ -17,7 +32,8 @@ Fixed
 - Fog
 - Shadows
 - Glow around sun
-- Bloom around lights
+- Approximate fix for bloom around lights (Press H to change to an alternate
+  adjustment that places these at infinity)
 - Light shafts
 - Reflections on ground
 - Clipping on decals
@@ -43,7 +59,8 @@ return to the game's default depth.
 
 Notes
 -----
-- This is an episodic game and will likely need to be updated for future
-  episodes, so check back for updates after the release of each episode.
-
 - I played on high quality and have not checked for issues on lower settings.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

@@ -1,0 +1,170 @@
+// CRC32: 404A0037 | Unity headers extracted from Standard - Cull Off.shader
+// Shader "Custom/Standard - Cull Off" {
+//   Properties {
+//    _Color ("Color", Color) = (1,1,1,1)
+//    _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//    _BumpMap ("Normal (RGB)", 2D) = "bump" { }
+//    _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//    _Metallic ("Metallic", Range(0,1)) = 0
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/4 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 83856
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Vector 10 [_Color]
+//           Float 8 [_Glossiness]
+//           Vector 6 [_LightColor0]
+//           Float 9 [_Metallic]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 4 [_WorldSpaceLightPos0]
+//           Vector 5 [unity_ColorSpaceDielectricSpec]
+//           Vector 7 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_LightTexture0] CUBE 0
+//           SetTexture 1 [_LightTextureB0] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_BumpMap] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c11, 2, -1, 0, 1
+    def c12, 0.00100000005, 31.622776, 9.99999975e-005, 10
+    def c13, 0.967999995, 0.0299999993, -0.5, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_cube s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Standard - Cull Off/fp/404A0037.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v4
+    nrm_pp r1.xyz, r0
+    add r0.xyz, c4, -v4
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad_pp r2.xyz, r0, r0.w, r1
+    mul_pp r0.xyz, r0.w, r0
+    dp3_pp r0.w, r2, r2
+    add r1.w, -r0.w, c12.x
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r1.w, c12.y, r0.w
+    mul_pp r2.xyz, r0.w, r2
+    texld_pp r3, v0, s3
+    mad_pp r3.xy, r3.wyzw, c11.x, c11.y
+    dp2add_sat_pp r0.w, r3, r3, c11.z
+    add_pp r0.w, -r0.w, c11.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r3.z, r0.w
+    dp3_pp r4.x, v1, r3
+    dp3_pp r4.y, v2, r3
+    dp3_pp r4.z, v3, r3
+    nrm_pp r3.xyz, r4
+    dp3_pp r0.w, r4, r0
+    dp3_pp r0.x, r0, r2
+    dp3_pp r0.y, r3, r2
+    dp3_pp r0.z, r3, r1
+    max_pp r1.x, r0.z, c11.z
+    max_pp r1.y, r0.y, c11.z
+    max_pp r1.z, r0.x, c11.z
+    max_pp r1.w, r0.w, c11.z
+    mov r0.w, c11.w
+    add_pp r0.x, r0.w, -c8.x
+    add_pp r0.y, -r0.x, c11.w
+    mad_pp r0.y, r0.y, c13.x, c13.y
+    log_pp r0.y, r0.y
+    rcp r0.y, r0.y
+    mul_pp r0.y, r0.y, c12.w
+    mul_pp r0.z, r0.y, r0.y
+    mad_pp r0.y, r0.y, r0.y, c11.w
+    mul_pp r0.y, r0.y, c7.y
+    pow_pp r2.x, r1.y, r0.z
+    mul_pp r0.y, r0.y, r2.x
+    mul_pp r0.z, r0.x, r0.x
+    mul_pp r1.y, r0.z, c7.w
+    mad_pp r0.z, r0.z, -c7.w, r0.w
+    mad_pp r0.w, r1.x, r0.z, r1.y
+    mad_pp r0.z, r1.w, r0.z, r1.y
+    mad r0.z, r0.z, r0.w, c12.z
+    rcp_pp r0.z, r0.z
+    mul_pp r0.y, r0.y, r0.z
+    mul_pp r0.y, r1.w, r0.y
+    mul_pp r0.y, r0.y, c7.x
+    max_pp r1.y, r0.y, c11.z
+    mad r2, v4.xyzx, c11.wwwz, c11.zzzw
+    dp4 r3.x, c0, r2
+    dp4 r3.y, c1, r2
+    dp4 r3.z, c2, r2
+    dp3 r0.y, r3, r3
+    texld r2, r3, s0
+    texld r3, r0.y, s1
+    mul_pp r0.y, r2.w, r3.x
+    mul_pp r0.yzw, r0.y, c6.xxyz
+    mul_pp r2.xyz, r0.yzww, r1.y
+    add_pp r1.xy, -r1.xzzw, c11.w
+    mul_pp r1.z, r1.z, r1.z
+    dp2add_pp r0.x, r1.z, r0.x, c13.z
+    mul_pp r1.z, r1.y, r1.y
+    mul_pp r1.z, r1.z, r1.z
+    mul_pp r1.y, r1.y, r1.z
+    texld r3, v0, s2
+    mov r4, c5
+    mad_pp r5.xyz, r3, c10, -r4
+    mul_pp r3.xyz, r3, c10
+    mad_pp r4.xyz, c9.x, r5, r4
+    lrp_pp r5.xyz, r1.y, c11.w, r4
+    mul_pp r2.xyz, r2, r5
+    mul_pp r1.y, r1.x, r1.x
+    mul_pp r1.y, r1.y, r1.y
+    mul_pp r1.x, r1.x, r1.y
+    mad_pp r1.x, r0.x, r1.x, c11.w
+    add_pp r1.y, -r1.w, c11.w
+    mul_pp r1.z, r1.y, r1.y
+    mul_pp r1.z, r1.z, r1.z
+    mul_pp r1.y, r1.y, r1.z
+    mad_pp r0.x, r0.x, r1.y, c11.w
+    mul_pp r0.x, r1.x, r0.x
+    mul_pp r0.x, r1.w, r0.x
+    mul_pp r0.xyz, r0.x, r0.yzww
+    mad_pp r0.w, c9.x, -r4.w, r4.w
+    mul_pp r1.xyz, r0.w, r3
+    mad_pp oC0.xyz, r1, r0, r2
+    mov_pp oC0.w, c11.w

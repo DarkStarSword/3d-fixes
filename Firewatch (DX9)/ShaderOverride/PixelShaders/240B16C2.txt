@@ -1,0 +1,152 @@
+// CRC32: 240B16C2 | Unity headers extracted from Standard-Base.shader
+// Shader "Hidden/TerrainEngine/Splatmap/Standard-Base" {
+//   Properties {
+//    _MainTex ("Base (RGB) Smoothness (A)", 2D) = "white" { }
+//    _MetallicTex ("Metallic (R)", 2D) = "white" { }
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//   }
+//   Fallback "Diffuse"
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 119980
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Vector 6 [_LightColor0]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 4 [_WorldSpaceLightPos0]
+//           Vector 5 [unity_ColorSpaceDielectricSpec]
+//           Vector 7 [unity_LightGammaCorrectionConsts]
+//           SetTexture 0 [_LightTexture0] CUBE 0
+//           SetTexture 1 [_LightTextureB0] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_MetallicTex] 2D 3
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 1, 0, 0.00100000005, 31.622776
+    def c9, 9.99999975e-005, 0.967999995, 0.0299999993, 10
+    def c10, -0.5, 0, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_cube s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_TerrainEngine_Splatmap_Standard-Base/fp/240B16C2.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad r0, v2.xyzx, c8.xxxy, c8.yyyx
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp3 r0.x, r1, r1
+    texld r1, r1, s0
+    texld r0, r0.x, s1
+    mul_pp r0.x, r1.w, r0.x
+    mul_pp r0.xyz, r0.x, c6
+    add r1.xyz, r30, -v2
+    nrm_pp r2.xyz, r1
+    add r1.xyz, c4, -v2
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    mad_pp r3.xyz, r1, r0.w, r2
+    mul_pp r1.xyz, r0.w, r1
+    dp3_pp r0.w, r3, r3
+    add r1.w, -r0.w, c8.z
+    rsq_pp r0.w, r0.w
+    cmp_pp r0.w, r1.w, c8.w, r0.w
+    mul_pp r3.xyz, r0.w, r3
+    nrm_pp r4.xyz, v1
+    dp3_pp r0.w, r4, r3
+    dp3_pp r1.w, r1, r3
+    dp3_pp r1.x, v1, r1
+    max_pp r2.w, r1.x, c8.y
+    max_pp r3.x, r1.w, c8.y
+    dp3_pp r1.x, r4, r2
+    max_pp r2.x, r1.x, c8.y
+    max_pp r1.x, r0.w, c8.y
+    texld_pp r4, v0, s2
+    add_pp r0.w, -r4.w, c8.x
+    add_pp r1.y, -r0.w, c8.x
+    mad_pp r1.y, r1.y, c9.y, c9.z
+    log_pp r1.y, r1.y
+    rcp r1.y, r1.y
+    mul_pp r1.y, r1.y, c9.w
+    mul_pp r1.z, r1.y, r1.y
+    mad_pp r1.y, r1.y, r1.y, c8.x
+    mul_pp r1.y, r1.y, c7.y
+    pow_pp r2.y, r1.x, r1.z
+    mul_pp r1.x, r1.y, r2.y
+    mul_pp r1.y, r0.w, r0.w
+    mul_pp r1.z, r1.y, c7.w
+    mov r5.x, c8.x
+    mad_pp r1.y, r1.y, -c7.w, r5.x
+    mad_pp r1.w, r2.x, r1.y, r1.z
+    add_pp r2.x, -r2.x, c8.x
+    mad_pp r1.y, r2.w, r1.y, r1.z
+    mad r1.y, r1.y, r1.w, c9.x
+    rcp_pp r1.y, r1.y
+    mul_pp r1.x, r1.x, r1.y
+    mul_pp r1.x, r2.w, r1.x
+    mul_pp r1.x, r1.x, c7.x
+    max_pp r2.y, r1.x, c8.y
+    mul_pp r1.xyz, r0, r2.y
+    add_pp r1.w, -r3.x, c8.x
+    mul_pp r2.y, r3.x, r3.x
+    dp2add_pp r0.w, r2.y, r0.w, c10.x
+    mul_pp r2.y, r1.w, r1.w
+    mul_pp r2.y, r2.y, r2.y
+    mul_pp r1.w, r1.w, r2.y
+    texld_pp r3, v0, s3
+    lrp_pp r5.xyz, r3.x, r4, c5
+    mad_pp r2.y, r3.x, -c5.w, c5.w
+    mul_pp r3.xyz, r2.y, r4
+    lrp_pp r4.xyz, r1.w, c8.x, r5
+    mul_pp r1.xyz, r1, r4
+    mul_pp r1.w, r2.x, r2.x
+    mul_pp r1.w, r1.w, r1.w
+    mul_pp r1.w, r2.x, r1.w
+    mad_pp r1.w, r0.w, r1.w, c8.x
+    add_pp r2.x, -r2.w, c8.x
+    mul_pp r2.y, r2.x, r2.x
+    mul_pp r2.y, r2.y, r2.y
+    mul_pp r2.x, r2.x, r2.y
+    mad_pp r0.w, r0.w, r2.x, c8.x
+    mul_pp r0.w, r1.w, r0.w
+    mul_pp r0.w, r2.w, r0.w
+    mul_pp r0.xyz, r0.w, r0
+    mad_pp oC0.xyz, r3, r0, r1
+    mov_pp oC0.w, c8.x

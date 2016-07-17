@@ -1,0 +1,138 @@
+// CRC32: 70440D2C | Matched 4 variants of 1 shaders: Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward
+// 
+//    Unity headers extracted from Glass - Bumped Specular Refractive Forward.shader
+//    Shader "Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward" {
+//      Properties {
+//       _Color ("Glass Color (RGB)", Color) = (1,1,1,1)
+//       _NormalStrength ("Normal Map Strength", Range(0,128)) = 64
+//       _Abberation ("Abberation", Float) = 0.0015
+//       _MainTex ("Diffuse Albedo (NOT IN USE)", 2D) = "white" { }
+//       _SpecTex ("Specular Albedo (RGB) Gloss (A)", 2D) = "white" { }
+//       _BumpTex ("Normal Map", 2D) = "bump" { }
+//       _HighlightRimColor ("Highlight Rim Color", Color) = (0,0,0,0)
+//      }
+//      Fallback "VertexLit"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "RenderType"="Transparent" }
+//        GrabPass {
+//         }
+//        Pass 2/2 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent" "FORCENOSHADOWCASTING"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend One One
+//          GpuProgramID 91619
+//          Program "fp" {
+//            SubProgram "d3d9 " {
+// 1:           Keywords { "DIRECTIONAL" "SUNSHINE_DISABLED" }
+// 8:           Keywords { "DIRECTIONAL" "SUNSHINE_FILTER_HARD" }
+// 4:           Keywords { "DIRECTIONAL" "SUNSHINE_FILTER_PCF_2x2" }
+// 2:           Keywords { "DIRECTIONAL" "SUNSHINE_FILTER_PCF_3x3" }
+//              Vector 3 [_LightColor0]
+//              Vector 0 [_WorldSpaceCameraPos]
+//              Vector 1 [_WorldSpaceLightPos0]
+//              Vector 2 [unity_ColorSpaceDielectricSpec]
+//              Vector 4 [unity_LightGammaCorrectionConsts]
+//              SetTexture 0 [_BumpTex] 2D 0
+//              SetTexture 1 [_SpecTex] 2D 1
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c5, 2, -1, 0, 1
+    def c6, 0.00100000005, 31.622776, 9.99999975e-005, 10
+    def c7, 0.967999995, 0.0299999993, 0, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_2d s0
+    dcl_2d s1
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Beam Team_Standard_Transparent_Glass - Bumped Specular Refractive Forward/fp/70440D2C.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v0, s0
+    mad_pp r0.xy, r0.wyzw, c5.x, c5.y
+    dp2add_sat_pp r0.w, r0, r0, c5.z
+    add_pp r0.w, -r0.w, c5.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r0.z, r0.w
+    nrm_pp r1.xyz, r0
+    dp3_pp r0.x, v1, r1
+    dp3_pp r0.y, v2, r1
+    dp3_pp r0.z, v3, r1
+    nrm_pp r1.xyz, r0
+    dp3_pp r0.x, r0, c1
+    max_pp r1.w, r0.x, c5.z
+    add r0.xyz, r30, -v4
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul_pp r2.xyz, r0.w, r0
+    mad_pp r0.xyz, r0, r0.w, c1
+    dp3_pp r0.w, r1, r2
+    max_pp r2.x, r0.w, c5.z
+    texld_pp r3, v0, s1
+    add_pp r0.w, -r3.w, c5.w
+    mul_pp r2.y, r0.w, r0.w
+    add_pp r0.w, -r0.w, c5.w
+    mad_pp r0.w, r0.w, c7.x, c7.y
+    log_pp r0.w, r0.w
+    rcp r0.w, r0.w
+    mul_pp r0.w, r0.w, c6.w
+    mul_pp r2.z, r2.y, c4.w
+    mov r2.w, c5.w
+    mad_pp r2.y, r2.y, -c4.w, r2.w
+    mad_pp r2.x, r2.x, r2.y, r2.z
+    mad_pp r2.y, r1.w, r2.y, r2.z
+    mad r2.x, r2.y, r2.x, c6.z
+    rcp_pp r2.x, r2.x
+    dp3_pp r2.y, r0, r0
+    add r2.z, -r2.y, c6.x
+    rsq_pp r2.y, r2.y
+    cmp_pp r2.y, r2.z, c6.y, r2.y
+    mul_pp r0.xyz, r0, r2.y
+    dp3_pp r1.x, r1, r0
+    dp3_pp r0.x, c1, r0
+    max_pp r0.y, r1.x, c5.z
+    mul_pp r0.z, r0.w, r0.w
+    mad_pp r0.w, r0.w, r0.w, c5.w
+    mul_pp r0.w, r0.w, c4.y
+    pow_pp r1.x, r0.y, r0.z
+    mul_pp r0.y, r0.w, r1.x
+    mul_pp r0.y, r0.y, r2.x
+    mul_pp r0.y, r1.w, r0.y
+    mul_pp r0.y, r0.y, c4.x
+    mul_pp r1.xyz, r0.y, c3
+    cmp_pp r0.yzw, r0.y, r1.xxyz, c5.z
+    add_pp r1.x, -r0.x, c5.w
+    cmp_pp r0.x, r0.x, r1.x, c5.w
+    mul_pp r1.x, r0.x, r0.x
+    mul_pp r1.x, r1.x, r1.x
+    mul_pp r0.x, r0.x, r1.x
+    lrp_pp r1.xyz, r0.x, r2.w, c2
+    mul_pp oC0.xyz, r0.yzww, r1
+    mov_pp oC0.w, c5.w

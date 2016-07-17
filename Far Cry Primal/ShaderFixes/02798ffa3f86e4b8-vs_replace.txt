@@ -1,0 +1,180 @@
+// Decals (pattern: WorldMatrix._m30_m31_m32 not in multiply) - hunter vision foot prints, etc
+// Note: Using partner filtering - see d3dx.ini
+// ---- Created with 3Dmigoto v1.2.31 on Wed Mar 02 09:01:23 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CSceneTransformParameterProvider : register(b1)
+{
+  float4x4 WorldMatrix : packoffset(c0);
+  float3 WorldPositionFractions : packoffset(c4);
+}
+
+cbuffer CSceneGeometry : register(b2)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MeshDecompression : packoffset(c1);
+  float4 NormalizedXYBBox : packoffset(c2);
+}
+
+cbuffer InkAndPaint : register(b3)
+{
+  float4 BehindObjectColor : packoffset(c0);
+  float4 InkAndPaintParams : packoffset(c1);
+  float4 InteriorColor : packoffset(c2);
+  float4 MaterialPickingID : packoffset(c3);
+  float4 OutlineColor : packoffset(c4);
+  float2 OutlineShapePatternTiling : packoffset(c5);
+  float2 OutlineVisualTiling : packoffset(c5.z);
+  bool AlphaInRedChannel : packoffset(c6);
+  float HuntingInvestigationLerpFactor : packoffset(c6.y);
+  float HuntingInvestigationWorldSpaceZOffset : packoffset(c6.z);
+  float ShowThroughWallsAlpha : packoffset(c6.w);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  int2 v1 : texcoord0,
+  float4 v2 : normal0,
+  float4 v3 : color0,
+  out float4 o0 : SV_Position0,
+  out float o1 : SV_ClipDistance0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2,
+  out float4 o5 : TEXCOORD3,
+  out float o6 : TEXCOORD4)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = WorldMatrix._m30;
+  r0.y = WorldMatrix._m31;
+  r0.z = WorldMatrix._m32;
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  r1.xyz = -CameraPositionFractions.xyz + r1.xyz;
+  r2.xyz = (int3)v0.xyz;
+  r2.xyz = r2.xyz * MeshDecompression.yyy + MeshDecompression.xxx;
+  r3.x = dot(r2.xyz, WorldMatrix._m00_m10_m20);
+  r3.y = dot(r2.xyz, WorldMatrix._m01_m11_m21);
+  r3.z = dot(r2.xyz, WorldMatrix._m02_m12_m22);
+
+r3.xyz += WorldMatrix._m30_m31_m32;
+
+float4 stereo = StereoParams.Load(0);
+float4 tmp = mul(float4(r3.xyz, 1), ViewProjectionMatrix);
+tmp = float4(stereo.x * (tmp.w - stereo.y) * InvProjectionMatrix._m00, 0, 0, 0);
+r3.xyz += mul(tmp, InvViewMatrix);
+
+r3.xyz -= WorldMatrix._m30_m31_m32;
+
+  r1.xyz = r3.xyz + r1.xyz;
+  r0.xyz = r3.xyz + r0.xyz;
+
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r1.xyz * r0.www;
+
+// Decompiler bug:
+  //r1.xyz = r2.xyz * -AlphaInRedChannel + r1.xyz;
+  r1.xyz = r2.xyz * -HuntingInvestigationWorldSpaceZOffset + r1.xyz;
+
+  r1.w = 1;
+  r2.x = dot(r1.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  r2.y = dot(r1.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  r2.w = dot(r1.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  o0.z = dot(r1.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.xyw = r2.xyw;
+
+o0.x -= stereo.x * (o0.w - stereo.y);
+
+  r1.xyzw = DepthTextureScaleOffset.xyzw * r2.xyww;
+  o5.z = r2.w;
+  o5.xy = r1.xy + r1.zw;
+  o1.x = 0;
+  r1.xy = (int2)v1.xy;
+  o2.xy = r1.xy * MeshDecompression.ww + MeshDecompression.zz;
+  o2.zw = float2(0,0);
+  o3.xyzw = float4(0,0,0,0);
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+
+// Decompiler bug:
+  //r0.xyz = r1.xyz * -AlphaInRedChannel + r0.xyz;
+  r0.xyz = r1.xyz * - HuntingInvestigationWorldSpaceZOffset + r0.xyz;
+
+  r0.xyz = -CameraPosition.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = sqrt(r0.w);
+  r1.xyz = r0.xyz / r0.www;
+  r0.x = dot(CameraDirection.xyz, r0.xyz);
+  o6.x = CameraDistances.w * r0.x;
+  r0.xyz = v2.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r2.x = dot(r0.xyz, WorldMatrix._m00_m10_m20);
+  r2.y = dot(r0.xyz, WorldMatrix._m01_m11_m21);
+  r2.z = dot(r0.xyz, WorldMatrix._m02_m12_m22);
+  r0.x = dot(r2.xyz, r2.xyz);
+  r0.x = rsqrt(r0.x);
+  r0.xyz = r2.xyz * r0.xxx;
+  o4.w = dot(r0.xyz, r1.xyz);
+  o4.xyz = float3(0,0,0);
+  r0.x = 0.5 * InkAndPaintParams.y;
+  o5.w = 1 / r0.x;
+  return;
+}

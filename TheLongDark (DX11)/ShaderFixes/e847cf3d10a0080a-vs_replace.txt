@@ -1,0 +1,263 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe e847cf3d10a0080a-vs_replace.txt
+// 3DMigoto: e847cf3d10a0080a |    Unity headers extracted from TLD_WavingGrassBillboarded.shader
+//    Shader "Hidden/TerrainEngine/Details/BillboardWavingDoublePass" {
+//      Properties {
+//       _WavingTint ("Fade Color", Color) = (0.7,0.6,0.5,0)
+//       _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" { }
+//       _WaveAndDistance ("Wave and distance", Vector) = (12,3.6,1,1)
+//       _Cutoff ("Cutoff", Float) = 0.5
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "DisableBatching"="true" "RenderType"="GrassBillboard" }
+//        Pass 6/6 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="Geometry+200" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "DisableBatching"="true" "RenderType"="GrassBillboard" }
+//          Cull Off
+//          GpuProgramID 377198
+//          Program "vp" {
+//            SubProgram "d3d11_9x " {
+//              GpuProgramIndex 140
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from TLD_WavingGrassBillboarded.shader.decompressed:
+//   API d3d11_9x
+//   Shader model vs_4_0_level_9_1
+//   undeciphered1: 109 0 0
+//   Keywords { "SHADOWS_DEPTH" }
+//   undeciphered2: 1 0 6 0 0
+//   undeciphered3: 143 5 0 0 2 1 1 2 3 4 7 8
+//   ConstBuffer "$Globals" 256
+//   Vector 144 [_GlobalSunDir] 3
+//   Float 156 [_GlobalSunLuminance]
+//   Float 160 [_GlobalGrassTintScalar]
+//   Vector 176 [_GlobalWindInfo]
+//   Vector 208 [_GlobalGrassPhase]
+//   Vector 224 [_CamUpForGrass] 3
+//   Vector 240 [_MainTex_ST]
+//   ConstBuffer "UnityLighting" 720
+//   Vector 0 [_WorldSpaceLightPos0]
+//   ConstBuffer "UnityShadows" 416
+//   Vector 80 [unity_LightShadowBias]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 128 [glstate_matrix_invtrans_modelview0]
+//   Matrix 192 [_Object2World]
+//   Matrix 256 [_World2Object]
+//   ConstBuffer "UnityPerFrame" 256
+//   Matrix 144 [unity_MatrixVP]
+//   ConstBuffer "UnityTerrain" 272
+//   Vector 0 [_WavingTint]
+//   Vector 16 [_WaveAndDistance]
+//   Vector 32 [_CameraPosition]
+//   Vector 48 [_CameraRight] 3
+//   BindCB "$Globals" 0
+//   BindCB "UnityLighting" 1
+//   BindCB "UnityShadows" 2
+//   BindCB "UnityPerDraw" 3
+//   BindCB "UnityPerFrame" 4
+//   BindCB "UnityTerrain" 5
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:43:54 2016
+cbuffer cb5 : register(b5)
+{
+  float4 cb5[4];
+}
+
+cbuffer cb4 : register(b4)
+{
+  float4 cb4[13];
+}
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[19];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[6];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[1];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[16];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD1,
+  out float3 o2 : TEXCOORD2,
+  out float4 o3 : COLOR0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.x = cb3[16].x * v2.x;
+  r0.y = cb3[17].x * v2.x;
+  r0.z = cb3[18].x * v2.x;
+  r1.x = cb3[16].y * v2.y;
+  r1.y = cb3[17].y * v2.y;
+  r1.z = cb3[18].y * v2.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.x = cb3[16].z * v2.z;
+  r1.y = cb3[17].z * v2.z;
+  r1.z = cb3[18].z * v2.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.xyz = v1.xxx * float3(1,0,0) + v0.xyz;
+  r1.xyz = v1.yyy * float3(0,1,0) + r1.xyz;
+  r0.w = dot(r1.xyz, float3(7,3,9));
+  r1.x = cb0[13].x + cb0[13].y;
+  r1.x = cb0[13].z + r1.x;
+  r0.w = r1.x + r0.w;
+  r1.xy = frac(r0.ww);
+  r1.zw = float2(0,0);
+  r1.xyzw = r1.xyzw * float4(6.40884876,6.40884876,6.40884876,6.40884876) + float4(-3.14159274,-3.14159274,-3.14159274,-3.14159274);
+  r2.yz = r1.yw * r1.yw;
+  r0.w = r2.y * r1.y;
+  r3.xy = float2(-0.161616161,-0.161616161) * r0.ww;
+  r0.w = r0.w * r2.y;
+  r3.zw = float2(5.01111603,5.01111603);
+  r1.xyzw = r3.xyzw + r1.xyzw;
+  r3.xy = float2(0.00833330024,0.00833330024) * r0.ww;
+  r2.x = r0.w * r2.y;
+  r3.zw = float2(-2.55015421,-2.55015421);
+  r1.xyzw = r3.xyzw + r1.xyzw;
+  r1.xyzw = r2.xxzz * float4(-0.000198409994,-0.000198409994,0.0607173741,0.0607173741) + r1.xyzw;
+  r1.xyzw = r1.xyzw * r1.xyzw;
+  r1.xyzw = r1.xyzw * r1.xyzw;
+  r2.xyzw = v1.yyyy * r1.xyzw;
+  r0.w = dot(r1.yyww, float4(0.674199879,0.674199879,0.269679934,0.134839967));
+  r1.x = dot(r2.yyww, float4(0.0240000002,0.0399999991,-0.119999997,0.0960000008));
+  r1.z = dot(r2.xyzw, float4(0.00600000005,0.0199999996,-0.0199999996,0.100000001));
+  r2.xyz = -cb5[2].xyz + v0.xyz;
+  r1.y = dot(r2.xyz, r2.xyz);
+  r1.y = cmp(cb5[1].w < r1.y);
+  r1.yw = r1.yy ? float2(0,0) : v1.xy;
+  r2.xyz = r1.yyy * cb5[3].xyz + v0.xyz;
+  r2.xyz = r1.www * cb0[14].xyz + r2.xyz;
+  r1.y = cb5[1].z * cb0[11].w;
+  r1.y = 10 * r1.y;
+  r1.xy = -r1.xz * r1.yy + r2.xz;
+  r1.zw = cb0[11].xz * cb0[11].ww;
+  r1.zw = v1.yy * r1.zw;
+  r2.w = -cb0[13].w * 0.600000024 + 0.699999988;
+  r2.xz = r1.zw * r2.ww + r1.xy;
+  r1.xyz = cb0[14].xyz * cb0[11].www;
+  r1.xyz = v1.yyy * r1.xyz;
+  r1.xyz = -r1.xyz * float3(0.200000003,0.200000003,0.200000003) + r2.xyz;
+  r2.xyz = cb3[13].xyz * r1.yyy;
+  r2.xyz = cb3[12].xyz * r1.xxx + r2.xyz;
+  r2.xyz = cb3[14].xyz * r1.zzz + r2.xyz;
+  r3.xyz = cb3[15].xyz + r2.xyz;
+  o2.xyz = cb3[15].xyz * v0.www + r2.xyz;
+  r2.xyz = -r3.xyz * cb1[0].www + cb1[0].xyz;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.w = rsqrt(r1.w);
+  r2.xyz = r2.xyz * r1.www;
+  r1.w = dot(r0.xyz, r2.xyz);
+  r1.w = -r1.w * r1.w + 1;
+  r1.w = sqrt(r1.w);
+  r1.w = cb2[5].z * r1.w;
+  r0.xyz = -r0.xyz * r1.www + r3.xyz;
+  r2.xyzw = cb4[10].xyzw * r0.yyyy;
+  r2.xyzw = cb4[9].xyzw * r0.xxxx + r2.xyzw;
+  r2.xyzw = cb4[11].xyzw * r0.zzzz + r2.xyzw;
+  r2.xyzw = cb4[12].xyzw + r2.xyzw;
+  r3.xyzw = cb3[1].xyzw * r1.yyyy;
+  r3.xyzw = cb3[0].xyzw * r1.xxxx + r3.xyzw;
+  r3.xyzw = cb3[2].xyzw * r1.zzzz + r3.xyzw;
+  r3.xyzw = cb3[3].xyzw + r3.xyzw;
+  r0.x = cmp(cb2[5].z != 0.000000);
+  r2.xyzw = r0.xxxx ? r2.xyzw : r3.xyzw;
+
+o0.xyw = r2.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe e847cf3d10a0080a-vs_replace.txt
+if (r2.w != 1.0) { r2.x += separation * (r2.w - convergence); }
+
+  r0.x = saturate(cb2[5].x / r2.w);
+  r0.x = r2.z + r0.x;
+
+  // o0.xyw = r2.xyw; // Relocated from here with hlsltool.py
+
+  r0.y = max(0, r0.x);
+  r0.y = r0.y + -r0.x;
+  o0.z = cb2[5].y * r0.y + r0.x;
+  o1.xy = v3.xy * cb0[15].xy + cb0[15].zw;
+  r0.x = cb3[1].z * r1.y;
+  r0.x = cb3[0].z * r1.x + r0.x;
+  r0.x = cb3[2].z * r1.z + r0.x;
+  r1.xyz = -cb5[2].xyz + r1.xyz;
+  r0.y = dot(r1.xyz, r1.xyz);
+  r0.y = cb5[1].w + -r0.y;
+  o3.w = saturate(dot(cb5[2].ww, r0.yy));
+  r0.x = cb3[3].z * v0.w + r0.x;
+  r0.xw = float2(0.0500000007,0.699999988) * r0.xw;
+  r0.x = min(1, r0.x);
+  r1.xyz = float3(-0.5,-0.5,-0.5) + cb5[0].xyz;
+  r0.yzw = r0.www * r1.xyz + float3(0.5,0.5,0.5);
+  r0.yzw = v7.xyz * r0.yzw;
+  r1.xyz = float3(2.20000005,2.20000005,2.20000005) * r0.yzw;
+  r2.x = cb3[8].z;
+  r2.y = cb3[9].z;
+  r2.z = cb3[10].z;
+  r1.w = dot(r2.xyz, cb0[9].xyz);
+  r1.w = max(0, r1.w);
+  r2.x = cb0[10].x * cb0[9].w;
+  r2.x = r2.x * 0.25 + 0.899999976;
+  r2.xyz = v7.xyz * r2.xxx;
+  r2.w = -cb0[9].w * 0.400000006 + 1.14999998;
+  r3.xyz = v7.xyz * r2.www + -r2.xyz;
+  r2.xyz = r1.www * r3.xyz + r2.xyz;
+  r0.yzw = -r0.yzw * float3(2.20000005,2.20000005,2.20000005) + r2.xyz;
+  r0.xyz = r0.xxx * r0.yzw + r1.xyz;
+  r0.w = 1 + -cb0[10].x;
+  r0.w = 0.25 * r0.w;
+  r0.w = r1.w * -r0.w + 1;
+  o3.xyz = r0.xyz * r0.www;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\e847cf3d10a0080a-vs_replace.txt(119,14-15): warning X3578: Output value 'o1' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

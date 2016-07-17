@@ -1,0 +1,245 @@
+// CRC32: CFB872B4 | Unity headers extracted from AfsFoliageShader Deferred SingleSided v4 Stipple.shader
+// Shader "AFS/Foliage Shader Deferred SingleSided v4 Stipple" {
+//   Properties {
+//   [Header(Base Maps and Settings)] [Space] [LM_Albedo] [LM_Transparency]  _MainTex ("Base (RGB)", 2D) = "white" { }
+//   [LM_TransparencyCutOff]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.3
+//   [NoScaleOffset] [LM_Glossiness]  _BumpTransSpecMap ("Normal (GA) Translucency(R) Smoothness(B)", 2D) = "bump" { }
+//   [LM_Specular]  _SpecularReflectivity ("Specular Reflectivity", Color) = (0.2,0.2,0.2,1)
+//    _TranslucencyColor ("Translucency Color", Color) = (0.73,0.85,0.41,1)
+//    _TranslucencyViewDependency ("Translucency View Dependency", Range(0,1)) = 0.5
+//   [Space(5)] [Header(Wind)] [Space]  _Windmultiplier ("Wind Multiplier", Range(0,10)) = 1
+//    _LeafTurbulence ("Leaf Turbulence", Range(0,1)) = 0.5
+//    _LeafTurbulenceStrength ("Leaf Turbulence Strength", Range(0,6)) = 1
+//   [Space(10)] [KeywordEnum(Vertex Colors, Vertex Colors And UV4)]  _BendingControls ("Bending Parameters", Float) = 0
+//   [Space(5)] [Header(Stippling)] [Space]  _StippleNear ("Stipple Near", Range(0,300)) = 10
+//    _StippleFar ("Stipple Far", Range(0,300)) = 20
+//   [Space(5)] [Header(Burning)] [Space]  _BurnColor ("Burn Color (RGB) Ratio (A)", Color) = (0.75,0,0,0.1)
+//    _BurnHeight ("Burn Height", Float) = 3
+//    _BurnAmount ("Burn Amount", Range(0,1)) = 0
+//   }
+//   SubShader 1/1 {
+//     LOD 200
+//     Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="AFSFoliageBendingSingleSided" "AfsMode"="Foliage" }
+//     Pass 4/4 {
+//       Name "SHADOWCASTER"
+//       Tags { "LIGHTMODE"="SHADOWCASTER" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="AFSFoliageBendingSingleSided" "AfsMode"="Foliage" }
+//       Cull Off
+//       GpuProgramID 247907
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "SHADOWS_DEPTH" }
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "normal" Normal
+//           Bind "texcoord" TexCoord0
+//           Bind "texcoord3" TexCoord3
+//           Matrix 4 [_Object2World]
+//           Matrix 12 [_World2Object] 3
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 8 [unity_MatrixVP]
+//           Vector 22 [_AfsSpecFade]
+//           Vector 19 [_AfsTimeFrequency]
+//           Float 27 [_BendingControls]
+//           Float 28 [_BurnHeight]
+//           Float 23 [_Cutoff]
+//           Float 20 [_LeafTurbulence]
+//           Float 21 [_LeafTurbulenceStrength]
+//           Vector 29 [_MainTex_ST]
+//           Float 25 [_StippleFar]
+//           Float 24 [_StippleNear]
+//           Vector 18 [_Wind]
+//           Float 26 [_Windmultiplier]
+//           Vector 15 [_WorldSpaceCameraPos]
+//           Vector 16 [_WorldSpaceLightPos0]
+//           Vector 17 [unity_LightShadowBias]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c30, 0, 1, 0.800000012, 0.5
+    def c31, 2, -1, 3, 0.330000013
+    def c32, 1.97500002, 0.792999983, 2, -0.5
+    def c33, 0.25, 0.375, 0.193000004, 0.100000001
+    def c34, 0.300000012, 0, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord3 v3
+    dcl_color v4
+    dcl_texcoord o0
+    dcl_position o1
+    dcl_texcoord1 o2.xyz
+    dcl_color o3
+    dcl_texcoord2 o4
+    dcl_texcoord3 o5
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r7, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Foliage Shader Deferred SingleSided v4 Stipple/vp/CFB872B4.txt
+mov r30, c15
+mov r29, c220.x
+mul r29.x, r7.x, -r7.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad o4.xy, v2, c29, c29.zwzw
+    rcp r0.x, c28.x
+    mul o4.z, r0.x, v0.y
+    slt r0.xy, -v1.xzzw, v1.xzzw
+    slt r0.zw, v1.xyxz, -v1.xyxz
+    add r0.xy, -r0.zwzw, r0
+    mul r0.z, c33.w, v4.y
+    mul r0.zw, r0.z, v1.xyxz
+    mul r0.xz, r0.xyyw, r0.zyww
+    mov r1.z, c34.x
+    abs r0.w, c27.x
+    sge r0.w, -r0.w, r0.w
+    mov r2.z, v4.z
+    lrp r3.xy, r0.w, r2.z, v3
+    mad r0.w, v4.y, c21.x, r3.y
+    add r1.w, c33.x, v4.x
+    mul r2.xy, r1.w, c33.yzzw
+    mov r4.xzw, c19
+    mad r2.zw, r1.w, -c33.xyyz, r4
+    mad r2.zw, c20.x, r2, r2.xyxy
+    mov r2.xy, c32
+    mov r4.yz, c30
+    dp3 r1.w, c7, r4.y
+    add r5.y, r1.w, v4.x
+    add r1.w, r5.y, v4.y
+    dp4 r6.x, c4, v0
+    dp4 r6.y, c5, v0
+    dp4 r6.z, c6, v0
+    dp3 r5.x, r6, r1.w
+    add r5, r5.xxyy, c19.y
+    mul r2, r2, r5
+    frc r2, r2
+    mad r2, r2, c32.z, c32.w
+    frc r2, r2
+    mad r2, r2, c31.x, c31.y
+    mul r5, r2_abs, r2_abs
+    mad r2, r2_abs, -c31.x, c31.z
+    mul r2, r2, r5
+    add r1.xy, r2.ywzw, r2.xzzw
+    mul r0.y, r0.w, r1.y
+    mul r2.xyz, r1.y, c18
+    mul r2.xyz, r3.y, r2
+    mul r3.xyz, r3.x, c18
+    mad r0.xyz, r1.xzxw, r0, r2
+    add r0.w, r4.x, c30.y
+    add r1.x, r0.w, c4.w
+    mad r1.y, r0.w, r4.z, c6.w
+    add r1.xy, r1, c30.w
+    frc r1.xy, r1
+    mad r1.xy, r1, c31.x, c31.y
+    mul r1.zw, r1_abs.xyxy, r1_abs.xyxy
+    mad r1.xy, r1_abs, -c31.x, c31.z
+    mul r1.xy, r1, r1.zwzw
+    mad r0.w, r1.y, r1.y, r1.x
+    add r0.w, r0.w, c31.z
+    rcp r1.x, c22.y
+    add r1.yzw, -r6.xxyz, r30.xxyz
+    dp3 r1.y, r1.yzww, r1.yzww
+    rsq r1.y, r1.y
+    rcp r1.y, r1.y
+    add r1.y, -r1.y, c22.x
+    mul_sat r1.x, r1.x, r1.y
+    mul r1.y, r1.x, c26.x
+    slt r1.x, c30.x, r1.x
+    mul r1.y, r1.y, c18.w
+    mul r0.w, r0.w, r1.y
+    mul r0.w, r0.w, c31.w
+    mad r0.xyz, r0, r0.w, r6
+    mul r1.yzw, r0.w, r3.xxyz
+    nrm r2.xyz, r0
+    dp3 r0.x, r6, r6
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mad r0.xyz, r2, r0.x, r1.yzww
+    lrp r2.xyz, r1.x, r0, r6
+    mov r2.w, v0.w
+    dp4 r0.x, c12, r2
+    dp4 r0.y, c13, r2
+    dp4 r0.z, c14, r2
+    mov r0.w, v0.w
+    dp4 r1.x, c4, r0
+    dp4 r1.z, c6, r0
+    dp4 o2.y, c5, r0
+    mad r0, r0.xyzx, c30.yyyx, c30.xxxy
+    add r1.yw, r1.xxzz, -r30.xxzz
+    mov o2.xz, r1
+    mul r1.xy, r1.ywzw, r1.ywzw
+    add r1.x, r1.y, r1.x
+    mov r1.y, c24.x
+    mad r1.x, r1.y, -r1.y, r1.x
+    mul r1.y, r1.y, r1.y
+    mov r1.z, c25.x
+    mad r1.y, r1.z, r1.z, -r1.y
+    rcp r1.y, r1.y
+    mul r1.x, r1.y, r1.x
+    add r1.y, r4.y, -c23.x
+    mul_sat o4.w, r1.y, r1.x
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp4 r1.w, c3, r0
+    dp4 r2.x, c4, r0
+    dp4 r2.y, c5, r0
+    dp4 r2.z, c6, r0
+    mad r0.xyz, r2, -c16.w, c16
+    nrm r3.xyz, r0
+    mul r0.xyz, c13, v1.y
+    mad r0.xyz, c12, v1.x, r0
+    mad r0.xyz, c14, v1.z, r0
+    nrm r4.xyz, r0
+    dp3 r0.x, r4, r3
+    mad r0.x, r0.x, -r0.x, c30.y
+    rsq r0.x, r0.x
+    rcp r0.x, r0.x
+    mul r0.x, r0.x, c17.z
+    mad r0.xyz, r4, -r0.x, r2
+    mov r0.w, c30.y
+    dp4 r2.x, c8, r0
+    dp4 r2.y, c9, r0
+    dp4 r2.z, c10, r0
+    dp4 r2.w, c11, r0
+    abs r0.x, c17.z
+    slt r0.x, -r0.x, r0.x
+    lrp r3, r0.x, r2, r1
+
+mov o1, r3 // Relocated from line 211 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./AFS_Foliage Shader Deferred SingleSided v4 Stipple/vp/CFB872B4.txt
+texldl r31, c220.z, s3
+add r31.w, r3.w, -r31.y
+mad r3.x, r31.w, r31.x, r3.x
+
+    rcp r0.x, r3.w
+    mul_sat r0.x, r0.x, c17.x
+    add r0.x, r0.x, r3.z
+    max r0.y, r0.x, c30.x
+    lrp r3.z, c17.y, r0.y, r0.x
+    mov o0, r3
+
+//     mov o1, r3 // Relocated to line 205 with shadertool.py
+mov o1.z, r3 // Inserted by shadertool.py
+
+    mov o3, v4
+    mov o5, c30.x

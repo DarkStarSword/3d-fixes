@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import sys, os, re, math, copy
-import json, hashlib, collections
+import json, hashlib, collections, struct
 
 shader_idx_filename = 'ShaderHeaders.json'
+cmd_Decompiler = os.path.join(os.path.dirname(__file__), 'cmd_Decompiler.exe')
 
 # Tokeniser loosely based on
 # https://docs.python.org/3.4/library/re.html#writing-a-tokenizer
@@ -209,11 +210,14 @@ def handle_shader_asm(token, parent, asm):
         parent.hash_type = shader_index[token][0].hash_type
         parent.hash_fmt = shader_index[token][0].hash_fmt
     else:
+        try:
+            add_shader_hash(parent)
+        except BogusShader:
+            return
         shader_index[token] = []
-        add_shader_hash(parent)
         if parent.hash:
             if parent.hash in hash_list:
-                if parent.hash_type == 'crc32':
+                if parent.hash_type == 'asm_crc32':
                     print('%s WARNING: CRC32 COLLISION DETECTED: %.8X %s' % ('-'*17, parent.hash, '-'*17))
                 elif parent.hash_type == '3Dmigoto':
                     print('%s WARNING: 3DMigoto HASH COLLISION DETECTED: %.16x %s' % ('-'*17, parent.hash, '-'*17))
@@ -247,7 +251,7 @@ def parse_keywords(tree, parent=None, filename=None, args=None):
 
         if isinstance(token, String):
             parent.fog = None
-            if args.type and parent.name not in args.type:
+            if args is not None and args.type and parent.name not in args.type:
                 continue
             handle_shader_asm(token, parent, strip_quotes(token))
             continue
@@ -331,7 +335,7 @@ def compress_keywords(keywords):
     return ' '.join(sorted(ret))
 
 def get_hash_filename_base(shader):
-    if shader.sub_program.hash_type == 'crc32':
+    if shader.sub_program.hash_type == 'asm_crc32':
         return shader.sub_program.hash_fmt % shader.sub_program.hash
 
     if shader.sub_program.hash_type == '3Dmigoto':
@@ -351,7 +355,20 @@ def get_hash_filename_base(shader):
             raise Exception("Unknown program type: %s" % shader.program.name)
         return (shader.sub_program.hash_fmt + '-%s') % (shader.sub_program.hash, shader_type)
 
+    if shader.sub_program.hash_type == 'gl_crc32':
+        if shader.program.name == 'fp': # Pixel Shader ("Fragment Program")
+            shader_type = 'Pixel'
+        elif shader.program.name == 'vp': # Vertex Shader
+            shader_type = 'Vertex'
+        else:
+            raise Exception("Unknown program type: %s" % shader.program.name)
+        return ('%s_' + shader.sub_program.hash_fmt) % (shader_type, shader.sub_program.hash)
+
     assert(False)
+
+def sanitise_filename(path_components):
+    if path_components is not None:
+        return [x.replace('/', '_').replace('\\', '_') for x in path_components]
 
 def export_filename_combined_long(shaders, args):
     ret = []
@@ -394,26 +411,34 @@ def export_filename_combined_long(shaders, args):
     if shaders[0].sub_program.fog:
         ret[-1] = '%s %s' % (ret[-1], shaders[0].sub_program.fog)
 
-    return ret
+    return sanitise_filename(ret)
 
-def export_filename_combined_short(shader, args):
+def export_filename_combined_short(shader):
     if not shader.sub_program.hash:
         return None
 
-    if shader.sub_program.hash_type == 'crc32':
-        return (
+    if shader.sub_program.hash_type == 'asm_crc32':
+        return sanitise_filename([
             'ShaderCRCs',
             shader.shader.name,
             shader.program.name,
             get_hash_filename_base(shader),
-        )
+        ])
 
     if shader.sub_program.hash_type == '3Dmigoto':
-        return (
+        return sanitise_filename([
             'ShaderFNVs',
             shader.shader.name,
             get_hash_filename_base(shader),
-        )
+        ])
+
+    if shader.sub_program.hash_type == 'gl_crc32':
+        return sanitise_filename([
+            'ShaderGL',
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
+        ])
 
     assert(False)
 
@@ -433,12 +458,8 @@ def export_filename_combined(sub_programs, args):
     assert(all([ x.program.name == shaders[0].program.name for x in shaders]))
 
     if not args.deep_dir:
-        ret = export_filename_combined_short(shaders[0], args)
-    else:
-        ret = export_filename_combined_long(shaders, args)
-    if ret is not None:
-        return [x.replace('/', '_') for x in ret]
-    return None
+        return export_filename_combined_short(shaders[0])
+    return export_filename_combined_long(shaders, args)
 
 def _collect_headers(tree):
     headers = []
@@ -514,7 +535,7 @@ def combine_similar_headers(trees):
     return ret
 
 def commentify(headers):
-    return '\n'.join([ '// %s' % x for x in headers ])
+    return '\n'.join([ ('// %s' % x).rstrip() for x in headers ])
 
 def indent_like_helix(assembly):
     return '\n'.join([ '%s%s' % (' '*4, x) for x in assembly.split('\n') ]) + '\n'
@@ -527,7 +548,7 @@ def mkdir_recursive(components):
             continue
         os.mkdir(path)
 
-def calc_shader_crc(shader_asm):
+def calc_shader_asm_crc(shader_asm):
     # FUTURE: Use ctypes to call into d3dx.dll directly to remove need for
     # shaderasm.exe helper (may require native windows python - cygwin python
     # is missing some function calling conventions). Can always try both
@@ -552,11 +573,14 @@ def calc_shader_crc(shader_asm):
 
     return zlib.crc32(blob)
 
-def add_shader_hash_crc(sub_program):
+def _add_shader_hash_asm_crc(sub_program, hash):
+    sub_program.hash = hash
+    sub_program.hash_type = 'asm_crc32'
+    sub_program.hash_fmt = '%.8X'
+
+def add_shader_hash_asm_crc(sub_program):
     try:
-        sub_program.hash = calc_shader_crc(sub_program.shader_asm)
-        sub_program.hash_type = 'crc32'
-        sub_program.hash_fmt = '%.8X'
+        _add_shader_hash_asm_crc(sub_program, calc_shader_asm_crc(sub_program.shader_asm))
     except:
         pass
     if not sub_program.hash:
@@ -583,6 +607,11 @@ def fnv_3Dmigoto_shader(input):
         hash = hash ^ octet
     return hash
 
+def _add_shader_hash_fnv(sub_program, hash):
+    sub_program.hash = hash
+    sub_program.hash_type = '3Dmigoto'
+    sub_program.hash_fmt = '%.16x'
+
 def add_shader_hash_fnv(sub_program):
     bin = decode_unity_d3d11_shader(sub_program.shader_asm)
 
@@ -590,24 +619,45 @@ def add_shader_hash_fnv(sub_program):
     # sub_program.hash = fnv64_1(bin)
     # sub_program.hash_type = 'fnv64'
 
-    sub_program.hash = fnv_3Dmigoto_shader(bin)
-    sub_program.hash_type = '3Dmigoto'
+    _add_shader_hash_fnv(sub_program, fnv_3Dmigoto_shader(bin))
 
-    sub_program.hash_fmt = '%.16x'
+def hash_gl_crc(sub_program):
+    import zlib
+    glsl = fixup_glsl_like_unity(sub_program)
+    return zlib.crc32(glsl.encode('utf-8'))
+
+def _add_shader_hash_gl_crc(sub_program, hash):
+    sub_program.hash = hash
+    sub_program.hash_type = 'gl_crc32'
+    # Looks like the OpenGL wrapper does not pad these in the filenames:
+    sub_program.hash_fmt = '%x'
+
+def add_shader_hash_gl_crc(sub_program):
+    _add_shader_hash_gl_crc(sub_program, hash_gl_crc(sub_program))
+
+
+def is_opengl_shader(sub_program):
+    # XXX: Not clear on the significance of each of these:
+    # Removed "gles" and "gles3" which are for mobile devices and not relevant
+    # on PC (and if they ever are I'll need to work out how to transform them
+    # properly to match the wrapper's hash).
+    return sub_program.name in ('opengl', 'glcore')
 
 def add_shader_hash(sub_program):
     sub_program.hash = None
     sub_program.hash_type = None
     sub_program.hash_fmt = None
     if sub_program.name == 'd3d9':
-        return add_shader_hash_crc(sub_program)
+        return add_shader_hash_asm_crc(sub_program)
     if sub_program.name.startswith('d3d11'):
         return add_shader_hash_fnv(sub_program)
+    if is_opengl_shader(sub_program):
+        return add_shader_hash_gl_crc(sub_program)
 
 def add_header_hash(headers, sub_program):
     if sub_program.hash:
-        if sub_program.hash_type == 'crc32':
-            if sub_program.fog:
+        if sub_program.hash_type == 'asm_crc32':
+            if hasattr(sub_program, 'fog') and sub_program.fog:
                 headers[0] = 'CRC32: %.8X (%s + %.8X) | %s' % (sub_program.hash, sub_program.fog, sub_program.fog_orig_crc, headers[0])
             else:
                 headers[0] = 'CRC32: %.8X | %s' % (sub_program.hash, headers[0])
@@ -615,13 +665,15 @@ def add_header_hash(headers, sub_program):
         #     headers[0] = 'FNV64: %.16x | %s' % (sub_program.hash, headers[0])
         elif sub_program.hash_type == '3Dmigoto':
             headers[0] = '3DMigoto: %.16x | %s' % (sub_program.hash, headers[0])
+        elif is_opengl_shader(sub_program):
+            headers[0] = 'CRC32: %.8x | %s' % (sub_program.hash, headers[0])
         else:
             raise Exception("Unknown hash type: %s" % sub_program.hash_type)
 
 def index_headers(headers, sub_program):
-    # TODO: Also store d3d11 hashes, but no point until there is a tool to look
-    # them up
-    if sub_program.hash and sub_program.hash_type == 'crc32':
+    # TODO: Also store d3d11 + opengl hashes, but no point until there is a
+    # tool to look them up
+    if sub_program.hash and sub_program.hash_type == 'asm_crc32':
         hash_headers['%.8X' % sub_program.hash] = headers
 
 def save_header_index():
@@ -636,16 +688,19 @@ def save_header_index():
 def add_vanity_tag(headers):
     if headers[-1] != '':
         headers.append('')
-    headers.append("Headers extracted with DarkStarSword's extract_unity_shaders.py")
-    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py")
+    tool_name = os.path.basename(sys.argv[0])
+    headers.append("Headers extracted with DarkStarSword's {}".format(tool_name))
+    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/{}".format(tool_name))
 
-def decode_unity_d3d11_shader(asm):
-    # Pretty straight forward encoding - each byte is split in half and offset
-    # from the letter 'a'.
+def decode_unity_byte(upper, lower):
+        upper = ord(upper) - ord('a')
+        lower = ord(lower) - ord('a')
+        assert(upper & 0xffff == upper)
+        assert(lower & 0xffff == lower)
+        return (upper << 4) | lower
 
-    # Strip off first line, which is the shader model and not part of the
-    # binary file:
-    asm = list(asm[asm.find('\n'):])
+def _decode_unity_d3d11_shader(asm):
+    asm = list(asm)
 
     def next_char():
         char = ' '
@@ -655,29 +710,157 @@ def decode_unity_d3d11_shader(asm):
 
     ret = []
     while len(asm):
-        upper = ord(next_char()) - ord('a')
-        lower = ord(next_char()) - ord('a')
-        assert(upper & 0xffff == upper)
-        assert(lower & 0xffff == lower)
-        ret.append((upper << 4) | lower)
+        ret.append(decode_unity_byte(next_char(), next_char()))
     return bytes(ret)
 
-def _export_shader(sub_program, headers, path_components):
+def decode_unity_d3d11_shader(asm):
+    # Pretty straight forward encoding - each byte is split in half and offset
+    # from the letter 'a'.
+
+    # Strip off first line, which is the shader model and not part of the
+    # binary file:
+    asm = asm[asm.find('\n')+1:]
+
+    # Newer versions of Unity (5.1.1?) add a line like 'root12:aaabaaaa'.
+    # Not sure what it is (flags? checksum?), don't really care either.
+    if asm.startswith('root12:'):
+        root12 = _decode_unity_d3d11_shader(asm[7:15])
+        # print('root12: 0x%08x' % struct.unpack('<I', root12)[0])
+        asm = asm[asm.find('\n')+1:]
+
+    return _decode_unity_d3d11_shader(asm)
+
+def strip_glsl_tag(glsl):
+    if glsl.startswith("!!GLES3"): # "gles3"
+        return glsl[7:]
+    if glsl.startswith("!!GLES"): # "gles"
+        return glsl[6:]
+    if glsl.startswith("!!GLSL"): # "opengl"
+        return glsl[6:]
+    if glsl.startswith("!!GL2x"): # "glcore"
+        return glsl[6:]
+    return glsl
+
+class BogusShader(Exception): pass
+
+def fixup_glsl_like_unity(sub_program):
+    glsl = strip_glsl_tag(sub_program.shader_asm)
+    if not glsl:
+        # Fragment shaders appear to be bogus empty placeholders since they are
+        # really combined with vertex shaders. If this shader is empty raise an
+        # exception so we will throw it away. We will duplicate the vertex
+        # shaders elsewhere and rehash them to get pixel shaders.
+        raise BogusShader()
+    if sub_program.parent.name == 'vp':
+        define = '#define VERTEX'
+    elif sub_program.parent.name == 'fp':
+        define = '#define FRAGMENT'
+    else:
+        raise Exception("Unknown program type: %s" % sub_program.parent.name)
+    if glsl.startswith("#version"):
+        version, glsl = glsl.split('\n', 1)
+        return '\n'.join((version, define, glsl))
+    return '\n'.join((define, glsl))
+
+def disassemble_and_decompile_binary_shader(bin_filename, disassemble_flugan=True, disassemble_ms=False, decompile=True):
+    import subprocess
+
+    # TODO: Batch these to reduce overhead. Remember:
+    # - command line parameters have a limited length (catch OSError, check
+    # errno == 7, retry with fewer arguments)
+    # - Change to a common directory and pass all shaders relative to that
+
+    # cmd_Decompiler expects windows paths. Since we might be being run from
+    # cygwin, the easiest way to satisfy this is to change to the same
+    # directory as the shader and run it with a relative path
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(os.path.realpath(bin_filename)))
+
+    args = [cmd_Decompiler]
+    if disassemble_flugan:
+        args.append('-d')
+    if disassemble_ms:
+        args.append('--disassemble-ms')
+    if decompile:
+        args.append('-D')
+    args.append(os.path.basename(bin_filename))
+
+    try:
+        subprocess.call(args)
+    except FileNotFoundError:
+        os.chdir(cwd)
+        return False
+    except:
+        os.chdir(cwd)
+        raise
+
+    os.chdir(cwd)
+    return True
+
+def attach_headers(old_file_path, new_file_path, headers, remove=True):
+    try:
+        with open(old_file_path, 'r') as old_file:
+            with open(new_file_path, 'w') as new_file:
+                new_file.write(headers)
+                new_file.write("\n\n")
+                new_file.write(old_file.read())
+        if remove:
+            os.remove(old_file_path)
+    except OSError as e:
+        print('Error attaching headers to %s' % old_file_path)
+
+def path_components_to_dest(path_components):
     mkdir_recursive(path_components[:-1])
-    dest = os.path.join(os.curdir, *path_components)
+    return os.path.join(os.curdir, *path_components)
+
+def export_dx9_shader_binary(dest, bin, headers):
+    '''
+    Used for Unity 5.3 and later by export_unity53_shaders which store DX9
+    shaders as binary instead of assembly.
+    '''
+    bin_filename = '%s.bin' % dest
+    print('Extracting %s' % bin_filename)
+    with open(bin_filename, 'wb') as f:
+        f.write(bin)
+
+    if disassemble_and_decompile_binary_shader(bin_filename, decompile=False, disassemble_flugan=False, disassemble_ms=True):
+        attach_headers('%s.msasm' % dest, '%s.txt' % dest, headers)
+    else:
+        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
+
+def export_dx11_shader(dest, bin, headers, extra_headers=''):
+    bin_filename = '%s.bin' % dest
+    print('Extracting %s' % bin_filename)
+    with open(bin_filename, 'wb') as f:
+        f.write(bin)
+
+    if disassemble_and_decompile_binary_shader(bin_filename):
+        attach_headers('%s.asm' % dest, '%s.txt' % dest, headers)
+        attach_headers('%s.hlsl' % dest, '%s_replace.txt' % dest, headers + extra_headers)
+    else:
+        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+        with open('%s_headers.txt' % dest, 'w') as f:
+            f.write(headers)
+            f.write(extra_headers)
+
+def _export_shader(sub_program, headers, path_components):
+    dest = path_components_to_dest(path_components)
     headers = commentify(headers)
+    extra_headers = '\n//\n// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0]
     index_headers(headers, sub_program)
 
     if sub_program.name.startswith('d3d11'):
-        print('Extracting %s_headers.txt...' % dest)
-        with open('%s_headers.txt' % dest, 'w') as f:
+        bin = decode_unity_d3d11_shader(sub_program.shader_asm)
+        export_dx11_shader(dest, bin, headers, extra_headers)
+
+    elif is_opengl_shader(sub_program):
+        print('Extracting %s.glsl...' % dest)
+        with open('%s.glsl' % dest, 'w') as f:
             f.write(headers)
-            if sub_program.name.startswith('d3d11'):
-                f.write('\n//\n')
-                f.write('// Shader model %s' % sub_program.shader_asm.split('\n', 1)[0])
-        print('Extracting %s_original.bin...' % dest)
-        with open('%s_original.bin' % dest, 'wb') as f:
-            f.write(decode_unity_d3d11_shader(sub_program.shader_asm))
+            f.write('\n\n')
+            f.write(fixup_glsl_like_unity(sub_program))
     else:
         print('Extracting %s.txt...' % dest)
         with open('%s.txt' % dest, 'w') as f:
@@ -724,6 +907,30 @@ def dedupe_shaders(shader_list, args):
             return
         _export_shader(shader_list[0], headers, path_components)
 
+def parse_tree(filename, data=None, args=None):
+    if data is None:
+        data = open(filename, 'rb').read()
+    tree = list(tokenise(data.decode('utf-8'))) # Wasn't sure of the encoding until I found a utf8 character in The Forest
+    tree = curly_scope(tree)
+    return parse_keywords(tree, filename=os.path.basename(filename), args=args)
+
+def walk_sub_programs(tree): # Used by extract_unity53_shaders
+    trees = {}
+
+    i = 0
+    for shader in filter(lambda shader: shader.keyword == 'Shader', tree):
+        for sub_shader in filter(lambda sub_shader: sub_shader.keyword == 'SubShader', shader):
+            for Pass in filter(lambda Pass: Pass.keyword == 'Pass', sub_shader):
+                for program in filter(lambda program: program.keyword == 'Program', Pass):
+                    for sub_program in filter(lambda sub_program: sub_program.keyword == 'SubProgram', program):
+                        if int(sub_program.keywords['GpuProgramIndex'][0].line) == i:
+                            if i not in trees:
+                                trees[i] = []
+                            trees[i].append(sub_program)
+                            i += 1
+    for i in trees:
+        yield trees[i]
+
 def parse_args():
     global shadertool
     import argparse
@@ -734,14 +941,16 @@ def parse_args():
             help='Name the files by the keywords of the shader (WARNING: May exceed Windows filename limit)')
     parser.add_argument('--deep-dir', action='store_true',
             help='Use alternate directory structure with more levels to sort the shaders (WARNING: May exceed Windows filename limit)')
-    parser.add_argument('--fog', action='store_true',
-            help='Generate additional shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--vs-fog', action='store_true',
+            help='Generate additional vertex shader variants with fog instructions added to match those from Unity')
+    parser.add_argument('--ps-fog', action='store_true',
+            help='Generate additional pixel shader variants with fog instructions added to match those from Unity')
     parser.add_argument('--type', action='append',
             help='Filter types of shaders to process, useful to avoid unecessary slow hash calculations')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')
-    if args.fog:
+    if args.vs_fog or args.ps_fog:
         try:
             shadertool = __import__('shadertool')
         except ImportError:
@@ -772,16 +981,18 @@ def main():
         if digest in processed:
             continue
         processed.add(digest)
-        tree = list(tokenise(data.decode('ascii'))) # I don't know what encoding it uses
-        tree = curly_scope(tree)
-        tree = parse_keywords(tree, filename=os.path.basename(filename), args=args)
+        tree = parse_tree(filename, data, args)
 
-    if args.fog:
+    if args.vs_fog or args.ps_fog:
         for shaders in list(shader_index.values()):
             for shader in shaders:
                 if shader.name != 'd3d9':
                     continue
                 assert(not shader.fog)
+                if shader.parent.name == 'vp' and not args.vs_fog:
+                    continue
+                if shader.parent.name == 'fp' and not args.ps_fog:
+                    continue
                 try:
                     for fog_tree in create_fog_asm(shader.shader_asm):
                         fog_asm = str(fog_tree)
@@ -797,6 +1008,18 @@ def main():
                     traceback.print_exc()
                     time.sleep(0.1)
                     continue
+
+    for shaders in list(shader_index.values()):
+        for shader in shaders:
+            if not is_opengl_shader(shader):
+                continue
+            # Not a full deep copy, but we do need to copy the parent to change it to a fragment shader:
+            parent_shader = copy.copy(shader.parent)
+            frag_shader = copy.copy(shader)
+            frag_shader.parent = parent_shader
+            del frag_shader.hash
+            frag_shader.parent.name = 'fp'
+            handle_shader_asm(frag_shader.shader_asm, frag_shader, frag_shader.shader_asm)
 
     for shaders in shader_index.values():
         if len(shaders) == 1:

@@ -1,0 +1,115 @@
+// CRC32: 3AB95FDB | Unity headers extracted from Regular Block.shader
+// Shader "Custom/Regular Block" {
+//   Properties {
+//    _MainTex ("Texture (RGB)", 2D) = "white" { }
+//    _GlossTex ("Gloss Map", 2D) = "white" { }
+//    _EmissionTex ("Emission Map", 2D) = "black" { }
+//    _FastSimTex ("Fast Texture (RGB)", 2D) = "white" { }
+//    _Glossiness ("Glossiness", Float) = 0.05
+//    _SpecularPower ("Specular Power", Float) = 1
+//    _ScrollRate ("Scroll Rate of Texture", Float) = 0
+//    _EmissivePulseAmplitude ("Emissive Pulse Amplitude", Float) = 0
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/3 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 129446
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" }
+//           Matrix 0 [_LightMatrix0] 2
+//           Float 10 [_Env_BottomFogFullHeight]
+//           Float 9 [_Env_BottomFogStartHeight]
+//           Float 8 [_Env_FogFullDistance]
+//           Float 6 [_Env_FogMaxOpacity]
+//           Float 7 [_Env_FogStartDistance]
+//           Vector 4 [_LightColor0]
+//           Float 13 [_ManualScrollTime]
+//           Float 5 [_ScrollRate]
+//           Vector 2 [_WorldSpaceCameraPos]
+//           Vector 3 [_WorldSpaceLightPos0]
+//           Float 12 [_ZI_FastSim]
+//           Float 11 [_ZI_SimTime]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_FastSimTex] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c14, 0, 10000, 1, 0
+    dcl_texcoord v0.xy
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2 v2.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Custom_Regular Block/fp/3AB95FDB.txt
+mov r30, c2
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.y, c14.y
+    mul_sat r0.x, r0.y, c5.x
+    mul r0.x, r0.x, c12.x
+    mov r1.x, c5.x
+    mov r2.x, c11.x
+    mad r1.y, r1.x, -r2.x, c13.x
+    mov r1.x, c14.x
+    add r0.yz, r1.xxyw, v0.xxyw
+    texld r1, r0.yzzw, s1
+    texld r2, r0.yzzw, s2
+    lrp_pp r3.xyz, r0.x, r2, r1
+    mul_pp r0.xyz, r3, c4
+    mad r1, v2.xyzx, c14.zzzx, c14.xxxz
+    dp4 r2.x, c0, r1
+    dp4 r2.y, c1, r1
+    texld_pp r1, r2, s0
+    nrm_pp r1.xyz, v1
+    dp3_pp r0.w, r1, c3
+    dp2add_pp r0.w, r0.w, r1.w, c14.x
+    mul_pp r0.xyz, r0.w, r0
+    add r1.xyz, r30, -v2
+    dp3 r0.w, r1, r1
+    rsq r0.w, r0.w
+    rcp r0.w, r0.w
+    add r0.w, r0.w, -c7.x
+    mov r1.x, c7.x
+    add r1.x, -r1.x, c8.x
+    rcp r1.x, r1.x
+    mul_sat r0.w, r0.w, r1.x
+    mul r0.w, r0.w, c6.x
+    mov r1.x, c9.x
+    add r1.x, -r1.x, c10.x
+    rcp r1.x, r1.x
+    add r1.y, -c9.x, v2.y
+    mul_sat r1.x, r1.x, r1.y
+    max r2.x, r0.w, r1.x
+    mad_pp oC0.xyz, r2.x, -r0, r0
+    mov_pp oC0.w, c14.z

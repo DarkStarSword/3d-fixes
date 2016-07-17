@@ -1,0 +1,129 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 651f3ed26d6f7042-vs_replace.txt
+// 3DMigoto: 651f3ed26d6f7042 | Matched 2 variants of 1 shaders: Hidden/Amplify Motion/SolidVectorsMobile
+// 
+//    Unity headers extracted from SolidVectorsMobile.shader
+//    Shader "Hidden/Amplify Motion/SolidVectorsMobile" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _Cutoff ("Alpha cutoff", Range(0,1)) = 0.25
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+// 1:     Pass 1/2 {
+// 2:     Pass 2/2 {
+//          Cull Off
+// 1:       GpuProgramID 48581
+// 2:       GpuProgramID 75635
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              Bind "vertex" Vertex
+//              Bind "texcoord" TexCoord0
+//              ConstBuffer "$Globals" 240
+//              Matrix 96 [_EFLOW_MATRIX_PREV_MVP]
+//              Float 176 [_EFLOW_OBJECT_ID]
+//              Float 180 [_EFLOW_MOTION_SCALE]
+//              Float 184 [_EFLOW_MIN_VELOCITY]
+//              Float 188 [_EFLOW_MAX_VELOCITY]
+//              Float 192 [_EFLOW_RCP_TOTAL_VELOCITY]
+//              Vector 208 [_MainTex_ST]
+//              ConstBuffer "UnityPerCamera" 144
+//              Vector 80 [_ProjectionParams]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              BindCB "$Globals" 0
+//              BindCB "UnityPerCamera" 1
+//              BindCB "UnityPerDraw" 2
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:32:58 2016
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[4];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[14];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float2 o3 : TEXCOORD3)
+{
+  float4 r0,r1,r2;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = cb2[1].xyzw * v0.yyyy;
+  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb2[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 651f3ed26d6f7042-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r1.xz = float2(0.5,0.5);
+  r1.y = cb1[5].x;
+  r1.w = cmp(0 < cb1[5].x);
+  r2.y = r1.w ? -r0.y : r0.y;
+  r2.xz = r0.xw;
+  r1.xyz = r2.xyz * r1.xyz;
+  r1.w = 0.5 * r1.y;
+  o1.xy = r1.xw + r1.zz;
+  o1.zw = r0.zw;
+  r0.xy = float2(1,-1) * r0.xy;
+  r0.xy = r0.xy / r0.ww;
+  r1.xyz = cb0[7].xyw * v0.yyy;
+  r1.xyz = cb0[6].xyw * v0.xxx + r1.xyz;
+  r1.xyz = cb0[8].xyw * v0.zzz + r1.xyz;
+  r1.xyz = cb0[9].xyw * v0.www + r1.xyz;
+  r1.w = -r1.y;
+  r0.zw = r1.xw / r1.zz;
+  r0.xy = r0.xy + -r0.zw;
+  r0.xy = cb0[11].yy * r0.xy;
+  r0.z = dot(r0.xy, r0.xy);
+  r0.z = sqrt(r0.z);
+  r0.w = cmp(r0.z < cb0[11].z);
+  r0.w = r0.w ? 0 : r0.z;
+  r0.xy = r0.xy / r0.zz;
+  o2.xy = r0.xy * float2(0.5,0.5) + float2(0.5,0.5);
+  r0.x = min(cb0[11].w, r0.w);
+  r0.x = -cb0[11].z + r0.x;
+  r0.x = max(0, r0.x);
+  o2.z = cb0[12].x * r0.x;
+  o2.w = cb0[11].x;
+  o3.xy = v1.xy * cb0[13].xy + cb0[13].zw;
+  return;
+}

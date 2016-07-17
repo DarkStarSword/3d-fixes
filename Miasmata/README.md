@@ -9,11 +9,13 @@ exploration game that gives you a map and compass and a realistic cartography
 system, but it really starts to get interesting once you get lost, and believe
 me - you *will* get lost (and if you don't - you're doing it wrong).
 
-<table><tr><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d627fee7e564f3040000fb/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d62d17e7e564543200017c/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td></tr></table>
+<script src="https://s3.amazonaws.com/DarkStarSword/3dvisionlive.js"></script>
+<noscript><p>Please enable javascript to view screenshots.</p></noscript>
+<script>
+embed_3dvisionlive('54d627fee7e564f3040000fb');
+embed_3dvisionlive('54d62d17e7e564543200017c');
+</script>
+
 
 There's something about the tension that this game creates when you suddenly
 realise that you are no longer on the path you were following and aren't really
@@ -22,9 +24,10 @@ the wilderness and you discover that this developer actually made night *dark*
 in this game and you can't see two meters in front of your face. When your
 heart starts beating as you suddenly realise that you are no longer alone...
 
-<div style="text-align: center;">
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d62142e7e5648f2e000175/nvidia/500.300/important" width="500" height="300" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</div>
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d62142e7e5648f2e000175');
+</script>
 
 I wrote a [short story about my first day in this game][1], which goes over
 some of the basics of the game in a bit more detail.
@@ -48,12 +51,11 @@ last few remaining issues - achievement unlocked ;-)
 [5]: http://steamcommunity.com/app/223510/discussions/0/630800445647188169/
 [6]: http://steamcommunity.com/app/223510/discussions/0/540741859566627042/
 
-<table><tr><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d64f41e7e564f22e000191/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d64fc0e7e5646d0d0001ad/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td></tr></table>
-
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d64f41e7e564f22e000191');
+embed_3dvisionlive('54d64fc0e7e5646d0d0001ad');
+</script>
 
 Fixed
 -----
@@ -64,11 +66,11 @@ I managed to fix the real-time reflections when the water quality is set to
 medium or high, and as you can see the reflections are accurately rendered
 below the surface where they belong:
 
-<table><tr><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d62b4ae7e5646803000108/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d62543e7e5643530000170/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td></tr></table>
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d62b4ae7e5646803000108');
+embed_3dvisionlive('54d62543e7e5643530000170');
+</script>
 
 Note - the water rendering gets messed up after changing any graphics settings
 in the game, so be sure to restart the game to fix it!
@@ -87,11 +89,11 @@ incredibly jarring and eye-bleeding. I ended up interpolating the fix away at
 the edge of the screen to prevent this from happening, which gives a very good
 result.
 
-<table><tr><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d6284ae7e564b0060000f2/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d653abe7e564ee090001b9/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td></tr></table>
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d6284ae7e564b0060000f2');
+embed_3dvisionlive('54d653abe7e564ee090001b9');
+</script>
 
 ### Automatic Stereo Crosshair ###
 
@@ -101,11 +103,11 @@ crosshair in the game. This won't work in every game and takes a bit of effort
 to get working, but it was extremely effective in this game once I got the
 maths right.
 
-<table><tr><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d64e49e7e564ee090001b6/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td><td>
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d64e8be7e5645432000193/nvidia/480.294/important" width="480" height="294" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</td></tr></table>
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d64e49e7e564ee090001b6');
+embed_3dvisionlive('54d64e8be7e5645432000193');
+</script>
 
 It is still a bit experimental, so two fixed depths can be cycled by pressing
 the 9 key if needed. Pressing 9 again will return to the auto crosshair.
@@ -173,9 +175,10 @@ Known Issues
 Bugs
 ----
 
-<div style="text-align: center;">
-<iframe  src="http://photos.3dvisionlive.com/e/embed/54d62c87e7e5648106000102/nvidia/500.300/important" width="500" height="300" frameborder="1" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" noresize><p>See stereo 3D on <a href="http://photos.3dvisionlive.com">photos.3dvisionlive.com</a></p></iframe>
-</div>
+<script>
+new_screenshot_block();
+embed_3dvisionlive('54d62c87e7e5648106000102');
+</script>
 
 These are not bugs specifically related to the 3D - these are just four common
 bugs that everyone seems to hit. None of them are game breaking, but it's handy
@@ -216,3 +219,7 @@ Update 2015-05-18
 
 - Automatic stereo crosshair will now work on objects popped out of the screen
   with high convergence settings.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)

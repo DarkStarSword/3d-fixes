@@ -1,0 +1,272 @@
+// CRC32: F353D2DA | Unity headers extracted from Marmoset Terrain Add Pass.shader
+// Shader "Hidden/Marmoset/Terrain/Terrain IBL AddPass" {
+//   Properties {
+//    _Color ("Diffuse Color", Color) = (1,1,1,1)
+//    _DetailWeight ("DetailWeight", Range(0,1)) = 1
+//    _FadeNear ("Fade Near", Float) = 500
+//    _FadeRange ("Fade Range", Float) = 100
+//    _DiffFresnel ("Master Diffuse Fresnel", Range(0,1)) = 0
+//    _Fresnel0 ("Diffuse Fresnel 0", Range(0,1)) = 0
+//    _Fresnel1 ("Diffuse Fresnel 1", Range(0,1)) = 0
+//    _Fresnel2 ("Diffuse Fresnel 2", Range(0,1)) = 0
+//    _Fresnel3 ("Diffuse Fresnel 3", Range(0,1)) = 0
+//    _Fresnel4 ("Diffuse Fresnel 4", Range(0,1)) = 0
+//    _Fresnel5 ("Diffuse Fresnel 5", Range(0,1)) = 0
+//    _Fresnel6 ("Diffuse Fresnel 6", Range(0,1)) = 0
+//    _Fresnel7 ("Diffuse Fresnel 7", Range(0,1)) = 0
+//    _BaseTex ("Base Diffuse (RGB) Gloss (A)", 2D) = "white" { }
+//    _BumpMap ("Base Normalmap (RGB)", 2D) = "bump" { }
+//   [HideInInspector]  _Control ("Splatmap (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 2/2 {
+//       Name "META"
+//       Tags { "LIGHTMODE"="Deferred" "QUEUE"="Geometry-99" "IGNOREPROJECTOR"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//       ZWrite Off
+//       Cull Off
+//       Blend One One
+//       GpuProgramID 94803
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "MARMO_TERRAIN_BLEND_ON" }
+//           Matrix 0 [_SkyMatrix] 3
+//           Matrix 3 [_SkyMatrix1] 3
+//           Float 18 [_BlendWeightIBL]
+//           Vector 34 [_Color]
+//           Vector 29 [_Control_ST]
+//           Float 37 [_DiffFresnel]
+//           Vector 7 [_ExposureIBL]
+//           Vector 19 [_ExposureIBL1]
+//           Float 35 [_FadeNear]
+//           Float 36 [_FadeRange]
+//           Float 38 [_Fresnel4]
+//           Float 39 [_Fresnel5]
+//           Float 40 [_Fresnel6]
+//           Float 41 [_Fresnel7]
+//           Vector 9 [_SH0]
+//           Vector 20 [_SH01]
+//           Vector 10 [_SH1]
+//           Vector 21 [_SH11]
+//           Vector 11 [_SH2]
+//           Vector 22 [_SH21]
+//           Vector 12 [_SH3]
+//           Vector 23 [_SH31]
+//           Vector 13 [_SH4]
+//           Vector 24 [_SH41]
+//           Vector 14 [_SH5]
+//           Vector 25 [_SH51]
+//           Vector 15 [_SH6]
+//           Vector 26 [_SH61]
+//           Vector 16 [_SH7]
+//           Vector 27 [_SH71]
+//           Vector 17 [_SH8]
+//           Vector 28 [_SH81]
+//           Vector 30 [_Splat0_ST]
+//           Vector 31 [_Splat1_ST]
+//           Vector 32 [_Splat2_ST]
+//           Vector 33 [_Splat3_ST]
+//           Vector 8 [_UniformOcclusion]
+//           Vector 6 [_WorldSpaceCameraPos]
+//           Float 44 [unity_MaxOutputValue]
+//           Vector 42 [unity_MetaFragmentControl]
+//           Float 43 [unity_OneOverOutputBoost]
+//           Float 45 [unity_UseLinearSpace]
+//           SetTexture 0 [_Control] 2D 0
+//           SetTexture 1 [_Splat0] 2D 1
+//           SetTexture 2 [_Splat1] 2D 2
+//           SetTexture 3 [_Splat2] 2D 3
+//           SetTexture 4 [_Splat3] 2D 4
+//           SetTexture 5 [_Normal0] 2D 5
+//           SetTexture 6 [_Normal1] 2D 6
+//           SetTexture 7 [_Normal2] 2D 7
+//           SetTexture 8 [_Normal3] 2D 8
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c46, 0, 3, -1, 0.0125228781
+    def c47, 0.305306017, 0.682171106, 0.010309278, 0.0199999996
+    def c48, 255, 0.00392156886, 0, 0
+    def c49, 1, -0.00999999978, 100, -2
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2 v2
+    dcl_texcoord3 v3.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+    dcl_2d s5
+    dcl_2d s6
+    dcl_2d s7
+    dcl_2d s8
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s13
+
+texldl r31, c220.z, s13
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors Hidden_Marmoset_Terrain_Terrain IBL AddPass/fp/F353D2DA.txt
+mov r30, c6
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add_pp r0.x, -c35.x, v3.z
+    rcp r0.y, c36.x
+    mul_sat_pp r0.x, r0.y, r0.x
+    mov r1.x, v0.w
+    mov r1.y, v1.w
+    mov r1.z, v2.w
+    add r0.yzw, -r1.xxyz, r30.xxyz
+    nrm_pp r1.xyz, r0.yzww
+    mul r0.yzw, r1.y, v1.xxyz
+    mad r0.yzw, v0.xxyz, r1.x, r0
+    mad_pp r0.yzw, v2.xxyz, r1.z, r0
+    nrm r1.xyz, r0.yzww
+    mad r0.yz, v3.xxyw, c32.xxyw, c32.xzww
+    texld r2, r0.yzzw, s7
+    texld r3, r0.yzzw, s3
+    mad r0.yz, v3.xxyw, c30.xxyw, c30.xzww
+    texld r4, r0.yzzw, s5
+    texld r5, r0.yzzw, s1
+    mad r0.yz, v3.xxyw, c31.xxyw, c31.xzww
+    texld r6, r0.yzzw, s6
+    texld r7, r0.yzzw, s2
+    mad r0.yz, v3.xxyw, c29.xxyw, c29.xzww
+    texld_pp r8, r0.yzzw, s0
+    dp4 r0.y, r8, c49.x
+    add r0.z, r0.y, c49.y
+    rcp r0.y, r0.y
+    cmp r0.y, r0.z, r0.y, c49.z
+    mul r9, r0.y, r8
+    mul r0.yz, r6.xwyw, r9.y
+    mad_pp r0.yz, r9.x, r4.xwyw, r0
+    mad_pp r0.yz, r9.z, r2.xwyw, r0
+    mad r2.xy, v3, c33, c33.zwzw
+    texld r4, r2, s8
+    texld r2, r2, s4
+    mad_pp r0.yz, r9.w, r4.xwyw, r0
+    mad_pp r4.xy, r0.yzzw, -c49.w, -c49.x
+    dp2add_sat_pp r0.y, r4, r4, c46.x
+    add_pp r0.xy, -r0, c49.x
+    rsq_pp r0.y, r0.y
+    rcp_pp r4.z, r0.y
+    dp3_sat_pp r0.y, r4, r1
+    add_pp r0.y, -r0.y, c49.x
+    mul_pp r0.z, r0.y, r0.y
+    mov_pp r1.x, c38.x
+    mov_pp r1.y, c39.x
+    mov_pp r1.z, c40.x
+    mov_pp r1.w, c41.x
+    dp4_pp r0.w, r8, r1
+    mad_pp r0.y, r0.z, -r0.w, r0.y
+    mul_pp r0.z, r0.w, r0.z
+    mad_pp r0.y, r0.w, r0.y, r0.z
+    mul_pp r0.x, r0.x, r0.y
+    mov r1.x, c49.x
+    mad_pp r0.x, r0.x, c37.x, r1.x
+    mul r0.yzw, r7.xxyz, r8.y
+    mad_pp r0.yzw, r8.x, r5.xxyz, r0
+    mad_pp r0.yzw, r8.z, r3.xxyz, r0
+    mad_pp r0.yzw, r8.w, r2.xxyz, r0
+    mul_pp r0.yzw, r0, c34.xxyz
+    mov r1.xw, c19
+    add r1.yz, -r1.xxww, c7.xxww
+    mad_pp r1.xy, c18.x, r1.yzzw, r1.xwzw
+    mul_pp r0.yzw, r0, r1.y
+    mul_pp r1.x, r1.x, c8.x
+    mul_pp r0.xyz, r0.x, r0.yzww
+    dp3 r0.w, v2, r4
+    mul r1.yzw, r0.w, c2.xxyz
+    mul r2.xyz, r0.w, c5
+    dp3 r0.w, v1, r4
+    dp3 r2.w, v0, r4
+    mad r1.yzw, c1.xxyz, r0.w, r1
+    mad r2.xyz, c4, r0.w, r2
+    mad r2.xyz, c3, r2.w, r2
+    mad r1.yzw, c0.xxyz, r2.w, r1
+    nrm r3.xyz, r1.yzww
+    nrm r4.xyz, r2
+    mov r2.xyz, c10
+    mad r1.yzw, r2.xxyz, r3.y, c9.xxyz
+    mad r1.yzw, c11.xxyz, r3.z, r1
+    mad r1.yzw, c12.xxyz, r3.x, r1
+    mul r2.xyz, r3.xzxw, r3.yyzw
+    mad r1.yzw, c13.xxyz, r2.x, r1
+    mad r1.yzw, c14.xxyz, r2.y, r1
+    mad r1.yzw, c16.xxyz, r2.z, r1
+    mul r2.xy, r3.yzzw, r3.yzzw
+    mad r0.w, r3.x, r3.x, -r2.x
+    mad r2.x, r2.y, c46.y, c46.z
+    mad r1.yzw, c15.xxyz, r2.x, r1
+    mad r1.yzw, c17.xxyz, r0.w, r1
+    mov r2.xyz, c21
+    mad r2.xyz, r2, r4.y, c20
+    mad r2.xyz, c22, r4.z, r2
+    mad r2.xyz, c23, r4.x, r2
+    mul r3.xyz, r4.xzxw, r4.yyzw
+    mad r2.xyz, c24, r3.x, r2
+    mad r2.xyz, c25, r3.y, r2
+    mad r2.xyz, c27, r3.z, r2
+    mul r3.xy, r4.yzzw, r4.yzzw
+    mad r0.w, r4.x, r4.x, -r3.x
+    mad r2.w, r3.y, c46.y, c46.z
+    mad r2.xyz, c26, r2.w, r2
+    mad r2.xyz, c28, r0.w, r2
+    lrp_pp r3.xyz, c18.x, r1_abs.yzww, r2_abs
+    mul_pp r1.yzw, r0.xxyz, r3.xxyz
+    mul_pp r1.xyz, r1.x, r1.yzww
+    mad_pp r2.xyz, r1, c47.x, c47.y
+    mad_pp r2.xyz, r1, r2, c46.w
+    mul_pp r2.xyz, r1, r2
+    abs r0.w, c45.x
+    cmp_pp r1.xyz, -r0.w, r2, r1
+    mul r1.xyz, r1, c47.z
+    max r0.w, r1.x, r1.y
+    max r2.x, r1.z, c47.w
+    max r1.w, r0.w, r2.x
+    mul r0.w, r1.w, c48.x
+    frc r1.w, -r0.w
+    add r0.w, r0.w, r1.w
+    mul_pp r2.w, r0.w, c48.y
+    rcp r0.w, r2.w
+    mul_pp r2.xyz, r0.w, r1
+    log r1.x, r0.x
+    log r1.y, r0.y
+    log r1.z, r0.z
+    mov_sat r0.x, c43.x
+    mul r0.xyz, r1, r0.x
+    exp_pp r1.x, r0.x
+    exp_pp r1.y, r0.y
+    exp_pp r1.z, r0.z
+    min_pp r0.xyz, c44.x, r1
+    mov r1.x, c46.x
+    cmp_pp r0.xyz, -c42.x, r1.x, r0
+    mov r0.w, c42.x
+    cmp_pp oC0, -c42.y, r0, r2

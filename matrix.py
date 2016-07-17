@@ -2,8 +2,15 @@
 
 import numpy as np
 from math import *
+import pyasm
 
-def translate(x, y, z):
+# Suppress scientific notation of small floating point values to make matrices
+# easier to read:
+np.set_printoptions(suppress=True)
+
+def translate(x, y, z, verbose=False):
+    if verbose:
+        print('''TRANSLATE:  %-8f   %-8f   %-8f''' % (x, y, z))
     return np.matrix([
         [1, 0, 0, 0],
         [0, 1, 0, 0],
@@ -11,7 +18,9 @@ def translate(x, y, z):
         [x, y, z, 1],
     ])
 
-def scale(x, y, z):
+def scale(x, y, z, verbose=False):
+    if verbose:
+        print('''    SCALE:  %-8f   %-8f   %-8f''' % (x, y, z))
     return np.matrix([
         [x, 0, 0, 0],
         [0, y, 0, 0],
@@ -19,7 +28,9 @@ def scale(x, y, z):
         [0, 0, 0, 1],
     ])
 
-def rotate_x(angle):
+def rotate_x(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE X:  %-8f   %8s   %8s  ''' % (angle, '', ''))
     a = radians(angle)
     return np.matrix([
         [1,       0,      0, 0],
@@ -28,7 +39,9 @@ def rotate_x(angle):
         [0,       0,      0, 1],
     ])
 
-def rotate_y(angle):
+def rotate_y(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE Y:  %8s   %-8f   %8s  ''' % ('', angle, ''))
     a = radians(angle)
     return np.matrix([
         [cos(a), 0, -sin(a), 0],
@@ -37,7 +50,9 @@ def rotate_y(angle):
         [     0, 0,       0, 1],
     ])
 
-def rotate_z(angle):
+def rotate_z(angle, verbose=False):
+    if verbose:
+        print(''' ROTATE Z:  %8s   %8s   %-8f  ''' % ('', '', angle))
     a = radians(angle)
     return np.matrix([
         [ cos(a), sin(a), 0, 0],
@@ -46,7 +61,9 @@ def rotate_z(angle):
         [      0,      0, 0, 1],
     ])
 
-def projection(near, far, fov_horiz, fov_vert):
+def projection(near, far, fov_horiz, fov_vert, verbose=False):
+    if verbose:
+        print('''PROJECTION: near: %g far: %g H FOV: %g V FOV: %g''' % (near, far, fov_horiz, fov_vert))
     w = 1 / tan(radians(fov_horiz) / 2)
     h = 1 / tan(radians(fov_vert)  / 2)
     q = far / (far - near)
@@ -83,6 +100,32 @@ def projection_nv_equiv(near, far, fov_horiz, fov_vert, separation, convergence)
     ])
 
     return (left, right)
+
+def nv_equiv_multiplier(near, far, sep, conv):
+    '''
+    Returns a matrix that a projection matrix, including a composite MVP or VP
+    matrix can be multiplied by in order to add a stereo correction to it.
+    '''
+    q = far / (far - near)
+    return np.matrix([
+        [                     1, 0, 0, 0 ],
+        [                     0, 1, 0, 0 ],
+        [ (sep*conv) / (q*near), 0, 1, 0 ],
+        [ sep - (sep*conv)/near, 0, 0, 1 ]
+    ])
+
+def nv_equiv_multiplier_inv(near, far, sep, conv):
+    '''
+    The inverse of the above, for removing a stereo correction from an inverted
+    MV or MVP matrix. Simplifies down to a negation of the above.
+    '''
+    q = far / (far - near)
+    return np.matrix([
+        [                      1, 0, 0, 0 ],
+        [                      0, 1, 0, 0 ],
+        [ -(sep*conv) / (q*near), 0, 1, 0 ],
+        [ -sep + (sep*conv)/near, 0, 0, 1 ]
+    ])
 
 def fov_w(matrix):
     return degrees(2 * atan(1/matrix[0, 0]))
@@ -142,6 +185,154 @@ def determinant_euclidean(m):
             - (m[0,1]*m[1,0]*m[2,2]) \
             + (m[0,2]*m[1,0]*m[2,1]) \
             - (m[0,2]*m[1,1]*m[2,0])
+
+def col_major_regs(m):
+    r1 = pyasm.Register(m.T.tolist()[0])
+    r2 = pyasm.Register(m.T.tolist()[1])
+    r3 = pyasm.Register(m.T.tolist()[2])
+    r4 = pyasm.Register(m.T.tolist()[3])
+    return (r1, r2, r3, r4)
+
+def _determinant_euclidean_asm_col_major(col0, col1, col2):
+    tmp0 = pyasm.Register()
+    tmp1 = pyasm.Register()
+    det = pyasm.Register()
+
+    # Do some multiplications & subtractions in parallel with SIMD instructions:
+    tmp0.xyz = pyasm.mul(col0.zxy, col1.yzx)            # m0.z*m1.y, m0.x*m1.z, m0.y*m1.x
+    tmp0.xyz = pyasm.mad(col0.yzx, col1.zxy, -tmp0.xyz) # m0.y*m1.z - m0.z*m1.y, m0.z*m1.x - m0.x*m1.z, m0.x*m1.y - m0.y*m1.x
+    # Now the multiplications:
+    tmp0.xyz = pyasm.mul(tmp0.xyz, col2.xyz)
+    # Sum it together to get the determinant:
+    det.x = pyasm.add(tmp0.x, tmp0.y)
+    det.x = pyasm.add(det.x, tmp0.z)
+
+    return det
+
+def determinant_euclidean_asm_col_major(m):
+    (col0, col1, col2, _) = col_major_regs(m)
+    return _determinant_euclidean_asm_col_major(col0, col1, col2)
+
+def _inverse(m, d):
+    n = np.matrix([[0.0]*4]*4)
+    n[0,0] = m[1,2]*m[2,3]*m[3,1] - m[1,3]*m[2,2]*m[3,1] + m[1,3]*m[2,1]*m[3,2] - m[1,1]*m[2,3]*m[3,2] - m[1,2]*m[2,1]*m[3,3] + m[1,1]*m[2,2]*m[3,3]
+    n[0,1] = m[0,3]*m[2,2]*m[3,1] - m[0,2]*m[2,3]*m[3,1] - m[0,3]*m[2,1]*m[3,2] + m[0,1]*m[2,3]*m[3,2] + m[0,2]*m[2,1]*m[3,3] - m[0,1]*m[2,2]*m[3,3]
+    n[0,2] = m[0,2]*m[1,3]*m[3,1] - m[0,3]*m[1,2]*m[3,1] + m[0,3]*m[1,1]*m[3,2] - m[0,1]*m[1,3]*m[3,2] - m[0,2]*m[1,1]*m[3,3] + m[0,1]*m[1,2]*m[3,3]
+    n[0,3] = m[0,3]*m[1,2]*m[2,1] - m[0,2]*m[1,3]*m[2,1] - m[0,3]*m[1,1]*m[2,2] + m[0,1]*m[1,3]*m[2,2] + m[0,2]*m[1,1]*m[2,3] - m[0,1]*m[1,2]*m[2,3]
+    n[1,0] = m[1,3]*m[2,2]*m[3,0] - m[1,2]*m[2,3]*m[3,0] - m[1,3]*m[2,0]*m[3,2] + m[1,0]*m[2,3]*m[3,2] + m[1,2]*m[2,0]*m[3,3] - m[1,0]*m[2,2]*m[3,3]
+    n[1,1] = m[0,2]*m[2,3]*m[3,0] - m[0,3]*m[2,2]*m[3,0] + m[0,3]*m[2,0]*m[3,2] - m[0,0]*m[2,3]*m[3,2] - m[0,2]*m[2,0]*m[3,3] + m[0,0]*m[2,2]*m[3,3]
+    n[1,2] = m[0,3]*m[1,2]*m[3,0] - m[0,2]*m[1,3]*m[3,0] - m[0,3]*m[1,0]*m[3,2] + m[0,0]*m[1,3]*m[3,2] + m[0,2]*m[1,0]*m[3,3] - m[0,0]*m[1,2]*m[3,3]
+    n[1,3] = m[0,2]*m[1,3]*m[2,0] - m[0,3]*m[1,2]*m[2,0] + m[0,3]*m[1,0]*m[2,2] - m[0,0]*m[1,3]*m[2,2] - m[0,2]*m[1,0]*m[2,3] + m[0,0]*m[1,2]*m[2,3]
+    n[2,0] = m[1,1]*m[2,3]*m[3,0] - m[1,3]*m[2,1]*m[3,0] + m[1,3]*m[2,0]*m[3,1] - m[1,0]*m[2,3]*m[3,1] - m[1,1]*m[2,0]*m[3,3] + m[1,0]*m[2,1]*m[3,3]
+    n[2,1] = m[0,3]*m[2,1]*m[3,0] - m[0,1]*m[2,3]*m[3,0] - m[0,3]*m[2,0]*m[3,1] + m[0,0]*m[2,3]*m[3,1] + m[0,1]*m[2,0]*m[3,3] - m[0,0]*m[2,1]*m[3,3]
+    n[2,2] = m[0,1]*m[1,3]*m[3,0] - m[0,3]*m[1,1]*m[3,0] + m[0,3]*m[1,0]*m[3,1] - m[0,0]*m[1,3]*m[3,1] - m[0,1]*m[1,0]*m[3,3] + m[0,0]*m[1,1]*m[3,3]
+    n[2,3] = m[0,3]*m[1,1]*m[2,0] - m[0,1]*m[1,3]*m[2,0] - m[0,3]*m[1,0]*m[2,1] + m[0,0]*m[1,3]*m[2,1] + m[0,1]*m[1,0]*m[2,3] - m[0,0]*m[1,1]*m[2,3]
+    n[3,0] = m[1,2]*m[2,1]*m[3,0] - m[1,1]*m[2,2]*m[3,0] - m[1,2]*m[2,0]*m[3,1] + m[1,0]*m[2,2]*m[3,1] + m[1,1]*m[2,0]*m[3,2] - m[1,0]*m[2,1]*m[3,2]
+    n[3,1] = m[0,1]*m[2,2]*m[3,0] - m[0,2]*m[2,1]*m[3,0] + m[0,2]*m[2,0]*m[3,1] - m[0,0]*m[2,2]*m[3,1] - m[0,1]*m[2,0]*m[3,2] + m[0,0]*m[2,1]*m[3,2]
+    n[3,2] = m[0,2]*m[1,1]*m[3,0] - m[0,1]*m[1,2]*m[3,0] - m[0,2]*m[1,0]*m[3,1] + m[0,0]*m[1,2]*m[3,1] + m[0,1]*m[1,0]*m[3,2] - m[0,0]*m[1,1]*m[3,2]
+    n[3,3] = m[0,1]*m[1,2]*m[2,0] - m[0,2]*m[1,1]*m[2,0] + m[0,2]*m[1,0]*m[2,1] - m[0,0]*m[1,2]*m[2,1] - m[0,1]*m[1,0]*m[2,2] + m[0,0]*m[1,1]*m[2,2]
+    return n / d
+
+def inverse(m):
+    return _inverse(m, determinant(m))
+
+def _inverse_euclidean(m, d):
+    # Simplifying on the assumption that the 4th column is 0,0,0,1
+    n = np.matrix([[0.0]*4]*4)
+    n[0,0] = m[1,1]*m[2,2] - m[1,2]*m[2,1]
+    n[1,0] = m[1,2]*m[2,0] - m[1,0]*m[2,2]
+    n[2,0] = m[1,0]*m[2,1] - m[1,1]*m[2,0]
+
+    n[0,1] = m[0,2]*m[2,1] - m[0,1]*m[2,2]
+    n[1,1] = m[0,0]*m[2,2] - m[0,2]*m[2,0]
+    n[2,1] = m[0,1]*m[2,0] - m[0,0]*m[2,1]
+
+    n[0,2] = m[0,1]*m[1,2] - m[0,2]*m[1,1]
+    n[1,2] = m[0,2]*m[1,0] - m[0,0]*m[1,2]
+    n[2,2] = m[0,0]*m[1,1] - m[0,1]*m[1,0]
+
+    n[0,3] = n[1,3] = n[2,3] = 0
+
+    n[3,0] = - m[3,0]*n[0,0] - m[3,1]*n[1,0] - m[3,2]*n[2,0]
+    n[3,1] = - m[3,0]*n[0,1] - m[3,1]*n[1,1] - m[3,2]*n[2,1]
+    n[3,2] = - m[3,0]*n[0,2] - m[3,1]*n[1,2] - m[3,2]*n[2,2]
+    n[3,3] =   m[0,0]*n[0,0] + m[0,1]*n[1,0] + m[0,2]*n[2,0] # Gut feeling this will always end up as 1
+    # assert(n[3,3] == 1)
+
+    return n / d
+
+def inverse_euclidean(m):
+    return _inverse_euclidean(m, determinant_euclidean(m))
+
+def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
+    '''
+    Performs a matrix inverse in a manner as would be done in assembly.
+    Note that the input matrix is in column-major order, but the resulting
+    inverted matrix will be in ROW-major order.
+    '''
+    std_consts = pyasm.Register([0, 1, 0.0625, 0.5])
+    tmp0 = pyasm.Register()
+    tmp1 = pyasm.Register()
+    tmp2 = pyasm.Register()
+    dst0 = pyasm.Register()
+    dst1 = pyasm.Register()
+    dst2 = pyasm.Register()
+    dst3 = pyasm.Register()
+
+    # 1st row, simplifying by assuimg the 4th column 0,0,0,1
+    # dst0.x = (m1.y*m2.z - m1.z*m2.y)
+    # dst0.y = (m1.z*m2.x - m1.x*m2.z)
+    # dst0.z = (m1.x*m2.y - m1.y*m2.x)
+    # dst0.w = 0
+
+    dst0.xyz = pyasm.mul(col1.zxy, col2.yzx)
+    dst0.xyz = pyasm.mad(col1.yzx, col2.zxy, -dst0.xyz)
+
+    # 2nd row
+    # dst1.x = (col0.z*m2.y - col0.y*m2.z)
+    # dst1.y = (col0.x*m2.z - col0.z*m2.x)
+    # dst1.z = (col0.y*m2.x - col0.x*m2.y)
+    # dst1.w = 0
+
+    dst1.xyz = pyasm.mul(col0.yzx, col2.zxy)
+    dst1.xyz = pyasm.mad(col0.zxy, col2.yzx, -dst1.xyz)
+
+    # 3nd row
+    # dst2.x = (col0.y*m1.z - col0.z*m1.y)
+    # dst2.y = (col0.z*m1.x - col0.x*m1.z)
+    # dst2.z = (col0.x*m1.y - col0.y*m1.x)
+    # dst2.w = 0
+
+    dst2.xyz = pyasm.mul(col0.zxy, col1.yzx)
+    dst2.xyz = pyasm.mad(col0.yzx, col1.zxy, -dst2.xyz)
+
+    # 4th row
+    # dst3.x = - col0.w*dst0.x - col1.w*dst1.x - col2.w*dst2.x
+    # dst3.y = - col0.w*dst0.y - col1.w*dst1.y - col2.w*dst2.y
+    # dst3.z = - col0.w*dst0.z - col1.w*dst1.z - col2.w*dst2.z
+    # dst3.w =   col0.x*dst0.x + col1.x*dst1.x + col2.x*dst2.x (always 1?)
+
+    dst3.xyzw = pyasm.mul(col0.wwwx, dst0.xyzx)
+    dst3.xyzw = pyasm.mad(col1.wwwx, dst1.xyzx, dst3.xyzw)
+    dst3.xyzw = pyasm.mad(col2.wwwx, dst2.xyzx, dst3.xyzw)
+    dst3.xyz  = pyasm.mov(-dst3)
+
+    # Multiply against 1/determinant (and zero out 4th column):
+    inv_det = pyasm.rcp(d.x)
+    inv_det.y = pyasm.mov(std_consts.x)
+    dst0 = pyasm.mul(dst0, inv_det.xxxy)
+    dst1 = pyasm.mul(dst1, inv_det.xxxy)
+    dst2 = pyasm.mul(dst2, inv_det.xxxy)
+    dst3 = pyasm.mul(dst3, inv_det.xxxx)
+
+    # Note that this matrix has been transposed and is now in ROW major order!
+
+    return (dst0, dst1, dst2, dst3)
+
+def inverse_euclidean_asm_col_major(m):
+    (col0, col1, col2, _) = col_major_regs(m)
+    d = _determinant_euclidean_asm_col_major(col0, col1, col2)
+    return _inverse_euclidean_asm_col_major(col0, col1, col2, d)
 
 def inverse_matrix_euclidean_m0(m, d):
     # Return the 1st row of an inverted matrix, simplifying on the assumption
@@ -227,3 +418,41 @@ def mv_mvp_m00i(mv, mvp):
 # //    simplifying based on assumptions about the structure of a projection
 # //    matrix (should even work for off-center projection matrices):
 # rcp r20.x, r20.x
+
+def random_euclidean_matrix(multiplier=1):
+    '''
+    Generates a matrix with random euclidean transformations applied to it in a
+    random order. Useful for testing simplified matrix algorithms that are
+    supposed to work on matrices that do not use the homogeneous 4th
+    coordinate but have no other assumptions (e.g. model-view, but not
+    model-view-projection).
+    '''
+    import random
+    m = np.identity(4)
+    steps = random.randint(1,10)
+    for i in range(steps):
+        choice = random.randrange(5)
+        if choice == 0:
+            m = m * translate(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier, verbose=True)
+        if choice == 1:
+            m = m * scale(random.random() * multiplier, random.random() * multiplier, random.random() * multiplier, verbose=True)
+        if choice == 2:
+            m = m * rotate_x(random.random() * 180, verbose=True)
+        if choice == 3:
+            m = m * rotate_y(random.random() * 180, verbose=True)
+        if choice == 4:
+            m = m * rotate_z(random.random() * 180, verbose=True)
+    return m
+
+def random_projection_matrix():
+    import random
+    near = random.random() * 10 + 1e-45 # Near cannot be 0, so add the minimum non-zero value a 32bit float can hold
+    far = near + random.random() * 1000
+    fov_h = random.uniform(60,110)
+    fov_v = random.uniform(60,90)
+    return projection(near, far, fov_h, fov_v, verbose=True)
+
+def random_mvp():
+    mv = random_euclidean_matrix()
+    p = random_projection_matrix()
+    return mv * p

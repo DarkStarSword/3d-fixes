@@ -1,0 +1,109 @@
+// CRC32: 364735BF | Matched 5 variants of 1 shaders: Custom/Terrain Block
+// 
+//     Unity headers extracted from Terrain Block.shader
+//     Shader "Custom/Terrain Block" {
+//       Properties {
+//        _MainTex ("Wall Texture (RGB)", 2D) = "white" { }
+//        _GroundTex ("Floor Texture (RGB)", 2D) = "white" { }
+//        _CeilingTex ("Ceiling Texture (RGB)", 2D) = "white" { }
+//        _EdgeTex ("Edge Texture", 2D) = "" { }
+//        _WallGlossinessTex ("Wall Glossiness (R)", 2D) = "black" { }
+//        _GroundGlossinessTex ("Floor Glossiness (R)", 2D) = "black" { }
+//        _CeilingGlossinessTex ("Ceiling Glossiness (R)", 2D) = "black" { }
+//        _EmissiveTex ("Emissive (RGB)", 2D) = "black" { }
+//        _SpecularPower ("Specular Power", Float) = 1
+//        _Tiling ("Tiling - width of texture in tiles", Float) = 8
+//        _StretchDownwardUV ("Downward Texture Stretching", Range(0,1)) = 1
+//        _OriginalPosition ("Internal Use Only", Vector) = (0,0,0,0)
+//        _OriginalPositionOffset ("Internal Use Only", Vector) = (0,0,0,0)
+//        _OriginalRotation ("Internal Use Only", Float) = 0
+//       }
+//       Fallback Off
+//       SubShader 1/1 {
+//         Tags { "RenderType"="Opaque" }
+//         Pass 2/3 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 130897
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" }
+// 01:           Keywords { "POINT" }
+// 08:           Keywords { "POINT_COOKIE" }
+// 04:           Keywords { "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Bind "texcoord1" TexCoord1
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 16 [_EdgeTex_ST]
+//               Vector 15 [_MainTex_ST]
+//               Vector 11 [_OriginalPosition]
+//               Vector 12 [_OriginalPositionOffset]
+//               Float 13 [_OriginalRotation]
+//               Float 10 [_StretchDownwardUV]
+//               Float 14 [_ZI_LevelBottomBound]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c17, 6.28318548, -3.14159274, 0, 0
+    def c18, 0, 30, 0.159154937, 0.5
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_texcoord1 v3
+    dcl_position o0
+    dcl_texcoord o1
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+    add r0.x, c14.x, -v0.y
+    slt r0.y, c18.x, r0.x
+    mov r1.yzw, c18
+    mad r0.x, r0.x, -r1.y, c14.x
+    lrp r2.y, r0.y, r0.x, v0.y
+    mov r2.xzw, v0
+    dp4 o0.x, c0, r2
+    dp4 o0.y, c1, r2
+    dp4 o0.z, c2, r2
+    dp4 o0.w, c3, r2
+    mad o1.xy, v2, c15, c15.zwzw
+    mad o1.zw, v3.xyxy, c16.xyxy, c16
+    dp4 o3.x, c4, r2
+    dp4 o3.y, c5, r2
+    dp4 o3.z, c6, r2
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o2.xyz, r0.w, r0
+    mad r0.x, c13.x, r1.z, r1.w
+    frc r0.x, r0.x
+    mad r0.x, r0.x, c17.x, c17.y
+    sincos r1.xy, r0.x
+    mul r0.xyz, r1.yxyw, v0.zxxw
+    mad r2.z, v0.z, r1.x, -r0.z
+    add r2.x, r0.y, r0.x
+    mov r0.xyz, c11
+    add r0.xyz, r0, c12
+    add r0.xyz, r2, r0
+    add r1.x, -r0.y, c14.x
+    pow r2.x, r1.x, c10.x
+    slt r1.x, c18.x, r1.x
+    add r1.y, -r2.x, c14.x
+    add r1.y, -r0.y, r1.y
+    mad r0.w, r1.x, r1.y, r0.y
+    mov o4.xyz, r0.xwzw

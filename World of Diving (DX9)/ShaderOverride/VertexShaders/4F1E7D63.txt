@@ -1,0 +1,78 @@
+// CRC32: 4F1E7D63 | Matched 4 variants of 1 shaders: Custom/FX/FogVolumeTransparent
+// 
+//    Unity headers extracted from FogVolumeTransparent.shader
+//    Shader "Custom/FX/FogVolumeTransparent" {
+//      Properties {
+//       _MainTex ("MainTex", 2D) = "white" { }
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _Alpha ("Alpha", Range(0,1)) = 0.774436
+//       _DepthFadeReduction ("Depth Fade Reduction", Range(0,1)) = 0.0300752
+//      [HideInInspector]  _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Overlay+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Name "FORWARD"
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Overlay+1" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Blend SrcAlpha OneMinusSrcAlpha
+//          GpuProgramID 44844
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 4:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" "VERTEXLIGHT_ON" }
+// 1:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+// 8:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" "VERTEXLIGHT_ON" }
+// 2:           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "texcoord" TexCoord0
+//              Matrix 4 [glstate_matrix_modelview0] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Vector 7 [_ProjectionParams]
+//              Vector 8 [_ScreenParams]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c9, 0.5, 0, 0, 0
+    dcl_position v0
+    dcl_texcoord v1
+    dcl_color v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_color o2
+    dcl_texcoord1 o3
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    dp4 o0.z, c2, v0
+    dp4 r0.y, c1, v0
+    mul r0.z, r0.y, c7.x
+    dp4 r0.x, c0, v0
+    dp4 r0.w, c3, v0
+
+mov o0.xyw, r0 // Relocated from line 58 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors Custom_FX_FogVolumeTransparent/vp/4F1E7D63.txt
+texldl r31, c220.z, s3
+add r31.w, r0.w, -r31.y
+mad r0.x, r31.w, r31.x, r0.x
+
+    mul r1.xzw, r0.xywz, c9.x
+
+//     mov o0.xyw, r0 // Relocated to line 57 with shadertool.py
+    mov o3.w, r0.w
+    mad o3.xy, r1.z, c8.zwzw, r1.xwzw
+    dp4 r0.x, c6, v0
+    mov o3.z, -r0.x
+    mov o1.xy, v1
+    mov o2, v2

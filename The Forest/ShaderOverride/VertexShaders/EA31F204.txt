@@ -1,0 +1,91 @@
+// CRC32: EA31F204 | Matched 5 variants of 1 shaders: Lux/LODStipple
+// 
+//     Unity headers extracted from LuxLODStipple.shader
+//     Shader "Lux/LODStipple" {
+//       Properties {
+//        _Color ("Color", Color) = (1,1,1,1)
+//        _MainTex ("Albedo (RGB)", 2D) = "white" { }
+//        _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//        _Specular ("Specualr", Color) = (0.2,0.2,0.2,1)
+//       }
+//       SubShader 1/1 {
+//         LOD 200
+//         Tags { "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//         Pass 2/4 {
+//           Name "FORWARD"
+//           Tags { "LIGHTMODE"="ForwardAdd" "SHADOWSUPPORT"="true" "DisableBatching"="LodFading" "RenderType"="Opaque" }
+//           ZWrite Off
+//           Blend One One
+//           GpuProgramID 71891
+//           Program "vp" {
+//             SubProgram "d3d9 " {
+// 02:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
+// 10:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
+// 01:           Keywords { "POINT" "SHADOWS_OFF" }
+// 08:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
+// 04:           Keywords { "SHADOWS_OFF" "SPOT" }
+//               Bind "vertex" Vertex
+//               Bind "normal" Normal
+//               Bind "texcoord" TexCoord0
+//               Matrix 4 [_Object2World] 3
+//               Matrix 7 [_World2Object] 3
+//               Matrix 0 [glstate_matrix_mvp]
+//               Vector 12 [_MainTex_ST]
+//               Vector 10 [_ProjectionParams]
+//               Vector 11 [_ScreenParams]
+//             }
+//           }
+//         }
+//       }
+//     }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c13, 0.5, 0.25, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_texcoord v2
+    dcl_position o0
+    dcl_texcoord o1.xy
+    dcl_texcoord1 o2.xyz
+    dcl_texcoord2 o3.xyz
+    dcl_texcoord3 o4.xyz
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+    mov r0.y, c13.y
+    mul r0.xy, r0.y, c11
+    dp4 r1.y, c1, v0
+    mul r0.z, r1.y, c10.x
+    mul r2.w, r0.z, c13.x
+    dp4 r1.x, c0, v0
+    dp4 r1.w, c3, v0
+
+mov o0.xyw, r1 // Relocated from line 63 with shadertool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Lux_LODStipple/vp/EA31F204.txt
+texldl r31, c220.z, s3
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+    mul r2.xz, r1.xyww, c13.x
+
+//     mov o0.xyw, r1 // Relocated to line 62 with shadertool.py
+    mov o4.z, r1.w
+    mad r0.zw, r2.z, c11, r2.xyxw
+    mul o4.xy, r0, r0.zwzw
+    dp4 o0.z, c2, v0
+    mad o1.xy, v2, c12, c12.zwzw
+    dp4 o3.x, c4, v0
+    dp4 o3.y, c5, v0
+    dp4 o3.z, c6, v0
+    mul r0.xyz, c8, v1.y
+    mad r0.xyz, c7, v1.x, r0
+    mad r0.xyz, c9, v1.z, r0
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mul o2.xyz, r0.w, r0

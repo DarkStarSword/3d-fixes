@@ -1,0 +1,507 @@
+// Specular highlights (no shadows) (from green lights at base at night during rain)
+// ---- Created with 3Dmigoto v1.2.27 on Fri Jan 29 00:21:53 2016
+
+cbuffer cPSScene : register(b2)
+{
+
+  struct
+  {
+    float4x4 m_projectionView;
+    float4x4 m_projection;
+    float4x4 m_view;
+    float4x4 m_shadowProjection;
+    float4x4 m_shadowProjection2;
+    float4 m_eyepos;
+    float4 m_projectionParam;
+    float4 m_viewportSize;
+    float4 m_exposure;
+    float4 m_fogParam[3];
+    float4 m_fogColor;
+    float4 m_cameraCenterOffset;
+    float4 m_shadowMapResolutions;
+  } g_psScene : packoffset(c0);
+
+}
+
+cbuffer cPSMaterial : register(b4)
+{
+
+  struct
+  {
+    float4 m_materials[8];
+  } g_psMaterial : packoffset(c0);
+
+}
+
+cbuffer cPSSystem : register(b0)
+{
+
+  struct
+  {
+    float4 m_param;
+    float4 m_renderInfo;
+    float4 m_renderBuffer;
+    float4 m_dominantLightDir;
+  } g_psSystem : packoffset(c0);
+
+}
+
+SamplerState g_samplerPoint_Wrap_s : register(s8);
+SamplerState g_samplerPoint_Clamp_s : register(s9);
+SamplerState g_samplerLinear_Wrap_s : register(s10);
+SamplerState g_samplerLinear_Clamp_s : register(s11);
+Texture2D<float4> inViewportCaptureMap : register(t0);
+Texture2D<float4> inAlbedoMap : register(t8);
+Texture2D<float4> inMaterialMap : register(t11);
+Texture2D<float4> inDepthMap : register(t12);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : TEXCOORD0,
+  float4 v1 : SV_Position0,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = float2(-0.5,-0.5) + v1.xy;
+  r0.xy = float2(0.49609375,0.49609375) + r0.xy;
+  r0.xy = g_psSystem.m_renderBuffer.zw * r0.xy;
+  r0.zw = v0.xy;
+  r1.xy = -g_psScene.m_cameraCenterOffset.xy;
+  r0.zw = r1.xy + r0.zw;
+  r1.xyzw = g_psScene.m_projectionParam.xyzw;
+  r2.x = inDepthMap.SampleLevel(g_samplerPoint_Clamp_s, r0.xy, 0).x;
+  r1.w = -r1.w;
+  r1.w = r2.x + r1.w;
+  r2.z = r1.z / r1.w;
+  r1.z = r2.z;
+  r0.zw = r1.xy * r0.zw;
+  r2.xy = r0.zw * r1.zz;
+
+float4 stereo = StereoParams.Load(0);
+
+// Adjustment for specular highlights:
+float4 spec = float4(r2.xy, r1.z, 1);
+spec.x -= stereo.x * spec.z / g_psScene.m_projection._m00;
+
+// No shadows
+
+  r0.z = -g_psMaterial.m_materials[2].x;
+  r0.z = r1.z + r0.z;
+  r0.z = g_psMaterial.m_materials[3].x * r0.z;
+  r0.z = max(0, r0.z);
+  r0.z = min(1, r0.z);
+  r2.w = 1;
+  r1.x = dot(spec, g_psScene.m_view._m00_m10_m20_m30);
+  r1.y = dot(spec, g_psScene.m_view._m01_m11_m21_m31);
+  r1.z = dot(spec, g_psScene.m_view._m03_m13_m23_m33);
+  r1.xy = float2(0.0299999993,0.0299999993) * r1.xy;
+  r1.xy = float2(0.5,-0.5) * r1.xy;
+  r1.xy = float2(0.5,0.5) + r1.xy;
+  r0.w = g_psMaterial.m_materials[0].w * r1.z;
+  r0.w = max(0, r0.w);
+  r0.w = min(1, r0.w);
+  r0.w = -r0.w;
+  r0.w = 1 + r0.w;
+  r1.zw = float2(-0.5,-0.5) * g_psSystem.m_renderBuffer.zw;
+  r1.xy = r1.xy + r1.zw;
+  r1.xyzw = inViewportCaptureMap.Sample(g_samplerLinear_Clamp_s, r1.xy).xzyw;
+  r1.xy = float2(0.0399999991,0.0399999991) + r1.xy;
+  r2.xy = -r0.ww;
+  r1.xy = r2.xy + r1.xy;
+  r1.xy = r1.xy / float2(0.0399999991,0.0399999991);
+  r1.xy = max(float2(0,0), r1.xy);
+  r1.xy = min(float2(1,1), r1.xy);
+  r1.zw = r1.xy * r1.zw;
+  r1.xy = -r1.xy;
+  r1.xy = float2(1,1) + r1.xy;
+  r1.xy = r1.zw + r1.xy;
+  r0.w = r1.x * r1.y;
+  r1.xyz = r0.www * r0.zzz;
+  r2.xyzw = inAlbedoMap.Sample(g_samplerLinear_Wrap_s, r0.xy).xyzw;
+  r0.xyzw = inMaterialMap.Sample(g_samplerPoint_Wrap_s, r0.xy).xyzw;
+  r1.w = r1.z;
+  r3.x = g_psMaterial.m_materials[0].z;
+  r3.y = g_psMaterial.m_materials[3].y;
+  r3.z = -r3.x;
+  r3.z = r3.z + r0.x;
+  r3.y = r3.y * r3.z;
+  r3.y = r3.y + r3.x;
+  r3.x = cmp(r0.x >= r3.x);
+  r3.x = r3.x ? 1 : 0;
+  r1.w = r3.x * r1.w;
+  r3.x = -r0.x;
+  r3.x = r3.y + r3.x;
+  r1.w = r3.x * r1.w;
+  r0.x = r1.w + r0.x;
+  r3.xyz = g_psMaterial.m_materials[0].xxx * r2.xyz;
+  r4.xyz = -r2.xyz;
+  r3.xyz = r4.xyz + r3.xyz;
+  r1.xyz = r3.xyz * r1.xyz;
+  r1.xyz = r2.xyz + r1.xyz;
+  r3.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r1.xyz);
+  r3.xyz = r3.xyz ? float3(1,1,1) : float3(0,0,0);
+  r4.xyz = float3(12.9200001,12.9200001,12.9200001) * r1.xyz;
+  r4.xyz = r4.xyz * r3.xyz;
+  r3.xyz = -r3.xyz;
+  r3.xyz = float3(1,1,1) + r3.xyz;
+  r1.xyz = max(float3(9.99999975e-006,9.99999975e-006,9.99999975e-006), r1.xyz);
+  r1.xyz = log2(r1.xyz);
+  r1.xyz = float3(0.416666657,0.416666657,0.416666657) * r1.xyz;
+  r1.xyz = exp2(r1.xyz);
+  r1.xyz = float3(1.05499995,1.05499995,1.05499995) * r1.xyz;
+  r1.xyz = float3(-0.0549999997,-0.0549999997,-0.0549999997) + r1.xyz;
+  r1.xyz = r3.xyz * r1.xyz;
+  r2.xyz = r4.xyz + r1.xyz;
+  o0.xyzw = r2.xyzw;
+  o1.xyzw = r0.xyzw;
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cPSScene
+// {
+//
+//   struct PSScene
+//   {
+//       
+//       float4x4 m_projectionView;     // Offset:    0
+//       float4x4 m_projection;         // Offset:   64
+//       float4x4 m_view;               // Offset:  128
+//       float4x4 m_shadowProjection;   // Offset:  192
+//       float4x4 m_shadowProjection2;  // Offset:  256
+//       float4 m_eyepos;               // Offset:  320
+//       float4 m_projectionParam;      // Offset:  336
+//       float4 m_viewportSize;         // Offset:  352
+//       float4 m_exposure;             // Offset:  368
+//       float4 m_fogParam[3];          // Offset:  384
+//       float4 m_fogColor;             // Offset:  432
+//       float4 m_cameraCenterOffset;   // Offset:  448
+//       float4 m_shadowMapResolutions; // Offset:  464
+//
+//   } g_psScene;                       // Offset:    0 Size:   480
+//
+// }
+//
+// cbuffer cPSMaterial
+// {
+//
+//   struct PSMaterial
+//   {
+//       
+//       float4 m_materials[8];         // Offset:    0
+//
+//   } g_psMaterial;                    // Offset:    0 Size:   128
+//
+// }
+//
+// cbuffer cPSSystem
+// {
+//
+//   struct PSSystem
+//   {
+//       
+//       float4 m_param;                // Offset:    0
+//       float4 m_renderInfo;           // Offset:   16
+//       float4 m_renderBuffer;         // Offset:   32
+//       float4 m_dominantLightDir;     // Offset:   48
+//
+//   } g_psSystem;                      // Offset:    0 Size:    64
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// g_samplerPoint_Wrap               sampler      NA          NA    8        1
+// g_samplerPoint_Clamp              sampler      NA          NA    9        1
+// g_samplerLinear_Wrap              sampler      NA          NA   10        1
+// g_samplerLinear_Clamp             sampler      NA          NA   11        1
+// inViewportCaptureMap              texture  float4          2d    0        1
+// inAlbedoMap                       texture  float4          2d    8        1
+// inMaterialMap                     texture  float4          2d   11        1
+// inDepthMap                        texture  float4          2d   12        1
+// cPSSystem                         cbuffer      NA          NA    0        1
+// cPSScene                          cbuffer      NA          NA    2        1
+// cPSMaterial                       cbuffer      NA          NA    4        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// TEXCOORD                 0   xyzw        0     NONE   float   xy  
+// SV_Position              0   xyzw        1      POS   float   xy  
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Target                0   xyzw        0   TARGET   float   xyzw
+// SV_Target                1   xyzw        1   TARGET   float   xyzw
+//
+ps_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb2[29], immediateIndexed
+dcl_constantbuffer cb4[4], immediateIndexed
+dcl_constantbuffer cb0[3], immediateIndexed
+dcl_sampler s8, mode_default
+dcl_sampler s9, mode_default
+dcl_sampler s10, mode_default
+dcl_sampler s11, mode_default
+dcl_resource_texture2d (float,float,float,float) t0
+dcl_resource_texture2d (float,float,float,float) t8
+dcl_resource_texture2d (float,float,float,float) t11
+dcl_resource_texture2d (float,float,float,float) t12
+dcl_input_ps linear v0.xy
+dcl_input_ps_siv linear noperspective v1.xy, position
+dcl_output o0.xyzw
+dcl_output o1.xyzw
+dcl_temps 5
+
+#line 257 "d:\work\master\git_clone\_intermediate\win64\TppShaders_dx11_win64\Release\TppRainFilterGBufferMaterial_ps.hlsl"
+add r0.xy, v1.xyxx, l(-0.500000, -0.500000, 0.000000, 0.000000)  // inVPos<0,1>
+
+#line 277
+mov r0.xy, r0.xyxx  // NScreenToTextureCoordinate_screenToTextureCoordinate_inPixelPosition<0,1>
+nop 
+mov r0.xy, r0.xyxx  // inPixelPosition<0,1>
+
+#line 56
+add r0.xy, r0.xyxx, l(0.496094, 0.496094, 0.000000, 0.000000)
+mul r0.xy, r0.xyxx, cb0[2].zwzz  // outTexcoord<0:Inf,1:Inf>
+
+#line 278
+mov r0.xy, r0.xyxx  // NScreenToTextureCoordinate_screenToTextureCoordinate_outTexcoord<0:Inf,1:Inf>
+
+#line 291
+mov r0.xy, r0.xyxx  // NCalcMask_calcMask_inTexcoord<0:Inf,1:Inf>
+
+#line 288
+mov r0.zw, v0.xxxy  // NCalcMask_calcMask_inClipSpcae<0,1>
+nop 
+mov r0.xy, r0.xyxx  // inTexcoord<0:Inf,1:Inf>
+mov r0.zw, r0.zzzw  // inClipSpcae<0,1>
+
+#line 103
+nop 
+mov r0.xy, r0.xyxx  // inTexCoord<0:Inf,1:Inf>
+mov r1.xy, -cb2[28].xyxx
+add r0.zw, r0.zzzw, r1.xxxy  // clipSpacePosXY<0:Inf,1:Inf>
+mov r1.xyzw, cb2[21].xyzw  // inProjectionParam<0,1,2,3>
+
+#line 329
+sample_l_indexable(texture2d)(float,float,float,float) r2.x, r0.xyxx, t12.xyzw, s9, l(0.000000)
+mov r2.x, r2.x  // zOverW<0:Inf>
+
+#line 336
+nop 
+mov r0.zw, r0.zzzw  // clipSpacePos<0:Inf,1:Inf>
+mov r2.x, r2.x  // clipSpacePos<2:Inf>
+mov r1.xyzw, r1.xyzw  // proj<0,1,2,3>
+
+#line 288
+mov r1.w, -r1.w
+add r1.w, r1.w, r2.x
+div r2.z, r1.z, r1.w  // viewPos<2:NaN:Inf>
+mov r1.z, r2.z  // viewPos<2:NaN:Inf>
+mul r0.zw, r0.zzzw, r1.xxxy
+mul r2.xy, r1.zzzz, r0.zwzz  // viewPos<0:NaN:Inf,1:NaN:Inf>
+
+#line 293
+mov r1.z, r1.z  // ReconstructViewPos<2:NaN:Inf>
+
+#line 336
+mov r1.z, r1.z  // ReconstructViewPosFromTexture<2:NaN:Inf>
+
+#line 103
+mov r1.z, r1.z  // viewPos<2:NaN:Inf>
+
+#line 106
+mov r0.z, -cb4[2].x
+add r0.z, r0.z, r1.z
+mul r0.z, r0.z, cb4[3].x
+max r0.z, r0.z, l(0.000000)
+min r0.z, r0.z, l(1.000000)  // fade<0:[0f,1f]>
+
+#line 112
+nop 
+
+#line 408
+mov r2.w, l(1.000000)
+dp4 r1.x, r2.xyzw, cb2[8].xyzw  // ApplyMatrixT<0:NaN:Inf>
+dp4 r1.y, r2.xyzw, cb2[9].xyzw  // ApplyMatrixT<1:NaN:Inf>
+dp4 r1.z, r2.xyzw, cb2[11].xyzw  // ApplyMatrixT<3:NaN:Inf>
+
+#line 112
+mov r1.xyz, r1.xyzx  // ssPos<0:NaN:Inf,1:NaN:Inf,3:NaN:Inf>
+mul r1.xy, r1.xyxx, l(0.030000, 0.030000, 0.000000, 0.000000)  // ssPos<0:NaN:Inf,1:NaN:Inf>
+mul r1.xy, r1.xyxx, l(0.500000, -0.500000, 0.000000, 0.000000)
+add r1.xy, r1.xyxx, l(0.500000, 0.500000, 0.000000, 0.000000)  // ssPos<0:NaN:Inf,1:NaN:Inf>
+mul r0.w, r1.z, cb4[0].w
+max r0.w, r0.w, l(0.000000)
+min r0.w, r0.w, l(1.000000)
+mov r0.w, -r0.w
+add r0.w, r0.w, l(1.000000)  // ssPos<2:[0f,1f]>
+
+#line 118
+nop 
+mov r1.xy, r1.xyxx  // ssPos<0:NaN:Inf,1:NaN:Inf>
+mov r0.w, r0.w  // ssPos<2:[0f,1f]>
+
+#line 92
+nop 
+
+#line 48
+mul r1.zw, cb0[2].zzzw, l(0.000000, 0.000000, -0.500000, -0.500000)  // GetRainFilterDepthCapturePixelOffset<0:[-1.70141e+038f,1.70141e+038f],1:[-1.70141e+038f,1.70141e+038f]>
+
+#line 92
+add r1.xy, r1.zwzz, r1.xyxx
+sample_indexable(texture2d)(float,float,float,float) r1.xyzw, r1.xyxx, t0.xzyw, s11  // texColor<0:Inf,2:Inf,1:Inf,3:Inf>
+mov r1.xy, r1.xyxx  // depth<0:Inf,1:Inf>
+mov r1.zw, r1.zzzw  // alpha<0:Inf,1:Inf>
+add r1.xy, r1.xyxx, l(0.040000, 0.040000, 0.000000, 0.000000)
+mov r2.xy, -r0.wwww
+add r1.xy, r1.xyxx, r2.xyxx
+div r1.xy, r1.xyxx, l(0.040000, 0.040000, 0.000000, 0.000000)
+max r1.xy, r1.xyxx, l(0.000000, 0.000000, 0.000000, 0.000000)
+min r1.xy, r1.xyxx, l(1.000000, 1.000000, 0.000000, 0.000000)  // t<0:[0f,1f],1:[0f,1f]>
+mul r1.zw, r1.zzzw, r1.xxxy
+mov r1.xy, -r1.xyxx
+add r1.xy, r1.xyxx, l(1.000000, 1.000000, 0.000000, 0.000000)
+add r1.xy, r1.xyxx, r1.zwzz  // a<0:NaN:Inf,1:NaN:Inf>
+mul r0.w, r1.y, r1.x  // CalcAlphaFromScreeningTexture<0:NaN:Inf>
+
+#line 118
+mov r0.w, r0.w  // alpha<0:NaN:Inf>
+mul r1.xyz, r0.zzzz, r0.wwww  // outAlpha<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 289
+mov r1.xyz, r1.xyzx  // NCalcMask_calcMask_outAlpha<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 296
+nop 
+
+#line 29
+sample_indexable(texture2d)(float,float,float,float) r2.xyzw, r0.xyxx, t8.xyzw, s10  // outColorAlbedo<0:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 32
+sample_indexable(texture2d)(float,float,float,float) r0.xyzw, r0.xyxx, t11.xyzw, s8  // outColorMaterial<0:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 296
+mov r2.xyzw, r2.xyzw  // NFetchMap_textureFetch_outColorAlbedo<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r0.xyzw, r0.xyzw  // NFetchMap_textureFetch_outColorMaterial<0:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 310
+mov r0.xyzw, r0.xyzw  // NAttenuateRoughness_attenuateRoughness_inMaterial<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r1.w, r1.z  // NAttenuateRoughness_attenuateRoughness_inAlpha<0:NaN:Inf>
+nop 
+mov r0.xyzw, r0.xyzw  // inMaterial<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r1.w, r1.w  // inAlpha<0:NaN:Inf>
+
+#line 181
+mov r0.x, r0.x  // roughness<0:Inf>
+mov r3.x, cb4[0].z  // threshold<0>
+mov r3.y, cb4[3].y  // coefficient<0>
+mov r3.z, -r3.x
+add r3.z, r0.x, r3.z
+mul r3.y, r3.z, r3.y
+add r3.y, r3.x, r3.y  // outroughness<0:NaN:Inf>
+ge r3.x, r0.x, r3.x
+movc r3.x, r3.x, l(1.000000), l(0)
+mul r1.w, r1.w, r3.x  // mask<0:NaN:Inf>
+mov r3.x, -r0.x
+add r3.x, r3.x, r3.y
+mul r1.w, r1.w, r3.x
+add r0.x, r0.x, r1.w  // outAttenuateMaterial<0:NaN:Inf>
+mov r0.yzw, r0.yyzw  // outAttenuateMaterial<1:Inf,2:Inf,3:Inf>
+
+#line 312
+mov r0.xyzw, r0.xyzw  // NAttenuateRoughness_attenuateRoughness_outAttenuateMaterial<0:NaN:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 300
+mov r2.xyz, r2.xyzx  // NAttenuateAlbedo_attenuateAlbedo_inAlbedo<0:Inf,1:Inf,2:Inf>
+mov r1.xyz, r1.xyzx  // NAttenuateAlbedo_attenuateAlbedo_inAlpha<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+nop 
+mov r2.xyz, r2.xyzx  // inAlbedo<0:Inf,1:Inf,2:Inf>
+mov r1.xyz, r1.xyzx  // inAlpha<0:NaN:Inf,0:NaN:Inf,0:NaN:Inf>
+
+#line 138
+mul r3.xyz, r2.xyzx, cb4[0].xxxx
+mov r4.xyz, -r2.xyzx
+add r3.xyz, r3.xyzx, r4.xyzx
+mul r1.xyz, r1.xyzx, r3.xyzx
+add r1.xyz, r1.xyzx, r2.xyzx  // outAttenuateAlbedo<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 302
+mov r1.xyz, r1.xyzx  // NAttenuateAlbedo_attenuateAlbedo_outAttenuateAlbedo<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r1.xyz, r1.xyzx  // NGammaEncodeF3_gammaEncode_inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+nop 
+mov r1.xyz, r1.xyzx  // inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 237
+nop 
+mov r1.xyz, r1.xyzx  // linearRGB<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 24
+ge r3.xyz, l(0.003131, 0.003131, 0.003131, 0.000000), r1.xyzx
+movc r3.xyz, r3.xyzx, l(1.000000,1.000000,1.000000,0), l(0,0,0,0)  // mask<0:[-0f,1f],1:[-0f,1f],2:[-0f,1f]>
+mul r4.xyz, r1.xyzx, l(12.920000, 12.920000, 12.920000, 0.000000)
+mul r4.xyz, r3.xyzx, r4.xyzx
+mov r3.xyz, -r3.xyzx
+add r3.xyz, r3.xyzx, l(1.000000, 1.000000, 1.000000, 0.000000)
+max r1.xyz, r1.xyzx, l(0.000010, 0.000010, 0.000010, 0.000000)
+log r1.xyz, r1.xyzx
+mul r1.xyz, r1.xyzx, l(0.416667, 0.416667, 0.416667, 0.000000)
+exp r1.xyz, r1.xyzx
+mul r1.xyz, r1.xyzx, l(1.055000, 1.055000, 1.055000, 0.000000)
+add r1.xyz, r1.xyzx, l(-0.055000, -0.055000, -0.055000, 0.000000)
+mul r1.xyz, r1.xyzx, r3.xyzx
+add r2.xyz, r1.xyzx, r4.xyzx  // GammaCorrection<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 237
+mov r2.xyz, r2.xyzx  // outColorSRGB<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+
+#line 305
+mov r2.xyz, r2.xyzx  // NGammaEncodeF3_gammaEncode_outColorSRGB<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.xyz, r2.xyzx  // NCalculateFinalColor_calculateFinalColor_inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.w, r2.w  // NCalculateFinalColor_calculateFinalColor_insRGBAlpha<0:Inf>
+nop 
+mov r2.xyz, r2.xyzx  // inColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.w, r2.w  // insRGBAlpha<0:Inf>
+
+#line 202
+mov r2.xyz, r2.xyzx  // outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r2.w, r2.w  // outColor<3:Inf>
+
+#line 307
+mov r2.xyzw, r2.xyzw  // NCalculateFinalColor_calculateFinalColor_outColor<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:Inf>
+mov o0.xyzw, r2.xyzw  // outColorAlbedo<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:Inf>
+
+#line 312
+mov o1.xyzw, r0.xyzw  // outColorMaterial<0:NaN:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 249
+ret 
+// Approximately 143 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

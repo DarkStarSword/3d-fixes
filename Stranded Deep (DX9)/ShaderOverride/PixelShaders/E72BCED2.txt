@@ -1,0 +1,50 @@
+// CRC32: E72BCED2 | Unity headers extracted from BeamTeamGodRays.shader
+// Shader "Beam Team/Post Effects/God Rays" {
+//   Properties {
+//    _MainTex ("Base", 2D) = "" { }
+//    _ColorBuffer ("Color", 2D) = "" { }
+//   }
+//   Fallback Off
+//   SubShader 1/1 {
+//     Pass 2/3 {
+//       ZTest Always
+//       ZWrite Off
+//       Cull Off
+//       Fog { Mode Off }
+//       GpuProgramID 109448
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           SetTexture 0 [_MainTex] 2D 0
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c0, 0.166666672, 0, 0, 0
+    dcl_texcoord_pp v0.xy
+    dcl_texcoord2_pp v1.xy // Replaced with stereoised output from vertex shader
+    dcl_2d s0
+    mov r0.xy, v1
+    add_pp r0.xy, r0, v0
+    add_pp r1.xy, r0, v1
+    add_pp r2.xy, r1, v1
+    add_pp r3.xy, r2, v1
+    add_pp r4.xy, r3, v1
+    texld r5, v0, s0
+    texld r0, r0, s0
+    texld r1, r1, s0
+    texld r2, r2, s0
+    texld r3, r3, s0
+    texld r4, r4, s0
+    add r0, r0, r5
+    add r0, r1, r0
+    add r0, r2, r0
+    add r0, r3, r0
+    add r0, r4, r0
+    mul r0, r0, c0.x
+    mov oC0, r0

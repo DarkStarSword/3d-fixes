@@ -1,0 +1,135 @@
+// CRC32: 568E3E6A | Unity headers extracted from Refractive.shader
+// Shader "Transparent/Refractive" {
+//   Properties {
+//    _MainTex ("Base (RGB), Alpha (A)", 2D) = "white" { }
+//    _BumpMap ("Normal Map (RGB)", 2D) = "bump" { }
+//    _Mask ("Specularity (R), Shininess (G), Refraction (B)", 2D) = "black" { }
+//    _Color ("Color Tint", Color) = (1,1,1,1)
+//    _Specular ("Specular Color", Color) = (0,0,0,0)
+//    _Focus ("Focus", Range(-100,100)) = -100
+//    _Shininess ("Shininess", Range(0.01,1)) = 0.2
+//   }
+//   Fallback Off
+//   SubShader 1/4 {
+//     LOD 500
+//     Tags { "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//     GrabPass {
+//       Name "BASE"
+//       Tags { "LIGHTMODE"="Always" }
+//      }
+//     Pass 2/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "QUEUE"="Transparent+1" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//       ZWrite Off
+//       Cull Off
+//       Blend SrcAlpha One
+//       AlphaTest Greater 0
+//       ColorMask RGB
+//       GpuProgramID 88305
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL_COOKIE" }
+//           Matrix 0 [_LightMatrix0] 2
+//           Vector 5 [_Color]
+//           Float 8 [_Focus]
+//           Vector 7 [_GrabTexture_TexelSize]
+//           Vector 4 [_LightColor0]
+//           Float 9 [_Shininess]
+//           Vector 6 [_Specular]
+//           Vector 2 [_WorldSpaceCameraPos]
+//           Vector 3 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_GrabTexture] 2D 1
+//           SetTexture 2 [_MainTex] 2D 2
+//           SetTexture 3 [_BumpMap] 2D 3
+//           SetTexture 4 [_Mask] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c10, 2, -1, 0, 1
+    def c11, 250, 4, 0, 0
+    dcl_texcoord v1.xy
+    dcl_texcoord1_pp v2.xyz
+    dcl_texcoord2_pp v3.xyz
+    dcl_texcoord3_pp v4.xyz
+    dcl_texcoord4 v5.xyz
+    dcl_color v0
+    dcl_texcoord6 v6
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Transparent_Refractive/fp/568E3E6A.txt
+mov r30, c2
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    texld_pp r0, v1, s3
+    mad_pp r1.x, r0.w, c10.x, c10.y
+    mad_pp r1.y, r0.y, c10.x, c10.y
+    dp2add_sat_pp r1.w, r1, r1, c10.z
+    add_pp r1.w, -r1.w, c10.w
+    rsq_pp r1.w, r1.w
+    rcp_pp r1.z, r1.w
+    mul_pp r0.xy, r1, c7
+    mul r0.xy, r0, c8.x
+    mad r0.xy, r0, v6.z, v6
+    dp3_pp r2.x, v2, r1
+    dp3_pp r2.y, v3, r1
+    dp3_pp r2.z, v4, r1
+    nrm_pp r1.xyz, r2
+    dp3_pp r1.w, c3, r1
+    add_pp r2.x, r1.w, r1.w
+    max_pp r2.y, r1.w, c10.z
+    mad_pp r1.xyz, r1, -r2.x, c3
+    add r3.xyz, -v5, r30
+    nrm_pp r4.xyz, r3
+    dp3_pp r1.x, -r4, r1
+    max_pp r2.x, r1.x, c10.z
+    mov r0.zw, v6
+    mov r1.xyz, v5
+    mov_pp r1.w, c10.w
+    dp4 r3.x, c0, r1
+    dp4 r3.y, c1, r1
+    texld_pp r1, v1, s4
+    texldp_pp r0, r0, s1
+    texld_pp r4, v1, s2
+    texld_pp r3, r3, s0
+    mul_pp r0.w, r1.y, c9.x
+    mad_pp r0.w, r0.w, c11.x, c11.y
+    pow_pp r1.y, r2.x, r0.w
+    mul_pp r0.w, r1.x, r1.y
+    mul_pp r3.xyz, r0.w, c6
+    mul r4.xyz, r4, v0
+    mad r0.xyz, c5, r0, -r4
+    mad_pp r0.xyz, r1.z, r0, r4
+    mad_pp r0.xyz, r0, r2.y, r3
+    mul_pp r0.xyz, r0, c4
+    add_pp r0.w, r3.w, r3.w
+    mul_pp r0.xyz, r0.w, r0
+    mul r1.x, v0.w, c5.w
+    mul_pp r0.w, r4.w, r1.x
+    mov_pp oC0, r0

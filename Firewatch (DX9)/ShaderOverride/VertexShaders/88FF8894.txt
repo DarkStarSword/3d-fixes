@@ -1,0 +1,276 @@
+// CRC32: 88FF8894 | Matched 2 variants of 1 shaders: TMPro/Distance Field
+// 
+//    Unity headers extracted from TMPro_SDF.shader
+//    Shader "TMPro/Distance Field" {
+//      Properties {
+//       _FaceTex ("Face Texture", 2D) = "white" { }
+//       _FaceUVSpeedX ("Face UV Speed X", Range(-5,5)) = 0
+//       _FaceUVSpeedY ("Face UV Speed Y", Range(-5,5)) = 0
+//       _FaceColor ("Face Color", Color) = (1,1,1,1)
+//       _FaceDilate ("Face Dilate", Range(-1,1)) = 0
+//       _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+//       _OutlineTex ("Outline Texture", 2D) = "white" { }
+//       _OutlineUVSpeedX ("Outline UV Speed X", Range(-5,5)) = 0
+//       _OutlineUVSpeedY ("Outline UV Speed Y", Range(-5,5)) = 0
+//       _OutlineWidth ("Outline Thickness", Range(0,1)) = 0
+//       _OutlineSoftness ("Outline Softness", Range(0,1)) = 0
+//       _Bevel ("Bevel", Range(0,1)) = 0.5
+//       _BevelOffset ("Bevel Offset", Range(-0.5,0.5)) = 0
+//       _BevelWidth ("Bevel Width", Range(-0.5,0.5)) = 0
+//       _BevelClamp ("Bevel Clamp", Range(0,1)) = 0
+//       _BevelRoundness ("Bevel Roundness", Range(0,1)) = 0
+//       _LightAngle ("Light Angle", Range(0,6.28319)) = 3.1416
+//       _SpecularColor ("Specular", Color) = (1,1,1,1)
+//       _SpecularPower ("Specular", Range(0,4)) = 2
+//       _Reflectivity ("Reflectivity", Range(5,15)) = 10
+//       _Diffuse ("Diffuse", Range(0,1)) = 0.5
+//       _Ambient ("Ambient", Range(1,0)) = 0.5
+//       _BumpMap ("Normal map", 2D) = "bump" { }
+//       _BumpOutline ("Bump Outline", Range(0,1)) = 0
+//       _BumpFace ("Bump Face", Range(0,1)) = 0
+//       _ReflectFaceColor ("Reflection Color", Color) = (0,0,0,1)
+//       _ReflectOutlineColor ("Reflection Color", Color) = (0,0,0,1)
+//       _Cube ("Reflection Cubemap", CUBE) = "black" { }
+//       _EnvMatrixRotation ("Texture Rotation", Vector) = (0,0,0,0)
+//       _UnderlayColor ("Border Color", Color) = (0,0,0,0.5)
+//       _UnderlayOffsetX ("Border OffsetX", Range(-1,1)) = 0
+//       _UnderlayOffsetY ("Border OffsetY", Range(-1,1)) = 0
+//       _UnderlayDilate ("Border Dilate", Range(-1,1)) = 0
+//       _UnderlaySoftness ("Border Softness", Range(0,1)) = 0
+//       _GlowColor ("Color", Color) = (0,1,0,0.5)
+//       _GlowOffset ("Offset", Range(-1,1)) = 0
+//       _GlowInner ("Inner", Range(0,1)) = 0.05
+//       _GlowOuter ("Outer", Range(0,1)) = 0.05
+//       _GlowPower ("Falloff", Range(1,0)) = 0.75
+//       _WeightNormal ("Weight Normal", Float) = 0
+//       _WeightBold ("Weight Bold", Float) = 0.5
+//       _ShaderFlags ("Flags", Float) = 0
+//       _ScaleRatioA ("Scale RatioA", Float) = 1
+//       _ScaleRatioB ("Scale RatioB", Float) = 1
+//       _ScaleRatioC ("Scale RatioC", Float) = 1
+//       _MainTex ("Font Atlas", 2D) = "white" { }
+//       _TextureWidth ("Texture Width", Float) = 512
+//       _TextureHeight ("Texture Height", Float) = 512
+//       _GradientScale ("Gradient Scale", Float) = 5
+//       _ScaleX ("Scale X", Float) = 1
+//       _ScaleY ("Scale Y", Float) = 1
+//       _PerspectiveFilter ("Perspective Correction", Range(0,1)) = 0.875
+//       _VertexOffsetX ("Vertex OffsetX", Float) = 0
+//       _VertexOffsetY ("Vertex OffsetY", Float) = 0
+//       _ClipRect ("Mask Coords", Vector) = (0,0,100000,100000)
+//       _MaskSoftnessX ("Mask SoftnessX", Float) = 0
+//       _MaskSoftnessY ("Mask SoftnessY", Float) = 0
+//       _StencilComp ("Stencil Comparison", Float) = 8
+//       _Stencil ("Stencil ID", Float) = 0
+//       _StencilOp ("Stencil Operation", Float) = 0
+//       _StencilWriteMask ("Stencil Write Mask", Float) = 255
+//       _StencilReadMask ("Stencil Read Mask", Float) = 255
+//      }
+//      Fallback "TMPro/Mobile/Distance Field"
+//      SubShader 1/1 {
+//        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//        Pass 1/1 {
+//          Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+//          ZTest False
+//          ZWrite Off
+//          Cull [_CullMode]
+//          Stencil {
+//             Ref [_Stencil]
+//             ReadMask [_StencilReadMask]
+//             WriteMask [_StencilWriteMask]
+//             Comp [_StencilComp]
+//             Pass [_StencilOp]
+//            }
+//          Blend One OneMinusSrcAlpha
+//          GpuProgramID 5639
+//          Program "vp" {
+//            SubProgram "d3d9 " {
+// 2:           Keywords { "BEVEL_ON" "GLOW_ON" "UNDERLAY_ON" }
+// 1:           Keywords { "GLOW_ON" "UNDERLAY_ON" }
+//              Bind "vertex" Vertex
+//              Bind "color" Color
+//              Bind "normal" Normal
+//              Bind "texcoord" TexCoord0
+//              Bind "texcoord1" TexCoord1
+//              Matrix 14 [_EnvMatrix] 3
+//              Matrix 8 [_Object2World] 3
+//              Matrix 11 [_World2Object] 3
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 4 [glstate_matrix_projection]
+//              Vector 19 [_FaceColor]
+//              Float 20 [_FaceDilate]
+//              Float 29 [_GlowOffset]
+//              Float 30 [_GlowOuter]
+//              Float 40 [_GradientScale]
+//              Vector 22 [_OutlineColor]
+//              Float 21 [_OutlineSoftness]
+//              Float 23 [_OutlineWidth]
+//              Float 43 [_PerspectiveFilter]
+//              Float 33 [_ScaleRatioA]
+//              Float 34 [_ScaleRatioB]
+//              Float 35 [_ScaleRatioC]
+//              Float 41 [_ScaleX]
+//              Float 42 [_ScaleY]
+//              Vector 18 [_ScreenParams]
+//              Float 39 [_TextureHeight]
+//              Float 38 [_TextureWidth]
+//              Vector 24 [_UnderlayColor]
+//              Float 27 [_UnderlayDilate]
+//              Float 25 [_UnderlayOffsetX]
+//              Float 26 [_UnderlayOffsetY]
+//              Float 28 [_UnderlaySoftness]
+//              Float 36 [_VertexOffsetX]
+//              Float 37 [_VertexOffsetY]
+//              Float 32 [_WeightBold]
+//              Float 31 [_WeightNormal]
+//              Vector 17 [_WorldSpaceCameraPos]
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0
+    def c44, 0, 1.5, 1, 0.5
+    def c45, 0.00122070313, 5, 0, 0
+    dcl_position v0
+    dcl_normal v1
+    dcl_color v2
+    dcl_texcoord v3
+    dcl_texcoord1 v4
+    dcl_position o0
+    dcl_color o1
+    dcl_color1 o2
+    dcl_texcoord o3.x
+    dcl_texcoord1 o4
+    dcl_texcoord2 o5
+    dcl_texcoord3 o6
+    dcl_texcoord4 o7.xyz
+    dcl_texcoord5 o8
+    dcl_texcoord6 o9
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s0
+
+texldl r31, c220.z, s0
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors TMPro_Distance Field/vp/88FF8894.txt
+mov r30, c17
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.zw, v0
+    add r0.x, c36.x, v0.x
+    add r0.y, c37.x, v0.y
+    dp4 o0.x, c0, r0
+    dp4 o0.y, c1, r0
+    dp4 o0.z, c2, r0
+    dp4 r1.x, c8, r0
+    dp4 r1.y, c9, r0
+    dp4 r1.z, c10, r0
+    dp4 r0.z, c3, r0
+    mov o6.xy, r0
+    add r0.xyw, -r1.xyzz, r30.xyzz
+    nrm r1.xyz, r0.xyww
+    mul r2.xyz, c12, v1.y
+    mad r2.xyz, c11, v1.x, r2
+    mad r2.xyz, c13, v1.z, r2
+    nrm r3.xyz, r2
+    dp3 r1.x, r3, r1
+    mov r2.xy, c18
+    mul r1.yz, r2.xxyw, c4.xxyw
+    add r1.y, r1.z, r1.y
+    mul r1.y, r1_abs.y, c41.x
+    rcp r3.x, r1.y
+    mul r1.yz, r2.xxyw, c5.xxyw
+    add r1.y, r1.z, r1.y
+    mul r1.y, r1_abs.y, c42.x
+    rcp r3.y, r1.y
+    mul r1.yz, r0.z, r3.xxyw
+    mov o0.w, r0.z
+    mul r2.xy, r1.yzzw, r1.yzzw
+    add r0.z, r2.y, r2.x
+    rsq r0.z, r0.z
+    mul r1.w, c40.x, v4_abs.y
+    mul r0.z, r0.z, r1.w
+    mul r1.w, r0.z, c44.y
+    mov r2.z, c44.z
+    add r2.x, r2.z, -c43.x
+    mul r2.x, r1.w, r2.x
+    mad r2.y, r0.z, c44.y, -r2.x
+    mad r1.x, r1_abs.x, r2.y, r2.x
+    mad r0.z, r0.z, -c44.y, r1.x
+    abs r1.x, c7.w
+    sge r1.x, -r1.x, r1.x
+    mad r2.y, r1.x, r0.z, r1.w
+    rcp r0.z, r2.y
+    sge r1.x, c44.x, v4.y
+    mov r2.x, c31.x
+    add r1.w, -r2.x, c32.x
+    mad r1.x, r1.x, r1.w, c31.x
+    mov r2.x, c33.x
+    mul r1.w, r2.x, c20.x
+    mul r1.w, r1.w, c44.w
+    rcp r3.x, c40.x
+    mad r2.w, r1.x, r3.x, r1.w
+    add r1.x, -r2.w, c44.w
+    mad o5.z, r0.z, c44.w, r1.x
+    mul r0.z, r0.z, c44.w
+    mad r1.x, c23.x, -r2.x, r2.z
+    mad r1.x, c21.x, -r2.x, r1.x
+    mov r2.x, c34.x
+    mad r1.w, c29.x, -r2.x, r2.z
+    mad r1.w, c30.x, -r2.x, r1.w
+    min r1.x, r1.w, r1.x
+    mad r0.z, r1.x, c44.w, -r0.z
+    add o5.x, -r2.w, r0.z
+    mov o5.yw, r2
+    mul o1, c19, v2
+    mul o2.w, c22.w, v2.w
+    mul r0.z, c24.w, v2.w
+    mul o9.xyz, r0.z, c24
+    mov o9.w, r0.z
+    mov r1.x, c35.x
+    mul r0.z, r1.x, c28.x
+    mad r0.z, r0.z, r2.y, c44.z
+    rcp r0.z, r0.z
+    mul r0.z, r0.z, r2.y
+    lrp r1.w, r0.z, -r2.w, -c44.w
+    mul r2.x, r1.x, c27.x
+    mul r2.x, r0.z, r2.x
+    mov o8.z, r0.z
+    mad o8.w, r2.x, -c44.w, r1.w
+    frc r0.z, v4.x
+    add r1.w, -r0.z, v4.x
+    mul o4.w, r0.z, c45.y
+    mul o4.z, r1.w, c45.x
+    rcp r2.z, r1.y
+    rcp r2.w, r1.z
+    mul o6.zw, r2, c44.w
+    dp3 o7.x, c14, r0.xyww
+    dp3 o7.y, c15, r0.xyww
+    dp3 o7.z, c16, r0.xyww
+    mul r0.x, r1.x, c25.x
+    mul r0.x, -r0.x, c40.x
+    rcp r0.y, c38.x
+    mul r0.x, r0.y, r0.x
+    mul r0.z, r1.x, c26.x
+    mul r0.z, -r0.z, c40.x
+    rcp r0.w, c39.x
+    mul r0.y, r0.w, r0.z
+    add o8.xy, r0, v3
+    mov o2.xyz, c22
+    mov o3.x, v2.w
+    mov o4.xy, v3

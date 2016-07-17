@@ -1,0 +1,481 @@
+// (FNV 944944f802088d72) HUD: Crosshair, Target icons and part of the ammo info
+// (FNV c0a2b1d790493cb2) HUD - waypoint circle on map
+// (FNV edae0f70c37e2627) HUD - left/right arrows in setting menu
+
+cbuffer cVSObject : register(b5)
+{
+
+  struct
+  {
+    float4x4 m_viewWorld;
+    float4x4 m_world;
+    float4 m_useWeightCount;
+    float4 m_localParam[4];
+  } g_vsObject : packoffset(c0);
+
+}
+
+cbuffer cVSLight : register(b3)
+{
+
+  struct
+  {
+    float4 m_lightParams[11];
+  } g_vsLight : packoffset(c0);
+
+}
+
+cbuffer cVSMaterial : register(b4)
+{
+
+  struct
+  {
+    float4 m_materials[8];
+  } g_vsMaterial : packoffset(c0);
+
+}
+
+cbuffer cVSWork : register(b7)
+{
+
+  struct
+  {
+    float4x4 m_viewInverse;
+    float4x4 m_matrix[8];
+  } g_vsWork : packoffset(c0);
+
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+#include <ShaderFixes/crosshair.hlsl>
+
+// Will need this later to find icon centers (but first need to decode the
+// vertex buffer):
+float4 calc_pos(float3 v0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6;
+
+  r4.xyz = g_vsObject.m_localParam[1].xyz;
+  r5.w = 1;
+  r5.xyz = v0.xyz;
+  r6.x = dot(r5.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
+  r6.y = dot(r5.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
+  r6.z = dot(r5.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
+  r6.w = dot(r5.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
+  r5.x = dot(r6.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
+  r5.y = dot(r6.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
+  r5.z = dot(r6.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
+  r5.w = dot(r6.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
+  r3.xyz = r5.xyz * r3.xyz;
+  r5.xyz = r3.xyz + r4.xyz;
+
+  return r5.xyzw;
+}
+
+void main( 
+  float3 v0 : POSITION0,
+  float4 v1 : COLOR0,
+  float2 v2 : TEXCOORD0,
+  out float4 o0 : SV_Position0,
+  out float4 o1 : COLOR0,
+  out float2 o2 : TEXCOORD0,
+  out float2 p2 : TEXCOORD1,
+  out float2 o3 : TEXCOORD2,
+  out float offset : TEXCOORD3 // new output to fix opacity in pixel shader for waypoint circle on map
+  )
+{
+  float4 r0,r1,r2,r3,r4,r5,r6;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = v1.xyzw;
+  r1.xy = v2.xy;
+  r2.xyzw = g_vsLight.m_lightParams[1].xyzw;
+  r3.xyz = g_vsObject.m_localParam[0].xyz;
+  r4.xyz = g_vsObject.m_localParam[1].xyz;
+  r5.w = 1;
+  r5.xyz = v0.xyz;
+  r6.x = dot(r5.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
+  r6.y = dot(r5.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
+  r6.z = dot(r5.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
+  r6.w = dot(r5.xyzw, g_vsObject.m_world._m03_m13_m23_m33);
+  r5.x = dot(r6.xyzw, g_vsWork.m_matrix[0]._m00_m10_m20_m30);
+  r5.y = dot(r6.xyzw, g_vsWork.m_matrix[0]._m01_m11_m21_m31);
+  r5.z = dot(r6.xyzw, g_vsWork.m_matrix[0]._m02_m12_m22_m32);
+  r5.w = dot(r6.xyzw, g_vsWork.m_matrix[0]._m03_m13_m23_m33);
+  r3.xyz = r5.xyz * r3.xyz;
+  r5.xyz = r3.xyz + r4.xyz;
+  r0.xyzw = r2.xyzw * r0.xyzw;
+  r1.zw = g_vsMaterial.m_materials[3].xy;
+  r2.xy = g_vsMaterial.m_materials[3].zw;
+  r2.zw = g_vsMaterial.m_materials[4].xy;
+  r3.xy = -r1.zw;
+  r3.xy = r3.xy + r1.xy;
+  r2.zw = r3.xy * r2.zw;
+  r1.zw = r2.zw + r1.zw;
+  r1.zw = r1.zw + r2.xy;
+  r2.xy = g_vsMaterial.m_materials[1].zw;
+  r2.zw = g_vsMaterial.m_materials[2].xy;
+  r3.xy = g_vsMaterial.m_materials[2].zw;
+  r3.zw = -r2.xy;
+  r3.zw = r3.zw + r1.xy;
+  r3.xy = r3.zw * r3.xy;
+  r2.xy = r3.xy + r2.xy;
+  r2.xy = r2.xy + r2.zw;
+  r2.zw = g_vsMaterial.m_materials[0].xy;
+  r3.xy = g_vsMaterial.m_materials[0].zw;
+  r3.zw = g_vsMaterial.m_materials[1].xy;
+  r4.xy = -r2.zw;
+  r1.xy = r4.xy + r1.xy;
+  r1.xy = r1.xy * r3.zw;
+  r1.xy = r1.xy + r2.zw;
+  r1.xy = r1.xy + r3.xy;
+  o2.xy = r1.xy;
+  p2.xy = r2.xy;
+  o3.xy = r1.zw;
+  o0.xyzw = r5.xyzw;
+  o1.xyzw = r0.xyzw;
+
+float4 stereo = StereoParams.Load(0);
+float4 params = IniParams.Load(0);
+float4 filter = IniParams.Load(int2(1, 0));
+float tex_filter = filter.x;
+float aiming = filter.z;
+
+int action = 0;
+
+if (filter.y && all(abs(o0.xy) >= 1.0)) {
+	// Disable cutscene pause background so we can fix effects:
+	action = -1;
+} else if (o0.w != 1.0) {
+	// Some HUD elements are in 3D, but way too far back with a reasonable
+	// convergence.
+	action = 4;
+} else if (tex_filter == 2) {
+	// crosshair, or possibly other floating icon
+	if (aiming) {
+		action = 2;
+	} else {
+		action = 3;
+	}
+} else if (tex_filter == 3) {
+	// Floating icon
+	action = 3;
+} else if (tex_filter == 4) {
+	// Generic four square texture used for crosshair, menus, targets in the HUD, etc
+	// Check which corner the texcoord is in:
+	if (v2.x <= 0.5 && v2.y <= 0.5) {
+		// Menus
+		action = 1;
+	} else if (v2.x <= 0.5) {
+		// Loading Squares
+		action = 1;
+	} else if (v2.x > 0.5 && v2.y <= 0.5) {
+		// Four bright squares on the crosshair
+		if (aiming) {
+			action = 2;
+		} else {
+			action = 1;
+		}
+	} else { // else solid white texture
+		action = 1;
+	}
+} else {
+	action = 1;
+}
+
+offset = 0;
+
+switch (action) {
+	case -1: // Disable
+		o0 = 0;
+		break;
+	case 1: // Move to 2D HUD depth
+	case 3: // Doing this for now until I rework texture hashes to make track_texture_updates less expensive
+		offset = stereo.x * params.x * o0.w;
+		o0.x += offset;
+		break;
+	case 2: // Auto adjust from center of screen
+		offset = adjust_from_depth_buffer(0, 0) * o0.w;
+		o0.x += offset;
+		break;
+	// This case is too unreliable without using track_texture_updates, and
+	// that has a significant performance cost due to the way we designed
+	// texture hashes. I have plans to rework it, but that will mean
+	// changing the hashes again, so until then forget about this case:
+	//case 3: // Adjust floating icon
+	//	// TODO: Find icon center if possible
+	//	offset = adjust_from_depth_buffer(o0.x, o0.y) * o0.w;
+	//	o0.x += offset;
+	//	break;
+	case 4: // Override convergence for 3D HUD
+		// This formula removes the convergence from the driver and
+		// replaces it with a custom one:
+		if (o0.w < params.y) { // 3D main menu after progressing a little way into the game
+			o0.x += stereo.x * (stereo.y - params.w);
+			// The offset to fix the opacity is just the custom convergence formula:
+			offset = (stereo.x * (o0.w - params.w)) / o0.w;
+		} else {
+			o0.x += stereo.x * (stereo.y - params.z);
+			offset = (stereo.x * (o0.w - params.z)) / o0.w;
+		}
+		break;
+}
+
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//   using 3Dmigoto v1.2.25 on Tue Jan 19 09:16:04 2016
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer cVSObject
+// {
+//
+//   struct VSObject
+//   {
+//       
+//       float4x4 m_viewWorld;          // Offset:    0
+//       float4x4 m_world;              // Offset:   64
+//       float4 m_useWeightCount;       // Offset:  128
+//       float4 m_localParam[4];        // Offset:  144
+//
+//   } g_vsObject;                      // Offset:    0 Size:   208
+//
+// }
+//
+// cbuffer cVSLight
+// {
+//
+//   struct VSLight
+//   {
+//       
+//       float4 m_lightParams[11];      // Offset:    0
+//
+//   } g_vsLight;                       // Offset:    0 Size:   176
+//
+// }
+//
+// cbuffer cVSMaterial
+// {
+//
+//   struct VSMaterial
+//   {
+//       
+//       float4 m_materials[8];         // Offset:    0
+//
+//   } g_vsMaterial;                    // Offset:    0 Size:   128
+//
+// }
+//
+// cbuffer cVSWork
+// {
+//
+//   struct VSWork
+//   {
+//       
+//       float4x4 m_viewInverse;        // Offset:    0
+//       float4x4 m_matrix[8];          // Offset:   64
+//
+//   } g_vsWork;                        // Offset:    0 Size:   576
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// cVSLight                          cbuffer      NA          NA    3        1
+// cVSMaterial                       cbuffer      NA          NA    4        1
+// cVSObject                         cbuffer      NA          NA    5        1
+// cVSWork                           cbuffer      NA          NA    7        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// POSITION                 0   xyz         0     NONE   float   xyz 
+// COLOR                    0   xyzw        1     NONE   float   xyzw
+// TEXCOORD                 0   xy          2     NONE   float   xy  
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float   xyzw
+// COLOR                    0   xyzw        1     NONE   float   xyzw
+// TEXCOORD                 0   xy          2     NONE   float   xy  
+// TEXCOORD                 1     zw        2     NONE   float     zw
+// TEXCOORD                 2   xy          3     NONE   float   xy  
+//
+vs_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb5[11], immediateIndexed
+dcl_constantbuffer cb3[2], immediateIndexed
+dcl_constantbuffer cb4[5], immediateIndexed
+dcl_constantbuffer cb7[8], immediateIndexed
+dcl_input v0.xyz
+dcl_input v1.xyzw
+dcl_input v2.xy
+dcl_output_siv o0.xyzw, position
+dcl_output o1.xyzw
+dcl_output o2.xy
+dcl_output o2.zw
+dcl_output o3.xy
+dcl_temps 7
+
+#line 122 "d:\work\master\git_clone\_intermediate\win64\GrSystemShaders_dx11_win64\Release\Draw2D_Ui2_BL_vs.hlsl"
+mov r0.xyzw, v1.xyzw  // inColor<0,1,2,3>
+
+#line 130
+mov r0.xyzw, r0.xyzw  // NTransformInput_transform_inColor<0,1,2,3>
+mov r1.xy, v2.xyxx  // NTransformInput_transform_inUV<0,1>
+nop 
+mov r0.xyzw, r0.xyzw  // inColor<0,1,2,3>
+mov r1.xy, r1.xyxx  // inUV<0,1>
+
+#line 37
+nop 
+
+#line 16
+mov r2.xyzw, cb3[1].xyzw  // GetBaseColor<0,1,2,3>
+
+#line 37
+mov r2.xyzw, r2.xyzw  // baseColor<0,1,2,3>
+nop 
+nop 
+
+#line 53
+mov r3.xyz, cb5[9].xyzx  // GetViewmapScale<0,1,2>
+
+#line 39
+mov r3.xyz, r3.xyzx  // viewMapScale<0,1,2>
+nop 
+
+#line 58
+mov r4.xyz, cb5[10].xyzx  // GetViewmapOffset<0,1,2>
+
+#line 40
+mov r4.xyz, r4.xyzx  // viewMapOffset<0,1,2>
+
+#line 43
+nop 
+mov r5.w, l(1.000000)  // vec<3: 1f>
+
+#line 408
+mov r5.xyz, v0.xyzx
+dp4 r6.x, r5.xyzw, cb5[4].xyzw  // ApplyMatrixT<0:NaN:Inf>
+dp4 r6.y, r5.xyzw, cb5[5].xyzw  // ApplyMatrixT<1:NaN:Inf>
+dp4 r6.z, r5.xyzw, cb5[6].xyzw  // ApplyMatrixT<2:NaN:Inf>
+dp4 r6.w, r5.xyzw, cb5[7].xyzw  // ApplyMatrixT<3:NaN:Inf>
+
+#line 45
+nop 
+
+#line 408
+dp4 r5.x, r6.xyzw, cb7[4].xyzw  // ApplyMatrixT<0:NaN:Inf>
+dp4 r5.y, r6.xyzw, cb7[5].xyzw  // ApplyMatrixT<1:NaN:Inf>
+dp4 r5.z, r6.xyzw, cb7[6].xyzw  // ApplyMatrixT<2:NaN:Inf>
+dp4 r5.w, r6.xyzw, cb7[7].xyzw  // ApplyMatrixT<3:NaN:Inf>
+
+#line 45
+mov r5.xyzw, r5.xyzw  // outPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:NaN:Inf>
+mul r3.xyz, r3.xyzx, r5.xyzx
+add r5.xyz, r4.xyzx, r3.xyzx  // outPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mul r0.xyzw, r0.xyzw, r2.xyzw  // outColor<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r1.xy, r1.xyxx  // outUV<0,1>
+
+#line 132
+mov r5.xyz, r5.xyzx  // NTransformInput_transform_outPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf>
+mov r5.w, r5.w  // NTransformInput_transform_outPosition<3:NaN:Inf>
+mov r0.xyzw, r0.xyzw  // NTransformInput_transform_outColor<0:Inf,1:Inf,2:Inf,3:Inf>
+mov r1.xy, r1.xyxx  // NTransformInput_transform_outUV<0,1>
+
+#line 148
+mov r1.xy, r1.xyxx  // NTransformUV_transformMaskUV_inUV<0,1>
+mov r1.zw, cb4[3].xxxy  // NTransformUV_transformMaskUV_inCenter<0,1>
+mov r2.xy, cb4[3].zwzz  // NTransformUV_transformMaskUV_inShift<0,1>
+mov r2.zw, cb4[4].xxxy  // NTransformUV_transformMaskUV_inRepeart<0,1>
+nop 
+mov r1.xy, r1.xyxx  // inUV<0,1>
+mov r1.zw, r1.zzzw  // inCenter<0,1>
+mov r2.xy, r2.xyxx  // inShift<0,1>
+mov r2.zw, r2.zzzw  // inRepeart<0,1>
+
+#line 96
+mov r3.xy, -r1.zwzz
+add r3.xy, r1.xyxx, r3.xyxx
+mul r2.zw, r2.zzzw, r3.xxxy
+add r1.zw, r1.zzzw, r2.zzzw
+add r1.zw, r2.xxxy, r1.zzzw  // outUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 152
+mov r1.zw, r1.zzzw  // NTransformUV_transformMaskUV_outUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 141
+mov r2.xy, cb4[1].zwzz  // NTransformUV_transformLayerUV_inCenter<0,1>
+mov r2.zw, cb4[2].xxxy  // NTransformUV_transformLayerUV_inShift<0,1>
+mov r3.xy, cb4[2].zwzz  // NTransformUV_transformLayerUV_inRepeart<0,1>
+nop 
+mov r2.xy, r2.xyxx  // inCenter<0,1>
+mov r2.zw, r2.zzzw  // inShift<0,1>
+mov r3.xy, r3.xyxx  // inRepeart<0,1>
+
+#line 96
+mov r3.zw, -r2.xxxy
+add r3.zw, r1.xxxy, r3.zzzw
+mul r3.xy, r3.xyxx, r3.zwzz
+add r2.xy, r2.xyxx, r3.xyxx
+add r2.xy, r2.zwzz, r2.xyxx  // outUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 144
+mov r2.xy, r2.xyxx  // NTransformUV_transformLayerUV_outUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 134
+mov r2.zw, cb4[0].xxxy  // NTransformUV_transformBaseUV_inCenter<0,1>
+mov r3.xy, cb4[0].zwzz  // NTransformUV_transformBaseUV_inShift<0,1>
+mov r3.zw, cb4[1].xxxy  // NTransformUV_transformBaseUV_inRepeart<0,1>
+nop 
+mov r2.zw, r2.zzzw  // inCenter<0,1>
+mov r3.xy, r3.xyxx  // inShift<0,1>
+mov r3.zw, r3.zzzw  // inRepeart<0,1>
+
+#line 96
+mov r4.xy, -r2.zwzz
+add r1.xy, r1.xyxx, r4.xyxx
+mul r1.xy, r3.zwzz, r1.xyxx
+add r1.xy, r2.zwzz, r1.xyxx
+add r1.xy, r3.xyxx, r1.xyxx  // outUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 137
+mov r1.xy, r1.xyxx  // NTransformUV_transformBaseUV_outUV<0:NaN:Inf,1:NaN:Inf>
+mov o2.xy, r1.xyxx  // outBaseUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 144
+mov o2.zw, r2.xxxy  // outLayerUV<0:NaN:Inf,1:NaN:Inf>
+
+#line 152
+mov o3.xy, r1.zwzz  // outMaskUV<0:NaN:Inf,1:NaN:Inf>
+mov o0.xyzw, r5.xyzw  // outPosition<0:NaN:Inf,1:NaN:Inf,2:NaN:Inf,3:NaN:Inf>
+mov o1.xyzw, r0.xyzw  // outColor<0:Inf,1:Inf,2:Inf,3:Inf>
+
+#line 110
+ret 
+// Approximately 84 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

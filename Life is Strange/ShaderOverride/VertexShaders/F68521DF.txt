@@ -55,7 +55,13 @@
     dcl_position o6
 
 def c220, 0, 1, 0.0625, 0.5
+def c221, 50, 0, 0, 0
 dcl_2d s3
+
+dcl_2d s2 // Copy of SceneColorTexture, depth is in w
+defi i0, 255, 0, 0, 0
+def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
+def c40, 0.0625, 0, 9.99999975e-006, 100000
 
     mul r0, c7, v0.y
     mad r0, c6, v0.x, r0
@@ -159,16 +165,115 @@ dcl_2d s3
     mov o5.xyz, r0
     mov o5.w, r3.w
 
-// This shader is responsible for both the sun (which is already correct) and
-// the glow around the sun (which varies wildly with convergence). In order to
-// fix this for both, I'm doing a simple skybox depth correction that moves
-// both of them to infinty independent of their original placements (and since
-// the sun is already there it won't move), which turns out to simplify down to
-// X += separation * convergence
+mov r20, c200
+if_eq r20.y, c220.x
+	// move based on depth buffer:
+	mov r30.x, c220.y
+else
+	// move to infintiy:
+	mov r30.x, c220.w
+endif
 
 texldl r31, c220.z, s3
-mad r3.x, r31.x, r31.y, r3.x
+
+if_eq r30.x, c220.w
+	// This shader is responsible for both the sun (which is already correct) and
+	// the glow around the sun (which varies wildly with convergence). In order to
+	// fix this for both, I'm doing a simple skybox depth correction that moves
+	// both of them to infinty independent of their original placements (and since
+	// the sun is already there it won't move), which turns out to simplify down to
+	// X += separation * convergence
+
+	mad r3.x, r31.x, r31.y, r3.x
+endif
+if_eq r30.x, c220.y
+	// Auto depth: sample a number of points on the depth buffer to
+	// determine an appropriate depth for this object, starting at the near
+	// clipping plane and working towards original x + separation.
+	//
+	// You can think of this as a line in three dimensional space that
+	// starts at each eye and stretches out towards infinity. We sample 255
+	// points along this line (evenly spaced in the X axis) and compare
+	// with the depth buffer to find where the line is first intersected.
+	//
+	// Based on DarkStarSword's stereo crosshair code originally developed
+	// for Miasmata, adapted to HLSL and made to use coordinates other than
+	// (0,0), then adapted back to assembly for UE3.
+
+	// Screen depth coordinates to sample around - Just using current
+	// vertex for now. Would be better to use the center, but we can't look
+	// up other vertices and the matrices don't seem to help find it:
+	rcp r22.w, r3.w
+	mul r22.xy, r3.xy, r22.w
+
+	// near clipping plane
+	//mov r20.w, c221.x // start at 50.0
+	mov r31.w, c40.z
+	add r31.w, r31.w, -c220.y
+	add r31.w, r31.w, c150.y
+	rcp r31.w, r31.w
+	mul r20.w, r31.w, -c150.x
+
+	// offset = separation * (near - convergence) / near
+	add r31.w, r20.w, -r31.y
+	mul r20.x, r31.w, r31.x
+	rcp r31.w, r20.w
+	mul r20.x, r20.x, r31.w
+
+	// Total distance to cover
+	// distance = separation - starting X offset:
+	add r20.y, r31.x, -r20.x
+
+	// old_offset = offset
+	mov r21.x, r20.x
+
+	// Precompute some constants:
+	// separation * convergence:
+	mul r31.w, r31.x, r31.y
+	// distance / 255:
+	mul r20.z, r20.y, c227.x
+
+	rep i0
+		// offset += distance / 255:
+		add r20.x, r20.x, r20.z
+
+		// Calculate W for this adjustment amount:
+		// w = (separation * convergence) / (separation - offset):
+		add r20.w, r31.x, -r20.x
+		rcp r20.w, r20.w
+		mul r20.w, r31.w, r20.w
+
+		// sample_x = x + offset, sample_y = -y
+		mov r23.y, -r22.y
+		add r23.x, r22.x, r20.x
+		// Convert to texture coordinates (coords / 2 + 0.5):
+		mad r23.xy, r23.xy, c220.w, c220.w
+		// Sample depth buffer:
+		texldl r5, r23.xy, s2
+
+		// Ignore reads of 1.0:
+		if_ne r5.w, c220.y
+			// scale depth buffer to world Z (game dependent - look for scaling applied to
+			// the depth buffer wherever else it is used. In the case of UE3 we use
+			// MinZ_MaxZRatio, but seems to vary per game):
+			add r5.x, r5.w, -c150.y
+			add r5.y, -r5.x, c40.z
+			rcp r5.x, r5.x
+			//cmp r5.x, r5.y, c40.w, r5.x
+			mul r5.x, r5.x, c150.x
+
+			// If the sampled depth is closer than the calculated depth, exit the loop:
+			break_ge r20.w, r5.x
+		endif
+
+		// old_offset = offset
+		mov r21.x, r20.x
+	endrep
+
+	// Finally adjust the X coordinate:
+	add r31.w, r3.w, -r31.y
+	mad r3.x, -r31.w, r31.x, r3.x
+	mad r3.x, r21.x, r3.w, r3.x
+endif
 
     mov o6, r3
-
-// approximately 115 instruction slots used

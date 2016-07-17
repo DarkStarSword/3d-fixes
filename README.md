@@ -8,24 +8,56 @@ these fixes.
 [1]: http://helixmod.blogspot.com.au/
 
 ### Complete Fixes ###
-- Betrayer (Improvements on Eqzitara's fix - fixes water, god rays, etc.)
-- The Book of Unwritten Tales 2 (Fixes shadows, halos, etc.)
-- Montague's Mount (Fixes halos, shadows, etc.)
-- Dreamfall Chapters Book 1 (First ever Unity FOV correct shadow fix)
-- World of Diving (Fixed halos, shadows, etc.)
-- The Forest (Fixed halos, shadows)
-- Legends of Aethereus (Fixed halos, shadows, skybox, etc.)
-- DreadOut (Fix for missing fog after shader model upgrade, stereo cameraphone, etc.)
-- Eleusis (Fixed shadows, light shafts, etc.)
-- Stranded Deep (Fixed water, light shafts, yet another shadow pattern)
-- Life Is Strange (Fixed shadows, reflections, light shafts, bloom, etc.)
-- Miasmata (Reflections, light shafts, stereo crosshair, skybox, etc.)
-- Oddworld: New 'n' Tasty (Shadows, halos, clipping, ripple distortion, etc.)
-- Pineview Drive (Halos, shadows, sun shafts, etc.)
-- Viscera Cleanup Detail (shadows, missing UI, etc.)
+- [Betrayer](Betrayer) (Improvements on Eqzitara's fix) - fixes water, god rays, etc.
+- [The Book of Unwritten Tales 2](BoUT2) - Fixes shadows, halos, etc.
+- [Montague's Mount](Montague's Mount) - Fixes halos, shadows, etc.
+- [Dreamfall Chapters](Dreamfall Chapters) - First ever Unity FOV correct shadow fix
+- World of Diving [DX9](World of Diving (DX9)) & [DX11](World of Diving (DX11)) - Fixed halos, shadows, etc.
+- [The Forest](The Forest) - Fixed halos, shadows, reflections, parallax sand/rocks, etc.
+- [Legends of Aethereus](LegendsOfAethereus) - Fixed halos, shadows, skybox, etc.
+- [DreadOut](DreadOut) - Fix for missing fog after shader model upgrade, stereo cameraphone, etc.
+- [Eleusis](Eleusis) - Fixed shadows, light shafts, etc.
+- [Stranded Deep](Stranded Deep) - Fixed water, light shafts, yet another shadow pattern, auto-crosshair, etc.
+- [Life Is Strange](Life is Strange) - Fixed shadows, reflections, light shafts, bloom, etc.
+- [Miasmata](Miasmata) - Reflections, light shafts, stereo crosshair, skybox, etc.
+- [Oddworld: New 'n' Tasty](Oddworld New n Tasty) - Shadows, halos, clipping, ripple distortion, etc.
+- [Pineview Drive](Pineview Drive) - Halos, shadows, sun shafts, etc.
+- [The Long Dark](TheLongDark) - Halos, shadows, etc.
+- [Viscera Cleanup Detail](Viscera) - shadows, missing UI, etc.
+- [Dead or Alive 5: Last Round](Dead or Alive 5 Last Round) - water, halos, lens flares
+- [The Last Tinker: City of Colors](The Last Tinker City of Colors) - new technique to fix shadows
+- [Euro Truck Simulator 2](Euro Truck Simulator 2) - skybox, god rays, reflections
+- [Lichdom Battlemage](Lichdom Battlemage) - first every CryEngine 3 fix
+- [Mad Max](Mad Max) (Collaboration with DHR) - Fixes shadows, bloom, decals, reflections, etc.
+- [Metal Gear Solid V: The Phantom Pain](MGSV_TPP) - New 3DMigoto hooking mode, accurate specular highlight fix, etc.
+- [The Witness](The Witness) - Automatic stereo mouse cursor, reflections, etc.
+- [Firewatch](Firewatch) - First game to use the DX11 port of my Unity scripts
+- [Far Cry Primal](Far Cry Primal) - Volumetric fog / light shafts / shadow volumes, accurate specular highlights, etc.
+
+Several of my fixes can be found in the 3DMigoto repository instead:
+- [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69) - fixes pretty much everything, adds an auto HUD
+- [Witcher 3](https://github.com/bo3b/3Dmigoto/tree/master/Witcher3) (with mike_ar69 & others) - Highlight: physical lighting compute shaders
+
+### Works In Progress ###
+- [Submerged](Submerged) (UE4 3DMigoto approach WIP, fixes shadows)
+- [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar69) - fixes tile lighting compute shaders and halos
+- [Demonicon](demonicon) - Quick fix to make the game playable, fixes lights and some halos
+- [Akiba's Trip](Akiba's Trip Undead & Undressed) - Adds a toggle for an auto UI depth adjustment (unpolished)
 
 ### Minor Improvements ###
-- Far Cry 2 (Adds auto-convergence while holding RMB)
+- [Far Cry 2](Far Cry 2) - Adds auto-convergence while holding RMB
+- [Infinifactory](Infinifactory) - fixes shadows from bo3b's fix
+
+### Other Branches ###
+There's a couple of fixes that aren't in the master branch for various reasons:
+- [Crysis 3](https://github.com/DarkStarSword/3d-fixes/tree/crysis3/Crysis 3) - Assisting DHR with a few lights
+- [Glare](https://github.com/DarkStarSword/3d-fixes/tree/glare/Glare) - Was unable to resolve clipping issue on lights at the time (I should revisit this - I believe I now know how to solve this)
+
+### Templates ###
+- [Unity 4](Unity)
+- [Unity 5 DX9 Old view-space style fix](Unity5/DX9)
+- [Unity 5 DX9 New world-space style fix](Unity5/DX9-New)
+- [Unity 5 DX11 Hybrid style fix](Unity5/DX11)
 
 Misc
 ====
@@ -65,7 +97,8 @@ some of the stereo attributes that I've identified in each profile.
 ### shadertool.py ###
 This is a python tool I've started working on to parse shaders and automate
 some of the process of hacking them. It's very early and the code is not very
-pretty. At the moment it can:
+pretty. At the moment it can (this list is out of date, run with --help for all
+current features):
 - Install shaders to the ShaderOverride directory, taking care of naming the
   file correctly.
 - Convert ps_2_0 to ps_3_0 and vs_2_0 to vs_3_0, optionally adding instructions
@@ -90,6 +123,27 @@ pretty. At the moment it can:
 - Automatically fix certain types of reflective surfaces in Unreal games (those
   using a 2D DNEReflectionTexture, used in Life Is Strange).
 - Automatically fix shadows in Unreal Engine games.
+- Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
+  fog, SSAO, etc (start with the [templates](Unity) instead).
+
+### hlsltool.py ###
+This is similar to shadertool.py, but works on HLSL shaders instead. It's
+feature set is more limited than shadertool:
+- Install shaders to the ShaderFixes directory.
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
+- Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
+  fog, light shafts, etc (start with the [template](Unity/DX11) instead).
+
+### asmtool.py ###
+This is a port of shadertool.py to work with DX11 assembly shaders, (but
+internally is more similar to hlsltool and depends on both for some common
+code). It's feature set is the most limited for now:
+- Install shaders to the ShaderFixes directory.
+- Attempt to automatically fix common issues in vertex shaders where the output
+  position has been copied, often resulting in halos (Very helpful for Unity
+  games).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
@@ -105,18 +159,17 @@ Python script to parse the compiled output of Unity shaders and pull out all
 the different variants into separate files, with headers intact.
 
 ### ddsinfo.py ###
-Decodes the header on a DDS file. Use GetSampler1FromReg, GetSampler2FromReg or
+Decodes the header on a DDS file and possibly converts it to PNG (conversion
+only supported for some DDS formats, extending support as I come across new
+formats, but I kind of want to rewrite the format support to be more
+declarative).
+
+For use with Helix Mod: Use GetSampler1FromReg, GetSampler2FromReg or
 GetSampler3FromReg in a shader section of DX9Settings.ini to extract a texture
 passed to a shader, press F12 in game to dump it out as Tex1.dds, Tex2.dds or
-Tex3.dds, then use this tool to decode it's header. This doesn't (yet) convert
-it into another image format (but doing so would not be hard to add - I already
-have a version that can decompress S3 textures in my Miasmata-fixes
-repository, or you can always look for other tools to decode or show DDS files).
+Tex3.dds, then use this tool to decode it's header.
 
-The idea here is to narrow down the list of render targets in the LOG.txt when
-searching for a surface that needs to be stereoised - e.g. you can match the
-FourCC with a Format and the Width & Height (Possibly Levels - is that mip-maps
-by any chance?).
+For use with 3DMigoto: Use on .dds files dumped during frame analysis.
 
 ### interlaced2jps.py ###
 Converts an interlaced image into a jps file
@@ -139,3 +192,58 @@ Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
 ### unity_asset_extractor.py ###
 An alternative to Unity Asset Explorer, to extract assets (currently limited to
 shaders) from Unity 4 and Unity 5 games in batch.
+
+### dx11shaderanalyse.py ###
+Decodes some information in the ISGN & OSGN sections of DX11 shaders.
+
+### pyasm.py ###
+Implements shader like semantics in Python, including registers supporting
+masks and swizzles using a natural syntax, and various shader instructions.
+Useful to prototype & debug complicated algorithms.
+
+### decode_buffer.py ###
+Decodes the given buffer extracted via 3DMigoto's frame analysis feature as
+both integers and floats.
+
+### 3dvisionlive_download_button.user.js ###
+User script to add a download button to images on 3D Vision Live.
+
+### cleanup_unity_shaders.py ###
+Removes shaders from a Unity game in this git repository that are no longer
+found amongst the extracted shaders to stop a fix growing endlessly. Use only
+for games that people should not be running old versions of (like early
+access). Old shaders will still be in the git history if we need them.
+
+### compare_shader_bins.py ###
+This was a quick 'n' dirty means to repair the damage caused to a DX11 assembly
+shader by the microsoft disassembler by comparing the original and otherwise
+unmodified reassembled shader binaries to look for differences then patch
+floating point values in the assembly text to compensate. In some cases this
+may patch the wrong floating point value, but has worked remarkably well in
+practice. This script is no longer required as 3DMigoto will now auto repair
+assembly shaders when they are dumped.
+
+### extract_unreal_shaders.py ###
+Early work in progress, probably only works with Arkham Knight for now.
+Extracts shader names from the UE3 cooked shader cache. Eventually want to make
+this extract all shaders from UE3 + UE4 games to facilitate bulk fixing in
+games that only dump shaders on demand and recover some info about shaders with
+missing headers.
+
+### __profiles__ ###
+A couple of scripts to help catalogue the driver profiles and normalise the
+profile format to make it easier to compare changes between driver versions.
+
+### shaderutil.py ###
+Utility library used by shadertool and the shader database.
+
+### find_frame_analysis_candidates.py ###
+Provides statistics from a 3DMigoto frame analysis log.txt that may assist in
+selecting a suitable shader to use as a trigger to start analysis at the more
+interesting post-processing phase of the frame. Statistics include the
+percentage of draw calls and dumped render targets would be saved, as well as
+the total number of times each listed shader is used (not all shaders are
+listed), and the number of simultaneous render targets used with each listed
+shader (a series of consecutive shaders with a consistently high number of
+render targets may indicate the long and uninteresting forward rendering phase
+of the frame).

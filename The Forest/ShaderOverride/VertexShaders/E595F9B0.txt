@@ -1,0 +1,102 @@
+// CRC32: E595F9B0 | Unity headers extracted from Stars.shader
+// Shader "Hidden/uSky/Stars" {
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry+501" "IGNOREPROJECTOR"="true" "RenderType"="Background" }
+//     Pass 1/1 {
+//       Tags { "QUEUE"="Geometry+501" "IGNOREPROJECTOR"="true" "RenderType"="Background" }
+//       ZWrite Off
+//       Fog { Mode Off }
+//       Blend OneMinusDstAlpha OneMinusSrcAlpha
+//       GpuProgramID 26814
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "color" Color
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Matrix 4 [rotationMatrix] 3
+//           Float 10 [StarIntensity]
+//           Vector 7 [_Time]
+//           Vector 9 [_WorldSpaceCameraPos]
+//           Vector 8 [unity_DeltaTime]
+//         }
+//       }
+//     }
+//   }
+// }
+//
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+    def c12, 0.550299287, 0.273586661, -3.94000006, 6.5
+    def c11, 0.897907794, -0.347608536, 1, 256
+    def c13, 0.823885977, 0.0988530666, 2, 8
+    def c14, 0.922739029, -0.122108862, 2.5, -1.44000006
+    def c15, 0.800630152, -0.0889568031, 0.928771198, 0
+    def c16, 0.711673379, 0.158864424, -0.5, 5
+    def c17, 0.870537817, 0.0854845569, 0, 0
+    def c18, 0.956022382, -0.0581145398, 0, 0
+    dcl_position v0
+    dcl_color v1
+    dcl_texcoord v2
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r31, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Hidden_uSky_Stars/vp/E595F9B0.txt
+mov r30, c9
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    dp3 r0.x, c4, v0
+    dp3 r0.y, c5, v0
+    dp3 r0.z, c6, v0
+    add r0.xyz, r0, r30
+    mov r0.w, c11.z
+    dp4 o1.x, c0, r0
+    dp4 o1.y, c1, r0
+    dp4 o1.z, c2, r0
+    dp4 o1.w, c3, r0
+    max r0.x, r0.y, c15.w
+    min r0.x, r0.x, c11.z
+    mul r0.yz, v0.xxyw, c11.w
+    frc r0.yz, r0
+    add r0.z, r0.z, c11.z
+    mov r1.z, c13.z
+    mov r1.x, c7.x
+    mad r0.w, r1.x, r1.z, c8.z
+    mad r0.y, r0.z, r0.w, r0.y
+    frc r0.y, r0.y
+    mul r0.y, r0.y, c13.w
+    frc r0.z, r0.y
+    add r0.y, r0.y, -r0.z
+    mul r0.z, r0.z, c14.z
+    mova a0.x, r0.y
+    mad r0.y, r0.z, c11[a0.x].y, c11[a0.x].x
+    mad r0.z, v1.w, c12.z, c12.w
+    add r0.z, -r0.z, c14.w
+    mul r0.z, r0.z, c15.z
+    exp r0.z, r0.z
+    mul r1.w, r0.z, r0.y
+    mul r1.xyz, r1.w, v1
+    mul r1, r1, c10.x
+    mul o2, r0.x, r1
+    add r0.xy, v2, c16.z
+    mul o0.xy, r0, c16.w

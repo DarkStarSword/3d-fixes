@@ -1,0 +1,253 @@
+// 3DMigoto: e63d825b6a667f3c |    Unity headers extracted from SSAOPro_v2.shader
+//    Shader "Hidden/SSAO Pro V2" {
+//      Properties {
+//       _MainTex ("", 2D) = "white" { }
+//      }
+//      Fallback Off
+//      SubShader 1/1 {
+//        Pass 5/9 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          GpuProgramID 304225
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 95
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from SSAOPro_v2.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 103 7 1
+//   Keywords { "HIGH_PRECISION_DEPTHMAP_OFF" "SAMPLES_MEDIUM" }
+//   undeciphered2: 1 4 2 4 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 304
+//   Vector 240 [_Params1]
+//   Vector 256 [_Params2]
+//   Vector 272 [_OcclusionColor]
+//   Matrix 112 [_InverseViewProject]
+//   Matrix 176 [_CameraModelView]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 96 [_ScreenParams]
+//   Vector 112 [_ZBufferParams]
+//   SetTexture 0 [_CameraDepthTexture] 2D 1
+//   SetTexture 1 [_CameraDepthNormalsTexture] 2D 2
+//   SetTexture 2 [_NoiseTex] 2D 3
+//   SetTexture 3 [_MainTex] 2D 0
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.36 on Fri May 06 11:15:51 2016
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[8];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[18];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+#include <matrix.hlsl>
+
+void main( 
+  float4 v0 : SV_POSITION0,
+  float2 v1 : TEXCOORD0,
+  float2 w1 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  const float4 icb[] = { { 1.000000, 0, 0, 0},
+                              { -1.000000, 0, 0, 0},
+                              { 0, 1.000000, 0, 0},
+                              { 0, -1.000000, 0, 0} };
+  float4 r0,r1,r2,r3,r4,r5,r6;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+row_major matrix _InverseViewProject = matrix(cb0[7], cb0[8], cb0[9], cb0[10]);
+row_major matrix vp = inverse(_InverseViewProject);
+float4 tmp;
+
+  r0.xyzw = t0.Sample(s1_s, v1.xy).xyzw;
+  r0.y = cb1[7].z * r0.x + cb1[7].w;
+  r0.y = 1 / r0.y;
+  r0.zw = v1.xy * float2(2,2) + float2(-1,-1);
+
+// _InverseViewProject
+  r1.xyzw = cb0[8].xyzw * r0.wwww;
+  r1.xyzw = cb0[7].xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = cb0[9].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = cb0[10].xyzw + r1.xyzw;
+
+  r0.xzw = r1.xyz / r1.www;
+
+tmp = mul(float4(r0.xzw, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r0.xzw = mul(tmp, _InverseViewProject);
+
+  r1.xyzw = t1.Sample(s2_s, v1.xy).xyzw;
+  r1.xyz = r1.xyz * float3(3.55539989,3.55539989,0) + float3(-1.77769995,-1.77769995,1);
+  r1.z = dot(r1.xyz, r1.xyz);
+  r1.z = 2 / r1.z;
+  r1.xy = r1.zz * r1.xy;
+  r1.z = -1 + r1.z;
+
+// _CameraModelView
+  r2.xyz = cb0[12].xyz * r1.yyy;
+  r1.xyw = cb0[11].xyz * r1.xxx + r2.xyz;
+  r1.xyz = cb0[13].xyz * r1.zzz + r1.xyw;
+
+  r2.xy = cb1[6].xy * v1.xy;
+  r2.xy = r2.xy / cb0[15].xx;
+  r2.xyzw = t2.Sample(s3_s, r2.xy).xyzw;
+  r2.xy = r2.xy * float2(2,2) + float2(-1,-1);
+  r1.w = dot(r2.xy, r2.xy);
+  r1.w = rsqrt(r1.w);
+  r2.xy = r2.xy * r1.ww;
+  r1.w = cb0[15].y / r0.y;
+  r1.w = max(0.00499999989, r1.w);
+  r2.z = cb0[16].z + -r0.y;
+  r2.z = cmp(r2.z < 0);
+  if (r2.z != 0) discard;
+  r2.zw = float2(0,0);
+  while (true) {
+    r3.x = cmp((int)r2.w >= 4);
+    if (r3.x != 0) break;
+    r3.x = dot(icb[r2.w+0].xxyy, r2.xxyy);
+    r3.xy = r2.xy * -r3.xx + icb[r2.w+0].xy;
+    r3.xy = r3.xy * r1.ww;
+    r3.zw = float2(0.707000017,0.707000017) * r3.xy;
+    r4.x = r3.x * 0.707000017 + -r3.w;
+    r4.y = r3.z + r3.w;
+    r3.zw = r3.xy * float2(0.300000012,0.300000012) + v1.xy;
+    r5.xyzw = t0.Sample(s1_s, r3.zw).xyzw;
+    r3.zw = r3.zw * float2(2,2) + float2(-1,-1);
+
+// _InverseViewProject
+    r6.xyzw = cb0[8].xyzw * r3.wwww;
+    r6.xyzw = cb0[7].xyzw * r3.zzzz + r6.xyzw;
+    r5.xyzw = cb0[9].xyzw * r5.xxxx + r6.xyzw;
+    r5.xyzw = cb0[10].xyzw + r5.xyzw;
+    r5.xyz = r5.xyz / r5.www;
+
+tmp = mul(float4(r5.xyz, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r5.xyz = mul(tmp, _InverseViewProject);
+
+    r5.xyz = r5.xyz + -r0.xzw;
+    r3.z = dot(r5.xyz, r5.xyz);
+    r3.w = rsqrt(r3.z);
+    r5.xyz = r5.xyz * r3.www;
+    r3.z = sqrt(r3.z);
+    r3.w = dot(r1.xyz, r5.xyz);
+    r3.w = -cb0[16].x + r3.w;
+    r3.w = max(0, r3.w);
+    r3.z = r3.z * cb0[15].w + 1;
+    r3.z = 1 / r3.z;
+    r3.z = r3.w * r3.z;
+    r3.z = r3.z * cb0[15].z + r2.z;
+    r4.xy = r4.xy * float2(0.600000024,0.600000024) + v1.xy;
+    r5.xyzw = t0.Sample(s1_s, r4.xy).xyzw;
+    r4.xy = r4.xy * float2(2,2) + float2(-1,-1);
+
+// _InverseViewProject
+    r6.xyzw = cb0[8].xyzw * r4.yyyy;
+    r4.xyzw = cb0[7].xyzw * r4.xxxx + r6.xyzw;
+    r4.xyzw = cb0[9].xyzw * r5.xxxx + r4.xyzw;
+    r4.xyzw = cb0[10].xyzw + r4.xyzw;
+    r4.xyz = r4.xyz / r4.www;
+
+tmp = mul(float4(r4.xyz, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r4.xyz = mul(tmp, _InverseViewProject);
+
+    r4.xyz = r4.xyz + -r0.xzw;
+    r3.w = dot(r4.xyz, r4.xyz);
+    r4.w = rsqrt(r3.w);
+    r4.xyz = r4.xyz * r4.www;
+    r3.w = sqrt(r3.w);
+    r4.x = dot(r1.xyz, r4.xyz);
+    r4.x = -cb0[16].x + r4.x;
+    r4.x = max(0, r4.x);
+    r3.w = r3.w * cb0[15].w + 1;
+    r3.w = 1 / r3.w;
+    r3.w = r4.x * r3.w;
+    r3.z = r3.w * cb0[15].z + r3.z;
+    r3.xy = r3.xy * float2(0.899999976,0.899999976) + v1.xy;
+    r4.xyzw = t0.Sample(s1_s, r3.xy).xyzw;
+    r3.xy = r3.xy * float2(2,2) + float2(-1,-1);
+
+// _InverseViewProject
+    r5.xyzw = cb0[8].xyzw * r3.yyyy;
+    r5.xyzw = cb0[7].xyzw * r3.xxxx + r5.xyzw;
+    r4.xyzw = cb0[9].xyzw * r4.xxxx + r5.xyzw;
+    r4.xyzw = cb0[10].xyzw + r4.xyzw;
+    r3.xyw = r4.xyz / r4.www;
+
+tmp = mul(float4(r3.xyw, 1), vp);
+tmp.x -= stereo.x * (tmp.w - stereo.y);
+r3.xyw = mul(tmp, _InverseViewProject);
+
+    r3.xyw = r3.xyw + -r0.xzw;
+    r4.x = dot(r3.xyw, r3.xyw);
+    r4.y = rsqrt(r4.x);
+    r3.xyw = r4.yyy * r3.xyw;
+    r4.x = sqrt(r4.x);
+    r3.x = dot(r1.xyz, r3.xyw);
+    r3.x = -cb0[16].x + r3.x;
+    r3.x = max(0, r3.x);
+    r3.y = r4.x * cb0[15].w + 1;
+    r3.y = 1 / r3.y;
+    r3.x = r3.x * r3.y;
+    r2.z = r3.x * cb0[15].z + r3.z;
+    r2.w = (int)r2.w + 1;
+  }
+  r0.x = -r2.z * 0.0833333358 + 1;
+  r0.z = cb0[16].z + -cb0[16].w;
+  r0.y = r0.y + -r0.z;
+  r0.z = cb0[16].z + -r0.z;
+  r0.y = saturate(r0.y / r0.z);
+  r0.z = 1 + -r0.x;
+  r0.x = r0.y * r0.z + r0.x;
+  r1.xyzw = t3.Sample(s0_s, w1.xy).xyzw;
+  r0.y = dot(r1.xyz, float3(0.298999995,0.587000012,0.114));
+  r0.y = cb0[16].y * r0.y;
+  r0.z = 1 + -r0.x;
+  r0.xyz = r0.yyy * r0.zzz + r0.xxx;
+  r0.w = 1;
+  o0.xyzw = saturate(cb0[17].xyzw + r0.xyzw);
+  return;
+}

@@ -1,0 +1,111 @@
+// CRC32: 74ACEBF7 | Unity headers extracted from DistanceCloud Cheap.shader
+// Shader "uSky/DistanceCloud Cheap" {
+//   Properties {
+//    Attenuation ("Attenuation", Range(0,1)) = 0.6
+//    AlphaSaturation ("Alpha saturation", Range(1,10)) = 2
+//    SunColorMultiplier ("Sun Color multiplier", Range(0,8)) = 4
+//    SkyColorMultiplier ("Sky Color multiplier", Range(0,8)) = 1.5
+//    CloudSampler ("Texture (R)", 2D) = "white" { }
+//    Mask ("Opacity mask (G)", Range(0,1)) = 0
+//    RotateSpeed ("Rotate speed", Range(-1,1)) = 0
+//   [HideInInspector]  ShadeColorFromSun ("ShadeColorFromSun", Vector) = (1,0.87,0.73,1)
+//   [HideInInspector]  ShadeColorFromSky ("ShadeColorFromSky", Vector) = (0.58,0.7,0.86,1)
+//   }
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry+499" "RenderType"="Background" }
+//     Pass 1/1 {
+//       Name "BASE"
+//       Tags { "QUEUE"="Geometry+499" "RenderType"="Background" }
+//       ZWrite Off
+//       Blend SrcAlpha OneMinusSrcAlpha
+//       GpuProgramID 9991
+//       Program "vp" {
+//         SubProgram "d3d9 " {
+//           Bind "vertex" Vertex
+//           Bind "texcoord" TexCoord0
+//           Matrix 0 [glstate_matrix_mvp]
+//           Float 9 [Attenuation]
+//           Vector 14 [CloudSampler_ST]
+//           Float 8 [RotateSpeed]
+//           Vector 13 [ShadeColorFromSky]
+//           Vector 12 [ShadeColorFromSun]
+//           Float 11 [SkyColorMultiplier]
+//           Float 10 [SunColorMultiplier]
+//           Vector 7 [_ProjectionParams]
+//           Vector 4 [_Time]
+//           Vector 6 [_WorldSpaceCameraPos]
+//           Vector 5 [unity_DeltaTime]
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
+    def c15, 0.00277778413, 0.5, 6.28318548, -3.14159274
+    def c16, 1, 0, 0, 0
+    // Discarded sincos constant c17
+    // Discarded sincos constant c18
+    dcl_position v0
+    dcl_texcoord v1
+
+dcl_texcoord o0
+dcl_position o1
+dcl_color o2
+
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s3
+
+texldl r2, c220.z, s3
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./uSky_DistanceCloud Cheap/vp/74ACEBF7.txt
+mov r30, c6
+mov r29, c220.x
+mul r29.x, r2.x, -r2.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mad o0.xy, v1, c14, c14.zwzw
+    mov r0.x, c11.x
+    mul r0.xyz, r0.x, c13
+    mov r1.x, c10.x
+    mad r1.xyz, r1.x, c12, -r0
+    mad o2.xyz, c9.x, r1, r0
+    mov r0.x, c8.x
+    mov r0.y, c4.y
+    mad r0.x, r0.x, r0.y, c5.z
+    mad r0.x, r0.x, c15.x, c15.y
+    frc r0.x, r0.x
+    mad r0.x, r0.x, c15.z, c15.w
+    sincos r1.xy, r0.x
+    mul r0.xyz, r1.xyxw, v0.xxzw
+    mad r1.x, -r1.y, v0.z, r0.x
+    add r1.z, r0.z, r0.y
+    mov r1.y, v0.y
+    mov r0.z, c7.z
+    mad r0.xyz, r1, r0.z, r30
+    mov r0.w, c16.x
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c3, r0
+    mov o1, r1.xyzz
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-vs=s3 --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./uSky_DistanceCloud Cheap/vp/74ACEBF7.txt
+texldl r31, c220.z, s3
+add r31.w, r1.w, -r31.y
+mad r1.x, r31.w, r31.x, r1.x
+
+mov o9, r1.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0

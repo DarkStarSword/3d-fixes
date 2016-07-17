@@ -1,0 +1,169 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 948c2c34a0c309db-vs_replace.txt
+// 3DMigoto: 948c2c34a0c309db | Matched 2 variants of 1 shaders: Standard (Specular setup)
+// 
+//    Unity headers extracted from StandardSpecular.shader
+//    Shader "Standard (Specular setup)" {
+//      Properties {
+//       _Color ("Color", Color) = (1,1,1,1)
+//       _MainTex ("Albedo", 2D) = "white" { }
+//       _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.5
+//       _Glossiness ("Smoothness", Range(0,1)) = 0.5
+//       _SpecColor ("Specular", Color) = (0.2,0.2,0.2,1)
+//       _SpecGlossMap ("Specular", 2D) = "white" { }
+//       _BumpScale ("Scale", Float) = 1
+//       _BumpMap ("Normal Map", 2D) = "bump" { }
+//       _Parallax ("Height Scale", Range(0.005,0.08)) = 0.02
+//       _ParallaxMap ("Height Map", 2D) = "black" { }
+//       _OcclusionStrength ("Strength", Range(0,1)) = 1
+//       _OcclusionMap ("Occlusion", 2D) = "white" { }
+//       _EmissionColor ("Color", Color) = (0,0,0,1)
+//       _EmissionMap ("Emission", 2D) = "white" { }
+//       _DetailMask ("Detail Mask", 2D) = "white" { }
+//       _DetailAlbedoMap ("Detail Albedo x2", 2D) = "grey" { }
+//       _DetailNormalMapScale ("Scale", Float) = 1
+//       _DetailNormalMap ("Normal Map", 2D) = "bump" { }
+//      [Enum(UV0,0,UV1,1)]  _UVSec ("UV Set for secondary textures", Float) = 0
+//      [HideInInspector]  _Mode ("__mode", Float) = 0
+//      [HideInInspector]  _SrcBlend ("__src", Float) = 1
+//      [HideInInspector]  _DstBlend ("__dst", Float) = 0
+//      [HideInInspector]  _ZWrite ("__zw", Float) = 1
+//      }
+//      Fallback "VertexLit"
+// 1:   SubShader 1/2 {
+// 2:   SubShader 2/2 {
+// 2:     LOD 150
+// 1:     LOD 300
+//        Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
+// 2:     Pass 3/3 {
+// 1:     Pass 3/4 {
+//          Name "SHADOWCASTER"
+//          Tags { "LIGHTMODE"="SHADOWCASTER" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "PerformanceChecks"="False" }
+// 1:       GpuProgramID 163686
+// 2:       GpuProgramID 473441
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              Keywords { "SHADOWS_DEPTH" }
+//              Bind "vertex" Vertex
+//              Bind "normal" Normal
+//              ConstBuffer "UnityLighting" 720
+//              Vector 0 [_WorldSpaceLightPos0]
+//              ConstBuffer "UnityShadows" 416
+//              Vector 80 [unity_LightShadowBias]
+//              ConstBuffer "UnityPerDraw" 352
+//              Matrix 0 [glstate_matrix_mvp]
+//              Matrix 192 [_Object2World]
+//              Matrix 256 [_World2Object]
+//              ConstBuffer "UnityPerFrame" 256
+//              Matrix 144 [unity_MatrixVP]
+//              BindCB "UnityLighting" 0
+//              BindCB "UnityShadows" 1
+//              BindCB "UnityPerDraw" 2
+//              BindCB "UnityPerFrame" 3
+//            }
+//          }
+//        }
+//      }
+//    }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+//
+// Shader model vs_4_0
+
+// ---- Created with 3Dmigoto v1.2.31 on Sat Feb 20 12:30:49 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[13];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[19];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[1];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float3 v1 : NORMAL0,
+  float2 v2 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0)
+{
+  float4 r0,r1,r2;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.x = cb2[16].x * v1.x;
+  r0.y = cb2[17].x * v1.x;
+  r0.z = cb2[18].x * v1.x;
+  r1.x = cb2[16].y * v1.y;
+  r1.y = cb2[17].y * v1.y;
+  r1.z = cb2[18].y * v1.y;
+  r0.xyz = r1.xyz + r0.xyz;
+  r1.x = cb2[16].z * v1.z;
+  r1.y = cb2[17].z * v1.z;
+  r1.z = cb2[18].z * v1.z;
+  r0.xyz = r1.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.xyz = cb2[13].xyz * v0.yyy;
+  r1.xyz = cb2[12].xyz * v0.xxx + r1.xyz;
+  r1.xyz = cb2[14].xyz * v0.zzz + r1.xyz;
+  r1.xyz = cb2[15].xyz + r1.xyz;
+  r2.xyz = -r1.xyz * cb0[0].www + cb0[0].xyz;
+  r0.w = dot(r2.xyz, r2.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r2.xyz * r0.www;
+  r0.w = dot(r0.xyz, r2.xyz);
+  r0.w = -r0.w * r0.w + 1;
+  r0.w = sqrt(r0.w);
+  r0.w = cb1[5].z * r0.w;
+  r0.xyz = -r0.xyz * r0.www + r1.xyz;
+  r1.xyzw = cb3[10].xyzw * r0.yyyy;
+  r1.xyzw = cb3[9].xyzw * r0.xxxx + r1.xyzw;
+  r0.xyzw = cb3[11].xyzw * r0.zzzz + r1.xyzw;
+  r0.xyzw = cb3[12].xyzw + r0.xyzw;
+  r1.xyzw = cb2[1].xyzw * v0.yyyy;
+  r1.xyzw = cb2[0].xyzw * v0.xxxx + r1.xyzw;
+  r1.xyzw = cb2[2].xyzw * v0.zzzz + r1.xyzw;
+  r1.xyzw = cb2[3].xyzw + r1.xyzw;
+  r2.x = cmp(cb1[5].z != 0.000000);
+  r0.xyzw = r2.xxxx ? r0.xyzw : r1.xyzw;
+
+o0.xyw = r0.xyw; // Relocated to here with hlsltool.py
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 948c2c34a0c309db-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  r1.x = saturate(cb1[5].x / r0.w);
+  r0.z = r1.x + r0.z;
+
+  // o0.xyw = r0.xyw; // Relocated from here with hlsltool.py
+
+  r0.x = max(0, r0.z);
+  r0.x = r0.x + -r0.z;
+  o0.z = cb1[5].y * r0.x + r0.z;
+  return;
+}

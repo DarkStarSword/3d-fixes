@@ -1,0 +1,123 @@
+// CRC32: FCD6015E | Unity headers extracted from Specular-FirstPass.shader
+// Shader "Nature/Terrain/Specular" {
+//   Properties {
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//   [HideInInspector]  _Control ("Control (RGBA)", 2D) = "red" { }
+//   [HideInInspector]  _Splat3 ("Layer 3 (A)", 2D) = "white" { }
+//   [HideInInspector]  _Splat2 ("Layer 2 (B)", 2D) = "white" { }
+//   [HideInInspector]  _Splat1 ("Layer 1 (G)", 2D) = "white" { }
+//   [HideInInspector]  _Splat0 ("Layer 0 (R)", 2D) = "white" { }
+//   [HideInInspector]  _Normal3 ("Normal 3 (A)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal2 ("Normal 2 (B)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal1 ("Normal 1 (G)", 2D) = "bump" { }
+//   [HideInInspector]  _Normal0 ("Normal 0 (R)", 2D) = "bump" { }
+//   [HideInInspector]  _MainTex ("BaseMap (RGB)", 2D) = "white" { }
+//   [HideInInspector]  _Color ("Main Color", Color) = (1,1,1,1)
+//   }
+//   Dependency "AddPassShader" = "Hidden/TerrainEngine/Splatmap/Specular-AddPass"
+//   Dependency "BaseMapShader" = "Hidden/TerrainEngine/Splatmap/Specular-Base"
+//   Fallback "Nature/Terrain/Diffuse"
+//   SubShader 1/1 {
+//     Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" "SplatCount"="4" }
+//     Pass 1/2 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" "SplatCount"="4" }
+//       GpuProgramID 17527
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_OFF" }
+//           Vector 5 [_LightColor0]
+//           Float 7 [_Shininess]
+//           Vector 6 [_SpecColor]
+//           Vector 0 [_WorldSpaceCameraPos]
+//           Vector 1 [_WorldSpaceLightPos0]
+//           Vector 4 [unity_SHAb]
+//           Vector 3 [unity_SHAg]
+//           Vector 2 [unity_SHAr]
+//           SetTexture 0 [_Control] 2D 0
+//           SetTexture 1 [_Splat0] 2D 1
+//           SetTexture 2 [_Splat1] 2D 2
+//           SetTexture 3 [_Splat2] 2D 3
+//           SetTexture 4 [_Splat3] 2D 4
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0
+    def c8, 1, 0.00100000005, 0, 128
+    dcl_texcoord v0
+    dcl_texcoord1 v1
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3 v3.xyz
+    dcl_texcoord4 v4.xy
+    dcl_texcoord5_pp v5.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+    dcl_2d s3
+    dcl_2d s4
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Nature_Terrain_Specular/fp/FCD6015E.txt
+mov r30, c0
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    add r0.xyz, r30, -v3
+    dp3 r0.w, r0, r0
+    rsq r0.w, r0.w
+    mad_pp r0.xyz, r0, r0.w, c1
+    nrm_pp r1.xyz, r0
+    dp3_pp r0.x, v2, r1
+    max r1.x, r0.x, c8.z
+    mov r0.w, c8.w
+    mul r0.x, r0.w, c7.x
+    pow r2.x, r1.x, r0.x
+    texld r0, v0, s1
+    texld r1, v0.zwzw, s2
+    texld_pp r3, v4, s0
+    dp4_pp r2.y, r3, c8.x
+    add r2.z, r2.y, c8.y
+    rcp r2.z, r2.z
+    mul_pp r3, r2.z, r3
+    mul r1, r1, r3.y
+    mad_pp r0, r3.x, r0, r1
+    texld r1, v1, s3
+    mad_pp r0, r3.z, r1, r0
+    texld r1, v1.zwzw, s4
+    mad_pp r0, r3.w, r1, r0
+    mul r0.w, r0.w, r2.x
+    mov r1.xyz, c5
+    mul r1.xyz, r1, c6
+    mul r1.xyz, r0.w, r1
+    mul_pp r2.xzw, r0.xyyz, c5.xyyz
+    dp3_pp r0.w, v2, c1
+    max_pp r1.w, r0.w, c8.z
+    mad_pp r1.xyz, r2.xzww, r1.w, r1
+    mad_pp r3, v2.xyzx, c8.xxxz, c8.zzzx
+    dp4_pp r4.x, c2, r3
+    dp4_pp r4.y, c3, r3
+    dp4_pp r4.z, c4, r3
+    add_pp r2.xzw, r4.xyyz, v5.xyyz
+    mad_pp r0.xyz, r0, r2.xzww, r1
+    mul_pp oC0.xyz, r2.y, r0
+    mov_pp oC0.w, c8.x

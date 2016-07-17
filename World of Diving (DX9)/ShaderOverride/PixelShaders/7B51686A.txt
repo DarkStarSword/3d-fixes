@@ -1,0 +1,115 @@
+// CRC32: 7B51686A | Unity headers extracted from Normal-BumpSpec.shader
+// Shader "Legacy Shaders/Bumped Specular" {
+//   Properties {
+//    _Color ("Main Color", Color) = (1,1,1,1)
+//    _SpecColor ("Specular Color", Color) = (0.5,0.5,0.5,1)
+//    _Shininess ("Shininess", Range(0.03,1)) = 0.078125
+//    _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+//    _BumpMap ("Normalmap", 2D) = "bump" { }
+//   }
+//   Fallback "Legacy Shaders/Specular"
+//   SubShader 2/2 {
+//     LOD 400
+//     Tags { "RenderType"="Opaque" }
+//     Pass 2/5 {
+//       Name "FORWARD"
+//       Tags { "LIGHTMODE"="ForwardAdd" "RenderType"="Opaque" }
+//       ZWrite Off
+//       Blend One One
+//       GpuProgramID 518069
+//       Program "fp" {
+//         SubProgram "d3d9 " {
+//           Keywords { "POINT" }
+//           Matrix 0 [_LightMatrix0] 3
+//           Vector 7 [_Color]
+//           Vector 5 [_LightColor0]
+//           Float 8 [_Shininess]
+//           Vector 6 [_SpecColor]
+//           Vector 3 [_WorldSpaceCameraPos]
+//           Vector 4 [_WorldSpaceLightPos0]
+//           SetTexture 0 [_LightTexture0] 2D 0
+//           SetTexture 1 [_MainTex] 2D 1
+//           SetTexture 2 [_BumpMap] 2D 2
+//         }
+//       }
+//     }
+//   }
+// }
+// 
+// Headers extracted with DarkStarSword's extract_unity_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
+
+    ps_3_0 // Converted from ps_2_0 with DarkStarSword's shadertool.py
+    def c9, 2, -1, 0, 1
+    def c10, 128, 0, 0, 0
+    dcl_texcoord v0
+    dcl_texcoord1_pp v1.xyz
+    dcl_texcoord2_pp v2.xyz
+    dcl_texcoord3_pp v3.xyz
+    dcl_texcoord4 v4.xyz
+    dcl_2d s0
+    dcl_2d s1
+    dcl_2d s2
+
+def c220, 0, 1, 0.0625, 0.5
+dcl_2d s15
+
+texldl r31, c220.z, s15
+
+// Unity reflection/specular fix inserted with DarkStarSword's shadertool.py:
+// shadertool.py -I ../.. --stereo-sampler-ps=s15 --fix-unity-reflection --only-autofixed --ignore-register-errors Legacy Shaders_Bumped Specular/fp/7B51686A.txt
+mov r30, c3
+mov r29, c220.x
+mul r29.x, r31.x, -r31.y
+dp4 r28.x, c180, r29
+dp4 r28.y, c181, r29
+dp4 r28.z, c182, r29
+dp4 r28.w, c183, r29
+dp4 r29.x, c190, r28
+dp4 r29.y, c191, r28
+dp4 r29.z, c192, r28
+add r30.xyz, r30, -r29
+
+    mov r0.xyz, v4
+    mov_pp r0.w, c9.w
+    dp4 r1.x, c0, r0
+    dp4 r1.y, c1, r0
+    dp4 r1.z, c2, r0
+    dp3 r0.xy, r1, r1
+    mov r1.x, v0.z
+    mov r1.y, v0.w
+    texld_pp r0, r0, s0
+    texld_pp r1, r1, s2
+    texld_pp r2, v0, s1
+    mul_pp r0.xyz, r0.x, c5
+    mul r3.xyz, r0, c6
+    add r4.xyz, -v4, r30
+    dp3 r0.w, r4, r4
+    rsq r0.w, r0.w
+    add r5.xyz, -v4, c4
+    nrm_pp r6.xyz, r5
+    mad_pp r4.xyz, r4, r0.w, r6
+    nrm_pp r5.xyz, r4
+    mad_pp r4.x, r1.w, c9.x, c9.y
+    mad_pp r4.y, r1.y, c9.x, c9.y
+    dp2add_sat_pp r0.w, r4, r4, c9.z
+    add_pp r0.w, -r0.w, c9.w
+    rsq_pp r0.w, r0.w
+    rcp_pp r4.z, r0.w
+    dp3_pp r1.x, v1, r4
+    dp3_pp r1.y, v2, r4
+    dp3_pp r1.z, v3, r4
+    dp3_pp r0.w, r1, r5
+    dp3_pp r3.w, r1, r6
+    max_pp r1.x, r3.w, c9.z
+    max r3.w, r0.w, c9.z
+    mov r0.w, c8.x
+    mul r0.w, r0.w, c10.x
+    pow r1.y, r3.w, r0.w
+    mul r0.w, r2.w, r1.y
+    mul_pp r1.yzw, r2.wzyx, c7.wzyx
+    mul_pp r0.xyz, r0, r1.wzyx
+    mul r1.yzw, r0.w, r3.wzyx
+    mad_pp r0.xyz, r0, r1.x, r1.wzyx
+    mov_pp r0.w, c9.w
+    mov_pp oC0, r0

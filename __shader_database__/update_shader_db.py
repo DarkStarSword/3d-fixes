@@ -23,6 +23,7 @@ except ImportError:
 
 import http_date
 import shaderutil
+import itertools
 
 blog_id = '5003459283230164005'
 api_key = None
@@ -51,7 +52,7 @@ def get_page(pageToken = None):
         'orderBy': 'updated',
         'fields': 'items(author/displayName,content,id,title,updated,url,labels),nextPageToken',
         'key': api_key,
-        'maxResults': 500, # Fucking page token only returned me 10+6 results! Is this really the only way to fetch everything?
+        'maxResults': 50,
         'fetchBodies': str(fetch_all).lower(),
     }
     if pageToken is not None:
@@ -61,7 +62,7 @@ def get_page(pageToken = None):
 def get_blog_posts():
     pageToken = None
     posts = []
-    for i in range(3):
+    for i in itertools.count():
         j = get_page(pageToken)
         print('Fetched page %i (%i posts)...' % (i, len(j['items'])))
         # print(json.dumps(j, sort_keys=True, indent=4))

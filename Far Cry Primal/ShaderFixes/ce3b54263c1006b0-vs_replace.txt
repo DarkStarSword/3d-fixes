@@ -1,0 +1,451 @@
+// Fire vision - crystals(?) on side of vision way too close to camera
+// ---- Created with 3Dmigoto v1.2.34 on Sat Mar 12 03:37:02 2016
+
+cbuffer CViewportShaderParameterProvider : register(b0)
+{
+  float4x4 InvProjectionMatrix : packoffset(c0);
+  float4x4 InvViewMatrix : packoffset(c4);
+  float4x4 ProjectionMatrix : packoffset(c8);
+  float4x4 ViewMatrix : packoffset(c12);
+  float4x4 ViewProjectionMatrix : packoffset(c16);
+  float4x4 ViewRotProjectionMatrix : packoffset(c20);
+  float4x4 ViewRotProjectionMatrix_Previous : packoffset(c24);
+  float4 AmbientSHR : packoffset(c28);
+  float4 AmbientSHG : packoffset(c29);
+  float4 AmbientSHB : packoffset(c30);
+  float4 CameraDistances : packoffset(c31);
+  float4 CameraNearPlaneSize : packoffset(c32);
+  float4 DepthScale : packoffset(c33);
+  float4 DepthTextureScaleOffset : packoffset(c34);
+  float4 FogParams : packoffset(c35);
+  float4 FogSHB : packoffset(c36);
+  float4 FogSHG : packoffset(c37);
+  float4 FogSHR : packoffset(c38);
+  float4 HeightFogParams : packoffset(c39);
+  float4 ViewportSize : packoffset(c40);
+  float3 ViewPoint : packoffset(c41);
+  float3 CameraPosition : packoffset(c42);
+  float3 CameraPosition_Previous : packoffset(c43);
+  float3 CameraPositionFractions : packoffset(c44);
+  float3 CameraPositionFractions_Previous : packoffset(c45);
+  float3 CameraRight : packoffset(c46);
+  float3 CameraUp : packoffset(c47);
+  float3 CameraDirection : packoffset(c48);
+  float3 EnvironmentMapColorOffset : packoffset(c49);
+  float3 EnvironmentMapColorScale : packoffset(c50);
+  float3 AmbientOcclusionRanges : packoffset(c51);
+  float3 DepthTextureRcpSize : packoffset(c52);
+  float2 MotionVectorOffsets : packoffset(c53);
+  float2 DepthRangeCompression : packoffset(c53.z);
+  float ShadowProjDepthMinValue : packoffset(c54);
+  float DistanceScale : packoffset(c54.y);
+  float WorldSpaceZOffset : packoffset(c54.z);
+  float WorldSpaceZOffset_Previous : packoffset(c54.w);
+  float CameraFOVDeg : packoffset(c55);
+  float EffectsEmissiveEVBias : packoffset(c55.y);
+  float ShadowCSMLastSliceIndex : packoffset(c55.z);
+  float UseNormalization : packoffset(c55.w);
+  float FogUndergroundColorScale : packoffset(c56);
+}
+
+cbuffer CUserClipPlaneParameterProvider : register(b1)
+{
+  float4 UserClipPlane : packoffset(c0);
+}
+
+cbuffer CSceneTransformParameterProvider : register(b2)
+{
+  float4x4 WorldMatrix : packoffset(c0);
+  float3 WorldPositionFractions : packoffset(c4);
+}
+
+cbuffer CSceneGeometry : register(b3)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MeshDecompression : packoffset(c1);
+  float4 NormalizedXYBBox : packoffset(c2);
+}
+
+cbuffer CSceneTransformPreviousParameterProvider : register(b4)
+{
+  float4x4 WorldMatrix_Previous : packoffset(c0);
+  float3 WorldPositionFractions_Previous : packoffset(c4);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  int2 v1 : texcoord0,
+  int2 v2 : texcoord1,
+  float4 v3 : normal0,
+  float4 v4 : color0,
+  float4 v5 : fog0,
+  float4 v6 : psize0,
+  out float4 o0 : SV_Position0,
+  out float o1 : SV_ClipDistance0,
+  out float4 o2 : TEXCOORD0,
+  out float4 o3 : TEXCOORD1,
+  out float4 o4 : TEXCOORD2,
+  out float4 o5 : TEXCOORD3,
+  out float4 o6 : TEXCOORD4,
+  out float4 o7 : TEXCOORD5,
+  out float4 o8 : TEXCOORD6,
+  out float4 o9 : TEXCOORD7,
+  out float3 o10 : TEXCOORD8)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = WorldPositionFractions.xyz + -CameraPositionFractions.xyz;
+  r1.x = WorldMatrix._m30;
+  r1.y = WorldMatrix._m31;
+  r1.z = WorldMatrix._m32;
+  r2.xyz = -CameraPosition.xyz + r1.xyz;
+  r3.xyz = (int3)v0.xyz;
+  r3.xyz = MeshDecompression.yyy * r3.xyz;
+  r3.xyz = MeshDecompression.xxx + r3.xyz;
+  r4.x = dot(r3.xyz, WorldMatrix._m00_m10_m20);
+  r4.y = dot(r3.xyz, WorldMatrix._m01_m11_m21);
+  r4.z = dot(r3.xyz, WorldMatrix._m02_m12_m22);
+  r2.xyz = r4.xyz + r2.xyz;
+  r1.xyz = r4.xyz + r1.xyz;
+  r0.xyz = r2.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r0.xyz * r0.www;
+  r0.xyz = r2.xyz * WorldSpaceZOffset + r0.xyz;
+  r0.w = 1;
+  o0.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+  o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+
+// Override convergence when close to the camera so that this effect doesn't
+// get in the way:
+if (o0.w < 0.2) {
+	float4 stereo = StereoParams.Load(0);
+	o0.x += stereo.x * (stereo.y - 0.05);
+}
+
+  r0.xyz = -CameraPosition.xyz + r1.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r0.xyz = r0.xyz * WorldSpaceZOffset + r1.xyz;
+  r0.w = 1;
+  o1.x = dot(UserClipPlane.xyzw, r0.xyzw);
+  r1.xy = (int2)v1.xy;
+  o2.xy = r1.xy * MeshDecompression.ww + MeshDecompression.zz;
+  r1.xy = (int2)v2.xy;
+  o2.zw = r1.xy * MeshDecompression.ww + MeshDecompression.zz;
+  r0.w = max(AmbientOcclusionRanges.x, v4.w);
+  r0.w = min(AmbientOcclusionRanges.y, r0.w);
+  r0.w = -AmbientOcclusionRanges.x + r0.w;
+  o3.w = saturate(AmbientOcclusionRanges.z * r0.w);
+  o3.xyz = saturate(v4.xyz);
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  o5.xyz = r0.xyz;
+  r0.xyz = WorldMatrix._m01_m11_m21 * r1.yyy;
+  r0.xyz = WorldMatrix._m00_m10_m20 * r1.xxx + r0.xyz;
+  r0.xyz = WorldMatrix._m02_m12_m22 * r1.zzz + r0.xyz;
+  r1.xyz = v5.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r2.xyz = r1.xyz * r0.www;
+  o4.x = dot(r2.xyz, r0.xyz);
+  r2.xyz = v6.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r2.xyz, r2.xyz);
+  r0.w = rsqrt(r0.w);
+  r4.xyz = r2.xyz * r0.www;
+  o4.y = dot(r4.xyz, r0.xyz);
+  r4.xyz = v3.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r4.xyz, r4.xyz);
+  r0.w = rsqrt(r0.w);
+  r5.xyz = r4.xyz * r0.www;
+  o4.z = dot(r5.xyz, r0.xyz);
+  r0.x = WorldMatrix_Previous._m30 + -CameraPosition_Previous.x;
+  r0.y = WorldMatrix_Previous._m31 + -CameraPosition_Previous.y;
+  r0.z = WorldMatrix_Previous._m32 + -CameraPosition_Previous.z;
+  r5.x = dot(r3.xyz, WorldMatrix_Previous._m00_m10_m20);
+  r5.y = dot(r3.xyz, WorldMatrix_Previous._m01_m11_m21);
+  r5.z = dot(r3.xyz, WorldMatrix_Previous._m02_m12_m22);
+  o10.xyz = r3.xyz;
+  r0.xyz = r5.xyz + r0.xyz;
+  r3.xyz = WorldPositionFractions_Previous.xyz + -CameraPositionFractions_Previous.xyz;
+  r0.xyz = r3.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r3.xyz = r0.xyz * r0.www;
+  r0.xyz = r3.xyz * WorldSpaceZOffset + r0.xyz;
+  r0.w = 1;
+  o6.x = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m00_m10_m20_m30);
+  o6.y = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m01_m11_m21_m31);
+  o6.z = dot(r0.xyzw, ViewRotProjectionMatrix_Previous._m03_m13_m23_m33);
+  o7.x = dot(r4.xyz, WorldMatrix._m00_m10_m20);
+  o7.y = dot(r4.xyz, WorldMatrix._m01_m11_m21);
+  o7.z = dot(r4.xyz, WorldMatrix._m02_m12_m22);
+  o8.x = dot(r2.xyz, WorldMatrix._m00_m10_m20);
+  o8.y = dot(r2.xyz, WorldMatrix._m01_m11_m21);
+  o8.z = dot(r2.xyz, WorldMatrix._m02_m12_m22);
+  o9.x = dot(r1.xyz, WorldMatrix._m00_m10_m20);
+  o9.y = dot(r1.xyz, WorldMatrix._m01_m11_m21);
+  o9.z = dot(r1.xyz, WorldMatrix._m02_m12_m22);
+  return;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Generated by Microsoft (R) HLSL Shader Compiler 9.29.952.3111
+//
+//   using 3Dmigoto v1.2.34 on Sat Mar 12 03:37:02 2016
+//
+//
+// Buffer Definitions: 
+//
+// cbuffer CViewportShaderParameterProvider
+// {
+//
+//   float4x4 InvProjectionMatrix;      // Offset:    0 Size:    64 [unused]
+//   float4x4 InvViewMatrix;            // Offset:   64 Size:    64 [unused]
+//   float4x4 ProjectionMatrix;         // Offset:  128 Size:    64 [unused]
+//   float4x4 ViewMatrix;               // Offset:  192 Size:    64 [unused]
+//   float4x4 ViewProjectionMatrix;     // Offset:  256 Size:    64 [unused]
+//   float4x4 ViewRotProjectionMatrix;  // Offset:  320 Size:    64
+//   float4x4 ViewRotProjectionMatrix_Previous;// Offset:  384 Size:    64
+//   float4 AmbientSHR;                 // Offset:  448 Size:    16 [unused]
+//   float4 AmbientSHG;                 // Offset:  464 Size:    16 [unused]
+//   float4 AmbientSHB;                 // Offset:  480 Size:    16 [unused]
+//   float4 CameraDistances;            // Offset:  496 Size:    16 [unused]
+//   float4 CameraNearPlaneSize;        // Offset:  512 Size:    16 [unused]
+//   float4 DepthScale;                 // Offset:  528 Size:    16 [unused]
+//   float4 DepthTextureScaleOffset;    // Offset:  544 Size:    16 [unused]
+//   float4 FogParams;                  // Offset:  560 Size:    16 [unused]
+//   float4 FogSHB;                     // Offset:  576 Size:    16 [unused]
+//   float4 FogSHG;                     // Offset:  592 Size:    16 [unused]
+//   float4 FogSHR;                     // Offset:  608 Size:    16 [unused]
+//   float4 HeightFogParams;            // Offset:  624 Size:    16 [unused]
+//   float4 ViewportSize;               // Offset:  640 Size:    16 [unused]
+//   float3 ViewPoint;                  // Offset:  656 Size:    12 [unused]
+//   float3 CameraPosition;             // Offset:  672 Size:    12
+//   float3 CameraPosition_Previous;    // Offset:  688 Size:    12
+//   float3 CameraPositionFractions;    // Offset:  704 Size:    12
+//   float3 CameraPositionFractions_Previous;// Offset:  720 Size:    12
+//   float3 CameraRight;                // Offset:  736 Size:    12 [unused]
+//   float3 CameraUp;                   // Offset:  752 Size:    12 [unused]
+//   float3 CameraDirection;            // Offset:  768 Size:    12 [unused]
+//   float3 EnvironmentMapColorOffset;  // Offset:  784 Size:    12 [unused]
+//   float3 EnvironmentMapColorScale;   // Offset:  800 Size:    12 [unused]
+//   float3 AmbientOcclusionRanges;     // Offset:  816 Size:    12
+//   float3 DepthTextureRcpSize;        // Offset:  832 Size:    12 [unused]
+//   float2 MotionVectorOffsets;        // Offset:  848 Size:     8 [unused]
+//   float2 DepthRangeCompression;      // Offset:  856 Size:     8 [unused]
+//   float ShadowProjDepthMinValue;     // Offset:  864 Size:     4 [unused]
+//   float DistanceScale;               // Offset:  868 Size:     4 [unused]
+//   float WorldSpaceZOffset;           // Offset:  872 Size:     4
+//   float WorldSpaceZOffset_Previous;  // Offset:  876 Size:     4 [unused]
+//   float CameraFOVDeg;                // Offset:  880 Size:     4 [unused]
+//   float EffectsEmissiveEVBias;       // Offset:  884 Size:     4 [unused]
+//   float ShadowCSMLastSliceIndex;     // Offset:  888 Size:     4 [unused]
+//   float UseNormalization;            // Offset:  892 Size:     4 [unused]
+//   float FogUndergroundColorScale;    // Offset:  896 Size:     4 [unused]
+//
+// }
+//
+// cbuffer CUserClipPlaneParameterProvider
+// {
+//
+//   float4 UserClipPlane;              // Offset:    0 Size:    16
+//
+// }
+//
+// cbuffer CSceneTransformParameterProvider
+// {
+//
+//   float4x4 WorldMatrix;              // Offset:    0 Size:    64
+//   float3 WorldPositionFractions;     // Offset:   64 Size:    12
+//
+// }
+//
+// cbuffer CSceneGeometry
+// {
+//
+//   float4 GeometryPickingID;          // Offset:    0 Size:    16 [unused]
+//   float4 MeshDecompression;          // Offset:   16 Size:    16
+//   float4 NormalizedXYBBox;           // Offset:   32 Size:    16 [unused]
+//
+// }
+//
+// cbuffer CSceneTransformPreviousParameterProvider
+// {
+//
+//   float4x4 WorldMatrix_Previous;     // Offset:    0 Size:    64
+//   float3 WorldPositionFractions_Previous;// Offset:   64 Size:    12
+//
+// }
+//
+//
+// Resource Bindings:
+//
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// CViewportShaderParameterProvider    cbuffer      NA          NA    0        1
+// CUserClipPlaneParameterProvider    cbuffer      NA          NA    1        1
+// CSceneTransformParameterProvider    cbuffer      NA          NA    2        1
+// CSceneGeometry                    cbuffer      NA          NA    3        1
+// CSceneTransformPreviousParameterProvider    cbuffer      NA          NA    4        1
+//
+//
+//
+// Input signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// position                 0   xyzw        0     NONE     int   xyz 
+// texcoord                 0   xy          1     NONE     int   xy  
+// texcoord                 1   xy          2     NONE     int   xy  
+// normal                   0   xyzw        3     NONE   float   xyz 
+// color                    0   xyzw        4     NONE   float   xyzw
+// fog                      0   xyzw        5     NONE   float   xyz 
+// psize                    0   xyzw        6     NONE   float   xyz 
+//
+//
+// Output signature:
+//
+// Name                 Index   Mask Register SysValue  Format   Used
+// -------------------- ----- ------ -------- -------- ------- ------
+// SV_Position              0   xyzw        0      POS   float   xyzw
+// SV_ClipDistance          0   x           1  CLIPDST   float   x   
+// TEXCOORD                 0   xyzw        2     NONE   float   xyzw
+// TEXCOORD                 1   xyzw        3     NONE   float   xyzw
+// TEXCOORD                 2   xyz         4     NONE   float   xyz 
+// TEXCOORD                 3   xyz         5     NONE   float   xyz 
+// TEXCOORD                 4   xyz         6     NONE   float   xyz 
+// TEXCOORD                 5   xyz         7     NONE   float   xyz 
+// TEXCOORD                 6   xyz         8     NONE   float   xyz 
+// TEXCOORD                 7   xyz         9     NONE   float   xyz 
+// TEXCOORD                 8   xyz        10     NONE   float   xyz 
+//
+vs_5_0
+dcl_globalFlags refactoringAllowed
+dcl_constantbuffer cb0[55], immediateIndexed
+dcl_constantbuffer cb1[1], immediateIndexed
+dcl_constantbuffer cb2[5], immediateIndexed
+dcl_constantbuffer cb3[2], immediateIndexed
+dcl_constantbuffer cb4[5], immediateIndexed
+dcl_input v0.xyz
+dcl_input v1.xy
+dcl_input v2.xy
+dcl_input v3.xyz
+dcl_input v4.xyzw
+dcl_input v5.xyz
+dcl_input v6.xyz
+dcl_output_siv o0.xyzw, position
+dcl_output_siv o1.x, clip_distance
+dcl_output o2.xyzw
+dcl_output o3.xyzw
+dcl_output o4.xyz
+dcl_output o5.xyz
+dcl_output o6.xyz
+dcl_output o7.xyz
+dcl_output o8.xyz
+dcl_output o9.xyz
+dcl_output o10.xyz
+dcl_temps 6
+add [precise(xyz)] r0.xyz, -cb0[44].xyzx, cb2[4].xyzx
+mov [precise(x)] r1.x, cb2[0].w
+mov [precise(y)] r1.y, cb2[1].w
+mov [precise(z)] r1.z, cb2[2].w
+add [precise(xyz)] r2.xyz, r1.xyzx, -cb0[42].xyzx
+itof [precise(xyz)] r3.xyz, v0.xyzx
+mul [precise(xyz)] r3.xyz, r3.xyzx, cb3[1].yyyy
+add [precise(xyz)] r3.xyz, r3.xyzx, cb3[1].xxxx
+dp3 [precise(x)] r4.x, r3.xyzx, cb2[0].xyzx
+dp3 [precise(y)] r4.y, r3.xyzx, cb2[1].xyzx
+dp3 [precise(z)] r4.z, r3.xyzx, cb2[2].xyzx
+add [precise(xyz)] r2.xyz, r2.xyzx, r4.xyzx
+add r1.xyz, r1.xyzx, r4.xyzx
+add [precise(xyz)] r0.xyz, r0.xyzx, r2.xyzx
+dp3 r0.w, r0.xyzx, r0.xyzx
+rsq r0.w, r0.w
+mul r2.xyz, r0.wwww, r0.xyzx
+mad r0.xyz, r2.xyzx, cb0[54].zzzz, r0.xyzx
+mov r0.w, l(1.000000)
+dp4 o0.x, r0.xyzw, cb0[20].xyzw
+dp4 o0.y, r0.xyzw, cb0[21].xyzw
+dp4 o0.z, r0.xyzw, cb0[22].xyzw
+dp4 o0.w, r0.xyzw, cb0[23].xyzw
+add r0.xyz, r1.xyzx, -cb0[42].xyzx
+dp3 r0.w, r0.xyzx, r0.xyzx
+rsq r0.w, r0.w
+mul r0.xyz, r0.wwww, r0.xyzx
+mad r0.xyz, r0.xyzx, cb0[54].zzzz, r1.xyzx
+mov r0.w, l(1.000000)
+dp4 o1.x, cb1[0].xyzw, r0.xyzw
+itof r1.xy, v1.xyxx
+mad o2.xy, r1.xyxx, cb3[1].wwww, cb3[1].zzzz
+itof r1.xy, v2.xyxx
+mad o2.zw, r1.xxxy, cb3[1].wwww, cb3[1].zzzz
+max r0.w, v4.w, cb0[51].x
+min r0.w, r0.w, cb0[51].y
+add r0.w, r0.w, -cb0[51].x
+mul_sat o3.w, r0.w, cb0[51].z
+mov_sat o3.xyz, v4.xyzx
+add r1.xyz, r0.xyzx, -cb0[42].xyzx
+mov o5.xyz, r0.xyzx
+mul r0.xyz, r1.yyyy, cb2[1].xyzx
+mad r0.xyz, cb2[0].xyzx, r1.xxxx, r0.xyzx
+mad r0.xyz, cb2[2].xyzx, r1.zzzz, r0.xyzx
+mad r1.xyz, v5.xyzx, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
+dp3 r0.w, r1.xyzx, r1.xyzx
+rsq r0.w, r0.w
+mul r2.xyz, r0.wwww, r1.xyzx
+dp3 o4.x, r2.xyzx, r0.xyzx
+mad r2.xyz, v6.xyzx, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
+dp3 r0.w, r2.xyzx, r2.xyzx
+rsq r0.w, r0.w
+mul r4.xyz, r0.wwww, r2.xyzx
+dp3 o4.y, r4.xyzx, r0.xyzx
+mad r4.xyz, v3.xyzx, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
+dp3 r0.w, r4.xyzx, r4.xyzx
+rsq r0.w, r0.w
+mul r5.xyz, r0.wwww, r4.xyzx
+dp3 o4.z, r5.xyzx, r0.xyzx
+add [precise(x)] r0.x, -cb0[43].x, cb4[0].w
+add [precise(y)] r0.y, -cb0[43].y, cb4[1].w
+add [precise(z)] r0.z, -cb0[43].z, cb4[2].w
+dp3 [precise(x)] r5.x, r3.xyzx, cb4[0].xyzx
+dp3 [precise(y)] r5.y, r3.xyzx, cb4[1].xyzx
+dp3 [precise(z)] r5.z, r3.xyzx, cb4[2].xyzx
+mov o10.xyz, r3.xyzx
+add [precise(xyz)] r0.xyz, r0.xyzx, r5.xyzx
+add [precise(xyz)] r3.xyz, -cb0[45].xyzx, cb4[4].xyzx
+add [precise(xyz)] r0.xyz, r0.xyzx, r3.xyzx
+dp3 r0.w, r0.xyzx, r0.xyzx
+rsq r0.w, r0.w
+mul r3.xyz, r0.wwww, r0.xyzx
+mad r0.xyz, r3.xyzx, cb0[54].zzzz, r0.xyzx
+mov r0.w, l(1.000000)
+dp4 o6.x, r0.xyzw, cb0[24].xyzw
+dp4 o6.y, r0.xyzw, cb0[25].xyzw
+dp4 o6.z, r0.xyzw, cb0[27].xyzw
+dp3 o7.x, r4.xyzx, cb2[0].xyzx
+dp3 o7.y, r4.xyzx, cb2[1].xyzx
+dp3 o7.z, r4.xyzx, cb2[2].xyzx
+dp3 o8.x, r2.xyzx, cb2[0].xyzx
+dp3 o8.y, r2.xyzx, cb2[1].xyzx
+dp3 o8.z, r2.xyzx, cb2[2].xyzx
+dp3 o9.x, r1.xyzx, cb2[0].xyzx
+dp3 o9.y, r1.xyzx, cb2[1].xyzx
+dp3 o9.z, r1.xyzx, cb2[2].xyzx
+ret 
+// Approximately 87 instruction slots used
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

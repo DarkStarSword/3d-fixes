@@ -1,4 +1,4 @@
-// CRC32: 9A849C62 | Matched 6 variants of 6 shaders: Diffuse, Hidden/TerrainEngine/Splatmap/Specular-Base, Legacy Shaders/Diffuse, Legacy Shaders/Specular, Legacy Shaders/Transparent/Cutout/Diffuse, Legacy Shaders/Transparent/Cutout/Specular
+// CRC32: 9A849C62 | Matched 5 variants of 5 shaders: Diffuse, Hidden/TerrainEngine/Splatmap/Specular-Base, Legacy Shaders/Specular, Legacy Shaders/Transparent/Cutout/Diffuse, Legacy Shaders/Transparent/Cutout/Specular
 // 
 //    Unity headers extracted from Normal-Diffuse.shader
 //    Shader "Diffuse" {
@@ -13,7 +13,7 @@
 //        Pass 1/5 {
 //          Name "FORWARD"
 //          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//          GpuProgramID 37137
+//          GpuProgramID 19610
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
@@ -53,47 +53,8 @@
 //        Tags { "QUEUE"="Geometry-100" "RenderType"="Opaque" }
 //        Pass 1/4 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="Geometry-100" "RenderType"="Opaque" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="Geometry-100" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
 //          GpuProgramID 56616
-//          Program "vp" {
-//            SubProgram "d3d9 " {
-//              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
-//              Bind "vertex" Vertex
-//              Bind "normal" Normal
-//              Bind "texcoord" TexCoord0
-//              Matrix 4 [_Object2World] 3
-//              Matrix 7 [_World2Object] 3
-//              Matrix 0 [glstate_matrix_mvp]
-//              Vector 19 [_MainTex_ST]
-//              Vector 10 [_ProjectionParams]
-//              Vector 11 [_ScreenParams]
-//              Vector 14 [unity_SHAb]
-//              Vector 13 [unity_SHAg]
-//              Vector 12 [unity_SHAr]
-//              Vector 17 [unity_SHBb]
-//              Vector 16 [unity_SHBg]
-//              Vector 15 [unity_SHBr]
-//              Vector 18 [unity_SHC]
-//            }
-//          }
-//        }
-//      }
-//    }
-// 
-//    Unity headers extracted from Normal-Diffuse.shader
-//    Shader "Legacy Shaders/Diffuse" {
-//      Properties {
-//       _Color ("Main Color", Color) = (1,1,1,1)
-//       _MainTex ("Base (RGB)", 2D) = "white" { }
-//      }
-//      Fallback "Legacy Shaders/VertexLit"
-//      SubShader 1/1 {
-//        LOD 200
-//        Tags { "RenderType"="Opaque" }
-//        Pass 1/5 {
-//          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "RenderType"="Opaque" }
-//          GpuProgramID 59087
 //          Program "vp" {
 //            SubProgram "d3d9 " {
 //              Keywords { "DIRECTIONAL" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "LIGHTMAP_OFF" "SHADOWS_SCREEN" }
@@ -173,7 +134,7 @@
 //        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
 //        Pass 1/5 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
 //          ColorMask RGB
 //          GpuProgramID 2513
 //          Program "vp" {
@@ -216,7 +177,7 @@
 //        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
 //        Pass 1/5 {
 //          Name "FORWARD"
-//          Tags { "LIGHTMODE"="ForwardBase" "SHADOWSUPPORT"="true" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+//          Tags { "LIGHTMODE"="ForwardBase" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "SHADOWSUPPORT"="true" "RenderType"="TransparentCutout" }
 //          ColorMask RGB
 //          GpuProgramID 10884
 //          Program "vp" {
@@ -248,6 +209,7 @@
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
 
     vs_3_0 // Converted from vs_2_0 with DarkStarSword's shadertool.py
+dcl_fog o9 // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     def c20, 1, 0.5, 0, 0
     dcl_position v0
     dcl_normal v1
@@ -262,7 +224,7 @@ dcl_position o5
 
 
 def c220, 0, 1, 0.0625, 0.5
-dcl_2d s0
+dcl_2d s3
 
     mad o0.xy, v2, c19, c19.zwzw
     dp4 o2.x, c4, v0
@@ -291,11 +253,11 @@ dcl_2d s0
     dp4 r0.x, c0, v0
     dp4 r0.w, c3, v0
 
-mov o5, r0 // Relocated from line 292 with shadertool.py
+mov o5, r0 // Relocated from line 254 with shadertool.py
 
 // Automatic vertex shader halo fix inserted with DarkStarSword's shadertool.py:
-// shadertool.py -I /home/ian/3d-fixes/The Forest/ --auto-fix-vertex-halo --only-autofixed --ignore-register-errors Diffuse/vp/9A849C62.txt
-texldl r31, c220.z, s0
+// shadertool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --add-fog-on-sm3-update --only-autofixed ./Diffuse/vp/9A849C62.txt
+texldl r31, c220.z, s3
 add r31.w, r0.w, -r31.y
 mad r0.x, r31.w, r31.x, r0.x
 
@@ -303,7 +265,8 @@ mad r0.x, r31.w, r31.x, r0.x
     mad o4.xy, r1.z, c11.zwzw, r1.xwzw
     dp4 r0.z, c2, v0
 
-//     mov o5, r0 // Relocated to line 289 with shadertool.py
-mov o5.z, r0.z // Inserted by shadertool.py
+//     mov o5, r0 // Relocated to line 251 with shadertool.py
+mov o5.z, r0 // Inserted by shadertool.py
 
+mov o9, r0.z // Inserted by shadertool.py for fog compatibility on upgrade from vs_2_0 to vs_3_0
     mov o4.zw, r0

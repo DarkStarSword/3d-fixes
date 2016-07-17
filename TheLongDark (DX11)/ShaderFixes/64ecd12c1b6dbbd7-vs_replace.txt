@@ -1,0 +1,216 @@
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 64ecd12c1b6dbbd7-vs_replace.txt
+// 3DMigoto: 64ecd12c1b6dbbd7 |    Unity headers extracted from SnowPack01_WithTexSnow.shader
+//    Shader "Custom/SnowShader01_WithTex" {
+//      Properties {
+//       _MainTex ("Base (RGB)", 2D) = "white" { }
+//       _SnowTex ("Snow Texture", 2D) = "white" { }
+//       _Snow ("Snow Level", Float) = 10
+//       _SnowColor ("Snow Color", Color) = (1,1,1,1)
+//       _SnowDirection ("Snow Direction", Vector) = (0,1,0,1)
+//       _SnowDepth ("Snow Depth (unused)", Float) = 0.1
+//       _Wetness ("Wetness", Float) = 0.3
+//       _Fresnelcolor ("Fresnel Color", Color) = (1,1,1,1)
+//       _Fresnelexponent ("Fresnel exponent", Float) = 24
+//       _Fresnelbias ("Fresnel bias", Float) = 0.2
+//       _Fresnelgain ("Fresnel gain", Range(0,1)) = 0.2
+//      }
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        LOD 200
+//        Tags { "QUEUE"="Geometry" "RenderType"="Opaque" }
+//        Pass 4/5 {
+//          Name "PREPASS"
+//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="Geometry" "RenderType"="Opaque" }
+//          ZWrite Off
+//          GpuProgramID 255099
+//          Program "vp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 147
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from SnowPack01_WithTexSnow.shader.decompressed:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 46 0 0
+//   Keywords { "LIGHTMAP_OFF" "DIRLIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "UNITY_HDR_ON" "LOD_FADE_CROSSFADE" }
+//   undeciphered2: 1 0 4 0 0
+//   undeciphered3: 15 4 0 0 2 1 1 2 3 4
+//   ConstBuffer "$Globals" 272
+//   Vector 48 [unity_ColorSpaceLuminance]
+//   Vector 224 [_MainTex_ST]
+//   Vector 240 [_SnowTex_ST]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityLighting" 720
+//   Vector 608 [unity_SHAr]
+//   Vector 624 [unity_SHAg]
+//   Vector 640 [unity_SHAb]
+//   Vector 656 [unity_SHBr]
+//   Vector 672 [unity_SHBg]
+//   Vector 688 [unity_SHBb]
+//   Vector 704 [unity_SHC]
+//   ConstBuffer "UnityPerDraw" 352
+//   Matrix 0 [glstate_matrix_mvp]
+//   Matrix 192 [_Object2World]
+//   Matrix 256 [_World2Object]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityLighting" 2
+//   BindCB "UnityPerDraw" 3
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.35 on Sat Apr 30 15:46:13 2016
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[22];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[45];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[9];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[16];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5,
+  out float3 o7 : TEXCOORD6)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+// Unity reflection/specular fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 64ecd12c1b6dbbd7-vs_replace.txt
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
+  r0.xyzw = cb3[1].xyzw * v0.yyyy;
+  r0.xyzw = cb3[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb3[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb3[3].xyzw * v0.wwww + r0.xyzw;
+  o0.xyzw = r0.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed --fxc /home/dss/fxc.exe 64ecd12c1b6dbbd7-vs_replace.txt
+if (r0.w != 1.0) { r0.x += separation * (r0.w - convergence); }
+
+  o1.xy = v3.xy * cb0[14].xy + cb0[14].zw;
+  o1.zw = v3.xy * cb0[15].xy + cb0[15].zw;
+  r1.x = cb3[16].x * v2.x;
+  r1.y = cb3[17].x * v2.x;
+  r1.z = cb3[18].x * v2.x;
+  r2.x = cb3[16].y * v2.y;
+  r2.y = cb3[17].y * v2.y;
+  r2.z = cb3[18].y * v2.y;
+  r1.xyz = r2.xyz + r1.xyz;
+  r2.x = cb3[16].z * v2.z;
+  r2.y = cb3[17].z * v2.z;
+  r2.z = cb3[18].z * v2.z;
+  r1.xyz = r2.xyz + r1.xyz;
+  r1.w = dot(r1.xyz, r1.xyz);
+  r1.w = rsqrt(r1.w);
+  r1.xyz = r1.xyz * r1.www;
+  o2.xyz = r1.xyz;
+  r2.xyz = cb3[13].xyz * v0.yyy;
+  r2.xyz = cb3[12].xyz * v0.xxx + r2.xyz;
+  r2.xyz = cb3[14].xyz * v0.zzz + r2.xyz;
+  r2.xyz = cb3[15].xyz * v0.www + r2.xyz;
+  o3.xyz = r2.xyz;
+  o4.xyz = _WorldSpaceCameraPos.xyz + -r2.xyz;
+  r0.y = cb1[5].x * r0.y;
+  r2.xzw = float3(0.5,0.5,0.5) * r0.xwy;
+  o5.zw = r0.zw;
+  o5.xy = r2.xw + r2.zz;
+  o6.xyzw = float4(0,0,0,0);
+  r0.x = r1.y * r1.y;
+  r0.x = r1.x * r1.x + -r0.x;
+  r2.xyzw = r1.xyzz * r1.yzzx;
+  r3.x = dot(cb2[41].xyzw, r2.xyzw);
+  r3.y = dot(cb2[42].xyzw, r2.xyzw);
+  r3.z = dot(cb2[43].xyzw, r2.xyzw);
+  r0.xyz = cb2[44].xyz * r0.xxx + r3.xyz;
+  r1.w = 1;
+  r2.x = dot(cb2[38].xyzw, r1.xyzw);
+  r2.y = dot(cb2[39].xyzw, r1.xyzw);
+  r2.z = dot(cb2[40].xyzw, r1.xyzw);
+  r0.xyz = r2.xyz + r0.xyz;
+  r1.xyz = max(float3(0,0,0), r0.xyz);
+  r1.xyz = log2(r1.xyz);
+  r1.xyz = float3(0.416666657,0.416666657,0.416666657) * r1.xyz;
+  r1.xyz = exp2(r1.xyz);
+  r1.xyz = r1.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
+  r1.xyz = max(float3(0,0,0), r1.xyz);
+  r0.w = cmp(cb0[3].w == 0.000000);
+  o7.xyz = r0.www ? r1.xyz : r0.xyz;
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\64ecd12c1b6dbbd7-vs_replace.txt(128,14-15): warning X3578: Output value 'o2' is not completely initialized
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\64ecd12c1b6dbbd7-vs_replace.txt(129,14-15): warning X3578: Output value 'o3' is not completely initialized
+C:\Steam\SteamApps\common\TheLongDark\ShaderFixes\64ecd12c1b6dbbd7-vs_replace.txt(130,14-15): warning X3578: Output value 'o4' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/
