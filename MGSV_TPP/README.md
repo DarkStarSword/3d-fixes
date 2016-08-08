@@ -1,6 +1,10 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.5
+-----------
+- Fixed a crash that affects systems running the Windows 10 anniversary update.
+
 Update v1.4
 -----------
 - Re-fixed red dot sight
