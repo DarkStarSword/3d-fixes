@@ -1,3 +1,8 @@
+// Water w/ sun reflections
+// PS c10819b69c631ece - water on main menu
+// 16087ef0346c4d70 4e7828140620978e 57602750d16d2a78 b0637dad8ecb6a91
+
+
 // ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:42 2016
 cbuffer cb0 : register(b0)
 {
@@ -23,11 +28,21 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 s = StereoParams.Load(0);
+
   o0.xy = v0.xy * cb0[52].xy + cb0[52].wz;
+  o2.xy = v0.xy;
+  o2.zw = float2(0,1);
+
+// This fixes the placement of the sun reflection in the water. Need to keep an
+// eye out for anything else that might break since this shader is used for
+// multiple things.
+v0.x -= s.x;
+
   r0.xyzw = cb0[45].xyzw * v0.yyyy;
   r0.xyzw = v0.xxxx * cb0[44].xyzw + r0.xyzw;
   o1.xyzw = cb0[46].xyzw + r0.xyzw;
-  o2.xy = v0.xy;
-  o2.zw = float2(0,1);
+
+
   return;
 }
