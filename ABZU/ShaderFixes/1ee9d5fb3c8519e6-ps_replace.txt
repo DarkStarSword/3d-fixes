@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:42 2016
+// "DiverFoam"
+
+// ---- Created with 3Dmigoto v1.2.44 on Fri Sep 30 18:20:02 2016
 Texture2D<float4> t3 : register(t3);
 
 Texture2D<float4> t2 : register(t2);
@@ -45,6 +47,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : SV_Position0,
@@ -63,6 +66,18 @@ void main(
   r0.xyzw = r1.xxxx * cb0[3].xyzw + r0.xyzw;
   r0.xyzw = cb0[4].xyzw + r0.xyzw;
   r0.xyz = r0.xyz / r0.www;
+
+// Correct the foam depth:
+
+float4 s = StereoParams.Load(0);
+matrix m = matrix(cb0[1], cb0[2], cb0[3], cb0[4]);
+matrix im = inverse(m);
+float4 t = mul(float4(r0.xyz, 1), im);
+float adj = s.x * (t.w - s.y) * cb2[3].x / 2; // cb2[3].x has the resolution width
+t.x -= adj; // Adjusts foam depth
+v0.x -= adj / t.w; // Adjusts foam outline (note extra divide by depth)
+r0.xyz = mul(t, m);
+
   r1.yzw = float3(1,1,1) + r0.xyz;
   r1.yzw = cmp(r1.yzw < float3(0,0,0));
   r0.w = (int)r1.z | (int)r1.y;
