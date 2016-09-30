@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:43 2016
+// Blur (processes broken velocity buffer?)
+
+// ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:19:03 2016
 Texture2D<float4> t2 : register(t2);
 
 Texture2D<float4> t1 : register(t1);
@@ -55,6 +57,10 @@ void main(
   r0.xy = min(r0.xy, r0.zw);
   r0.xy = cb0[4].zw * r0.xy;
   r0.xyzw = t2.SampleLevel(s2_s, r0.xy, 0).xyzw;
+
+// Kill blur:
+r0 = 0;
+
   r2.xyzw = cb0[25].yyyy * r0.zwzw;
   r0.z = dot(r2.zw, r2.zw);
   r0.w = cmp(r0.z < 0.25);
