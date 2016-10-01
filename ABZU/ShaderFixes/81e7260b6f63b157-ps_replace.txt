@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:43 2016
+// Shadows (skipping removed shadows, left light)
+
+// ---- Created with 3Dmigoto v1.2.44 on Sun Oct 02 01:14:23 2016
 Texture2D<float4> t3 : register(t3);
 
 Texture2D<float4> t2 : register(t2);
@@ -51,9 +53,15 @@ void main(
   r0.z = t2.SampleLevel(s2_s, r0.xy, 0).x;
   r0.z = r0.z * cb1[51].z + -cb1[51].w;
   r0.z = 1 / r0.z;
+
   r1.xy = v0.xy * cb2[3].zw + -cb1[52].wz;
   r1.xy = r1.xy / cb1[52].xy;
   r1.xy = r1.xy * r0.zz;
+
+// Fix shadow placement:
+float4 s = StereoParams.Load(0);
+r1.x -= s.x * (r0.z - s.y);
+
   r2.xyzw = cb0[29].xyzw * r1.yyyy;
   r1.xyzw = r1.xxxx * cb0[28].xyzw + r2.xyzw;
   r1.xyzw = r0.zzzz * cb0[30].xyzw + r1.xyzw;
