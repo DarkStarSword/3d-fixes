@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:43 2016
+// Grass on surface
+
+// ---- Created with 3Dmigoto v1.2.44 on Sun Oct 02 04:11:10 2016
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -35,6 +37,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   linear centroid float4 v0 : TEXCOORD10,
@@ -68,6 +71,15 @@ void main(
   r2.xyzw = v5.zzzz * cb0[38].xyzw + r2.xyzw;
   r2.xyzw = cb0[39].xyzw + r2.xyzw;
   r2.xyz = r2.xyz / r2.www;
+
+float4 s = StereoParams.Load(0);
+float4 p = IniParams.Load(0);
+matrix m = MATRIX(cb0, 36);
+matrix im = inverse(m);
+float4 t = mul(float4(r2.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb1[2].x / 2; // Note different constant buffer had resolution
+r2.xyz = mul(t, m);
+
   r2.xyz = -cb0[56].xyz + r2.xyz;
   r0.w = cb2[9].w * cb1[10].w;
   r1.w = v6.x ? 1 : -1;
