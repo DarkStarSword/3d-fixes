@@ -1,3 +1,5 @@
+// Caustics
+
 // ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:42 2016
 Texture2D<float4> t5 : register(t5);
 
@@ -56,6 +58,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : SV_Position0,
@@ -65,6 +68,10 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 s = StereoParams.Load(0);
+float4 p = IniParams.Load(0);
+//v0.x-=s.x*p.x*1000;
+
   r0.xy = cb2[3].zw * v0.xy;
   r0.x = t5.SampleLevel(s5_s, r0.xy, 0).x;
   r1.xyzw = cb0[19].xyzw * v0.yyyy;
@@ -72,11 +79,28 @@ void main(
   r1.xyzw = r0.xxxx * cb0[20].xyzw + r1.xyzw;
   r1.xyzw = cb0[21].xyzw + r1.xyzw;
   r0.yzw = r1.yzx / r1.www;
+
+// Fix caustics placement:
+matrix m = MATRIX(cb0, 18);
+matrix im = inverse(m);
+float4 t = mul(float4(r0.wyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb2[3].x/2;
+r0.yzw = mul(t, m).yzx;
+
   r1.xyzw = cb1[37].xyzw * v0.yyyy;
   r1.xyzw = v0.xxxx * cb1[36].xyzw + r1.xyzw;
   r1.xyzw = r0.xxxx * cb1[38].xyzw + r1.xyzw;
   r1.xyzw = cb1[39].xyzw + r1.xyzw;
   r1.xyz = r1.xyz / r1.www;
+
+// May need another adjustment here?
+// No apparent change - leaving out until I confirm I need it...
+//m = MATRIX(cb1, 36);
+//im = inverse(m);
+//t = mul(float4(r1.xyz, 1), im);
+//t.x -= s.x * (t.w - s.y) * cb2[3].x/2;
+//r1.xyz = mul(t, m);
+
   r1.xyz = -cb1[56].xyz + r1.xyz;
   r2.xyz = cb1[53].xyz + -r1.xyz;
   r0.x = dot(r2.xyz, r2.xyz);
