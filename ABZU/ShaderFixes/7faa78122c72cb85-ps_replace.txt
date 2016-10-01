@@ -1,3 +1,8 @@
+// Lighting near cave entrance
+// VS 3c39886e9905c001
+// PS 7faa78122c72cb85 b8c7724aad81f2e3
+
+
 // ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
 Texture2D<uint4> t7 : register(t7);
 
@@ -87,6 +92,11 @@ void main(
     r2.z = r2.z * cb0[51].z + -cb0[51].w;
     r2.z = 1 / r2.z;
     r0.xy = r2.zz * r0.xy;
+
+// Fix light shading:
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (r2.z - s.y);
+
     r4.xyzw = cb0[41].xyzw * r0.yyyy;
     r4.xyzw = r0.xxxx * cb0[40].xyzw + r4.xyzw;
     r4.xyzw = r2.zzzz * cb0[42].xyzw + r4.xyzw;

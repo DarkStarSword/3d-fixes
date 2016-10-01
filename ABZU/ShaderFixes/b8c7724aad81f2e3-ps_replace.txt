@@ -1,3 +1,7 @@
+// Lighting (unconfirmed)
+// VS 3c39886e9905c001
+// PS 7faa78122c72cb85 b8c7724aad81f2e3
+
 // ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
 Texture2D<float4> t6 : register(t6);
 
@@ -77,6 +81,11 @@ void main(
     r3.x = r3.x * cb0[51].z + -cb0[51].w;
     r3.x = 1 / r3.x;
     r0.xy = r3.xx * r0.xy;
+
+// Fix light shading:
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (r3.x - s.y);
+
     r4.xyzw = cb0[41].xyzw * r0.yyyy;
     r4.xyzw = r0.xxxx * cb0[40].xyzw + r4.xyzw;
     r3.xyzw = r3.xxxx * cb0[42].xyzw + r4.xyzw;
