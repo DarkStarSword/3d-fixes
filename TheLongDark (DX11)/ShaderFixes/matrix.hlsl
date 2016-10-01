@@ -28,3 +28,5 @@ matrix inverse(float4 m0, float4 m1, float4 m2, float4 m3)
 {
 	return inverse(matrix(m0, m1, m2, m3));
 }
+
+#define MATRIX(cb, idx) matrix(cb[idx], cb[idx+1], cb[idx+2], cb[idx+3])
