@@ -1,3 +1,5 @@
+// Terrain
+
 // ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:43 2016
 Texture2D<float4> t7 : register(t7);
 
@@ -70,10 +72,11 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
-  float2 v0 : TEXCOORD0,
-  float w0 : TEXCOORD1,
+  float3 v0 : TEXCOORD0, // Changed to float3
+  //float w0 : TEXCOORD1, // Commented out
   float4 v1 : VELOCITY_PREV_POS0,
   float4 v2 : SV_Position0,
   uint v3 : SV_IsFrontFace0,
@@ -89,8 +92,8 @@ void main(
   float4 fDest;
 
   r0.x = t7.Sample(s5_s, v0.xy).x;
-  r0.yzw = cb0[16].xyz * w0.xzz;
-  r1.xyz = cb0[18].xyz * w0.xzz;
+  r0.yzw = cb0[16].xyz * v0.xzz; // Decompiler bug w0.xzz
+  r1.xyz = cb0[18].xyz * v0.xzz; // Decompiler bug w0.xzz
   r2.xy = -cb2[1].xy + v2.xy;
   r2.xy = r2.xy * cb2[2].zw + float2(-0.5,-0.5);
   r2.xy = v2.ww * r2.xy;
@@ -100,6 +103,15 @@ void main(
   r3.xyzw = v2.zzzz * cb1[38].xyzw + r3.xyzw;
   r3.xyzw = cb1[39].xyzw + r3.xyzw;
   r3.xyz = r3.xyz / r3.www;
+
+// Fix grain depth:
+float4 s = StereoParams.Load(0);
+matrix m = MATRIX(cb1, 36);
+matrix im = inverse(m);
+float4 t = mul(float4(r3.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb2[3].x/2;
+r3.xyz = mul(t, m);
+
   r4.xyz = -cb1[56].xyz + r3.xyz;
   r1.w = dot(r3.xyz, r3.xyz);
   r1.w = sqrt(r1.w);
