@@ -1,3 +1,5 @@
+// "OpaqueOceanSurface" transition between transparent and opaque Ocean at screen depth
+
 // ---- Created with 3Dmigoto v1.2.42 on Fri Sep 30 07:38:43 2016
 Texture3D<float4> t10 : register(t10);
 
@@ -81,6 +83,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : TEXCOORD10,
@@ -107,6 +110,15 @@ void main(
   r1.xyzw = v3.zzzz * cb1[38].xyzw + r1.xyzw;
   r1.xyzw = cb1[39].xyzw + r1.xyzw;
   r1.xyz = r1.xyz / r1.www;
+
+// Fix depth of transition from opaque to transparent in Ocean surface from below:
+float4 s = StereoParams.Load(0);
+matrix m = MATRIX(cb1, 36);
+matrix im = inverse(m);
+float4 t = mul(float4(r1.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+r1.xyz = mul(t, m);
+
   r2.xyz = -cb1[56].xyz + r1.xyz;
   r3.xy = -cb1[56].xy + v2.xy;
   r1.w = dot(r1.xyz, r1.xyz);
