@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
+// Lighting in distant water background - horizontal band
+// ---- Created with 3Dmigoto v1.2.44 on Mon Oct 03 01:41:01 2016
 Texture3D<float4> t5 : register(t5);
 
 Texture2D<float4> t4 : register(t4);
@@ -57,6 +58,11 @@ void main(
     r1.xyz = r0.yyy * cb0[0].xyw + r1.xyz;
     r1.xyz = r0.www * cb0[2].xyw + r1.xyz;
     r1.xyz = cb0[3].xyw + r1.xyz;
+
+// Fix lighting in the distant water background:
+float4 s = StereoParams.Load(0);
+r1.x -= s.x * (r0.x - s.y);
+
     r1.xy = r1.xy / r1.zz;
     r0.y = dot(r0.yzw, r0.yzw);
     r0.y = sqrt(r0.y);
