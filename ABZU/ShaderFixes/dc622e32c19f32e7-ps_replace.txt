@@ -1,3 +1,5 @@
+// Lighting in distance, around cliffs, etc
+
 // ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
 Texture2D<float4> t10 : register(t10);
 
@@ -58,7 +60,6 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
-
 void main( 
   linear noperspective float4 v0 : TEXCOORD0,
   float4 v1 : SV_POSITION0,
@@ -99,6 +100,11 @@ void main(
   r3.xyz = r3.xyz * cb1[5].www + cb1[5].xyz;
   r2.xyz = r2.xyz * cb1[6].www + cb1[6].xyz;
   r4.xyz = t5.SampleLevel(s1_s, v0.xy, 0).xyz;
+
+// Fix lighting in distance, around cliffs, etc:
+float4 s = StereoParams.Load(0);
+v0.z -= s.x * (r0.w - s.y) / r0.w;
+
   r5.xyz = cb0[41].xyz * v0.www;
   r5.xyz = v0.zzz * cb0[40].xyz + r5.xyz;
   r5.xyz = cb0[42].xyz + r5.xyz;
