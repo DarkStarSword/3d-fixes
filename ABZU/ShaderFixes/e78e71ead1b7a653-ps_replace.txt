@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
+// Orange web door
+// ---- Created with 3Dmigoto v1.2.44 on Mon Oct 03 02:34:16 2016
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -30,6 +31,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : SV_Position0,
@@ -48,6 +50,14 @@ void main(
   r0.xyzw = r0.xxxx * cb0[3].xyzw + r1.xyzw;
   r0.xyzw = cb0[4].xyzw + r0.xyzw;
   r0.xyz = r0.xyz / r0.www;
+
+float4 s = StereoParams.Load(0);
+matrix m = MATRIX(cb0, 1);
+matrix im = inverse(m);
+float4 t = mul(float4(r0.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb1[3].x / 2; // Different cb for resolution
+r0.xyz = mul(t, m);
+
   r1.xyz = float3(1,1,1) + r0.xyz;
   r1.xyz = cmp(r1.xyz < float3(0,0,0));
   r0.w = (int)r1.y | (int)r1.x;

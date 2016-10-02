@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
+// Rocks with orange grass
+// ---- Created with 3Dmigoto v1.2.44 on Mon Oct 03 02:32:12 2016
 Texture2D<float4> t8 : register(t8);
 
 Texture2D<float4> t7 : register(t7);
@@ -74,6 +75,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   linear centroid float4 v0 : TEXCOORD10,
@@ -108,6 +110,14 @@ void main(
   r2.xyzw = v6.zzzz * cb1[38].xyzw + r2.xyzw;
   r2.xyzw = cb1[39].xyzw + r2.xyzw;
   r2.xyz = r2.xyz / r2.www;
+
+float4 s = StereoParams.Load(0);
+matrix m = MATRIX(cb1, 36);
+matrix im = inverse(m);
+float4 t = mul(float4(r2.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+r2.xyz = mul(t, m);
+
   r2.xyz = -cb1[56].xyz + r2.xyz;
   r3.xyzw = -cb1[56].xzyz + v5.xzyz;
   r4.xyz = t3.Sample(s1_s, v3.xy).xyz;

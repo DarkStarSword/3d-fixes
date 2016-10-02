@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.42 on Sun Oct 02 17:34:21 2016
+// Screen depth highlights on water in whirlpool
+// ---- Created with 3Dmigoto v1.2.44 on Mon Oct 03 03:25:13 2016
 Texture2D<float4> t2 : register(t2);
 
 Texture2D<float4> t1 : register(t1);
@@ -44,6 +45,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : SV_Position0,
@@ -60,6 +62,14 @@ void main(
   r0.xyzw = r1.xxxx * cb0[3].xyzw + r0.xyzw;
   r0.xyzw = cb0[4].xyzw + r0.xyzw;
   r0.xyz = r0.xyz / r0.www;
+
+float4 s = StereoParams.Load(0);
+matrix m = MATRIX(cb0, 1);
+matrix im = inverse(m);
+float4 t = mul(float4(r0.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * 1920 / 2;
+r0.xyz = mul(t, m);
+
   r1.yzw = float3(1,1,1) + r0.xyz;
   r1.yzw = cmp(r1.yzw < float3(0,0,0));
   r0.w = (int)r1.z | (int)r1.y;
@@ -76,6 +86,14 @@ void main(
   r1.xyzw = r1.xxxx * cb1[38].xyzw + r2.xyzw;
   r1.xyzw = cb1[39].xyzw + r1.xyzw;
   r1.xyz = r1.xyz / r1.www;
+
+// May need another adjustment here? No apparent change:
+//m = MATRIX(cb1, 36);
+//im = inverse(m);
+//t = mul(float4(r1.xyz, 1), im);
+//t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+//r1.xyz = mul(t, m);
+
   r1.xyz = -cb1[56].xyz + r1.xyz;
   r2.xyz = -cb3[1].xyz + r1.xyz;
   r0.w = dot(r2.xyz, r2.xyz);
