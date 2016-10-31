@@ -40,5 +40,5 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// mathematically equivalent). Note that if you legitimately wanted a
 	// transposed output for some reason you could save some (13)
 	// instructions in this shader by doing the opposite of this advice.
-	InvViewMatrixOutputBuffer[tid.x] = inverse_transpose_parallel(ViewMatrix, tid.x);
+	OutputMatrix[tid.x] = inverse_transpose_parallel(InputMatrix, tid.x);
 }
