@@ -195,7 +195,6 @@ def col_major_regs(m):
 
 def _determinant_euclidean_asm_col_major(col0, col1, col2):
     tmp0 = pyasm.Register()
-    tmp1 = pyasm.Register()
     det = pyasm.Register()
 
     # Do some multiplications & subtractions in parallel with SIMD instructions:
@@ -264,16 +263,13 @@ def _inverse_euclidean(m, d):
 def inverse_euclidean(m):
     return _inverse_euclidean(m, determinant_euclidean(m))
 
-def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
+def _inverse_euclidean_asm_col_major(col0, col1, col2, det):
     '''
     Performs a matrix inverse in a manner as would be done in assembly.
     Note that the input matrix is in column-major order, but the resulting
     inverted matrix will be in ROW-major order.
     '''
     std_consts = pyasm.Register([0, 1, 0.0625, 0.5])
-    tmp0 = pyasm.Register()
-    tmp1 = pyasm.Register()
-    tmp2 = pyasm.Register()
     dst0 = pyasm.Register()
     dst1 = pyasm.Register()
     dst2 = pyasm.Register()
@@ -318,7 +314,7 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
     dst3.xyz  = pyasm.mov(-dst3)
 
     # Multiply against 1/determinant (and zero out 4th column):
-    inv_det = pyasm.rcp(d.x)
+    inv_det = pyasm.rcp(det.x)
     inv_det.y = pyasm.mov(std_consts.x)
     dst0 = pyasm.mul(dst0, inv_det.xxxy)
     dst1 = pyasm.mul(dst1, inv_det.xxxy)
@@ -331,8 +327,8 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, d):
 
 def inverse_euclidean_asm_col_major(m):
     (col0, col1, col2, _) = col_major_regs(m)
-    d = _determinant_euclidean_asm_col_major(col0, col1, col2)
-    return _inverse_euclidean_asm_col_major(col0, col1, col2, d)
+    det = _determinant_euclidean_asm_col_major(col0, col1, col2)
+    return _inverse_euclidean_asm_col_major(col0, col1, col2, det)
 
 def inverse_matrix_euclidean_m0(m, d):
     # Return the 1st row of an inverted matrix, simplifying on the assumption
