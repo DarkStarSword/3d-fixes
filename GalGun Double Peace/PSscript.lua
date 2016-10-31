@@ -162,7 +162,7 @@ if (((SceneColorTexture ~= nil) or (LightMapTextures ~= nil)) and (UniformPixelV
 		
 						if (lastdclpos == nil) and (dclpos ~= nil) then
 							if i == dclpos then
-								x = x .. "   dcl_2d s13" .. string.char(10)	
+								x = x .. "   dcl_2d s15" .. string.char(10)	
 							end			
 						end
 					end
@@ -177,7 +177,7 @@ if (((SceneColorTexture ~= nil) or (LightMapTextures ~= nil)) and (UniformPixelV
 					
 						if IsFirst then
 							x = x .. "    mov r16.xyw, " .. textcordreg .. string.char(10)			
-							x = x .. "    texldl r11, c200.z, s13" .. string.char(10)
+							x = x .. "    texldl r11, c200.z, s15" .. string.char(10)
 							x = x .. "    add r11.y, r16.w, -r11.y" .. string.char(10)
 							x = x .. "    mul r11.x, r11.x, r11.y" .. string.char(10)
 							x = x .. "    add r16.x, r16.x, r11.x" .. string.char(10)
@@ -249,7 +249,7 @@ if (SceneColorTexture ~= nil) and (ScreenToLS ~= nil) then
 		
 						if (lastdclpos == nil) and (dclpos ~= nil) then
 							if i == dclpos then
-								x = x .. "   dcl_2d s13" .. string.char(10)	
+								x = x .. "   dcl_2d s15" .. string.char(10)	
 							end
 							
 							if c7pos == nil then
@@ -283,7 +283,7 @@ if (SceneColorTexture ~= nil) and (ScreenToLS ~= nil) then
 									sw = string.sub(SText[c7pos], rposEnd + 2, rposEnd + 2)
 						
 									x = x .. SText[i] .. string.char(10)
-									x = x .. "    texldl r11, c200.z, s13" .. string.char(10)
+									x = x .. "    texldl r11, c200.z, s15" .. string.char(10)
 									x = x .. "    add r11.y, " .. sr .. "." .. sw .. ", -r11.y" .. string.char(10)
 									x = x .. "    mul r11.x, r11.x, r11.y" .. string.char(10)
 									x = x .. "    add " .. sr .. "." .. sx .. ", " .. sr .. "." .. sx .. ", -r11.x" .. string.char(10)
@@ -304,7 +304,7 @@ if (SceneColorTexture ~= nil) and (ScreenToLS ~= nil) then
 					
 						if IsFirst then
 							x = x .. "    mov r16.xyw, " .. textcordreg .. string.char(10)			
-							x = x .. "    texldl r11, c200.z, s13" .. string.char(10)
+							x = x .. "    texldl r11, c200.z, s15" .. string.char(10)
 							x = x .. "    add r11.y, r16.w, -r11.y" .. string.char(10)
 							x = x .. "    mul r11.x, r11.x, r11.y" .. string.char(10)
 							x = x .. "    add r16.x, r16.x, r11.x" .. string.char(10)
@@ -376,7 +376,7 @@ if ((pos ~= nil) or (ShadowTexture and  SceneColorTexture)) and (pos1 ~= nil) th
 		
 			if (lastdclpos == nil) and (dclpos ~= nil) and (VPreg ~= "") then
 				if i == dclpos then
-					x = x .. "   dcl_2d s13" .. string.char(10)	
+					x = x .. "   dcl_2d s15" .. string.char(10)	
 				end
 				c7pos = string.find(SText[i], VPreg)
 				if c7pos ~= nil then
@@ -394,7 +394,7 @@ if ((pos ~= nil) or (ShadowTexture and  SceneColorTexture)) and (pos1 ~= nil) th
 						x = x .. SText[i + 2] .. string.char(10)
 						SText[i + 1] = ""
 						SText[i + 2] = ""
-						x = x .. "    texldl r11, c200.z, s13" .. string.char(10)
+						x = x .. "    texldl r11, c200.z, s15" .. string.char(10)
 						x = x .. "    add r11.y, " .. sr .. "." .. sw .. ", -r11.y" .. string.char(10)
 						x = x .. "    mul r11.x, r11.x, r11.y" .. string.char(10)
 						x = x .. "    add " .. sr .. "." .. sx .. ", " .. sr .. "." .. sx .. ", r11.x" .. string.char(10)
@@ -453,7 +453,7 @@ if (pos ~= nil) and (LightAttenuationTexture ~= nil) and (pos1 == nil)  then
 		
 			if (lastdclpos == nil) and (dclpos ~= nil) then
 				if i == dclpos then
-					x = x .. "   dcl_2d s13" .. string.char(10)	
+					x = x .. "   dcl_2d s15" .. string.char(10)	
 				end
 				c7pos, rposEnd = string.find(SText[i], textcordreg)
 				if c7pos ~= nil then
@@ -461,7 +461,7 @@ if (pos ~= nil) and (LightAttenuationTexture ~= nil) and (pos1 == nil)  then
 					if IsFirst then
 						x = x .. "    mov r16.xyw, " .. textcordreg .. string.char(10)
 			
-						x = x .. "    texldl r11, c200.z, s13" .. string.char(10)
+						x = x .. "    texldl r11, c200.z, s15" .. string.char(10)
 						x = x .. "    add r11.y, r16.w, -r11.y" .. string.char(10)
 						x = x .. "    mul r11.x, r11.x, r11.y" .. string.char(10)
 						x = x .. "    add r16.x, r16.x, r11.x" .. string.char(10)
