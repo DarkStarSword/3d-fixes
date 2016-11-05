@@ -1,6 +1,12 @@
 Gal\*Gun: Double Peace
 ======================
-NOTE: This is a quick fix for shadows - the crosshair and UI are still 2D.
+
+Fixes
+-----
+- Shadows
+- God Rays
+
+NOTE: This is a quick fix only - the crosshair and UI are still 2D.
 
 Installation
 ------------
