@@ -73,55 +73,67 @@ def decode_consts(file, headers, shader_type):
         (name_len,) = struct.unpack('<I', file.read(4))
         entry_name = file.read(name_len).decode('ascii')
         align(file, 4)
-        (type1, type_size1, type_size2, type3, one, offset) = struct.unpack('<6I', file.read(24))
-        assert(one == 1)
-        if type1 == 0: # Float
-            if type_size1 == 1:
+        (type1, type_size1, type_size2, type3, array_len, offset) = struct.unpack('<6I', file.read(24))
+
+        # Unity < 5.4 this was always 1 and arrays were spelt out with all
+        # individual elements. From 5.4 onwards it is 0 for no array, or >= 1
+        # for an array - we append a number to the name to give the same
+        # results as old versions, though this won't technically be correct for
+        # Unity 5.4 with an array length of 1, but that's a minor issue.
+        if array_len > 1:
+            entry_names = [ '%s%i' % (entry_name, n) for n in range(array_len) ]
+        else:
+            entry_names = [ entry_name ]
+
+        for entry_name in entry_names:
+            if type1 == 0: # Float
+                if type_size1 == 1:
+                    assert(type3 == 0)
+                    if type_size2 == 1:
+                        add_header(headers, 'Float {} [{}]'.format(offset, entry_name))
+                    elif type_size2 == 4:
+                        add_header(headers, 'Vector {} [{}]'.format(offset, entry_name))
+                    elif type_size2 in (2, 3):
+                        add_header(headers, 'Vector {} [{}] {}'.format(offset, entry_name, type_size2))
+                    else:
+                        raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
+                elif type_size1 == 4:
+                    assert(type3 == 1)
+                    if type_size2 == 4:
+                        add_header(headers, 'Matrix {} [{}]'.format(offset, entry_name))
+                    elif type_size2 in (2, 3): # 2x4 unconfirmed for DX11
+                        add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size2))
+                        assert(shader_type == ShaderType.dx11) # Need to check syntax for other way around
+                    else:
+                        assert(False)
+                elif type_size1 in (2, 3):
+                    assert(type_size2 == 4)
+                    assert(type3 == 1)
+                    add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size1))
+                    assert(shader_type == ShaderType.dx9) # Need to check syntax for other way around
+                else:
+                    raise ParseError('Unknown name: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type_size1, type_size2, type3, offset))
+            elif type1 == 1: # Int
+                assert(type_size1 == 1)
                 assert(type3 == 0)
                 if type_size2 == 1:
-                    add_header(headers, 'Float {} [{}]'.format(offset, entry_name))
-                elif type_size2 == 4:
-                    add_header(headers, 'Vector {} [{}]'.format(offset, entry_name))
-                elif type_size2 in (2, 3):
-                    add_header(headers, 'Vector {} [{}] {}'.format(offset, entry_name, type_size2))
+                    add_header(headers, 'ScalarInt {} [{}]'.format(offset, entry_name))
+                elif type_size2 in (2, 3, 4):
+                    add_header(headers, 'VectorInt {} [{}] {}'.format(offset, entry_name, type_size2))
                 else:
                     raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
-            elif type_size1 == 4:
-                assert(type3 == 1)
-                if type_size2 == 4:
-                    add_header(headers, 'Matrix {} [{}]'.format(offset, entry_name))
-                elif type_size2 in (2, 3): # 2x4 unconfirmed for DX11
-                    add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size2))
-                    assert(shader_type == ShaderType.dx11) # Need to check syntax for other way around
+            elif type1 == 2: # Bool
+                assert(type_size1 == 1)
+                assert(type3 == 0)
+                if type_size2 == 1:
+                    add_header(headers, 'ScalarBool {} [{}]'.format(offset, entry_name))
+                elif type_size2 in (2, 3, 4):
+                    add_header(headers, 'VectorBool {} [{}] {}'.format(offset, entry_name, type_size2))
                 else:
-                    assert(False)
-            elif type_size1 in (2, 3):
-                assert(type_size2 == 4)
-                assert(type3 == 1)
-                add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size1))
-                assert(shader_type == ShaderType.dx9) # Need to check syntax for other way around
+                    raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
             else:
-                raise ParseError('Unknown name: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type_size1, type_size2, type3, offset))
-        elif type1 == 1: # Int
-            assert(type_size1 == 1)
-            assert(type3 == 0)
-            if type_size2 == 1:
-                add_header(headers, 'ScalarInt {} [{}]'.format(offset, entry_name))
-            elif type_size2 in (2, 3, 4):
-                add_header(headers, 'VectorInt {} [{}] {}'.format(offset, entry_name, type_size2))
-            else:
-                raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
-        elif type1 == 2: # Bool
-            assert(type_size1 == 1)
-            assert(type3 == 0)
-            if type_size2 == 1:
-                add_header(headers, 'ScalarBool {} [{}]'.format(offset, entry_name))
-            elif type_size2 in (2, 3, 4):
-                add_header(headers, 'VectorBool {} [{}] {}'.format(offset, entry_name, type_size2))
-            else:
-                raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
-        else:
-            raise ParseError('Unknown name: {} type1: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type1, type_size1, type_size2, type3, offset))
+                raise ParseError('Unknown name: {} type1: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type1, type_size1, type_size2, type3, offset))
+            offset += type_size1 * type_size2 * 4
 
 def decode_constbuffers(file, num_cbs, headers, shader_type):
     for i in range(num_cbs):
@@ -243,11 +255,21 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
 
     extract_unity_shaders.export_dx9_shader_binary(dest, bin, finalise_headers(headers, shader.sub_program))
 
-def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader):
-    (u8a, u8b, u8c, u8d, u8e) = struct.unpack('<5b', file.read(5))
-    add_header(headers, 'undeciphered2: {} {} {} {} {}'.format(u8a, u8b, u8c, u8d, u8e)) # Think this is related to the bindings
+def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader, date):
+    # Is this the correct way to detect this? Could be a file version, but it
+    # looks suspiciously like a date (but 2015? Last year for an update
+    # released this year?), so I'm not certain this is correct. If not this,
+    # maybe just check the Unity version for 5.4?
+    if date == 201509030:
+        u8len = 5
+    elif date == 201510240: # Seen in Firewatch Unity 5.4 update
+        u8len = 6
+    else:
+        assert(False)
+    u8 = struct.unpack('<%ib' % u8len, file.read(u8len))
+    add_header(headers, 'undeciphered2: {}'.format(' '.join(map(str, u8)))) # Think this is related to the bindings
 
-    bin = file.read(shader_size - 5)
+    bin = file.read(shader_size - u8len)
     align(file, 4)
     assert(bin[:4] == b'DXBC')
 
@@ -320,19 +342,19 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
     saved_offset = file.tell()
     file.seek(offset)
     try:
-        (u1, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
-        assert(u1 == 0x0c02c8a6)
+        (date, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
+        assert(date in (201509030, 201510240)) # New date/version(?) seen in Firewatch Unity 5.4 update
         api = get_shader_api(shader_type)
         program_name = get_program_name(shader_type)
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
-        add_header(headers, 'undeciphered1: {} {} {}'.format(u3, u4, u5))
+        add_header(headers, 'undeciphered1: {} {} {} {}'.format(date, u3, u4, u5))
         if args.skip_classic_headers:
             shader.program.name = program_name
             shader.sub_program.name = api
         else:
             assert(shader.program.name == program_name or program_name is None)
-            assert(shader.sub_program.name == api)
+            assert(shader.sub_program.name.split(' ')[0] == api) # sub_program "d3d9 hw_tier01" seen in Firewatch Unity 5.4 update
 
         keywords = []
         for i in range(num_keywords):
@@ -349,7 +371,7 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
         elif api == 'd3d9':
             extract_directx9_shader(file, shader_size, headers, offset, size, shader)
         elif api in ('d3d11', 'd3d11_9x'):
-            extract_directx11_shader(file, shader_size, headers, offset, size, shader)
+            extract_directx11_shader(file, shader_size, headers, offset, size, shader, date)
         elif api in ('gles', 'gles3'):
             # See explanation in is_opengl_shader
             pass
