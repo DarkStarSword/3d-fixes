@@ -1,3 +1,5 @@
+// Conversation text
+
 // 3DMigoto: 8b3454d7afc952b3 |    Unity headers extracted from TMPro_SDF ScreenBlend.shader
 //    Shader "TMPro/Distance Field ScreenBlend" {
 //      Properties {
@@ -163,6 +165,24 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -184,12 +204,26 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
   r0.xy = cb0[27].zw + v0.xy;
   r1.xyzw = cb2[1].xyzw * r0.yyyy;
   r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
   r1.xyzw = cb2[2].xyzw * v0.zzzz + r1.xyzw;
   r1.xyzw = cb2[3].xyzw * v0.wwww + r1.xyzw;
   o0.xyzw = r1.xyzw;
+
+// Automatic vertex shader halo fix inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --only-autofixed --fxc /home/dss/fxc.exe 2c3105d25d4c7d98-vs_replace.txt
+if (r1.w != 1.0) { r1.x += separation * (r1.w - convergence); }
+
   o1.xyzw = cb0[7].xyzw * v2.xyzw;
   o2.w = cb0[9].w * v2.w;
   o2.xyz = cb0[9].xyz;
@@ -198,7 +232,7 @@ void main(
   o6.xy = r0.xy;
   r0.xyz = cb2[14].xyz * v0.zzz + r2.xyz;
   r0.xyz = cb2[15].xyz * v0.www + r0.xyz;
-  r0.xyz = cb1[4].xyz + -r0.xyz;
+  r0.xyz = _WorldSpaceCameraPos.xyz + -r0.xyz;
   r2.xyz = cb0[16].xyz * r0.yyy;
   r2.xyz = cb0[15].xyz * r0.xxx + r2.xyz;
   p3.xyz = cb0[17].xyz * r0.zzz + r2.xyz;
@@ -260,5 +294,21 @@ void main(
   r0.xyz = float3(0.5,0.5,-0.5) * r1.xwy;
   o7.zw = r1.zw;
   o7.xy = r0.xz + r0.yy;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+float4 crosshair_settings = IniParams.Load(int2(2, 0));
+if (crosshair_settings.z)
+	o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }

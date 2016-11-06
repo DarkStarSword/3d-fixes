@@ -1,3 +1,5 @@
+// Various menu text "PAUSED"
+
 // 3DMigoto: 530653d0b72dc586 |    Unity headers extracted from TMPro_SDF.shader
 //    Shader "TMPro/Distance Field" {
 //      Properties {
@@ -159,6 +161,24 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <ShaderFixes/crosshair.hlsl>
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <ShaderFixes/matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -179,6 +199,16 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+float4 _WorldSpaceCameraPos = cb1[4];
+float4 clip_space_adj = float4(-separation * convergence, 0, 0, 0);
+matrix imvp = inverse(glstate_matrix_mvp);
+float4 local_space_adj = mul(imvp, clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+_WorldSpaceCameraPos.xyz -= world_space_adj.xyz;
+
   r0.xy = cb0[27].zw + v0.xy;
   r1.xyzw = cb2[1].xyzw * r0.yyyy;
   r1.xyzw = cb2[0].xyzw * r0.xxxx + r1.xyzw;
@@ -193,7 +223,7 @@ void main(
   o6.xy = r0.xy;
   r0.xyz = cb2[14].xyz * v0.zzz + r1.xyz;
   r0.xyz = cb2[15].xyz * v0.www + r0.xyz;
-  r0.xyz = cb1[4].xyz + -r0.xyz;
+  r0.xyz = _WorldSpaceCameraPos.xyz + -r0.xyz;
   r1.xyz = cb0[16].xyz * r0.yyy;
   r1.xyz = cb0[15].xyz * r0.xxx + r1.xyz;
   p3.xyz = cb0[17].xyz * r0.zzz + r1.xyz;
@@ -252,5 +282,21 @@ void main(
   o5.x = r0.y + -r0.w;
   r0.y = 0.5 + -r0.w;
   o5.z = r0.y + r0.x;
+
+if (o0.w != 1)
+	return;
+
+float4 rt_filter = IniParams.Load(int2(1, 0));
+if (any(rt_filter.xy != rt_filter.zw))
+	return;
+
+// Full screen detection:
+if (all(abs(o0.xy) >= 1.0))
+	return;
+
+float4 crosshair_settings = IniParams.Load(int2(2, 0));
+if (crosshair_settings.z)
+	o0.x += adjust_from_depth_buffer(0, 0);
+
   return;
 }
