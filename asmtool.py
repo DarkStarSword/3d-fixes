@@ -674,6 +674,7 @@ def fix_unity_frustum_world(shader):
         _FrustumCornersWS2 = _FrustumCornersWS[2],
     ))
 
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
 
