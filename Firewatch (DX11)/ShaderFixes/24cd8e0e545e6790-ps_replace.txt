@@ -74,6 +74,27 @@ Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
 
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+cbuffer Resource_Inverse_MVP : register(b10)
+{
+	matrix Inverse_MVP;
+}
+
+#include <matrix.hlsl>
+
 void main( 
   float4 v0 : SV_POSITION0,
   float2 v1 : TEXCOORD0,
@@ -85,9 +106,19 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 s = StereoParams.Load(0);
+
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.x = cb1[7].x * r0.x + cb1[7].y;
   r0.x = 1 / r0.x;
+
+// This fog shader also draws a shadow, fix it's depth (also requires frustum fix in the VS):
+float4 clip_space_adj = float4(s.x * (r0.x - s.y), 0, 0, 0);
+float4 local_space_adj = mul(Inverse_MVP, clip_space_adj);
+float4 world_space_adj = mul(_Object2World, local_space_adj);
+
+v2.xyz -= world_space_adj.xyz / r0.x;
+
   r0.xyz = v2.xyz * r0.xxx;
   r0.x = dot(r0.xyz, r0.xyz);
   r0.x = sqrt(r0.x);
