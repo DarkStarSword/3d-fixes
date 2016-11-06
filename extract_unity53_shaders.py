@@ -217,15 +217,23 @@ def delay_writing_dx11_shader(hash, dest, bin, headers, sub_program):
     return delay_writing_shader(dx11_shader_cache, hash, dest, bin, headers, sub_program)
 
 def _write_delayed_shaders(shader_cache, export):
-    for (hash, shaders) in shader_cache.items():
+    for (hash, shaders) in sorted(shader_cache.items()):
         (dests, uncombined_headers, sub_programs, bin) = shaders
         if len(sub_programs) > 1:
             headers = extract_unity_shaders.combine_shader_headers(sub_programs)
         else:
             headers = uncombined_headers[0]
         headers = finalise_headers(headers, sub_programs[0])
+        output_files = export(dests.pop(), bin, headers)
         for dest in dests:
-            export(dest, bin, headers)
+            for (filename, contents) in output_files.items():
+                mode = 'w'
+                if isinstance(contents, bytes):
+                    mode = 'wb'
+                copy_dest = os.path.join(os.path.dirname(dest), os.path.basename(filename))
+                print('  |--> %s' % copy_dest)
+                with open (copy_dest, mode) as out:
+                    out.write(contents)
 
 def write_delayed_shaders():
     _write_delayed_shaders(dx9_shader_cache, extract_unity_shaders.export_dx9_shader_binary)

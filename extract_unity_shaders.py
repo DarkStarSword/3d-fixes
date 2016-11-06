@@ -798,16 +798,17 @@ def disassemble_and_decompile_binary_shader(bin_filename, disassemble_flugan=Tru
     return True
 
 def attach_headers(old_file_path, new_file_path, headers, remove=True):
+    attached = headers
     try:
         with open(old_file_path, 'r') as old_file:
             with open(new_file_path, 'w') as new_file:
-                new_file.write(headers)
-                new_file.write("\n\n")
-                new_file.write(old_file.read())
+                attached = headers + '\n\n' + old_file.read()
+                new_file.write(attached)
         if remove:
             os.remove(old_file_path)
     except OSError as e:
         print('Error attaching headers to %s' % old_file_path)
+    return attached
 
 def path_components_to_dest(path_components):
     mkdir_recursive(path_components[:-1])
@@ -819,31 +820,40 @@ def export_dx9_shader_binary(dest, bin, headers):
     shaders as binary instead of assembly.
     '''
     bin_filename = '%s.bin' % dest
+    txt_filename = '%s.txt' % dest
     print('Extracting %s' % bin_filename)
     with open(bin_filename, 'wb') as f:
         f.write(bin)
 
     if disassemble_and_decompile_binary_shader(bin_filename, decompile=False, disassemble_flugan=False, disassemble_ms=True):
-        attach_headers('%s.msasm' % dest, '%s.txt' % dest, headers)
-    else:
-        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
-        with open('%s_headers.txt' % dest, 'w') as f:
-            f.write(headers)
+        attached = attach_headers('%s.msasm' % dest, txt_filename, headers)
+        return {bin_filename: bin, txt_filename: attached}
+
+    print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+    headers_filename = '%s_headers.txt' % dest
+    with open(headers_filename, 'w') as f:
+        f.write(headers)
+    return {headers_filename: headers}
 
 def export_dx11_shader(dest, bin, headers, extra_headers=''):
     bin_filename = '%s.bin' % dest
+    asm_filename = '%s.txt' % dest
+    hlsl_filename = '%s_replace.txt' % dest
     print('Extracting %s' % bin_filename)
     with open(bin_filename, 'wb') as f:
         f.write(bin)
 
     if disassemble_and_decompile_binary_shader(bin_filename):
-        attach_headers('%s.asm' % dest, '%s.txt' % dest, headers)
-        attach_headers('%s.hlsl' % dest, '%s_replace.txt' % dest, headers + extra_headers)
-    else:
-        print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
-        with open('%s_headers.txt' % dest, 'w') as f:
-            f.write(headers)
-            f.write(extra_headers)
+        asm_attached = attach_headers('%s.asm' % dest, asm_filename, headers)
+        hlsl_attached = attach_headers('%s.hlsl' % dest, hlsl_filename, headers + extra_headers)
+        return {bin_filename: bin, asm_filename: asm_attached, hlsl_filename: hlsl_attached}
+
+    print('cmd_Decompiler.exe not found, extracting %s_headers.txt instead...' % dest)
+    headers_filename = '%s_headers.txt' % dest
+    headers = headers + extra_headers
+    with open(headers_filename, 'w') as f:
+        f.write(headers)
+    return {headers_filename: headers}
 
 def _export_shader(sub_program, headers, path_components):
     dest = path_components_to_dest(path_components)
