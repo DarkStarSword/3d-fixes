@@ -1,58 +1,72 @@
 // asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed cca264a8a70a20a6-vs.txt
-// 3DMigoto: cca264a8a70a20a6 |    Unity headers extracted from AlphaTest-Glossy.shader
-//    Shader "Legacy Shaders/Transparent/Cutout/Specular" {
-//      Properties {
-//       _Color ("Main Color", Color) = (1.000000,1.000000,1.000000,1.000000)
-//       _SpecColor ("Specular Color", Color) = (0.500000,0.500000,0.500000,0.000000)
-//       _Shininess ("Shininess", Range(0.010000,1.000000)) = 0.078125
-//       _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" { }
-//       _Cutoff ("Alpha cutoff", Range(0.000000,1.000000)) = 0.500000
-//      }
-//      Fallback "Legacy Shaders/Transparent/Cutout/VertexLit"
-//      SubShader 1/1 {
-//        LOD 300
-//        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
-//        Pass 4/5 {
-//          Name "PREPASS"
-//          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
-//          ZWrite Off
-//          GpuProgramID 255801
-//          Program "vp" {
-//            SubProgram "d3d11_9x " {
-//              GpuProgramIndex 104
-//            }
-//          }
-//        }
-//      }
-//    }
+// 3DMigoto: cca264a8a70a20a6 | Matched 4 variants of 2 shaders: Legacy Shaders/Specular, Legacy Shaders/Transparent/Cutout/Specular
 //
-// Unity 5.3 headers extracted from AlphaTest-Glossy.shader.decompressed:
-//   API d3d11_9x
-//   Shader model vs_4_0_level_9_1
-//   undeciphered1: 201510240 43 0 0
-//   Keywords { "LIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" }
-//   undeciphered2: 1 0 4 0 0 0
-//   undeciphered3: 11 3 0 0 1 2 3 4
-//   ConstBuffer "$Globals" 208
-//   Vector 160 [_MainTex_ST]
-//   ConstBuffer "UnityPerCamera" 144
-//   Vector 80 [_ProjectionParams]
-//   ConstBuffer "UnityLighting" 720
-//   Vector 608 [unity_SHAr]
-//   Vector 624 [unity_SHAg]
-//   Vector 640 [unity_SHAb]
-//   Vector 656 [unity_SHBr]
-//   Vector 672 [unity_SHBg]
-//   Vector 688 [unity_SHBb]
-//   Vector 704 [unity_SHC]
-//   ConstBuffer "UnityPerDraw" 352
-//   Matrix 0 [glstate_matrix_mvp]
-//   Matrix 192 [unity_ObjectToWorld]
-//   Matrix 256 [unity_WorldToObject]
-//   BindCB "$Globals" 0
-//   BindCB "UnityPerCamera" 1
-//   BindCB "UnityLighting" 2
-//   BindCB "UnityPerDraw" 3
+// 3:    Unity headers extracted from AlphaTest-Glossy.shader
+// c:    Unity headers extracted from Normal-Glossy.shader
+// c:    Shader "Legacy Shaders/Specular" {
+// 3:    Shader "Legacy Shaders/Transparent/Cutout/Specular" {
+//         Properties {
+//          _Color ("Main Color", Color) = (1.000000,1.000000,1.000000,1.000000)
+// 3:       _SpecColor ("Specular Color", Color) = (0.500000,0.500000,0.500000,0.000000)
+// c:       _SpecColor ("Specular Color", Color) = (0.500000,0.500000,0.500000,1.000000)
+//          _Shininess ("Shininess", Range(0.010000,1.000000)) = 0.078125
+// c:       _MainTex ("Base (RGB) Gloss (A)", 2D) = "white" { }
+// 3:       _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" { }
+// 3:       _Cutoff ("Alpha cutoff", Range(0.000000,1.000000)) = 0.500000
+//         }
+// 3:      Fallback "Legacy Shaders/Transparent/Cutout/VertexLit"
+// c:      Fallback "Legacy Shaders/VertexLit"
+//         SubShader 1/1 {
+//           LOD 300
+// 3:        Tags { "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+// c:        Tags { "RenderType"="Opaque" }
+//           Pass 4/5 {
+//             Name "PREPASS"
+// 3:          Tags { "LIGHTMODE"="PrePassFinal" "QUEUE"="AlphaTest" "IGNOREPROJECTOR"="true" "RenderType"="TransparentCutout" }
+// c:          Tags { "LIGHTMODE"="PrePassFinal" "RenderType"="Opaque" }
+//             ZWrite Off
+// c:          GpuProgramID 205893
+// 3:          GpuProgramID 255801
+//             Program "vp" {
+//               SubProgram "d3d11_9x " {
+// 5:              GpuProgramIndex 104
+// a:              GpuProgramIndex 107
+//               }
+//             }
+//           }
+//         }
+//       }
+//
+// 3: Unity 5.3 headers extracted from AlphaTest-Glossy.shader.decompressed:
+// c: Unity 5.3 headers extracted from Normal-Glossy.shader.decompressed:
+//      API d3d11_9x
+//      Shader model vs_4_0_level_9_1
+//      undeciphered1: 201510240 43 0 0
+// a:   Keywords { "LIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" "UNITY_HDR_ON" }
+// 5:   Keywords { "LIGHTMAP_OFF" "DYNAMICLIGHTMAP_OFF" }
+//      undeciphered2: 1 0 4 0 0 0
+//      undeciphered3: 11 3 0 0 1 2 3 4
+// c:   ConstBuffer "$Globals" 192
+// 3:   ConstBuffer "$Globals" 208
+//      Vector 160 [_MainTex_ST]
+//      ConstBuffer "UnityPerCamera" 144
+//      Vector 80 [_ProjectionParams]
+//      ConstBuffer "UnityLighting" 720
+//      Vector 608 [unity_SHAr]
+//      Vector 624 [unity_SHAg]
+//      Vector 640 [unity_SHAb]
+//      Vector 656 [unity_SHBr]
+//      Vector 672 [unity_SHBg]
+//      Vector 688 [unity_SHBb]
+//      Vector 704 [unity_SHC]
+//      ConstBuffer "UnityPerDraw" 352
+//      Matrix 0 [glstate_matrix_mvp]
+//      Matrix 192 [unity_ObjectToWorld]
+//      Matrix 256 [unity_WorldToObject]
+//      BindCB "$Globals" 0
+//      BindCB "UnityPerCamera" 1
+//      BindCB "UnityLighting" 2
+//      BindCB "UnityPerDraw" 3
 //
 // Headers extracted with DarkStarSword's extract_unity53_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
@@ -60,7 +74,7 @@
 //
 // Generated by Microsoft (R) D3D Shader Disassembler
 //
-//   using 3Dmigoto v1.2.42 on Sat Nov 05 21:00:56 2016
+//   using 3Dmigoto v1.2.42 on Sun Nov 06 16:58:57 2016
 //
 //
 // Input signature:
