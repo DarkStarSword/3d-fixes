@@ -220,7 +220,15 @@ def _write_delayed_shaders(shader_cache, export):
     for (hash, shaders) in sorted(shader_cache.items()):
         (dests, uncombined_headers, sub_programs, bin) = shaders
         if len(sub_programs) > 1:
-            headers = extract_unity_shaders.combine_shader_headers(sub_programs)
+            (shaders, headers) = extract_unity_shaders.shader_variant_summary_header(sub_programs)
+            # Unlike the old script, we combine all the header variants
+            # together - this should usually make it clearer and will work with
+            # the separate 5.3 header section. There were some cases where this
+            # would create too much diff garbage in the old script which I'll
+            # need to keep an eye out for, but hopefully the simpler header
+            # format will reduce the likelihood of that...
+            while any(uncombined_headers):
+                extract_unity_shaders._combine_similar_headers(headers, uncombined_headers)
         else:
             headers = uncombined_headers[0]
         headers = finalise_headers(headers, sub_programs[0])
