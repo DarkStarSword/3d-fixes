@@ -968,7 +968,7 @@ def parse_args():
     parser.add_argument('--ps-fog', action='store_true',
             help='Generate additional pixel shader variants with fog instructions added to match those from Unity')
     parser.add_argument('--type', action='append',
-            help='Filter types of shaders to process, useful to avoid unecessary slow hash calculations')
+            help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
     args = parser.parse_args()
     if args.filename_keywords and not args.deep_dir:
         raise ValueError('--filename-keywords requires --deep-dir')

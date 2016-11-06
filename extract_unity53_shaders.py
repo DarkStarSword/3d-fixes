@@ -27,10 +27,21 @@ shader_type_mapping = {
     22: ("dp", "d3d11", "ds_5_0"),
 }
 
+api_mapping = {
+    "opengl": "opengl",
+    "gles3": "opengl",
+    "gles": "opengl",
+    "glcore": "opengl",
+    "d3d9": "d3d9",
+    "d3d11_9x": "d3d11",
+    "d3d11": "d3d11",
+}
+
 def get_program_name(shader_type):
     return shader_type_mapping[shader_type][0]
 def get_shader_api(shader_type):
-    return shader_type_mapping[shader_type][1]
+    api = shader_type_mapping[shader_type][1]
+    return (api, api_mapping[api])
 def get_shader_model(shader_type):
     return shader_type_mapping[shader_type][2]
 
@@ -395,7 +406,12 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
     try:
         (date, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
         assert(date in (201509030, 201510240)) # New date/version(?) seen in Firewatch Unity 5.4 update
-        api = get_shader_api(shader_type)
+        api, conceptual_api = get_shader_api(shader_type)
+
+        if args.type and conceptual_api not in args.type:
+                file.seek(saved_offset)
+                return
+
         program_name = get_program_name(shader_type)
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
@@ -459,6 +475,8 @@ def parse_args():
             help='List of compiled Unity shader files to parse')
     parser.add_argument('--skip-classic-headers', action='store_true',
             help='Skip extracting the classic Unity headers from a corresponding .shader file (not recommended)')
+    parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11'),
+            help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
     args = parser.parse_args()
 
 def main():

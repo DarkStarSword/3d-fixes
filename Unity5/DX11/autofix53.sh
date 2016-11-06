@@ -28,7 +28,7 @@ update_ini()
 if [ $EXTRACT -eq 1 ]; then
 	unity_asset_extractor.py *_Data/Resources/* *_Data/*.assets
 	cd extracted
-	extract_unity53_shaders.py */*.shader.decompressed
+	extract_unity53_shaders.py */*.shader.decompressed --type=d3d11
 	cd ShaderFNVs
 fi
 
