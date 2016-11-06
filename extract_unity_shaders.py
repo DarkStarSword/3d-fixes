@@ -883,19 +883,25 @@ def shader_name(tree):
         tree = tree.parent
     return tree.name
 
-def dedupe_shaders(shader_list, args):
-    asm = shader_list[0].shader_asm
-    assert(all([ x.shader_asm == asm for x in shader_list]))
-
+def combine_shader_headers(shader_list):
     headers = []
     shaders = sorted(set(map(shader_name, shader_list)))
     headers.append('Matched %i variants of %i shaders: %s' %
             (len(shader_list), len(shaders), ', '.join(shaders)))
     headers.append('')
+
     for shader in shaders:
         similar_shaders = filter(lambda x: shader_name(x) == shader, shader_list)
         headers.extend(combine_similar_headers(similar_shaders))
         headers.append('')
+
+    return headers
+
+def dedupe_shaders(shader_list, args):
+    asm = shader_list[0].shader_asm
+    assert(all([ x.shader_asm == asm for x in shader_list]))
+
+    headers = combine_shader_headers(shader_list)
     add_header_hash(headers, shader_list[0])
     add_vanity_tag(headers)
     # print(commentify(headers))

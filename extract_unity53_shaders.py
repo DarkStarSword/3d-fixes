@@ -196,6 +196,41 @@ def finalise_headers(headers, sub_program):
     extract_unity_shaders.add_vanity_tag(headers)
     return extract_unity_shaders.commentify(headers)
 
+def delay_writing_shader(shader_cache, hash, dest, bin, headers, sub_program):
+    if hash not in shader_cache:
+        cache = [set(), [], [], bin]
+        shader_cache[hash] = cache
+    else:
+        cache = shader_cache[hash]
+        assert(cache[3] == bin)
+    cache[0].add(dest)
+    cache[1].append(headers)
+    cache[2].append(sub_program)
+
+dx9_shader_cache = {}
+dx11_shader_cache = {}
+
+def delay_writing_dx9_shader(hash, dest, bin, headers, sub_program):
+    return delay_writing_shader(dx9_shader_cache, hash, dest, bin, headers, sub_program)
+
+def delay_writing_dx11_shader(hash, dest, bin, headers, sub_program):
+    return delay_writing_shader(dx11_shader_cache, hash, dest, bin, headers, sub_program)
+
+def _write_delayed_shaders(shader_cache, export):
+    for (hash, shaders) in shader_cache.items():
+        (dests, uncombined_headers, sub_programs, bin) = shaders
+        if len(sub_programs) > 1:
+            headers = extract_unity_shaders.combine_shader_headers(sub_programs)
+        else:
+            headers = uncombined_headers[0]
+        headers = finalise_headers(headers, sub_programs[0])
+        for dest in dests:
+            export(dest, bin, headers)
+
+def write_delayed_shaders():
+    _write_delayed_shaders(dx9_shader_cache, extract_unity_shaders.export_dx9_shader_binary)
+    _write_delayed_shaders(dx11_shader_cache, extract_unity_shaders.export_dx11_shader)
+
 processed = set()
 
 def extract_opengl_shader(file, shader_size, headers, shader):
@@ -207,6 +242,13 @@ def extract_opengl_shader(file, shader_size, headers, shader):
             hash[program_name] = extract_unity_shaders.hash_gl_crc(shader.sub_program)
             add_header(headers, ('{} hash: {:x}'.format(program_name, hash[program_name])))
         for program_name in ('fp', 'vp'):
+
+            # FIXME: Write out any with duplicate hashes in case we ever have
+            # an autofix that needs to e.g. find all PS corresponding with a
+            # given VS hash, where that hash appears in multiple distinct
+            # shaders (e.g. Internal-PrePassLighting and
+            # Internal-DeferredReflection share the same VS, but have differing PS)
+
             if hash[program_name] in processed:
                 continue
             processed.add(hash[program_name])
@@ -230,10 +272,6 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     assert(bin[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
 
     hash = zlib.crc32(bin)
-    if hash in processed:
-        # FIXME: Merge headers and write it.
-        return
-    processed.add(hash)
 
     extract_unity_shaders._add_shader_hash_asm_crc(shader.sub_program, zlib.crc32(bin))
     path_components = extract_unity_shaders.export_filename_combined_short(shader)
@@ -253,7 +291,7 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     decode_dx9_bind_info(file, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
-    extract_unity_shaders.export_dx9_shader_binary(dest, bin, finalise_headers(headers, shader.sub_program))
+    delay_writing_dx9_shader(hash, dest, bin, headers, shader.sub_program)
 
 def extract_directx11_shader(file, shader_size, headers, section_offset, section_size, shader, date):
     # Is this the correct way to detect this? Could be a file version, but it
@@ -274,17 +312,14 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     assert(bin[:4] == b'DXBC')
 
     hash = extract_unity_shaders.fnv_3Dmigoto_shader(bin)
-    if hash in processed:
-        return
-    processed.add(hash)
 
     extract_unity_shaders._add_shader_hash_fnv(shader.sub_program, hash)
     path_components = extract_unity_shaders.export_filename_combined_short(shader)
     dest = extract_unity_shaders.path_components_to_dest(path_components)
 
-    print('Extracting %s.bin...' % dest)
-    with open('%s.bin' % dest, 'wb') as out:
-        out.write(bin)
+    # print('Extracting %s.bin...' % dest)
+    # with open('%s.bin' % dest, 'wb') as out:
+    #     out.write(bin)
 
     dump_raw_bind_info(file, dest, section_offset, section_size)
 
@@ -304,7 +339,7 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     decode_dx11_bind_info(file, num_sections, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
-    extract_unity_shaders.export_dx11_shader(dest, bin, finalise_headers(headers, shader.sub_program))
+    delay_writing_dx11_shader(hash, dest, bin, headers, shader.sub_program)
 
 def synthesize_sub_program(name):
     class Shader(object):
@@ -427,6 +462,8 @@ def main():
         print('Processing %s...' % filename)
         parse_unity53_shader(filename)
         print()
+
+    write_delayed_shaders()
 
 if __name__ == '__main__':
     sys.exit(main())
