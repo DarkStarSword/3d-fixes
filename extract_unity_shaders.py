@@ -513,8 +513,13 @@ def _combine_similar_headers(ret, headers):
         # Avoid potential live lock - certain patterns of headers could
         # potentially cause each header stream to block waiting on the other
         # streams to flush to a matching line.
-        # If all streams are blocked, force flushing out the current lines:
-        head = [ len(x) > 0 and x[0] or '' for x in headers ]
+        # If all streams are blocked, force flushing out the current lines,
+        # avoiding any that open a new scope:
+        head = [ len(x) > 0 and x[0][-1] != '{' and x[0] or '' for x in headers ]
+
+        if not any(head):
+            # If all streams are still blocked, forget worrying about the scope
+            head = [ len(x) > 0 and x[0] or '' for x in headers ]
 
     # Dump any ungrouped headers:
     tmp = {}
