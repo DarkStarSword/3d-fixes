@@ -26,6 +26,7 @@ def unity_header(name, type):
 unity_Ceto_Reflections                = unity_header('Ceto_Reflections', 'texture')
 unity_CameraDepthTexture              = unity_header('_CameraDepthTexture', 'texture')
 unity_CameraToWorld                   = unity_header('_CameraToWorld', 'matrix')
+unity_CameraToWorld54                 = unity_header('unity_CameraToWorld', 'matrix')
 unity_FrustumCornersWS                = unity_header('_FrustumCornersWS', 'matrix')
 unity_glstate_matrix_mvp_pattern      = unity_header('glstate_matrix_mvp', 'matrix')
 unity_Object2World                    = unity_header('_Object2World', 'matrix')
@@ -1699,8 +1700,12 @@ def fix_unity_lighting_ps(tree, args):
     try:
         match = find_header(tree, unity_CameraToWorld)
     except KeyError:
-        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
-        return
+        # Try Unity 5.4 variant:
+        try:
+            match = find_header(tree, unity_CameraToWorld54)
+        except KeyError:
+            debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+            return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
     _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
@@ -1869,8 +1874,12 @@ def fix_unity_lighting_ps_world(tree, args):
     try:
         match = find_header(tree, unity_CameraToWorld)
     except KeyError:
-        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
-        return
+        # Try Unity 5.4 variant:
+        try:
+            match = find_header(tree, unity_CameraToWorld54)
+        except KeyError:
+            debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+            return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
     _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))

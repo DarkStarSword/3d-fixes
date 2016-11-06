@@ -38,22 +38,35 @@ fi
 
 if [ $FIX_LIGHTING -eq 1 ]; then
 	# Lighting fix - match any shaders that use known lighting vertex shaders:
-	find . \( -name 'b78925705424e647-vs*' -o -name 'ca5cfc8e4d8b1ce5-vs*' -o -name '69294277cca1bade-vs*' \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
-		hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
-	find . \( -name 'bfae1ae6908d87a2-vs*' -o -name 'f51c2a7085326040-vs*' \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
-		hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
+	echo
+	echo "Applying point/spot/physical lighting fix..."
+	find . \( -name 'b78925705424e647-vs*' \
+	       -o -name 'ca5cfc8e4d8b1ce5-vs*' \
+	       -o -name '69294277cca1bade-vs*' \
+	       -o -name '99341a34a001a3d1-vs*' \
+	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
+			hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
+	echo
+	echo "Applying directional lighting fix..."
+	find . \( -name 'bfae1ae6908d87a2-vs*' \
+	       -o -name 'f51c2a7085326040-vs*' \
+	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
+			hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
 fi
 
 if [ $FIX_SUN_SHAFTS -eq 1 ]; then
+	echo
+	echo "Applying sun shaft fix..."
 	hlsltool.py -I ../.. --fix-unity-sun-shafts --only-autofixed --fxc "$FXC" Hidden_SunShaftsComposite/*_replace.txt | update_ini
 fi
 
 if [ $FIX_HALO -eq 1 ]; then
-	# Vertex shader halo, reflection & frustum fix:
+	echo
+	echo "Applying vertex shader halo, reflection & frustum fixes..."
 	asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed */*vs.txt | update_ini
 fi
 
 if [ $FIX_REFLECTION -eq 1 ]; then
-	# Reflection fix:
+	echo "Applying pixel shader reflection fix..."
 	asmtool.py -I ../.. --fix-unity-reflection --only-autofixed */*ps.txt | update_ini
 fi
