@@ -23,16 +23,15 @@ def unity_header(name, type):
 
 
 # Regular expressions to match various shader headers:
-unity_Ceto_Reflections                = unity_header('Ceto_Reflections', 'texture')
-unity_CameraDepthTexture              = unity_header('_CameraDepthTexture', 'texture')
-unity_CameraToWorld                   = unity_header('_CameraToWorld', 'matrix')
-unity_CameraToWorld54                 = unity_header('unity_CameraToWorld', 'matrix')
-unity_FrustumCornersWS                = unity_header('_FrustumCornersWS', 'matrix')
-unity_glstate_matrix_mvp_pattern      = unity_header('glstate_matrix_mvp', 'matrix')
-unity_Object2World                    = unity_header('_Object2World', 'matrix')
-unity_WorldSpaceCameraPos             = unity_header('_WorldSpaceCameraPos', 'constant')
-unity_ZBufferParams                   = unity_header('_ZBufferParams', 'constant')
-unity_SunPosition                     = unity_header('_SunPosition', 'constant')
+unity_Ceto_Reflections                = unity_header(r'Ceto_Reflections', 'texture')
+unity_CameraDepthTexture              = unity_header(r'_CameraDepthTexture', 'texture')
+unity_CameraToWorld                   = unity_header(r'(?:unity)?_CameraToWorld', 'matrix') # Unity 5.4 added unity prefix
+unity_FrustumCornersWS                = unity_header(r'_FrustumCornersWS', 'matrix')
+unity_glstate_matrix_mvp_pattern      = unity_header(r'glstate_matrix_mvp', 'matrix')
+unity_Object2World                    = unity_header(r'(?:unity)?_Object(?:2|To)World', 'matrix') # Unity 5.4 added unity prefix and changed '2' to 'To'
+unity_WorldSpaceCameraPos             = unity_header(r'_WorldSpaceCameraPos', 'constant')
+unity_ZBufferParams                   = unity_header(r'_ZBufferParams', 'constant')
+unity_SunPosition                     = unity_header(r'_SunPosition', 'constant')
 
 unreal_DNEReflectionTexture_pattern   = re.compile(r'//\s+DNEReflectionTexture\s+s(?P<texture>[0-9]+)\s+1$')
 unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<constant>c[0-9]+)\s+1$')
@@ -1700,12 +1699,8 @@ def fix_unity_lighting_ps(tree, args):
     try:
         match = find_header(tree, unity_CameraToWorld)
     except KeyError:
-        # Try Unity 5.4 variant:
-        try:
-            match = find_header(tree, unity_CameraToWorld54)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
-            return
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
     _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
@@ -1874,12 +1869,8 @@ def fix_unity_lighting_ps_world(tree, args):
     try:
         match = find_header(tree, unity_CameraToWorld)
     except KeyError:
-        # Try Unity 5.4 variant:
-        try:
-            match = find_header(tree, unity_CameraToWorld54)
-        except KeyError:
-            debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
-            return
+        debug_verbose(0, 'Shader does not use _CameraToWorld, or is missing headers (my other scripts can extract these)')
+        return
     _CameraToWorld0 = Register('c' + match.group('matrix'))
     _CameraToWorld1 = Register('c%i' % (_CameraToWorld0.num + 1))
     _CameraToWorld2 = Register('c%i' % (_CameraToWorld0.num + 2))
