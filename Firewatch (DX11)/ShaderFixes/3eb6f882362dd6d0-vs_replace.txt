@@ -1,0 +1,82 @@
+// 3DMigoto: 3eb6f882362dd6d0 | Matched 2 variants of 1 shaders: _Shaders/StylisticFog
+//
+//       Unity headers extracted from vgStylisticFog.shader
+//       Shader "_Shaders/StylisticFog" {
+//         Fallback Off
+//         SubShader 1/1 {
+//           Pass 1/1 {
+//             ZTest Always
+//             ZWrite Off
+//             Cull Off
+//             Blend SrcAlpha OneMinusSrcAlpha
+//             GpuProgramID 24972
+//             Program "vp" {
+//               SubProgram "d3d11_9x " {
+// 1:              GpuProgramIndex 2
+// 2:              GpuProgramIndex 5
+//               }
+//             }
+//           }
+//         }
+//       }
+//
+//    Unity 5.3 headers extracted from vgStylisticFog.shader.decompressed:
+//      API d3d11_9x
+//      Shader model vs_4_0_level_9_1
+//      undeciphered1: 201510240 6 0 0
+// 2:   Keywords { "DONT_INTERPOLATE_DUAL_FOG" }
+// 1:   Keywords { "INTERPOLATE_DUAL_FOG" }
+//      undeciphered2: 1 0 1 0 0 0
+//      undeciphered3: 9 2 0 0 3 4
+//      ConstBuffer "$Globals" 336
+//      Vector 96 [_MainTex_TexelSize]
+//      Matrix 256 [_FrustumCornersWS]
+//      BindCB "$Globals" 0
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity53_shaders.py
+
+// ---- Created with 3Dmigoto v1.2.42 on Sun Nov 06 16:56:11 2016
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[19];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_POSITION0,
+  out float2 o1 : TEXCOORD0,
+  out float2 p1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2)
+{
+  const float4 icb[] = { { 1.000000, 0, 0, 0},
+                              { 0, 1.000000, 0, 0},
+                              { 0, 0, 1.000000, 0},
+                              { 0, 0, 0, 1.000000} };
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  o0.xy = v0.xy;
+  o0.zw = float2(0.100000001,1);
+  r0.x = cmp(cb0[6].y < 0);
+  r0.y = 1 + -v1.y;
+  o1.y = r0.x ? r0.y : v1.y;
+  o1.xzw = v1.xxy * float3(1,1,-1) + float3(0,0,1);
+  o2.w = v0.z;
+  r0.x = (int)v0.z;
+  o2.x = dot(cb0[16].xyzw, icb[r0.x+0].xyzw);
+  o2.y = dot(cb0[17].xyzw, icb[r0.x+0].xyzw);
+  o2.z = dot(cb0[18].xyzw, icb[r0.x+0].xyzw);
+  return;
+}
