@@ -39,7 +39,7 @@
 // ---- Created with 3Dmigoto v1.2.42 on Sun Nov 06 16:57:29 2016
 cbuffer cb0 : register(b0)
 {
-  float4 cb0[19];
+  float4 cb0[21];
 }
 
 
@@ -50,6 +50,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include <matrix.hlsl>
 
 void main( 
   float4 v0 : POSITION0,
@@ -57,7 +58,8 @@ void main(
   out float4 o0 : SV_POSITION0,
   out float2 o1 : TEXCOORD0,
   out float2 p1 : TEXCOORD1,
-  out float4 o2 : TEXCOORD2)
+  out float4 o2 : TEXCOORD2,
+  out float3 world_right : TEXCOORD3) // New output for screen right in world space coordinates
 {
   const float4 icb[] = { { 1.000000, 0, 0, 0},
                               { 0, 1.000000, 0, 0},
@@ -67,16 +69,28 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+// GOTCHA: _FrustumCornersWS is TRANSPOSED vs DX9!
+float4x4 _FrustumCornersWS = MATRIX(cb0, 16);
+world_right.x = _FrustumCornersWS[0].y - _FrustumCornersWS[0].x;
+world_right.y = _FrustumCornersWS[1].y - _FrustumCornersWS[1].x;
+world_right.z = _FrustumCornersWS[2].y - _FrustumCornersWS[2].x;
+world_right = normalize(world_right);
+
   o0.xy = v0.xy;
   o0.zw = float2(0.100000001,1);
   r0.x = cmp(cb0[6].y < 0);
   r0.y = 1 + -v1.y;
   o1.y = r0.x ? r0.y : v1.y;
-  o1.xzw = v1.xxy * float3(1,1,-1) + float3(0,0,1);
+
+  // Decompile bug:
+  // o1.xzw = v1.xxy * float3(1,1,-1) + float3(0,0,1);
+  o1.x = v1.x;
+  p1.xy = v1.xy * float2(1,-1) + float2(0,1);
+
   o2.w = v0.z;
   r0.x = (int)v0.z;
-  o2.x = dot(cb0[16].xyzw, icb[r0.x+0].xyzw);
-  o2.y = dot(cb0[17].xyzw, icb[r0.x+0].xyzw);
-  o2.z = dot(cb0[18].xyzw, icb[r0.x+0].xyzw);
+  o2.x = dot(_FrustumCornersWS[0].xyzw, icb[r0.x+0].xyzw);
+  o2.y = dot(_FrustumCornersWS[1].xyzw, icb[r0.x+0].xyzw);
+  o2.z = dot(_FrustumCornersWS[2].xyzw, icb[r0.x+0].xyzw);
   return;
 }
