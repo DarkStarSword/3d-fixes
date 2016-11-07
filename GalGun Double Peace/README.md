@@ -8,6 +8,11 @@ Fixes
 
 NOTE: This is a quick fix only - the crosshair and UI are still 2D.
 
+Important Note for UI adjustment
+--------------------------------
+Every time you run the game, move the mouse cursor as far as possible to each
+side of the screen to ensure that the auto UI adjustment will work correctly.
+
 Installation
 ------------
 Extract the zip file under:
