@@ -34,3 +34,7 @@ Keys
 Known Issues
 ------------
 Parts of the HUD will break when a HUD adjustment is active.
+
+Like my Work?
+-------------
+Consider supporting me on [Patreon](https://www.patreon.com/DarkStarSword)
