@@ -402,20 +402,7 @@ class ASMShader(hlsltool.Shader):
         return ''.join(ret)
 
     def hlsl_swizzle(self, mask, swizzle):
-        if mask and not swizzle:
-            return mask
-        swizzle4 = swizzle + swizzle[-1] * (4-len(swizzle))
-        if not mask:
-            return swizzle4
-        ret = ''
-        for component in mask:
-            ret += {
-                'x': swizzle4[0],
-                'y': swizzle4[1],
-                'z': swizzle4[2],
-                'w': swizzle4[3],
-            }[component]
-        return ret
+        return shadertool.asm_hlsl_swizzle(mask, swizzle)
 
     def adjust_cb_size(self, cb, size):
         search = 'dcl_constantbuffer cb%d[' % cb

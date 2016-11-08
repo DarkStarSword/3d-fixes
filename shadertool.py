@@ -38,6 +38,7 @@ unreal_NvStereoEnabled_pattern        = re.compile(r'//\s+NvStereoEnabled\s+(?P<
 unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
+unreal_ViewProjectionMatrix_pattern   = re.compile(r'//\s+ViewProjectionMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 
 # WARNING: THESE REQUIRE THE UNITY HEADERS ATTACHED TO THE SHADER (not a
 # problem in 5.2 or older because everything requires that, but starting with
@@ -1332,6 +1333,91 @@ def scan_shader(tree, reg, components=None, write=None, start=None, end=None, di
 
     return ret
 
+def find_row_major_matrix_multiply(tree, matrix_pattern, matrix_name):
+    try:
+        match = find_header(tree, matrix_pattern)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use %s' % matrix_name)
+        return None, None
+
+    matrix = [ Register(match.group('constant')) ]
+    for i in range(1,4):
+        matrix.append(Register('c%i' % (matrix[0].num + i)))
+    debug_verbose(0, '%s identified as %s-%s' % (matrix_name, matrix[0], matrix[3]))
+
+    # XXX: Could optimise this by scanning around the preceeding hit, but
+    # complicated by the fact the multiply order can vary. First instruction
+    # should be a mul, 2nd/3rd should be mad, 4th should be mad/add, but since
+    # the order of matrix registers can vary, just scan for all options and
+    # verify later after sorting:
+    results = []
+    for i in range(4):
+        result = scan_shader(tree, matrix[i], write=False, opcode=('mul', 'mad', 'add'))
+        l = len(result)
+        if l != 1:
+            debug("Unsupported: %s[%i] referenced %i times" % (matrix_name, i, l))
+            return None, None
+        results.extend(result)
+
+    results = sorted(results, key = lambda x: x.line)
+    #print('\n'.join(map(repr, results)))
+
+    if results[0].instruction.opcode != 'mul' \
+    or results[1].instruction.opcode != 'mad' \
+    or results[2].instruction.opcode != 'mad' \
+    or results[3].instruction.opcode not in ('mad', 'add'):
+        debug("Invalid matrix multiply flow: %s" % ' -> '.join([x.instruction.opcode for x in results]))
+        return None, None
+
+    for i in range(3):
+        # Double check the intermediate register is not clobbered:
+        if scan_shader(tree,
+                results[i].instruction.args[0].reg,
+                components = results[i].instruction.args[0].swizzle,
+                write = True,
+                start = results[i].line + 1,
+                end = results[i+1].line):
+            debug("Intermediate matrix multiply result clobbered")
+            return None, None
+
+        # Verify that the output from each instruction feeds into the next:
+        if results[i].instruction.args[0].reg not in \
+                [x.reg for x in results[i+1].instruction.args[1:]]:
+            debug("Intermediate matrix multiply register not used in following instruction")
+            return None, None
+
+    return matrix, results
+
+def asm_hlsl_swizzle(mask, swizzle):
+    if mask and not swizzle:
+        return mask
+    swizzle4 = swizzle + swizzle[-1] * (4-len(swizzle))
+    if not mask:
+        return swizzle4
+    ret = ''
+    for component in mask:
+        ret += {
+            'x': swizzle4[0],
+            'y': swizzle4[1],
+            'z': swizzle4[2],
+            'w': swizzle4[3],
+        }[component]
+    return ret
+
+def follow_components_through_swizzle_and_mask(mask, swizzle):
+    # Resolve the swizzle to HLSL style so the positions between mask and
+    # swizzle will line up:
+    resolved_swizzle = asm_hlsl_swizzle(mask, swizzle)
+    components = []
+    for component in 'xyzw':
+        # Beware .find() can return -1, which is a valid list index!
+        # Not sure why they didn't return None or raise an exception instead...
+        # I reckon that there is a high probability that this design flaw has
+        # led to exploitable programs out there in the wild...
+        location = resolved_swizzle.find(component)
+        components.append(location != -1 and mask[location] or None)
+    return components
+
 # Converts a set of components into a string, ensuring the order is consistently xyzw
 def component_set_to_string(components):
     ret = ''
@@ -1687,6 +1773,41 @@ def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_patt
 
 def auto_fix_unreal_lights(tree, args):
     return auto_fix_unreal_shadows(tree, args, unreal_ScreenToLight_pattern, matrix_name='ScreenToLight', name="light")
+
+def fix_unreal_ps_halo(tree, args):
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal halo fix is only applicable to pixel shaders')
+
+    matrix, results = find_row_major_matrix_multiply(tree, unreal_ViewProjectionMatrix_pattern, 'ViewProjectionMatrix')
+    if matrix is None:
+        return
+
+    debug_verbose(-1, 'Applying Unreal Engine 3 halo fix')
+
+    # Find correct swizzle for clip space register, e.g.
+    # mad r2.xyz, c11.xyww, v3.w, r2 --> r2.x, r2.z
+    # mad r7.yzw, c11.xxyw, v7.w, r2 --> r7.y, r7.w
+    (line, linepos, instr) = results[3]
+    components = follow_components_through_swizzle_and_mask(instr.args[0].swizzle, instr.args[1].swizzle)
+    if components[0] is None or components[3] is None:
+        debug_verbose(0, 'VPM multiplication does not use both x and w components')
+        return None
+    clip_reg_x = Register('%s.%s' % (instr.args[0].reg, components[0]))
+    clip_reg_w = Register('%s.%s' % (instr.args[0].reg, components[3]))
+
+    t = tree._find_free_reg('r', PS3, desired=31)
+    stereo_const, offset = insert_stereo_declarations(tree, args, w = 0.5)
+
+    pos = next_line_pos(tree, line + offset)
+
+    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine halo fix inserted with")
+    pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
+    separation = t.x; convergence = t.y
+    pos += tree.insert_instr(pos, NewInstruction('add', [t.w, clip_reg_w, -convergence]))
+    pos += tree.insert_instr(pos, NewInstruction('mad', [clip_reg_x, t.w, separation, clip_reg_x]))
+    pos += tree.insert_instr(pos)
+
+    tree.autofixed = True
 
 def fix_unity_lighting_ps(tree, args):
     if not isinstance(tree, PS3):
@@ -2988,6 +3109,8 @@ def parse_args():
             help="Attempt to automatically fix shadows in Unreal games")
     parser.add_argument('--auto-fix-unreal-lights', action='store_true',
             help="Attempt to automatically fix lights in Unreal games")
+    parser.add_argument('--fix-unreal-ps-halo', action='store_true',
+            help="Apply halo fix to Unreal Engine 3 pixel shaders (NOTE: only applicable to certain games)")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--fix-unity-lighting-ps-world', action='store_true',
@@ -3090,6 +3213,7 @@ def args_require_reg_analysis(args):
                 args.adjust_unity_ceto_reflections or \
                 args.auto_fix_unreal_shadows or \
                 args.auto_fix_unreal_lights or \
+                args.fix_unreal_ps_halo or \
                 args.fix_unity_lighting_ps or \
                 args.fix_unity_lighting_ps_world or \
                 args.fix_unity_reflection or \
@@ -3214,6 +3338,8 @@ def main():
                 auto_fix_unreal_shadows(tree, args)
             if args.auto_fix_unreal_lights:
                 auto_fix_unreal_lights(tree, args)
+            if args.fix_unreal_ps_halo:
+                fix_unreal_ps_halo(tree, args)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(tree, args)
             if args.fix_unity_lighting_ps_world:
