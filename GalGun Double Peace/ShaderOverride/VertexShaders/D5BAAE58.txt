@@ -32,7 +32,7 @@ def c227, 0.00390625, 64, 0, 0.5 // 1/i0.x, 0.5
 
 dcl_2d s3 // Stereo sampler
 def c220, 0, 1, 0.0625, 0.5
-def c221, 2, 0.001, 1920, 1080
+def c221, 2, 3, 4, 5
 
     mad r0.x, v2.z, c0.x, c0.y
     mul r0.y, c0.x, v2.z
@@ -50,12 +50,18 @@ def c221, 2, 0.001, 1920, 1080
 
 texldl r31, c220.z, s3
 
-mov r30.x, c220.x
+mov r30.x, c220.y
 
 // Only enable auto depth if MinZ_MaxZRatio is valid:
 mov r30.w, c150.x
-if_ne r30.w, c220.x
-	mov r30.x, c220.y
+if_eq r30.w, c220.x
+	mov r30.x, c220.x
+endif
+
+mov r30.y, c200.x
+// Option 0: Screen depth
+if_eq r30.y, c220.x
+	mov r30.x, c220.x
 endif
 
 if_eq r30.x, c220.y
@@ -72,17 +78,35 @@ if_eq r30.x, c220.y
 	// for Miasmata, adapted to HLSL and made to use coordinates other than
 	// (0,0), then adapted back to assembly for UE3.
 
-	// Option 1: Adjust from current vertex position:
-	//rcp r22.w, r2.w
-	//mul r22.xy, r2.xy, r22.w
+	// Option 1: Adjust to screen center
+	if_eq r30.y, c220.y
+		mov r22.xy, c220.xx
+	endif
 
-	// Option 2: Adjust from mouse cursor position:
-	rcp r22.x, c210.x		// 1 / resolution
-	rcp r22.y, c210.y		// 1 / resolution
-	mul r22.xy, r22.xy, c180.xy	// mouse / resolution
-	add r22.xy, r22.xy, -c220.ww	// ... - 0.5
-	mul r22.xy, r22.xy, c221.xx	// ... * 2
-	mov r22.y, -r22.y		// Negate Y
+	// Option 2: Adjust from current vertex position:
+	if_eq r30.y, c221.x
+		rcp r22.w, r2.w
+		mul r22.xy, r2.xy, r22.w
+	endif
+
+	// Option 3: Adjust from mouse cursor position:
+	if_eq r30.y, c221.y
+		rcp r22.x, c210.x		// 1 / resolution
+		rcp r22.y, c210.y		// 1 / resolution
+		mul r22.xy, r22.xy, c180.xy	// mouse / resolution
+		add r22.xy, r22.xy, -c220.ww	// ... - 0.5
+		mul r22.xy, r22.xy, c221.xx	// ... * 2
+		mov r22.y, -r22.y		// Negate Y
+	endif
+
+	// Option 4: Use first vertex position:
+	if_eq r30.y, c221.z
+		mov r23, c170
+		mov r23.w, c220.y // GOTCHA: FirstVertexPosReg.w = 0
+		// NOTE: This code is shader specific
+		dp4 r22.x, r23, c6[a0.y]
+		dp4 r22.y, r23, c9[a0.x]
+	endif
 
 	// near = -MinZ_MaxZRatio.x / MinZ_MaxZRatio.y
 	rcp r31.w, c150.y
