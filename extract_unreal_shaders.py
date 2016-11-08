@@ -20,6 +20,7 @@ class file_parser(object):
 	def read(self, length):
 		return self.f.read(length)
 	def unknown(self, len, show=True):
+		start = self.f.tell()
 		buf = self.read(len)
 
 		if not verbosity or not show:
@@ -34,7 +35,7 @@ class file_parser(object):
 					pr_debug(' | %s |' % a)
 				else:
 					pr_debug()
-				pr_debug('  %08x: ' % self.f.tell(), end='')
+				pr_debug('  %08x: ' % (start + i), end='')
 				a = ''
 			elif i and i % 4 == 0:
 				pr_debug(' ', end='')
@@ -69,9 +70,105 @@ def FString(f):
 		string = f.read(SaveNum).decode('ascii')
 	return string.rstrip('\0')
 
-def parse_cooked_shader_cache(f):
+def parse_ue4_global_shader_cache(f):
 	'''
-	Parses a cooked shader cache from UE4, e.g.
+	e.g. Engine/GlobalShaderCache-PCD3D_SM5.bin
+	'''
+	# Engine/Source/Runtime/Engine/Private/GlobalShader.cpp SerializeGlobalShaders
+	assert(f.u32() == 0x47534D42) # Endian swapped "GSMB"
+
+	# Engine/Source/Runtime/ShaderCore/Public/Shader.h TShaderMap::SerializeInline
+	NumShaders = f.u32()
+	print('NumShaders: %i' % NumShaders)
+
+	for i in range(NumShaders):
+		print()
+
+		Type = FString(f)
+		pr_debug('Type:', Type)
+		EndOffset = f.u32()
+		pr_debug('EndOffset: 0x%x' % EndOffset)
+
+		# Way to have a flag embedded >in the file< indicating if this section
+		# is present or not @Epic... Fail...
+		bHandleShaderKeyChanges = False
+		if bHandleShaderKeyChanges:
+			# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+			#   FArchive& operator<<(FArchive& Ar,class FSelfContainedShaderId& Ref)
+			#
+			# Engine/Source/Runtime/Core/Public/Misc/SecureHash.h
+			#   FSHAHash MaterialShaderMapHash - 16 bytes
+			# FString VertexFactoryTypeName
+			# FSHAHash VFSourceHash
+			# FSerializationHistory VFSerializationHistory
+			# FString ShaderTypeName
+			# FSHAHash SourceHash
+			# FSerializationHistory SerializationHistory
+			# FShaderTarget Target;
+			assert(False)
+
+		# XXX: This file format is NOT WELL DEFINED and that is an EPIC FAIL!
+		# The fields in this section may be SHADER SPECIFIC & GAME SPECIFIC!
+		# There is no field that indicates the length of this section, so we
+		# cannot reliably skip over it to get to the generic info we are after.
+		# We take advantage of the fact that the shader type string is repeated
+		# in the generic info after this section (which itself shows how poorly
+		# designed the format is, but whatever - at least it is something we
+		# can use. @Epic, if you fix that, please add a length field so we can
+		# skip over the shader type specifc fields that we don't care about).
+		# Look for any class that is derived from FShader (or other children
+		# like FGlobalShader, etc) that has a ::Serialize() method. e.g.
+		# Engine/Source/Runtime/Renderer/Private/ShaderBaseClasses.cpp
+		# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateMaterialShader.cpp
+		# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateShaders.cpp
+		# And of course... these can be defined/overridden on a per game basis,
+		# so the source code to the engine only helps us in some cases :(
+
+		# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+		#   bool FShader::SerializeBase(FArchive& Ar, bool bShadersInline)
+
+		# Ar << OutputHash;
+		# Ar << MaterialShaderMapHash;
+		# Ar << VFType;
+		# Ar << VFSourceHash;
+		# Ar << Type;
+		# Ar << SourceHash;
+		# Ar << Target;
+		# NumUniformParameters = f.s32()
+		# print('NumUniformParameters: %i' % NumUniformParameters)
+		# for ParameterIndex in range(NumUniformParameters):
+		# 	StructName = FString(f)
+		# 	print('StructName: %s' % StructName)
+		# 	# FShaderUniformBufferParameter* Parameter = Struct ? Struct->ConstructTypedParameter() : new FShaderUniformBufferParameter();
+		# 	# Ar << *Parameter;
+
+		# And again - way to have a flag embedded in the file to indicate that
+		# this section is present @Epic Fail...
+		bShadersInline = True
+		if bShadersInline:
+			# Resource->Serialize(Ar)
+			#   Ar << SpecificType;
+			#   Ar << Target;
+			#    Ar << TargetFrequency << TargetPlatform;
+			#   Ar << Code;
+			#   Ar << OutputHash;
+			#   Ar << NumInstructions;
+			#   Ar << NumTextureSamplers;
+			pass
+
+		tail = EndOffset - f.tell()
+		f.unknown(tail)
+
+	print()
+
+	cur = f.tell()
+	end = os.fstat(f.fileno()).st_size
+	pr_debug('Current position: 0x%x / 0x%x' % (cur, end))
+	f.unknown(end - cur)
+
+def parse_batman_cooked_shader_cache(f):
+	'''
+	Parses a cooked shader cache from UE3.5, e.g.
 	*/CookedPCConsole/GlobalShaderCache-PC-D3D-SM5.bin
 
 	Material shaders and uncooked shaders are elsewhere and not parsed yet
@@ -93,25 +190,8 @@ def parse_cooked_shader_cache(f):
 	for i in range(NumShaders):
 		print()
 
-		# # Engine/Source/Runtime/ShaderCore/Private/Shader.cpp FArchive operator<<
-		# Type = FString(f)
-		# pr_debug('Type:', Type)
-		# EndOffset = f.u32()
-		# pr_debug('EndOffset: 0x%x' % EndOffset)
-		# # if True: # bHandleShaderKeyChanges
-		# # 	# FSHAHash MaterialShaderMapHash 
-		# # 	# FString VertexFactoryTypeName
-		# # 	# FSHAHash VFSourceHash
-		# # 	# FSerializationHistory VFSerializationHistory
-		# # 	# FString ShaderTypeName
-		# # 	# FSHAHash SourceHash
-		# # 	# FSerializationHistory SerializationHistory
-		# # 	# FShaderTarget Target;
-
 		# Format used in Batman does not seem to match UE4 source code?
-		# Either that or I'm lost in a maze of object inheritance, all
-		# alike. Screw the source code, it doesn't match Batman and
-		# it's taking longer than my usual reverse engineering approach
+		# Update: Batman is a heavily modified version of UE3.5, not UE4
 
 		Name = FString(f)
 		print('Name:', Name)
@@ -173,6 +253,7 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('files', nargs='+')
 	parser.add_argument('--verbose', '-v', action='count', default=0)
+	parser.add_argument('--batman', action='store_true')
 	args = parser.parse_args()
 
 	verbosity = args.verbose
@@ -183,13 +264,18 @@ def main():
 	args = parse_args()
 
 	f = file_parser(args.files[0])
-	shader_names = parse_cooked_shader_cache(f)
+	if args.batman:
+		shader_names = parse_batman_cooked_shader_cache(f)
+		for shader in args.files[1:]:
+			fnv = int(os.path.basename(shader)[0:16], 16)
+			if fnv in shader_names:
+				print('%s: %s' % (shader, shader_names[fnv]))
+	else:
+		parse_ue4_global_shader_cache(f)
 
-	for shader in args.files[1:]:
-		fnv = int(os.path.basename(shader)[0:16], 16)
-		if fnv in shader_names:
-			print('%s: %s' % (shader, shader_names[fnv]))
 
 
 if __name__ == '__main__':
 	main()
+
+# vi:noet:ts=4:sw=4
