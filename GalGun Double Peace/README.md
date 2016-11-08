@@ -24,12 +24,12 @@ Change it to True:
 
 Keys
 ----
-~ = Toggle between two convergence presets
-1 = HUD to 2D screen depth (use for menus)
-2 = HUD to first vertex depth (selected by default, recommended for gameplay)
-3 = HUD to individual vertex depth (like 2, but HUD elements may be more skewed)
-4 = HUD to mouse depth (Periodically move the mouse to all four sides to calibrate)
-5 = HUD to depth of screen center
+- ~ = Toggle between two convergence presets
+- 1 = HUD to 2D screen depth (use for menus)
+- 2 = HUD to first vertex depth (selected by default, recommended for gameplay)
+- 3 = HUD to individual vertex depth (like 2, but HUD elements may be more skewed)
+- 4 = HUD to mouse depth (Periodically move the mouse to all four sides to calibrate)
+- 5 = HUD to depth of screen center
 
 Known Issues
 ------------
