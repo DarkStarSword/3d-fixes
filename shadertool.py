@@ -39,6 +39,8 @@ unreal_ScreenToLight_pattern          = re.compile(r'//\s+ScreenToLight\s+(?P<co
 unreal_ScreenToShadowMatrix_pattern   = re.compile(r'//\s+ScreenToShadowMatrix\s+(?P<constant>c[0-9]+)\s+4$')
 unreal_TextureSpaceBlurOrigin_pattern = re.compile(r'//\s+TextureSpaceBlurOrigin\s+(?P<constant>c[0-9]+)\s+1$')
 unreal_ViewProjectionMatrix_pattern   = re.compile(r'//\s+ViewProjectionMatrix\s+(?P<constant>c[0-9]+)\s+4$')
+unreal_SceneColorTexture_pattern      = re.compile(r'//\s+SceneColorTexture\s+s(?P<texture>[0-9]+)\s+1$')
+unreal_ScreenPositionScaleBias_pattern= re.compile(r'//\s+ScreenPositionScaleBias\s+(?P<constant>c[0-9]+)\s+1$')
 
 # WARNING: THESE REQUIRE THE UNITY HEADERS ATTACHED TO THE SHADER (not a
 # problem in 5.2 or older because everything requires that, but starting with
@@ -1170,8 +1172,13 @@ def adjust_output(tree, args):
         # special exception to skip it without double reporting the error.
         raise ExceptionDontReport()
 
-def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
+def _adjust_input(tree, reg, args, stereo_const=None, tmp_reg=None, vanity="Input adjustment inserted with"):
     # TODO: Refactor common code with _adjust_output
+
+    if stereo_const is None:
+        stereo_const, _ = insert_stereo_declarations(tree, args)
+    if tmp_reg is None:
+        tmp_reg = tree._find_free_reg('r', VS3, desired=31)
 
     repl_reg = tree._find_free_reg('r', VS3, desired=30)
 
@@ -1192,7 +1199,7 @@ def _adjust_input(tree, reg, args, stereo_const, tmp_reg):
         repl_reg_mask = '%s.%s' % (repl_reg, declared_reg.swizzle)
 
     pos = tree.decl_end - 1
-    pos += insert_vanity_comment(args, tree, pos, "Input adjustment inserted with")
+    pos += insert_vanity_comment(args, tree, pos, vanity)
     pos += tree.insert_instr(pos, NewInstruction('mov', [repl_reg_mask, org_reg]))
     if args.condition:
         pos += tree.insert_instr(pos, NewInstruction('mov', [tmp_reg.x, args.condition]))
@@ -1566,6 +1573,16 @@ def find_header(tree, comment_patterns):
                     return match
     raise KeyError()
 
+def find_texture(tree, comment_patterns):
+    match = find_header(tree, comment_patterns)
+    return Register('s' + match.group('texture'))
+
+def find_const(tree, comment_patterns):
+    match = find_header(tree, comment_patterns)
+    # XXX: In some of these below I added 'c' manually - double check the
+    # patterns before switching anything to use this.
+    return Register(match.group('constant'))
+
 def disable_unreal_correction(tree, args, redundant_check):
     # In Life Is Strange I found a lot of Unreal Engine shaders are now using
     # the vPos semantic, and then applying a stereo correction on top of that,
@@ -1774,15 +1791,15 @@ def auto_fix_unreal_shadows(tree, args, pattern=unreal_ScreenToShadowMatrix_patt
 def auto_fix_unreal_lights(tree, args):
     return auto_fix_unreal_shadows(tree, args, unreal_ScreenToLight_pattern, matrix_name='ScreenToLight', name="light")
 
-def fix_unreal_ps_halo(tree, args):
+def fix_unreal_halo_vpm(tree, args):
     if not isinstance(tree, PS3):
-        raise Exception('Unreal halo fix is only applicable to pixel shaders')
+        raise Exception('Unreal ViewProjectionMatrix halo fix is only applicable to pixel shaders')
 
     matrix, results = find_row_major_matrix_multiply(tree, unreal_ViewProjectionMatrix_pattern, 'ViewProjectionMatrix')
     if matrix is None:
         return
 
-    debug_verbose(-1, 'Applying Unreal Engine 3 halo fix')
+    debug_verbose(-1, 'Applying Unreal Engine 3 ViewProjectionMatrix halo fix')
 
     # Find correct swizzle for clip space register, e.g.
     # mad r2.xyz, c11.xyww, v3.w, r2 --> r2.x, r2.z
@@ -1800,7 +1817,7 @@ def fix_unreal_ps_halo(tree, args):
 
     pos = next_line_pos(tree, line + offset)
 
-    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine halo fix inserted with")
+    pos += insert_vanity_comment(args, tree, pos, "Unreal Engine ViewProjectionMatrix halo fix inserted with")
     pos += tree.insert_instr(pos, NewInstruction('texldl', [t, stereo_const.z, tree.stereo_sampler]))
     separation = t.x; convergence = t.y
     pos += tree.insert_instr(pos, NewInstruction('add', [t.w, clip_reg_w, -convergence]))
@@ -1808,6 +1825,69 @@ def fix_unreal_ps_halo(tree, args):
     pos += tree.insert_instr(pos)
 
     tree.autofixed = True
+
+def fix_unreal_halo_sct(tree, args):
+    # These halos could be fixed in the vertex shader using the generic vertex
+    # shader halo fix, but doing so may break other effects in UE3 games, so
+    # better to detect when the fix is required in the pixel shader instead.
+
+    if not isinstance(tree, PS3):
+        raise Exception('Unreal SceneColorTexture halo fix is only applicable to pixel shaders')
+
+    try:
+        SceneColorTexture = find_texture(tree, unreal_SceneColorTexture_pattern)
+        ScreenPositionScaleBias = find_const(tree, unreal_ScreenPositionScaleBias_pattern)
+    except KeyError:
+        debug_verbose(0, 'Shader does not use SceneColorTexture and/or ScreenPositionScaleBias')
+        return
+
+    debug_verbose(0, 'SceneColorTexture identified as %s' % SceneColorTexture)
+    debug_verbose(0, 'ScreenPositionScaleBias identified as %s' % ScreenPositionScaleBias)
+
+    results = scan_shader(tree, SceneColorTexture, write=False)
+    if not results:
+        debug_verbose(0, 'SceneColorTexture is not used in shader')
+        return
+    if len(results) > 1:
+        debug("Autofixing a shader using SceneColorTexture multiple times is unsupported.")
+        return
+    (line, linepos, instr) = results[0]
+
+    # Trace back to mad rX.xy, rM.xy, cN, cN.wzzw instruction:
+    results = scan_shader(tree, instr.args[1].reg, components='x', write=True, start=line - 1, direction=-1, stop=True)
+    assert(len(results) == 1)
+    (line, linepos, instr) = results[0]
+    if instr.opcode != 'mad':
+        debug("Unexpected instruction %s, aborting" % instr)
+        return
+    if [x.reg for x in instr.args[1:]].count(ScreenPositionScaleBias) != 2:
+        debug("Unexpected flow - instruction did not use ScreenPositionScaleBias, aborting")
+        return
+
+    # Trace back to input register:
+    reg = [x for x in instr.args[1:3] if x.reg.startswith('r')]
+    assert(len(reg) == 1)
+    reg = reg[0]
+    swizzle = asm_hlsl_swizzle(instr.args[0].swizzle, reg.swizzle)
+    results = scan_shader(tree, reg.reg, components=swizzle, write=True, start=line - 1, direction=-1, stop=True)
+    (line, linepos, instr) = results[0]
+    if instr.opcode != 'mul':
+        debug("Unexpected instruction %s, aborting" % instr)
+        return
+    vreg = [x for x in instr.args[1:] if x.reg.startswith('v')]
+    if len(vreg) != 1:
+        debug("Unable to determine input register")
+        return
+    vreg = vreg[0]
+
+    # Could trace further and verify that this was multiplied by 1/vreg.w, but
+    # this is probably fine
+
+    debug_verbose(-1, 'Applying Unreal Engine 3 SceneColorTexture halo fix')
+    _adjust_input(tree, vreg, args, vanity="Unreal Engine SceneColorTexture halo fix inserted with")
+
+    tree.autofixed = True
+
 
 def fix_unity_lighting_ps(tree, args):
     if not isinstance(tree, PS3):
@@ -3109,8 +3189,10 @@ def parse_args():
             help="Attempt to automatically fix shadows in Unreal games")
     parser.add_argument('--auto-fix-unreal-lights', action='store_true',
             help="Attempt to automatically fix lights in Unreal games")
-    parser.add_argument('--fix-unreal-ps-halo', action='store_true',
-            help="Apply halo fix to Unreal Engine 3 pixel shaders (NOTE: only applicable to certain games)")
+    parser.add_argument('--fix-unreal-halo-vpm', action='store_true',
+            help="Fix halos caused by the view projection matrix used in the pixel shader of certain UE3 games")
+    parser.add_argument('--fix-unreal-halo-sct', action='store_true',
+            help="Fix halos on effects that read the SceneColorTexture in certain UE3 games")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix! You should use my template instead!")
     parser.add_argument('--fix-unity-lighting-ps-world', action='store_true',
@@ -3213,7 +3295,8 @@ def args_require_reg_analysis(args):
                 args.adjust_unity_ceto_reflections or \
                 args.auto_fix_unreal_shadows or \
                 args.auto_fix_unreal_lights or \
-                args.fix_unreal_ps_halo or \
+                args.fix_unreal_halo_vpm or \
+                args.fix_unreal_halo_sct or \
                 args.fix_unity_lighting_ps or \
                 args.fix_unity_lighting_ps_world or \
                 args.fix_unity_reflection or \
@@ -3338,8 +3421,10 @@ def main():
                 auto_fix_unreal_shadows(tree, args)
             if args.auto_fix_unreal_lights:
                 auto_fix_unreal_lights(tree, args)
-            if args.fix_unreal_ps_halo:
-                fix_unreal_ps_halo(tree, args)
+            if args.fix_unreal_halo_vpm:
+                fix_unreal_halo_vpm(tree, args)
+            if args.fix_unreal_halo_sct:
+                fix_unreal_halo_sct(tree, args)
             if args.fix_unity_lighting_ps:
                 fix_unity_lighting_ps(tree, args)
             if args.fix_unity_lighting_ps_world:
