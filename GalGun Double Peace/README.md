@@ -6,6 +6,7 @@ Fixes
 - Various automatic HUD depth adjustments (refer to Keys below)
 - Shadows
 - God Rays
+- Halos
 
 Installation
 ------------
@@ -28,4 +29,8 @@ Keys
 2 = HUD to first vertex depth (selected by default, recommended for gameplay)
 3 = HUD to individual vertex depth (like 2, but HUD elements may be more skewed)
 4 = HUD to mouse depth (Periodically move the mouse to all four sides to calibrate)
-5 = HUD to depth at screen center
+5 = HUD to depth of screen center
+
+Known Issues
+------------
+Parts of the HUD will break when a HUD adjustment is active.
