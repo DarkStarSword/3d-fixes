@@ -2,6 +2,8 @@
 
 from extract_unity_shaders import fnv_3Dmigoto_shader
 from extract_unity_shaders import export_dx11_shader
+from extract_unity_shaders import add_vanity_tag
+from extract_unity_shaders import commentify
 import sys, os, struct, argparse, codecs, hashlib, io
 
 verbosity = 0
@@ -18,9 +20,10 @@ def start_headers():
 
 def end_headers():
 	global headers
-	ret = ''.join(['// ' + x for x in headers.getvalue().splitlines(True)])
+	ret = headers.getvalue().splitlines(True)
+	add_vanity_tag(ret)
 	headers = None
-	return ret
+	return commentify(ret)
 
 def pr_headers(*msg, **kwargs):
 	global headers
