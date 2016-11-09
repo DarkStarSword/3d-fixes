@@ -9,29 +9,47 @@ def pr_debug(*msg, **kwargs):
 	if verbosity:
 		print(*msg, **kwargs)
 
+headers = None
+
+def start_headers():
+	global headers
+	headers = io.StringIO()
+
+def end_headers():
+	global headers
+	ret = ''.join(['// ' + x for x in headers.getvalue().splitlines(True)])
+	headers = None
+	return ret
+
+def pr_headers(*msg, **kwargs):
+	global headers
+	if headers is not None:
+		print(*msg, file=headers, **kwargs)
+	pr_debug(*msg, **kwargs)
+
 def hexdump(buf, text, start=0, width=16):
 	a = ''
-	pr_debug(text, end=':')
+	pr_headers(text, end=':')
 	for i, b in enumerate(buf):
 		if i % width == 0:
 			if i:
-				pr_debug(' | %s |' % a)
+				pr_headers(' | %s |' % a)
 			else:
-				pr_debug()
-			pr_debug('  %08x: ' % (start + i), end='')
+				pr_headers()
+			pr_headers('  %08x: ' % (start + i), end='')
 			a = ''
 		elif i and i % 4 == 0:
-			pr_debug(' ', end='')
+			pr_headers(' ', end='')
 		if b >= ord(' ') and b <= ord('~'):
 			a += chr(b)
 		else:
 			a += '.'
-		pr_debug('%02X' % b, end='')
+		pr_headers('%02X' % b, end='')
 	if a:
 		rem = width - (i % width) - 1
-		pr_debug(' ' * (rem*2), end='')
-		pr_debug(' ' * (rem//4 + 1), end='')
-		pr_debug('| %s%s |' % (a, ' ' * rem))
+		pr_headers(' ' * (rem*2), end='')
+		pr_headers(' ' * (rem//4 + 1), end='')
+		pr_headers('| %s%s |' % (a, ' ' * rem))
 
 class parser(object):
 	def u16(self):
@@ -116,7 +134,8 @@ def export_shader(bytecode):
 	# TODO: Support other 3DMigoto hash types
 	embedded_hash = bytecode[4:12] # The embedded hash is a 16 byte hash, but we only use 8
 	# FIXME: Determine shader type somehow
-	filename = '%s-XX.bin' % codecs.encode(embedded_hash, 'hex').decode('ascii')
+	base_filename = '%s-XX' % codecs.encode(embedded_hash, 'hex').decode('ascii')
+	filename = '%s.bin' % base_filename
 	print('Extracting extracted/%s...' % filename)
 
 	try:
@@ -126,6 +145,11 @@ def export_shader(bytecode):
 
 	with open('extracted/%s' % filename, 'wb') as out:
 		out.write(bytecode)
+
+	filename = '%s_headers.txt' % base_filename
+	headers = end_headers()
+	with open('extracted/%s' % filename, 'w') as out:
+		out.write(headers)
 
 def parse_ue4_shader_code(Code):
 	f = buf_parser(Code)
@@ -137,11 +161,11 @@ def parse_ue4_shader_code(Code):
 	SamplerMap = TArrayU32(f)
 	UnorderedAccessViewMap = TArrayU32(f)
 	ResourceTableLayoutHashes = TArrayU32(f)
-	print('ResourceTableBits:', ResourceTableBits)
-	print('ShaderResourceViewMap:',     ' '.join(map(lambda x: '%08x' % x, ShaderResourceViewMap)))
-	print('SamplerMap:',                ' '.join(map(lambda x: '%08x' % x, SamplerMap)))
-	print('UnorderedAccessViewMap:',    ' '.join(map(lambda x: '%08x' % x, UnorderedAccessViewMap)))
-	print('ResourceTableLayoutHashes:', ' '.join(map(lambda x: '%08x' % x, ResourceTableLayoutHashes)))
+	pr_headers('ResourceTableBits:', '%08x' % ResourceTableBits)
+	pr_headers('ShaderResourceViewMap:',     ' '.join(map(lambda x: '%08x' % x, ShaderResourceViewMap)))
+	pr_headers('SamplerMap:',                ' '.join(map(lambda x: '%08x' % x, SamplerMap)))
+	pr_headers('UnorderedAccessViewMap:',    ' '.join(map(lambda x: '%08x' % x, UnorderedAccessViewMap)))
+	pr_headers('ResourceTableLayoutHashes:', ' '.join(map(lambda x: '%08x' % x, ResourceTableLayoutHashes)))
 
 	# This is in the UE4 source, but doesn't seem to be in the file?
 	# Different engine versions perhaps? The tail in ABZU is different.
@@ -160,7 +184,118 @@ def parse_ue4_shader_code(Code):
 	tail_len = Code[-1]
 	hexdump(Code[-tail_len:-1], 'Unknown Tail')
 
-	export_shader(Code[f.tell() : -tail_len])
+	return Code[f.tell() : -tail_len]
+
+def parse_ue4_shader(f):
+	start_headers()
+	Type = FString(f)
+	pr_headers('Type:', Type)
+	EndOffset = f.u32()
+	pr_debug('EndOffset: 0x%x' % EndOffset)
+
+	# Way to have a flag embedded >in the file< indicating if this section
+	# is present or not @Epic... Fail...
+	bHandleShaderKeyChanges = False
+	if bHandleShaderKeyChanges:
+		# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+		#   FArchive& operator<<(FArchive& Ar,class FSelfContainedShaderId& Ref)
+		#
+		# Engine/Source/Runtime/Core/Public/Misc/SecureHash.h
+		#   FSHAHash MaterialShaderMapHash - 16 bytes
+		# FString VertexFactoryTypeName
+		# FSHAHash VFSourceHash
+		# FSerializationHistory VFSerializationHistory
+		# FString ShaderTypeName
+		# FSHAHash SourceHash
+		# FSerializationHistory SerializationHistory
+		# FShaderTarget Target;
+		assert(False)
+
+	# XXX: This file format is NOT WELL DEFINED and that is an EPIC FAIL!
+	# The fields in this section may be SHADER SPECIFIC & GAME SPECIFIC!
+	# There is no field that indicates the length of this section, so we
+	# cannot reliably skip over it to get to the generic info we are after.
+	# We take advantage of the fact that the shader type string is repeated
+	# in the generic info after this section (which itself shows how poorly
+	# designed the format is, but whatever - at least it is something we
+	# can use. @Epic, if you fix that, please add a length field so we can
+	# skip over the shader type specifc fields that we don't care about).
+	# Look for any class that is derived from FShader (or other children
+	# like FGlobalShader, etc) that has a ::Serialize() method. e.g.
+	# Engine/Source/Runtime/Renderer/Private/ShaderBaseClasses.cpp
+	# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateMaterialShader.cpp
+	# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateShaders.cpp
+	# And of course... these can be defined/overridden on a per game basis,
+	# so the source code to the engine only helps us in some cases :(
+
+	# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+	#   bool FShader::SerializeBase(FArchive& Ar, bool bShadersInline)
+
+	# Ar << OutputHash;
+	# Ar << MaterialShaderMapHash;
+	# Ar << VFType;
+	# Ar << VFSourceHash;
+
+	# XXX: Could potentially work backwards from below to find the
+	# preceeding fields we skipped over. It is worth noting that OutputHash
+	# in this section is repeated after the code if the shader is inlined.
+
+	off = f.find(bytes(Type), 0, EndOffset - f.tell())
+	f.unknown(off, text='Skipping due to fields with shader specific length')
+	# Ar << Type;
+	f.seek(f.tell() + len(bytes(Type)))
+
+	SourceHash = FHash(f)
+	pr_headers('SourceHash:', SourceHash)
+
+	# Engine/Source/Runtime/ShaderCore/Public/ShaderCore.h
+	#   friend FArchive& operator<<(FArchive& Ar,FShaderTarget& Target)
+	TargetFrequency = f.u32()
+	TargetPlatform = f.u32()
+	pr_headers('TargetFrequency: %u, TargetPlatform: %u' % (TargetFrequency, TargetPlatform))
+
+	NumUniformParameters = f.s32()
+	pr_headers('NumUniformParameters: %i' % NumUniformParameters)
+	for ParameterIndex in range(NumUniformParameters):
+		StructName = FString(f)
+		pr_headers('  StructName: %s' % StructName)
+		# Grrr! The fields here can be parameter type specific:
+		#   FUniformBufferStruct* Struct = FindUniformBufferStructByName(*StructName);
+		#   FShaderUniformBufferParameter* Parameter = Struct ? Struct->ConstructTypedParameter() : new FShaderUniformBufferParameter();
+		# With any luck they are all generic, but if not this could be a
+		# deal breaker. If they are generic this should work:
+		#   UnrealEngine/Engine/Source/Runtime/ShaderCore/Public/ShaderParameters.h
+		#   FShaderUniformBufferParameter::Serialize()
+		BaseIndex = f.u16() # NOTE: There is an accessor method that casts this to 32bit
+		bIsBound = f.u32() # A bool... God damnit, read a book on defining file formats
+		pr_headers('   BaseIndex: %u, bIsBound: %u' % (BaseIndex, bIsBound))
+
+	# And again - way to have a flag embedded in the file to indicate that
+	# this section is present @Epic Fail...
+	bShadersInline = True
+	if bShadersInline:
+		# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+		#   FShaderResource::Serialize
+		#     FArchive& operator<<(FArchive& Ar,FShaderType*& Ref)
+		ShaderTypeName = FString(f)
+		pr_headers('ShaderTypeName:', ShaderTypeName)
+		TargetFrequency1 = f.u32()
+		TargetPlatform1 = f.u32()
+		assert(TargetFrequency == TargetFrequency1)
+		assert(TargetPlatform == TargetPlatform1)
+		#     Ar << Code;
+		Code = TArrayU8(f)
+		dxbc = parse_ue4_shader_code(Code)
+		OutputHash = FHash(f)
+		pr_headers('OutputHash:', OutputHash) # Repeated from above in the section we skipped over
+		NumInstructions = f.u32()
+		pr_headers('NumInstructions:', NumInstructions)
+		NumTextureSamplers = f.u32()
+		pr_headers('NumTextureSamplers:', NumTextureSamplers)
+
+		export_shader(dxbc)
+
+	f.unknown(EndOffset - f.tell())
 
 def parse_ue4_global_shader_cache(f):
 	'''
@@ -174,114 +309,8 @@ def parse_ue4_global_shader_cache(f):
 	print('NumShaders: %i' % NumShaders)
 
 	for i in range(NumShaders):
-		print()
-
-		Type = FString(f)
-		print('Type:', Type)
-		EndOffset = f.u32()
-		pr_debug('EndOffset: 0x%x' % EndOffset)
-
-		# Way to have a flag embedded >in the file< indicating if this section
-		# is present or not @Epic... Fail...
-		bHandleShaderKeyChanges = False
-		if bHandleShaderKeyChanges:
-			# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
-			#   FArchive& operator<<(FArchive& Ar,class FSelfContainedShaderId& Ref)
-			#
-			# Engine/Source/Runtime/Core/Public/Misc/SecureHash.h
-			#   FSHAHash MaterialShaderMapHash - 16 bytes
-			# FString VertexFactoryTypeName
-			# FSHAHash VFSourceHash
-			# FSerializationHistory VFSerializationHistory
-			# FString ShaderTypeName
-			# FSHAHash SourceHash
-			# FSerializationHistory SerializationHistory
-			# FShaderTarget Target;
-			assert(False)
-
-		# XXX: This file format is NOT WELL DEFINED and that is an EPIC FAIL!
-		# The fields in this section may be SHADER SPECIFIC & GAME SPECIFIC!
-		# There is no field that indicates the length of this section, so we
-		# cannot reliably skip over it to get to the generic info we are after.
-		# We take advantage of the fact that the shader type string is repeated
-		# in the generic info after this section (which itself shows how poorly
-		# designed the format is, but whatever - at least it is something we
-		# can use. @Epic, if you fix that, please add a length field so we can
-		# skip over the shader type specifc fields that we don't care about).
-		# Look for any class that is derived from FShader (or other children
-		# like FGlobalShader, etc) that has a ::Serialize() method. e.g.
-		# Engine/Source/Runtime/Renderer/Private/ShaderBaseClasses.cpp
-		# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateMaterialShader.cpp
-		# Engine/Source/Runtime/SlateRHIRenderer/Private/SlateShaders.cpp
-		# And of course... these can be defined/overridden on a per game basis,
-		# so the source code to the engine only helps us in some cases :(
-
-		# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
-		#   bool FShader::SerializeBase(FArchive& Ar, bool bShadersInline)
-
-		# Ar << OutputHash;
-		# Ar << MaterialShaderMapHash;
-		# Ar << VFType;
-		# Ar << VFSourceHash;
-
-		# XXX: Could potentially work backwards from below to find the
-		# preceeding fields we skipped over. It is worth noting that OutputHash
-		# in this section is repeated after the code if the shader is inlined.
-
-		off = f.find(bytes(Type), 0, EndOffset - f.tell())
-		f.unknown(off, text='Skipping due to fields with shader specific length')
-		# Ar << Type;
-		f.seek(f.tell() + len(bytes(Type)))
-
-		SourceHash = FHash(f)
-		pr_debug('SourceHash:', SourceHash)
-
-		# Engine/Source/Runtime/ShaderCore/Public/ShaderCore.h
-		#   friend FArchive& operator<<(FArchive& Ar,FShaderTarget& Target)
-		TargetFrequency = f.u32()
-		TargetPlatform = f.u32()
-		pr_debug('TargetFrequency: %u, TargetPlatform: %u' % (TargetFrequency, TargetPlatform))
-
-		NumUniformParameters = f.s32()
-		print('NumUniformParameters: %i' % NumUniformParameters)
-		for ParameterIndex in range(NumUniformParameters):
-			StructName = FString(f)
-			print('  StructName: %s' % StructName)
-			# Grrr! The fields here can be parameter type specific:
-			#   FUniformBufferStruct* Struct = FindUniformBufferStructByName(*StructName);
-			#   FShaderUniformBufferParameter* Parameter = Struct ? Struct->ConstructTypedParameter() : new FShaderUniformBufferParameter();
-			# With any luck they are all generic, but if not this could be a
-			# deal breaker. If they are generic this should work:
-			#   UnrealEngine/Engine/Source/Runtime/ShaderCore/Public/ShaderParameters.h
-			#   FShaderUniformBufferParameter::Serialize()
-			BaseIndex = f.u16() # NOTE: There is an accessor method that casts this to 32bit
-			bIsBound = f.u32() # A bool... God damnit, read a book on defining file formats
-			print('   BaseIndex: %u, bIsBound: %u' % (BaseIndex, bIsBound))
-
-		# And again - way to have a flag embedded in the file to indicate that
-		# this section is present @Epic Fail...
-		bShadersInline = True
-		if bShadersInline:
-			# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
-			#   FShaderResource::Serialize
-			#     FArchive& operator<<(FArchive& Ar,FShaderType*& Ref)
-			ShaderTypeName = FString(f)
-			pr_debug('ShaderTypeName:', ShaderTypeName)
-			TargetFrequency1 = f.u32()
-			TargetPlatform1 = f.u32()
-			assert(TargetFrequency == TargetFrequency1)
-			assert(TargetPlatform == TargetPlatform1)
-			#     Ar << Code;
-			Code = TArrayU8(f)
-			parse_ue4_shader_code(Code)
-			OutputHash = FHash(f)
-			pr_debug('OutputHash:', OutputHash) # Repeated from above in the section we skipped over
-			NumInstructions = f.u32()
-			pr_debug('NumInstructions:', NumInstructions)
-			NumTextureSamplers = f.u32()
-			pr_debug('NumTextureSamplers:', NumTextureSamplers)
-
-		f.unknown(EndOffset - f.tell())
+		pr_debug()
+		parse_ue4_shader(f)
 
 	print()
 
