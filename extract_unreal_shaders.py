@@ -111,6 +111,22 @@ class FString(object):
 def FHash(f):
 	return codecs.encode(f.read(20), 'hex').decode('ascii')
 
+def export_shader(bytecode):
+	assert(bytecode[0:4] == b'DXBC')
+	# TODO: Support other 3DMigoto hash types
+	embedded_hash = bytecode[4:12] # The embedded hash is a 16 byte hash, but we only use 8
+	# FIXME: Determine shader type somehow
+	filename = '%s-XX.bin' % codecs.encode(embedded_hash, 'hex').decode('ascii')
+	print('Extracting extracted/%s...' % filename)
+
+	try:
+		os.mkdir('extracted')
+	except FileExistsError:
+		pass
+
+	with open('extracted/%s' % filename, 'wb') as out:
+		out.write(bytecode)
+
 def parse_ue4_shader_code(Code):
 	f = buf_parser(Code)
 
@@ -126,8 +142,25 @@ def parse_ue4_shader_code(Code):
 	print('SamplerMap:',                ' '.join(map(lambda x: '%08x' % x, SamplerMap)))
 	print('UnorderedAccessViewMap:',    ' '.join(map(lambda x: '%08x' % x, UnorderedAccessViewMap)))
 	print('ResourceTableLayoutHashes:', ' '.join(map(lambda x: '%08x' % x, ResourceTableLayoutHashes)))
-	if verbosity:
-		hexdump(f.read(), 'Code')
+
+	# This is in the UE4 source, but doesn't seem to be in the file?
+	# Different engine versions perhaps? The tail in ABZU is different.
+	# Engine/Source/Developer/Windows/ShaderFormatD3D/Private/D3D11ShaderCompiler.cpp
+	# CompileD3D11Shader() - search for Output.Code
+	#   Output.Code.Add(bGlobalUniformBufferUsed);
+	#   Output.Code.Add(NumSamplers);
+	#   Output.Code.Add(NumSRVs);
+	#   Output.Code.Add(NumCBs);
+	#   Output.Code.Add(NumUAVs);
+	#  Note - if these are present, they should be *one byte* each
+
+	# I'm not sure where the source is corresponding to this tail - I might
+	# need to see what has changed since the last time I pulled the UE4 source
+	# Looks like it contains the .usf filename and some other useful info...
+	tail_len = Code[-1]
+	hexdump(Code[-tail_len:-1], 'Unknown Tail')
+
+	export_shader(Code[f.tell() : -tail_len])
 
 def parse_ue4_global_shader_cache(f):
 	'''
