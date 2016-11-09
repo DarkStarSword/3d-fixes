@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from extract_unity_shaders import fnv_3Dmigoto_shader
+from extract_unity_shaders import export_dx11_shader
 import sys, os, struct, argparse, codecs, hashlib, io
 
 verbosity = 0
@@ -129,27 +130,28 @@ class FString(object):
 def FHash(f):
 	return codecs.encode(f.read(20), 'hex').decode('ascii')
 
+def shader_hash(bytecode):
+	if args.hash == 'embedded':
+		return bytecode[4:12] # The embedded hash is a 16 byte hash, but we only use 8
+	if args.hash == '3dmigoto':
+		return fnv_3Dmigoto_shader(bytecode)
+	raise NotImplemented()
+
 def export_shader(bytecode):
 	assert(bytecode[0:4] == b'DXBC')
 	# TODO: Support other 3DMigoto hash types
-	embedded_hash = bytecode[4:12] # The embedded hash is a 16 byte hash, but we only use 8
-	# FIXME: Determine shader type somehow
-	base_filename = '%s-XX' % codecs.encode(embedded_hash, 'hex').decode('ascii')
-	filename = '%s.bin' % base_filename
-	print('Extracting extracted/%s...' % filename)
 
+	headers = end_headers()
+
+	hash = shader_hash(bytecode)
+	# FIXME: Determine shader type somehow
+	base_filename = 'extracted/%s-XX' % codecs.encode(hash, 'hex').decode('ascii')
 	try:
 		os.mkdir('extracted')
 	except FileExistsError:
 		pass
 
-	with open('extracted/%s' % filename, 'wb') as out:
-		out.write(bytecode)
-
-	filename = '%s_headers.txt' % base_filename
-	headers = end_headers()
-	with open('extracted/%s' % filename, 'w') as out:
-		out.write(headers)
+	export_dx11_shader(base_filename, bytecode, headers)
 
 def parse_ue4_shader_code(Code):
 	f = buf_parser(Code)
@@ -372,8 +374,8 @@ def parse_batman_cooked_shader_cache(f):
 		# pr_debug('Bytecode:', bytecode)
 		assert(bytecode[0:4] == b'DXBC')
 
-		fnv = fnv_3Dmigoto_shader(bytecode)
-		print('3DMigoto hash: %016x' % fnv)
+		hash = shader_hash(bytecode)
+		print('%s hash: %016x' % (args.hash, hash))
 
 		u1a = f.unknown(8, show=False)
 		assert(u1 == u1a)
@@ -389,7 +391,7 @@ def parse_batman_cooked_shader_cache(f):
 		tail = EndOffset - f.tell()
 		f.unknown(tail)
 
-		ret[fnv] = Name
+		ret[hash] = Name
 
 	print()
 
@@ -401,20 +403,19 @@ def parse_batman_cooked_shader_cache(f):
 	return ret
 
 def parse_args():
-	global verbosity
+	global verbosity, args
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('files', nargs='+')
 	parser.add_argument('--verbose', '-v', action='count', default=0)
 	parser.add_argument('--batman', action='store_true')
+	parser.add_argument('--hash', choices=['embedded', '3dmigoto'], required=True) # TODO: bytecode
 	args = parser.parse_args()
 
 	verbosity = args.verbose
 
-	return args
-
 def main():
-	args = parse_args()
+	parse_args()
 
 	f = file_parser(args.files[0])
 	if args.batman:
