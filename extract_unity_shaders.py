@@ -695,7 +695,7 @@ def add_vanity_tag(headers):
         headers.append('')
     tool_name = os.path.basename(sys.argv[0])
     headers.append("Headers extracted with DarkStarSword's {}".format(tool_name))
-    headers.append("https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/{}".format(tool_name))
+    headers.append("https://github.com/DarkStarSword/3d-fixes")
 
 def decode_unity_byte(upper, lower):
         upper = ord(upper) - ord('a')
