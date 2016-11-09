@@ -70,7 +70,7 @@ class parser(object):
 		start = self.f.tell()
 		buf = self.read(len)
 
-		if not verbosity or not show:
+		if not show:
 			return buf
 
 		hexdump(buf, '%s (%u bytes)' % (text, len), start=start)
@@ -187,7 +187,7 @@ def parse_ue4_shader_code(Code):
 	# need to see what has changed since the last time I pulled the UE4 source
 	# Looks like it contains the .usf filename and some other useful info...
 	tail_len = Code[-1]
-	hexdump(Code[-tail_len:-1], 'Unknown Tail')
+	hexdump(Code[-tail_len:-1], 'Unknown Tail (%u bytes)' % (tail_len - 1))
 
 	return Code[f.tell() : -tail_len]
 
@@ -246,7 +246,7 @@ def parse_ue4_shader(f):
 	# in this section is repeated after the code if the shader is inlined.
 
 	off = f.find(bytes(Type), 0, EndOffset - f.tell())
-	f.unknown(off, text='Skipping due to fields with shader specific length')
+	f.unknown(off, text='Skipping over variable length shader specific section')
 	# Ar << Type;
 	f.seek(f.tell() + len(bytes(Type)))
 
@@ -298,9 +298,9 @@ def parse_ue4_shader(f):
 		NumTextureSamplers = f.u32()
 		pr_headers('NumTextureSamplers:', NumTextureSamplers)
 
-		export_shader(dxbc)
-
 	f.unknown(EndOffset - f.tell())
+
+	export_shader(dxbc)
 
 def parse_ue4_global_shader_cache(f):
 	'''
