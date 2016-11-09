@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from extract_unity_shaders import fnv_3Dmigoto_shader
-import sys, os, struct, argparse
+import sys, os, struct, argparse, codecs
 
 verbosity = 0
 
@@ -13,13 +13,17 @@ def pr_debug(*msg, **kwargs):
 class file_parser(object):
 	def __init__(self, filename):
 		self.f = open(filename, 'rb')
+	def u16(self):
+		return struct.unpack('<H', self.f.read(2))[0]
 	def u32(self):
 		return struct.unpack('<I', self.f.read(4))[0]
 	def s32(self):
 		return struct.unpack('<i', self.f.read(4))[0]
 	def read(self, length):
 		return self.f.read(length)
-	def unknown(self, len, show=True):
+	def unknown(self, len, show=True, text='Unknown'):
+		if not len:
+			return
 		start = self.f.tell()
 		buf = self.read(len)
 
@@ -27,7 +31,7 @@ class file_parser(object):
 			return buf
 
 		width = 16
-		pr_debug('Unknown: ', end='')
+		pr_debug('%s (%u bytes):' % (text, len), end='')
 		a = ''
 		for i, b in enumerate(buf):
 			if i % width == 0:
@@ -56,19 +60,43 @@ class file_parser(object):
 		return self.f.seek(*a, **kw)
 	def fileno(self):
 		return self.f.fileno()
+	def find(self, sub, start, end):
+		pos = self.f.tell()
+		buf = self.f.read(end)
+		self.f.seek(pos)
+		r = buf.find(sub, start, end)
+		if r == -1:
+			raise ItemError(r)
+		return r
 
+def TArrayU8(f):
+	# Engine/Source/Runtime/Core/Public/Containers/Array.h operator<<
+	ArrayNum = f.s32()
+	return f.read(ArrayNum)
 
-def FString(f):
-	# Engine/Source/Runtime/Core/Private/Containers/String.cpp operator<<
-	SaveNum = f.s32()
-	LoadUCS2Char = SaveNum < 0
-	SaveNum = abs(SaveNum)
-	# pr_debug('SaveNum: %i' % SaveNum)
-	if LoadUCS2Char:
-		string = f.read(SaveNum * 2).decode('utf16')
-	else:
-		string = f.read(SaveNum).decode('ascii')
-	return string.rstrip('\0')
+class FString(object):
+	def __init__(self, f):
+		# Engine/Source/Runtime/Core/Private/Containers/String.cpp operator<<
+		SaveNum = f.s32()
+		LoadUCS2Char = SaveNum < 0
+		SaveNum = abs(SaveNum)
+		# pr_debug('SaveNum: %i' % SaveNum)
+		if LoadUCS2Char:
+			self.raw = f.read(SaveNum * 2)
+			self.encoding = 'utf16'
+		else:
+			self.raw = f.read(SaveNum)
+			self.encoding = 'ascii'
+		self.string = self.raw.decode(self.encoding).rstrip('\0')
+
+	def __str__(self):
+		return self.string
+
+	def __bytes__(self):
+		return self.raw
+
+def FHash(f):
+	return codecs.encode(f.read(20), 'hex').decode('ascii')
 
 def parse_ue4_global_shader_cache(f):
 	'''
@@ -85,7 +113,7 @@ def parse_ue4_global_shader_cache(f):
 		print()
 
 		Type = FString(f)
-		pr_debug('Type:', Type)
+		print('Type:', Type)
 		EndOffset = f.u32()
 		pr_debug('EndOffset: 0x%x' % EndOffset)
 
@@ -131,29 +159,62 @@ def parse_ue4_global_shader_cache(f):
 		# Ar << MaterialShaderMapHash;
 		# Ar << VFType;
 		# Ar << VFSourceHash;
+
+		# XXX: Could potentially work backwards from below to find the
+		# preceeding fields we skipped over. It is worth noting that OutputHash
+		# in this section is repeated after the code if the shader is inlined.
+
+		off = f.find(bytes(Type), 0, EndOffset - f.tell())
+		f.unknown(off, text='Skipping due to fields with shader specific length')
 		# Ar << Type;
-		# Ar << SourceHash;
-		# Ar << Target;
-		# NumUniformParameters = f.s32()
-		# print('NumUniformParameters: %i' % NumUniformParameters)
-		# for ParameterIndex in range(NumUniformParameters):
-		# 	StructName = FString(f)
-		# 	print('StructName: %s' % StructName)
-		# 	# FShaderUniformBufferParameter* Parameter = Struct ? Struct->ConstructTypedParameter() : new FShaderUniformBufferParameter();
-		# 	# Ar << *Parameter;
+		f.seek(f.tell() + len(bytes(Type)))
+
+		SourceHash = FHash(f)
+		pr_debug('SourceHash:', SourceHash)
+
+		# Engine/Source/Runtime/ShaderCore/Public/ShaderCore.h
+		#   friend FArchive& operator<<(FArchive& Ar,FShaderTarget& Target)
+		TargetFrequency = f.u32()
+		TargetPlatform = f.u32()
+		pr_debug('TargetFrequency: %u, TargetPlatform: %u' % (TargetFrequency, TargetPlatform))
+
+		NumUniformParameters = f.s32()
+		print('NumUniformParameters: %i' % NumUniformParameters)
+		for ParameterIndex in range(NumUniformParameters):
+			StructName = FString(f)
+			print('  StructName: %s' % StructName)
+			# Grrr! The fields here can be parameter type specific:
+			#   FUniformBufferStruct* Struct = FindUniformBufferStructByName(*StructName);
+			#   FShaderUniformBufferParameter* Parameter = Struct ? Struct->ConstructTypedParameter() : new FShaderUniformBufferParameter();
+			# With any luck they are all generic, but if not this could be a
+			# deal breaker. If they are generic this should work:
+			#   UnrealEngine/Engine/Source/Runtime/ShaderCore/Public/ShaderParameters.h
+			#   FShaderUniformBufferParameter::Serialize()
+			BaseIndex = f.u16() # NOTE: There is an accessor method that casts this to 32bit
+			bIsBound = f.u32() # A bool... God damnit, read a book on defining file formats
+			print('   BaseIndex: %u, bIsBound: %u' % (BaseIndex, bIsBound))
 
 		# And again - way to have a flag embedded in the file to indicate that
 		# this section is present @Epic Fail...
 		bShadersInline = True
 		if bShadersInline:
-			# Resource->Serialize(Ar)
-			#   Ar << SpecificType;
-			#   Ar << Target;
-			#    Ar << TargetFrequency << TargetPlatform;
-			#   Ar << Code;
-			#   Ar << OutputHash;
-			#   Ar << NumInstructions;
-			#   Ar << NumTextureSamplers;
+			# Engine/Source/Runtime/ShaderCore/Private/Shader.cpp
+			#   FShaderResource::Serialize
+			#     FArchive& operator<<(FArchive& Ar,FShaderType*& Ref)
+			ShaderTypeName = FString(f)
+			pr_debug('ShaderTypeName:', ShaderTypeName)
+			TargetFrequency1 = f.u32()
+			TargetPlatform1 = f.u32()
+			assert(TargetFrequency == TargetFrequency1)
+			assert(TargetPlatform == TargetPlatform1)
+			#     Ar << Code;
+			Code = TArrayU8(f)
+			OutputHash = FHash(f)
+			pr_debug('OutputHash:', OutputHash) # Repeated from above in the section we skipped over
+			NumInstructions = f.u32()
+			pr_debug('NumInstructions:', NumInstructions)
+			NumTextureSamplers = f.u32()
+			pr_debug('NumTextureSamplers:', NumTextureSamplers)
 			pass
 
 		tail = EndOffset - f.tell()
