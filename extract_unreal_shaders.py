@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from extract_unity_shaders import fnv_3Dmigoto_shader
-import sys, os, struct, argparse, codecs
+import sys, os, struct, argparse, codecs, hashlib, io
 
 verbosity = 0
 
@@ -9,17 +9,38 @@ def pr_debug(*msg, **kwargs):
 	if verbosity:
 		print(*msg, **kwargs)
 
+def hexdump(buf, text, start=0, width=16):
+	a = ''
+	pr_debug(text, end=':')
+	for i, b in enumerate(buf):
+		if i % width == 0:
+			if i:
+				pr_debug(' | %s |' % a)
+			else:
+				pr_debug()
+			pr_debug('  %08x: ' % (start + i), end='')
+			a = ''
+		elif i and i % 4 == 0:
+			pr_debug(' ', end='')
+		if b >= ord(' ') and b <= ord('~'):
+			a += chr(b)
+		else:
+			a += '.'
+		pr_debug('%02X' % b, end='')
+	if a:
+		rem = width - (i % width) - 1
+		pr_debug(' ' * (rem*2), end='')
+		pr_debug(' ' * (rem//4 + 1), end='')
+		pr_debug('| %s%s |' % (a, ' ' * rem))
 
-class file_parser(object):
-	def __init__(self, filename):
-		self.f = open(filename, 'rb')
+class parser(object):
 	def u16(self):
 		return struct.unpack('<H', self.f.read(2))[0]
 	def u32(self):
 		return struct.unpack('<I', self.f.read(4))[0]
 	def s32(self):
 		return struct.unpack('<i', self.f.read(4))[0]
-	def read(self, length):
+	def read(self, length=None):
 		return self.f.read(length)
 	def unknown(self, len, show=True, text='Unknown'):
 		if not len:
@@ -30,30 +51,9 @@ class file_parser(object):
 		if not verbosity or not show:
 			return buf
 
-		width = 16
-		pr_debug('%s (%u bytes):' % (text, len), end='')
-		a = ''
-		for i, b in enumerate(buf):
-			if i % width == 0:
-				if i:
-					pr_debug(' | %s |' % a)
-				else:
-					pr_debug()
-				pr_debug('  %08x: ' % (start + i), end='')
-				a = ''
-			elif i and i % 4 == 0:
-				pr_debug(' ', end='')
-			if b >= ord(' ') and b <= ord('~'):
-				a += chr(b)
-			else:
-				a += '.'
-			pr_debug('%02X' % b, end='')
-		if a:
-			rem = width - (i % width) - 1
-			pr_debug(' ' * (rem*2), end='')
-			pr_debug(' ' * (rem//4 + 1), end='')
-			pr_debug('| %s%s |' % (a, ' ' * rem))
+		hexdump(buf, '%s (%u bytes)' % (text, len), start=start)
 		return buf
+
 	def tell(self):
 		return self.f.tell()
 	def seek(self, *a, **kw):
@@ -69,10 +69,23 @@ class file_parser(object):
 			raise ItemError(r)
 		return r
 
+class file_parser(parser):
+	def __init__(self, filename):
+		self.f = open(filename, 'rb')
+
+class buf_parser(parser):
+	def __init__(self, buf):
+		self.f = io.BytesIO(buf)
+
 def TArrayU8(f):
 	# Engine/Source/Runtime/Core/Public/Containers/Array.h operator<<
 	ArrayNum = f.s32()
 	return f.read(ArrayNum)
+
+def TArrayU32(f):
+	# Engine/Source/Runtime/Core/Public/Containers/Array.h operator<<
+	ArrayNum = f.s32()
+	return struct.unpack('%iI' % ArrayNum, f.read(ArrayNum * 4))
 
 class FString(object):
 	def __init__(self, f):
@@ -97,6 +110,24 @@ class FString(object):
 
 def FHash(f):
 	return codecs.encode(f.read(20), 'hex').decode('ascii')
+
+def parse_ue4_shader_code(Code):
+	f = buf_parser(Code)
+
+	# Engine/Source/Runtime/ShaderCore/Public/ShaderCore.h
+	#   inline FArchive& operator<<(FArchive& Ar, FBaseShaderResourceTable& SRT)
+	ResourceTableBits = f.u32()
+	ShaderResourceViewMap = TArrayU32(f)
+	SamplerMap = TArrayU32(f)
+	UnorderedAccessViewMap = TArrayU32(f)
+	ResourceTableLayoutHashes = TArrayU32(f)
+	print('ResourceTableBits:', ResourceTableBits)
+	print('ShaderResourceViewMap:',     ' '.join(map(lambda x: '%08x' % x, ShaderResourceViewMap)))
+	print('SamplerMap:',                ' '.join(map(lambda x: '%08x' % x, SamplerMap)))
+	print('UnorderedAccessViewMap:',    ' '.join(map(lambda x: '%08x' % x, UnorderedAccessViewMap)))
+	print('ResourceTableLayoutHashes:', ' '.join(map(lambda x: '%08x' % x, ResourceTableLayoutHashes)))
+	if verbosity:
+		hexdump(f.read(), 'Code')
 
 def parse_ue4_global_shader_cache(f):
 	'''
@@ -209,16 +240,15 @@ def parse_ue4_global_shader_cache(f):
 			assert(TargetPlatform == TargetPlatform1)
 			#     Ar << Code;
 			Code = TArrayU8(f)
+			parse_ue4_shader_code(Code)
 			OutputHash = FHash(f)
 			pr_debug('OutputHash:', OutputHash) # Repeated from above in the section we skipped over
 			NumInstructions = f.u32()
 			pr_debug('NumInstructions:', NumInstructions)
 			NumTextureSamplers = f.u32()
 			pr_debug('NumTextureSamplers:', NumTextureSamplers)
-			pass
 
-		tail = EndOffset - f.tell()
-		f.unknown(tail)
+		f.unknown(EndOffset - f.tell())
 
 	print()
 
