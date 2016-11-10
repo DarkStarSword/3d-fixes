@@ -58,10 +58,20 @@ def hexdump(buf, text, start=0, width=16):
 class parser(object):
 	def u16(self):
 		return struct.unpack('<H', self.f.read(2))[0]
+	def s16(self):
+		return struct.unpack('<h', self.f.read(2))[0]
 	def u32(self):
 		return struct.unpack('<I', self.f.read(4))[0]
 	def s32(self):
 		return struct.unpack('<i', self.f.read(4))[0]
+	def u64(self):
+		return struct.unpack('<Q', self.f.read(8))[0]
+	def s64(self):
+		return struct.unpack('<q', self.f.read(8))[0]
+	def bool(self):
+		b, = struct.unpack('<I', self.f.read(4))
+		assert (b == 0 or b == 1)
+		return not not b
 	def read(self, length=None):
 		return self.f.read(length)
 	def unknown(self, len, show=True, text='Unknown'):
@@ -108,6 +118,20 @@ def TArrayU32(f):
 	# Engine/Source/Runtime/Core/Public/Containers/Array.h operator<<
 	ArrayNum = f.s32()
 	return struct.unpack('%iI' % ArrayNum, f.read(ArrayNum * 4))
+
+def TArrayS32(f):
+	ArrayNum = f.s32()
+	return struct.unpack('%ii' % ArrayNum, f.read(ArrayNum * 4))
+
+def TArrayObject(f, constructor, *args, **kwargs):
+	ArrayNum = f.s32()
+	ret = []
+	for i in range(ArrayNum):
+		ret.append(constructor(f, *args, **kwargs))
+	return ret
+
+def FGuid(f):
+	return('%08x-%08x-%08x-%08x' % struct.unpack('4I', f.read(16)))
 
 class FString(object):
 	def __init__(self, f):
@@ -419,8 +443,239 @@ def parse_shader_cache(f):
 	else:
 		parse_ue4_global_shader_cache(f)
 
+def parse_custom_version_section(f, LegacyFileVersion):
+	# static ECustomVersionSerializationFormat::Type GetCustomVersionFormatForArchive(int32 LegacyFileVersion)
+	# Engine/Source/Runtime/Core/Private/Serialization/CustomVersion.cpp
+	if LegacyFileVersion < -5: # Optimized
+		# TSet, which contains a TSparseArray, which stores number of elements
+		# followed by a list, the serizlisation of each should be in
+		# Engine/Source/Runtime/Core/Private/Serialization/CustomVersion.cpp:
+		NewNumElements = f.s32()
+		# In ABZU this is 0, assert that for now and deal with it later:
+		assert(NewNumElements == 0)
+	elif LegacyFileVersion < -2: # Guids
+		raise NotImplemented()
+	elif LegacyFileVersion == -2: # Enums
+		raise NotImplemented()
+
+class Parser(object):
+	def __init__(self, indent=0):
+		self.indent = indent
+
+	def parse(self, name, val, fmt='{}'):
+		pr_debug(('{}{}: %s' % fmt).format(' ' * self.indent, name, val))
+		setattr(self, name, val)
+
+class Generation(Parser):
+	def __init__(self, f, indent=0):
+		Parser.__init__(self, indent)
+		p = self.parse
+		p('ExportCount', f.s32())
+		p('NameCount', f.s32())
+
+class FEngineVersion(Parser):
+	def __init__(self, f, indent=0):
+		Parser.__init__(self, indent)
+		p = self.parse
+		p('Major', f.s16())
+		p('Minor', f.s16())
+		p('Patch', f.s16())
+		p('Changelists', f.u32())
+		p('Branch', FString(f))
+
+class FCompressedChunk(Parser):
+	def __init__(self, f, indent=0):
+		Parser.__init__(self, indent)
+		p = self.parse
+		p('UncompressedOffset', f.s32())
+		p('UncompressedSize', f.s32())
+		p('CompressedOffset', f.s32())
+		p('CompressedSize', f.s32())
+
+class PackageFileSummary(Parser):
+	# Engine/Source/Runtime/CoreUObject/Private/UObject/PackageFileSummary.cpp
+	def __init__(self, f, indent=0):
+		# FArchive& operator<<( FArchive& Ar, FPackageFileSummary& Sum )
+		Parser.__init__(self, indent)
+		p = self.parse
+		assert(f.u32() == 0x9E2A83C1) # PACKAGE_FILE_TAG / PACKAGE_FILE_TAG_SWAPPED
+
+		# See comment in the source about what this signifies:
+		p('LegacyFileVersion', f.s32())
+		assert(self.LegacyFileVersion == -6) # ABZU, only one tested
+		if self.LegacyFileVersion != -4:
+			p('LegacyUE3Version', f.s32())
+
+		p('FileVersionUE4', f.s32())
+		p('FileVersionLicenseeUE4', f.s32())
+
+		parse_custom_version_section(f, self.LegacyFileVersion)
+
+		p('TotalHeaderSize', f.s32())
+		p('FolderName', FString(f))
+		p('PackageFlags', f.u32(), '{:08x}')
+		p('NameCount', f.s32())
+		p('NameOffset', f.s32(), '0x{:x}')
+
+		if self.FileVersionUE4 >= 459: # VER_UE4_SERIALIZE_TEXT_IN_PACKAGES
+			p('GatherableTextDataCount', f.s32())
+			p('GatherableTextDataOffset', f.s32(), '0x{:x}')
+
+		p('ExportCount', f.s32())
+		p('ExportOffset', f.s32(), '0x{:x}')
+		p('ImportCount', f.s32())
+		p('ImportOffset', f.s32(), '0x{:x}')
+		p('DependsOffset', f.s32(), '0x{:x}')
+
+		assert(self.FileVersionUE4 >= 214) # VER_UE4_OLDEST_LOADABLE_PACKAGE
+		assert(self.FileVersionUE4 <= 510) # VER_UE4_AUTOMATIC_VERSION XXX incremented as the format changes
+
+		if self.FileVersionUE4 >= 384: # VER_UE4_ADD_STRING_ASSET_REFERENCES_MAP
+			p('StringAssetReferencesCount', f.s32())
+			p('StringAssetReferencesOffset', f.s32(), '0x{:x}')
+
+		if self.FileVersionUE4 >= 510: # VER_UE4_ADDED_SEARCHABLE_NAMES
+			p('SearchableNamesOffset', f.s32(), '0x{:x}')
+
+		p('ThumbnailTableOffset', f.s32(), '0x{:x}')
+		p('Guid', FGuid(f))
+
+		p('GenerationCount', f.s32())
+		self.generations = []
+		for i in range(self.GenerationCount):
+			self.generations.append(Generation(f, indent=2))
+
+		if self.FileVersionUE4 >= 336: # VER_UE4_ENGINE_VERSION_OBJECT
+			pr_debug('SavedByEngineVersion:')
+			self.SavedByEngineVersion = FEngineVersion(f, indent=2)
+		else:
+			p('EngineChangelist', f.s32())
+
+		if self.FileVersionUE4 >= 444: # VER_UE4_PACKAGE_SUMMARY_HAS_COMPATIBLE_ENGINE_VERSION
+			pr_debug('CompatibleWithEngineVersion:')
+			self.CompatibleWithEngineVersion = FEngineVersion(f, indent=2)
+
+		p('CompressionFlags', f.u32(), '{:08x}')
+		pr_debug('CompressedChunks:')
+		self.CompressedChunks = TArrayObject(f, FCompressedChunk, indent=2)
+		p('PackageSource', f.u32(), '{:08x}')
+		pr_debug('AdditionalPackagesToCook:')
+		self.AdditionalPackagesToCook = TArrayObject(f, FString, indent=2)
+
+		if self.LegacyFileVersion > -7:
+			p('NumTextureAllocations', f.s32())
+
+		p('AssetRegistryDataOffset', f.s32(), '0x{:08x}')
+		p('BulkDataStartOffset', f.s64(), '0x{:016x}')
+
+		if self.FileVersionUE4 >= 224: # VER_UE4_WORLD_LEVEL_INFO
+			p('WorldTileInfoDataOffset', f.s32(), '0x{:08x}')
+
+		if self.FileVersionUE4 >= 326: # VER_UE4_CHANGED_CHUNKID_TO_BE_AN_ARRAY_OF_CHUNKIDS
+			p('ChunkIDs', TArrayS32(f))
+		elif self.FileVersionUE4 >= 278: # VER_UE4_ADDED_CHUNKID_TO_ASSETDATA_AND_UPACKAGE
+			raise NotImplemented()
+
+		if self.FileVersionUE4 >= 507: # VER_UE4_PRELOAD_DEPENDENCIES_IN_COOKED_EXPORTS
+			p('PreloadDependencyCount', f.s32())
+			p('PreloadDependencyOffset', f.s32(), '0x{:x}')
+
+class FObjectExport(Parser):
+	# Engine/Source/Runtime/CoreUObject/Private/UObject/ObjectResource.cpp
+	def __init__(self, f, s, FName, indent=0):
+		# FArchive& operator<<( FArchive& Ar, FObjectExport& E )
+		Parser.__init__(self, indent)
+		p = self.parse
+		p('ClassIndex', f.s32())
+		p('SuperIndex', f.s32())
+		if s.FileVersionUE4 >= 508: # VER_UE4_TemplateIndex_IN_COOKED_EXPORTS
+			p('TemplateIndex', f.s32())
+		p('OuterIndex', f.s32())
+		p('ObjectName', FName(f))
+		p('ObjectFlags', f.u32(), '{:08x}')
+		p('SerialSize', f.s32())
+		p('SerialOffset', f.u32(), '0x{:x}')
+		p('bForcedExport', f.bool())
+		p('bNotForClient', f.bool())
+		p('bNotForServer', f.bool())
+		p('PackageGuid', FGuid(f))
+		p('PackageFlags', f.u32(), '{:08x}')
+		if s.FileVersionUE4 >= 365: # VER_UE4_LOAD_FOR_EDITOR_GAME
+			p('bNotForEditorGame', f.bool())
+		if s.FileVersionUE4 >= 485: # VER_UE4_COOKED_ASSETS_IN_EDITOR_SUPPORT
+			p('bIsAsset', f.bool())
+		if s.FileVersionUE4 >= 507: # VER_UE4_PRELOAD_DEPENDENCIES_IN_COOKED_EXPORTS
+			p('FirstExportDependency', f.s32())
+			p('SerializationBeforeSerializationDependencies', f.s32())
+			p('CreateBeforeSerializationDependencies', f.s32())
+			p('SerializationBeforeCreateDependencies', f.s32())
+			p('CreateBeforeCreateDependencies', f.s32())
+
+class FObjectImport(Parser):
+	# Engine/Source/Runtime/CoreUObject/Private/UObject/ObjectResource.cpp
+	def __init__(self, f, s, FName, indent=0):
+		# FArchive& operator<<( FArchive& Ar, FObjectExport& E )
+		Parser.__init__(self, indent)
+		p = self.parse
+		p('ClassPackage', FName(f))
+		p('ClassName', FName(f))
+		p('OuterIndex', f.s32())
+		p('ObjectName', FName(f))
+
+def parse_name_map(f, s):
+	# Engine/Source/Runtime/AssetRegistry/Private/PackageReader.cpp
+	# FPackageReader::SerializeNameMap()
+	f.seek(s.NameOffset)
+	names = []
+	for i in range(s.NameCount):
+		name = FString(f) # Actually an FNameEntrySerialized
+		pr_debug('  Name[%i]: %s' % (i, name))
+		names.append(name)
+
+	def FNamePackageReader(f, names):
+		# There seem to be several implementations of FName, this one is from
+		# Engine/Source/Runtime/AssetRegistry/Private/PackageReader.cpp
+		NameIndex = f.u32()
+		Number = f.u32()
+		return '%s[%i]' % (names[NameIndex], Number)
+
+	return lambda f: FNamePackageReader(f, names)
+
+def parse_imports(f, s, FName):
+	# Engine/Source/Runtime/AssetRegistry/Private/PackageReader.cpp
+	# FPackageReader::SerializeImportMap()
+	f.seek(s.ImportOffset)
+	imports = []
+	for i in range(s.ImportCount):
+		pr_debug('Import %i:' % i)
+		imports.append(FObjectImport(f, s, FName, indent=2))
+	return imports
+
+def parse_exports(f, s, FName):
+	# Engine/Source/Runtime/AssetRegistry/Private/PackageReader.cpp
+	# FPackageReader::SerializeExportMap()
+	f.seek(s.ExportOffset)
+	exports = []
+	for i in range(s.ExportCount):
+		pr_debug('Export %i:' % i)
+		exports.append(FObjectExport(f, s, FName, indent=2))
+
+		offset = f.tell()
+		f.seek(exports[-1].SerialOffset)
+		f.unknown(exports[-1].SerialSize)
+		f.seek(offset)
+	return exports
+
 def parse_uasset(f):
-	pass
+	# ? Engine/Source/Runtime/AssetRegistry/Private/PackageReader.cpp
+	# ? Engine/Source/Runtime/Core/Private/Serialization/Archive.cpp
+	# ? Engine/Source/Runtime/CoreUObject/Private/UObject/SavePackage.cpp
+
+	summary = PackageFileSummary(f)
+	assert(not (summary.PackageFlags & 0x02000000)) # PKG_StoreCompressed
+	FName = parse_name_map(f, summary)
+	imports = parse_imports(f, summary, FName)
+	exports = parse_exports(f, summary, FName)
 
 def parse_args():
 	global verbosity, args
