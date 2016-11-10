@@ -130,12 +130,16 @@ class FString(object):
 	def __bytes__(self):
 		return self.raw
 
+	def __eq__(self, other):
+		return self.raw == other.raw
+
 def FHash(f):
 	return codecs.encode(f.read(20), 'hex').decode('ascii')
 
 def shader_hash(bytecode):
 	if args.hash == 'embedded':
-		return bytecode[4:12] # The embedded hash is a 16 byte hash, but we only use 8
+		# The embedded hash is a 16 byte hash, but we only use 8:
+		return int(codecs.encode(bytecode[4:12], 'hex'), 16)
 	if args.hash == '3dmigoto':
 		return fnv_3Dmigoto_shader(bytecode)
 	raise NotImplemented()
@@ -148,7 +152,7 @@ def export_shader(bytecode):
 
 	hash = shader_hash(bytecode)
 	# FIXME: Determine shader type somehow
-	base_filename = 'extracted/%s-XX' % codecs.encode(hash, 'hex').decode('ascii')
+	base_filename = 'extracted/%016x-XX' % hash
 	try:
 		os.mkdir('extracted')
 	except FileExistsError:
@@ -405,6 +409,19 @@ def parse_batman_cooked_shader_cache(f):
 
 	return ret
 
+def parse_shader_cache(f):
+	if args.batman:
+		shader_names = parse_batman_cooked_shader_cache(f)
+		for shader in args.files[1:]:
+			fnv = int(os.path.basename(shader)[0:16], 16)
+			if fnv in shader_names:
+				print('%s: %s' % (shader, shader_names[fnv]))
+	else:
+		parse_ue4_global_shader_cache(f)
+
+def parse_uasset(f):
+	pass
+
 def parse_args():
 	global verbosity, args
 
@@ -420,15 +437,15 @@ def parse_args():
 def main():
 	parse_args()
 
-	f = file_parser(args.files[0])
-	if args.batman:
-		shader_names = parse_batman_cooked_shader_cache(f)
-		for shader in args.files[1:]:
-			fnv = int(os.path.basename(shader)[0:16], 16)
-			if fnv in shader_names:
-				print('%s: %s' % (shader, shader_names[fnv]))
-	else:
-		parse_ue4_global_shader_cache(f)
+	for filename in args.files:
+		f = file_parser(filename)
+		ext = os.path.splitext(filename)[1].lower()
+		if ext == '.bin':
+			parse_shader_cache(f)
+		elif ext == '.uasset':
+			parse_uasset(f)
+		else:
+			raise Exception('Unsupported file: %s' % filename)
 
 
 
