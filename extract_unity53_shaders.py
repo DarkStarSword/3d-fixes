@@ -84,7 +84,7 @@ def decode_consts(file, headers, shader_type):
         (name_len,) = struct.unpack('<I', file.read(4))
         entry_name = file.read(name_len).decode('ascii')
         align(file, 4)
-        (type1, type_size1, type_size2, type3, array_len, offset) = struct.unpack('<6I', file.read(24))
+        (type1, type_size1, type_size2, is_matrix, array_len, offset) = struct.unpack('<6I', file.read(24))
 
         # Unity < 5.4 this was always 1 and arrays were spelt out with all
         # individual elements. From 5.4 onwards it is 0 for no array, or >= 1
@@ -98,8 +98,21 @@ def decode_consts(file, headers, shader_type):
 
         for entry_name in entry_names:
             if type1 == 0: # Float
-                if type_size1 == 1:
-                    assert(type3 == 0)
+                if is_matrix == 1: # Matrix
+                    if type_size1 == 4:
+                        if type_size2 == 4:
+                            add_header(headers, 'Matrix {} [{}]'.format(offset, entry_name))
+                        else:
+                            assert(type_size2 > 0 and type_size2 < 4)
+                            add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size2))
+                            assert(shader_type == ShaderType.dx11) # Need to check syntax for other way around
+                    else:
+                        assert(type_size2 == 4)
+                        assert(type_size1 > 0 and type_size1 < 4)
+                        add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size1))
+                        assert(shader_type == ShaderType.dx9) # Need to check syntax for other way around
+                else: # Not matrix
+                    assert(is_matrix == 0)
                     if type_size2 == 1:
                         add_header(headers, 'Float {} [{}]'.format(offset, entry_name))
                     elif type_size2 == 4:
@@ -108,25 +121,9 @@ def decode_consts(file, headers, shader_type):
                         add_header(headers, 'Vector {} [{}] {}'.format(offset, entry_name, type_size2))
                     else:
                         raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
-                elif type_size1 == 4:
-                    assert(type3 == 1)
-                    if type_size2 == 4:
-                        add_header(headers, 'Matrix {} [{}]'.format(offset, entry_name))
-                    elif type_size2 in (2, 3): # 2x4 unconfirmed for DX11
-                        add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size2))
-                        assert(shader_type == ShaderType.dx11) # Need to check syntax for other way around
-                    else:
-                        assert(False)
-                elif type_size1 in (2, 3):
-                    assert(type_size2 == 4)
-                    assert(type3 == 1)
-                    add_header(headers, 'Matrix {} [{}] {}'.format(offset, entry_name, type_size1))
-                    assert(shader_type == ShaderType.dx9) # Need to check syntax for other way around
-                else:
-                    raise ParseError('Unknown name: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type_size1, type_size2, type3, offset))
             elif type1 == 1: # Int
                 assert(type_size1 == 1)
-                assert(type3 == 0)
+                assert(is_matrix == 0)
                 if type_size2 == 1:
                     add_header(headers, 'ScalarInt {} [{}]'.format(offset, entry_name))
                 elif type_size2 in (2, 3, 4):
@@ -135,7 +132,7 @@ def decode_consts(file, headers, shader_type):
                     raise ParseError('Unknown type_size2: {} for {}, type_size1: {}'.format(type_size2, entry_name, type_size1))
             elif type1 == 2: # Bool
                 assert(type_size1 == 1)
-                assert(type3 == 0)
+                assert(is_matrix == 0)
                 if type_size2 == 1:
                     add_header(headers, 'ScalarBool {} [{}]'.format(offset, entry_name))
                 elif type_size2 in (2, 3, 4):
