@@ -42,7 +42,7 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name 678DC18B.txt \
 	       -o -name 2A3A109D.txt \
 	       -o -name BB17C675.txt \
-	       \) -a -print0 | xargs -0 dirname -z | sed -z 's/vp$/fp\/*.txt/' | xargs -0 \
+	       \) -a -print0 | xargs -0 dirname -z | sed -z 's/vp$/fp\/????????.txt/' | xargs -0 \
 			shadertool.py -I ../.. --fix-unity-lighting-ps-world --only-autofixed $LIGHTING_EXTRA | update_ini
 	# TODO: Alternate lighting fix for directional lighting like DX11 template
 fi
@@ -53,10 +53,10 @@ if [ $FIX_HALO -eq 1 ]; then
 	echo
 	echo "Applying vertex shader halo & reflection fixes..."
 	# TODO: Frustum fix
-	shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors */vp/*.txt | update_ini
+	shadertool.py -I ../.. --fix-unity-reflection --auto-fix-vertex-halo --add-fog-on-sm3-update --only-autofixed --ignore-register-errors */vp/????????.txt | update_ini
 fi
 
 if [ $FIX_REFLECTION -eq 1 ]; then
 	echo "Applying pixel shader reflection fix..."
-	shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors */fp/*.txt | update_ini
+	shadertool.py -I ../.. --fix-unity-reflection --only-autofixed --ignore-register-errors */fp/????????.txt | update_ini
 fi
