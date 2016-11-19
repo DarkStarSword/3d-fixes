@@ -1,7 +1,8 @@
 Unity 5 World Space Correction Template
 =======================================
 
-**THIS TEMPLATE WILL NOT WORK WITH UNITY 5.3 WITHOUT CONSIDERABLE EFFORT PENDING UPDATES TO THE EXTRACTION SCRIPTS**
+**This template has been updated to work with Unity 5.3 and 5.4 games. For
+these games, use autofix53.sh instead of autofix.sh**
 
 This template can be used as a starting point to fix any DX11 Unity game. It
 includes:

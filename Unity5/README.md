@@ -1,14 +1,6 @@
 Unity 5 Templates
 =================
 
-**Unity 5.3 has made a number of changes to how shaders are stored that will
-cause problems for these templates. DX9-Old is probably easier than DX9-New for
-now as it depends less on the Unity specific headers, but either way will
-require more effort until the extraction scripts have been updated. If an
-existing fix needs to be updated to 5.3, try UseAlternateCRC=true to see if
-your existing shaders will work (needs confirmation if this works for vertex
-shaders, or only pixel shaders)**
-
 These are a collection of templates that can be used as a starting point to fix
 any Unity game. Either DX9 or DX9-New can be used for DX9 games - check below
 for a few key differences between the two and reasons you might select one over
@@ -46,9 +38,9 @@ Advantages:
   adjustment as that is very game-specific, it just adds the depth buffer
   copy).
 
-Disadvantages:
+- Works with Unity 5.3
 
-- CURRENTLY BROKEN IN UNITY 5.3
+Disadvantages:
 
 - May need to find additional sources of the required matrices (but there is a
   script provided to do this for you)
@@ -70,14 +62,14 @@ Disadvantages:
   including directional lighting (I should be able to improve the directional
   case though)
 
+- Still needs some minor updates for Unity 5.4
+
 DX9
 ---
 This template works by applying a view-space correction to the lighting pixel
 shaders.
 
 Advantages:
-
-- Can work with Unity 5.3 shaders, but currently auto-extraction is broken
 
 - Simpler fix, as fewer shaders need to be included.
 
@@ -105,6 +97,8 @@ Disadvantages:
 - Incompatible with various other fixes that need world-space adjustments
   (unless they are self-contained and do not require additional matrices to be
   copied/inverted with Helix Mod)
+
+- Does not work with Unity 5.3, but could be adapted to do so fairly easily.
 
 Alternate DX9 Fix
 -----------------
@@ -141,9 +135,9 @@ Advantages
 
 - Directional, point and spot lights should always be fixed.
 
-Disadvantages:
+- Works with Unity 5.3 and 5.4 games.
 
-- CURRENTLY BROKEN IN UNITY 5.3
+Disadvantages:
 
 - Subject to 3DMigoto decompiler bugs. The script uses fxc to verify that the
   shaders will at least compile and renames any that fail, but it cannot detect

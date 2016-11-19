@@ -1,9 +1,10 @@
 Unity 5 View Space Correction Template
 ======================================
 
-**Unity 5.3 has broken the extraction scripts and changed all the shader CRCs.
-The techniques in this template will still work, but must be manually applied
-to shaders dumped with Helix Mod until the extraction scripts have been updated.**
+**This template has NOT been updated to work with Unity 5.3. If possible, use
+the DX9-New or DX11 templates instead, which have been updated. The techniques
+in this template should still apply to Unity 5.3 by switching to the new
+extraction script and adapting the fix to the new shader CRCs.**
 
 **The lighting vertex shader CRCs will have changed - UseAlternateCRC=true may be
 able to return to the old CRCs (needs confirmation if it works for vertex

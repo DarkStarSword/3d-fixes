@@ -1,7 +1,9 @@
 Unity 5 World Space Correction Template
 =======================================
 
-**THIS TEMPLATE WILL NOT WORK WITH UNITY 5.3 WITHOUT CONSIDERABLE EFFORT PENDING UPDATES TO THE EXTRACTION SCRIPTS**
+**This template has been updated to work with Unity 5.3 games. For these games,
+use autofix53.sh instead of autofix.sh. Unity 5.4 will likely need some
+additional minor updates due to their new directional lighting shader**
 
 This template can be used as a starting point to fix any DX9 Unity game. It
 includes:
