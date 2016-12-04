@@ -1218,7 +1218,7 @@ def fix_wd2_unproject(shader):
     # sophistocated later as needed.
 
     patterns = (
-        ('''
+       ('''
   r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
   r1.xy = (int2)v0.xy;
   r1.zw = float2(0,0);
@@ -1233,7 +1233,7 @@ def fix_wd2_unproject(shader):
   r0.x = dot(r2.xyzw, InvViewMatrix._m00_m10_m20_m30);
   r0.y = dot(r2.xyzw, InvViewMatrix._m01_m11_m21_m31);
   r0.z = dot(r2.xyzw, InvViewMatrix._m02_m12_m22_m32);
-    '''.strip(), '''
+           '''.strip(), '''
   r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
   r1.xy = (int2)v0.xy;
   r1.zw = float2(0,0);
@@ -1265,7 +1265,7 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
   r0.z = -r0.x;
   r1.xy = v8.xy * VPosScale.zw + VPosOffset.zw;
   r0.xy = r1.xy * r0.zz;
-    '''.strip(), '''
+           '''.strip(), '''
   r0.xy = (int2)v8.xy;
   r0.zw = float2(0,0);
   r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
@@ -1281,7 +1281,34 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
 float4 s = StereoParams.Load(0);
 r0.x -= s.x * (-r0.z - s.y) * InvProjectionMatrix._m00;
 '''.lstrip()
-        )
+       ), ('''
+  r0.xy = (int2)v6.xy;
+  r0.zw = float2(0,0);
+  r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
+  r0.yw = float2(1,1);
+  r0.z = dot(r0.xy, InvProjectionMatrix._m22_m32);
+  r0.x = dot(r0.xy, InvProjectionMatrix._m23_m33);
+  r0.x = -r0.z / r0.x;
+  r0.z = -r0.x;
+  r1.xy = v6.xy * VPosScale.zw + VPosOffset.zw;
+  r0.xy = r1.xy * r0.zz;
+           '''.strip(), '''
+  r0.xy = (int2)v6.xy;
+  r0.zw = float2(0,0);
+  r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
+  r0.yw = float2(1,1);
+  r0.z = dot(r0.xy, InvProjectionMatrix._m22_m32);
+  r0.x = dot(r0.xy, InvProjectionMatrix._m23_m33);
+  r0.x = -r0.z / r0.x;
+  r0.z = -r0.x;
+  r1.xy = v6.xy * VPosScale.zw + VPosOffset.zw;
+  r0.xy = r1.xy * r0.zz;
+
+// Fix decals, note depth is negative (or could have used r0.x):
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (-r0.z - s.y) * InvProjectionMatrix._m00;
+'''.lstrip()
+       )
     )
 
     if shader.shader_type != 'ps':
