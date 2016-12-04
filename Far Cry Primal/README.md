@@ -67,7 +67,8 @@ Installation
 
 3. Disable Motion Blur in the settings
 
-4. If using SLI, lower the water quality slightly to drastically improve the framerate.
+4. If using SLI, lower the water quality 'High' to improve the framerate and
+   reduce stuttering.
 
 HUD Modes
 ---------
@@ -94,8 +95,8 @@ Legend of the Mammoth DLC.
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
 This fix is bundled with the new SBS / TAB output mode support in 3DMigoto. To
-enable it, edit the d3dx.ini, find the [Present] section and uncomment the line
-that reads:
+enable it, edit the d3dx.ini, find the [Present] section and uncomment the
+following line by removing the semicolon from the start:
 
     run = CustomShader3DVision2SBS
 
