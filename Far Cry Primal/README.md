@@ -5,6 +5,9 @@ Update v1.1
 -----------
 - Updated to 3DMigoto 1.2.50
 - Driver profile is automatically updated on launch.
+- Improved performance in SLI setups, especially at high resolutions.
+- Made crosshair less jumpy - it will now prefer to stay behind small objects
+  like grass or foliage.
 
 Fixed
 -----
