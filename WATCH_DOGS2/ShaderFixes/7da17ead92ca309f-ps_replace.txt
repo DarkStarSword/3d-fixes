@@ -1,4 +1,5 @@
-// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:20:37 2016
+// Decals
+// ---- Created with 3Dmigoto v1.2.50 on Mon Dec 05 03:13:19 2016
 
 cbuffer Global : register(b0)
 {
@@ -229,6 +230,11 @@ void main(
   r0.z = -r0.x;
   r1.xy = v8.xy * VPosScale.zw + VPosOffset.zw;
   r0.xy = r1.xy * r0.zz;
+
+// Fix decals, note depth is negative (or could have used r0.z):
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (-r0.z - s.y) * InvProjectionMatrix._m00;
+
   r1.x = dot(v3.xyzw, r0.xyzw);
   r1.x = -v7.x + r1.x;
   r1.y = cmp(r1.x < -v7.y);
