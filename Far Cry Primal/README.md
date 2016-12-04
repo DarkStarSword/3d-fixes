@@ -3,11 +3,27 @@ Far Cry Primal
 
 Update v1.1
 -----------
+This update is primarily aimed at improving the performance on SLI systems.
+Running at 2560x1440 with water quality set to 'High', I see improvements from
+29fps to 55fps, and with water quality set to 'Very High' I see improvements
+from 10fps to 50fps!
+
+Note that enabling the SBS/TAB custom shader will still have a significant
+impact to the framerate in SLI (stay tuned - improvements to halve the cost and
+limit it to when SBS/TAB is actually being used are planned).
+
+For single GPU users there is still an improvement - the crosshair should now
+be less "jumpy", and will prefer to stay behind small objects like grass or
+foliage.
+
 - Updated to 3DMigoto 1.2.50
 - Driver profile is automatically updated on launch.
-- Improved performance in SLI setups, especially at high resolutions.
-- Made crosshair less jumpy - it will now prefer to stay behind small objects
-  like grass or foliage.
+- Downscale depth buffer to 1/16th resolution for crosshair depth calculations
+  to improve SLI framerate, and make crosshair less "jumpy".
+- Downscale reflections to 1/2 their original resolution before swapping eyes,
+  and limit operation to once per frame to drastically improve SLI framerate
+  (reducing water quality slightly will also make an additional improvement to
+  SLI framerate).
 
 Fixed
 -----
