@@ -1,0 +1,419 @@
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 24c95c64f4d89613-ps_replace.txt
+// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:19:48 2016
+
+cbuffer Global : register(b0)
+{
+  float4 EnvironmentLuminances : packoffset(c0);
+  float4 FakeEarthShadowPlane : packoffset(c1);
+  float4 GlobalLightsIntensity : packoffset(c2);
+  float4 GlobalWeatherControl : packoffset(c3);
+  float4 MaterialWetnessParams[22] : packoffset(c4);
+  float4 WindGlobalTurbulence : packoffset(c26);
+  float4 WindVelocityTextureCoverage : packoffset(c27);
+  float4 WorldLoadingRingSizes[2] : packoffset(c28);
+
+  struct
+  {
+    float debugValue0;
+    float debugValue1;
+    float debugValue2;
+    float debugValue3;
+  } DebugValues : packoffset(c30);
+
+  float3 SunShadowDirection : packoffset(c31);
+  float CrowdAnimationStartTime : packoffset(c31.w);
+  float3 WindGlobalNoiseTextureChannelSel : packoffset(c32);
+  float GlobalReflectionTextureBlendRatio : packoffset(c32.w);
+  float3 WindGlobalNoiseTextureCoverage : packoffset(c33);
+  float GlobalWaterLevel : packoffset(c33.w);
+
+  struct
+  {
+    float time;
+    float staticReflectionIntensity;
+    float gameDeltaTime;
+  } GlobalScalars : packoffset(c34);
+
+  float RcpStaticReflectionExposureScale : packoffset(c34.w);
+  float2 GlobalNoiseSampler2DSquareSize : packoffset(c35);
+  float SandstormIntensity : packoffset(c35.z);
+  float StaticReflectionIntensityDest : packoffset(c35.w);
+  float2 WindNoiseDeltaVector : packoffset(c36);
+  float TimeOfDay : packoffset(c36.z);
+  float VertexAOIntensity : packoffset(c36.w);
+  float2 WindVector : packoffset(c37);
+}
+
+cbuffer Viewport : register(b1)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+cbuffer MaterialWD2Generic : register(b2)
+{
+  float4 MaterialPickingID : packoffset(c0);
+  float4 AlphaUVTiling1 : packoffset(c1);
+  float4 ColorizeParams : packoffset(c2);
+  float4 DiffuseUVTiling1 : packoffset(c3);
+  float4 EmissiveIntensity : packoffset(c4);
+  float4 EmissiveUVTiling : packoffset(c5);
+  float4 GenericParameters : packoffset(c6);
+  float4 MaskTextureUVTiling1 : packoffset(c7);
+  float4 NormalUVTiling1 : packoffset(c8);
+  float4 PatternTexture1Size : packoffset(c9);
+  float3 DiffuseColor1 : packoffset(c10);
+  float ContrastTopSand : packoffset(c10.w);
+  float3 DiffuseColor2 : packoffset(c11);
+  float Duration : packoffset(c11.w);
+  float3 DiffuseColorTopSand : packoffset(c12);
+  float FramesPerSecond : packoffset(c12.w);
+  float3 EmissiveColor : packoffset(c13);
+  float MaskChannelUsageAlpha : packoffset(c13.w);
+  float3 SeparateOpacity : packoffset(c14);
+  float MaskChannelUsageBlue : packoffset(c14.w);
+  float2 AlphaTextureTiling1 : packoffset(c15);
+  float MaskChannelUsageGreen : packoffset(c15.z);
+  float MaskChannelUsageRed : packoffset(c15.w);
+  float2 AnimTexture1Size : packoffset(c16);
+  float Metalness : packoffset(c16.z);
+  float NormalIntensity : packoffset(c16.w);
+  float2 EmissiveFadeoutParams : packoffset(c17);
+  float NormalIntensityTopSand : packoffset(c17.z);
+  float NumberOfFrames : packoffset(c17.w);
+  float2 PatternTextureTiling1 : packoffset(c18);
+  float Opacity : packoffset(c18.z);
+  float Reflectance : packoffset(c18.w);
+  float ReflectionRoughnessBias : packoffset(c19);
+  float Roughness : packoffset(c19.y);
+  float ThresholdTopSand : packoffset(c19.z);
+  float Translucency : packoffset(c19.w);
+  float VertexAnimationFreq1 : packoffset(c20);
+  float VertexAnimationFreq2 : packoffset(c20.y);
+  float VertexAnimationFreq3 : packoffset(c20.z);
+  float VertexAnimationRadius1 : packoffset(c20.w);
+  float VertexAnimationRadius2 : packoffset(c21);
+  float VertexAnimationRadius3 : packoffset(c21.y);
+  float VertexAnimationSpeed1 : packoffset(c21.z);
+  float VertexAnimationSpeed2 : packoffset(c21.w);
+  float VertexAnimationSpeed3 : packoffset(c22);
+  int EmissiveType : packoffset(c22.y);
+  int SpecialMode : packoffset(c22.z);
+  int TextureArraySize : packoffset(c22.w);
+  int TextureMappingType : packoffset(c23);
+  int UseAsMaskChannel : packoffset(c23.y);
+  int VertexAnimationAxis : packoffset(c23.z);
+  int VertexAnimationType : packoffset(c23.w);
+  int WetSurfaceTypeIndex : packoffset(c24);
+  bool Colorize : packoffset(c24.y);
+  bool EmissiveAsMask : packoffset(c24.z);
+  bool RandomUVOffset : packoffset(c24.w);
+  bool TextureMappingFlipWorld : packoffset(c25);
+  bool UseAsMask : packoffset(c25.y);
+}
+
+SamplerState MaterialWD2Generic__AlphaTexture1__SampObj___s : register(s0);
+SamplerState MaterialWD2Generic__DiffuseTexture1__SampObj___s : register(s1);
+SamplerState MaterialWD2Generic__MaskTexture1__SampObj___s : register(s2);
+SamplerState MaterialWD2Generic__NormalTexture1__SampObj___s : register(s3);
+SamplerState ColorWrap_s : register(s4);
+SamplerComparisonState ShadowRealSampler_s : register(s5);
+Texture2D<float4> Global__GlobalRandomVectorTexture2D : register(t0);
+Texture2D<float4> Viewport__DepthVPSampler__TexObj__ : register(t1);
+Texture2D<float4> Viewport__RainOcclusionShadowMap__TexObj__ : register(t2);
+Texture2DArray<float4> Viewport__RaindropRippleTexture : register(t3);
+Texture2D<float4> MaterialWD2Generic__AlphaTexture1__TexObj__ : register(t4);
+Texture2D<float4> MaterialWD2Generic__DiffuseTexture1__TexObj__ : register(t5);
+Texture2D<float4> MaterialWD2Generic__MaskTexture1__TexObj__ : register(t6);
+Texture2D<float4> MaterialWD2Generic__NormalTexture1__TexObj__ : register(t7);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  linear centroid float4 v0 : TEXCOORD0,
+  linear centroid float4 v1 : TEXCOORD1,
+  linear centroid float4 v2 : TEXCOORD2,
+  linear centroid float4 v3 : TEXCOORD3,
+  linear centroid float4 v4 : TEXCOORD4,
+  linear centroid float4 v5 : TEXCOORD5,
+  linear centroid float4 v6 : TEXCOORD6,
+  linear centroid float2 v7 : TEXCOORD7,
+  float4 v8 : SV_Position0,
+  uint v9 : SV_IsFrontFace0,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1,
+  out float4 o2 : SV_Target2,
+  out float4 o3 : SV_Target3)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+// WATCH_DOGS2 unprojection fix inserted by DarkStarSword's hlsltool.py:
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 24c95c64f4d89613-ps_replace.txt
+
+  r0.xy = (int2)v8.xy;
+  r0.zw = float2(0,0);
+  r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
+  r0.yw = float2(1,1);
+  r0.z = dot(r0.xy, InvProjectionMatrix._m22_m32);
+  r0.x = dot(r0.xy, InvProjectionMatrix._m23_m33);
+  r0.x = -r0.z / r0.x;
+  r0.z = -r0.x;
+  r1.xy = v8.xy * VPosScale.zw + VPosOffset.zw;
+  r0.xy = r1.xy * r0.zz;
+
+// Fix decals, note depth is negative (or could have used r0.x):
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (-r0.z - s.y) * InvProjectionMatrix._m00;
+
+  r1.x = dot(v3.xyzw, r0.xyzw);
+  r1.x = -v7.x + r1.x;
+  r1.y = cmp(r1.x < -v7.y);
+  r1.x = cmp(0 < r1.x);
+  r1.x = (int)r1.x | (int)r1.y;
+  if (r1.x != 0) discard;
+  r1.x = dot(r0.xyzw, v1.xyzw);
+  r1.y = dot(r0.xyzw, v2.xyzw);
+  r1.zw = float2(1,1) + -r1.xy;
+  r2.xyzw = cmp(r1.xyzw < float4(0,0,0,0));
+  r1.xy = v0.xy * r1.xy + v0.zw;
+  r1.zw = (int2)r2.zw | (int2)r2.xy;
+  r1.z = (int)r1.w | (int)r1.z;
+  if (r1.z != 0) discard;
+  r2.x = dot(r0.xyzw, InvViewMatrix._m00_m10_m20_m30);
+  r2.z = dot(r0.xyzw, InvViewMatrix._m02_m12_m22_m32);
+  r2.y = dot(r0.xyzw, InvViewMatrix._m01_m11_m21_m31);
+  r0.xyz = -CameraPosition.xyz + r2.xyz;
+  r0.x = dot(r0.xyz, r0.xyz);
+  r0.x = sqrt(r0.x);
+  r0.x = 0.0199999996 * r0.x;
+  r0.x = min(1, r0.x);
+  r0.x = 1 + -r0.x;
+  r0.x = 4 * r0.x;
+  r0.y = dot(v4.xyz, v4.xyz);
+  r0.y = rsqrt(r0.y);
+  r0.yzw = v4.xyz * r0.yyy;
+  r0.yzw = v9.xxx ? r0.yzw : -r0.yzw;
+  r1.z = 0.200000003 + abs(r0.w);
+  r1.z = min(1, r1.z);
+  r0.x = r1.z * r0.x;
+  r1.zw = RainOcclusionShadowMapSize.zw * r0.xx;
+  r3.xyzw = cmp(abs(r0.zwyw) < abs(r0.yyzz));
+  r3.xy = r3.yw ? r3.xz : 0;
+  r2.w = r3.y ? r2.z : r2.y;
+  r3.xy = r3.xx ? r2.yz : r2.xw;
+  r4.xyz = r0.yzw * float3(0.300000012,0.300000012,0.200000003) + r2.xyz;
+  r2.xy = RaindropRippleScale * r2.xy;
+  r0.x = 0.0625 * ViewportSize.x;
+  r3.xy = r3.xy * r0.xx;
+  r3.xy = (int2)r3.xy;
+  r3.xy = (int2)r3.xy & int2(63,63);
+  r3.zw = float2(0,0);
+  r3.xy = Global__GlobalRandomVectorTexture2D.Load(r3.xyz).xy;
+  r3.xy = r3.yx * float2(2,2) + float2(-1,-1);
+  r3.zw = float2(-0.0620006211,0.194514006) * r3.xx;
+  r5.xy = r3.yy * float2(0.64955771,-0.252099097) + -r3.zw;
+  r5.z = dot(r3.xy, float2(0.64955771,-0.0620006211));
+  r6.xy = r5.xz * r1.zw;
+  r6.z = 0;
+  r4.w = 1;
+  r7.z = dot(r4.xyzw, RainOcclusionProjectionMatrix._m02_m12_m22_m32);
+  r7.x = dot(r4.xyzw, RainOcclusionProjectionMatrix._m00_m10_m20_m30);
+  r7.y = dot(r4.xyzw, RainOcclusionProjectionMatrix._m01_m11_m21_m31);
+  r4.xyz = r7.xyz + r6.xyz;
+  r0.x = Viewport__RainOcclusionShadowMap__TexObj__.SampleCmpLevelZero(ShadowRealSampler_s, r4.xy, r4.z, int2(0, 0)).x;
+  r5.w = dot(r3.xy, float2(-0.252099097,0.194514006));
+  r4.xy = r5.yw * r1.zw;
+  r4.z = 0;
+  r4.xyz = r7.xyz + r4.xyz;
+  r2.w = Viewport__RainOcclusionShadowMap__TexObj__.SampleCmpLevelZero(ShadowRealSampler_s, r4.xy, r4.z, int2(0, 0)).x;
+  r0.x = r2.w + r0.x;
+  r3.zw = float2(-0.602610528,0.987966299) * r3.xx;
+  r4.xy = r3.yy * float2(-0.167515993,0.0800626874) + -r3.zw;
+  r4.z = dot(r3.xy, float2(-0.167515993,-0.602610528));
+  r4.w = dot(r3.xy, float2(0.0800626874,0.987966299));
+  r3.xy = r4.yw * r1.zw;
+  r4.xy = r4.xz * r1.zw;
+  r4.z = 0;
+  r4.xyz = r7.xyz + r4.xyz;
+  r1.z = Viewport__RainOcclusionShadowMap__TexObj__.SampleCmpLevelZero(ShadowRealSampler_s, r4.xy, r4.z, int2(0, 0)).x;
+  r0.x = r1.z + r0.x;
+  r3.z = 0;
+  r3.xyz = r7.xyz + r3.xyz;
+  r1.zw = -RainOcclusionFadeParams.xy + r7.xy;
+  r1.zw = RainOcclusionFadeParams.zw + -abs(r1.zw);
+  r1.zw = float2(5,5) * r1.zw;
+  r1.z = saturate(min(r1.z, r1.w));
+  r1.w = Viewport__RainOcclusionShadowMap__TexObj__.SampleCmpLevelZero(ShadowRealSampler_s, r3.xy, r3.z, int2(0, 0)).x;
+  r0.x = r1.w + r0.x;
+  r0.x = r0.x * 0.25 + -1;
+  r0.x = r1.z * r0.x + 1;
+  r1.z = saturate(r0.w * 0.5 + 0.5);
+  r0.x = r1.z * r0.x;
+  r0.x = GlobalWeatherControl.x * r0.x;
+  r1.z = WetSurfaceTypeIndex + 1;
+  r3.xyz = MaterialWetnessParams[r1.z].zxy + float3(-1,-1,-1);
+  r3.xyz = r0.xxx * r3.xyz + float3(1,1,1);
+  r1.w = cmp(MaskChannelUsageBlue == 0.000000);
+  r4.xy = MaskTextureUVTiling1.xy * r1.xy;
+  r4.xyzw = MaterialWD2Generic__MaskTexture1__TexObj__.Sample(MaterialWD2Generic__MaskTexture1__SampObj___s, r4.xy).xyzw;
+  r5.z = r1.w ? Metalness : r4.z;
+  r6.x = Reflectance;
+  r6.y = Roughness;
+  r6.z = Metalness;
+  r1.w = cmp(MaskChannelUsageAlpha == 1.000000);
+  r2.w = r1.w ? r4.w : 0;
+  r7.xyz = cmp(UseAsMaskChannel == int3(1,2,3));
+  r8.xyz = cmp(MaskChannelUsageRed == float3(0,0,2));
+  r3.w = (int)r7.x | (int)r8.z;
+  r3.w = r3.w ? r4.x : r2.w;
+  r5.w = r8.z ? r4.x : r2.w;
+  r2.w = r7.y ? r4.y : r3.w;
+  r6.w = r7.z ? r4.z : r2.w;
+  r5.x = r8.x ? Reflectance : r4.x;
+  r5.y = r8.y ? Roughness : r4.y;
+  r4.xyzw = TextureMappingFlipWorld ? r6.xyzw : r5.xyzw;
+  r5.xy = saturate(ColorizeParams.yz + r4.yz);
+  r5.xy = r5.xy + -r4.yz;
+  r2.w = 1 + -r4.w;
+  r3.w = cmp(0.5 < ColorizeParams.w);
+  r6.w = r3.w ? r2.w : r4.w;
+  r6.yz = r6.ww * r5.xy + r4.yz;
+  r2.w = r8.z ? Reflectance : r4.x;
+  r1.w = (int)r1.w | (int)r8.z;
+  r3.w = saturate(ColorizeParams.x + r2.w);
+  r3.w = r3.w + -r2.w;
+  r6.x = r6.w * r3.w + r2.w;
+  r2.w = cmp(TextureMappingFlipWorld != 0);
+  r1.w = (int)r1.w | (int)r2.w;
+  r4.xyzw = r1.wwww ? r6.xyzw : r4.xyzw;
+  r5.xyz = DiffuseColor2.xyz + -DiffuseColor1.xyz;
+  r5.xyz = r4.www * r5.xyz + DiffuseColor1.xyz;
+  r6.xy = DiffuseUVTiling1.xy * r1.xy;
+  r6.xyz = MaterialWD2Generic__DiffuseTexture1__TexObj__.Sample(MaterialWD2Generic__DiffuseTexture1__SampObj___s, r6.xy).xyz;
+  r5.xyz = r6.xyz * r5.xyz;
+  o0.xyz = r5.xyz * r3.yyy;
+  r3.yw = AlphaUVTiling1.xy * r1.xy;
+  r1.xy = NormalUVTiling1.xy * r1.xy;
+  r1.xy = MaterialWD2Generic__NormalTexture1__TexObj__.Sample(MaterialWD2Generic__NormalTexture1__SampObj___s, r1.xy).xy;
+  r5.xy = r1.xy * float2(2,2) + float2(-1,-1);
+  r1.x = MaterialWD2Generic__AlphaTexture1__TexObj__.Sample(MaterialWD2Generic__AlphaTexture1__SampObj___s, r3.yw).x;
+  r1.x = v4.w * r1.x;
+  r1.x = Opacity * r1.x;
+  r1.xyw = SeparateOpacity.yzx * r1.xxx;
+  o0.w = r1.w;
+  o3.w = r1.w;
+  r2.z = 0;
+  r2.xy = Viewport__RaindropRippleTexture.Sample(ColorWrap_s, r2.xyz).xy;
+  r1.w = saturate(r0.w);
+  r1.w = dot(r1.ww, r1.ww);
+  r1.w = -1 + r1.w;
+  r1.w = max(0, r1.w);
+  r0.x = r1.w * r0.x;
+  r2.xy = r2.xy * r0.xx;
+  r6.xy = NormalIntensity * r3.xx;
+  o2.y = r4.y * r3.z;
+  o2.xz = r4.xz;
+  r0.x = dot(r5.xy, r5.xy);
+  r0.x = min(1, r0.x);
+  r0.x = 1 + -r0.x;
+  r5.z = sqrt(r0.x);
+  r6.z = 1;
+  r3.xyz = r6.xyz * r5.xyz;
+  r0.x = dot(r3.xyz, r3.xyz);
+  r0.x = rsqrt(r0.x);
+  r3.xyz = r3.xyz * r0.xxx;
+  r0.x = dot(v5.xyz, v5.xyz);
+  r0.x = rsqrt(r0.x);
+  r4.xyz = v5.xyz * r0.xxx;
+  r4.xyz = r4.xyz * r3.yyy;
+  r0.x = dot(v6.xyz, v6.xyz);
+  r0.x = rsqrt(r0.x);
+  r5.xyz = v6.xyz * r0.xxx;
+  r3.xyw = r3.xxx * r5.xyz + r4.xyz;
+  r0.xyz = r3.zzz * r0.yzw + r3.xyw;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  o1.xy = r2.xy * MaterialWetnessParams[r1.z].ww + r0.xy;
+  o1.z = r0.z;
+  o1.w = r1.x;
+  o2.w = r1.y;
+  o3.xyz = float3(0,0,0);
+  return;
+
+}
