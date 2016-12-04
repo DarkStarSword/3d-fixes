@@ -1,5 +1,5 @@
-// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 00ab52041ded55ad-ps_replace.txt
-// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:19:27 2016
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 02d1103b178e1c93-ps_replace.txt
+// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:19:28 2016
 
 cbuffer Viewport : register(b0)
 {
@@ -108,15 +108,13 @@ cbuffer LightData : register(b1)
 }
 
 SamplerState Global__PreIntegratedSkinDiffuseTexture__SampObj___s : register(s0);
-SamplerState LightData__LightIESTexture__SampObj___s : register(s1);
-SamplerComparisonState ShadowRealSampler_s : register(s2);
+SamplerComparisonState ShadowRealSampler_s : register(s1);
 Texture2D<float4> Global__PreIntegratedSkinDiffuseTexture__TexObj__ : register(t0);
 Texture2D<float4> Viewport__DepthVPSampler__TexObj__ : register(t1);
-Texture2D<float4> LightData__LightIESTexture__TexObj__ : register(t2);
-Texture2D<float4> LightData__LightShadowTexture__TexObj__ : register(t3);
-Texture2D<float4> DeferredLightingCommon__AlbedoTexture__TexObj__ : register(t4);
-Texture2D<float4> DeferredLightingCommon__NormalTexture__TexObj__ : register(t5);
-Texture2D<float4> DeferredLightingCommon__OtherTexture__TexObj__ : register(t6);
+Texture2D<float4> LightData__LightShadowTexture__TexObj__ : register(t2);
+Texture2D<float4> DeferredLightingCommon__AlbedoTexture__TexObj__ : register(t3);
+Texture2D<float4> DeferredLightingCommon__NormalTexture__TexObj__ : register(t4);
+Texture2D<float4> DeferredLightingCommon__OtherTexture__TexObj__ : register(t5);
 
 
 // 3Dmigoto declarations
@@ -134,7 +132,7 @@ void main(
   float4 fDest;
 
 // WATCH_DOGS2 light fix inserted by DarkStarSword's hlsltool.py:
-// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 00ab52041ded55ad-ps_replace.txt
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 02d1103b178e1c93-ps_replace.txt
 
   r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
   r1.xy = (int2)v0.xy;
@@ -289,6 +287,17 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
   }
   r0.w = 1;
   r1.z = dot(LightDatas.LightFadingClipPlanes[0].xyzw, r0.xyzw);
+  r1.z = min(1, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[1].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[2].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[3].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[4].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[5].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
   r2.y = cmp(r1.z < 0);
   if (r2.y != 0) discard;
   r8.x = dot(r0.xyzw, LightDatas.LightSpotShadowProjections._m00_m10_m20_m30);
@@ -349,13 +358,8 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
     r10.xyz = r9.xyz * r4.zzz;
     r0.xyz = LightDatas.LightPivotPosition.xyz + -r0.xyz;
     r4.w = dot(r10.xyz, LightDatas.LightDirection.xyz);
-    r11.x = LightDatas.LightIESParams.y * r4.w + LightDatas.LightIESParams.x;
-    r11.y = LightDatas.LightIESParams.z;
-    r11.xy = LightData__LightIESTexture__TexObj__.SampleLevel(LightData__LightIESTexture__SampObj___s, r11.xy, 0).xy;
-    r5.y = r11.x / r11.y;
-    r11.xyz = LightDatas.LightColor.xyz * r5.yyy;
     r4.w = saturate(-r4.w * LightDatas.LightSpotConeFactors.x + LightDatas.LightSpotConeFactors.y);
-    r11.xyz = r11.xyz * r4.www;
+    r11.xyz = LightDatas.LightColor.xyz * r4.www;
     r0.x = dot(r0.xyz, r0.xyz);
     r0.y = 1 / r0.x;
     r0.x = LightDatas.LightAttenuation.y * r0.x;
@@ -364,8 +368,8 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
     r0.x = r0.x * r0.x;
     r0.x = r0.y * r0.x;
     r0.x = min(LightDatas.LightAttenuation.w, r0.x);
-    r1.z = saturate(r1.z);
-    r0.y = r1.z * r1.z;
+    r0.y = max(0, r1.z);
+    r0.y = r0.y * r0.y;
     r0.x = abs(r0.x) * r0.y;
     r11.xyz = r11.xyz * r0.xxx;
     r11.w = dot(r11.xyz, float3(0.212639004,0.715168655,0.0721923187));

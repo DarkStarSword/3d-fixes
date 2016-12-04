@@ -1,5 +1,5 @@
-// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 00ab52041ded55ad-ps_replace.txt
-// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:19:27 2016
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 78b5b12b6dd399ac-ps_replace.txt
+// ---- Created with 3Dmigoto v1.2.42 on Sun Dec 04 15:20:34 2016
 
 cbuffer Viewport : register(b0)
 {
@@ -134,7 +134,7 @@ void main(
   float4 fDest;
 
 // WATCH_DOGS2 light fix inserted by DarkStarSword's hlsltool.py:
-// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 00ab52041ded55ad-ps_replace.txt
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 78b5b12b6dd399ac-ps_replace.txt
 
   r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
   r1.xy = (int2)v0.xy;
@@ -289,6 +289,19 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
   }
   r0.w = 1;
   r1.z = dot(LightDatas.LightFadingClipPlanes[0].xyzw, r0.xyzw);
+  r1.z = min(1, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[1].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[2].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[3].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[4].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[5].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
+  r2.y = dot(LightDatas.LightFadingClipPlanes[6].xyzw, r0.xyzw);
+  r1.z = min(r2.y, r1.z);
   r2.y = cmp(r1.z < 0);
   if (r2.y != 0) discard;
   r8.x = dot(r0.xyzw, LightDatas.LightSpotShadowProjections._m00_m10_m20_m30);
@@ -364,8 +377,8 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
     r0.x = r0.x * r0.x;
     r0.x = r0.y * r0.x;
     r0.x = min(LightDatas.LightAttenuation.w, r0.x);
-    r1.z = saturate(r1.z);
-    r0.y = r1.z * r1.z;
+    r0.y = max(0, r1.z);
+    r0.y = r0.y * r0.y;
     r0.x = abs(r0.x) * r0.y;
     r11.xyz = r11.xyz * r0.xxx;
     r11.w = dot(r11.xyz, float3(0.212639004,0.715168655,0.0721923187));
