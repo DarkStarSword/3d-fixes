@@ -1,6 +1,13 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.6
+-----------
+- Updated to 3DMigoto 1.2.50
+- The driver profile is now updated automatically on launch, meaning extra high
+  Ambient Occlusion will just work, and Compatibility Mode will automatically
+  be disabled. You may get a UAC prompt the first time you run the game.
+
 Update v1.5
 -----------
 - Fixed a crash that affects systems running the Windows 10 anniversary update.
@@ -54,15 +61,11 @@ Installation
 ------------
 1. Extract the contents of the zip file to the game directory
 
-2. Change the graphics settings to use exclusive full screen
+2. Launch the game. The first time you run it (and again after any driver
+   update) you will get a UAC prompt for Rundll32 to install the driver
+   profile - choose yes.
 
-3. Press Ctrl+Alt+F11 to disable compatibility mode (advanced keys must be
-   enabled in the control panel)
-
-Settings
---------
-Ambient Occlusion = High works out of the box. To use extra high, you must add
-the game to the Max Payne 3 profile.
+3. Change the graphics settings to use exclusive full screen
 
 Convergence Presets
 -------------------
@@ -82,15 +85,21 @@ aim if you enter 1st person view.
 
 All these presets can be customised by editing the d3dx.ini.
 
+Side-by-Side / Top-and-Bottom Output Modes
+------------------------------------------
+This fix is bundled with the new SBS / TAB output mode support in 3DMigoto. To
+enable it, edit the d3dx.ini, find the [Present] section and uncomment the line
+that reads:
+
+    run = CustomShader3DVision2SBS
+
+Then, in game press F11 to cycle output modes. If using 3D TV Play, set the
+nvidia control panel to output checkerboard to remove the 720p limitation.
+
 Known Issues
 ------------
 - Blue highlight on enemies behind cover is broken around the hips and
   disabled. Press F3 to re-enable.
-
-Notes
------
-- I am still fairly early in the game so there might be more effects to fix
-  later on. If you find a broken effect, please send me a save file.
 
 Like my Work?
 -------------
