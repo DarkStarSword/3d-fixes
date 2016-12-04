@@ -12,7 +12,7 @@ find . -lname '*/3Dmigoto-*.*.*' -print0 |
 		git add "$link"
 	done
 
-gamedir="$(basename $PWD)"
+gamedir="$(basename "$PWD")"
 if [ "$gamedir" = "3d-fixes" ]; then
 	gamedir="Global"
 fi
