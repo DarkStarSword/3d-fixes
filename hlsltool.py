@@ -1217,11 +1217,8 @@ def fix_wd2_unproject(shader):
     # Using a very simple search & replace for now. Can make this more
     # sophistocated later as needed.
 
-    if shader.shader_type != 'ps':
-        debug_verbose(0, 'Pattern only applies to pixel shaders')
-        return
-
-    txt = shader._body_txt.replace('''
+    patterns = (
+        ('''
   r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
   r1.xy = (int2)v0.xy;
   r1.zw = float2(0,0);
@@ -1256,15 +1253,52 @@ r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
   r0.x = dot(r2.xyzw, InvViewMatrix._m00_m10_m20_m30);
   r0.y = dot(r2.xyzw, InvViewMatrix._m01_m11_m21_m31);
   r0.z = dot(r2.xyzw, InvViewMatrix._m02_m12_m22_m32);
-    '''.strip(), 1)
+       '''.strip()
+       ), ('''
+  r0.xy = (int2)v8.xy;
+  r0.zw = float2(0,0);
+  r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
+  r0.yw = float2(1,1);
+  r0.z = dot(r0.xy, InvProjectionMatrix._m22_m32);
+  r0.x = dot(r0.xy, InvProjectionMatrix._m23_m33);
+  r0.x = -r0.z / r0.x;
+  r0.z = -r0.x;
+  r1.xy = v8.xy * VPosScale.zw + VPosOffset.zw;
+  r0.xy = r1.xy * r0.zz;
+    '''.strip(), '''
+  r0.xy = (int2)v8.xy;
+  r0.zw = float2(0,0);
+  r0.x = Viewport__DepthVPSampler__TexObj__.Load(r0.xyz).x;
+  r0.yw = float2(1,1);
+  r0.z = dot(r0.xy, InvProjectionMatrix._m22_m32);
+  r0.x = dot(r0.xy, InvProjectionMatrix._m23_m33);
+  r0.x = -r0.z / r0.x;
+  r0.z = -r0.x;
+  r1.xy = v8.xy * VPosScale.zw + VPosOffset.zw;
+  r0.xy = r1.xy * r0.zz;
 
-    if txt == shader._body_txt:
+// Fix decals, note depth is negative (or could have used r0.x):
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (-r0.z - s.y) * InvProjectionMatrix._m00;
+'''.lstrip()
+        )
+    )
+
+    if shader.shader_type != 'ps':
+        debug_verbose(0, 'Pattern only applies to pixel shaders')
+        return
+
+    for (pattern, replace) in patterns:
+        txt = shader._body_txt.replace(pattern, replace, 1)
+        if txt != shader._body_txt:
+            break
+    else:
         debug_verbose(0, 'Pattern not found')
         return
 
     shader.split_instructions(txt)
-    debug_verbose(0, 'Applied WATCH_DOGS2 light fix')
-    shader.insert_vanity_comment(shader.early_insert_pos, "WATCH_DOGS2 light fix inserted by")
+    debug_verbose(0, 'Applied WATCH_DOGS2 unprojection fix')
+    shader.insert_vanity_comment(shader.early_insert_pos, "WATCH_DOGS2 unprojection fix inserted by")
     shader.autofixed = True
 
 def find_game_dir(file):
