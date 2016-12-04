@@ -370,6 +370,7 @@ class Shader(object):
         self.shader_type = d['shader_type'].lower()
 
     def split_instructions(self, body_txt):
+        self._body_txt = body_txt
         self.instructions = [];
         pos = 0
         while True:
@@ -1212,6 +1213,60 @@ def fix_unity_sun_shafts(shader):
 
     shader.autofixed = True
 
+def fix_wd2_unproject(shader):
+    # Using a very simple search & replace for now. Can make this more
+    # sophistocated later as needed.
+
+    if shader.shader_type != 'ps':
+        debug_verbose(0, 'Pattern only applies to pixel shaders')
+        return
+
+    txt = shader._body_txt.replace('''
+  r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
+  r1.xy = (int2)v0.xy;
+  r1.zw = float2(0,0);
+  r0.z = Viewport__DepthVPSampler__TexObj__.Load(r1.xyw).x;
+  r0.w = 1;
+  r2.x = dot(r0.zw, InvProjectionMatrix._m22_m32);
+  r0.z = dot(r0.zw, InvProjectionMatrix._m23_m33);
+  r0.z = -r2.x / r0.z;
+  r2.z = -r0.z;
+  r2.xy = r2.zz * r0.xy;
+  r2.w = 1;
+  r0.x = dot(r2.xyzw, InvViewMatrix._m00_m10_m20_m30);
+  r0.y = dot(r2.xyzw, InvViewMatrix._m01_m11_m21_m31);
+  r0.z = dot(r2.xyzw, InvViewMatrix._m02_m12_m22_m32);
+    '''.strip(), '''
+  r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
+  r1.xy = (int2)v0.xy;
+  r1.zw = float2(0,0);
+  r0.z = Viewport__DepthVPSampler__TexObj__.Load(r1.xyw).x;
+  r0.w = 1;
+  r2.x = dot(r0.zw, InvProjectionMatrix._m22_m32);
+  r0.z = dot(r0.zw, InvProjectionMatrix._m23_m33);
+  r0.z = -r2.x / r0.z;
+  r2.z = -r0.z;
+  r2.xy = r2.zz * r0.xy;
+
+// Fix lights, note depth is negative (or could have used r0.z):
+float4 s = StereoParams.Load(0);
+r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
+
+  r2.w = 1;
+  r0.x = dot(r2.xyzw, InvViewMatrix._m00_m10_m20_m30);
+  r0.y = dot(r2.xyzw, InvViewMatrix._m01_m11_m21_m31);
+  r0.z = dot(r2.xyzw, InvViewMatrix._m02_m12_m22_m32);
+    '''.strip(), 1)
+
+    if txt == shader._body_txt:
+        debug_verbose(0, 'Pattern not found')
+        return
+
+    shader.split_instructions(txt)
+    debug_verbose(0, 'Applied WATCH_DOGS2 light fix')
+    shader.insert_vanity_comment(shader.early_insert_pos, "WATCH_DOGS2 light fix inserted by")
+    shader.autofixed = True
+
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
     if os.path.basename(src_dir).lower() in ('shaderfixes', 'shadercache'):
@@ -1382,6 +1437,9 @@ def parse_args():
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
+    parser.add_argument('--fix-wd2-unproject', action='store_true',
+            help="Fix lights, etc. in WATCH_DOGS2")
+
     parser.add_argument('--ignore-other-errors', action='store_true',
             help='Continue with the next file in the event of some other error while applying a fix')
 
@@ -1419,6 +1477,8 @@ def main():
                 fix_unity_frustum_world(shader)
             if args.fix_unity_sun_shafts:
                 fix_unity_sun_shafts(shader)
+            if args.fix_wd2_unproject:
+                fix_wd2_unproject(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
