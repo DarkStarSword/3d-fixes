@@ -1,6 +1,11 @@
 Far Cry Primal
 ==============
 
+Update v1.1
+-----------
+- Updated to 3DMigoto 1.2.50
+- Driver profile is automatically updated on launch.
+
 Fixed
 -----
 - Volumetric fog completely and accurately fixed and looks awesome in 3D :)
@@ -35,18 +40,15 @@ Fixed
 
 Installation
 ------------
-1. Use nvidia inspector to assign the game to the Far Cry 4 profile. Refer to
-   [this guide][1] for instructions on how to do this. This step will need to
-   be repeated whenever the driver is updated or reinstalled (and Windows 10
-   users should keep in mind that this includes any time Windows updates the
-   driver in the background). If the game renders all white in one eye, you
-   need to do this step again!
+1. Unpack the zip file to the Far Cry Primal\bin directory
 
-[1]: http://helixmod.blogspot.com/2013/03/how-to-change-3d-vision-profile-and.html
-
-2. Unpack the zip file to the Far Cry Primal\bin directory
+2. Launch the game. The first time you run it (and again after any driver
+   update) you will get a UAC prompt for Rundll32 to install the driver
+   profile - choose yes.
 
 3. Disable Motion Blur in the settings
+
+4. If using SLI, lower the water quality slightly to drastically improve the framerate.
 
 HUD Modes
 ---------
