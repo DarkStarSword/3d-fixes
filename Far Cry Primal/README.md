@@ -5,8 +5,8 @@ Update v1.1
 -----------
 This update is primarily aimed at improving the performance on SLI systems.
 Running at 2560x1440 with water quality set to 'High', I see improvements from
-29fps to 55fps, and with water quality set to 'Very High' I see improvements
-from 10fps to 50fps!
+29fps in v1.0 to 55fps in v1.1, and with water quality set to 'Very High' I see
+improvements from 10fps in v1.0 to 50fps in v1.1!
 
 Note that enabling the SBS/TAB custom shader will still have a significant
 impact to the framerate in SLI (stay tuned - improvements to halve the cost and
