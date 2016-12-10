@@ -8,6 +8,10 @@ Update 2016-12-xx
 - Removed full screen override (as it has been fixed in the game/engine once
   again... hopefully they won't break it again).
 - 3D sand is back
+- Should reduce flickering of the fixed effects (noticeable on water, shadows,
+  sand, reflections and grass). It may not be entirely eliminated, but should
+  be quite acceptable now. If you are still getting severe flickering please
+  let me know.
 
 Update 2016-07-18
 -----------------
