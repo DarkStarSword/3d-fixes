@@ -1,6 +1,13 @@
 Stranded Deep
 =============
 
+Update 2016-12-xx
+-----------------
+- Fix updated for version 0.19 of the game.
+- Profile is installed on first launch to set the default convergence.
+- Removed full screen override (as it has been fixed in the game/engine once
+  again... hopefully they won't break it again).
+
 Update 2016-07-18
 -----------------
 Fix is updated to work with version 0.14 of the game. The fix will now force
@@ -55,10 +62,13 @@ Installation
    to Stranded_Deep_x64.exe), replace the DLLs from the fix with those in the
    32bit directory.
 
-3. Select "Play Stranded Deep with DirectX 11.0" when launching the game from
-   Steam (if you previously added any launch options, remove them)
+3. Select "Play Stranded Deep with DirectX 11.0" and "Exclusive" full screen
+   mode when launching the game from Steam (if you previously added any launch
+   options, remove them)
 
-4. Press L to activate the recommended convergence preset.
+4. The first time you launch the game (and again after any driver update) you
+   will get a UAC prompt for Rundll32 to install the driver profile - choose
+   yes.
 
 Keys
 ----
