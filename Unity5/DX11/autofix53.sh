@@ -66,7 +66,7 @@ fi
 if [ $FIX_HALO -eq 1 ]; then
 	echo
 	echo "Applying vertex shader halo, reflection & frustum fixes..."
-	asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed */*vs.txt | update_ini
+	asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed */*vs.txt | update_ini
 fi
 
 if [ $FIX_REFLECTION -eq 1 ]; then

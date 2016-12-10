@@ -219,6 +219,48 @@ class DP4Instruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
 
+class AddInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>add)
+        \s+
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
+
+class MADInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>mad)
+        \s+
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+            \s* , \s*
+            (?P<arg3>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2, arg3):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3)))
+
 class Declaration(Instruction):
     pattern = re.compile(r'''
         \s*
@@ -317,6 +359,8 @@ specific_instructions = (
     LoadStructuredInstruction,
     ResourceLoadInstruction,
     DP4Instruction,
+    AddInstruction,
+    MADInstruction,
     AssignmentInstruction,
 )
 
@@ -527,6 +571,80 @@ class ASMShader(hlsltool.Shader):
         for instr in self.instructions:
             s += str(instr)
         return s
+
+def fix_unusual_halo_with_inconsistent_w_optimisation(shader):
+    # Fixes the following unusual halo pattern seen in Stranded Deep / Unity
+    # 5.4, where o0 is the output position - the output position assumes that
+    # the input W == 1 and optimises out the multiplication by it, yet the
+    # result is then stored in a texcoord without the same optimisation.
+    # add o0.xyzw, r0.xyzw, cb3[3].xyzw
+    # mad r0.xyzw, cb3[3].xyzw, v0.wwww, r0.xyzw
+    # mad o1.xy, v3.xyxx, cb0[13].xyxx, cb0[13].zwzz
+
+    try:
+        pos_out = shader.lookup_output_position()
+    except KeyError:
+        debug("Shader has no output position (tesselation?)")
+        return
+
+    results = shader.scan_shader(pos_out, components='xyzw', write=True)
+    if not results:
+        debug("Couldn't find write to output position register")
+        return
+    if len(results) > 1:
+        debug_verbose(0, "Can't autofix a vertex shader writing to output position from multiple instructions")
+        return
+    (output_line, output_instr) = results[0]
+    if not isinstance(output_instr, AddInstruction):
+        debug_verbose(-1, 'Output not using add: %s' % output_instr.strip())
+        return
+    temp_reg, mvp_row4 = output_instr.rargs
+    if not temp_reg.variable.startswith('r'):
+        mvp_row4, temp_reg = temp_reg, mvp_row4
+        if not temp_reg.variable.startswith('r'):
+            debug_verbose(-1, 'Output not added from a temporary register and matrix: %s' % output_instr.strip())
+            return
+    if temp_reg.components != 'xyzw':
+            debug_verbose(-1, 'Temp reg did not use all components: %s' % output_instr.strip())
+            return
+    if mvp_row4.components != 'xyzw':
+            debug_verbose(-1, 'MVP row4 did not use all components: %s' % output_instr.strip())
+            return
+
+    results = shader.scan_shader(temp_reg.variable, components='xyzw', write=False, start=output_line + 1, stop=True)
+    if not results:
+        debug_verbose(-1, 'Temp register not used')
+        return
+    (line, instr) = results[0]
+    if not isinstance(instr, MADInstruction):
+        debug_verbose(-1, 'Temp register not used in mad: %s' % instr.strip())
+        return
+    if instr.rargs[2] != temp_reg:
+        debug_verbose(-1, 'Temp register not used in expected location of mad instruction: %s' % instr.strip())
+        return
+    if instr.rargs[0] != mvp_row4 and instr.rargs[1] != mvp_row4:
+        debug_verbose(-1, 'MVP row4 was not used in mad instruction: %s' % instr.strip())
+        return
+
+    off = shader.insert_stereo_params()
+
+    # We could probably insert this on the following line and skip
+    # adding/subtracting the 4th row, but I have a haunch this might catch a
+    # few more variants if the result is directly stored in a texcoord.
+
+    off += shader.insert_vanity_comment(line + off, 'Unusual halo fix (inconsistent W optimisation) inserted with')
+    off += shader.insert_multiple_lines(line + off, '''
+        add {temp_reg}.xyzw, {temp_reg}.xyzw, {mvp_row4}.xyzw
+        add {stereo}.w, {temp_reg}.w, -{stereo}.y
+        mad {temp_reg}.x, {stereo}.w, {stereo}.x, {temp_reg}.x
+        add {temp_reg}.xyzw, {temp_reg}.xyzw, -{mvp_row4}.xyzw
+    '''.format(
+        temp_reg = temp_reg.variable,
+        mvp_row4 = mvp_row4.variable,
+        stereo = shader.stereo_params_reg
+    ))
+
+    shader.autofixed = True
 
 def fix_unity_reflection(shader):
     try:
@@ -948,6 +1066,8 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--fix-unusual-halo-with-inconsistent-w-optimisation', action='store_true',
+            help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-unity-frustum-world', action='store_true',
@@ -991,6 +1111,8 @@ def main():
         try:
             if args.auto_fix_vertex_halo:
                 hlsltool.auto_fix_vertex_halo(shader)
+            if args.fix_unusual_halo_with_inconsistent_w_optimisation:
+                fix_unusual_halo_with_inconsistent_w_optimisation(shader)
             if args.fix_unity_reflection:
                 fix_unity_reflection(shader)
             if args.fix_unity_frustum_world:
