@@ -7,6 +7,7 @@ Update 2016-12-xx
 - Profile is installed on first launch to set the default convergence.
 - Removed full screen override (as it has been fixed in the game/engine once
   again... hopefully they won't break it again).
+- 3D sand is back
 
 Update 2016-07-18
 -----------------
@@ -48,7 +49,7 @@ Fixed
 - Automatically adjust the crosshair depth
 - Automatically remove the crosshair when it is faded out
 - HUD depth adjustment is disabled when in a menu.
-- <strike>Parallax sand is now 3D</strike> Effect is not used in latest update
+- Parallax sand is now 3D
 - SSAO artefacts on rocky surfaces
 - Ocean misalignment when camera is tilted
 
