@@ -1,4 +1,5 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed f991c781e84c7888-vs.txt
+// Glass (in intro - drinking glass, plane window, etc) with unusual halo pattern
+
 // 3DMigoto: f991c781e84c7888 |    Unity headers extracted from Glass - Bumped Specular Refractive Forward.shader
 //    Shader "Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward" {
 //      Properties {
@@ -112,15 +113,13 @@ dcl_output o7.xyz
 dcl_temps 10
 dcl_constantbuffer cb10[4], immediateIndexed
 dcl_constantbuffer cb11[22], immediateIndexed
-
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 
 ld_indexable(texture2d)(float,float,float,float) r5.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 
-// Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed f991c781e84c7888-vs.txt
+// Unity reflection/specular fix:
 mov r6.xyzw, cb1[4].xyzw
 mov r7.xyzw, l(0)
 mul r7.x, -r5.x, r5.y
@@ -138,6 +137,14 @@ mul r0.xyzw, v0.yyyy, cb3[1].xyzw
 mad r0.xyzw, cb3[0].xyzw, v0.xxxx, r0.xyzw
 mad r0.xyzw, cb3[2].xyzw, v0.zzzz, r0.xyzw
 add o0.xyzw, r0.xyzw, cb3[3].xyzw
+
+// Manual halo fix for unusual pattern:
+add r0.xyzw, r0.xyzw, cb3[3].xyzw
+add r5.w, r0.w, -r5.y
+mul r5.w, r5.w, r5.x
+add r0.x, r0.x, r5.w
+add r0.xyzw, r0.xyzw, -cb3[3].xyzw
+
 mad r0.xyzw, cb3[3].xyzw, v0.wwww, r0.xyzw
 mad o1.xy, v3.xyxx, cb0[13].xyxx, cb0[13].zwzz
 mov r1.x, cb3[16].y
