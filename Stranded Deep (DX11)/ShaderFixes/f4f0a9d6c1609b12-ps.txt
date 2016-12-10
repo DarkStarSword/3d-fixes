@@ -1,4 +1,5 @@
-// asmtool.py -I ../.. --fix-unity-reflection --only-autofixed f4f0a9d6c1609b12-ps.txt
+// Ceto water
+
 // 3DMigoto: f4f0a9d6c1609b12 |    Unity headers extracted from OceanTopSide_Transparent.shader
 //    Shader "Ceto/OceanTopSide_Transparent" {
 //      Fallback Off
@@ -163,15 +164,13 @@ dcl_output o0.xyzw
 dcl_temps 19
 dcl_constantbuffer cb10[4], immediateIndexed
 dcl_constantbuffer cb11[22], immediateIndexed
-
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 
 ld_indexable(texture2d)(float,float,float,float) r14.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 
-// Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --fix-unity-reflection --only-autofixed f4f0a9d6c1609b12-ps.txt
+// Unity reflection/specular fix:
 mov r15.xyzw, cb1[4].xyzw
 mov r16.xyzw, l(0)
 mul r16.x, -r14.x, r14.y
@@ -445,10 +444,18 @@ mad r4.yzw, r2.wwww, r5.xxyz, r4.yyzw
 sample r5.xyzw, r3.xyxx, t7.xyzw, s7
 mad r3.xy, r3.xyxx, l(2.000000, 2.000000, 0.000000, 0.000000), l(-1.000000, -1.000000, 0.000000, 0.000000)
 mad r2.w, r5.x, l(2.000000), l(-1.000000)
+
+// Fix the misalignment when the camera is tilted:
+add r14.w, v5.w, -r14.y
+mul r14.w, r14.w, r14.x
+div r14.w, r14.w, v5.w
+add r3.x, r3.x, -r14.w
+
 mul r3.yw, r3.yyyy, cb0[26].yyyw
 mad r3.xy, cb0[25].ywyy, r3.xxxx, r3.ywyy
 mad r3.xy, cb0[27].ywyy, r2.wwww, r3.xyxx
 add r3.xy, r3.xyxx, cb0[28].ywyy
+
 div r2.w, r3.x, r3.y
 add r2.w, -r2.w, v4.y
 max r2.w, r2.w, l(0.000000)
