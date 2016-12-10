@@ -2,7 +2,11 @@
 
 path=$(dirname "$0")
 script=$(basename "$0")
-migoto=$(find "$path" -maxdepth 1 -type d -iname "3Dmigoto-*.*.*" -printf '%f\n' | sort --version-sort -r | head -n 1)
+if [ -z "$1" ]; then
+	migoto=$(find "$path" -maxdepth 1 -type d -iname "3Dmigoto-*.*.*" -printf '%f\n' | sort --version-sort -r | head -n 1)
+else
+	migoto="3Dmigoto-$1"
+fi
 
 echo "Updating to $migoto..."
 find . -lname '*/3Dmigoto-*.*.*' -print0 |
