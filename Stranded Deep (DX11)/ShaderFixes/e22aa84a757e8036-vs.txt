@@ -1,4 +1,4 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed e22aa84a757e8036-vs.txt
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed e22aa84a757e8036-vs.txt
 // 3DMigoto: e22aa84a757e8036 | Matched 8 variants of 1 shaders: Ceto/OceanTopSide_Transparent
 //
 //        Unity headers extracted from OceanTopSide_Transparent.shader
@@ -137,17 +137,17 @@ dcl_output o6.xyzw
 dcl_output o7.xyzw
 dcl_output o8.xyz
 dcl_temps 14
-dcl_constantbuffer cb10[4], immediateIndexed
-dcl_constantbuffer cb11[22], immediateIndexed
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
+dcl_constantbuffer cb10[4], immediateIndexed
+dcl_constantbuffer cb11[22], immediateIndexed
 
 ld_indexable(texture2d)(float,float,float,float) r9.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 
 // Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed e22aa84a757e8036-vs.txt
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed e22aa84a757e8036-vs.txt
 mov r10.xyzw, cb1[4].xyzw
 mov r11.xyzw, l(0)
 mul r11.x, -r9.x, r9.y
@@ -267,6 +267,15 @@ mul r1.xyzw, r0.yyyy, cb3[1].xyzw
 mad r1.xyzw, cb3[0].xyzw, r0.xxxx, r1.xyzw
 mad r1.xyzw, cb3[2].xyzw, r0.zzzz, r1.xyzw
 add o0.xyzw, r1.xyzw, cb3[3].xyzw
+
+// Unusual halo fix (inconsistent W optimisation) inserted with DarkStarSword's asmtool.py:
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed e22aa84a757e8036-vs.txt
+
+add r1.xyzw, r1.xyzw, cb3[3].xyzw
+add r9.w, r1.w, -r9.y
+mad r1.x, r9.w, r9.x, r1.x
+add r1.xyzw, r1.xyzw, -cb3[3].xyzw
+
 mad r1.xyzw, cb3[3].xyzw, v0.wwww, r1.xyzw
 mul r2.xyz, r0.yyyy, cb3[13].xyzx
 mad r2.xyz, cb3[12].xyzx, r0.xxxx, r2.xyzx

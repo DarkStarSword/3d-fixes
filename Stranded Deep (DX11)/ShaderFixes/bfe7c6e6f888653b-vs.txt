@@ -1,4 +1,4 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed bfe7c6e6f888653b-vs.txt
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed bfe7c6e6f888653b-vs.txt
 // 3DMigoto: bfe7c6e6f888653b |    Unity headers extracted from Glass - Bumped Specular Refractive Forward.shader
 //    Shader "Beam Team/Standard/Transparent/Glass - Bumped Specular Refractive Forward" {
 //      Properties {
@@ -105,17 +105,17 @@ dcl_output o5.xyz
 dcl_output o6.xyzw
 dcl_output o7.xyzw
 dcl_temps 9
-dcl_constantbuffer cb10[4], immediateIndexed
-dcl_constantbuffer cb11[22], immediateIndexed
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
+dcl_constantbuffer cb10[4], immediateIndexed
+dcl_constantbuffer cb11[22], immediateIndexed
 
 ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 
 // Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unity-reflection --fix-unity-frustum-world --only-autofixed bfe7c6e6f888653b-vs.txt
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed bfe7c6e6f888653b-vs.txt
 mov r5.xyzw, cb1[4].xyzw
 mov r6.xyzw, l(0)
 mul r6.x, -r4.x, r4.y
@@ -133,6 +133,15 @@ mul r0.xyzw, v0.yyyy, cb2[1].xyzw
 mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
 mad r0.xyzw, cb2[2].xyzw, v0.zzzz, r0.xyzw
 add o0.xyzw, r0.xyzw, cb2[3].xyzw
+
+// Unusual halo fix (inconsistent W optimisation) inserted with DarkStarSword's asmtool.py:
+// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed bfe7c6e6f888653b-vs.txt
+
+add r0.xyzw, r0.xyzw, cb2[3].xyzw
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+add r0.xyzw, r0.xyzw, -cb2[3].xyzw
+
 mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
 mad o1.xy, v3.xyxx, cb0[13].xyxx, cb0[13].zwzz
 mov r1.y, cb2[16].y
