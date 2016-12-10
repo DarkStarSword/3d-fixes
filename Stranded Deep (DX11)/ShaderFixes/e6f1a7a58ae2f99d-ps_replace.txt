@@ -1,0 +1,196 @@
+// hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc /home/dss/fxc.exe e6f1a7a58ae2f99d-ps_replace.txt
+// 3DMigoto: e6f1a7a58ae2f99d |    Unity headers extracted from Internal-ScreenSpaceShadows.shader
+//    Shader "Hidden/Internal-ScreenSpaceShadows" {
+//      Properties {
+//       _ShadowMapTexture ("", any) = "" { }
+//      }
+//      Fallback Off
+//      SubShader 1/2 {
+//        Pass 1/1 {
+//          ZTest Always
+//          ZWrite Off
+//          Cull Off
+//          GpuProgramID 1194
+//          Program "fp" {
+//            SubProgram "d3d11 " {
+//              GpuProgramIndex 16
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Internal-ScreenSpaceShadows.shader.decompressed:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 201510240 52 1 0
+//   Keywords { "SHADOWS_SPLIT_SPHERES" }
+//   undeciphered2: 1 2 3 2 0 0
+//   undeciphered3: 0 0
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 112 [_ZBufferParams]
+//   Vector 128 [unity_OrthoParams]
+//   ConstBuffer "UnityPerCameraRare" 352
+//   Matrix 288 [unity_CameraToWorld]
+//   ConstBuffer "UnityShadows" 416
+//   Vector 0 [unity_ShadowSplitSpheres0]
+//   Vector 16 [unity_ShadowSplitSpheres1]
+//   Vector 32 [unity_ShadowSplitSpheres2]
+//   Vector 48 [unity_ShadowSplitSpheres3]
+//   Vector 64 [unity_ShadowSplitSqRadii]
+//   Vector 384 [_LightShadowData]
+//   Vector 400 [unity_ShadowFadeCenterAndType]
+//   Matrix 128 [unity_WorldToShadow0]
+//   Matrix 192 [unity_WorldToShadow1]
+//   Matrix 256 [unity_WorldToShadow2]
+//   Matrix 320 [unity_WorldToShadow3]
+//   SetTexture 0 [_CameraDepthTexture] 2D 0
+//   SetTexture 1 [_ShadowMapTexture] 2D 1
+//   BindCB "UnityPerCamera" 0
+//   BindCB "UnityPerCameraRare" 1
+//   BindCB "UnityShadows" 2
+//
+// Headers extracted with DarkStarSword's extract_unity53_shaders.py
+// https://github.com/DarkStarSword/3d-fixes
+
+// ---- Created with 3Dmigoto v1.2.42 on Sat Dec 10 03:50:32 2016
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerComparisonState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[26];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[22];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[9];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+
+cbuffer UnityPerDraw : register(b11) {
+	float4x4 glstate_matrix_mvp;
+	float4x4 glstate_matrix_modelview0;
+	float4x4 glstate_matrix_invtrans_modelview0;
+	#define UNITY_MATRIX_MVP glstate_matrix_mvp
+	#define UNITY_MATRIX_MV glstate_matrix_modelview0
+	#define UNITY_MATRIX_IT_MV glstate_matrix_invtrans_modelview0
+
+	uniform float4x4 _Object2World;
+	uniform float4x4 _World2Object;
+	uniform float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
+}
+
+
+#include <matrix.hlsl>
+
+void main( 
+  float4 v0 : TEXCOORD0,
+  float4 v1 : TEXCOORD1,
+  float4 v2 : TEXCOORD2,
+  float3 v3 : TEXCOORD3,
+  float4 v4 : SV_POSITION0,
+  out float4 o0 : SV_Target0,
+  float fov : TEXCOORD4)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x, convergence = stereo.y, eye = stereo.z;
+
+  r0.xyzw = t0.Sample(s0_s, v0.xy).xyzw;
+  r0.y = cb0[7].x * r0.x + cb0[7].y;
+  r0.y = 1 / r0.y;
+  r0.z = r0.x + -r0.y;
+  r0.y = cb0[8].w * r0.z + r0.y;
+  r1.xyz = v3.xyz + -v2.xyz;
+  r0.xzw = r0.xxx * r1.xyz + v2.xyz;
+  r0.xzw = -v1.xyz * r0.yyy + r0.xzw;
+  r1.xyz = v1.xyz * r0.yyy;
+  r0.xyz = cb0[8].www * r0.xzw + r1.xyz;
+float depth = r0.z;
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc /home/dss/fxc.exe e6f1a7a58ae2f99d-ps_replace.txt
+if (fov) {
+  r0.x -= separation * (depth - convergence) * fov;
+}
+
+  r1.xyzw = cb1[19].xyzw * r0.yyyy;
+  r1.xyzw = cb1[18].xyzw * r0.xxxx + r1.xyzw;
+  r0.xyzw = cb1[20].xyzw * r0.zzzz + r1.xyzw; // depth in r0.z
+  r0.xyzw = cb1[21].xyzw + r0.xyzw;
+
+// Fallback adjustment if the FOV was not passed from the VS:
+if (!fov) {
+  float4 clip_space_adj = float4(separation * (depth - convergence), 0, 0, 0);
+  float4 local_space_adj = mul(inverse(glstate_matrix_mvp), clip_space_adj);
+  float4 world_space_adj = mul(_Object2World, local_space_adj);
+  r0.xyz -= world_space_adj.xyz;
+}
+
+  r1.xyz = -cb2[0].xyz + r0.xyz;
+  r1.x = dot(r1.xyz, r1.xyz);
+  r2.xyz = -cb2[1].xyz + r0.xyz;
+  r1.y = dot(r2.xyz, r2.xyz);
+  r2.xyz = -cb2[2].xyz + r0.xyz;
+  r1.z = dot(r2.xyz, r2.xyz);
+  r2.xyz = -cb2[3].xyz + r0.xyz;
+  r1.w = dot(r2.xyz, r2.xyz);
+  r1.xyzw = cmp(r1.xyzw < cb2[4].xyzw);
+  r2.xyz = r1.xyz ? float3(-1,-1,-1) : float3(-0,-0,-0);
+  r1.xyzw = r1.xyzw ? float4(1,1,1,1) : 0;
+  r1.yzw = r1.yzw + r2.xyz;
+  r1.yzw = max(float3(0,0,0), r1.yzw);
+  r2.xyz = cb2[13].xyz * r0.yyy;
+  r2.xyz = cb2[12].xyz * r0.xxx + r2.xyz;
+  r2.xyz = cb2[14].xyz * r0.zzz + r2.xyz;
+  r2.xyz = cb2[15].xyz * r0.www + r2.xyz;
+  r2.xyz = r2.xyz * r1.yyy;
+  r3.xyz = cb2[9].xyz * r0.yyy;
+  r3.xyz = cb2[8].xyz * r0.xxx + r3.xyz;
+  r3.xyz = cb2[10].xyz * r0.zzz + r3.xyz;
+  r3.xyz = cb2[11].xyz * r0.www + r3.xyz;
+  r2.xyz = r3.xyz * r1.xxx + r2.xyz;
+  r3.xyz = cb2[17].xyz * r0.yyy;
+  r3.xyz = cb2[16].xyz * r0.xxx + r3.xyz;
+  r3.xyz = cb2[18].xyz * r0.zzz + r3.xyz;
+  r3.xyz = cb2[19].xyz * r0.www + r3.xyz;
+  r1.xyz = r3.xyz * r1.zzz + r2.xyz;
+  r2.xyz = cb2[21].xyz * r0.yyy;
+  r2.xyz = cb2[20].xyz * r0.xxx + r2.xyz;
+  r2.xyz = cb2[22].xyz * r0.zzz + r2.xyz;
+  r2.xyz = cb2[23].xyz * r0.www + r2.xyz;
+  r0.xyz = -cb2[25].xyz + r0.xyz;
+  r0.x = dot(r0.xyz, r0.xyz);
+  r0.x = sqrt(r0.x);
+  r0.x = saturate(r0.x * cb2[24].z + cb2[24].w);
+  r0.yzw = r2.xyz * r1.www + r1.xyz;
+  r0.y = t1.SampleCmpLevelZero(s1_s, r0.yz, r0.w).x;
+  r0.z = 1 + -cb2[24].x;
+  r0.y = r0.y * r0.z + cb2[24].x;
+  o0.xyzw = r0.yyyy + r0.xxxx;
+  return;
+}
