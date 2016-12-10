@@ -1,4 +1,4 @@
-// 3DMigoto: ca5cfc8e4d8b1ce5 | Matched 65 variants of 2 shaders: Hidden/Internal-DeferredShading, Hidden/Internal-PrePassLighting
+// 3DMigoto: 69294277cca1bade | Matched 26 variants of 1 shaders: Hidden/Internal-DeferredShading
 // 
 //          Unity headers extracted from Internal-DeferredShading.shader
 //          Shader "Hidden/Internal-DeferredShading" {
@@ -15,7 +15,7 @@
 //                Tags { "SHADOWSUPPORT"="true" }
 //                ZWrite Off
 //                Blend [_SrcBlend] [_DstBlend]
-//                GpuProgramID 36028
+//                GpuProgramID 32647
 //                Program "vp" {
 //                  SubProgram "d3d11 " {
 // 0004000:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" "UNITY_HDR_ON" }
@@ -46,12 +46,12 @@
 // 0000004:           Keywords { "SHADOWS_OFF" "SPOT" }
 //                    Bind "vertex" Vertex
 //                    Bind "normal" Normal
-// 37ffbff:           ConstBuffer "$Globals" 288
-// 0800400:           ConstBuffer "$Globals" 352
-//                    Float 96 [_LightAsQuad]
+// 37ffbff:           ConstBuffer "$Globals" 304
+// 0800400:           ConstBuffer "$Globals" 368
+//                    Float 112 [_LightAsQuad]
 //                    ConstBuffer "UnityPerCamera" 144
 //                    Vector 80 [_ProjectionParams]
-//                    ConstBuffer "UnityPerDraw" 336
+//                    ConstBuffer "UnityPerDraw" 352
 //                    Matrix 0 [glstate_matrix_mvp]
 //                    Matrix 64 [glstate_matrix_modelview0]
 //                    BindCB "$Globals" 0
@@ -62,59 +62,6 @@
 //              }
 //            }
 //          }
-// 
-//             Unity headers extracted from Internal-PrePassLighting.shader
-//             Shader "Hidden/Internal-PrePassLighting" {
-//               Properties {
-//                _LightTexture0 ("", any) = "" { }
-//                _LightTextureB0 ("", 2D) = "" { }
-//                _ShadowMapTexture ("", any) = "" { }
-//               }
-//               Fallback Off
-//               SubShader 1/1 {
-// 0000001fff:     Pass 1/3 {
-// 0003ffe000:     Pass 2/3 {
-// 7ffc000000:     Pass 3/3 {
-//                   Tags { "SHADOWSUPPORT"="true" }
-//                   ZWrite Off
-// 0000001fff:       Blend DstColor Zero
-// 7fffffe000:       Blend One One
-// 0003ffe000:       GpuProgramID 113408
-// 7ffc000000:       GpuProgramID 155461
-// 0000001fff:       GpuProgramID 57115
-//                   Program "vp" {
-//                     SubProgram "d3d11 " {
-// 0008004002:           Keywords { "DIRECTIONAL" "SHADOWS_OFF" }
-// 0100080040:           Keywords { "DIRECTIONAL" "SHADOWS_SCREEN" }
-// 0040020010:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_OFF" }
-// 0200100080:           Keywords { "DIRECTIONAL_COOKIE" "SHADOWS_SCREEN" }
-// 2001000800:           Keywords { "POINT" "SHADOWS_CUBE" "SHADOWS_SOFT" }
-// 0400200100:           Keywords { "POINT" "SHADOWS_CUBE" }
-// 0004002001:           Keywords { "POINT" "SHADOWS_OFF" }
-// 4002001000:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" "SHADOWS_SOFT" }
-// 0800400200:           Keywords { "POINT_COOKIE" "SHADOWS_CUBE" }
-// 0020010008:           Keywords { "POINT_COOKIE" "SHADOWS_OFF" }
-// 1000800400:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SHADOWS_SOFT" "SPOT" }
-// 0080040020:           Keywords { "SHADOWS_DEPTH" "SHADOWS_NATIVE" "SPOT" }
-// 0010008004:           Keywords { "SHADOWS_OFF" "SPOT" }
-//                       Bind "vertex" Vertex
-//                       Bind "normal" Normal
-// 6fff7ffbff:           ConstBuffer "$Globals" 240
-// 1000800400:           ConstBuffer "$Globals" 304
-//                       Float 96 [_LightAsQuad]
-//                       ConstBuffer "UnityPerCamera" 144
-//                       Vector 80 [_ProjectionParams]
-//                       ConstBuffer "UnityPerDraw" 336
-//                       Matrix 0 [glstate_matrix_mvp]
-//                       Matrix 64 [glstate_matrix_modelview0]
-//                       BindCB "$Globals" 0
-//                       BindCB "UnityPerCamera" 1
-//                       BindCB "UnityPerDraw" 2
-//                     }
-//                   }
-//                 }
-//               }
-//             }
 // 
 // Headers extracted with DarkStarSword's extract_unity_shaders.py
 // https://raw.githubusercontent.com/DarkStarSword/3d-fixes/master/extract_unity_shaders.py
@@ -147,7 +94,7 @@ cbuffer cb1 : register(b1)
 
 cbuffer cb0 : register(b0)
 {
-  float4 cb0[7];
+  float4 cb0[8];
 }
 
 
@@ -162,6 +109,7 @@ cbuffer UnityPerCameraRare : register(b13)
   row_major uniform float4x4 unity_CameraProjection;
   row_major uniform float4x4 unity_CameraInvProjection;
 }
+
 
 // 3Dmigoto declarations
 #define cmp -
@@ -240,145 +188,6 @@ if (!full_screen) {
 
   r1.xyz = float3(-1,-1,1) * r0.xyz;
   r0.xyz = -r0.xyz * float3(-1,-1,1) + v1.xyz;
-  o2.xyz = cb0[6].xxx * r0.xyz + r1.xyz;
+  o2.xyz = cb0[7].xxx * r0.xyz + r1.xyz;
   return;
 }
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Original ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// Generated by Microsoft (R) D3D Shader Disassembler
-//
-//
-// Input signature:
-//
-// Name                 Index   Mask Register SysValue  Format   Used
-// -------------------- ----- ------ -------- -------- ------- ------
-// POSITION                 0   xyzw        0     NONE   float   xyzw
-// NORMAL                   0   xyz         1     NONE   float   xyz 
-//
-//
-// Output signature:
-//
-// Name                 Index   Mask Register SysValue  Format   Used
-// -------------------- ----- ------ -------- -------- ------- ------
-// SV_POSITION              0   xyzw        0      POS   float   xyzw
-// TEXCOORD                 0   xyzw        1     NONE   float   xyzw
-// TEXCOORD                 1   xyz         2     NONE   float   xyz 
-//
-vs_4_0
-dcl_constantbuffer cb0[7], immediateIndexed
-dcl_constantbuffer cb1[6], immediateIndexed
-dcl_constantbuffer cb2[8], immediateIndexed
-dcl_input v0.xyzw
-dcl_input v1.xyz
-dcl_output_siv o0.xyzw, position
-dcl_output o1.xyzw
-dcl_output o2.xyz
-dcl_temps 2
-mul r0.xyzw, v0.yyyy, cb2[1].xyzw
-mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
-mad r0.xyzw, cb2[2].xyzw, v0.zzzz, r0.xyzw
-mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
-mov o0.xyzw, r0.xyzw
-mul r0.y, r0.y, cb1[5].x
-mul r1.xzw, r0.xxwy, l(0.500000, 0.000000, 0.500000, 0.500000)
-mov o1.zw, r0.zzzw
-add o1.xy, r1.zzzz, r1.xwxx
-mul r0.xyz, v0.yyyy, cb2[5].xyzx
-mad r0.xyz, cb2[4].xyzx, v0.xxxx, r0.xyzx
-mad r0.xyz, cb2[6].xyzx, v0.zzzz, r0.xyzx
-mad r0.xyz, cb2[7].xyzx, v0.wwww, r0.xyzx
-mul r1.xyz, r0.xyzx, l(-1.000000, -1.000000, 1.000000, 0.000000)
-mad r0.xyz, -r0.xyzx, l(-1.000000, -1.000000, 1.000000, 0.000000), v1.xyzx
-mad o2.xyz, cb0[6].xxxx, r0.xyzx, r1.xyzx
-ret 
-// Approximately 0 instruction slots used
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Recompiled ASM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// Generated by Microsoft (R) HLSL Shader Compiler 9.30.9200.20789
-//
-//
-// Buffer Definitions: 
-//
-// cbuffer cb2
-// {
-//
-//   float4 cb2[8];                     // Offset:    0 Size:   128
-//
-// }
-//
-// cbuffer cb1
-// {
-//
-//   float4 cb1[6];                     // Offset:    0 Size:    96
-//
-// }
-//
-// cbuffer cb0
-// {
-//
-//   float4 cb0[7];                     // Offset:    0 Size:   112
-//
-// }
-//
-//
-// Resource Bindings:
-//
-// Name                                 Type  Format         Dim Slot Elements
-// ------------------------------ ---------- ------- ----------- ---- --------
-// cb0                               cbuffer      NA          NA    0        1
-// cb1                               cbuffer      NA          NA    1        1
-// cb2                               cbuffer      NA          NA    2        1
-//
-//
-//
-// Input signature:
-//
-// Name                 Index   Mask Register SysValue  Format   Used
-// -------------------- ----- ------ -------- -------- ------- ------
-// POSITION                 0   xyzw        0     NONE   float   xyzw
-// NORMAL                   0   xyz         1     NONE   float   xyz 
-//
-//
-// Output signature:
-//
-// Name                 Index   Mask Register SysValue  Format   Used
-// -------------------- ----- ------ -------- -------- ------- ------
-// SV_POSITION              0   xyzw        0      POS   float   xyzw
-// TEXCOORD                 0   xyzw        1     NONE   float   xyzw
-// TEXCOORD                 1   xyz         2     NONE   float   xyz 
-//
-vs_4_0
-dcl_constantbuffer cb2[8], immediateIndexed
-dcl_constantbuffer cb1[6], immediateIndexed
-dcl_constantbuffer cb0[7], immediateIndexed
-dcl_input v0.xyzw
-dcl_input v1.xyz
-dcl_output_siv o0.xyzw, position
-dcl_output o1.xyzw
-dcl_output o2.xyz
-dcl_temps 2
-mul r0.xyzw, v0.yyyy, cb2[1].xyzw
-mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
-mad r0.xyzw, cb2[2].xyzw, v0.zzzz, r0.xyzw
-mad r0.xyzw, cb2[3].xwyz, v0.wwww, r0.xwyz
-mov o0.xyzw, r0.xzwy
-mul r0.z, r0.z, cb1[5].x
-mov o1.zw, r0.wwwy
-mul r0.xyz, r0.xyzx, l(0.500000, 0.500000, 0.500000, 0.000000)
-add o1.xy, r0.yyyy, r0.xzxx
-mul r0.xyz, v0.yyyy, cb2[5].xyzx
-mad r0.xyz, cb2[4].xyzx, v0.xxxx, r0.xyzx
-mad r0.xyz, cb2[6].xyzx, v0.zzzz, r0.xyzx
-mad r0.xyz, cb2[7].xyzx, v0.wwww, r0.xyzx
-mul r1.xyz, r0.xyzx, l(-1.000000, -1.000000, 1.000000, 0.000000)
-mad r0.xyz, r0.xyzx, l(1.000000, 1.000000, -1.000000, 0.000000), v1.xyzx
-mad o2.xyz, cb0[6].xxxx, r0.xyzx, r1.xyzx
-ret 
-// Approximately 17 instruction slots used
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
