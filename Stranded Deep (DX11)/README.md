@@ -1,9 +1,10 @@
 Stranded Deep
 =============
 
-Update 2016-12-xx
+Update 2016-12-10
 -----------------
-- Fix updated for version 0.19 of the game.
+- Updated to 3DMigoto 1.2.51
+- Fix updated for version 0.19.01 of the game.
 - Profile is installed on first launch to set the default convergence.
 - Removed full screen override (as it has been fixed in the game/engine once
   again... hopefully they won't break it again).
@@ -12,6 +13,7 @@ Update 2016-12-xx
   sand, reflections and grass). It may not be entirely eliminated, but should
   be quite acceptable now. If you are still getting severe flickering please
   let me know.
+- New variation of the halo pattern fixed
 
 Update 2016-07-18
 -----------------
