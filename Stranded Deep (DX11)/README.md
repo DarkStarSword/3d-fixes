@@ -14,6 +14,7 @@ Update 2016-12-10
   be quite acceptable now. If you are still getting severe flickering please
   let me know.
 - New variation of the halo pattern fixed
+- Fixed watch display and tweaked convergence preset timing.
 
 Update 2016-07-18
 -----------------
