@@ -32,6 +32,8 @@ types = {
     3: 'float'
 }
 
+verbosity = 0
+
 def lookup(id, dict):
     return dict.get(id, "Unknown ({})".format(id))
 
@@ -104,8 +106,8 @@ def decode_sgn(buf, output, size=24):
 
         io = output and 'output' or 'input'
         reg_prefix = output and 'o' or 'v'
-        print('    dcl_{} {}{}{} : {}{}'.format(
-            io, reg_prefix, reg_num, reg_mask(mask), semantic, index or '')) # WIP
+        pr_verbose('    dcl_{} {}{}{} : {}{}'.format(
+            io, reg_prefix, reg_num, reg_mask(mask), semantic, index or ''), verbosity=0) # WIP
 
         if stream is not None:
             pr_verbose('      |       Stream: {}'.format(stream))
@@ -174,13 +176,13 @@ hash_sections = (
 def decode_chunk_at(stream, offset, bytecode_hash):
     (signature, size) = get_chunk_info(stream, offset)
     buf = stream.read(size)
-    if args.bytecode_hash and signature in hash_sections:
+    if bytecode_hash is not None and signature in hash_sections:
         # crc32c is not available in Python's standard libraries yet, use crcmod:
         import crcmod.predefined
         bytecode_hash = crcmod.predefined.mkPredefinedCrcFun("crc-32c")(buf, bytecode_hash)
     if verbosity >= 1:
         print("{} chunk at 0x{:08x} size {}".format(signature.decode('ASCII'), offset, size))
-    elif verbosity >= 0 or args.byetcode_hash:
+    elif verbosity >= 0:
         print('{}'.format(signature.decode('ASCII')))
     if signature in chunks:
         chunks[signature](buf)
@@ -326,7 +328,9 @@ def parse(stream):
         # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
         print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
 
-    bytecode_hash = 0
+    bytecode_hash = None
+    if args.bytecode_hash:
+        bytecode_hash = 0
     for idx in range(header.chunks):
         bytecode_hash = decode_chunk_at(stream, chunk_offsets[idx], bytecode_hash)
     if args.bytecode_hash:
