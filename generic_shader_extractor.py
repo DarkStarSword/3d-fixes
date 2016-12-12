@@ -12,6 +12,8 @@ target_dir_bytecode = 'ShaderCacheBytecode'
 blacklist_dirs = [
     'shadercache',
     'shaderfixes',
+    'shaderoverride',
+    'dumps',
     'extracted',
     'shadercrcs',
     'shaderfnvs',
@@ -42,19 +44,32 @@ def _save_shader(shader, dir, filename):
     if os.path.isfile(inter_hlsl_path):
         os.rename(inter_hlsl_path, final_hlsl_path)
 
-def save_shader(shader, hash_3dmigoto, hash_embedded, hash_bytecode):
+def save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode):
+    shader_model = shader_model[:2]
     if args.hash == '3dmigoto':
-        _save_shader(shader, target_dir_3dmigoto, '%016x-xx' % hash_3dmigoto)
+        _save_shader(shader, target_dir_3dmigoto, '%016x-%s' % (hash_3dmigoto, shader_model))
 
     if args.hash == 'embedded':
-        _save_shader(shader, target_dir_embedded, '%s-xx' % hash_embedded[:16])
+        _save_shader(shader, target_dir_embedded, '%s-%s' % (hash_embedded[:16], shader_model))
 
     if args.hash == 'bytecode':
-        _save_shader(shader, target_dir_bytecode, '00000000%08x-xx' % hash_bytecode)
+        _save_shader(shader, target_dir_bytecode, '00000000%08x-%s' % (hash_bytecode, shader_model))
+
+def print_parse_error(e, desc):
+    if e.__class__ == AssertionError:
+        import traceback
+        print('  %s %s: ' % (e.__class__.__name__, desc), end='')
+        # Python 3.5 supports negative limit to simplify this:
+        stack = traceback.extract_tb(e.__traceback__)
+        print(traceback.format_list(stack[-1:])[0].strip())
+    else:
+        print('  %s %s: %s' % (e.__class__.__name__, desc, str(e)))
 
 def search_file(path):
     print('Searching %s' % path)
     with open(path, 'rb') as fp:
+        if os.fstat(fp.fileno()).st_size == 0:
+            return
         with mmap.mmap(fp.fileno(), 0, access = mmap.ACCESS_READ) as mm:
             off = -1
             while True:
@@ -67,29 +82,46 @@ def search_file(path):
                     shader = mm[off : off + header.size]
                     assert(len(shader) == header.size)
                     hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
-                    if hash_embedded == codecs.encode(header.hash, 'hex').decode('ascii'):
-                        hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
+                    if hash_embedded != codecs.encode(header.hash, 'hex').decode('ascii'):
+                        continue
 
-                        print('%s+%08x: embedded: %s[%s] 3dmigoto: %016x' %
-                                (path, off, hash_embedded[:16], hash_embedded[16:], hash_3dmigoto), end='')
+                    chunk_offsets = dx11shaderanalyse.get_chunk_offsets(mm, header)
+                    try:
+                        for idx in range(header.chunks):
+                            shader_model = dx11shaderanalyse.check_chunk_for_shader_model(mm, off + chunk_offsets[idx])
+                            if shader_model is not None:
+                                break;
+                        else:
+                            print('No shader model found - missing bytecode section?')
+                            shader_model = 'xx_x_x'
+                    except Exception as e:
+                        print_parse_error(e, 'while trying to determine shader model')
+                        shader_model = 'xx_x_x'
 
-                        try:
-                            chunk_offsets = dx11shaderanalyse.get_chunk_offsets(mm, header)
-                            hash_bytecode = 0
-                            for idx in range(header.chunks):
-                                hash_bytecode = dx11shaderanalyse.decode_chunk_at(mm, off + chunk_offsets[idx], hash_bytecode)
-                            print(' bytecode: %08x' % hash_bytecode, end='')
-                        except ImportError:
-                            hash_bytecode = None
-
+                    hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
+                    print('%s+%08x: %s embedded: %s[%s] 3dmigoto: %016x' %
+                            (path, off, shader_model, hash_embedded[:16], hash_embedded[16:], hash_3dmigoto), end='')
+                    if crcmod is not None:
+                        hash_bytecode = 0
+                        for idx in range(header.chunks):
+                            hash_bytecode = dx11shaderanalyse.calc_chunk_bytecode_hash(mm, off + chunk_offsets[idx], hash_bytecode)
+                        print(' bytecode: %08x' % hash_bytecode)
+                    else:
+                        hash_bytecode = None
                         print()
-                        save_shader(shader, hash_3dmigoto, hash_embedded, hash_bytecode)
+
+                    save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode)
+
+                    # If we verified the hash and extracted a shader we can be
+                    # pretty sure there won't be another overlapping it:
+                    off += header.size - 1
+
                 except Exception as e:
-                    print('  %s while parsing possible shader %s' % (e.__class__.__name__, str(e)))
+                    print_parse_error(e, 'while parsing possible shader')
                     continue
 
 def parse_args():
-    global args
+    global args, crcmod
     parser = argparse.ArgumentParser(description = 'Generic Shader Extraction Tool')
     parser.add_argument('paths', nargs='*',
             help='List of files or directories to search for shader binaries')
@@ -98,14 +130,15 @@ def parse_args():
             help='Skip these file or directory names')
     args = parser.parse_args()
 
-    if args.hash == 'bytecode':
-        try:
-            import crcmod
-        except ImportError:
-            print('Python crcmod is not installed - bytecode hash is unavailable. Install with:')
-            print('python3 -m ensurepip')
-            print('python3 -m pip install crcmod')
+    try:
+        import crcmod
+    except ImportError:
+        print('Python crcmod is not installed - bytecode hash is unavailable. Install with:')
+        print('python3 -m ensurepip')
+        print('python3 -m pip install crcmod')
+        if args.hash == 'bytecode':
             sys.exit(1)
+        crcmod = None
 
     for path in map(os.path.basename, args.blacklist):
         blacklist_dirs.append(path.lower())

@@ -150,6 +150,31 @@ def decode_osg5(buf): return decode_sgn(buf, True, 28)
 def decode_pcsg(buf): return decode_sgn(buf, True, 24)
 def decode_psg1(buf): return decode_sgn(buf, True, 32)
 
+shader_types = {
+    0: 'ps',
+    1: 'vs',
+    2: 'gs',
+    3: 'hs',
+    4: 'ds',
+    5: 'cs',
+}
+
+def get_shader_model_section(buf, verify_major = None):
+    version, shader_type = struct.unpack('<2H', buf[:4])
+    shader_type = shader_types[shader_type]
+    major = version >> 4
+    minor = version & 0xf
+    if verify_major is not None:
+        assert(major == verify_major)
+    shader_model = ('{}_{}_{}'.format(shader_type, major, minor))
+    pr_verbose('    {}'.format(shader_model), verbosity=0)
+    return shader_model
+
+def get_shader_model_shdr(buf):
+    return get_shader_model_section(buf, 4)
+def get_shader_model_shex(buf):
+    return get_shader_model_section(buf, 5)
+
 chunks = {
     b'ISGN': decode_isgn, # "Input signature"
     b'ISG1': decode_isg1,
@@ -158,7 +183,14 @@ chunks = {
     b'OSG5': decode_osg5,
     b'PCSG': decode_pcsg, # "Patch Constant signature", for domain shaders
     b'PSG1': decode_psg1,
+    b'SHEX': get_shader_model_shex,
+    b'SHDR': get_shader_model_shdr,
     # TODO: 'SHEX' / 'SHDR', maybe 'STAT', etc.
+}
+
+shader_model_sections = {
+    b'SHEX': get_shader_model_shex,
+    b'SHDR': get_shader_model_shdr,
 }
 
 def get_chunk_info(stream, offset):
@@ -173,20 +205,35 @@ hash_sections = (
 	b"OSGN", b"OSG5", b"OSG1", # Output signature
 )
 
-def decode_chunk_at(stream, offset, bytecode_hash):
-    (signature, size) = get_chunk_info(stream, offset)
-    buf = stream.read(size)
-    if bytecode_hash is not None and signature in hash_sections:
+def _calc_chunk_bytecode_hash(signature, buf, bytecode_hash):
+    if signature in hash_sections:
         # crc32c is not available in Python's standard libraries yet, use crcmod:
         import crcmod.predefined
         bytecode_hash = crcmod.predefined.mkPredefinedCrcFun("crc-32c")(buf, bytecode_hash)
+    return bytecode_hash
+
+def calc_chunk_bytecode_hash(stream, offset, bytecode_hash):
+    # Called from generic_shader_extractor
+    (signature, size) = get_chunk_info(stream, offset)
+    buf = stream.read(size)
+    return _calc_chunk_bytecode_hash(signature, buf, bytecode_hash)
+
+def decode_chunk_at(stream, offset, bytecode_hash):
+    (signature, size) = get_chunk_info(stream, offset)
+    buf = stream.read(size)
     if verbosity >= 1:
         print("{} chunk at 0x{:08x} size {}".format(signature.decode('ASCII'), offset, size))
-    elif verbosity >= 0:
+    elif verbosity >= 0 or bytecode_hash is not None:
         print('{}'.format(signature.decode('ASCII')))
     if signature in chunks:
         chunks[signature](buf)
-    return bytecode_hash
+    if bytecode_hash is not None:
+        return _calc_chunk_bytecode_hash(signature, buf, bytecode_hash)
+
+def check_chunk_for_shader_model(stream, offset):
+    (signature, size) = get_chunk_info(stream, offset)
+    if signature in shader_model_sections:
+        return shader_model_sections[signature](stream.read(size))
 
 def get_chunk(stream, name):
     header = parse_dxbc_header(stream)
