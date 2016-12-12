@@ -9,7 +9,7 @@ target_dir_3dmigoto = 'ShaderCache3DMigoto'
 target_dir_embedded = 'ShaderCacheEmbedded'
 target_dir_bytecode = 'ShaderCacheBytecode'
 
-blacklist_dirs = (
+blacklist_dirs = [
     'shadercache',
     'shaderfixes',
     'extracted',
@@ -18,9 +18,9 @@ blacklist_dirs = (
     target_dir_3dmigoto.lower(),
     target_dir_embedded.lower(),
     target_dir_bytecode.lower(),
-)
+]
 
-blacklist_files = ('d3d11.dll', 'd3dcompiler_46.dll')
+blacklist_files = ['d3d11.dll', 'd3dcompiler_46.dll']
 
 def _save_shader(shader, dir, filename):
     if not os.path.isdir(dir):
@@ -86,7 +86,6 @@ def search_file(path):
                         save_shader(shader, hash_3dmigoto, hash_embedded, hash_bytecode)
                 except Exception as e:
                     print('  %s while parsing possible shader %s' % (e.__class__.__name__, str(e)))
-                    raise
                     continue
 
 def parse_args():
@@ -95,6 +94,8 @@ def parse_args():
     parser.add_argument('paths', nargs='*',
             help='List of files or directories to search for shader binaries')
     parser.add_argument('--hash', choices=['embedded', '3dmigoto', 'bytecode'], required=True)
+    parser.add_argument('--blacklist', action='append', default=[],
+            help='Skip these file or directory names')
     args = parser.parse_args()
 
     if args.hash == 'bytecode':
@@ -105,6 +106,11 @@ def parse_args():
             print('python3 -m ensurepip')
             print('python3 -m pip install crcmod')
             sys.exit(1)
+
+    for path in map(os.path.basename, args.blacklist):
+        blacklist_dirs.append(path.lower())
+        blacklist_files.append(path.lower())
+
 
 def main():
     parse_args()
