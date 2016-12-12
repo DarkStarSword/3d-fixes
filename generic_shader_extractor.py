@@ -65,60 +65,77 @@ def print_parse_error(e, desc):
     else:
         print('  %s %s: %s' % (e.__class__.__name__, desc, str(e)))
 
+def stream_search(stream, target, off):
+    stream.seek(off)
+    # Align first read to next page boundary for maximum speed:
+    block_size = mmap.PAGESIZE - off % mmap.PAGESIZE
+    buf = b''
+    while True:
+        new_buf = stream.read(block_size)
+        if not new_buf:
+            return -1
+        buf = buf[-len(target) + 1:] + new_buf
+        result = buf.find(target)
+        if result != -1:
+            off = stream.tell() - len(buf) + result
+            stream.seek(off)
+            return off
+        # Subsequent reads use the page size for maximum speed:
+        block_size = mmap.PAGESIZE
+
 def search_file(path):
     print('Searching %s' % path)
     with open(path, 'rb') as fp:
-        if os.fstat(fp.fileno()).st_size == 0:
-            return
-        with mmap.mmap(fp.fileno(), 0, access = mmap.ACCESS_READ) as mm:
-            off = -1
-            while True:
-                off = mm.find(b'DXBC', off + 1)
-                if off == -1:
-                    return
-                mm.seek(off)
-                try:
-                    header = dx11shaderanalyse.parse_dxbc_header(mm)
-                    shader = mm[off : off + header.size]
-                    assert(len(shader) == header.size)
-                    hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
-                    if hash_embedded != codecs.encode(header.hash, 'hex').decode('ascii'):
-                        continue
-
-                    chunk_offsets = dx11shaderanalyse.get_chunk_offsets(mm, header)
-                    try:
-                        for idx in range(header.chunks):
-                            shader_model = dx11shaderanalyse.check_chunk_for_shader_model(mm, off + chunk_offsets[idx])
-                            if shader_model is not None:
-                                break;
-                        else:
-                            print('No shader model found - missing bytecode section?')
-                            shader_model = 'xx_x_x'
-                    except Exception as e:
-                        print_parse_error(e, 'while trying to determine shader model')
-                        shader_model = 'xx_x_x'
-
-                    hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
-                    print('%s+%08x: %s embedded: %s[%s] 3dmigoto: %016x' %
-                            (path, off, shader_model, hash_embedded[:16], hash_embedded[16:], hash_3dmigoto), end='')
-                    if crcmod is not None:
-                        hash_bytecode = 0
-                        for idx in range(header.chunks):
-                            hash_bytecode = dx11shaderanalyse.calc_chunk_bytecode_hash(mm, off + chunk_offsets[idx], hash_bytecode)
-                        print(' bytecode: %08x' % hash_bytecode)
-                    else:
-                        hash_bytecode = None
-                        print()
-
-                    save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode)
-
-                    # If we verified the hash and extracted a shader we can be
-                    # pretty sure there won't be another overlapping it:
-                    off += header.size - 1
-
-                except Exception as e:
-                    print_parse_error(e, 'while parsing possible shader')
+        off = -1
+        while True:
+            off = stream_search(fp, b'DXBC', off + 1)
+            if off == -1:
+                return
+            try:
+                header = dx11shaderanalyse.parse_dxbc_header(fp)
+                bak = fp.tell()
+                fp.seek(off)
+                shader = fp.read(header.size)
+                assert(len(shader) == header.size)
+                fp.seek(bak)
+                hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
+                if hash_embedded != codecs.encode(header.hash, 'hex').decode('ascii'):
                     continue
+
+                chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
+                try:
+                    for idx in range(header.chunks):
+                        shader_model = dx11shaderanalyse.check_chunk_for_shader_model(fp, off + chunk_offsets[idx])
+                        if shader_model is not None:
+                            break;
+                    else:
+                        print('No shader model found - missing bytecode section?')
+                        shader_model = 'xx_x_x'
+                except Exception as e:
+                    print_parse_error(e, 'while trying to determine shader model')
+                    shader_model = 'xx_x_x'
+
+                hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
+                print('%s+%08x: %s embedded: %s[%s] 3dmigoto: %016x' %
+                        (path, off, shader_model, hash_embedded[:16], hash_embedded[16:], hash_3dmigoto), end='')
+                if crcmod is not None:
+                    hash_bytecode = 0
+                    for idx in range(header.chunks):
+                        hash_bytecode = dx11shaderanalyse.calc_chunk_bytecode_hash(fp, off + chunk_offsets[idx], hash_bytecode)
+                    print(' bytecode: %08x' % hash_bytecode)
+                else:
+                    hash_bytecode = None
+                    print()
+
+                save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode)
+
+                # If we verified the hash and extracted a shader we can be
+                # pretty sure there won't be another overlapping it:
+                off += header.size - 1
+
+            except Exception as e:
+                print_parse_error(e, 'while parsing possible shader')
+                continue
 
 def parse_args():
     global args, crcmod
