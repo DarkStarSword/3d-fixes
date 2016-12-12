@@ -83,6 +83,8 @@ def stream_search(stream, target, off):
         # Subsequent reads use the page size for maximum speed:
         block_size = mmap.PAGESIZE
 
+processed = set()
+
 def search_file(path):
     print('Searching %s' % path)
     with open(path, 'rb') as fp:
@@ -93,13 +95,27 @@ def search_file(path):
                 return
             try:
                 header = dx11shaderanalyse.parse_dxbc_header(fp)
+
+                header_hash = codecs.encode(header.hash, 'hex').decode('ascii')
+                if header_hash in processed:
+                    print('%s+%08x: *skip* embedded: %s[%s] seen before' %
+                        (path, off, header_hash[:16], header_hash[16:]))
+                    # Skipping over the shader's claimed size is a little risky
+                    # since we haven't validated the embedded hash yet, but the
+                    # chance that we find an invalid shader with a seemingly
+                    # valid header and a hash that we have previously validated
+                    # is so low that I deem the risk acceptable and the speed
+                    # benefits worthwhile:
+                    off += header.size - 1
+                    continue
+
                 bak = fp.tell()
                 fp.seek(off)
                 shader = fp.read(header.size)
                 assert(len(shader) == header.size)
                 fp.seek(bak)
                 hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
-                if hash_embedded != codecs.encode(header.hash, 'hex').decode('ascii'):
+                if hash_embedded != header_hash:
                     continue
 
                 chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
@@ -115,22 +131,29 @@ def search_file(path):
                     print_parse_error(e, 'while trying to determine shader model')
                     shader_model = 'xx_x_x'
 
-                hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
-                print('%s+%08x: %s embedded: %s[%s] 3dmigoto: %016x' %
-                        (path, off, shader_model, hash_embedded[:16], hash_embedded[16:], hash_3dmigoto), end='')
-                if crcmod is not None:
+                print('%s+%08x: %s embedded: %s[%s]' %
+                    (path, off, shader_model, hash_embedded[:16], hash_embedded[16:]), end='')
+
+                if args.hash == '3dmigoto':
+                    hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
+                    print(' 3dmigoto: %016x' % hash_3dmigoto, end='')
+                else:
+                    hash_3dmigoto = None
+
+                if args.hash == 'bytecode' and crcmod is not None:
                     hash_bytecode = 0
                     for idx in range(header.chunks):
                         hash_bytecode = dx11shaderanalyse.calc_chunk_bytecode_hash(fp, off + chunk_offsets[idx], hash_bytecode)
-                    print(' bytecode: %08x' % hash_bytecode)
+                    print(' bytecode: %08x' % hash_bytecode, end='')
                 else:
                     hash_bytecode = None
-                    print()
+                print()
 
                 save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode)
 
                 # If we verified the hash and extracted a shader we can be
                 # pretty sure there won't be another overlapping it:
+                processed.add(header_hash)
                 off += header.size - 1
 
             except Exception as e:
