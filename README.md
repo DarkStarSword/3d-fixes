@@ -144,6 +144,8 @@ code). It's feature set is the most limited for now:
 - Attempt to automatically fix common issues in vertex shaders where the output
   position has been copied, often resulting in halos (Very helpful for Unity
   games).
+- Apply auto fixes for Unity lights/shadows, specular highlights, reflections,
+  fog, light shafts, etc (start with the [template](Unity/DX11) instead).
 
 ### extract_stereo_settings.py ###
 Short python script to extract the table of Stereo settings from the nVidia
@@ -157,6 +159,22 @@ scaling and projection in 3D to help me understand the maths behind them.
 ### extract_unity_shaders.py ###
 Python script to parse the compiled output of Unity shaders and pull out all
 the different variants into separate files, with headers intact.
+
+### extract_unity53_shaders.py ###
+Variant of the above for Unity 5.3 and later.
+
+### extract_unreal_shaders.py ###
+This script has been abandoned due to considerable complications in the Unreal
+file formats. It can extract shader names from the Arkham Knight cooked shader
+cache, but probably won't do anything useful in any other game. Consider using
+the generic_shader_extractor.py script instead.
+
+### generic_shader_extractor.py ###
+This script can extract DX11 shaders from many games. It is known to work with
+all UE4 games, but not Unity or CryEngine games, and may or may not work with
+other games. It will not extract any additional metadata for the shaders other
+than what 3DMigoto can already extract, but is useful for games that only dump
+shaders on demand / level by level, or games that use GPU specific shaders.
 
 ### ddsinfo.py ###
 Decodes the header on a DDS file and possibly converts it to PNG (conversion
@@ -223,13 +241,6 @@ may patch the wrong floating point value, but has worked remarkably well in
 practice. This script is no longer required as 3DMigoto will now auto repair
 assembly shaders when they are dumped.
 
-### extract_unreal_shaders.py ###
-Early work in progress, probably only works with Arkham Knight for now.
-Extracts shader names from the UE3 cooked shader cache. Eventually want to make
-this extract all shaders from UE3 + UE4 games to facilitate bulk fixing in
-games that only dump shaders on demand and recover some info about shaders with
-missing headers.
-
 ### __profiles__ ###
 A couple of scripts to help catalogue the driver profiles and normalise the
 profile format to make it easier to compare changes between driver versions.
@@ -247,3 +258,33 @@ listed), and the number of simultaneous render targets used with each listed
 shader (a series of consecutive shaders with a consistently high number of
 render targets may indicate the long and uninteresting forward rendering phase
 of the frame).
+
+### photo-gallery ###
+Scripts to statically convert .mpo and .jps files into different viewing
+formats and create a website displaying them, with links to switch methods.
+
+### 3dvisionlive.js ###
+Javascript file to embed 3D photos from 3dvisionlive.com in a web page
+providing links to switch between using the plugin, cross-eyed or distance
+viewing methods, or anaglyph.
+
+### inverse-cs.hlsl ###
+Compute shader that can be injected with 3DMigoto to inverse arbitrary 4x4
+matrices. Uses the parallel nature of the GPU to accelerate the inverse, and
+3DMigoto can usually restrict this to run once per frame to minimise the
+performance impact. Extremely useful for inversing matrices to be passed to
+assembly shaders, where performing an inline inverse is complicated and error
+prone.
+
+### rename2bytecode.sh ###
+Script to rename shaders to use the bytecode hash. Requires a ShaderCache
+folder containing all replaced shaders dumped with their current hashes in
+binary form.
+
+### rename2embedded.sh ###
+As above, but renames the shaders to use the embedded hash.
+
+### update_3dmigoto_symlinks.sh ###
+Updates all 3DMigoto symlinks in the current directory or subdirectories to use
+the latest version of 3DMigoto (which must be extracted in a directory named
+3Dmigoto-x.y.z under 3d-fixes).
