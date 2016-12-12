@@ -101,7 +101,9 @@ def parse_args():
         try:
             import crcmod
         except ImportError:
-            print('Python crcmod is not installed - bytecode hash is unavailable')
+            print('Python crcmod is not installed - bytecode hash is unavailable. Install with:')
+            print('python3 -m ensurepip')
+            print('python3 -m pip install crcmod')
             sys.exit(1)
 
 def main():
