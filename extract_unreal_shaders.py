@@ -4,7 +4,7 @@ from extract_unity_shaders import fnv_3Dmigoto_shader
 from extract_unity_shaders import export_dx11_shader
 from extract_unity_shaders import add_vanity_tag
 from extract_unity_shaders import commentify
-import sys, os, struct, argparse, codecs, hashlib, io
+import sys, os, struct, argparse, codecs, hashlib, io, textwrap
 
 verbosity = 0
 
@@ -1272,11 +1272,30 @@ def parse_args():
 	global verbosity, args
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('files', nargs='+')
+	parser.add_argument('files', nargs='*')
 	parser.add_argument('--verbose', '-v', action='count', default=0)
 	parser.add_argument('--batman', action='store_true')
-	parser.add_argument('--hash', choices=['embedded', '3dmigoto'], required=True) # TODO: bytecode
+	parser.add_argument('--hash', choices=['embedded', '3dmigoto']) # TODO: bytecode
+	parser.add_argument('--acknowledge-this-script-is-abandoned-and-unsupported', action='store_true')
 	args = parser.parse_args()
+
+	if not args.acknowledge_this_script_is_abandoned_and_unsupported:
+		print(textwrap.dedent('''
+			This script has been abandoned due to considerable complications in the Unreal
+			file formats. It can extract shader names from the Arkham Knight cooked shader
+			cache, but probably won't do anything useful in any other game. Consider using
+			the generic_shader_extractor.py script instead.
+
+			To run the script anyway knowing that it is not supported, run again with
+			--acknowledge-this-script-is-abandoned-and-unsupported
+		'''))
+		sys.exit(1)
+
+	if not args.files:
+		parser.error('no files specified')
+
+	if args.hash is None:
+		parser.error('--hash is required')
 
 	verbosity = args.verbose
 
