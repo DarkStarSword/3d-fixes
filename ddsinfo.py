@@ -861,8 +861,17 @@ def main():
 	if not args.single_process and Image is not None and not args.no_convert:
 		pool = multiprocessing.Pool()
 
-	print_line = False
+	# Windows command prompt passes us a literal *, so expand any that we were passed:
+	import glob
+	files = []
 	for file in args.files:
+		if '*' in file:
+			files.extend(glob.glob(file))
+		else:
+			files.append(file)
+
+	print_line = False
+	for file in files:
 		print_line = print_line and print('\n' + '-'*79 + '\n') or True
 		print(file + ':')
 		fp = open(file, 'rb')
