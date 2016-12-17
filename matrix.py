@@ -127,6 +127,21 @@ def nv_equiv_multiplier_inv(near, far, sep, conv):
         [ -sep + (sep*conv)/near, 0, 0, 1 ]
     ])
 
+def find_near_far(m):
+    '''
+    Find the near and far clipping planes from a projection matrix, or a
+    composite matrix containing a projection matrix.
+    '''
+    near_origin = [0, 0, 0, 1] * m.I
+    near_origin = near_origin / near_origin[0,3]
+    near = (near_origin * m)[0,3]
+
+    far_origin = [0, 0, 1, 1] * m.I
+    far_origin = far_origin / far_origin[0,3]
+    far = (far_origin * m)[0,3]
+
+    return (near, far)
+
 def fov_w(matrix):
     return degrees(2 * atan(1/matrix[0, 0]))
 
