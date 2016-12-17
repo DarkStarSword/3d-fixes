@@ -706,7 +706,13 @@ def _convert(src_filename, pos, header, dest_filename, np_dtype, img_type, conve
 	if isinstance(buf, Image.Image):
 		image = buf
 	elif img_type == 'RGB':
-		image = Image.fromstring(img_type, (header.width, header.height), buf.tostring(), 'raw', img_type, 0, 1)
+		try:
+			image = Image.fromstring(img_type, (header.width, header.height), buf.tostring(), 'raw', img_type, 0, 1)
+		except NotImplementedError:
+			# Newer version of Pillow
+			# TODO: Test this & see if it works on old versions so
+			# we can drop fromstring()
+			image = Image.frombytes(img_type, (header.width, header.height), buf.tostring(), 'raw', img_type, 0, 1)
 	else:
 		image = Image.frombuffer(img_type, (header.width, header.height), buf.data, 'raw', img_type, 0, 1)
 
