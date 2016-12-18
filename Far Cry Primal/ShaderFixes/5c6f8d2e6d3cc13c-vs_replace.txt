@@ -58,7 +58,10 @@ cbuffer CSceneGeometryParameterProvider : register(b2)
   float4 NormalizedXYBBox : packoffset(c1);
 }
 
-
+cbuffer modified_ViewRotProjectionMatrix : register(b13)
+{
+    float4x4 modified_ViewRotProjectionMatrix[2];
+}
 
 // 3Dmigoto declarations
 #define cmp -
@@ -118,10 +121,22 @@ void main(
   r1.xyz = r1.xyz * WorldSpaceZOffset + r2.xyz;
   r2.xyz = -CameraPosition.xyz + r1.xyz;
   r2.w = 1;
-  o0.x = dot(r2.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
-  o0.y = dot(r2.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
-  o0.z = dot(r2.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
-  o0.w = dot(r2.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+
+// Replace this:
+//  o0.x = dot(r2.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+//  o0.y = dot(r2.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+//  o0.z = dot(r2.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
+//  o0.w = dot(r2.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+
+// With this:
+float4 s = StereoParams.Load(0);
+matrix meye = modified_ViewRotProjectionMatrix[s.z == 1.0];
+o0 = mul(r2, meye);
+
+// Remove driver correction since we injected our own into the
+// ViewRotProjection matrix:
+o0.x -= s.x * (o0.w - s.y);
+
   r1.w = 1;
   o1.x = dot(UserClipPlane.xyzw, r1.xyzw);
   o4.xyz = r1.xyz;
