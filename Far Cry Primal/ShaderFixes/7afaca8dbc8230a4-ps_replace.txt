@@ -110,6 +110,10 @@ Texture2DArray<float4> ShadowCmpSampler_TextureObject : register(t1);
 Texture2D<uint4> SectorAtlasTexture_UINT_TextureObject : register(t2);
 Texture2D<float4> CloudShadowTexture : register(t3);
 
+cbuffer modified_InvViewRotProjectionMatrix : register(b13)
+{
+    float4x4 modified_InvViewRotProjectionMatrix[2];
+}
 
 // 3Dmigoto declarations
 #define cmp -
@@ -137,10 +141,20 @@ void main(
   r0.z = -r0.x * CameraDistances.w + 1;
   r0.xy = v1.xy * float2(2,-2) + float2(-1,1);
   r0.w = 1;
-  r1.x = dot(r0.xyzw, InvViewRotProjectionMatrix._m00_m10_m20_m30);
-  r1.y = dot(r0.xyzw, InvViewRotProjectionMatrix._m01_m11_m21_m31);
-  r1.z = dot(r0.xyzw, InvViewRotProjectionMatrix._m02_m12_m22_m32);
-  r0.x = dot(r0.xyzw, InvViewRotProjectionMatrix._m03_m13_m23_m33);
+
+// Replace the original matrix:
+  //r1.x = dot(r0.xyzw, InvViewRotProjectionMatrix._m00_m10_m20_m30);
+  //r1.y = dot(r0.xyzw, InvViewRotProjectionMatrix._m01_m11_m21_m31);
+  //r1.z = dot(r0.xyzw, InvViewRotProjectionMatrix._m02_m12_m22_m32);
+  //r0.x = dot(r0.xyzw, InvViewRotProjectionMatrix._m03_m13_m23_m33);
+
+// With this:
+float4 s = StereoParams.Load(0);
+matrix meye = modified_InvViewRotProjectionMatrix[s.z == 1.0];
+float4 tmp = mul(r0, meye);
+r1.xyz = tmp.xyz;
+r0.x = tmp.w;
+
   r0.xyz = r1.xyz / r0.xxx;
   r1.xyz = CameraPosition.xyz + r0.xyz;
   r2.xyz = -PlayerPosition.xyz + r1.xyz;
