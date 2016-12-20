@@ -288,3 +288,9 @@ As above, but renames the shaders to use the embedded hash.
 Updates all 3DMigoto symlinks in the current directory or subdirectories to use
 the latest version of 3DMigoto (which must be extracted in a directory named
 3Dmigoto-x.y.z under 3d-fixes).
+
+### custom_shader_cb_live_view ###
+This directory contains a custom shader, font and the corresponding d3dx.ini
+sections to interpret a constant buffer as floating point values and show them
+live while in game. This is done entirely on the GPU and uses a geometry shader
+to generate the text.
