@@ -21,3 +21,4 @@ known working driver:
 - 376.09 (Mon Nov 28, 2016): Broken
 - 376.19 (Mon Dec 05, 2016): Untested, presumed broken
 - 376.33 (Wed Dec 14, 2016): Broken
+- 376.48 (Wed Dec 21, 2016): Broken
