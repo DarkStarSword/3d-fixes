@@ -1,4 +1,4 @@
-// Spot lights from helmet in dark areas
+// Spot lights from helmet in dark areas with specular highlight on shiny surfaces
 
 // ---- Created with 3Dmigoto v1.2.51 on Sat Dec 24 04:12:43 2016
 Texture2D<uint4> t8 : register(t8);
@@ -104,6 +104,10 @@ r0.x -= s.x * (r2.z - s.y);
     r4.xyzw = cb0[43].xyzw + r4.xyzw;
     r4.xyz = r4.xyz / r4.www;
     r5.xyz = -cb0[53].xyz + r4.xyz;
+
+// Fix specular highlight depth:
+r5.xyz -= mul(float4(s.x * s.y, 0, 0, 0), MATRIX(cb0, 40)).xyz;
+
     r0.x = dot(r5.xyz, r5.xyz);
     r0.x = rsqrt(r0.x);
     r5.xyz = r5.xyz * r0.xxx;
