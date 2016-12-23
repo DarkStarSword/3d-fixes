@@ -1,3 +1,5 @@
+// DeferredLightPixelShaders.usf (most noticeable looking at the grass at the surface immediately after the shark encounter)
+
 // ---- Created with 3Dmigoto v1.2.42 on Sat Oct 01 18:32:02 2016
 Texture2D<uint4> t14 : register(t14);
 
@@ -77,6 +79,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : TEXCOORD0,
@@ -108,9 +111,12 @@ void main(
     r3.xyz = t6.SampleLevel(s2_s, v0.xy, 0).xyz;
     r4.xyzw = t8.SampleLevel(s4_s, v0.xy, 0).xyzw;
     r5.xyzw = t9.SampleLevel(s5_s, v0.xy, 0).xyzw;
+
+// Depth:
     r1.z = t10.SampleLevel(s6_s, v0.xy, 0).x;
     r1.z = r1.z * cb0[51].z + -cb0[51].w;
     r1.z = 1 / r1.z;
+
     r1.w = (uint)cb1[32].x;
     r1.x = (int)r1.x + (int)r1.y;
     r1.x = (int)r1.x + (int)r1.w;
@@ -133,6 +139,11 @@ void main(
     r4.xyz = r4.xyz * cb1[5].www + cb1[5].xyz;
     r8.xyz = r8.xyz * cb1[6].www + cb1[6].xyz;
     r9.xyz = v1.xyz * r1.zzz;
+
+// Correct the lighting in the distance using the ClipToTranslatedWorld matrix:
+float4 s = StereoParams.Load(0);
+r9.xyz -= mul(float4(s.x * (r1.z - s.y), 0, 0, 0), MATRIX(cb0, 32));
+
     r10.xyz = t5.SampleLevel(s1_s, v0.xy, 0).xyz;
     r11.xyzw = t11.SampleLevel(s7_s, v0.xy, 0).xyzw;
     r12.xyzw = r11.xyzw * r11.xyzw;
@@ -806,11 +817,15 @@ void main(
     r0.w = t4.Sample(s1_s, v0.xy).x;
     r0.w = cmp(r0.w == 0.000000);
     if (r0.w != 0) {
+
+// This is TranslatedWorldToClip, but it is only using three components which
+// is slightly throwing out any adjustments we add after it:
       r1.xyw = cb0[1].xyw * r9.yyy;
       r1.xyw = r9.xxx * cb0[0].xyw + r1.xyw;
       r1.xyw = r9.zzz * cb0[2].xyw + r1.xyw;
       r1.xyw = cb0[3].xyw + r1.xyw;
       r2.xy = r1.xy / r1.ww;
+
       r0.w = dot(r9.xyz, r9.xyz);
       r0.w = sqrt(r0.w);
       r0.w = saturate(cb2[10].z * r0.w);
