@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.2.42 on Mon Dec 12 10:31:48 2016
+// PostProcessTemporalAA.usf, only enabled for later part of the game, but causes judder and breaks grass
+
+// ---- Created with 3Dmigoto v1.2.51 on Sat Dec 24 08:45:11 2016
 Texture2D<float4> t3 : register(t3);
 
 Texture2D<float4> t2 : register(t2);
@@ -51,13 +53,20 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+// Partially kill temporal AA. Fixes grass, but judder remains - in fact, this
+// causes judder in 2D as well :(
+//o0 = t1.SampleLevel(s1_s, v0.xy, 0, int2(0, 1)).xyzw;
+//return;
+
   r0.z = -2;
   r1.z = 2;
+// SceneDepthTexture nearby pixels
   r0.x = t0.SampleLevel(s0_s, v0.xy, 0, int2(-2, -2)).x;
   r0.w = t0.SampleLevel(s0_s, v0.xy, 0, int2(2, -2)).x;
   r1.x = cmp(r0.w < r0.x);
   r0.x = max(r0.x, r0.w);
   r0.y = r1.x ? -2 : 2;
+// SceneDepthTexture nearby pixels
   r0.w = t0.SampleLevel(s0_s, v0.xy, 0, int2(-2, 2)).x;
   r1.x = t0.SampleLevel(s0_s, v0.xy, 0, int2(2, 2)).x;
   r1.w = cmp(r1.x < r0.w);
@@ -68,17 +77,26 @@ void main(
   r0.xy = r1.xx ? r0.yz : r1.yz;
   r2.yz = cb0[1].zw * r0.xy;
   r0.yz = float2(0,0);
+// SceneDepthTexture for this pixel
   r0.x = t0.SampleLevel(s0_s, v0.xy, 0).x;
   r0.w = cmp(r0.x < r2.x);
   r0.xyz = r0.www ? r2.xyz : r0.xyz;
   r0.yz = v0.xy + r0.yz;
+
+// VelocityN:
   r0.yz = t3.SampleLevel(s3_s, r0.yz, 0).xy;
+
+// Kill VelocityN to get rid of judder:
+r0.yz = 0;
+
   r0.w = cmp(0 < r0.y);
   r0.yz = r0.yz * float2(4.00801611,4.00801611) + float2(-2.00397754,-2.00397754);
   r1.xy = -cb2[1].xy + v4.xy;
   r1.xy = r1.xy * cb2[2].zw + float2(-0.5,-0.5);
   r1.xy = v4.ww * r1.xy;
   r1.zw = float2(2,-2) * r1.xy;
+
+// ClipToPrevClip:
   r2.xyz = cb1[109].xyw * r1.www;
   r2.xyz = r1.zzz * cb1[108].xyw + r2.xyz;
   r1.zw = cb0[15].zw * float2(2,2) + abs(r1.zw);
