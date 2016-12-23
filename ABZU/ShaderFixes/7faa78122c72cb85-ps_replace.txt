@@ -109,6 +109,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : TEXCOORD0,
@@ -155,6 +156,10 @@ r0.x -= s.x * (r2.z - s.y);
     r4.xyzw = cb0[43].xyzw + r4.xyzw;
     r4.xyz = r4.xyz / r4.www;
     r5.xyz = -cb0[53].xyz + r4.xyz;
+
+// Specular:
+r5.xyz -= mul(float4(s.x * s.y, 0, 0, 0), MATRIX(cb0, 40)).xyz;
+
     r0.x = dot(r5.xyz, r5.xyz);
     r0.x = rsqrt(r0.x);
     r5.xyz = r5.xyz * r0.xxx;
