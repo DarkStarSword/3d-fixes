@@ -105,12 +105,13 @@ void main(
   r3.xyz = r3.xyz / r3.www;
 
 // Fix grain depth:
+// Common SVPositionToTranslatedWorld fix:
 float4 s = StereoParams.Load(0);
-matrix m = MATRIX(cb1, 36);
-matrix im = inverse(m);
-float4 t = mul(float4(r3.xyz, 1), im);
-t.x -= s.x * (t.w - s.y) * cb2[3].x/2;
-r3.xyz = mul(t, m);
+matrix TranslatedWorldToClip = MATRIX(cb1, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb1, 32);
+float4 t = mul(r3.xyz, TranslatedWorldToClip);
+t.x -= s.x * (t.w - s.y);
+r3.xyz = mul(t, ClipToTranslatedWorld);
 
   r4.xyz = -cb1[56].xyz + r3.xyz;
   r1.w = dot(r3.xyz, r3.xyz);
