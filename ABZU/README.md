@@ -7,7 +7,7 @@ Press \ to activate the recommended convergence preset.
 
 
 SLI Notes
-=========
+---------
 SLI + 3D Vision is broken in this game in recent drivers. The surface of the
 water is badly corrupted and plants at the surface are desynchronised between
 both eyes. Either disable SLI through the control panel, or downgrade to a
@@ -24,7 +24,10 @@ known working driver:
 - 376.48 (Wed Dec 21, 2016): Broken
 
 Known Issues
-============
-While I was playing I came across a surface that was shiny and flickering like
-crazy - I believe that the shader had been replaced by an unrelated one. This
-was a glitch and cleared up after a restart.
+------------
+- If you see a massively broken effect (like a flickering surface, extremely
+  bright lights, an inexplicable colour filter, etc) it might just be a glitch
+  - try restarting the game before reporting any issues.
+- About half way through the game it suddenly enables temporal anti-aliasing
+  for no apparent reason, which has issues in 3D. I've fixed all the worst
+  problems this causes, but it still exhibits some judder in some areas.
