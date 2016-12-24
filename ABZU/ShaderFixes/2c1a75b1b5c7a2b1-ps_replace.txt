@@ -1,3 +1,7 @@
+// RISKY! Already fixed, but has environment reflection component - new fix may break old!
+// Reflection found in a hidden area near the algae water temple - walk on land
+// through the waterfall off to the side.
+
 // ---- Created with 3Dmigoto v1.2.44 on Mon Oct 03 03:21:54 2016
 TextureCube<float4> t7 : register(t7);
 
@@ -98,7 +102,14 @@ float4 s = StereoParams.Load(0);
 matrix m = MATRIX(cb1, 36);
 matrix im = inverse(m);
 float4 t = mul(float4(r2.xyz, 1), im);
-t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+
+//t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+
+// This alternate adjustment moves environment reflections to infinity, but
+// may break the regular fix - need to go back and check if other uses of this
+// shader are ok, or find a way to fix the reflection separately.
+t.x -= s.x * t.w * cb2[3].x / 2;
+
 r2.xyz = mul(t, m);
 
   r0.w = dot(r2.xyz, r2.xyz);
@@ -147,7 +158,13 @@ r2.xyz = mul(t, m);
   r4.xyz = t3.Sample(s5_s, r4.xy).xyz;
   r5.z = 0;
   r3.xyz = r5.xyz + r3.xyz;
+
+// Environment reflection:
   r3.xyz = t7.Sample(s5_s, r3.xyz).xyz;
+//o0 = 1;
+//o0.xyz = r3.xyz;
+//return;
+
   r3.xyz = r0.www * r4.xyz + r3.xyz;
   r3.xyz = cb4[6].zzz * r3.xyz;
   r4.xy = t4.Sample(s2_s, v2.xy).xw;
