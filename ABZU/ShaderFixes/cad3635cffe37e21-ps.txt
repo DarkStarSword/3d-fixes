@@ -53,9 +53,10 @@ dcl_resource_texture2d (uint,uint,uint,uint) t14
 dcl_input_ps linear v0.xy
 dcl_input_ps linear v1.xyz
 dcl_output o0.xyzw
-dcl_temps 22
+dcl_temps 23
 dcl_resource_texture2d (float,float,float,float) t125
 ld_indexable(texture2d)(float,float,float,float) r19.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 
 sample_l_indexable(texture2d)(float,float,float,float) r0.xyzw, v0.xyxx, t7.xyzw, s3, l(0.000000)
 mul r1.xy, v0.xyxx, cb1[3].xyxx
@@ -71,9 +72,20 @@ and r1.z, r1.z, cb3[6].y
 ine r1.z, r1.z, l(0)
 and r1.z, r1.z, r2.y
 if_nz r1.z
-  dp3 r1.z, v1.xyzx, v1.xyzx
+
+// This variation of DeferredLightPixelShaders.usf uses:
+// float3 CameraVector = normalize(ScreenVector);
+// where ScreenVector is TEXCOORD1
+// So, to fix specularity we adjust ScreenVector here by adding separation in
+// world coordinates:
+mov r22.xyz, v1.xyz
+mul r20.xyzw, r19.xxxx, cb0[40].xyzw
+add r22.xyz, r22.xyz, -r20.xyz
+
+  dp3 r1.z, r22.xyzx, r22.xyzx
   rsq r1.z, r1.z
-  mul r2.yzw, r1.zzzz, v1.xxyz
+  mul r2.yzw, r1.zzzz, r22.xxyz
+
   sample_l_indexable(texture2d)(float,float,float,float) r3.xyz, v0.xyxx, t6.xyzw, s2, l(0.000000)
   sample_l_indexable(texture2d)(float,float,float,float) r4.xyzw, v0.xyxx, t8.xyzw, s4, l(0.000000)
   sample_l_indexable(texture2d)(float,float,float,float) r5.xyzw, v0.xyxx, t9.xyzw, s5, l(0.000000)
