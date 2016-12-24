@@ -1,3 +1,6 @@
+// Water surface - odd curved clipping near edges (visible in some parts of the algae temple)
+
+
 // ---- Created with 3Dmigoto v1.2.42 on Mon Dec 12 08:31:09 2016
 Texture2D<float4> t0 : register(t0);
 
@@ -21,6 +24,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : TEXCOORD10,
@@ -37,18 +41,48 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+float4 s = StereoParams.Load(0);
+matrix TranslatedWorldToClip = MATRIX(cb0, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb0, 32);
+matrix SVPositionToTranslatedWorld = MATRIX(cb0, 36);
+float4 t;
+
+// This particular shader only used 3x4 of the SVPositionToTranslatedWorld matrix:
   r0.xyz = cb0[37].xyw * v3.yyy;
   r0.xyz = v3.xxx * cb0[36].xyw + r0.xyz;
   r0.xyz = v3.zzz * cb0[38].xyw + r0.xyz;
   r0.xyz = cb0[39].xyw + r0.xyz;
   r0.xy = r0.xy / r0.zz;
+
+// We can't use that to find the depth, so redo it with the full matrix:
+  t = mul(float4(v3.xyz, 1), SVPositionToTranslatedWorld);
+  t /= t.w;
+
+// And now we could use the common pattern, but in this case we don't have
+// access to the constant buffer with the render size, so rather than doing any
+// heroics to get it, let's be smart now that we know what the above matrix is
+// the SVPositionToTranslatedWorld matrix (from matching the constant buffer in
+// the UE4 source code), and use TranslatedWorldToClip and
+// ClipToTranslatedWorld instead, which don't do the resolution divide so we
+// don't need to know the resolution. This also saves us from having to do the
+// matrix inverse, so it's a win-win.
+t = mul(t, TranslatedWorldToClip);
+t.x -= s.x * (t.w - s.y);
+r0.xyz = mul(t, ClipToTranslatedWorld);
+
   r0.xy = -cb0[56].xy + r0.xy;
   r0.xy = -cb1[12].xy + r0.xy;
   r0.xy = r0.xy / cb1[13].xy;
   r0.x = t0.Sample(s0_s, r0.xy).x;
   r0.x = -0.5 + r0.x;
   r0.x = cmp(r0.x < 0);
+
+// Alternatively, we could have disabled the discard instruction to remove the
+// clipping. Simpler, but I judged it riskier since I'm only fixing this late
+// in the game and it would take time to double check this didn't cause any
+// glitches like water poking through a wall. Probably would have been fine.
   if (r0.x != 0) discard;
+
   o0.xyzw = float4(0,0,0,0);
   o1.xyzw = float4(0,0,0,0);
   o2.xyzw = float4(0,0,0,0);
