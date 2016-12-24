@@ -40,6 +40,8 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
+
 void main( 
   linear noperspective float4 v0 : TEXCOORD0,
   linear noperspective float4 v1 : TEXCOORD1,
@@ -93,14 +95,29 @@ r0.y -= s.x * (depth - s.y) / depth / 4;
   r1.zw = float2(2,-2) * r1.xy;
 
 // ClipToPrevClip:
-  r2.xyz = cb1[109].xyw * r1.www;
-  r2.xyz = r1.zzz * cb1[108].xyw + r2.xyz;
+  // r2.xyz = cb1[109].xyw * r1.www;
+  // r2.xyz = r1.zzz * cb1[108].xyw + r2.xyz;
+  // r2.xyz = r0.xxx * cb1[110].xyw + r2.xyz;
+  // r2.xyz = cb1[111].xyw + r2.xyz;
+
+// This fixes the opacity of the particles to match in both eyes. Difficult to
+// tell if this is accurate or not as it is quite subtle on anything else, but
+// there seem to be *far more* particles visible with this, so probably not
+// accurate.
+
+float4 ThisClip = float4(r1.zw, r0.x, 1);
+ThisClip.x -= s.x * (depth - s.y) / depth;
+float4 PrevClip = mul(ThisClip, MATRIX(cb1, 108));
+PrevClip.x += s.x * (PrevClip.w - s.y);
+r2.xyz = PrevClip.xyw;
+
   r1.zw = cb0[15].zw * float2(2,2) + abs(r1.zw);
   r1.z = max(r1.z, r1.w);
   r1.z = cmp(r1.z >= 1);
-  r2.xyz = r0.xxx * cb1[110].xyw + r2.xyz;
-  r2.xyz = cb1[111].xyw + r2.xyz;
+
+// PrevScreen:
   r2.xy = r2.xy / r2.zz;
+
   r2.xy = r1.xy * float2(2,-2) + -r2.xy;
   r0.xy = r0.ww ? r0.yz : r2.xy;
   r0.xy = r1.xy * float2(2,-2) + -r0.xy;
