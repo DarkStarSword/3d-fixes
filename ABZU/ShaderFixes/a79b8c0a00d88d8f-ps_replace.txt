@@ -116,12 +116,13 @@ void main(
   r2.xyzw = cb0[39].xyzw + r2.xyzw;
   r2.xyz = r2.xyz / r2.www;
 
+// Common SVPositionToTranslatedWorld fix:
 float4 s = StereoParams.Load(0);
-matrix m = MATRIX(cb0, 36);
-matrix im = inverse(m);
-float4 t = mul(float4(r2.xyz, 1), im);
-t.x -= s.x * (t.w - s.y) * cb1[3].x / 2;
-r2.xyz = mul(t, m);
+matrix TranslatedWorldToClip = MATRIX(cb0, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb0, 32);
+float4 t = mul(r2.xyz, TranslatedWorldToClip);
+t.x -= s.x * (t.w - s.y);
+r2.xyz = mul(t, ClipToTranslatedWorld);
 
   r2.xyz = -cb0[56].xyz + r2.xyz;
   r3.xyz = -cb2[8].xyz + r2.xyz;

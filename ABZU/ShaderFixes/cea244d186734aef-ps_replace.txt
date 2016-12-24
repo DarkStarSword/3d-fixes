@@ -112,12 +112,13 @@ void main(
   r1.xyz = r1.xyz / r1.www;
 
 // Fix depth of transition from opaque to transparent in Ocean surface from below:
+// Common SVPositionToTranslatedWorld fix:
 float4 s = StereoParams.Load(0);
-matrix m = MATRIX(cb1, 36);
-matrix im = inverse(m);
-float4 t = mul(float4(r1.xyz, 1), im);
-t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
-r1.xyz = mul(t, m);
+matrix TranslatedWorldToClip = MATRIX(cb1, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb1, 32);
+float4 t = mul(r1.xyz, TranslatedWorldToClip);
+t.x -= s.x * (t.w - s.y);
+r1.xyz = mul(t, ClipToTranslatedWorld);
 
   r2.xyz = -cb1[56].xyz + r1.xyz;
   r3.xy = -cb1[56].xy + v2.xy;
