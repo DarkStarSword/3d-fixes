@@ -40,7 +40,6 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
-
 void main( 
   linear noperspective float4 v0 : TEXCOORD0,
   linear noperspective float4 v1 : TEXCOORD1,
@@ -52,11 +51,6 @@ void main(
   float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9;
   uint4 bitmask, uiDest;
   float4 fDest;
-
-// Partially kill temporal AA. Fixes grass, but judder remains - in fact, this
-// causes judder in 2D as well :(
-//o0 = t1.SampleLevel(s1_s, v0.xy, 0, int2(0, 1)).xyzw;
-//return;
 
   r0.z = -2;
   r1.z = 2;
@@ -86,8 +80,10 @@ void main(
 // VelocityN:
   r0.yz = t3.SampleLevel(s3_s, r0.yz, 0).xy;
 
-// Kill VelocityN to get rid of judder:
-r0.yz = 0;
+// Correct VelocityN to align the blur. Not 100% certain why this is /4:
+float depth = 1 / (r2.x * cb1[51].z + -cb1[51].w);
+float4 s = StereoParams.Load(0);
+r0.y -= s.x * (depth - s.y) / depth / 4;
 
   r0.w = cmp(0 < r0.y);
   r0.yz = r0.yz * float2(4.00801611,4.00801611) + float2(-2.00397754,-2.00397754);
