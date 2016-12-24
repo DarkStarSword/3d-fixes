@@ -1,0 +1,57 @@
+// ---- Created with 3Dmigoto v1.2.42 on Mon Dec 12 08:31:09 2016
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s0_s : register(s0);
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[14];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[57];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : TEXCOORD10,
+  float4 v1 : TEXCOORD11,
+  float3 v2 : TEXCOORD9,
+  float4 v3 : SV_Position0,
+  uint v4 : SV_IsFrontFace0,
+  out float4 o0 : SV_Target0,
+  out float4 o1 : SV_Target1,
+  out float4 o2 : SV_Target2,
+  out float4 o3 : SV_Target3)
+{
+  float4 r0;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = cb0[37].xyw * v3.yyy;
+  r0.xyz = v3.xxx * cb0[36].xyw + r0.xyz;
+  r0.xyz = v3.zzz * cb0[38].xyw + r0.xyz;
+  r0.xyz = cb0[39].xyw + r0.xyz;
+  r0.xy = r0.xy / r0.zz;
+  r0.xy = -cb0[56].xy + r0.xy;
+  r0.xy = -cb1[12].xy + r0.xy;
+  r0.xy = r0.xy / cb1[13].xy;
+  r0.x = t0.Sample(s0_s, r0.xy).x;
+  r0.x = -0.5 + r0.x;
+  r0.x = cmp(r0.x < 0);
+  if (r0.x != 0) discard;
+  o0.xyzw = float4(0,0,0,0);
+  o1.xyzw = float4(0,0,0,0);
+  o2.xyzw = float4(0,0,0,0);
+  o3.xyzw = float4(0,0,0,0);
+  return;
+}
