@@ -92,11 +92,12 @@ r0.yzw = mul(t, m).yzx;
   r1.xyz = r1.xyz / r1.www;
 
 // Fixes some ambient lighting
-m = MATRIX(cb1, 36);
-im = inverse(m);
-t = mul(float4(r1.xyz, 1), im);
-t.x -= s.x * (t.w - s.y) * cb2[3].x/2;
-r1.xyz = mul(t, m);
+// Common SVPositionToTranslatedWorld fix:
+matrix TranslatedWorldToClip = MATRIX(cb1, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb1, 32);
+t = mul(r1.xyz, TranslatedWorldToClip);
+t.x -= s.x * (t.w - s.y);
+r1.xyz = mul(t, ClipToTranslatedWorld);
 
   r1.xyz = -cb1[56].xyz + r1.xyz;
   r2.xyz = cb1[53].xyz + -r1.xyz;
