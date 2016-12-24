@@ -99,18 +99,19 @@ void main(
   r2.xyz = r2.xyz / r2.www;
 
 float4 s = StereoParams.Load(0);
-matrix m = MATRIX(cb1, 36);
-matrix im = inverse(m);
-float4 t = mul(float4(r2.xyz, 1), im);
+matrix TranslatedWorldToClip = MATRIX(cb1, 0);
+matrix ClipToTranslatedWorld = MATRIX(cb1, 32);
 
-//t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+float4 t = mul(float4(r2.xyz, 1), TranslatedWorldToClip);
+
+//t.x -= s.x * (t.w - s.y);
 
 // This alternate adjustment moves environment reflections to infinity, but
 // may break the regular fix - need to go back and check if other uses of this
 // shader are ok, or find a way to fix the reflection separately.
-t.x -= s.x * t.w * cb2[3].x / 2;
+t.x -= s.x * t.w;
 
-r2.xyz = mul(t, m);
+r2.xyz = mul(t, ClipToTranslatedWorld);
 
   r0.w = dot(r2.xyz, r2.xyz);
   r0.w = sqrt(r0.w);
