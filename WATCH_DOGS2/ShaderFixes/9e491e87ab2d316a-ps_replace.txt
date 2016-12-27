@@ -1,0 +1,440 @@
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 9e491e87ab2d316a-ps_replace.txt
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:54:14 2016
+
+cbuffer Viewport : register(b0)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+cbuffer SkyBuffer : register(b1)
+{
+
+  struct
+  {
+    float4 m_lightIrradiance;
+    float4 m_lightIrradianceWithoutCloudsCoverage;
+    float4 m_lightDirection;
+    float4 m_cloudLightVector;
+    float4 m_cloudIrradiance;
+    float4 m_environmentIrradianceSHRed;
+    float4 m_environmentIrradianceSHGreen;
+    float4 m_environmentIrradianceSHBlue;
+    float4 m_environmentIrradianceAverage;
+    float4 m_giDefaultProbeIrradiance[3];
+    float4 m_giDefaultProbeTint[3];
+    float4 m_giDirectEnvironmentIrradiance[3];
+    float4 m_giBouncedEnvironmentIrradiance[4];
+    float4 m_cloudAndSkyIrradianceSH[9];
+    float4 m_skyOnlyIrradianceSH[9];
+  } SkyLightStruct : packoffset(c0);
+
+}
+
+cbuffer LightProbes : register(b2)
+{
+  float4x4 InvLocalToWorldMatrixWithoutFeatherMargin : packoffset(c0);
+  float4x4 LocalToWorldMatrixWithFeatherMargin : packoffset(c4);
+  float4x4 LocalToWorldMatrixWithoutFeatherMargin : packoffset(c8);
+
+  struct
+  {
+    float4x4 WorldToLocalMatrix;
+    float3 Resolution;
+    float OneOverZDistributionPower;
+    float MaxLinearSliceIndex;
+    float LinearGridResCutoff;
+  } VoxelPositioning : packoffset(c12);
+
+  float3 RcpFeatherWidthsInBasicUVWSpace : packoffset(c18);
+  bool AreSkyHorizonAnglesValid : packoffset(c18.w);
+  float3 VolumeCentre : packoffset(c19);
+  float3 VolumeDimensions : packoffset(c20);
+  float3 VolumeDimensionsWithFeatherMargin : packoffset(c21);
+  float2 ProbeInterpolationPower_rcp : packoffset(c22);
+}
+
+cbuffer LightProbesGlobal : register(b3)
+{
+  float4 MinAmbient : packoffset(c0);
+  float4x4 ViewProjectionMatrixWithZBias : packoffset(c1);
+  float4 WorldEdgeFadeParams : packoffset(c5);
+  float2 LightProbesGlobal_GIGenerationSunInterlacePixelsXY : packoffset(c6);
+  float DrawDistance : packoffset(c6.z);
+}
+
+SamplerState ColorClamp_s : register(s0);
+Texture2D<float4> Viewport__DepthVPSampler__TexObj__ : register(t0);
+Texture2D<float4> Viewport__GBufferNormalTexture__TexObj__ : register(t1);
+Texture2D<float4> Viewport__GBufferParamsTexture__TexObj__ : register(t2);
+Texture2D<float4> LightProbes__FloorCeilingTexture__TexObj__ : register(t3);
+Texture3D<float4> LightProbes__VolumeTextureB__TexObj__ : register(t4);
+Texture3D<float4> LightProbes__VolumeTextureG__TexObj__ : register(t5);
+Texture3D<float4> LightProbes__VolumeTextureR__TexObj__ : register(t6);
+Texture3D<float4> LightProbes__VolumeTextureSkyVisibility0__TexObj__ : register(t7);
+Texture3D<float4> LightProbes__VolumeTextureSkyVisibility1__TexObj__ : register(t8);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : SV_Position0,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+// WATCH_DOGS2 unprojection fix inserted by DarkStarSword's hlsltool.py:
+// hlsltool.py --fix-wd2-unproject -i --only-autofixed --fxc /home/dss/fxc.exe 9e491e87ab2d316a-ps_replace.txt
+
+  r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
+  r1.xy = (int2)v0.xy;
+  r1.zw = float2(0,0);
+  r0.z = Viewport__DepthVPSampler__TexObj__.Load(r1.xyw).x;
+  r0.w = 1;
+  r2.x = dot(r0.zw, InvProjectionMatrix._m22_m32);
+  r0.z = dot(r0.zw, InvProjectionMatrix._m23_m33);
+  r0.z = -r2.x / r0.z;
+  r2.z = -r0.z;
+  r2.xy = r2.zz * r0.xy;
+
+// Fix lights, note depth is negative (or could have used r0.z):
+float4 s = StereoParams.Load(0);
+r2.x -= s.x * (-r2.z - s.y) * InvProjectionMatrix._m00;
+
+  r2.w = 1;
+  r0.x = dot(r2.xyzw, InvViewMatrix._m00_m10_m20_m30);
+  r0.y = dot(r2.xyzw, InvViewMatrix._m01_m11_m21_m31);
+  r0.z = dot(r2.xyzw, InvViewMatrix._m02_m12_m22_m32);
+  r0.w = 1;
+  r2.x = dot(r0.xyzw, VoxelPositioning.WorldToLocalMatrix._m00_m10_m20_m30);
+  r2.y = dot(r0.xyzw, VoxelPositioning.WorldToLocalMatrix._m01_m11_m21_m31);
+  r0.w = saturate(dot(r0.xyzw, VoxelPositioning.WorldToLocalMatrix._m02_m12_m22_m32));
+  r3.xyzw = float4(0.5,0.5,0.5,0.5) + r2.xyxy;
+  r4.xyzw = Viewport__GBufferNormalTexture__TexObj__.Load(r1.xyw).xyzw;
+  r1.xy = Viewport__GBufferParamsTexture__TexObj__.Load(r1.xyz).yw;
+  r1.y = r1.y * 255 + 0.5;
+  r1.y = floor(r1.y);
+  r1.y = (uint)r1.y;
+  r1.y = (uint)r1.y >> 5;
+  r1.z = r4.w * 0.5 + 0.5;
+  r1.z = r1.z * 65535 + 0.5;
+  r1.z = (uint)r1.z;
+  r1.z = (int)r1.z & 255;
+  r1.z = (uint)r1.z;
+  r1.z = 0.00392156886 * r1.z;
+  r1.y = r1.y ? 0 : r1.z;
+  r1.z = AreSkyHorizonAnglesValid ? 0 : 1;
+  r2.xyzw = float4(0.5,0.5,0.5,0.5) + -abs(r2.xyxy);
+  r2.xyzw = saturate(float4(500,500,500,500) * r2.xyzw);
+  r5.xyzw = float4(-1,-1,-1,-1) + VoxelPositioning.Resolution.xyxy;
+  r6.xyzw = float4(1,1,1,1) / r5.xyxy;
+  r6.xyzw = r6.xyzw * r4.xyxy;
+  r2.xyzw = r6.xyzw * r2.xyzw;
+  r2.xyzw = saturate(r2.xyzw * float4(0.300000012,0.300000012,0.899999976,0.899999976) + r3.xyzw);
+  r3.xyzw = r5.zwzw / VoxelPositioning.Resolution.xyxy;
+  r5.xyzw = float4(0.5,0.5,0.200000003,0.600000024) / VoxelPositioning.Resolution.xyzz;
+  r1.w = -1 + VoxelPositioning.Resolution.z;
+  r4.w = cmp(0 < VoxelPositioning.LinearGridResCutoff);
+  r6.x = saturate(r0.w / VoxelPositioning.LinearGridResCutoff);
+  r6.x = VoxelPositioning.MaxLinearSliceIndex * r6.x;
+  r4.w = r4.w ? r6.x : 0;
+  r6.x = cmp(VoxelPositioning.LinearGridResCutoff < 1);
+  r0.w = saturate(-VoxelPositioning.LinearGridResCutoff + r0.w);
+  r6.y = 1 + -VoxelPositioning.LinearGridResCutoff;
+  r0.w = r0.w / r6.y;
+  r0.w = log2(abs(r0.w));
+  r0.w = VoxelPositioning.OneOverZDistributionPower * r0.w;
+  r0.w = exp2(r0.w);
+  r1.w = -VoxelPositioning.MaxLinearSliceIndex + r1.w;
+  r0.w = r1.w * r0.w;
+  r0.w = r6.x ? r0.w : 0;
+  r0.w = r4.w + r0.w;
+  r0.w = r0.w / VoxelPositioning.Resolution.z;
+  r2.xyzw = r2.xyzw * r3.xyzw + r5.xyxy;
+  r3.xy = r4.zz * r5.zw + r0.ww;
+  r0.w = VoxelPositioning.Resolution.z * r3.x;
+  r1.w = floor(r0.w);
+  r1.w = r1.w / VoxelPositioning.Resolution.z;
+  r0.w = ceil(r0.w);
+  r0.w = r0.w / VoxelPositioning.Resolution.z;
+  r3.z = saturate(r2.y);
+  r3.z = r3.z / VoxelPositioning.Resolution.z;
+  r5.y = r3.z + r1.w;
+  r5.x = r2.x;
+  r3.zw = LightProbes__FloorCeilingTexture__TexObj__.SampleLevel(ColorClamp_s, r5.xy, 0).xy;
+  r5.xy = float2(1,1) + -r3.zw;
+  r3.w = r5.y * 0.25 + r3.w;
+  r3.w = min(r5.x, r3.w);
+  r3.z = r3.z / VoxelPositioning.Resolution.z;
+  r3.z = r3.z + r1.w;
+  r3.xy = r3.xy + -r3.zz;
+  r3.xy = VoxelPositioning.Resolution.zz * r3.xy;
+  r3.xy = saturate(r3.xy / r3.ww);
+  r0.w = r0.w + -r1.w;
+  r3.xy = r3.xy * r0.ww + r1.ww;
+  r0.w = 0.5 / VoxelPositioning.Resolution.z;
+  r3.xz = r3.xy + r0.ww;
+  r3.yw = r2.xy;
+  r5.xyzw = LightProbes__VolumeTextureR__TexObj__.SampleLevel(ColorClamp_s, r3.ywx, 0).xyzw;
+  r6.xyzw = LightProbes__VolumeTextureG__TexObj__.SampleLevel(ColorClamp_s, r3.ywx, 0).xyzw;
+  r7.xyzw = LightProbes__VolumeTextureB__TexObj__.SampleLevel(ColorClamp_s, r3.ywx, 0).xyzw;
+  r3.xy = r2.zw;
+  r2.xyzw = LightProbes__VolumeTextureSkyVisibility0__TexObj__.SampleLevel(ColorClamp_s, r3.xyz, 0).xyzw;
+  r5.xyzw = log2(abs(r5.xyzw));
+  r5.xyzw = ProbeInterpolationPower_rcp.xxxx * r5.xyzw;
+  r5.xyzw = exp2(r5.xyzw);
+  r6.xyzw = log2(abs(r6.xyzw));
+  r6.xyzw = ProbeInterpolationPower_rcp.xxxx * r6.xyzw;
+  r6.xyzw = exp2(r6.xyzw);
+  r7.xyzw = log2(abs(r7.xyzw));
+  r7.xyzw = ProbeInterpolationPower_rcp.xxxx * r7.xyzw;
+  r7.xyzw = exp2(r7.xyzw);
+  r0.w = VolumeDimensions.z + VolumeCentre.z;
+  r0.w = r0.w + -r0.z;
+  r0.w = saturate(0.0333333351 * r0.w);
+  r0.w = 1 + -r0.w;
+  r8.xyzw = SkyLightStruct.m_giDefaultProbeIrradiance[0].xyzw + -r5.xyzw;
+  r5.xyzw = r0.wwww * r8.xyzw + r5.xyzw;
+  r8.xyzw = SkyLightStruct.m_giDefaultProbeIrradiance[1].xyzw + -r6.xyzw;
+  r6.xyzw = r0.wwww * r8.xyzw + r6.xyzw;
+  r8.xyzw = SkyLightStruct.m_giDefaultProbeIrradiance[2].xyzw + -r7.xyzw;
+  r7.xyzw = r0.wwww * r8.xyzw + r7.xyzw;
+  r8.xyzw = -r2.xyzw + r1.zzzz;
+  r2.xyzw = r0.wwww * r8.xyzw + r2.xyzw;
+  r8.xyzw = MinAmbient.xxxw * SkyLightStruct.m_giDefaultProbeTint[0].xyzw;
+  r9.xyzw = MinAmbient.yyyw * SkyLightStruct.m_giDefaultProbeTint[1].xyzw;
+  r10.xyzw = MinAmbient.zzzw * SkyLightStruct.m_giDefaultProbeTint[2].xyzw;
+  r5.xyzw = max(r8.xyzw, r5.xyzw);
+  r6.xyzw = max(r9.xyzw, r6.xyzw);
+  r7.xyzw = max(r10.xyzw, r7.xyzw);
+  r8.x = dot(r4.xyz, float3(-0.408248007,-0.707107008,0.577350318));
+  r8.y = dot(r4.xyz, float3(-0.408248007,0.707107008,0.577350318));
+  r8.z = dot(r4.xz, float2(0.816497028,0.577350318));
+  r8.w = -r4.z;
+  r9.xyzw = r8.xyzw * float4(1,1,1,0.666666687) + float4(0,0,0,0.333333343);
+  r9.xyzw = max(float4(0,0,0,0), r9.xyzw);
+  r10.xyz = r9.yyy * r6.xyz;
+  r10.xyz = r9.xxx * r5.xyz + r10.xyz;
+  r10.xyz = r9.zzz * r7.xyz + r10.xyz;
+  r11.x = r5.w;
+  r11.y = r6.w;
+  r11.z = r7.w;
+  r10.xyz = r9.www * r11.xyz + r10.xyz;
+  r1.w = r9.x + r9.y;
+  r1.w = r1.w + r9.z;
+  r1.w = r1.w + r9.w;
+  r9.xyz = r10.xyz / r1.www;
+  r8.xyzw = -r8.xyzw * float4(1,1,1,0.666666687) + float4(0,0,0,0.333333343);
+  r8.xyzw = max(float4(0,0,0,0), r8.xyzw);
+  r6.xyz = r8.yyy * r6.xyz;
+  r5.xyz = r8.xxx * r5.xyz + r6.xyz;
+  r5.xyz = r8.zzz * r7.xyz + r5.xyz;
+  r5.xyz = r8.www * r11.xyz + r5.xyz;
+  r1.w = r8.x + r8.y;
+  r1.w = r1.w + r8.z;
+  r1.w = r1.w + r8.w;
+  r5.xyz = r5.xyz * r1.yyy;
+  r5.xyz = r5.xyz / r1.www;
+  r5.xyz = r9.xyz + r5.xyz;
+  r0.xyz = CameraPosition.xyz + -r0.xyz;
+  r1.y = dot(r0.xyz, r0.xyz);
+  r1.y = rsqrt(r1.y);
+  r0.xyz = r1.yyy * r0.xyz;
+  r1.y = dot(-r0.xyz, r4.xyz);
+  r1.y = r1.y + r1.y;
+  r0.xyz = r4.xyz * -r1.yyy + -r0.xyz;
+  r1.y = dot(r0.xyz, r0.xyz);
+  r1.y = rsqrt(r1.y);
+  r4.xyz = r1.yyy * r0.xyz;
+  if (AreSkyHorizonAnglesValid != 0) {
+    r3.xyzw = LightProbes__VolumeTextureSkyVisibility1__TexObj__.SampleLevel(ColorClamp_s, r3.xyz, 0).xyzw;
+    r6.xyzw = -r3.xyzw + r1.zzzz;
+    r3.xyzw = r0.wwww * r6.xyzw + r3.xyzw;
+    r0.x = dot(r4.xy, r4.xy);
+    r0.x = rsqrt(r0.x);
+    r0.xy = r4.xy * r0.xx;
+    r0.w = dot(r0.xy, float2(0.923879504,0.382683456));
+    r0.w = -0.707106769 + r0.w;
+    r0.w = saturate(3.41421342 * r0.w);
+    r1.z = dot(r0.xy, float2(0.923879564,-0.382683426));
+    r1.z = -0.707106769 + r1.z;
+    r1.z = saturate(3.41421342 * r1.z);
+    r1.w = r1.z + r0.w;
+    r4.w = dot(r0.xy, float2(-0.382683516,0.923879504));
+    r4.w = -0.707106769 + r4.w;
+    r4.w = saturate(3.41421342 * r4.w);
+    r1.w = r4.w + r1.w;
+    r5.w = dot(r0.xy, float2(0.382683426,0.923879504));
+    r5.w = -0.707106769 + r5.w;
+    r5.w = saturate(3.41421342 * r5.w);
+    r1.w = r5.w + r1.w;
+    r6.x = dot(r0.xy, float2(-0.923879504,-0.382683426));
+    r6.x = -0.707106769 + r6.x;
+    r6.x = saturate(3.41421342 * r6.x);
+    r1.w = r6.x + r1.w;
+    r6.y = dot(r0.xy, float2(-0.923879623,0.382683277));
+    r6.y = -0.707106769 + r6.y;
+    r6.y = saturate(3.41421342 * r6.y);
+    r1.w = r6.y + r1.w;
+    r6.z = dot(r0.xy, float2(0.382683605,-0.923879445));
+    r6.z = -0.707106769 + r6.z;
+    r6.z = saturate(3.41421342 * r6.z);
+    r1.w = r6.z + r1.w;
+    r0.x = dot(r0.xy, float2(-0.382683128,-0.923879683));
+    r0.x = -0.707106769 + r0.x;
+    r0.x = saturate(3.41421342 * r0.x);
+    r0.y = r1.w + r0.x;
+    r1.z = r1.z / r0.y;
+    r1.w = r4.w / r0.y;
+    r4.w = r5.w / r0.y;
+    r5.w = r6.x / r0.y;
+    r6.x = r6.y / r0.y;
+    r6.y = r6.z / r0.y;
+    r0.xw = r0.xw / r0.yy;
+    r0.y = r2.y * r1.z;
+    r0.y = r2.x * r0.w + r0.y;
+    r0.y = r2.z * r1.w + r0.y;
+    r0.y = r2.w * r4.w + r0.y;
+    r0.y = r3.x * r5.w + r0.y;
+    r0.y = r3.y * r6.x + r0.y;
+    r0.y = r3.z * r6.y + r0.y;
+    r0.y = r3.w * r0.x + r0.y;
+    r0.w = cmp(0.565599978 >= r1.x);
+    r1.z = -r1.x * 0.0968105793 + 1.0504638;
+    r1.z = r1.z * r1.x + -0.601145864;
+    r1.x = -0.619457066 + r1.x;
+    r1.x = r1.z / r1.x;
+    r0.w = r0.w ? r1.x : 0.705081284;
+    r1.x = -r4.z * r4.z + 1;
+    r1.z = -r0.w * r0.w + 1;
+    r1.xz = sqrt(r1.xz);
+    r1.w = r1.x * r1.z;
+    r3.y = r4.z * r0.w + -r1.w;
+    r6.y = r4.z * r0.w + r1.w;
+    r1.z = r1.z * r4.z;
+    r3.x = r1.x * r0.w + r1.z;
+    r6.x = r1.x * r0.w + -r1.z;
+    r0.w = cmp(r3.x < 0);
+    r1.xz = r0.ww ? float2(0,-1) : r3.xy;
+    r0.w = cmp(r6.x < 0);
+    r3.xy = r0.ww ? float2(0,1) : r6.xy;
+    r0.w = cmp(r1.z >= r0.y);
+    r1.w = cmp(r0.y >= r3.y);
+    r3.z = r0.y * r0.y;
+    r3.w = -r0.y * r0.y + 1;
+    r0.x = sqrt(r3.w);
+    r3.w = cmp(r1.z < 0);
+    r6.xy = float2(-1,-0) + r3.xy;
+    r4.w = dot(r6.xy, r6.xy);
+    r4.w = sqrt(r4.w);
+    r4.w = 0.5 * r4.w;
+    r4.w = r4.w * r4.w;
+    r1.xz = -r3.xy + r1.xz;
+    r1.x = dot(r1.xz, r1.xz);
+    r1.x = sqrt(r1.x);
+    r1.x = 0.5 * r1.x;
+    r1.x = r1.x * r1.x;
+    r1.x = r3.w ? r4.w : r1.x;
+    r0.xy = -r3.xy + r0.xy;
+    r0.x = dot(r0.xy, r0.xy);
+    r0.x = sqrt(r0.x);
+    r0.x = 0.5 * r0.x;
+    r0.x = r0.x * r0.x;
+    r0.x = r0.x / r1.x;
+    r0.x = r1.w ? 0 : r0.x;
+    r0.x = r0.w ? 1 : r0.x;
+    r0.y = r3.z * -0.0799999982 + 0.0799999982;
+    o0.w = max(r0.x, r0.y);
+  } else {
+    r3.x = dot(r4.xyz, float3(-0.408248007,-0.707107008,0.577350318));
+    r3.y = dot(r4.xyz, float3(-0.408248007,0.707107008,0.577350318));
+    r3.z = dot(r4.xz, float2(0.816497028,0.577350318));
+    r0.x = -r0.z * r1.y + 0.5;
+    r3.w = 0.666666687 * r0.x;
+    r0.xyzw = max(float4(0,0,0,0), r3.xyzw);
+    r1.x = dot(r0.xyzw, r2.xyzw);
+    r0.x = r0.x + r0.y;
+    r0.x = r0.x + r0.z;
+    r0.x = r0.x + r0.w;
+    o0.w = r1.x / r0.x;
+  }
+  r0.xyz = ExposureScale * r5.xyz;
+  r0.xyz = max(float3(0,0,0), r0.xyz);
+  o0.xyz = min(float3(64512,64512,64512), r0.xyz);
+  return;
+
+}
