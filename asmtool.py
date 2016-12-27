@@ -475,6 +475,9 @@ class ASMShader(hlsltool.Shader):
     def hlsl_swizzle(self, mask, swizzle):
         return shadertool.asm_hlsl_swizzle(mask, swizzle)
 
+    def mask_register(self, lval, rval):
+        return hlsltool.Register(rval.negate, rval.variable, None, self.hlsl_swizzle(lval.components, rval.components))
+
     def adjust_cb_size(self, cb, size):
         search = 'dcl_constantbuffer cb%d[' % cb
         for declaration in self.declarations:
@@ -1071,6 +1074,90 @@ def fix_fcprimal_light_pos(shader):
 
         shader.autofixed = True
 
+def fix_wd2_unproject(shader):
+    try:
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        VPosScale = cb_offset(*shader.find_cb_entry('float4', 'VPosScale'))
+        VPosOffset = cb_offset(*shader.find_cb_entry('float4', 'VPosOffset'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 unprojection fix')
+        return
+
+
+    # Scan for:
+    # r2.x = dot(r0.zw, InvProjectionMatrix._m22_m32);
+    # r0.z = dot(r0.zw, InvProjectionMatrix._m23_m33);
+    r2 = shader.scan_shader(InvProjectionMatrix[2], write=False, instr_type=DP2Instruction)
+    r3 = shader.scan_shader(InvProjectionMatrix[3], write=False, instr_type=DP2Instruction)
+    if len(r2) != 1 or len(r3) != 1:
+        debug_verbose(0, 'Shader does not use InvProjectionMatrix')
+        return
+    line = max(r2[0].line, r3[0].line) + 1
+
+    # Scan for:
+    # r0.z = -r2.x / r0.z;
+    r2 = shader.scan_shader(r2[0].instruction.lval, start=line, write=False, stop=True, stop_when_clobbered=True, instr_type=DivInstruction)
+    r3 = shader.scan_shader(r3[0].instruction.lval, start=line, write=False, stop=True, stop_when_clobbered=True, instr_type=DivInstruction)
+    if len(r2) != 1 or len(r3) != 1 or r2[0].line != r3[0].line:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (1)')
+        return
+    depth_line, depth_instr = r2[0]
+    if depth_instr.rargs[0].negate == depth_instr.rargs[1].negate:
+        # XXX Wouldn't surprise me if this is not universal, but start specific then generalise...
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (2)')
+        return
+
+    # Scan for (n.b. it wouldn't surprise me if this line is optimised out of some shaders):
+    # r2.z = -r0.z;
+    r = shader.scan_shader(depth_instr.lval, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MovInstruction)
+    if len(r) != 1 or not r[0].instruction.rarg.negate:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (3)')
+        return
+    depth_line, depth_instr = r[0]
+    depth_reg = depth_instr.lval
+
+    # Scan for
+    # r2.xy = r2.zz * r0.xy;
+    r = shader.scan_shader(depth_reg, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
+    if len(r) != 1 or r[0].instruction.rargs[0].negate or r[0].instruction.rargs[1].negate:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (4)')
+        return
+    line, instr = r[0]
+    vpos = instr.rargs[0]
+    if hlsltool.regs_overlap(vpos, depth_reg.variable, depth_reg.components):
+        vpos = instr.rargs[1]
+    vpos = shader.mask_register(instr.lval, vpos)
+
+    # Scan up for
+    # r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
+    r = shader.scan_shader(vpos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
+    if len(r) != 1:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
+        return
+    if VPosScale not in (r[0].instruction.rargs[0].variable, r[0].instruction.rargs[1].variable) or \
+            r[0].instruction.rargs[2].variable != VPosOffset:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (6)')
+        return
+
+    debug("vpos in {} depth in {}".format(vpos, depth_reg))
+
+    off = shader.insert_stereo_params()
+
+    off += shader.insert_vanity_comment(line + off + 1, 'WATCH_DOGS2 unprojection fix inserted with')
+    off += shader.insert_multiple_lines(line + off + 1, '''
+        add {stereo}.w, -{depth}, -{stereo}.y
+        mul {stereo}.w, {stereo}.w, {stereo}.x
+        mad {vpos}.{vpos_x}, {stereo}.w, {InvProjectionMatrix0}.x, {vpos}.{vpos_x}
+    '''.format(
+        vpos = vpos.variable,
+        vpos_x = vpos.components[0],
+        depth = depth_reg,
+        stereo = shader.stereo_params_reg,
+        InvProjectionMatrix0 = InvProjectionMatrix[0],
+    ))
+
+    shader.autofixed = True
+
 def parse_args():
     global args
 
@@ -1109,6 +1196,8 @@ def parse_args():
             help="Fix various volumetric fog shaders (WARNING: do not apply to shadow volume shaders - their pattern is slightly different and this will lead to smearing)")
     parser.add_argument('--fix-fcprimal-light-pos', action='store_true',
             help="Fix light position, for volumetric fog around point lights (WARNING: this might break some cave light shaft shaders)")
+    parser.add_argument('--fix-wd2-unproject', action='store_true',
+            help="Fix lights, etc. in WATCH_DOGS2")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1154,6 +1243,8 @@ def main():
                 fix_fcprimal_volumetric_fog(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
+            if args.fix_wd2_unproject:
+                fix_wd2_unproject(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
