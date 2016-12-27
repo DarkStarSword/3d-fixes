@@ -207,45 +207,39 @@ class LoadStructuredInstruction(ResourceLoadInstruction):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3)))
 
-class DP4Instruction(AssignmentInstruction):
-    pattern = re.compile(r'''
-        \s*
-        (?P<instruction>dp4)
-        \s+
-        (?P<lval>\S+)
-        \s* , \s*
-        (?P<rval>
-            (?P<arg1>\S+)
+class TwoArgAssignmentInstruction(AssignmentInstruction):
+    @staticmethod
+    def mkpattern(instruction):
+        return re.compile(r'''
+            \s*
+            (?P<instruction>{})
+            \s+
+            (?P<lval>\S+)
             \s* , \s*
-            (?P<arg2>\S+)
-        )
-        \s*
-        $
-    ''', re.MULTILINE | re.VERBOSE)
+            (?P<rval>
+                (?P<arg1>\S+)
+                \s* , \s*
+                (?P<arg2>\S+)
+            )
+            \s*
+            $
+        '''.format(instruction), re.MULTILINE | re.VERBOSE)
 
     def __init__(self, text, instruction, lval, rval, arg1, arg2):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
 
-class AddInstruction(AssignmentInstruction):
-    pattern = re.compile(r'''
-        \s*
-        (?P<instruction>add)
-        \s+
-        (?P<lval>\S+)
-        \s* , \s*
-        (?P<rval>
-            (?P<arg1>\S+)
-            \s* , \s*
-            (?P<arg2>\S+)
-        )
-        \s*
-        $
-    ''', re.MULTILINE | re.VERBOSE)
+class DP4Instruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('dp4')
 
-    def __init__(self, text, instruction, lval, rval, arg1, arg2):
-        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
-        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
+class AddInstruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('add')
+
+class MulInstruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('mul')
+
+class DivInstruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('div')
 
 class MADInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
@@ -368,6 +362,8 @@ specific_instructions = (
     ResourceLoadInstruction,
     DP4Instruction,
     AddInstruction,
+    MulInstruction,
+    DivInstruction,
     MADInstruction,
     AssignmentInstruction,
 )
