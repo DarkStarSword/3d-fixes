@@ -144,15 +144,14 @@ class ResourceLoadInstruction(AssignmentInstruction):
         \s*
         (?P<instruction>[a-zA-Z_]+
             \s*
-            \(
-                [^)]+
-            \)
-            \(
-                [^)]+
-            \)
+            (?:
+                \(
+                    [^)]+
+                \)
+            )+
         )
         \s*
-        (?P<lval>[^\s\(\)]+)
+        (?P<lval>\S+)
         \s* , \s*
         (?P<rval>\S.*)
         \s*
