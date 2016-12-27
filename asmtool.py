@@ -102,9 +102,7 @@ class AssignmentInstruction(Instruction):
         (?P<instruction>\S+)
         \s+
         (?P<lval>\S+)
-        \s*
-        ,
-        \s*
+        \s* , \s*
         (?P<rval>\S.*)
         \s*
         $
@@ -124,6 +122,22 @@ class AssignmentInstruction(Instruction):
 
     def is_noop(self):
         return False
+
+class MovInstruction(AssignmentInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>mov)
+        \s+
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>\S+)
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval) # rval is text for consistency
+        self.rarg = hlsltool.expression_as_single_register(rval) or rval # rarg is Register if possible
 
 class ResourceLoadInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
@@ -365,6 +379,7 @@ specific_instructions = (
     MulInstruction,
     DivInstruction,
     MADInstruction,
+    MovInstruction,
     AssignmentInstruction,
 )
 
