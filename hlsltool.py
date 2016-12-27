@@ -426,6 +426,11 @@ class Shader(object):
             if end is None:
                 end = -1
 
+        if isinstance(reg, Register):
+            if reg.components is not None:
+                components = set(reg.components)
+            reg = reg.variable
+
         debug_verbose(1, "Scanning shader %s from instruction %i to %i for %s %s%s..." % (
             {1: 'downwards', -1: 'upwards'}[direction],
             start, end - direction,
