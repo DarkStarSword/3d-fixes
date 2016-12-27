@@ -138,7 +138,7 @@ class ResourceLoadInstruction(AssignmentInstruction):
             \)
         )
         \s*
-        (?P<lval>\S+)
+        (?P<lval>[^\s\(\)]+)
         \s* , \s*
         (?P<rval>\S.*)
         \s*
