@@ -96,7 +96,7 @@ class Instruction(hlsltool.Instruction):
         $
     ''', re.MULTILINE | re.VERBOSE)
 
-class AssignmentInstruction(hlsltool.AssignmentInstruction, Instruction):
+class AssignmentInstruction(Instruction):
     pattern = re.compile(r'''
         \s*
         (?P<instruction>\S+)
@@ -111,8 +111,16 @@ class AssignmentInstruction(hlsltool.AssignmentInstruction, Instruction):
     ''', re.MULTILINE | re.VERBOSE)
 
     def __init__(self, text, instruction, lval, rval):
-        hlsltool.AssignmentInstruction.__init__(self, text, lval, rval)
+        Instruction.__init__(self, text)
         self.instruction = instruction
+        self.lval = hlsltool.expression_as_single_register(lval)
+        self.rval = rval.strip()
+
+    def writes(self, variable, components=None):
+        return hlsltool.regs_overlap(self.lval, variable, components)
+
+    def reads(self, variable, components=None):
+        return hlsltool.register_in_expression(self.rval, variable, components)
 
     def is_noop(self):
         return False
@@ -880,7 +888,7 @@ def fix_fcprimal_physical_lighting(shader):
     results = shader.scan_shader(Depth, write=False)
     assert(len(results) == 1)
     (depth_line, depth_instr) = results[0]
-    depth_reg = hlsltool.expression_as_single_register(depth_instr.lval)
+    depth_reg = depth_instr.lval
 
     off = shader.insert_stereo_params()
 
@@ -963,7 +971,7 @@ def fix_fcprimal_volumetric_fog(shader):
     tmp1 = shader.allocate_temp_reg()
     tmp2 = shader.allocate_temp_reg()
 
-    pos = hlsltool.expression_as_single_register(instr.lval)
+    pos = instr.lval
 
     off += shader.insert_vanity_comment(line + off + 1, 'Volumetric Fog fix inserted with')
     off += shader.insert_multiple_lines(line + off + 1, '''
@@ -1012,7 +1020,7 @@ def fix_fcprimal_light_pos(shader):
             tmp1 = shader.allocate_temp_reg()
             tmp2 = shader.allocate_temp_reg()
 
-        pos = hlsltool.expression_as_single_register(instr.lval)
+        pos = instr.lval
 
         off += shader.insert_vanity_comment(line + off + 1, 'LightsLightingData.pos (Volumetric Fog) adjustment inserted with')
         off += shader.insert_multiple_lines(line + off + 1, '''
