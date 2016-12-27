@@ -243,6 +243,12 @@ class TwoArgAssignmentInstruction(AssignmentInstruction):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2)))
 
+class DP2Instruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('dp2')
+
+class DP3Instruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('dp3')
+
 class DP4Instruction(TwoArgAssignmentInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('dp4')
 
@@ -375,6 +381,8 @@ specific_instructions = (
     LoadStructuredInstruction,
     ResourceLoadInstruction,
     DP4Instruction,
+    DP3Instruction,
+    DP2Instruction,
     AddInstruction,
     MulInstruction,
     DivInstruction,
