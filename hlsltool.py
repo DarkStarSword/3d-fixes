@@ -271,12 +271,28 @@ register_pattern = re.compile(r'''
     \b                                  (?# Ensure we end on a word boundary)
     (?![(.])                            (?# Prevent matching float2\(...\) or not matching components)
 ''', re.VERBOSE)
-RegisterCls = collections.namedtuple('Register', ['negate', 'variable', 'components'])
-def Register(negate, variable, index, components):
-    negate = not not negate
-    if index is not None:
-        variable = '%s[%s]' % (variable, index)
-    return RegisterCls(negate, variable, components)
+
+class Register(object):
+    def __new__(cls, negate, variable, index, components):
+        r = super(Register, cls).__new__(cls)
+        r.negate = not not negate
+        if index is not None:
+            variable = '%s[%s]' % (variable, index)
+        r.variable = variable
+        r.components = components
+        return r
+
+    def __repr__(self):
+        r = ''
+        if self.negate:
+            r += '-'
+        r += self.variable
+        if self.components is not None:
+            r += '.' + self.components
+        return r
+
+    def __neg__(self):
+        return Register(not self.negate, self.variable, None, self.components)
 
 def find_regs_in_expression(expression):
     '''
