@@ -1122,14 +1122,15 @@ def fix_wd2_unproject(shader):
         debug_verbose(0, 'Depth calculation does not follow expected pattern (4)')
         return
     line, instr = r[0]
-    vpos = instr.rargs[0]
-    if hlsltool.regs_overlap(vpos, depth_reg.variable, depth_reg.components):
-        vpos = instr.rargs[1]
-    vpos = shader.mask_register(instr.lval, vpos)
+    vpos = instr.lval
+    spos = instr.rargs[0]
+    if hlsltool.regs_overlap(spos, depth_reg.variable, depth_reg.components):
+        spos = instr.rargs[1]
+    spos = shader.mask_register(instr.lval, spos)
 
     # Scan up for
     # r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
-    r = shader.scan_shader(vpos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
+    r = shader.scan_shader(spos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
     if len(r) != 1:
         debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
         return
@@ -1138,7 +1139,7 @@ def fix_wd2_unproject(shader):
         debug_verbose(0, 'Depth calculation does not follow expected pattern (6)')
         return
 
-    debug("vpos in {} depth in {}".format(vpos, depth_reg))
+    debug("spos in {} depth in {}".format(spos, depth_reg))
 
     off = shader.insert_stereo_params()
 
@@ -1146,7 +1147,7 @@ def fix_wd2_unproject(shader):
     off += shader.insert_multiple_lines(line + off + 1, '''
         add {stereo}.w, -{depth}, -{stereo}.y
         mul {stereo}.w, {stereo}.w, {stereo}.x
-        mad {vpos}.{vpos_x}, {stereo}.w, {InvProjectionMatrix0}.x, {vpos}.{vpos_x}
+        mad {vpos}.{vpos_x}, -{stereo}.w, {InvProjectionMatrix0}.x, {vpos}.{vpos_x}
     '''.format(
         vpos = vpos.variable,
         vpos_x = vpos.components[0],
