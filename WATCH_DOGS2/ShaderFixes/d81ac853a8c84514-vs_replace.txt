@@ -1,0 +1,284 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:54:47 2016
+
+cbuffer Global : register(b0)
+{
+  float4 EnvironmentLuminances : packoffset(c0);
+  float4 FakeEarthShadowPlane : packoffset(c1);
+  float4 GlobalLightsIntensity : packoffset(c2);
+  float4 GlobalWeatherControl : packoffset(c3);
+  float4 MaterialWetnessParams[22] : packoffset(c4);
+  float4 WindGlobalTurbulence : packoffset(c26);
+  float4 WindVelocityTextureCoverage : packoffset(c27);
+  float4 WorldLoadingRingSizes[2] : packoffset(c28);
+
+  struct
+  {
+    float debugValue0;
+    float debugValue1;
+    float debugValue2;
+    float debugValue3;
+  } DebugValues : packoffset(c30);
+
+  float3 SunShadowDirection : packoffset(c31);
+  float CrowdAnimationStartTime : packoffset(c31.w);
+  float3 WindGlobalNoiseTextureChannelSel : packoffset(c32);
+  float GlobalReflectionTextureBlendRatio : packoffset(c32.w);
+  float3 WindGlobalNoiseTextureCoverage : packoffset(c33);
+  float GlobalWaterLevel : packoffset(c33.w);
+
+  struct
+  {
+    float time;
+    float staticReflectionIntensity;
+    float gameDeltaTime;
+  } GlobalScalars : packoffset(c34);
+
+  float RcpStaticReflectionExposureScale : packoffset(c34.w);
+  float2 GlobalNoiseSampler2DSquareSize : packoffset(c35);
+  float SandstormIntensity : packoffset(c35.z);
+  float StaticReflectionIntensityDest : packoffset(c35.w);
+  float2 WindNoiseDeltaVector : packoffset(c36);
+  float TimeOfDay : packoffset(c36.z);
+  float VertexAOIntensity : packoffset(c36.w);
+  float2 WindVector : packoffset(c37);
+}
+
+cbuffer Viewport : register(b1)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+cbuffer SkyRenderer : register(b2)
+{
+  float4 AerialPerscpectiveFogParams : packoffset(c0);
+  float4 ArtisticPatchForBrunetonSky : packoffset(c1);
+  float4x4 SkyDomeInvViewMatrix : packoffset(c2);
+  float4 SkyMoonPositionAndIntensity : packoffset(c6);
+  float4 SkyParaboloidTextureSize : packoffset(c7);
+  float4 SkyStarsIntensity : packoffset(c8);
+  float4 SkySunPositionAndIrradiance : packoffset(c9);
+  float4 StarDecalParams : packoffset(c10);
+  float4 SunColorHack : packoffset(c11);
+  float4 TopocentricXAxis : packoffset(c12);
+  float4 TopocentricYAxis : packoffset(c13);
+  float4 TopocentricZAxis : packoffset(c14);
+  float3 MoonSkyColor : packoffset(c15);
+  float MoonCloudIntensity : packoffset(c15.w);
+  float3 MoonXAxis : packoffset(c16);
+  float SkyIntensityForMainView : packoffset(c16.w);
+  float3 MoonYAxis : packoffset(c17);
+  float SkyMoonInScattering : packoffset(c17.w);
+  float3 MoonZAxis : packoffset(c18);
+  float SkyMoonMIETurbidity : packoffset(c18.w);
+  float3 SkyMoonColor : packoffset(c19);
+  float SkyMoonSpriteIntensity : packoffset(c19.w);
+  float3 SkyMoonUnlitColor : packoffset(c20);
+  float SkyMoonTurbidity : packoffset(c20.w);
+  float3 SkyNightSkyHorizonColor : packoffset(c21);
+  float SkyNightSkyCrossFadeThreshold : packoffset(c21.w);
+  float3 SkyNightSkyTopColor : packoffset(c22);
+  float SkyNightSkyGIFactor : packoffset(c22.w);
+  float3 SkySunAndMoonTanCosAngle : packoffset(c23);
+  float SkyNightSkyGradientGamma : packoffset(c23.w);
+  float3 SunDiscDirection : packoffset(c24);
+  float SkyNightSkyIntensity : packoffset(c24.w);
+  float2 SkCameraSettings : packoffset(c25);
+  float SkySunBelowHorizonFactor : packoffset(c25.z);
+  float SkySunMoonCrossFade : packoffset(c25.w);
+  float2 SkyFakeSunDirectionForMoonPhase : packoffset(c26);
+  float SkySunTurbidity : packoffset(c26.z);
+  float2 SkyOffScreenCloudLayersInvScale : packoffset(c27);
+}
+
+cbuffer CloudLayers : register(b3)
+{
+  float4 CL_LayerParams : packoffset(c0);
+  float4 CL_LayerXAxis : packoffset(c1);
+  float4 CL_LayerYAxis : packoffset(c2);
+  float CL_AmbientIntensity : packoffset(c3);
+  float CL_Contribution : packoffset(c3.y);
+  float CL_CylindricProjectionOffset : packoffset(c3.z);
+  float CL_CylindricSkewYAxis : packoffset(c3.w);
+  float CL_Depth : packoffset(c4);
+  float CL_EarthRadius : packoffset(c4.y);
+  float CL_ExtinctionForHighAlpha : packoffset(c4.z);
+  float CL_ExtinctionForLowAlpha : packoffset(c4.w);
+  float CL_LayerHeight : packoffset(c5);
+  float CL_Phase : packoffset(c5.y);
+  float CL_PhaseAmbient : packoffset(c5.z);
+  float CL_PhaseAmbientIntensity : packoffset(c5.w);
+  float CL_PhaseIntensity : packoffset(c6);
+  float CL_ScatteringForHighAlpha : packoffset(c6.y);
+  float CL_ScatteringForLowAlpha : packoffset(c6.z);
+  float CL_ShadowCoef : packoffset(c6.w);
+}
+
+cbuffer MaterialWD2CloudLayer : register(b4)
+{
+  float4 DetailUnderlayerBlend : packoffset(c0);
+  float4 TypeUnderlayerBlend : packoffset(c1);
+  float2 DetailTextureTiling : packoffset(c2);
+  float DetailTextureRotation : packoffset(c2.z);
+  float DetailUVRotationAnimation : packoffset(c2.w);
+  float2 DetailUVAnimation : packoffset(c3);
+  float MaskIntensity : packoffset(c3.z);
+  float MaskTileCountX : packoffset(c3.w);
+  float2 TypeTextureTiling : packoffset(c4);
+  float MaskTileCountY : packoffset(c4.z);
+  float TypeTextureRotation : packoffset(c4.w);
+  float2 TypeUVAnimation : packoffset(c5);
+  float TypeUVRotationAnimation : packoffset(c5.z);
+  int DetailBlendingMode : packoffset(c5.w);
+  int TypeBlendingMode : packoffset(c6);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float2 v1 : TexCoord0,
+  uint4 v2 : TexCoord1,
+  out float4 o0 : TEXCOORD0,
+  out float4 o1 : TEXCOORD1,
+  out float4 o2 : TEXCOORD2,
+  out float4 o3 : TEXCOORD3,
+  out float2 o4 : TEXCOORD4,
+  out float4 o5 : SV_Position0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = CL_LayerParams.yy * v0.zw;
+  r0.xy = float2(0.200000003,0.200000003) * r0.xy;
+  r1.y = v0.y;
+  r0.z = GlobalScalars.time * CL_LayerParams.w + v0.x;
+  r1.x = frac(r0.z);
+  r0.zw = r1.xy * float2(2,2) + float2(-1,-1);
+  r1.x = -0.5 + r1.x;
+  r1.x = -abs(r1.x) * 2 + 1;
+  r1.w = saturate(CL_LayerParams.z * r1.x);
+  r0.xy = r0.zw * CL_LayerParams.xx + r0.xy;
+  r2.xyz = CL_LayerYAxis.xyz * r0.yyy;
+  r2.xyz = CL_LayerXAxis.xyz * r0.xxx + r2.xyz;
+  r0.x = dot(r0.xy, r0.xy);
+  r0.y = CL_LayerHeight + CL_EarthRadius;
+  r0.x = r0.y * r0.y + -r0.x;
+  r0.x = sqrt(r0.x);
+  r0.x = -CL_EarthRadius + r0.x;
+  r0.xyz = r0.xxx * float3(0,0,1) + r2.xyz;
+  r2.x = CL_LayerParams.x * SkCameraSettings.y;
+  r2.x = r2.x / SkCameraSettings.x;
+  r0.z = -r2.x + r0.z;
+  r0.w = 1;
+  r2.x = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+  r2.y = cmp(r1.w < 0.00392156886);
+  r1.z = r2.y ? -10000 : r2.x;
+  r1.x = dot(r0.xyzw, ViewRotProjectionMatrix._m00_m10_m20_m30);
+  r1.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
+  o0.xyzw = r1.xyzw;
+  o5.xyw = r1.xyz;
+  o1.xyz = CL_LayerXAxis.xyz;
+  o2.xyz = CL_LayerYAxis.xyz;
+  r0.xy = DetailUVAnimation.xy * GlobalScalars.time;
+  r0.z = DetailUVRotationAnimation * GlobalScalars.time + DetailTextureRotation;
+  r0.z = 3.14159274 * r0.z;
+  sincos(r0.z, r1.x, r2.x);
+  r3.xyzw = v1.xyxy * float4(-1,1,-1,1) + float4(0.5,-0.5,1,0);
+  r0.zw = r3.xy * r2.xx;
+  r2.x = r3.y * r1.x + r0.z;
+  r2.y = -r3.x * r1.x + r0.w;
+  r0.zw = float2(0.5,0.5) + r2.xy;
+  o3.xy = r0.zw * DetailTextureTiling.xy + r0.xy;
+  r0.x = TypeUVRotationAnimation * GlobalScalars.time + TypeTextureRotation;
+  r0.x = 3.14159274 * r0.x;
+  sincos(r0.x, r0.x, r1.x);
+  r0.yz = r3.xy * r1.xx;
+  r1.z = r3.y * r0.x + r0.y;
+  r1.w = -r3.x * r0.x + r0.z;
+  r0.xy = float2(0.5,0.5) + r1.zw;
+  r0.zw = TypeUVAnimation.xy * GlobalScalars.time;
+  r0.xy = r0.xy * TypeTextureTiling.xy + r0.zw;
+  r1.xyzw = (uint4)v2.zwxy;
+  o3.zw = r1.xy * float2(0.125,0.125) + r0.xy;
+  r0.xy = r3.zw + r1.zw;
+  o4.x = MaskTileCountX * r0.x;
+  o4.y = MaskTileCountY * r0.y;
+  o5.z = 9.99999972e-010;
+  return;
+}
