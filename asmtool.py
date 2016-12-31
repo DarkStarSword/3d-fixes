@@ -971,16 +971,7 @@ def fix_fcprimal_camera_pos(shader):
 
     shader.autofixed = True
 
-def fix_fcprimal_volumetric_fog(shader):
-    try:
-        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
-        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
-        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
-        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
-    except KeyError:
-        debug_verbose(0, 'Shader does not declare all required values for the Far Cry Primal light position adjustment')
-        return
-
+def _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix):
     results = shader.scan_shader(CameraPosition, write=False)
     if not results:
         debug_verbose(0, 'Shader does not use CameraPosition')
@@ -1023,6 +1014,30 @@ def fix_fcprimal_volumetric_fog(shader):
     ))
 
     shader.autofixed = True
+
+def fix_fcprimal_volumetric_fog(shader):
+    try:
+        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
+        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the Far Cry Primal volumetric fog adjustment')
+        return
+
+    return _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
+
+def fix_wd2_volumetric_fog(shader):
+    try:
+        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
+        ViewProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ViewProjectionMatrix'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x3', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 volumetric fog adjustment')
+        return
+
+    return _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
 
 def fix_fcprimal_light_pos(shader):
     try:
@@ -1198,6 +1213,8 @@ def parse_args():
             help="Fix light position, for volumetric fog around point lights (WARNING: this might break some cave light shaft shaders)")
     parser.add_argument('--fix-wd2-unproject', action='store_true',
             help="Fix lights, etc. in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-volumetric-fog', action='store_true',
+            help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1241,6 +1258,8 @@ def main():
                 fix_fcprimal_camera_pos(shader)
             if args.fix_fcprimal_volumetric_fog:
                 fix_fcprimal_volumetric_fog(shader)
+            if args.fix_wd2_volumetric_fog:
+                fix_wd2_volumetric_fog(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
             if args.fix_wd2_unproject:
