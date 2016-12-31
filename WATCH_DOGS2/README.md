@@ -5,10 +5,19 @@ Fixed
 -----
 - Lights
 - Shadows
+- Decals
+- Volumetric Fog
+- Added an automatic stereo crosshair
+- Added an automatic/manual crosshair toggle
 
 Installation
 ------------
 1. Extract the zip file under WATCH_DOGS2\bin
+
+Keys
+----
+- K: Cycle between three crosshair modes: auto (enabled only when aiming), on
+  and off.
 
 Note about anti-cheat software
 ------------------------------
