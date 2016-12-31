@@ -1,0 +1,50 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:54:18 2016
+
+cbuffer FireUiPrimitive : register(b0)
+{
+  float4 ColorAdd : packoffset(c0);
+  float4 ColorMultiplier : packoffset(c1);
+  float4 DiffuseSampler0Size : packoffset(c2);
+  float4 DistanceFieldFloatArray[3] : packoffset(c3);
+  float4x4 Transform : packoffset(c6);
+  float4 UVOffsets[9] : packoffset(c10);
+  float4x4 UVTransform : packoffset(c19);
+  float4 VideoTextureUnpack[8] : packoffset(c23);
+  float3 GammaBrightnessContrastParams : packoffset(c31);
+  float DesaturationFactor : packoffset(c31.w);
+  float2 SystemTime_GlitchFactor : packoffset(c32);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float2 v0 : position0,
+  float2 v1 : texcoord2,
+  float4 v2 : color1,
+  out float4 o0 : TEXCOORD0,
+  out float2 o1 : TEXCOORD1,
+  out float4 o2 : SV_Position0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  o0.xyzw = v2.xyzw;
+  o1.xy = v1.xy;
+  r0.xy = v0.xy;
+  r0.zw = float2(1,1);
+  r1.x = dot(r0.xyww, Transform._m00_m10_m20_m30);
+  r1.y = dot(r0.xyww, Transform._m01_m11_m21_m31);
+  r0.z = dot(r0.xyzw, Transform._m03_m13_m23_m33);
+  o2.z = dot(r0.xyww, Transform._m02_m12_m22_m32);
+  r0.xy = r1.xy * float2(2,2) + -r0.zz;
+  o2.w = r0.z;
+  o2.xy = float2(1,-1) * r0.xy;
+  return;
+}
