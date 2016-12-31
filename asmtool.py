@@ -1088,7 +1088,10 @@ def fix_fcprimal_light_pos(shader):
 
         shader.autofixed = True
 
-def fix_wd2_unproject(shader):
+def fix_wd2_unproject(shader, allow_multiple=False):
+    if hasattr(shader, 'wd2_unprojection_fix_applied'):
+        return
+
     try:
         InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
         VPosScale = cb_offset(*shader.find_cb_entry('float4', 'VPosScale'))
@@ -1103,8 +1106,11 @@ def fix_wd2_unproject(shader):
     # r0.z = dot(r0.zw, InvProjectionMatrix._m23_m33);
     r2 = shader.scan_shader(InvProjectionMatrix[2], write=False, instr_type=DP2Instruction)
     r3 = shader.scan_shader(InvProjectionMatrix[3], write=False, instr_type=DP2Instruction)
-    if len(r2) != 1 or len(r3) != 1:
+    if len(r2) == 0 or len(r3) == 0:
         debug_verbose(0, 'Shader does not use InvProjectionMatrix')
+        return
+    if not allow_multiple and (len(r2) > 1 or len(r3) > 1):
+        debug_verbose(0, 'Shader uses InvProjectionMatrix more than once')
         return
     line = max(r2[0].line, r3[0].line) + 1
 
@@ -1172,8 +1178,12 @@ def fix_wd2_unproject(shader):
     ))
 
     shader.autofixed = True
+    shader.wd2_unprojection_fix_applied = True
 
 def fix_wd2_camera_pos(shader):
+    if hasattr(shader, 'wd2_camera_pos_fix_applied'):
+        return
+
     try:
         CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
         InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
@@ -1215,6 +1225,78 @@ def fix_wd2_camera_pos(shader):
     ))
 
     shader.autofixed = True
+    shader.wd2_camera_pos_fix_applied = True
+
+def fix_wd2_screen_space_reflections(shader):
+    try:
+        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
+        ViewportSize = cb_offset(*shader.find_cb_entry('float4', 'ViewportSize'))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        ProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ProjectionMatrix'))
+        CameraSpaceToPreviousProjectedSpace = cb_matrix(*shader.find_cb_entry('float4x4', 'CameraSpaceToPreviousProjectedSpace'))
+        ProjectToPixelMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'ProjectToPixelMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 screen space reflection fix')
+        return
+
+    shader.insert_stereo_params()
+    shader.early_insert_vanity_comment("WATCH_DOGS2 Screen Space Reflection fix inserted with")
+
+    # The unprojection fix applies several times in this shader, but we currently
+    # only fix the first as the others make no noticeable difference and their
+    # instructions aren't quite the same (can add them later if needed):
+    fix_wd2_unproject(shader, allow_multiple=True)
+
+    # The camera position fix has the effect of moving the screen space
+    # reflections from surface depth to correct depth (once all other
+    # adjustments are in place to get them to the surface depth):
+    fix_wd2_camera_pos(shader)
+
+    off = 0
+    for line, instr in shader.scan_shader(ProjectionMatrix[3], write = False):
+        x_line, x_instr = shader.scan_shader(ProjectionMatrix[0], start = line + off - 1, direction = -1, stop = True, write = False)[0]
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            // ProjectionMatrix - standard stereo correction:
+            add {stereo}.w, {depth}, -{stereo}.y
+            mad {x}, {stereo}.w, {stereo}.x, {x}
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            depth = instr.lval,
+            x = x_instr.lval,
+        ))
+
+    off = 0
+    for line, instr in shader.scan_shader(CameraSpaceToPreviousProjectedSpace[3], write = False):
+        x_line, x_instr = shader.scan_shader(CameraSpaceToPreviousProjectedSpace[0], start = line + off - 1, direction = -1, stop = True, write = False)[0]
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            // CameraSpaceToPreviousProjectedSpace - standard stereo correction:
+            add {stereo}.w, {depth}, -{stereo}.y
+            mad {x}, {stereo}.w, {stereo}.x, {x}
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            depth = instr.lval,
+            x = x_instr.lval,
+        ))
+
+    off = 0
+    for line, instr in shader.scan_shader(ProjectToPixelMatrix[3], write = False):
+        x_line, x_instr = shader.scan_shader(ProjectToPixelMatrix[0], start = line + off - 1, direction = -1, stop = True, write = False)[0]
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            // ProjectToPixelMatrix - stereo correction * resolution / 2:
+            add {stereo}.w, {depth}, -{stereo}.y
+            mul {stereo}.w, {stereo}.w, {stereo}.x
+            mul {stereo}.w, {stereo}.w, {ViewportSize}.x
+            mad {x}, {stereo}.w, l(0.5), {x}
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            depth = instr.lval,
+            x = x_instr.lval,
+            ViewportSize = ViewportSize,
+        ))
+
+
+    shader.autofixed = True
+
 
 def parse_args():
     global args
@@ -1260,6 +1342,8 @@ def parse_args():
             help="Fix specular highlights in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-volumetric-fog', action='store_true',
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-screen-space-reflections', action='store_true',
+            help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1307,6 +1391,8 @@ def main():
                 fix_wd2_volumetric_fog(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
+            if args.fix_wd2_screen_space_reflections:
+                fix_wd2_screen_space_reflections(shader)
             if args.fix_wd2_unproject:
                 fix_wd2_unproject(shader)
             if args.fix_wd2_camera_pos:
