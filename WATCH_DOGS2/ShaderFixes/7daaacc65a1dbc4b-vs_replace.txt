@@ -1,0 +1,165 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:53:56 2016
+
+cbuffer Viewport : register(b0)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+cbuffer SceneGeometry : register(b1)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 GeometryUserData : packoffset(c1);
+  float4 UVDecompression : packoffset(c2);
+
+  struct
+  {
+    float positionMin;
+    float positionRange;
+    float meshLocalHeight;
+    float isBuildingFacadeInterior;
+  } MeshDecompression : packoffset(c3);
+
+  float3 GeometryBBoxMax : packoffset(c4);
+  float3 GeometryBBoxMin : packoffset(c5);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : blendweight0,
+  float4 v1 : normal0,
+  float4 v2 : texcoord1,
+  float4 v3 : texcoord0,
+  float4 v4 : texcoord4,
+  float4 v5 : texcoord5,
+  float4 v6 : texcoord6,
+  int4 v7 : texcoord7,
+  out float4 o0 : TEXCOORD0,
+  out float4 o1 : TEXCOORD1,
+  out float3 o2 : TEXCOORD2,
+  out float4 o3 : SV_Position0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyz = v4.xyz;
+  r1.x = v4.w;
+  r1.y = v5.w;
+  r1.z = v6.w;
+  r2.xyzw = (int4)v7.xyzw;
+  r1.xyw = r2.xyz + r1.xyz;
+  r2.x = r2.w * 0.00781273842 + 256;
+  r0.w = r1.x;
+  r2.yzw = (int3)v0.xyz;
+  r2.yzw = r2.yzw * MeshDecompression.positionRange + MeshDecompression.positionMin;
+  r2.xyz = r2.yzw * r2.xxx;
+  r2.w = 1;
+  r0.x = dot(r2.xyzw, r0.xyzw);
+  r3.w = r1.y;
+  r3.xyz = v5.xyz;
+  r0.y = dot(r2.xyzw, r3.xyzw);
+  r1.xyz = v6.xyz;
+  r0.z = dot(r2.xyzw, r1.xyzw);
+  r1.xyz = -CameraPosition.xyz + r0.xyz;
+  o1.xyz = r0.xyz;
+  r0.x = ViewRotProjectionMatrix._m10 * r1.y;
+  r0.y = ViewRotProjectionMatrix._m11 * r1.y;
+  r0.z = ViewRotProjectionMatrix._m12 * r1.y;
+  r0.w = ViewRotProjectionMatrix._m13 * r1.y;
+  r2.x = r1.z * ViewRotProjectionMatrix._m20 + ViewRotProjectionMatrix._m30;
+  r2.y = r1.z * ViewRotProjectionMatrix._m21 + ViewRotProjectionMatrix._m31;
+  r2.z = r1.z * ViewRotProjectionMatrix._m22 + ViewRotProjectionMatrix._m32;
+  r2.w = r1.z * ViewRotProjectionMatrix._m23 + ViewRotProjectionMatrix._m33;
+  r0.xyzw = r2.xyzw + r0.xyzw;
+  r2.x = ViewRotProjectionMatrix._m00 * r1.x;
+  r2.y = ViewRotProjectionMatrix._m01 * r1.x;
+  r2.z = ViewRotProjectionMatrix._m02 * r1.x;
+  r2.w = ViewRotProjectionMatrix._m03 * r1.x;
+  r0.xyzw = r2.xyzw + r0.xyzw;
+  r1.xy = CameraNearPlaneSize.xy * r0.xy;
+  r1.xy = float2(0.5,0.5) * r1.xy;
+  o0.xy = r1.xy / -CameraDistances.near;
+  o0.z = r0.w;
+  o3.xyzw = r0.xyzw;
+  r0.xyz = v1.zyx * float3(2,2,2) + float3(-1,-1,-1);
+  o2.x = dot(r0.xyz, v4.xyz);
+  o2.y = dot(r0.xyz, v5.xyz);
+  o2.z = dot(r0.xyz, v6.xyz);
+  return;
+}

@@ -1,0 +1,126 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:54:27 2016
+
+cbuffer Viewport : register(b0)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+SamplerState LightEffectVisibilityTest__VisibilityTestSampler__SampObj___s : register(s0);
+Texture2D<float4> LightEffectVisibilityTest__VisibilityTestSampler__TexObj__ : register(t0);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : position0,
+  float4 v1 : color1,
+  float4 v2 : normal0,
+  float4 v3 : texcoord2,
+  float2 v4 : texcoord1,
+  out float4 o0 : TEXCOORD0,
+  out float3 o1 : TEXCOORD1,
+  out float4 o2 : SV_Position0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = v3.zw * float2(1,-1) + float2(0,1);
+  r0.x = LightEffectVisibilityTest__VisibilityTestSampler__TexObj__.SampleLevel(LightEffectVisibilityTest__VisibilityTestSampler__SampObj___s, r0.xy, 0).x;
+  r0.y = v4.y + -r0.x;
+  r0.x = v4.x * r0.y + r0.x;
+  r0.x = -v2.w + r0.x;
+  r0.y = 1 + -v2.w;
+  r0.y = 1 / r0.y;
+  r0.x = saturate(r0.x * r0.y);
+  r0.y = r0.x * -2 + 3;
+  r0.x = r0.x * r0.x;
+  r0.x = r0.y * r0.x;
+  o0.w = r0.x;
+  o0.xyz = v1.xyz;
+  r1.x = v0.z;
+  r1.y = 1;
+  r0.y = dot(r1.xy, InvProjectionMatrix._m22_m32);
+  r0.z = dot(r1.xy, InvProjectionMatrix._m23_m33);
+  o1.z = -r0.y / r0.z;
+  o1.xy = v3.xy;
+  r0.y = 1 + -v1.w;
+  r0.x = r0.x * r0.y + v1.w;
+  r0.yzw = -v2.xyz + v0.xyz;
+  o2.xyz = r0.xxx * r0.yzw + v2.xyz;
+  o2.w = 1;
+  return;
+}
