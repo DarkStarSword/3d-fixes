@@ -1122,26 +1122,34 @@ def fix_wd2_unproject(shader, allow_multiple=False):
         debug_verbose(0, 'Depth calculation does not follow expected pattern (1)')
         return
     depth_line, depth_instr = r2[0]
+    depth_reg = depth_instr.lval
     if depth_instr.rargs[0].negate == depth_instr.rargs[1].negate:
         # XXX Wouldn't surprise me if this is not universal, but start specific then generalise...
         debug_verbose(0, 'Depth calculation does not follow expected pattern (2)')
         return
 
-    # Scan for (n.b. it wouldn't surprise me if this line is optimised out of some shaders):
+    # Scan for possible negate:
     # r2.z = -r0.z;
-    r = shader.scan_shader(depth_instr.lval, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MovInstruction)
-    if len(r) != 1 or not r[0].instruction.rarg.negate:
+    r = shader.scan_shader(depth_instr.lval, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=(MovInstruction, MulInstruction))
+    if len(r) != 1:
         debug_verbose(0, 'Depth calculation does not follow expected pattern (3)')
         return
-    depth_line, depth_instr = r[0]
-    depth_reg = depth_instr.lval
+    line, instr = r[0]
 
-    # Scan for
-    # r2.xy = r2.zz * r0.xy;
-    r = shader.scan_shader(depth_reg, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
+    if isinstance(instr, MovInstruction):
+        if not instr.rarg.negate:
+            debug_verbose(0, 'Depth calculation does not follow expected pattern (4)')
+            return
+        depth_reg = -instr.lval
+
+        # Scan for
+        # r2.xy = r2.zz * r0.xy;
+        r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
+
     if len(r) != 1 or r[0].instruction.rargs[0].negate or r[0].instruction.rargs[1].negate:
-        debug_verbose(0, 'Depth calculation does not follow expected pattern (4)')
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
         return
+
     line, instr = r[0]
     vpos = instr.lval
     spos = instr.rargs[0]
@@ -1151,14 +1159,16 @@ def fix_wd2_unproject(shader, allow_multiple=False):
 
     # Scan up for
     # r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
-    r = shader.scan_shader(spos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
-    if len(r) != 1:
-        debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
-        return
-    if VPosScale not in (r[0].instruction.rargs[0].variable, r[0].instruction.rargs[1].variable) or \
-            r[0].instruction.rargs[2].variable != VPosOffset:
-        debug_verbose(0, 'Depth calculation does not follow expected pattern (6)')
-        return
+    # Unless this is a compute shader (which will be using thread ID instead)
+    if shader.shader_type != 'cs':
+        r = shader.scan_shader(spos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
+        if len(r) != 1:
+            debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
+            return
+        if VPosScale not in (r[0].instruction.rargs[0].variable, r[0].instruction.rargs[1].variable) or \
+                r[0].instruction.rargs[2].variable != VPosOffset:
+            debug_verbose(0, 'Depth calculation does not follow expected pattern (6)')
+            return
 
     debug("spos in {} depth in {}".format(spos, depth_reg))
 
@@ -1166,7 +1176,7 @@ def fix_wd2_unproject(shader, allow_multiple=False):
 
     off += shader.insert_vanity_comment(line + off + 1, 'WATCH_DOGS2 unprojection fix inserted with')
     off += shader.insert_multiple_lines(line + off + 1, '''
-        add {stereo}.w, -{depth}, -{stereo}.y
+        add {stereo}.w, {depth}, -{stereo}.y
         mul {stereo}.w, {stereo}.w, {stereo}.x
         mad {vpos}.{vpos_x}, -{stereo}.w, {InvProjectionMatrix0}.x, {vpos}.{vpos_x}
     '''.format(
