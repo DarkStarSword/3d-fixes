@@ -1,3 +1,5 @@
+// "Blue Glitch" Lights
+
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:52:58 2016
 
 cbuffer Viewport : register(b0)
@@ -135,5 +137,14 @@ void main(
   o0.w = dot(r1.xyzw, ViewProjectionMatrixWithZBias._m03_m13_m23_m33);
   r0.x = dot(r1.xyzw, ViewMatrix._m02_m12_m22_m32);
   o1.x = -r0.x;
+
+// This prevents the shader from ever being clipped at the near clipping plane.
+// It is used in conjunction with disabling back face culling to fix the blue
+// glitch. This shader is not not writing or testing depth, so there should be
+// no side effects of this, but nevertheless we check to make sure we are being
+// called from the custom shader section just in case:
+if (IniParams[1].w)
+	o0.z = o0.w;
+
   return;
 }
