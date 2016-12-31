@@ -9,6 +9,7 @@ Fixed
 - Lights
 - Shadows
 - Decals
+- Light flares
 - Volumetric Fog
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
