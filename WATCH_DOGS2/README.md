@@ -13,6 +13,7 @@ Fixed
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
 - Synchronised particle physics between eyes (falling leaves)
+- Fixed the "strange blue glitch" at light volume boundaries
 
 Installation
 ------------
