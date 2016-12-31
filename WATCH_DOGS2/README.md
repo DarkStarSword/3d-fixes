@@ -16,6 +16,7 @@ Fixed
 - Synchronised particle physics between eyes (falling leaves)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
+- Glass panels in nethack vision
 
 Installation
 ------------
