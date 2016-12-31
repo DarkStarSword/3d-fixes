@@ -9,10 +9,13 @@ Fixed
 - Lights
 - Shadows
 - Decals
+- Skybox
 - Light flares
 - Volumetric Fog
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
+- Minimap pinned at screen depth
+- Profile dialogs capped no closer than screen depth
 - Synchronised particle physics between eyes (falling leaves)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
