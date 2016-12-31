@@ -47,12 +47,23 @@ void main(
   o2.w = r0.z;
   o2.xy = float2(1,-1) * r0.xy;
 
+if (o2.w != 1)
+	return;
+
 float tex_filter = IniParams[1].x;
 if (!tex_filter)
 	return;
 
-if (o2.w == 1)
-	o2.x += adjust_from_depth_buffer(0, 0);
+float crosshair_mode = IniParams[1].y;
+switch (crosshair_mode) {
+	case 1: // on
+		o2.x += adjust_from_depth_buffer(0, 0);
+		return;
+	case 0: // auto
+	case 2: // off
+		o2 = 0;
+		return;
+}
 
   return;
 }

@@ -60,8 +60,24 @@ float tex_filter = IniParams[1].x;
 
 if (o2.w != 1) // Minimap icon, return to screen depth
 	o2.x -= s.x * (o2.w - s.y);
-else if (tex_filter == 1) // Crosshair
-	o2.x += adjust_from_depth_buffer(0, 0);
+else if (tex_filter == 1) {
+	// Crosshair
+	float crosshair_mode = IniParams[1].y;
+	switch (crosshair_mode) {
+		case 0: // auto
+			if (v1.w > IniParams[1].z)
+				o2.x += adjust_from_depth_buffer(0, 0);
+			else
+				o2 = 0;
+			return;
+		case 1: // on
+			o2.x += adjust_from_depth_buffer(0, 0);
+			return;
+		case 2: // off
+			o2 = 0;
+			return;
+	}
+}
 
   return;
 }
