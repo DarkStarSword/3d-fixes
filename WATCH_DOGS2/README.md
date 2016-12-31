@@ -3,6 +3,8 @@ WATCH_DOGS 2
 
 Fixed
 -----
+- Screen Space Reflections (first ever accurate SSR fix for 3D Vision!)
+- Environmental reflections
 - Lights
 - Shadows
 - Decals
