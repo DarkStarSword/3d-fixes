@@ -1307,6 +1307,39 @@ def fix_wd2_screen_space_reflections(shader):
 
     shader.autofixed = True
 
+def fix_wd2_screen_space_reflections_cs(shader):
+    try:
+        SSPRWMirrorViewProjMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'SSPRWMirrorViewProjMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 screen space reflection fix')
+        return
+
+    shader.insert_stereo_params()
+    shader.early_insert_vanity_comment("WATCH_DOGS2 Screen Space Reflection fix (Compute Shader variant) inserted with")
+
+    fix_wd2_unproject(shader, allow_multiple=True)
+
+    try:
+        fix_wd2_camera_pos(shader)
+    except:
+        # Not all shaders have this
+        pass
+
+    off = 0
+    for line, instr in shader.scan_shader(SSPRWMirrorViewProjMatrix[3], write = False):
+        x_line, x_instr = shader.scan_shader(SSPRWMirrorViewProjMatrix[0], start = line + off - 1, direction = -1, stop = True, write = False)[0]
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            // SSPRWMirrorViewProjMatrix - subtract stereo correction:
+            add {stereo}.w, {depth}, -{stereo}.y
+            mad {x}, -{stereo}.w, {stereo}.x, {x}
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            depth = instr.lval,
+            x = x_instr.lval,
+        ))
+
+    shader.autofixed = True
+
 
 def parse_args():
     global args
@@ -1354,6 +1387,8 @@ def parse_args():
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-screen-space-reflections', action='store_true',
             help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-screen-space-reflections-cs', action='store_true',
+            help="Compute shader variant of the screen space reflection fix for WATCH_DOGS2")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1403,6 +1438,8 @@ def main():
                 fix_fcprimal_light_pos(shader)
             if args.fix_wd2_screen_space_reflections:
                 fix_wd2_screen_space_reflections(shader)
+            if args.fix_wd2_screen_space_reflections_cs:
+                fix_wd2_screen_space_reflections_cs(shader)
             if args.fix_wd2_unproject:
                 fix_wd2_unproject(shader)
             if args.fix_wd2_camera_pos:
