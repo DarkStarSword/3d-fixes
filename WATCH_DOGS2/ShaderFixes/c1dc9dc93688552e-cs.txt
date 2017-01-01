@@ -301,11 +301,16 @@ add r1.x, r1.x, -r4.x
   log r3.x, r3.x
   mul r3.x, r3.x, l(200.000000)
   exp r3.x, r3.x
-  if_nz cb3[10].w
-    sample_l_indexable(texture2d)(float,float,float,float) r3.y, cb3[11].zwzz, t3.yxzw, s0, l(0.000000)
-  else 
+
+// FillVolumeTexture__VFSunVisibilitySamplingTexture__TexObj__ is causing sun
+// glow to be inconsistent at sunset. Worry about this later - for now just
+// disable the visibility check.
+  //if_nz cb3[10].w
+  //  sample_l_indexable(texture2d)(float,float,float,float) r3.y, cb3[11].zwzz, t3.yxzw, s0, l(0.000000)
+  //else 
     mov r3.y, l(1.000000)
-  endif 
+  //endif 
+
   add r3.z, -r3.y, l(1.000000)
   mad r3.x, r3.x, r3.z, r3.y
   mul r3.yzw, r2.wwww, cb1[0].xxyz
