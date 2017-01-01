@@ -31,6 +31,8 @@ Keys
 - K: Cycle between three crosshair modes: auto (enabled only when aiming), on
   and off.
 
+- ~: Toggle between two convergence presets for cutscenes and gameplay.
+
 Note about anti-cheat software
 ------------------------------
 This game uses anti-cheat software that is running even while in single player.
