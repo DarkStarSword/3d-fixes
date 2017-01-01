@@ -1,4 +1,4 @@
-// HUD - minimap orange
+// HUD - minimap orange, waypoint guide on roads
 // ---- Created with 3Dmigoto v1.2.52 on Sat Dec 31 04:18:02 2016
 
 cbuffer Viewport : register(b0)
@@ -128,7 +128,11 @@ void main(
   o2.w = dot(r0.xyzw, ViewRotProjectionMatrixPure._m03_m13_m23_m33);
 
 float4 s = StereoParams.Load(0);
-if (o2.w != 1) // Minimap icon, return to screen depth
+
+// Need to return minimap icons to screen depth, while leaving markers on the
+// road alone. The minimap is very deep, so use a depth check to distinguish
+// between them:
+if (o2.w > 80)
 	o2.x -= s.x * (o2.w - s.y);
 
   return;
