@@ -96,7 +96,7 @@ class Instruction(hlsltool.Instruction):
         $
     ''', re.MULTILINE | re.VERBOSE)
 
-class AssignmentInstruction(Instruction):
+class AssignmentInstruction(hlsltool.AssignmentInstruction, Instruction):
     pattern = re.compile(r'''
         \s*
         (?P<instruction>\S+)

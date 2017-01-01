@@ -312,12 +312,14 @@ def find_regs_in_expression(expression):
     return regs
 
 def expression_as_single_register(expression):
-        match = register_pattern.search(expression)
-        if match is None:
-            return None
-        if expression[:match.start()].strip() or expression[match.end():].strip():
-            return None
-        return Register(**match.groupdict())
+    if isinstance(expression, Register):
+        return expression
+    match = register_pattern.search(expression)
+    if match is None:
+        return None
+    if expression[:match.start()].strip() or expression[match.end():].strip():
+        return None
+    return Register(**match.groupdict())
 
 def regs_overlap(register, variable, components):
     if register.variable != variable:
