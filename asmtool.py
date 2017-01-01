@@ -1145,36 +1145,36 @@ def fix_wd2_unproject(shader, allow_multiple=False):
         # Scan for
         # r2.xy = r2.zz * r0.xy;
         r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
-
-    if len(r) != 1 or r[0].instruction.rargs[0].negate or r[0].instruction.rargs[1].negate:
-        debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
-        return
-
-    line, instr = r[0]
-    vpos = instr.lval
-    spos = instr.rargs[0]
-    if hlsltool.regs_overlap(spos, depth_reg.variable, depth_reg.components):
-        spos = instr.rargs[1]
-    spos = shader.mask_register(instr.lval, spos)
-
-    # Scan up for
-    # r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
-    # Unless this is a compute shader (which will be using thread ID instead)
-    if shader.shader_type != 'cs':
-        r = shader.scan_shader(spos, direction=-1, start=line - 1, write=True, stop=True, stop_when_clobbered=True, instr_type=MADInstruction)
         if len(r) != 1:
             debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
             return
-        if VPosScale not in (r[0].instruction.rargs[0].variable, r[0].instruction.rargs[1].variable) or \
-                r[0].instruction.rargs[2].variable != VPosOffset:
-            debug_verbose(0, 'Depth calculation does not follow expected pattern (6)')
-            return
 
-    debug("spos in {} depth in {}".format(spos, depth_reg))
+    prev_depth_reg = depth_reg
+    if r[0].instruction.rargs[0].negate != r[0].instruction.rargs[1].negate:
+        depth_reg = -depth_reg
+
+    line, instr = r[0]
+    vpos = instr.lval
+
+    # removed - b474742570c37446 and compute shaders do not follow this pattern:
+    # # Scan up for r0.xy = v0.xy * VPosScale.zw + VPosOffset.zw;
 
     off = shader.insert_stereo_params()
 
+    debug("vpos in {} depth in {}".format(vpos, depth_reg))
+    if hlsltool.regs_overlap(vpos, depth_reg.variable, depth_reg.components):
+        off += shader.insert_instr(line + off)
+        off += shader.insert_instr(line + off,
+                'mov {stereo}.w, {depth}'.format(
+                    stereo = shader.stereo_params_reg,
+                    depth = prev_depth_reg
+                ), 'Save off depth before it is clobbered:')
+        off += shader.insert_instr(line + off)
+        debug("vpos in {} and depth in {} overlap - remapping".format(vpos, depth_reg))
+        depth_reg = shader.stereo_params_reg + '.w'
+
     off += shader.insert_vanity_comment(line + off + 1, 'WATCH_DOGS2 unprojection fix inserted with')
+
     off += shader.insert_multiple_lines(line + off + 1, '''
         add {stereo}.w, {depth}, -{stereo}.y
         mul {stereo}.w, {stereo}.w, {stereo}.x
