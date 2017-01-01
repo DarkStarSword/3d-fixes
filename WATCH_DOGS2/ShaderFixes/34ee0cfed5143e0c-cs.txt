@@ -179,9 +179,9 @@ mul r1.xy, r0.wwww, r0.xyxx
 
 // Unprojection fix disabled for now - we need to toally fix this, or not at all
 
-// add r3.w, r0.w, -r3.y
-// mul r3.w, r3.w, r3.x
-// mad r1.x, -r3.w, cb0[9].x, r1.x
+add r3.w, r0.w, -r3.y
+mul r3.w, r3.w, r3.x
+mad r1.x, -r3.w, cb0[9].x, r1.x
 
 mad r0.x, r0.z, l(0.120000), l(1.000000)
 mul r1.x, r0.x, r1.x
@@ -199,9 +199,15 @@ if_nz r0.x
 endif 
 mul r0.x, r0.w, l(65536.000000)
 ftou r0.x, r0.x
+
+// SSPRWMirrorViewProjMatrix:
 dp4 r2.x, r1.xyzw, cb1[5].xyzw
 dp4 r2.y, r1.xyzw, cb1[6].xyzw
 dp4 r0.y, r1.xyzw, cb1[8].xyzw
+
+add r3.w, r0.y, -r3.y
+mad r2.x, -r3.w, r3.x, r2.x
+
 div r1.xyzw, r2.xyxy, r0.yyyy
 mad r1.xyzw, -r1.xyzw, cb1[0].xyxy, cb1[0].xyxy
 ftou r1.xyzw, r1.xyzw
