@@ -1314,6 +1314,11 @@ def fix_wd2_screen_space_reflections_cs(shader):
         debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 screen space reflection fix')
         return
 
+    results = shader.scan_shader(SSPRWMirrorViewProjMatrix[3], write = False)
+    if not results:
+        debug_verbose(0, 'Shader does not use SSPRWMirrorViewProjMatrix for the WATCH_DOGS2 screen space reflection fix')
+        return
+
     shader.insert_stereo_params()
     shader.early_insert_vanity_comment("WATCH_DOGS2 Screen Space Reflection fix (Compute Shader variant) inserted with")
 
