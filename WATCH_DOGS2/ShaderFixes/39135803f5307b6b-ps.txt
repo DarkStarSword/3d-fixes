@@ -199,7 +199,19 @@ dp2 r0.z, r0.xyxx, cb0[11].zwzz
 dp2 r0.x, r0.xyxx, cb0[12].zwzz
 div r0.x, -r0.z, r0.x
 div r0.yzw, v0.xxyz, v0.zzzz
+
+// Save off depth before it is clobbered:
+mov r5.w, r0.x
+
 mul r0.xyz, -r0.xxxx, r0.yzwy
+
+// WATCH_DOGS2 unprojection fix inserted with DarkStarSword's asmtool.py:
+// asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed 39135803f5307b6b-ps.txt
+
+add r5.w, r5.w, -r5.y
+mul r5.w, r5.w, r5.x
+mad r0.x, -r5.w, cb0[9].x, r0.x
+
 mov r0.w, l(1.000000)
 dp4 r1.x, r0.xyzw, cb0[17].xyzw
 dp4 r1.w, r0.xyzw, cb0[18].xyzw

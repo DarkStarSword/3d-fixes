@@ -268,6 +268,14 @@ dp2 r1.x, r1.xyxx, cb0[12].zwzz
 div r0.w, -r0.w, r1.x
 mov r0.z, l(1.000000)
 mul r1.xyz, r0.xyzx, -r0.wwww
+
+// WATCH_DOGS2 unprojection fix inserted with DarkStarSword's asmtool.py:
+// asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed f351deb58caa246a-ps.txt
+
+add r3.w, -r0.w, -r3.y
+mul r3.w, r3.w, r3.x
+mad r1.x, -r3.w, cb0[9].x, r1.x
+
 add r0.x, r0.w, l(0.001000)
 ge r0.x, r0.x, cb0[67].y
 and r0.x, r0.x, l(0x3f800000)
