@@ -1037,7 +1037,34 @@ def fix_wd2_volumetric_fog(shader):
         debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 volumetric fog adjustment')
         return
 
-    return _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
+    try:
+        _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
+    except:
+        pass
+
+    try:
+        VFViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', 'VFViewDirReconstruction'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare VFViewDirReconstruction')
+        return
+
+    results = shader.scan_shader(VFViewDirReconstruction, components='x', write=False)
+    if len(results) != 1:
+        debug_verbose(0, 'Shader does not use VFViewDirReconstruction')
+        return
+    line, instr = results[0]
+
+    off = shader.insert_stereo_params()
+
+    shader.insert_multiple_lines(line + off - 1, '''
+        // Adjust screen position before VFViewDirReconstruction to fix sun/moon glow:
+        add {x}, {x}, -{stereo}.x
+    '''.format(
+        x = instr.lval.variable + '.x',
+        stereo = shader.stereo_params_reg,
+    ))
+
+    shader.autofixed = True
 
 def fix_fcprimal_light_pos(shader):
     try:
