@@ -132,7 +132,10 @@ void main(
 
 // Move flares to correct depth (need to double check sun flare):
 float4 s = StereoParams.Load(0);
-o2.x += s.x * (o1.z - s.y) / o1.z;
+if (o1.z < 0.3) // Sun flares, move to infinity
+	o2.x += s.x * o2.w;
+else // Other flares, move to correct depth
+	o2.x += s.x * (o1.z - s.y) / o1.z;
 
   return;
 }
