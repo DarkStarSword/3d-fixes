@@ -6,12 +6,14 @@ Fixed
 - Accurate Screen Space Reflections (first ever accurate SSR fix for 3D Vision!)
 - Accurate Specular Highlights
 - Environmental reflections
+- Some 2D objects in reflections
 - Lights
 - Shadows
 - Decals
 - Skybox
 - Light flares
 - Volumetric Fog
+- Water refraction
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
 - Minimap pinned at screen depth
