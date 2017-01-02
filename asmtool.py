@@ -1064,8 +1064,8 @@ def fix_wd2_volumetric_fog(shader):
 
     off = shader.insert_stereo_params()
 
+    off += shader.insert_vanity_comment(line + off - 1, 'VFViewDirReconstruction adjustement (sun/moon volumetric fog) inserted with')
     shader.insert_multiple_lines(line + off - 1, '''
-        // Adjust screen position before VFViewDirReconstruction to fix sun/moon glow:
         add {x}, {x}, -{stereo}.x
     '''.format(
         x = instr.lval.variable + '.x',
