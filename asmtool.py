@@ -260,6 +260,12 @@ class MulInstruction(TwoArgAssignmentInstruction):
 class DivInstruction(TwoArgAssignmentInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('div')
 
+class MinInstruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('min')
+
+class MaxInstruction(TwoArgAssignmentInstruction):
+    pattern = TwoArgAssignmentInstruction.mkpattern('max')
+
 class MADInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
         \s*
@@ -387,6 +393,8 @@ specific_instructions = (
     DivInstruction,
     MADInstruction,
     MovInstruction,
+    MinInstruction,
+    MaxInstruction,
     AssignmentInstruction,
 )
 
@@ -1148,33 +1156,36 @@ def fix_wd2_unproject(shader, allow_multiple=False):
     if len(r2) != 1 or len(r3) != 1 or r2[0].line != r3[0].line:
         debug_verbose(0, 'Depth calculation does not follow expected pattern (1)')
         return
-    depth_line, depth_instr = r2[0]
-    depth_reg = depth_instr.lval
-    if depth_instr.rargs[0].negate == depth_instr.rargs[1].negate:
+    line, instr = r2[0]
+    depth_reg = instr.lval
+    if instr.rargs[0].negate == instr.rargs[1].negate:
         # XXX Wouldn't surprise me if this is not universal, but start specific then generalise...
         debug_verbose(0, 'Depth calculation does not follow expected pattern (2)')
         return
 
     # Scan for possible negate:
     # r2.z = -r0.z;
-    r = shader.scan_shader(depth_instr.lval, start=depth_line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=(MovInstruction, MulInstruction))
-    if len(r) != 1:
-        debug_verbose(0, 'Depth calculation does not follow expected pattern (3)')
-        return
-    line, instr = r[0]
-
-    if isinstance(instr, MovInstruction):
+    r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, stop_when_read=True, instr_type=MovInstruction)
+    if r:
+        line, instr = r[0]
         if not instr.rarg.negate:
             debug_verbose(0, 'Depth calculation does not follow expected pattern (4)')
             return
         depth_reg = -instr.lval
 
-        # Scan for
-        # r2.xy = r2.zz * r0.xy;
-        r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
-        if len(r) != 1:
-            debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
-            return
+    # Scan for
+    # min r0.w, r0.w, r1.x
+    r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, stop_when_read=True, instr_type=MinInstruction)
+    if r:
+        line, instr = r[0]
+        depth_reg = instr.lval
+
+    # Scan for
+    # r2.xy = r2.zz * r0.xy;
+    r = shader.scan_shader(depth_reg, start=line + 1, write=False, stop=True, stop_when_clobbered=True, instr_type=MulInstruction)
+    if len(r) != 1:
+        debug_verbose(0, 'Depth calculation does not follow expected pattern (5)')
+        return
 
     prev_depth_reg = depth_reg
     if r[0].instruction.rargs[0].negate != r[0].instruction.rargs[1].negate:

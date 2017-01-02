@@ -405,7 +405,7 @@ class Shader(object):
             #     self.comment_out_instruction(-1, 'noop')
         return pos
 
-    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None, stop_when_clobbered=False):
+    def scan_shader(self, reg, components=None, write=None, start=None, end=None, direction=1, stop=False, instr_type=None, stop_when_clobbered=False, stop_when_read=False):
         '''
         Based on the same function in shadertool
         '''
@@ -459,11 +459,19 @@ class Shader(object):
                     elif stop_when_clobbered:
                         debug_verbose(1, 'Stopping search: Write from instruction %s clobbered register: %s' % (i, instr.strip()))
                         return ret
+
+                if stop_when_read and instr.reads(reg, components):
+                        debug_verbose(1, 'Stopping search: Unrelated read from instruction %s: %s' % (i, instr.strip()))
+                        return ret
             else:
-                if instr.reads(reg, components) and (not instr_type or isinstance(instr, instr_type)):
-                    debug_verbose(1, 'Found read on instruction %s: %s' % (i, instr.strip()))
-                    ret.append(Match(i, instr))
-                    if stop:
+                if instr.reads(reg, components):
+                    if (not instr_type or isinstance(instr, instr_type)):
+                        debug_verbose(1, 'Found read on instruction %s: %s' % (i, instr.strip()))
+                        ret.append(Match(i, instr))
+                        if stop:
+                            return ret
+                    elif stop_when_read:
+                        debug_verbose(1, 'Stopping search: Unrelated read from instruction %s: %s' % (i, instr.strip()))
                         return ret
 
                 if stop_when_clobbered and instr.writes(reg, components):
