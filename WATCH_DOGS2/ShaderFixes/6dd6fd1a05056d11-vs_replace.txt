@@ -1,4 +1,6 @@
-// Lens flare from sun - move to infinity
+// Lens flare from sun + flares from studio lights (e.g. cinema)
+// Visibility is calculated in a different shader - 1061526d0c05e286
+
 // ---- Created with 3Dmigoto v1.2.52 on Sun Jan 01 13:20:29 2017
 
 cbuffer Viewport : register(b0)
@@ -128,9 +130,9 @@ void main(
   o1.z = -r0.z / r0.x;
   o1.xy = v3.xy;
 
-
+// Move flares to correct depth (need to double check sun flare):
 float4 s = StereoParams.Load(0);
-o2.x += s.x * o2.w;
+o2.x += s.x * (o1.z - s.y) / o1.z;
 
   return;
 }
