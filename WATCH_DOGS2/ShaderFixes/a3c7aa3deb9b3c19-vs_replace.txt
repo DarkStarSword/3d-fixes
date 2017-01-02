@@ -1,4 +1,4 @@
-// HUD - crosshair outer circle + lots of others
+// HUD - crosshair outer circle, camera HUD + lots of others
 // ---- Created with 3Dmigoto v1.2.52 on Sat Dec 31 14:13:06 2016
 
 cbuffer FireUiPrimitive : register(b0)
@@ -56,10 +56,15 @@ if (!tex_filter)
 
 float crosshair_mode = IniParams[1].y;
 switch (crosshair_mode) {
+	case 0: // auto
+		if (v2.w > IniParams[1].z)
+			o2.x += adjust_from_depth_buffer(0, 0);
+		else
+			o2 = 0;
+		return;
 	case 1: // on
 		o2.x += adjust_from_depth_buffer(0, 0);
 		return;
-	case 0: // auto
 	case 2: // off
 		o2 = 0;
 		return;
