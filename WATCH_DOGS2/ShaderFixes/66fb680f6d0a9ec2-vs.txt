@@ -240,6 +240,9 @@ dcl_temps 5
 
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
+// Driver stereo parameters - declaring this neutralises the driver's stereo
+// correction (even if it is not used):
+dcl_constantbuffer cb12[1], immediateIndexed
 
 ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
 
@@ -269,20 +272,12 @@ dp4 r0.y, r1.xyzw, cb1[59].xyzw
 dp4 r0.z, r1.xyzw, cb1[60].xyzw
 dp4 r0.w, r1.xyzw, cb1[61].xyzw
 
-// Relocated to here with asmtool.py
+// Halo fix variant - refer to f1b89303bc47a053-vs.txt for an explanation
+add r4.w, r0.w, -r4.y
+mad r0.x, r4.w, r4.x, r0.x
+
 mov o6.xyzw, r0.xyzw
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py --auto-fix-vertex-halo -i --only-autofixed 66fb680f6d0a9ec2-vs.txt
-ne r4.w, r0.w, l(1.0)
-if_nz r4.w
-  add r4.w, r0.w, -r4.y
-  mad r0.x, r4.w, r4.x, r0.x
-endif
-
 mov o0.xyzw, r0.xyzw
-
-// mov o6.xyzw, r0.xyzw // Relocated from here with asmtool.py
 
 mad r0.xyz, v2.zyxz, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
 dp3 o1.x, r0.xyzx, v6.xyzx
