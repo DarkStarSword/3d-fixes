@@ -223,6 +223,9 @@ dcl_constantbuffer cb1[175], immediateIndexed
 dcl_constantbuffer cb2[3], immediateIndexed
 dcl_constantbuffer cb3[7], immediateIndexed
 dcl_constantbuffer cb4[4], immediateIndexed
+// Driver stereo parameters - declaring this neutralises the driver's stereo
+// correction (even if it is not used):
+dcl_constantbuffer cb12[1], immediateIndexed
 dcl_input v0.xyz
 dcl_input v1.xy
 dcl_input v2.xyz
@@ -251,20 +254,43 @@ dp4 r1.y, r0.xyzw, cb1[59].xyzw
 dp4 r1.z, r0.xyzw, cb1[60].xyzw
 dp4 r1.w, r0.xyzw, cb1[61].xyzw
 
-// Relocated to here with asmtool.py
-mov o4.xyzw, r1.xyzw
+// This is a variant of the halo fix - this shader is used twice for the water
+// but will only be stereoised by the driver the second time. If the first is
+// not stereoised, the reflection will clip. Normally, we would normalise the
+// output coordinate to neutralise the driver's stereo correction, but that
+// does not work in this game due to the enormous magnitude of W causing
+// floating point havok.
 
-// Automatic vertex shader halo fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py --auto-fix-vertex-halo -i f1b89303bc47a053-vs.txt
-ne r2.w, r1.w, l(1.0)
+// Depth target filtering could probably be used to determine if the driver is
+// applying a stereo correction, but it is only implemented in a basic form in
+// 3DMigoto at the moment (yeah, I should fix that) and can't do what we need
+// since we need to alter the shader either way, just differently.
+
+// I discovered a while ago that if a shader declares the constant buffer that
+// the driver wants to use to pass the stereo parameters it will not apply the
+// stereo correction. This allows us to have a reliable starting point with the
+// correction not applied in either case, so we know we have to apply it
+// ourselves:
+
+ne r2.w, cb12[0].x, l(0.0)
 if_nz r2.w
-  add r2.w, r1.w, -r2.y
-  mad r1.x, r2.w, r2.x, r1.x
+	// Driver's stereo parameters have been passed in, may as well use them
+	// (not necessary - the else case would work here as well, but this
+	// demonstrates how to use the driver's parameters to the same result):
+	mad r1.x, r1.w, cb12[0].y, r1.x
+	add r1.x, r1.x, cb12[0].x
+else
+	// Driver was not going to alter this shader and did not pass it's
+	// parameters in, use 3DMigoto's stereo texture instead:
+	add r2.w, r1.w, -r2.y
+	mad r1.x, r2.w, r2.x, r1.x
 endif
 
+// Since we have neutralised the driver's stereo correction (or it was not
+// going to stereoise this in the first place), we need to output the stereo
+// corrected position ourselves along with the texcoord copy:
+mov o4.xyzw, r1.xyzw
 mov o0.xyzw, r1.xyzw
-
-// mov o4.xyzw, r1.xyzw // Relocated from here with asmtool.py
 
 mad r0.xyz, v2.zyxz, l(2.000000, 2.000000, 2.000000, 0.000000), l(-1.000000, -1.000000, -1.000000, 0.000000)
 dp3 o1.x, r0.xyzx, cb2[0].xyzx
