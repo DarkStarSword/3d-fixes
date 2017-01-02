@@ -28,6 +28,10 @@ Installation
 ------------
 1. Extract the zip file under WATCH_DOGS2\bin
 
+2. Configure the settings:
+   - Temporal Filtering: Off
+   - Multisample Anti-Aliasing: Off
+
 Keys
 ----
 - K: Cycle between three crosshair modes: auto (enabled only when aiming), on
