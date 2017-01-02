@@ -1,0 +1,194 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:11:03 2016
+
+cbuffer Viewport : register(b0)
+{
+  float4 CameraNearPlaneSize : packoffset(c0);
+  float4x4 DepthTextureTransform : packoffset(c1);
+  float4 FSMClipPlanes : packoffset(c5);
+  float4 FacettedShadowCastParams : packoffset(c6);
+  float4 FogValues0 : packoffset(c7);
+  float4 FogValues1 : packoffset(c8);
+  float4x4 InvProjectionMatrix : packoffset(c9);
+  float4x4 InvProjectionMatrixDepth : packoffset(c13);
+  float4x3 InvViewMatrix : packoffset(c17);
+  float4x4 PreviousViewProjectionMatrix : packoffset(c20);
+  float4x4 ProjectionMatrix : packoffset(c24);
+  float4 RainOcclusionFadeParams : packoffset(c28);
+  float4x4 RainOcclusionProjectionMatrix : packoffset(c29);
+  float4 RainOcclusionShadowMapSize : packoffset(c33);
+  float4 ReflectionVolumeDebugColors[15] : packoffset(c34);
+  float4 VPosOffset : packoffset(c49);
+  float4 VPosScale : packoffset(c50);
+  float4x3 ViewMatrix : packoffset(c51);
+  float4x4 ViewProjectionMatrix : packoffset(c54);
+  float4x4 ViewRotProjectionMatrix : packoffset(c58);
+  float4x4 ViewRotProjectionMatrixPure : packoffset(c62);
+  float4 ViewportSize : packoffset(c66);
+
+  struct
+  {
+    float near;
+    float far;
+    float view;
+    float oneOverView;
+  } CameraDistances : packoffset(c67);
+
+
+  struct
+  {
+    float4x4 inverseTransform;
+    float3 rcpFadeRangePositive;
+    float textureArrayIndexAsFloat;
+    float3 rcpFadeRangeNegative;
+    float fadeFactor;
+    float2 multipliers;
+    uint parallaxCorrection;
+    float padding0;
+  } ReflectionVolumes[15] : packoffset(c68);
+
+  float3 CameraDirection : packoffset(c173);
+  float DefaultReflectionTextureArrayIndexAsFloat : packoffset(c173.w);
+  float3 CameraPosition : packoffset(c174);
+  float DynamicCubeMapReflectionTextureMaxMipIndex : packoffset(c174.w);
+  float3 CullingCameraPosition : packoffset(c175);
+  float ExposedWhitePointOverExposureScale : packoffset(c175.w);
+  float3 FogColorVector : packoffset(c176);
+  float ExposureScale : packoffset(c176.w);
+  float3 OppositeFogColorDelta : packoffset(c177);
+  float MaxParaboloidReflectionMipIndex : packoffset(c177.w);
+  float3 SideFogColor : packoffset(c178);
+  float MaxStaticReflectionMipIndex : packoffset(c178.w);
+  float3 SunFogColorDelta : packoffset(c179);
+  float MeasuredExposureScale : packoffset(c179.w);
+  float3 TemporalFilteringParams : packoffset(c180);
+  float RaindropRippleScale : packoffset(c180.w);
+  float3 UncompressDepthWeights : packoffset(c181);
+  float ReflectionScaleDistanceMul : packoffset(c181.w);
+  float3 UncompressDepthWeightsWS : packoffset(c182);
+  float ReflectionScaleStrength : packoffset(c182.w);
+  float3 ViewPoint : packoffset(c183);
+  float SkyParaboloidTextureMaxMipIndex : packoffset(c183.w);
+  float2 DefaultReflectionMultipliers : packoffset(c184);
+  bool UseOnlySkyReflection : packoffset(c184.z);
+  float2 ReflectionGIControl : packoffset(c185);
+  uint2 SelectedPixel : packoffset(c185.z);
+}
+
+cbuffer SceneGeometry : register(b1)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 GeometryUserData : packoffset(c1);
+  float4 UVDecompression : packoffset(c2);
+
+  struct
+  {
+    float positionMin;
+    float positionRange;
+    float meshLocalHeight;
+    float isBuildingFacadeInterior;
+  } MeshDecompression : packoffset(c3);
+
+  float3 GeometryBBoxMax : packoffset(c4);
+  float3 GeometryBBoxMin : packoffset(c5);
+}
+
+cbuffer MaterialWD2Glass : register(b2)
+{
+  float4 MaterialPickingID : packoffset(c0);
+  float4 BaseColorUVTiling : packoffset(c1);
+  float4 SurfaceParametersUVTiling : packoffset(c2);
+  float3 AbsorptionColor : packoffset(c3);
+  float AbsorptionDistance : packoffset(c3.w);
+  float3 AbsorptionColorPreset : packoffset(c4);
+  float BaseColorAlpha : packoffset(c4.w);
+  float3 BaseColor : packoffset(c5);
+  float DustIntensity : packoffset(c5.w);
+  float3 DamageStateUVSlide : packoffset(c6);
+  float MaskChannelUsageAlpha : packoffset(c6.w);
+  float3 DustColor : packoffset(c7);
+  float MaskChannelUsageBlue : packoffset(c7.w);
+  float3 MudColor : packoffset(c8);
+  float MaskChannelUsageGreen : packoffset(c8.w);
+  float3 SurfaceAlbedo : packoffset(c9);
+  float MaskChannelUsageRed : packoffset(c9.w);
+  float2 AbsorptionDistanceTiling : packoffset(c10);
+  float MaxFreePath : packoffset(c10.z);
+  float Metalness : packoffset(c10.w);
+  float2 AbsorptionTiling : packoffset(c11);
+  float MudIntensity : packoffset(c11.z);
+  float NormalMapIntensity : packoffset(c11.w);
+  float2 NormalMapTiling : packoffset(c12);
+  float Reflectance : packoffset(c12.z);
+  float ReflectanceDustAdjustment : packoffset(c12.w);
+  float2 ThicknessTiling : packoffset(c13);
+  float Roughness : packoffset(c13.z);
+  float RoughnessDustAdjustment : packoffset(c13.w);
+  float Thickness : packoffset(c14);
+  int WetSurfaceTypeIndex : packoffset(c14.y);
+  bool AbsorptionDistanceModulateByVAlpha : packoffset(c14.z);
+  bool DamageStateEnabled : packoffset(c14.w);
+  bool IsVehicule : packoffset(c15);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : blendweight0,
+  int4 v1 : texcoord2,
+  float4 v2 : normal0,
+  float4 v3 : color1,
+  float4 v4 : texcoord1,
+  float4 v5 : texcoord0,
+  float4 v6 : texcoord4,
+  float4 v7 : texcoord5,
+  float4 v8 : texcoord6,
+  int4 v9 : texcoord7,
+  out float o0 : TEXCOORD0,
+  out float4 o1 : SV_Position0)
+{
+  float4 r0,r1,r2,r3;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  o0.x = AbsorptionDistanceModulateByVAlpha ? v3.w : 1;
+  r0.xyz = v6.xyz;
+  r1.x = v6.w;
+  r1.y = v7.w;
+  r1.z = v8.w;
+  r2.xyzw = (int4)v9.xyzw;
+  r1.xyw = r2.xyz + r1.xyz;
+  r2.x = r2.w * 0.00781273842 + 256;
+  r0.w = r1.x;
+  r2.yzw = (int3)v0.xyz;
+  r2.yzw = r2.yzw * MeshDecompression.positionRange + MeshDecompression.positionMin;
+  r2.xyz = r2.yzw * r2.xxx;
+  r2.w = 1;
+  r0.x = dot(r2.xyzw, r0.xyzw);
+  r3.w = r1.y;
+  r3.xyz = v7.xyz;
+  r0.y = dot(r2.xyzw, r3.xyzw);
+  r1.xyz = v8.xyz;
+  r0.z = dot(r2.xyzw, r1.xyzw);
+  r0.xyz = -CameraPosition.xyz + r0.xyz;
+  r1.x = ViewRotProjectionMatrix._m10 * r0.y;
+  r1.y = ViewRotProjectionMatrix._m11 * r0.y;
+  r1.z = ViewRotProjectionMatrix._m12 * r0.y;
+  r1.w = ViewRotProjectionMatrix._m13 * r0.y;
+  r2.x = r0.z * ViewRotProjectionMatrix._m20 + ViewRotProjectionMatrix._m30;
+  r2.y = r0.z * ViewRotProjectionMatrix._m21 + ViewRotProjectionMatrix._m31;
+  r2.z = r0.z * ViewRotProjectionMatrix._m22 + ViewRotProjectionMatrix._m32;
+  r2.w = r0.z * ViewRotProjectionMatrix._m23 + ViewRotProjectionMatrix._m33;
+  r1.xyzw = r2.xyzw + r1.xyzw;
+  r2.x = ViewRotProjectionMatrix._m00 * r0.x;
+  r2.y = ViewRotProjectionMatrix._m01 * r0.x;
+  r2.z = ViewRotProjectionMatrix._m02 * r0.x;
+  r2.w = ViewRotProjectionMatrix._m03 * r0.x;
+  o1.xyzw = r2.xyzw + r1.xyzw;
+  return;
+}
