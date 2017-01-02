@@ -18,7 +18,8 @@ Fixed
 - Added an automatic/manual crosshair toggle
 - Minimap pinned at screen depth
 - Profile dialogs capped no closer than screen depth
-- Synchronised particle physics between eyes (falling leaves)
+- Synchronised particle physics between eyes (for falling leaves - press F1 if
+  they are still broken)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
 - Lighting on walls in nethack vision
@@ -34,6 +35,9 @@ Keys
   and off.
 
 - ~: Toggle between two convergence presets for cutscenes and gameplay.
+
+- F1: Disable leaf particles (use if they are only visible in one eye or are in
+  different positions in each eye)
 
 Note about anti-cheat software
 ------------------------------
