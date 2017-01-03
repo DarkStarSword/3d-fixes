@@ -1064,36 +1064,30 @@ def fix_wd2_volumetric_fog(shader):
         return
 
     _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
-    fix_wd2_camera_pos(shader)
 
-    for name in ('VFViewDirReconstruction', 'FVViewDirReconstruction'):
-        try:
-            ViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', name))
-        except KeyError:
-            debug_verbose(0, 'Shader does not declare VFViewDirReconstruction')
-            continue
+    try:
+        VFViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', 'VFViewDirReconstruction'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare VFViewDirReconstruction')
+        return
 
-        results = shader.scan_shader(ViewDirReconstruction, components='x', write=False)
-        if len(results) != 1:
-            debug_verbose(0, 'Shader does not use %s' % name)
-            continue
-        line, instr = results[0]
+    results = shader.scan_shader(VFViewDirReconstruction, components='x', write=False)
+    if len(results) != 1:
+        debug_verbose(0, 'Shader does not use VFViewDirReconstruction')
+        return
+    line, instr = results[0]
 
-        off = shader.insert_stereo_params()
-        off += shader.insert_ini_params(0)
+    off = shader.insert_stereo_params()
 
-        off += shader.insert_vanity_comment(line + off - 1, '%s adjustement (sun/moon volumetric fog) inserted with' % name)
-        shader.insert_multiple_lines(line + off - 1, '''
-            mul {stereo}.w, {stereo}.x, {ini}.{ini_component}
-            add {x}, {x}, -{stereo}.w
-        '''.format(
-            x = instr.lval.variable + '.x',
-            stereo = shader.stereo_params_reg,
-            ini = shader.ini_params_reg[0],
-            ini_component = name == 'FVViewDirReconstruction' and 'y' or 'x',
-        ))
+    off += shader.insert_vanity_comment(line + off - 1, 'VFViewDirReconstruction adjustement (sun/moon volumetric fog) inserted with')
+    shader.insert_multiple_lines(line + off - 1, '''
+        add {x}, {x}, -{stereo}.x
+    '''.format(
+        x = instr.lval.variable + '.x',
+        stereo = shader.stereo_params_reg,
+    ))
 
-        shader.autofixed = True
+    shader.autofixed = True
 
 def fix_fcprimal_light_pos(shader):
     try:
@@ -1262,7 +1256,6 @@ def fix_wd2_camera_pos(shader):
         return
 
     off = shader.insert_stereo_params()
-    off += shader.insert_ini_params(0)
     repl_CameraPosition = shader.allocate_temp_reg()
     tmp1 = shader.allocate_temp_reg()
     tmp2 = shader.allocate_temp_reg()
@@ -1278,7 +1271,6 @@ def fix_wd2_camera_pos(shader):
         dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
         dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
         dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
-        mul {tmp2}.xyz, {tmp2}.xyz, {ini}.z
         add {repl_CameraPosition}.xyz, {CameraPosition}.xyz, {tmp2}.xyz
     '''.format(
         stereo = shader.stereo_params_reg,
@@ -1293,7 +1285,6 @@ def fix_wd2_camera_pos(shader):
         repl_CameraPosition = repl_CameraPosition,
         tmp1 = tmp1,
         tmp2 = tmp2,
-        ini = shader.ini_params_reg[0],
     ))
 
     shader.autofixed = True
