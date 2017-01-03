@@ -55,3 +55,18 @@ with the -eac_launcher option. If you are launching through UPlay you can go
 into the properties page for the game and use "Add launch arguments" to add
 this. If done correctly you will get a message when the game launches that the
 anti cheat software is not installed and multiplayer will be unavailable.
+
+Known Issues
+------------
+- Car windscreens reflect incorrectly at extreme angles
+- Thick fog that occasionally rolls in over the bay is clipping incorrectly
+- Need to sort out which fog fixes apply to which shaders for best accuracy
+  (sun/moon fix should not be universally applied for best results - need to
+  determine how to distinguish which shaders it does apply to)
+
+To Investigate
+--------------
+- Reports of flickering HUD on some systems after 10 minutes
+- Leaves still only displaying in one eye for some people
+- Reports of strange weather and disappearing objects (possible occlusion culling issue?):
+  https://forums.geforce.com/default/topic/979185/3d-vision/watch-dogs-2-3d-vision/post/5047888/#5047888
