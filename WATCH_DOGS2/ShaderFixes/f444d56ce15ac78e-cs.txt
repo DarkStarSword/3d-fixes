@@ -366,6 +366,22 @@ add r1.xyz, r1.xyzw, r13.xyzx
         mul r7.z, r11.x, r11.x
         mul r10.x, r11.x, r7.z
         add r8.xyz, r8.xyzx, -cb0[174].xyzx
+
+// Volumetric Fog fix inserted with DarkStarSword's asmtool.py:
+// asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed f444d56ce15ac78e-cs.txt
+
+mov r13.xyz, r8.xyzx
+mov r13.w, l(1.0)
+dp4 r14.w, r13.xyzw, cb0[57].xyzw
+add r14.x, r14.w, -r12.y
+mul r14.x, r14.x, -r12.x
+mul r14.x, r14.x, cb0[9].x
+mov r14.yzw, l(0.0)
+dp4 r13.x, r14.xyzw, cb0[17].xyzw
+dp4 r13.y, r14.xyzw, cb0[18].xyzw
+dp4 r13.z, r14.xyzw, cb0[19].xyzw
+add r8.xyz, r8.xyzw, r13.xyzx
+
         dp3 r7.z, r8.xyzx, r8.xyzx
         mul r7.z, r7.z, l(0.000400)
         min r7.z, r7.z, l(1.000000)
