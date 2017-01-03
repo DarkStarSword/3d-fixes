@@ -591,6 +591,20 @@ class ASMShader(hlsltool.Shader):
         off += self.early_insert_instr()
         return off
 
+    def insert_ini_params(self, idx):
+        if self.inserted_ini_params[idx]:
+            return 0
+        self.inserted_ini_params[idx] = True
+        self.ini_params_reg[idx] = self.allocate_temp_reg()
+        if not self.inserted_ini_params_decl:
+            self.inserted_ini_params_decl = True
+            self.insert_decl()
+            self.insert_decl('dcl_resource_texture1d (float,float,float,float) t120', '3DMigoto IniParams:')
+        off  = self.early_insert_instr()
+        off += self.early_insert_instr('ld_indexable(texture1d)(float,float,float,float) {0}.xyzw, l({1}, 0, 0, 0), t120.xyzw'.format(self.ini_params_reg[idx], idx))
+        off += self.early_insert_instr()
+        return off
+
     def insert_halo_fix_code(self, pos, temp_reg):
         off = 0
         off += self.insert_instr(pos + off, 'ne {0}.w, {1}.w, l(1.0)'.format(self.stereo_params_reg, temp_reg.variable))

@@ -373,11 +373,14 @@ class Shader(object):
         self.shader_model = None
         self._early_insert_pos = None
         self.inserted_stereo_params = False
+        self.inserted_ini_params_decl = False
+        self.inserted_ini_params = [False] * 8
         self.ini_settings = None
         self.ini_name = ''
         self.text = open(filename, 'r').read()
         self.get_info_from_filename()
         self.stereo_params_reg = None
+        self.ini_params_reg = [None] * 8
 
     def get_info_from_filename(self):
         match = self.shader_filename_pattern.match(self.filename)
