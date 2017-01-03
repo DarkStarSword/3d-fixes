@@ -985,43 +985,47 @@ def _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProject
         debug_verbose(0, 'Shader does not use CameraPosition')
         return
 
-    (line, instr) = results[0]
+    off = 0
 
-    off = shader.insert_stereo_params()
-    tmp1 = shader.allocate_temp_reg()
-    tmp2 = shader.allocate_temp_reg()
+    for (line, instr) in results:
+        pos = instr.lval
+        if len(pos.components) != 3:
+            continue
 
-    pos = instr.lval
+        if off == 0:
+            off  = shader.insert_stereo_params()
+            tmp1 = shader.allocate_temp_reg()
+            tmp2 = shader.allocate_temp_reg()
 
-    off += shader.insert_vanity_comment(line + off + 1, 'Volumetric Fog fix inserted with')
-    off += shader.insert_multiple_lines(line + off + 1, '''
-        mov {tmp1}.xyz, {pos}.{pos_swizzle}
-        mov {tmp1}.w, l(1.0)
-        dp4 {tmp2}.w, {tmp1}.xyzw, {ViewProjectionMatrix3}.xyzw
-        add {tmp2}.x, {tmp2}.w, -{stereo}.y
-        mul {tmp2}.x, {tmp2}.x, -{stereo}.x
-        mul {tmp2}.x, {tmp2}.x, {InvProjectionMatrix0}.x
-        mov {tmp2}.yzw, l(0.0)
-        dp4 {tmp1}.x, {tmp2}.xyzw, {InvViewMatrix0}.xyzw
-        dp4 {tmp1}.y, {tmp2}.xyzw, {InvViewMatrix1}.xyzw
-        dp4 {tmp1}.z, {tmp2}.xyzw, {InvViewMatrix2}.xyzw
-        add {pos}.{pos_mask}, {pos}.xyzw, {tmp1}.{adj_swizzle}
-    '''.format(
-        pos = pos.variable,
-        pos_mask = pos.components,
-        pos_swizzle = shader.remap_components(pos.components, 'xyz'),
-        adj_swizzle = shader.remap_components('xyz', pos.components),
-        stereo = shader.stereo_params_reg,
-        ViewProjectionMatrix3 = ViewProjectionMatrix[3],
-        InvProjectionMatrix0 = InvProjectionMatrix[0],
-        InvViewMatrix0 = InvViewMatrix[0],
-        InvViewMatrix1 = InvViewMatrix[1],
-        InvViewMatrix2 = InvViewMatrix[2],
-        tmp1=tmp1,
-        tmp2=tmp2
-    ))
+        off += shader.insert_vanity_comment(line + off + 1, 'Volumetric Fog fix inserted with')
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            mov {tmp1}.xyz, {pos}.{pos_swizzle}
+            mov {tmp1}.w, l(1.0)
+            dp4 {tmp2}.w, {tmp1}.xyzw, {ViewProjectionMatrix3}.xyzw
+            add {tmp2}.x, {tmp2}.w, -{stereo}.y
+            mul {tmp2}.x, {tmp2}.x, -{stereo}.x
+            mul {tmp2}.x, {tmp2}.x, {InvProjectionMatrix0}.x
+            mov {tmp2}.yzw, l(0.0)
+            dp4 {tmp1}.x, {tmp2}.xyzw, {InvViewMatrix0}.xyzw
+            dp4 {tmp1}.y, {tmp2}.xyzw, {InvViewMatrix1}.xyzw
+            dp4 {tmp1}.z, {tmp2}.xyzw, {InvViewMatrix2}.xyzw
+            add {pos}.{pos_mask}, {pos}.xyzw, {tmp1}.{adj_swizzle}
+        '''.format(
+            pos = pos.variable,
+            pos_mask = pos.components,
+            pos_swizzle = shader.remap_components(pos.components, 'xyz'),
+            adj_swizzle = shader.remap_components('xyz', pos.components),
+            stereo = shader.stereo_params_reg,
+            ViewProjectionMatrix3 = ViewProjectionMatrix[3],
+            InvProjectionMatrix0 = InvProjectionMatrix[0],
+            InvViewMatrix0 = InvViewMatrix[0],
+            InvViewMatrix1 = InvViewMatrix[1],
+            InvViewMatrix2 = InvViewMatrix[2],
+            tmp1=tmp1,
+            tmp2=tmp2
+        ))
 
-    shader.autofixed = True
+        shader.autofixed = True
 
 def fix_fcprimal_volumetric_fog(shader):
     try:
@@ -1045,10 +1049,7 @@ def fix_wd2_volumetric_fog(shader):
         debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 volumetric fog adjustment')
         return
 
-    try:
-        _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
-    except:
-        pass
+    _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
 
     try:
         VFViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', 'VFViewDirReconstruction'))
