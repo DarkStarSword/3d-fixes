@@ -1053,6 +1053,7 @@ def vanity_comment(args, tree, what):
         file_set = set(args.files)
         vanity_args = list(filter(lambda x: x not in file_set and '*' not in x, sys.argv[1:]))
 
+    debug_verbose(0, " Applying: %s %s" % (what, tool_name))
     return [
         "%s DarkStarSword's %s:" % (what, tool_name),
         '%s %s' % (os.path.basename(sys.argv[0]), ' '.join(vanity_args + [tree.filename])),
