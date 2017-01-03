@@ -123,6 +123,12 @@ class AssignmentInstruction(hlsltool.AssignmentInstruction, Instruction):
     def is_noop(self):
         return False
 
+    def replace_rval_reg(self, old, new):
+        indent = self.text[:self.text.find(self.instruction)]
+        text = '{}{} {}, {}'.format(indent, self.instruction, self.lval, self.rval.replace(old, new))
+        match = self.__class__.pattern.match(text)
+        return self.__class__(match.group(), **match.groupdict())
+
 class MovInstruction(AssignmentInstruction):
     pattern = re.compile(r'''
         \s*
@@ -994,10 +1000,18 @@ def fix_fcprimal_camera_pos(shader):
     shader.autofixed = True
 
 def _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix):
+    # FIXME: Verify something exists in the shader to confirm this is
+    # volumetric fog, otherwise it applies to anything using CameraPosition
+
     results = shader.scan_shader(CameraPosition, write=False)
     if not results:
         debug_verbose(0, 'Shader does not use CameraPosition')
         return
+
+    try:
+        VFPrevWorldToVolumetricShadowMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'VFPrevWorldToVolumetricShadowMatrix'))
+    except:
+        VFPrevWorldToVolumetricShadowMatrix = None
 
     off = 0
 
@@ -1012,6 +1026,20 @@ def _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProject
             tmp2 = shader.allocate_temp_reg()
 
         off += shader.insert_vanity_comment(line + off + 1, 'Volumetric Fog fix inserted with')
+
+        # Removes smear from shadow volume shaders:
+        if VFPrevWorldToVolumetricShadowMatrix is not None:
+            p_results = shader.scan_shader(VFPrevWorldToVolumetricShadowMatrix, start = line + 1, write = False)
+            if p_results:
+                orig_pos = shader.allocate_temp_reg()
+                for (p_line, p_instr) in p_results:
+                     shader.replace_rval_reg_on_line(p_line, pos.variable, orig_pos)
+                off += shader.insert_instr(line + off + 1,
+                        'mov {orig_pos}.xyzw, {pos}.xyzw'.format(
+                            orig_pos = orig_pos,
+                            pos = pos.variable,
+                    ))
+
         off += shader.insert_multiple_lines(line + off + 1, '''
             mov {tmp1}.xyz, {pos}.{pos_swizzle}
             mov {tmp1}.w, l(1.0)
@@ -1434,7 +1462,7 @@ def parse_args():
     parser.add_argument('--fix-fcprimal-camera-pos', action='store_true',
             help="Fix reflections, specular highlights, etc. by adjusting the camera position in Far Cry Primal")
     parser.add_argument('--fix-fcprimal-volumetric-fog', action='store_true',
-            help="Fix various volumetric fog shaders (WARNING: do not apply to shadow volume shaders - their pattern is slightly different and this will lead to smearing)")
+            help="Fix various volumetric fog shaders")
     parser.add_argument('--fix-fcprimal-light-pos', action='store_true',
             help="Fix light position, for volumetric fog around point lights (WARNING: this might break some cave light shaft shaders)")
     parser.add_argument('--fix-wd2-unproject', action='store_true',

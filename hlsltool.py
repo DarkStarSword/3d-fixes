@@ -415,6 +415,16 @@ class Shader(object):
         assert(direction == 1 or direction == -1)
         assert(write is not None)
 
+        if isinstance(reg, (list, tuple)):
+            results = []
+            for r in reg:
+                results.extend(self.scan_shader(r, components=components,
+                    write=write, start=start, end=end, direction=direction,
+                    stop=stop, instr_type=instr_type,
+                    stop_when_clobbered=stop_when_clobbered,
+                    stop_when_read=stop_when_read))
+            return results
+
         Match = collections.namedtuple('Match', ['line', 'instruction'])
 
         if instr_type and not isinstance(instr_type, (tuple, list)):
@@ -570,12 +580,22 @@ class Shader(object):
             self.ini_settings = []
         self.ini_settings.append(setting)
 
+    def replace_reg_on_line(self, i, old, new, components=None):
+        # NOTE: Replaces both lval and rval
+        instr = self.instructions[i]
+        if register_in_expression(str(instr), old, components):
+            # FIXME: Use a regular expression replace to ensure the
+            # replacement is on a word boundary:
+            self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+
+    def replace_rval_reg_on_line(self, i, old, new):
+        instr = self.instructions[i]
+        if register_in_expression(instr.rval, old):
+            self.instructions[i] = instr.replace_rval_reg(old, new)
+
     def replace_reg(self, old, new, components=None):
-        for i, instr in enumerate(self.instructions):
-            if register_in_expression(instr.rval, old, components):
-                # FIXME: Use a regular expression replace to ensure the
-                # replacement is on a word boundary:
-                self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+        for i in range(len(self.instructions)):
+            self.replace_reg_on_line(i, old, new, components)
 
     def update_ini(self):
         '''
