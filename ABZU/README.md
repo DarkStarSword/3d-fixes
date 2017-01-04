@@ -17,6 +17,17 @@ Fixed
 - Water caustics
 - Water density
 
+Update 1.1
+----------
+- Fix crash on Windows 10 when using the SBS custom shader
+
+Update 1.2
+----------
+- Allow Steam Overlay + Steam Controller to work
+- Fixed giant nautilus
+- Fix light hitting volcanic ash in depths level
+- Several more minor effects fixed
+
 Installation
 ------------
 1. Extract the zip file to the game directory. If done correctly, the d3d11.dll
