@@ -587,15 +587,21 @@ class Shader(object):
             # FIXME: Use a regular expression replace to ensure the
             # replacement is on a word boundary:
             self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+            return True
+        return False
 
     def replace_rval_reg_on_line(self, i, old, new):
         instr = self.instructions[i]
         if register_in_expression(instr.rval, old):
             self.instructions[i] = instr.replace_rval_reg(old, new)
 
-    def replace_reg(self, old, new, components=None):
+    def replace_reg(self, old, new, components = None, limit = None):
+        count = 0
         for i in range(len(self.instructions)):
-            self.replace_reg_on_line(i, old, new, components)
+            count += self.replace_reg_on_line(i, old, new, components)
+            if limit is not None and count >= limit:
+                break
+        return count
 
     def update_ini(self):
         '''

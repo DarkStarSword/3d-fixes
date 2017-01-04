@@ -1333,7 +1333,7 @@ def fix_wd2_unproject(shader, allow_multiple=False):
     shader.autofixed = True
     shader.wd2_unprojection_fix_applied = True
 
-def fix_wd2_camera_pos(shader):
+def fix_wd2_camera_pos(shader, limit = None):
     if hasattr(shader, 'wd2_camera_pos_fix_applied'):
         return
 
@@ -1356,7 +1356,7 @@ def fix_wd2_camera_pos(shader):
         tmp1 = shader.allocate_temp_reg()
         tmp2 = shader.allocate_temp_reg()
 
-        shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz')
+        shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz', limit = limit)
         shader.early_insert_vanity_comment('WATCH_DOGS2 %s adjustment inserted with' % name)
         shader.early_insert_multiple_lines('''
             mul {stereo}.w, {stereo}.x, {stereo}.y
@@ -1537,6 +1537,8 @@ def parse_args():
             help="Fix lights, etc. in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-camera-pos', action='store_true',
             help="Fix specular highlights in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-camera-pos-limit', type=int,
+            help="As above, but limits the number of times camera position will be replaced in a shader (for glass)")
     parser.add_argument('--fix-wd2-volumetric-fog', action='store_true',
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-view-dir-reconstruction', action='store_true',
@@ -1604,7 +1606,9 @@ def main():
                 fix_wd2_screen_space_reflections_cs(shader)
             if args.fix_wd2_unproject:
                 fix_wd2_unproject(shader)
-            if args.fix_wd2_camera_pos:
+            if args.fix_wd2_camera_pos_limit:
+                fix_wd2_camera_pos(shader, args.fix_wd2_camera_pos_limit)
+            elif args.fix_wd2_camera_pos:
                 fix_wd2_camera_pos(shader)
         except Exception as e:
             if args.ignore_other_errors:

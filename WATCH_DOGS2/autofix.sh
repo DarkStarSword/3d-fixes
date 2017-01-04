@@ -34,3 +34,11 @@ asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fv_shaders_ps
 # 1 fix completely breaks windshield reflections, while this breaks some fog):
 #fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
 #asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
+
+
+# Glass shaders use CameraPosition twice, but we only want to correct the first
+# to fix reflections - the second will mess up sky reflections causing them to
+# go out of bounds on the sky texture and show in only one eye.
+glass_ps=$(grep -l 'cbuffer MaterialWD2Glass' $ps)
+ps=$(grep -L 'cbuffer MaterialWD2Glass' $ps)
+asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $glass_ps
