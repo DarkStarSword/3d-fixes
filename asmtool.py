@@ -1093,29 +1093,38 @@ def fix_wd2_volumetric_fog(shader):
 
     _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProjectionMatrix, InvViewMatrix)
 
-    try:
-        VFViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', 'VFViewDirReconstruction'))
-    except KeyError:
-        debug_verbose(0, 'Shader does not declare VFViewDirReconstruction')
-        return
+def fix_wd2_view_dir_reconstruction(shader):
+    # Separated out from fix_wd2_volumetric_fog as it was found to completely
+    # break volumetric fog around light sources on foggy nights
+    # (f444d56ce15ac78e). Need to only apply this to sun/moon fog shaders (or
+    # find a better way to adjust them that works for everything).
+    #
+    # Not positive if FVViewDirReconstruction ever needs to be adjusted, but
+    # adding it here so we can easily test.
+    for name in ('VFViewDirReconstruction', 'FVViewDirReconstruction'):
+        try:
+            ViewDirReconstruction = cb_offset(*shader.find_cb_entry('float4', name))
+        except KeyError:
+            debug_verbose(0, 'Shader does not declare %s' % name)
+            continue
 
-    results = shader.scan_shader(VFViewDirReconstruction, components='x', write=False)
-    if len(results) != 1:
-        debug_verbose(0, 'Shader does not use VFViewDirReconstruction')
-        return
-    line, instr = results[0]
+        results = shader.scan_shader(ViewDirReconstruction, components='x', write=False)
+        if len(results) != 1:
+            debug_verbose(0, 'Shader does not use %s' % name)
+            continue
+        line, instr = results[0]
 
-    off = shader.insert_stereo_params()
+        off = shader.insert_stereo_params()
 
-    off += shader.insert_vanity_comment(line + off - 1, 'VFViewDirReconstruction adjustement (sun/moon volumetric fog) inserted with')
-    shader.insert_multiple_lines(line + off - 1, '''
-        add {x}, {x}, -{stereo}.x
-    '''.format(
-        x = instr.lval.variable + '.x',
-        stereo = shader.stereo_params_reg,
-    ))
+        off += shader.insert_vanity_comment(line + off - 1, '%s adjustement (sun/moon volumetric fog) inserted with' % name)
+        shader.insert_multiple_lines(line + off - 1, '''
+            add {x}, {x}, -{stereo}.x
+        '''.format(
+            x = instr.lval.variable + '.x',
+            stereo = shader.stereo_params_reg,
+        ))
 
-    shader.autofixed = True
+        shader.autofixed = True
 
 def fix_fcprimal_light_pos(shader):
     try:
@@ -1471,6 +1480,8 @@ def parse_args():
             help="Fix specular highlights in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-volumetric-fog', action='store_true',
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-view-dir-reconstruction', action='store_true',
+            help="Fix volumetric fog around the sun/moon (WARNING: Do not apply to other volumetric fog shaders!)")
     parser.add_argument('--fix-wd2-screen-space-reflections', action='store_true',
             help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-screen-space-reflections-cs', action='store_true',
@@ -1520,6 +1531,8 @@ def main():
                 fix_fcprimal_volumetric_fog(shader)
             if args.fix_wd2_volumetric_fog:
                 fix_wd2_volumetric_fog(shader)
+            if args.fix_wd2_view_dir_reconstruction:
+                fix_wd2_view_dir_reconstruction(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
             if args.fix_wd2_screen_space_reflections:
