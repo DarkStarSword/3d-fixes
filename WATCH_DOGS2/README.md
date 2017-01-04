@@ -66,4 +66,3 @@ To Investigate
 - Leaves still only displaying in one eye for some people
 - Reports of strange weather and disappearing objects (possible occlusion culling issue?):
   https://forums.geforce.com/default/topic/979185/3d-vision/watch-dogs-2-3d-vision/post/5047888/#5047888
-- Hud does not work with MSAA / temporal filtering

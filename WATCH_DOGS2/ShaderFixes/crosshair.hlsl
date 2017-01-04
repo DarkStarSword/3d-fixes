@@ -1,5 +1,6 @@
 // Depth buffer copied from other shaders to this input with 3Dmigoto:
 Texture2D<float4> Viewport__DepthVPSampler__TexObj__ : register(t110);
+Texture2DMS<float4> Viewport__DepthVPSamplerMS : register(t111);
 
 cbuffer Viewport : register(b13)
 {
@@ -77,14 +78,19 @@ cbuffer Viewport : register(b13)
 
 float world_z_from_depth_buffer(float x, float y)
 {
-	uint width, height;
+	uint width, height, samples = 0;
 	float4 z;
 
 	Viewport__DepthVPSampler__TexObj__.GetDimensions(width, height);
+	if (width == 0)
+		Viewport__DepthVPSamplerMS.GetDimensions(width, height, samples);
 
 	x = min(max((x / 2 + 0.5) * width, 0), width - 1);
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
-	z.z = Viewport__DepthVPSampler__TexObj__.Load(int3(x, y, 0)).x;
+	if (samples == 0)
+		z.z = Viewport__DepthVPSampler__TexObj__.Load(int3(x, y, 0)).x;
+	else
+		z.z = Viewport__DepthVPSamplerMS.Load(int3(x, y, 0), 0).x;
 
 	// Depth buffer scaling procedure copied from other shaders:
 	z.x = dot(float2(z.z, 1), InvProjectionMatrix._m22_m32);
