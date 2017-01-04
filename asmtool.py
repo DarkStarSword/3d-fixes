@@ -30,7 +30,7 @@ def cbuffer_entry_pattern(type, name):
             Offset: \s+ (?P<offset>\d+)
             \s+
             Size: \s+ (?P<size>\d+)
-            (?: \s+ \[unused\] )?
+            (?: \s+ \[(?P<unused>unused)\] )?
             \s* $
         '''.format(type, name), re.VERBOSE | re.MULTILINE)
         cbuffer_entry_pattern_cache[(type, name)] = pattern
@@ -505,10 +505,14 @@ class ASMShader(hlsltool.Shader):
             debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, declaration.size, size))
             declaration.size = size
 
-    def find_cb_entry(self, type, name):
+    def find_cb_entry(self, type, name, used = None):
         match = self.find_header(cbuffer_entry_pattern(type, name))
         debug_verbose(2, match.group())
         offset = int(match.group('offset'))
+        is_used = not match.group('unused')
+
+        if used is not None and used != is_used:
+            raise KeyError()
 
         pos = self.declarations_txt.rfind('// cbuffer ', 0, match.start())
         if pos == -1:
@@ -1126,6 +1130,55 @@ def fix_wd2_view_dir_reconstruction(shader):
 
         shader.autofixed = True
 
+def fix_wd2_camera_z_axis(shader):
+    # Experimental alternate method to fix volumetric fog when used in
+    # conjunction with --fix-wd2-view-dir-reconstruction by adjusting the
+    # camera Z axis to match the off-center projection (i.e. by separation).
+    # Does have slightly different results to the regular fix, but hard to say
+    # if it is better or worse. This cancels out the sun/moon glow adjustment
+    # though, so it can't be used with those shaders.
+
+    try:
+        VFCameraZAxis = cb_offset(*shader.find_cb_entry('float3', 'VFCameraZAxis', used = True))
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x3', 'InvViewMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare/use VFCameraZAxis')
+        return
+
+    off = shader.insert_stereo_params()
+    repl_VFCameraZAxis = shader.allocate_temp_reg()
+    tmp1 = shader.allocate_temp_reg()
+    tmp2 = shader.allocate_temp_reg()
+
+    shader.replace_reg(VFCameraZAxis, repl_VFCameraZAxis, 'xyz')
+    shader.early_insert_vanity_comment('WATCH_DOGS2 VFCameraZAxis adjustment inserted with')
+    shader.early_insert_multiple_lines('''
+        mul {tmp1}.x, {stereo}.x, {InvProjectionMatrix0}.x
+        mul {tmp1}.y, {stereo}.x, {InvProjectionMatrix1}.x
+        mul {tmp1}.z, {stereo}.x, {InvProjectionMatrix2}.x
+        mul {tmp1}.w, {stereo}.x, {InvProjectionMatrix3}.x
+        dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
+        dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
+        dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
+        add {repl_VFCameraZAxis}.xyz, {VFCameraZAxis}.xyz, {tmp2}.xyz
+    '''.format(
+        stereo = shader.stereo_params_reg,
+        InvProjectionMatrix0 = InvProjectionMatrix[0],
+        InvProjectionMatrix1 = InvProjectionMatrix[1],
+        InvProjectionMatrix2 = InvProjectionMatrix[2],
+        InvProjectionMatrix3 = InvProjectionMatrix[3],
+        InvViewMatrix0 = InvViewMatrix[0],
+        InvViewMatrix1 = InvViewMatrix[1],
+        InvViewMatrix2 = InvViewMatrix[2],
+        VFCameraZAxis = VFCameraZAxis,
+        repl_VFCameraZAxis = repl_VFCameraZAxis,
+        tmp1 = tmp1,
+        tmp2 = tmp2,
+    ))
+
+    shader.autofixed = True
+
 def fix_fcprimal_light_pos(shader):
     try:
         LightingData_pos = shader.find_struct_entry('LightingData', 'float4', 'pos')
@@ -1482,6 +1535,8 @@ def parse_args():
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-view-dir-reconstruction', action='store_true',
             help="Fix volumetric fog around the sun/moon (WARNING: Do not apply to other volumetric fog shaders!)")
+    parser.add_argument('--fix-wd2-camera-z-axis', action='store_true',
+            help="Experimental alternate volumetric fog pattern for WATCH_DOGS2 (use in conjunction with the view direction fix)")
     parser.add_argument('--fix-wd2-screen-space-reflections', action='store_true',
             help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-screen-space-reflections-cs', action='store_true',
@@ -1533,6 +1588,8 @@ def main():
                 fix_wd2_volumetric_fog(shader)
             if args.fix_wd2_view_dir_reconstruction:
                 fix_wd2_view_dir_reconstruction(shader)
+            if args.fix_wd2_camera_z_axis:
+                fix_wd2_camera_z_axis(shader)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
             if args.fix_wd2_screen_space_reflections:
