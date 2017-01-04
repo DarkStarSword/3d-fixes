@@ -3,6 +3,7 @@ WATCH_DOGS 2
 
 Fixed
 -----
+- Flickering HUD (render target redirection to work around game + driver bug)
 - Accurate Screen Space Reflections (first ever accurate SSR fix for 3D Vision!)
 - Accurate Specular Highlights
 - Environmental reflections
@@ -59,6 +60,8 @@ anti cheat software is not installed and multiplayer will be unavailable.
 Known Issues
 ------------
 - Thick fog that occasionally rolls in over the bay is clipping incorrectly
+- Screen space reflections are broken with temporal filtering (single GPU?):
+  looks like a mono depth buffer needs steroising.
 
 To Investigate
 --------------
