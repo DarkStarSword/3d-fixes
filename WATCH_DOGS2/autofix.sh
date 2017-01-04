@@ -11,6 +11,8 @@ ps=$(ls *ps.txt)
 # desync:
 cs=$(grep -L Confetti $cs)
 
+# TODO: Add Screen Space Reflection fix here
+
 # Sun/moon fog shaders - these need to be moved to infinity:
 sun_moon_fog=$(grep -l FillVolumeTexture__VFOutputBuffer4 $cs)
 cs=$(grep -L FillVolumeTexture__VFOutputBuffer4 $cs)
@@ -42,3 +44,5 @@ asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fv_shaders_ps
 glass_ps=$(grep -l 'cbuffer MaterialWD2Glass' $ps)
 ps=$(grep -L 'cbuffer MaterialWD2Glass' $ps)
 asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $glass_ps
+
+# TODO: Add remaining fixes here
