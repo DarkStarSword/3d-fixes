@@ -87,12 +87,12 @@ r0.xyz = mul(t, m);
   r1.xyzw = cb1[39].xyzw + r1.xyzw;
   r1.xyz = r1.xyz / r1.www;
 
-// May need another adjustment here? No apparent change:
-//m = MATRIX(cb1, 36);
-//im = inverse(m);
-//t = mul(float4(r1.xyz, 1), im);
-//t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
-//r1.xyz = mul(t, m);
+// Fixes bright highlight that travels towards the next alter:
+m = MATRIX(cb1, 36);
+im = inverse(m);
+t = mul(float4(r1.xyz, 1), im);
+t.x -= s.x * (t.w - s.y) * cb2[3].x / 2;
+r1.xyz = mul(t, m);
 
   r1.xyz = -cb1[56].xyz + r1.xyz;
   r2.xyz = -cb3[1].xyz + r1.xyz;
