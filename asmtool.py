@@ -1338,47 +1338,53 @@ def fix_wd2_camera_pos(shader):
         return
 
     try:
-        CameraPosition = cb_offset(*shader.find_cb_entry('float3', 'CameraPosition'))
         InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
         InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x3', 'InvViewMatrix'))
     except KeyError:
         debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 camera position fix')
         return
 
-    off = shader.insert_stereo_params()
-    repl_CameraPosition = shader.allocate_temp_reg()
-    tmp1 = shader.allocate_temp_reg()
-    tmp2 = shader.allocate_temp_reg()
+    for name in ('CameraPosition', 'VFCameraPosition'):
+        try:
+            CameraPosition = cb_offset(*shader.find_cb_entry('float3', name, used = True))
+        except KeyError:
+            debug_verbose(0, 'Shader does not declare/use %s' % name)
+            continue
 
-    shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz')
-    shader.early_insert_vanity_comment('WATCH_DOGS2 Camera Position adjustment inserted with')
-    shader.early_insert_multiple_lines('''
-        mul {stereo}.w, {stereo}.x, {stereo}.y
-        mul {tmp1}.x, {stereo}.w, {InvProjectionMatrix0}.x
-        mul {tmp1}.y, {stereo}.w, {InvProjectionMatrix1}.x
-        mul {tmp1}.z, {stereo}.w, {InvProjectionMatrix2}.x
-        mul {tmp1}.w, {stereo}.w, {InvProjectionMatrix3}.x
-        dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
-        dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
-        dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
-        add {repl_CameraPosition}.xyz, {CameraPosition}.xyz, {tmp2}.xyz
-    '''.format(
-        stereo = shader.stereo_params_reg,
-        InvProjectionMatrix0 = InvProjectionMatrix[0],
-        InvProjectionMatrix1 = InvProjectionMatrix[1],
-        InvProjectionMatrix2 = InvProjectionMatrix[2],
-        InvProjectionMatrix3 = InvProjectionMatrix[3],
-        InvViewMatrix0 = InvViewMatrix[0],
-        InvViewMatrix1 = InvViewMatrix[1],
-        InvViewMatrix2 = InvViewMatrix[2],
-        CameraPosition = CameraPosition,
-        repl_CameraPosition = repl_CameraPosition,
-        tmp1 = tmp1,
-        tmp2 = tmp2,
-    ))
+        off = shader.insert_stereo_params()
+        repl_CameraPosition = shader.allocate_temp_reg()
+        tmp1 = shader.allocate_temp_reg()
+        tmp2 = shader.allocate_temp_reg()
 
-    shader.autofixed = True
-    shader.wd2_camera_pos_fix_applied = True
+        shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz')
+        shader.early_insert_vanity_comment('WATCH_DOGS2 %s adjustment inserted with' % name)
+        shader.early_insert_multiple_lines('''
+            mul {stereo}.w, {stereo}.x, {stereo}.y
+            mul {tmp1}.x, {stereo}.w, {InvProjectionMatrix0}.x
+            mul {tmp1}.y, {stereo}.w, {InvProjectionMatrix1}.x
+            mul {tmp1}.z, {stereo}.w, {InvProjectionMatrix2}.x
+            mul {tmp1}.w, {stereo}.w, {InvProjectionMatrix3}.x
+            dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
+            dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
+            dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
+            add {repl_CameraPosition}.xyz, {CameraPosition}.xyz, {tmp2}.xyz
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            InvProjectionMatrix0 = InvProjectionMatrix[0],
+            InvProjectionMatrix1 = InvProjectionMatrix[1],
+            InvProjectionMatrix2 = InvProjectionMatrix[2],
+            InvProjectionMatrix3 = InvProjectionMatrix[3],
+            InvViewMatrix0 = InvViewMatrix[0],
+            InvViewMatrix1 = InvViewMatrix[1],
+            InvViewMatrix2 = InvViewMatrix[2],
+            CameraPosition = CameraPosition,
+            repl_CameraPosition = repl_CameraPosition,
+            tmp1 = tmp1,
+            tmp2 = tmp2,
+        ))
+
+        shader.autofixed = True
+        shader.wd2_camera_pos_fix_applied = True
 
 def fix_wd2_screen_space_reflections(shader):
     try:
