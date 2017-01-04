@@ -1,6 +1,13 @@
 ABZU
 ====
 
+Merry Christmas everyone! This is more an experience than a game really, but it
+is quite something else with the sheer abundance of sea life around you and the
+attention to detail to make things like kelp and algae move realistically is
+quite impressive. I laughed with glee when I first came across a group of fish
+swimming in a bait ball and was able to experience what it would be like to
+swim through the middle of them :)
+
 Fixed
 -----
 - Killed motion blur (causes massive issues in 3D)
