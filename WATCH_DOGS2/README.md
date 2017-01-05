@@ -9,7 +9,9 @@ Fixed
 - Environmental reflections
 - Some 2D objects in reflections
 - Lights
-- Shadows
+- Regular Shadows
+- PCSS Shadows
+- HFTS Shadows
 - Decals
 - Skybox
 - Light flares
