@@ -65,3 +65,8 @@ The falling leaves get out of sync between each eye in this game. I have a lot
 of progress towards keeping them synchronised, but they still misbehave in some
 cases, so I have disabled them by default. You can press F1 to toggle these on
 and off, or edit the d3dx.ini and change x2 to 0 to enable them by default.
+
+Known Issues
+------------
+- Thick fog that occasionally rolls in over the bay is clipping incorrectly
+- Some fog is slightly uneven between each eye
