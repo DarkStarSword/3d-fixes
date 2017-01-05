@@ -80,6 +80,8 @@ def resource_bind_pattern(name, type=None, format=None, dim=None):
         resource_bind_pattern_cache[name] = pattern
         return pattern
 
+resource_bindings_pattern = re.compile(r'// Resource Bindings:')
+
 def cbuffer_bind_pattern(cb_name):
     return resource_bind_pattern(cb_name, 'cbuffer', 'NA', 'NA')
 def struct_bind_pattern(cb_name):
@@ -1494,6 +1496,60 @@ def fix_wd2_screen_space_reflections_cs(shader):
 
     shader.autofixed = True
 
+def fix_wd2_soft_shadows(shader):
+    # Soft shadow shaders in WATCH_DOGS2 lack headers
+    try:
+        shader.find_header(resource_bindings_pattern)
+        return
+    except KeyError:
+        # Missing headers, we can proceed
+        pass
+
+    inv_projection = cb_matrix(13, 36 * 16)
+
+    results = shader.scan_shader(inv_projection, write=False)
+    if len(results) != 4:
+        debug_verbose(0, 'Inverse projection matrix not used expected number of times')
+        return
+
+    if any([ r.instruction.lval.variable != results[0].instruction.lval.variable for r in results ]):
+        debug_verbose(0, 'Inverse projection matrix not writing to same output variable')
+        return
+
+    # Check matrix multiplication writes x, y, z, w in order. Results will
+    # already be in order of constant value, so const index is implicitly
+    # checked by the line order below
+    if any([ r.instruction.lval.components != 'xyzw'[i] for (i, r) in enumerate(results) ]):
+        debug_verbose(0, 'Inverse projection matrix not writing to expected component')
+        return
+
+    if any([ results[n].line != results[n+1].line - 1 for n in range(3) ]):
+        debug_verbose(0, 'Inverse projection matrix not used in sequence')
+        return
+
+    line, instr = results[3]
+
+    results = shader.scan_shader(instr.lval.variable, start = line + 1, write = False, stop = True, stop_when_clobbered = True, instr_type = DivInstruction)
+    if not results or results[0].line != line + 1 or results[0].instruction.lval.components != 'xyzw':
+        debug_verbose(0, 'Inverse projection matrix normalisation not in expected location')
+        return
+    line, instr = results[0]
+    vpos = instr.lval.variable
+
+    off = shader.insert_stereo_params()
+    off += shader.insert_vanity_comment(line + off + 1, 'WATCH_DOGS2 soft shadows fix inserted with')
+    off += shader.insert_multiple_lines(line + off + 1, '''
+        add {stereo}.w, {vpos}.z, -{stereo}.y
+        mul {stereo}.w, {stereo}.w, {stereo}.x
+        mad {vpos}.x, -{stereo}.w, {inv_projection0}.x, {vpos}.x
+    '''.format(
+        stereo = shader.stereo_params_reg,
+        inv_projection0 = inv_projection[0],
+        vpos = vpos,
+    ))
+
+    shader.autofixed = True
+
 
 def parse_args():
     global args
@@ -1549,6 +1605,8 @@ def parse_args():
             help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-screen-space-reflections-cs', action='store_true',
             help="Compute shader variant of the screen space reflection fix for WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-soft-shadows', action='store_true',
+            help="Fix soft shadow shaders (PCSS) used in WATCH_DOGS2")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1610,6 +1668,8 @@ def main():
                 fix_wd2_camera_pos(shader, args.fix_wd2_camera_pos_limit)
             elif args.fix_wd2_camera_pos:
                 fix_wd2_camera_pos(shader)
+            elif args.fix_wd2_soft_shadows:
+                fix_wd2_soft_shadows(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
