@@ -8,7 +8,7 @@
 # parser - I'd be better off porting shadertool to DX11 since assembly language
 # is easier to reason about programatically than HLSL.
 
-import sys, os, re, collections, argparse, itertools, copy
+import sys, os, re, collections, argparse, itertools, copy, textwrap
 
 import shadertool
 from shadertool import debug, debug_verbose, component_set_to_string
@@ -562,7 +562,7 @@ class Shader(object):
 
     def insert_multiple_lines(self, pos, lines):
         off = 0
-        for line in map(str.strip, lines.splitlines()):
+        for line in map(str.rstrip, textwrap.dedent(lines).split('\n')):
             off += self.insert_instr(pos + off, line)
         return off
 

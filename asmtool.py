@@ -198,6 +198,36 @@ class SampleLIndexableInstruction(ResourceLoadInstruction):
         AssignmentInstruction.__init__(self, text, instruction, lval, rval)
         self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3, arg4)))
 
+class SampleIndexableInstruction(ResourceLoadInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>sample_indexable
+            \s*
+            \(
+                [^)]+
+            \)
+            \(
+                [^)]+
+            \)
+        )
+        \s*
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>\S+)
+            \s* , \s*
+            (?P<arg2>\S+)
+            \s* , \s*
+            (?P<arg3>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+    def __init__(self, text, instruction, lval, rval, arg1, arg2, arg3):
+        AssignmentInstruction.__init__(self, text, instruction, lval, rval)
+        self.rargs = tuple(map(lambda x: hlsltool.expression_as_single_register(x) or x, (arg1, arg2, arg3)))
+
 class LoadStructuredInstruction(ResourceLoadInstruction):
     pattern = re.compile(r'''
         \s*
@@ -390,6 +420,7 @@ specific_instructions = (
     SVOutputDeclaration,
     Declaration,
     ReturnInstruction,
+    SampleIndexableInstruction,
     SampleLIndexableInstruction,
     LoadStructuredInstruction,
     ResourceLoadInstruction,
@@ -1552,6 +1583,70 @@ def fix_wd2_soft_shadows(shader):
 
     shader.autofixed = True
 
+def fix_wd2_lens_grit(shader, param):
+    # Adjusts the lens grit depth by percentage of infinity passed in from an
+    # ini param, but also stretches it to avoid clipping
+
+    assert(len(param) == 2)
+    param_idx = int(param[1])
+    param_component = param[0]
+    assert(param_component in 'xyzw')
+
+    for name in ('HDRLighting__LensDirtTexture__TexObj__', 'HDRLighting__LensDirtTexture2__TexObj__'):
+        try:
+            tex = shader.find_texture(name, format='float4', dim='2d')
+        except KeyError:
+            debug_verbose(0, 'Shader does not declare %s' % name)
+            continue
+
+        results = shader.scan_shader(tex, write=False)
+        assert(len(results) == 1)
+        line, instr = results[0]
+
+        texcoord = instr.rargs[0]
+        repl_texcoord = shader.allocate_temp_reg()
+        tmp = shader.allocate_temp_reg()
+        shader.replace_rval_reg_on_line(line, texcoord.variable, repl_texcoord)
+
+        off = shader.insert_stereo_params()
+        off += shader.insert_ini_params(param_idx)
+        off += shader.insert_vanity_comment(line + off, 'WATCH_DOGS2 lens grit adjustment inserted with')
+        off += shader.insert_multiple_lines(line + off, '''
+            mov {repl_texcoord}.xyzw, {texcoord}.xyzw
+            mul {stereo}.w, {stereo}.x, {param_reg}.{param_component}
+            eq {tmp}.x, {stereo}.z, l(1.0)
+            if_nz {tmp}.x
+              add {tmp}.x, {stereo}.w, l(1.0)
+              add {tmp}.y, {repl_texcoord}.{texcoord_x}, l(-1.0)
+              mad {repl_texcoord}.{texcoord_x}, {tmp}.x, {tmp}.y, l(1.0)
+            else
+              add {tmp}.x, l(1.0), -{stereo}.w
+              mul {repl_texcoord}.{texcoord_x}, {repl_texcoord}.{texcoord_x}, {tmp}.x
+            endif
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            param_reg = shader.ini_params_reg[param_idx],
+            param_component = param_component,
+            texcoord = texcoord.variable,
+            texcoord_x = texcoord.components[0],
+            repl_texcoord = repl_texcoord,
+            tmp = tmp,
+        ))
+
+        off += shader.insert_multiple_lines(line + off + 1, '''
+            eq {tmp}.x, {param_reg}.{param_component}, l(-1.0)
+            if_nz {tmp}.x
+              mov {result}, l(0.0, 0.0, 0.0, 0.0)
+            endif
+        '''.format(
+            param_reg = shader.ini_params_reg[param_idx],
+            param_component = param_component,
+            result = instr.lval,
+            tmp = tmp,
+        ))
+
+        shader.autofixed = True
+
 
 def parse_args():
     global args
@@ -1609,6 +1704,8 @@ def parse_args():
             help="Compute shader variant of the screen space reflection fix for WATCH_DOGS2")
     parser.add_argument('--fix-wd2-soft-shadows', action='store_true',
             help="Fix soft shadow shaders (PCSS) used in WATCH_DOGS2")
+    parser.add_argument('--fix-wd2-lens-grit',
+            help="Adjust the lens grit depth in WD2. Pass in the ini param containing the depth")
     parser.add_argument('--only-autofixed', action='store_true',
             help="Installation type operations only act on shaders that were successfully autofixed with --auto-fix-vertex-halo")
 
@@ -1670,8 +1767,10 @@ def main():
                 fix_wd2_camera_pos(shader, args.fix_wd2_camera_pos_limit)
             elif args.fix_wd2_camera_pos:
                 fix_wd2_camera_pos(shader)
-            elif args.fix_wd2_soft_shadows:
+            if args.fix_wd2_soft_shadows:
                 fix_wd2_soft_shadows(shader)
+            if args.fix_wd2_lens_grit:
+                fix_wd2_lens_grit(shader, args.fix_wd2_lens_grit)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
