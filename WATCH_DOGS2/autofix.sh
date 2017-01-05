@@ -32,11 +32,6 @@ fv_shaders_ps=$(grep -l 'cbuffer FogVolumeRaymarch' $ps)
 ps=$(grep -L 'cbuffer FogVolumeRaymarch' $ps)
 asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fv_shaders_ps
 
-# Apply alternate 2 fog fix to *all* pixel shaders that mention fog (alternate
-# 1 fix completely breaks windshield reflections, while this breaks some fog):
-#fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
-#asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
-
 
 # Glass shaders use CameraPosition twice, but we only want to correct the first
 # to fix reflections - the second will mess up sky reflections causing them to
@@ -49,5 +44,14 @@ asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $glass_ps
 # Lens grit shaders:
 asmtool.py --fix-wd2-lens-grit=y2 -i -f --only-autofixed $(grep -l 'LensDirt' $ps)
 ps=$(grep -L 'LensDirt' $ps)
+
+
+# Apply alternate 2 fog fix to *all* pixel shaders that mention fog (alternate
+# 1 fix completely breaks windshield reflections, while this breaks some fog):
+fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
+#asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
+
+
+
 
 # TODO: Add remaining fixes here

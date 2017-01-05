@@ -96,8 +96,10 @@ and off, or edit the d3dx.ini and change x2 to 0 to enable them by default.
 
 Known Issues
 ------------
+- Fog from steam vents is uneven between each eye (conflict with other parts of
+  the volumetric fog fix)
 - Thick fog that occasionally rolls in over the bay is clipping incorrectly
-- Some fog is slightly uneven between each eye
+- Some other fog is slightly uneven between each eye
 - Fog glow around the sun / moon is at screen depth under certain weather
   conditions.
 
