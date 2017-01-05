@@ -5,6 +5,8 @@ import struct, hashlib, codecs, zlib
 from collections import namedtuple
 import numpy as np
 import math
+import extract_unity_shaders
+import io
 
 system_values = {
     0: 'NONE', # or TARGET, or SPRs: COVERAGE, DEPTH, DEPTHGE, DEPTHLE, ...
@@ -365,6 +367,11 @@ def shader_hash(message, real_md5=False):
     return '%08x%08x%08x%08x' % struct.unpack('>4I', struct.pack('<4I', a0, b0, c0, d0))
 
 def parse(stream):
+    if getattr(args, '3dmigoto_hash'):
+        stream = io.BytesIO(stream.read())
+        migoto_hash = extract_unity_shaders.fnv_3Dmigoto_shader(stream.getbuffer())
+        print('3DMigoto hash: %016x' % migoto_hash)
+
     header = parse_dxbc_header(stream)
     pr_verbose(header, verbosity=2)
     chunk_offsets = get_chunk_offsets(stream, header)
@@ -397,6 +404,8 @@ def parse_args():
             help='Calculate the obfuscated MD5-like hash used by DX shaders')
     parser.add_argument('--bytecode-hash', action='store_true',
             help='Calculate the bytecode+signature hash, e.g. use to correlate shaders that only differ by debug info, etc.')
+    parser.add_argument('--3dmigoto-hash', action='store_true',
+            help='Calculate the default hash used by 3DMigoto')
     args = parser.parse_args()
     verbosity = args.verbose - args.quiet
 
