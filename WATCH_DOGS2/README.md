@@ -22,8 +22,7 @@ Fixed
 - Added an automatic/manual crosshair toggle
 - Minimap pinned at screen depth
 - Profile dialogs capped no closer than screen depth
-- Synchronised particle physics between eyes (for falling leaves - press F1 if
-  they are still broken)
+- Work in progress to synchronise falling leaves between each eye (see below)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
 - Lighting on walls in nethack vision
@@ -59,3 +58,10 @@ with the -eac_launcher option. If you are launching through UPlay you can go
 into the properties page for the game and use "Add launch arguments" to add
 this. If done correctly you will get a message when the game launches that the
 anti cheat software is not installed and multiplayer will be unavailable.
+
+Falling Leaves
+--------------
+The falling leaves get out of sync between each eye in this game. I have a lot
+of progress towards keeping them synchronised, but they still misbehave in some
+cases, so I have disabled them by default. You can press F1 to toggle these on
+and off, or edit the d3dx.ini and change x2 to 0 to enable them by default.
