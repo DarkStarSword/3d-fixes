@@ -1,8 +1,9 @@
 #define hud_depth IniParams[0].x
-#define hud_3d_convergence_override IniParams[0].y
-#define hud_3d_convergence_override_mouse_showing IniParams[0].z
-#define hud_3d_threshold IniParams[0].w
-#define lens_grit_depth IniParams[2].y
+#define hud_depth_mouse_showing IniParams[0].y
+#define hud_3d_convergence_override IniParams[0].z
+#define hud_3d_convergence_override_mouse_showing IniParams[0].w
+#define hud_3d_threshold IniParams[2].z
+#define lens_grit_depth IniParams[2].y /* hard coded in asm shaders, do not change */
 #define cursor_showing IniParams[1].w
 
 void to_screen_depth(inout float4 pos)
@@ -15,11 +16,12 @@ void to_screen_depth(inout float4 pos)
 void to_hud_depth(inout float4 pos)
 {
 	float4 s = StereoParams.Load(0);
+	float depth = hud_depth;
 
 	if (cursor_showing)
-		return;
+		depth = hud_depth_mouse_showing;
 
-	pos.x += s.x * hud_depth * pos.w;
+	pos.x += s.x * depth * pos.w;
 }
 
 float2 to_lens_grit_depth(float2 texcoord)

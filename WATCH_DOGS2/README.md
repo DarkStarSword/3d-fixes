@@ -67,17 +67,20 @@ anti cheat software is not installed and multiplayer will be unavailable.
 
 HUD Depth
 ---------
-To change the depth of the HUD, edit the d3dx.ini and change the value for x in
-the [Constants] section. 0 is screen depth, 1 is infinity, negative numbers pop
-out. You can also specify several preset values to cycle between with the F2
-key by editing the [KeyHUDDepth] section.
+To change the depth of the 2D HUD, edit the d3dx.ini and change the value for x
+and y in the [Constants] section - x sets the depth when the mouse cursor is
+NOT visible, and y sets it when the mouse cursor IS visible. 0 is screen depth,
+1 is infinity, negative numbers pop out. You can also specify several preset
+values to cycle between with the F2 key by editing the [KeyHUDDepth] section.
 
-There are also separate adjustments for 3D HUD elements in y and z, but these
-are automatically biased to line up with the 2D HUD and you generally should
-not need to adjust them separately.
-
-Note that the HUD will always return to screen depth whenever the mouse cursor
-is visible.
+There are also separate adjustments for 3D HUD elements in z and w. The units
+are convergence override values, so higher values bring the HUD closer and
+lower values push it deeper (0 is infinity). z sets the convergence override
+when the mouse cursor is hidden, and this adjustment will also have a bias
+applied to line it up with any 2D HUD adjustments. w sets the 3D HUD
+convergence override when the mouse cursor is hidden, and does NOT have a bias
+(the idea being that when the mouse cursor is visible you want the HUD near
+screen depth where the mouse cursor is).
 
 Lens Grit
 ---------
