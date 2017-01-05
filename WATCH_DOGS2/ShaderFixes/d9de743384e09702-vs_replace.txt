@@ -105,6 +105,7 @@ cbuffer SceneGraphicObjectInstancePart : register(b2)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   int4 v0 : position0,
@@ -143,7 +144,9 @@ void main(
 
 float4 s = StereoParams.Load(0);
 if (o1.w != 1) // Minimap green, return to screen depth
-	o1.x -= s.x * (o1.w - s.y);
+	to_screen_depth(o1);
+
+// Off screen render target - do not adjust to HUD depth
 
   return;
 }

@@ -97,6 +97,7 @@ cbuffer FireUiPrimitive : register(b1)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   float2 v0 : position0,
@@ -124,10 +125,7 @@ void main(
   o2.w = dot(r0.xyzw, ViewRotProjectionMatrixPure._m03_m13_m23_m33);
 
 // This HUD is too close. Cap it at screen depth:
-float4 s = StereoParams.Load(0);
-if (s.y && o2.w > 0 && o2.w < s.y) {
-	o2.x -= s.x * (o2.w - s.y);
-}
+cap_to_hud_depth(o2);
 
   return;
 }

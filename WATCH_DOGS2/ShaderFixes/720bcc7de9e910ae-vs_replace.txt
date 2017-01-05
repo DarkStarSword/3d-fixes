@@ -1,0 +1,68 @@
+// HUD - Draws off screen minimap to screen
+
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:54:52 2016
+
+cbuffer Primitive : register(b0)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 MaterialPickingID : packoffset(c1);
+  float4 ModelPickingID : packoffset(c2);
+  float4 PickingID : packoffset(c3);
+  float4 ColorMultiplier : packoffset(c4);
+  float4x4 SecondTextureUVTransform : packoffset(c5);
+  float4x4 Transform : packoffset(c9);
+  float4x4 UVTransform : packoffset(c13);
+  float4 VideoTextureUnpack[8] : packoffset(c17);
+  float3 GammaBrightnessContrastParams : packoffset(c25);
+  float CustomExposureScale : packoffset(c25.w);
+  float MipLevel : packoffset(c26);
+  float Sharpness : packoffset(c26.y);
+  float VolumeTextureSizeZ : packoffset(c26.z);
+  bool SecondTextureAdditive : packoffset(c26.w);
+  bool TextureIsOffscreenComposited : packoffset(c27);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+#include "hud.hlsl"
+
+void main( 
+  float4 v0 : position0,
+  float4 v1 : color1,
+  float4 v2 : texcoord2,
+  out float4 o0 : TEXCOORD0,
+  out float4 o1 : TEXCOORD1,
+  out float2 o2 : TEXCOORD2,
+  out float4 o3 : SV_Position0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  o0.xyzw = v1.zyxw;
+  r0.x = dot(v0.xyzw, Transform._m00_m10_m20_m30);
+  r0.y = dot(v0.xyzw, Transform._m01_m11_m21_m31);
+  r1.w = dot(v0.xyzw, Transform._m03_m13_m23_m33);
+  r0.xy = r0.xy * float2(2,2) + -r1.ww;
+  r1.xy = float2(1,-1) * r0.xy;
+  r1.z = dot(v0.xyzw, Transform._m02_m12_m22_m32);
+  o1.x = dot(r1.xyzw, SecondTextureUVTransform._m00_m10_m20_m30);
+  o1.y = dot(r1.xyzw, SecondTextureUVTransform._m01_m11_m21_m31);
+  o1.z = dot(r1.xyzw, SecondTextureUVTransform._m03_m13_m23_m33);
+  o3.xyzw = r1.xyzw;
+  o2.xy = v2.xy;
+
+to_hud_depth(o3);
+
+  return;
+}
+
+/****************************** COMPILE WARNINGS ******************************
+C:\games\WATCH_DOGS2\bin\ShaderFixes\720bcc7de9e910ae-vs_replace.txt(36,14-15): warning X3578: Output value 'o1' is not completely initialized
+
+****************************** COMPILE WARNINGS ******************************/

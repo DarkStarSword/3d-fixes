@@ -20,6 +20,7 @@ Fixed
 - Water refraction
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
+- Added a static HUD depth adjustment
 - Minimap pinned at screen depth
 - Profile dialogs capped no closer than screen depth
 - Work in progress to synchronise falling leaves between each eye (see below)

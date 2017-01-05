@@ -32,6 +32,7 @@ Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
 #include "crosshair.hlsl"
+#include "hud.hlsl"
 
 void main( 
   float4 v0 : position0,
@@ -59,10 +60,15 @@ float4 s = StereoParams.Load(0);
 float tex_filter = IniParams[1].x;
 
 if (o2.w != 1) { // Minimap icon, return to screen depth
+
+	// Return to screen depth:
 	// No longer doing this because it was inconsistent - instead just
 	// unbinding the depth buffer on these draw calls so that the driver
 	// doesn't apply the stereo correction
 	// o2.x -= s.x * (o2.w - s.y);
+
+	to_hud_depth(o2);
+
 } else if (tex_filter == 1) {
 	// Crosshair
 	float crosshair_mode = IniParams[1].y;

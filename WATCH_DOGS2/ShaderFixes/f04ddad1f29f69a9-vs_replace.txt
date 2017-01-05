@@ -102,6 +102,7 @@ cbuffer Primitive : register(b1)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   float4 v0 : position0,
@@ -131,9 +132,11 @@ float4 s = StereoParams.Load(0);
 
 // Need to return minimap icons to screen depth, while leaving markers on the
 // road alone. Filter based on the pixel shader we are called with:
-//if (o2.w > 80)
-if (IniParams[6].z == 1)
-	o2.x -= s.x * (o2.w - s.y);
+if (IniParams[6].z == 1) {
+	to_screen_depth(o2);
+
+	// Do not adjust to HUD depth - off screen render target
+}
 
   return;
 }

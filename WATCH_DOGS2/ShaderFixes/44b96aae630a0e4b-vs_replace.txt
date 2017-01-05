@@ -105,6 +105,7 @@ cbuffer SceneGraphicObjectInstancePart : register(b2)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   int4 v0 : position0,
@@ -145,8 +146,7 @@ void main(
   o2.xyzw = r2.xyzw + r1.xyzw;
 
 // Return to screen depth along with the rest of the map:
-float4 s = StereoParams.Load(0);
-o2.x -= s.x * (o2.w - s.y);
+to_screen_depth(o2);
 
   return;
 }

@@ -97,6 +97,7 @@ cbuffer FireUiPrimitive : register(b1)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   float2 v0 : position0,
@@ -122,10 +123,7 @@ void main(
   o1.w = dot(r0.xyzw, ViewRotProjectionMatrixPure._m03_m13_m23_m33);
 
 // Match profile HUD to line up boxes:
-float4 s = StereoParams.Load(0);
-if (s.y && o1.w > 0 && o1.w < s.y) {
-	o1.x -= s.x * (o1.w - s.y);
-}
+cap_to_hud_depth(o1);
 
   return;
 }
