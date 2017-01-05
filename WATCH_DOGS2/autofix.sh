@@ -46,10 +46,8 @@ ps=$(grep -L 'cbuffer MaterialWD2Glass' $ps)
 asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $glass_ps
 
 
-# Lens grit shaders. Not positive if the camera position fix changes any of
-# these, but they take the pattern and do a bunch of other post processing, so
-# apply it as well:
-asmtool.py --fix-wd2-lens-grit=y2 --fix-wd2-camera-pos -i -f --only-autofixed $(grep -l 'LensDirt' $ps)
+# Lens grit shaders:
+asmtool.py --fix-wd2-lens-grit=y2 -i -f --only-autofixed $(grep -l 'LensDirt' $ps)
 ps=$(grep -L 'LensDirt' $ps)
 
 # TODO: Add remaining fixes here
