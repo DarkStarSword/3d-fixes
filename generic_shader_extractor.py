@@ -38,7 +38,8 @@ def _save_shader(shader, dir, filename):
     final_asm_path = path + '.txt'
     with open(bin_path, 'wb') as f:
         f.write(shader)
-    extract_unity_shaders.disassemble_and_decompile_binary_shader(bin_path)
+    if not args.only_bin:
+        extract_unity_shaders.disassemble_and_decompile_binary_shader(bin_path)
     if os.path.isfile(inter_asm_path):
         os.rename(inter_asm_path, final_asm_path)
     if os.path.isfile(inter_hlsl_path):
@@ -168,6 +169,8 @@ def parse_args():
     parser.add_argument('--hash', choices=['embedded', '3dmigoto', 'bytecode'], required=True)
     parser.add_argument('--blacklist', action='append', default=[],
             help='Skip these file or directory names')
+    parser.add_argument('--only-bin', action='store_true',
+            help='Do not disassemble or decompile extracted shaders')
     args = parser.parse_args()
 
     try:
