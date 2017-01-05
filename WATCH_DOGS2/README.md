@@ -12,6 +12,7 @@ Fixed
 - Regular Shadows
 - PCSS Shadows
 - HFTS Shadows
+- HBAO+ Normal Map Artefacts
 - Decals
 - Skybox
 - Light flares
