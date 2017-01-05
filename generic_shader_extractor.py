@@ -101,13 +101,16 @@ def search_file(path):
                 if header_hash in processed:
                     print('%s+%08x: *skip* embedded: %s[%s] seen before' %
                         (path, off, header_hash[:16], header_hash[16:]))
-                    # Skipping over the shader's claimed size is a little risky
-                    # since we haven't validated the embedded hash yet, but the
-                    # chance that we find an invalid shader with a seemingly
-                    # valid header and a hash that we have previously validated
-                    # is so low that I deem the risk acceptable and the speed
-                    # benefits worthwhile:
-                    off += header.size - 1
+                    if not args.skip_hash_check:
+                        # Skipping over the shader's claimed size is a little
+                        # risky since we haven't validated the embedded hash
+                        # yet, but the chance that we find an invalid shader
+                        # with a seemingly valid header and a hash that we have
+                        # previously validated is so low that I deem the risk
+                        # acceptable and the speed benefits worthwhile. Don't
+                        # skip over it if --skip-hash-check was specified
+                        # though, as that is more risky:
+                        off += header.size - 1
                     continue
 
                 bak = fp.tell()
@@ -115,9 +118,10 @@ def search_file(path):
                 shader = fp.read(header.size)
                 assert(len(shader) == header.size)
                 fp.seek(bak)
-                hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
-                if hash_embedded != header_hash:
-                    continue
+                if not args.skip_hash_check:
+                    hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
+                    if hash_embedded != header_hash:
+                        continue
 
                 chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
                 try:
@@ -133,7 +137,7 @@ def search_file(path):
                     shader_model = 'xx_x_x'
 
                 print('%s+%08x: %s embedded: %s[%s]' %
-                    (path, off, shader_model, hash_embedded[:16], hash_embedded[16:]), end='')
+                    (path, off, shader_model, header_hash[:16], header_hash[16:]), end='')
 
                 if args.hash == '3dmigoto':
                     hash_3dmigoto = extract_unity_shaders.fnv_3Dmigoto_shader(shader)
@@ -150,12 +154,13 @@ def search_file(path):
                     hash_bytecode = None
                 print()
 
-                save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode)
+                save_shader(shader, shader_model, hash_3dmigoto, header_hash, hash_bytecode)
 
-                # If we verified the hash and extracted a shader we can be
-                # pretty sure there won't be another overlapping it:
                 processed.add(header_hash)
-                off += header.size - 1
+                if not args.skip_hash_check:
+                    # If we verified the hash and extracted a shader we can be
+                    # pretty sure there won't be another overlapping it:
+                    off += header.size - 1
 
             except Exception as e:
                 print_parse_error(e, 'while parsing possible shader')
@@ -171,6 +176,8 @@ def parse_args():
             help='Skip these file or directory names')
     parser.add_argument('--only-bin', action='store_true',
             help='Do not disassemble or decompile extracted shaders')
+    parser.add_argument('--skip-hash-check', action='store_true',
+            help='Do not verify the embedded hash in each shader. Faster, but may extract some garbage')
     args = parser.parse_args()
 
     try:
