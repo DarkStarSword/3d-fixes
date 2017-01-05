@@ -2,6 +2,7 @@
 #define hud_3d_convergence_override IniParams[0].y
 #define hud_3d_convergence_override_mouse_showing IniParams[0].z
 #define hud_3d_threshold IniParams[0].w
+#define lens_grit_depth IniParams[2].y
 #define cursor_showing IniParams[1].w
 
 void to_screen_depth(inout float4 pos)
@@ -19,6 +20,21 @@ void to_hud_depth(inout float4 pos)
 		return;
 
 	pos.x += s.x * hud_depth * pos.w;
+}
+
+float2 to_lens_grit_depth(float2 texcoord)
+{
+	float4 s = StereoParams.Load(0);
+
+	// Adjust depth of dirty lens effect, stretching to avoid the effect clipping
+	// at edge of screen:
+	float multiplier = s.x * lens_grit_depth;
+	if (s.z == 1) /* left eye */
+		texcoord.x = (1 + multiplier) * (texcoord.x - 1) + 1;
+	else /* right eye */
+		texcoord.x *= 1 - multiplier;
+
+	return texcoord;
 }
 
 void screen_to_infinity(inout float4 pos)

@@ -21,8 +21,8 @@ Fixed
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
 - Added a static HUD depth adjustment
-- Minimap pinned at screen depth
-- Profile dialogs capped no closer than screen depth
+- Added a 3D HUD depth bias
+- Adjusted lens grit depth
 - Work in progress to synchronise falling leaves between each eye (see below)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
@@ -78,6 +78,11 @@ not need to adjust them separately.
 
 Note that the HUD will always return to screen depth whenever the mouse cursor
 is visible.
+
+Lens Grit
+---------
+The lens grit texture has been moved to depth to look better. The depth can be
+adjusted with y2 in the d3dx.ini, or disabled by setting y2 = -1.
 
 Falling Leaves
 --------------

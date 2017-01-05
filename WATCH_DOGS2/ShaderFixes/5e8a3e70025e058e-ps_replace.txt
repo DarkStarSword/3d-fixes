@@ -1,3 +1,5 @@
+// Lens grit
+
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:15:40 2016
 
 cbuffer Global : register(b0)
@@ -179,6 +181,7 @@ Texture3D<float4> HDRLighting__ColorRemapHDRTexture : register(t8);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "hud.hlsl"
 
 void main( 
   linear centroid float2 v0 : TEXCOORD0,
@@ -215,7 +218,14 @@ void main(
   r2.xyz = r3.xyz + r2.xyz;
   r2.xyz = r2.xyz / r0.xxx;
   r3.xyzw = HDRLighting__LensDirtBloomSource__TexObj__.Sample(ColorClamp_s, r1.xy).xyzw;
-  r1.xyz = HDRLighting__LensDirtTexture__TexObj__.Sample(HDRLighting__LensDirtTexture__SampObj___s, r1.xy).xyz;
+
+float2 coords = to_lens_grit_depth(r1.xy);
+
+  r1.xyz = HDRLighting__LensDirtTexture__TexObj__.Sample(HDRLighting__LensDirtTexture__SampObj___s, coords.xy).xyz;
+
+if (IniParams[7].z == -1)
+	r1.xyz = 0;
+
   r1.xyz = LensParams1.xxx * r1.xyz;
   r0.x = 1 + r3.w;
   r3.xyz = r3.xyz / r0.xxx;
