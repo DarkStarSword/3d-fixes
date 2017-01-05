@@ -1040,11 +1040,13 @@ def _fix_volumetric_fog(shader, CameraPosition, ViewProjectionMatrix, InvProject
                 orig_pos = shader.allocate_temp_reg()
                 for (p_line, p_instr) in p_results:
                      shader.replace_rval_reg_on_line(p_line, pos.variable, orig_pos)
-                off += shader.insert_instr(line + off + 1,
-                        'mov {orig_pos}.xyzw, {pos}.xyzw'.format(
-                            orig_pos = orig_pos,
-                            pos = pos.variable,
-                    ))
+                off += shader.insert_multiple_lines(line + off + 1, '''
+                    mov {orig_pos}.xyzw, {pos}.xyzw
+                    mov {orig_pos}.w, l(1.0)
+                '''.format(
+                    orig_pos = orig_pos,
+                    pos = pos.variable,
+                ))
 
         off += shader.insert_multiple_lines(line + off + 1, '''
             mov {tmp1}.xyz, {pos}.{pos_swizzle}
