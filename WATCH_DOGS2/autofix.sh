@@ -12,7 +12,13 @@ vs=$(ls *vs.txt)
 # desync:
 cs=$(grep -L Confetti $cs)
 
-# TODO: Add Screen Space Reflection fix here
+ssr_cs=$(grep -l SSPRWMirrorViewProjMatrix $cs)
+cs=$(grep -L SSPRWMirrorViewProjMatrix $cs)
+asmtool.py --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $ssr_cs
+
+ssr_ps=$(grep -l 'cbuffer SSR' $ps)
+ps=$(grep -L 'cbuffer SSR' $ps)
+asmtool.py --fix-wd2-screen-space-reflections -i -f --only-autofixed $ssr_ps
 
 # Sun/moon fog shaders - these need to be moved to infinity:
 sun_moon_fog=$(grep -l FillVolumeTexture__VFOutputBuffer4 $cs)
