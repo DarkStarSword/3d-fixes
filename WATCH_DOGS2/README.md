@@ -28,6 +28,7 @@ Fixed
 - Targetting lines
 - Lighting on walls in nethack vision
 - Glass panels in nethack vision
+- Partial fix for NVIDIA Ansel mode (likely still broken in many areas)
 
 Installation
 ------------

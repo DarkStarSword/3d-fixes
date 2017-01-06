@@ -319,6 +319,14 @@ dp4 r7.y, r5.xyzw, cb1[10].xyzw
 dp4 r7.z, r5.xyzw, cb1[11].xyzw
 dp4 r7.w, r5.xyzw, cb1[12].xyzw
 div r5.xyzw, r7.xyzw, r7.wwww
+
+// WATCH_DOGS2 unprojection (NVIDIA Ansel variant) fix inserted with DarkStarSword's asmtool.py:
+// asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed cedf0ef853d88e9a-ps.txt
+
+add r12.w, -r5.z, -r12.y
+mul r12.w, r12.w, r12.x
+mad r5.x, -r12.w, cb1[9].x, r5.x
+
 dp4 r7.x, r5.xyzw, cb1[17].xyzw
 dp4 r7.y, r5.xyzw, cb1[18].xyzw
 dp4 r7.z, r5.xyzw, cb1[19].xyzw
