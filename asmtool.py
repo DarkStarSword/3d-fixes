@@ -1440,7 +1440,7 @@ def fix_wd2_unproject(shader, allow_multiple=False):
     fix_wd2_unproject_main(shader, allow_multiple)
     fix_wd2_unproject_ansel(shader, allow_multiple)
 
-def fix_wd2_camera_pos(shader, limit = None):
+def fix_wd2_camera_pos(shader, limit = None, exclude = None):
     if hasattr(shader, 'wd2_camera_pos_fix_applied'):
         return
 
@@ -1463,7 +1463,7 @@ def fix_wd2_camera_pos(shader, limit = None):
         tmp1 = shader.allocate_temp_reg()
         tmp2 = shader.allocate_temp_reg()
 
-        shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz', limit = limit)
+        shader.replace_reg(CameraPosition, repl_CameraPosition, 'xyz', limit = limit, start = exclude)
         shader.early_insert_vanity_comment('WATCH_DOGS2 %s adjustment inserted with' % name)
         shader.early_insert_multiple_lines('''
             mul {stereo}.w, {stereo}.x, {stereo}.y
@@ -1760,6 +1760,8 @@ def parse_args():
             help="Fix specular highlights in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-camera-pos-limit', type=int,
             help="As above, but limits the number of times camera position will be replaced in a shader (for glass)")
+    parser.add_argument('--fix-wd2-camera-pos-excluding', type=int,
+            help="As above, but skips the first n times camera position will be replaced in a shader (for building fake interiors)")
     parser.add_argument('--fix-wd2-volumetric-fog', action='store_true',
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-view-dir-reconstruction', action='store_true',
@@ -1831,8 +1833,8 @@ def main():
                 fix_wd2_screen_space_reflections_cs(shader)
             if args.fix_wd2_unproject:
                 fix_wd2_unproject(shader)
-            if args.fix_wd2_camera_pos_limit:
-                fix_wd2_camera_pos(shader, args.fix_wd2_camera_pos_limit)
+            if args.fix_wd2_camera_pos_limit or args.fix_wd2_camera_pos_excluding:
+                fix_wd2_camera_pos(shader, limit = args.fix_wd2_camera_pos_limit, exclude = args.fix_wd2_camera_pos_excluding)
             elif args.fix_wd2_camera_pos:
                 fix_wd2_camera_pos(shader)
             if args.fix_wd2_soft_shadows:

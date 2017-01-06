@@ -595,9 +595,15 @@ class Shader(object):
         if register_in_expression(instr.rval, old):
             self.instructions[i] = instr.replace_rval_reg(old, new)
 
-    def replace_reg(self, old, new, components = None, limit = None):
+    def replace_reg(self, old, new, components = None, limit = None, start = None):
         count = 0
+        if start is not None and limit is not None:
+            limit += start
         for i in range(len(self.instructions)):
+            if start is not None and count < start:
+                if register_in_expression(str(self.instructions[i]), old, components):
+                    count += 1
+                    continue
             count += self.replace_reg_on_line(i, old, new, components)
             if limit is not None and count >= limit:
                 break
