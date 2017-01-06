@@ -14,5 +14,7 @@ for bin in $new_bin; do
 	mv "$tmp" "$asm"
 	chmod 644 $asm
 
-	~/3d-fixes/asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed "$asm"
+	if echo "$asm" | grep "ps.txt"; then
+		~/3d-fixes/asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed "$asm"
+	fi
 done
