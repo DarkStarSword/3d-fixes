@@ -28,6 +28,7 @@ Fixed
 - Targetting lines
 - Lighting on walls in nethack vision
 - Glass panels in nethack vision
+- "Fake" building interiors (lights through windows render at correct depth)
 - Partial fix for NVIDIA Ansel mode (likely still broken in many areas)
 
 Installation

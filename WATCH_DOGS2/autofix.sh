@@ -5,6 +5,7 @@ PATH="$DIR:$PATH"
 
 cs=$(ls *cs.txt)
 ps=$(ls *ps.txt)
+vs=$(ls *vs.txt)
 
 # Filter out all confetti physics compute shaders - these must have identical
 # inputs and execute the same instructions on both eyes otherwise physics will
@@ -52,6 +53,10 @@ fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
 #asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
 
 
+# Move fake interior lights to correct depth:
+fake_interiors=$(grep -l '//   float4 FakeInteriorTextureSize;    // Offset:   32 Size:    16$' $vs)
+vs=$(grep -L '//   float4 FakeInteriorTextureSize;    // Offset:   32 Size:    16$' $vs)
+~/3d-fixes/asmtool.py --fix-wd2-camera-pos-excluding=1 -i -f --only-autofixed $fake_interiors
 
 
 # TODO: Add remaining fixes here
