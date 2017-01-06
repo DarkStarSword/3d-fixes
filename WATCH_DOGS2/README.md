@@ -23,7 +23,8 @@ Fixed
 - Added a static HUD depth adjustment
 - Added a 3D HUD depth bias
 - Adjusted lens grit depth
-- Work in progress to synchronise falling leaves between each eye (see below)
+- Synchronised leaves, grass, bushes, etc. between both eyes (if the leaves
+  ever manage to get out of sync you can disable them by pressing backslash)
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
 - Lighting on walls in nethack vision
@@ -88,13 +89,6 @@ Lens Grit
 ---------
 The lens grit texture has been moved to depth to look better. The depth can be
 adjusted with y2 in the d3dx.ini, or disabled by setting y2 = -1.
-
-Falling Leaves
---------------
-The falling leaves get out of sync between each eye in this game. I have a lot
-of progress towards keeping them synchronised, but they still misbehave in some
-cases, so I have disabled them by default. You can press F1 to toggle these on
-and off, or edit the d3dx.ini and change x2 to 0 to enable them by default.
 
 Known Issues
 ------------
