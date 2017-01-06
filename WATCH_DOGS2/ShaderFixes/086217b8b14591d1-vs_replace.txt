@@ -1,3 +1,4 @@
+// Police helicopter search light 1/2 - apply stereo correction
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:03:49 2016
 
 cbuffer Viewport : register(b0)
@@ -155,5 +156,10 @@ void main(
   o1.z = dot(r2.xyzw, ViewProjectionMatrix._m02_m12_m22_m32);
   o0.z = r1.w;
   o1.xyw = r1.xyw;
+
+// Part of the search light fix:
+float4 s = StereoParams.Load(0);
+o1.x += s.x * (o1.w - s.y);
+
   return;
 }
