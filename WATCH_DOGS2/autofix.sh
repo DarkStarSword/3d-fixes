@@ -65,4 +65,5 @@ vs=$(grep -L '//   float4 FakeInteriorTextureSize;    // Offset:   32 Size:    1
 ~/3d-fixes/asmtool.py --fix-wd2-camera-pos-excluding=1 -i -f --only-autofixed $fake_interiors
 
 
-# TODO: Add remaining fixes here
+# Reflections, shadows, etc.
+asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed $ps
