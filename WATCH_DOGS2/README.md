@@ -48,7 +48,7 @@ Keys
 
 - ~: Toggle between two convergence presets for cutscenes and gameplay.
 
-- F1: Toggle leaf particles (disable if they are only visible in one eye or are
+- \: Toggle leaf particles (disable if they are only visible in one eye or are
   in different positions in each eye)
 
 - F2: Cycle between several preset HUD depths
