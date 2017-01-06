@@ -102,6 +102,8 @@ Known Issues
 - Some other fog is slightly uneven between each eye
 - Fog glow around the sun / moon is at screen depth under certain weather
   conditions.
+- Police search lights clip momentarily as the camera passes through the
+  boundary of the light cone.
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------

@@ -122,7 +122,11 @@ cbuffer LightEffectVolume : register(b2)
   float2 OneOverBeamTextureSize : packoffset(c23);
 }
 
-
+cbuffer DriverStereoParams : register(b12)
+{
+	float neg_sep_conv;
+	float sep;
+}
 
 // 3Dmigoto declarations
 #define cmp -
@@ -163,8 +167,17 @@ float3 cpos = CameraPosition.xyz;
   o1.z = dot(r1.xyzw, ViewProjectionMatrix._m02_m12_m22_m32);
   o1.w = dot(r1.xyzw, ViewProjectionMatrix._m03_m13_m23_m33);
 
-// Fix the light shaft depth:
-o1.x += s.x * (o1.w - s.y);
+// Fix the light shaft depth and neutralise the driver's inconsistent stereo
+// correction by accessing cb12 if it has passed it in:
+if (sep)
+	o1.x += sep * o1.w + neg_sep_conv;
+else
+	o1.x += s.x * (o1.w - s.y);
+
+// Standard technique to neutralise the driver's stereo correction did not
+// work - it removed the effect instead:
+//if (s.y && o1.w > 0)
+//	o1 = o1 / o1.w * s.y;
 
   return;
 }
