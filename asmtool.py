@@ -593,6 +593,28 @@ class ASMShader(hlsltool.Shader):
         match = self.find_header(resource_bind_pattern(name, type, format, dim))
         return 't' + match.group('slot')
 
+
+    def find_col_major_matrix_multiply(shader, matrix):
+        # TODO: this is quite strict at the moment, and could be relaxed to support
+        # matrix multiplies that are done out of order or interleaved with
+        # unrelated instructions.
+
+        results = shader.scan_shader(matrix, write = False, instr_type = DP4Instruction)
+        if len(results) != 4:
+            debug_verbose(0, 'Matrix not used expected number of times')
+            raise KeyError()
+
+        # Only checks xyz go to same output variable - w often goes to another:
+        if any([ r.instruction.lval.variable != results[0].instruction.lval.variable for r in results[:3] ]):
+            debug_verbose(0, 'Matrix writing to differing output variables')
+            raise KeyError()
+
+        if any([ results[n].line != results[n+1].line - 1 for n in range(3) ]):
+            debug_verbose(0, 'Matrix not used in sequence')
+            raise KeyError()
+
+        return results
+
     def insert_instr(self, pos, instruction=None, comment=None):
         off = 0
         if comment is not None:
@@ -1263,16 +1285,13 @@ def fix_fcprimal_light_pos(shader):
 
         shader.autofixed = True
 
-def fix_wd2_unproject(shader, allow_multiple=False):
-    if hasattr(shader, 'wd2_unprojection_fix_applied'):
-        return
-
+def fix_wd2_unproject_main(shader, allow_multiple=False):
     try:
         InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
         VPosScale = cb_offset(*shader.find_cb_entry('float4', 'VPosScale'))
         VPosOffset = cb_offset(*shader.find_cb_entry('float4', 'VPosOffset'))
     except KeyError:
-        debug_verbose(0, 'Shader does not declare all required values for the WATCH_DOGS2 unprojection fix')
+        debug_verbose(0, 'Shader does not declare all required values for the regular WATCH_DOGS2 unprojection fix')
         return
 
 
@@ -1367,6 +1386,59 @@ def fix_wd2_unproject(shader, allow_multiple=False):
 
     shader.autofixed = True
     shader.wd2_unprojection_fix_applied = True
+
+def fix_wd2_unproject_ansel(shader, allow_multiple=False):
+    try:
+        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+    except KeyError:
+        debug_verbose(0, 'Shader does not declare all required values for the Ansel WATCH_DOGS2 unprojection fix')
+        return
+
+    # Ansel shaders use a full multiplication with the inverse projection
+    # matrix instead of the partial multiplication that the regular variants of
+    # the shaders use. Light shaders also only dump on demand while Ansel is
+    # loaded, making it diffult to do an offline fix for these, but we can
+    # still script the pattern
+
+    # FIXME: This is basically the same as the soft shadow fix, except the
+    # shaders have headers, Z is negated, the div may only use three
+    # components. Should be able to refactor these together
+    try:
+        matrix_results = shader.find_col_major_matrix_multiply(InvProjectionMatrix)
+    except KeyError:
+        return
+    line, instr = matrix_results[3]
+
+    results = shader.scan_shader(instr.lval.variable, start = line + 1, write = False, stop = True, stop_when_clobbered = True, instr_type = DivInstruction)
+    if not results or results[0].line != line + 1 or \
+            len(results[0].instruction.lval.components) < 3 or \
+            not hlsltool.regs_overlap(results[0].instruction.rargs[0], matrix_results[0].instruction.lval.variable, 'xyz'):
+        debug_verbose(0, 'Inverse projection matrix normalisation not in expected location')
+        return
+    line, instr = results[0]
+    vpos = instr.lval.variable
+
+    off = shader.insert_stereo_params()
+    off += shader.insert_vanity_comment(line + off + 1, 'WATCH_DOGS2 unprojection (NVIDIA Ansel variant) fix inserted with')
+    off += shader.insert_multiple_lines(line + off + 1, '''
+        add {stereo}.w, -{vpos}.z, -{stereo}.y
+        mul {stereo}.w, {stereo}.w, {stereo}.x
+        mad {vpos}.x, -{stereo}.w, {InvProjectionMatrix0}.x, {vpos}.x
+    '''.format(
+        stereo = shader.stereo_params_reg,
+        InvProjectionMatrix0 = InvProjectionMatrix[0],
+        vpos = vpos,
+    ))
+
+    shader.autofixed = True
+    shader.wd2_unprojection_fix_applied = True
+
+def fix_wd2_unproject(shader, allow_multiple=False):
+    if hasattr(shader, 'wd2_unprojection_fix_applied'):
+        return
+
+    fix_wd2_unproject_main(shader, allow_multiple)
+    fix_wd2_unproject_ansel(shader, allow_multiple)
 
 def fix_wd2_camera_pos(shader, limit = None):
     if hasattr(shader, 'wd2_camera_pos_fix_applied'):
@@ -1540,25 +1612,21 @@ def fix_wd2_soft_shadows(shader):
 
     inv_projection = cb_matrix(13, 36 * 16)
 
-    results = shader.scan_shader(inv_projection, write=False)
-    if len(results) != 4:
-        debug_verbose(0, 'Inverse projection matrix not used expected number of times')
+    try:
+        results = shader.find_col_major_matrix_multiply(inv_projection)
+    except KeyError:
         return
 
     if any([ r.instruction.lval.variable != results[0].instruction.lval.variable for r in results ]):
-        debug_verbose(0, 'Inverse projection matrix not writing to same output variable')
-        return
+        debug_verbose(0, 'Matrix writing to differing output variables')
+        raise KeyError()
 
     # Check matrix multiplication writes x, y, z, w in order. Results will
     # already be in order of constant value, so const index is implicitly
     # checked by the line order below
     if any([ r.instruction.lval.components != 'xyzw'[i] for (i, r) in enumerate(results) ]):
-        debug_verbose(0, 'Inverse projection matrix not writing to expected component')
-        return
-
-    if any([ results[n].line != results[n+1].line - 1 for n in range(3) ]):
-        debug_verbose(0, 'Inverse projection matrix not used in sequence')
-        return
+        debug_verbose(0, 'Matrix not writing to expected components')
+        raise KeyError()
 
     line, instr = results[3]
 
