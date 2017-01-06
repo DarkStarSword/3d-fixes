@@ -1,0 +1,128 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:09:07 2016
+
+cbuffer LightEffectVolume : register(b0)
+{
+  float4 BeamUVOffsets : packoffset(c0);
+  float4 Colour : packoffset(c1);
+  float4x4 ViewToLightClipMatrix : packoffset(c2);
+  float4x4 ViewToLightMatrix : packoffset(c6);
+  float4x4 ViewToWorldMatrix : packoffset(c10);
+  float4x4 WorldMatrix : packoffset(c14);
+  float4x4 WorldToVolumeTextureCoordMatrix : packoffset(c18);
+  float2 BeamInterleavedPatternUVScale : packoffset(c22);
+  float OneOverSoftRange : packoffset(c22.z);
+  float2 OneOverBeamTextureSize : packoffset(c23);
+}
+
+SamplerState LightEffectVolume__BeamDepthsTexturePoint__SampObj___s : register(s0);
+SamplerState LightEffectVolume__BeamTexture__SampObj___s : register(s1);
+Texture2D<float4> LightEffectVolume__BeamDepthsTexturePoint__TexObj__ : register(t0);
+Texture2D<float4> LightEffectVolume__BeamTexture__TexObj__ : register(t1);
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  linear centroid float3 v0 : TEXCOORD0,
+  float4 v1 : SV_Position0,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = OneOverBeamTextureSize.xy * v1.xy;
+  r0.xy = LightEffectVolume__BeamDepthsTexturePoint__TexObj__.Sample(LightEffectVolume__BeamDepthsTexturePoint__SampObj___s, r0.xy).xy;
+  r1.xyz = v0.xyz / v0.zzz;
+  r0.yzw = r1.xyz * r0.yyy;
+  r1.xyz = r1.xyz * r0.xxx;
+  r1.xyz = float3(1,1,-1) * r1.xyz;
+  r0.xyz = float3(1,1,-1) * r0.yzw;
+  r0.w = 1;
+  r2.x = dot(r0.xyzw, ViewToLightClipMatrix._m00_m10_m20_m30);
+  r2.y = dot(r0.xyzw, ViewToLightClipMatrix._m01_m11_m21_m31);
+  r0.x = dot(r0.xyzw, ViewToLightClipMatrix._m03_m13_m23_m33);
+  r0.xy = r2.xy / r0.xx;
+  r1.w = 1;
+  r2.x = dot(r1.xyzw, ViewToLightClipMatrix._m00_m10_m20_m30);
+  r2.y = dot(r1.xyzw, ViewToLightClipMatrix._m01_m11_m21_m31);
+  r0.z = dot(r1.xyzw, ViewToLightClipMatrix._m03_m13_m23_m33);
+  r0.zw = r2.xy / r0.zz;
+  r0.xy = r0.zw + -r0.xy;
+  r1.x = dot(r0.xy, r0.xy);
+  r1.y = rsqrt(r1.x);
+  r1.x = cmp(r1.x != 0.000000);
+  r0.xy = r1.yy * r0.xy;
+  r0.x = dot(r0.zw, r0.xy);
+  r0.y = dot(r0.zw, r0.zw);
+  r0.x = -r0.x * r0.x + r0.y;
+  r0.yz = sqrt(r0.yx);
+  r0.y = -0.899999976 + r0.y;
+  r0.y = saturate(10 * r0.y);
+  r0.y = r0.z * r0.y;
+  r2.x = WorldMatrix._m10;
+  r2.y = WorldMatrix._m11;
+  r2.z = WorldMatrix._m12;
+  r0.w = dot(r2.xyz, r2.xyz);
+  r0.w = sqrt(r0.w);
+  r0.xw = cmp(float2(0,50) < r0.xw);
+  r0.y = r0.w ? r0.y : r0.z;
+  r0.y = 1 + -r0.y;
+  r0.y = saturate(r0.y + r0.y);
+  r0.x = r0.x ? r0.y : 1;
+  r0.x = r1.x ? r0.x : 0;
+  r0.x = Colour.w * r0.x;
+  r0.xyz = Colour.xyz * r0.xxx;
+  r1.xyzw = BeamUVOffsets.xyzw + BeamUVOffsets.xyzw;
+  r2.xyzw = v1.xyxy * OneOverBeamTextureSize.xyxy + r1.zwzy;
+  r1.xyzw = v1.xyxy * OneOverBeamTextureSize.xyxy + r1.xyxw;
+  r3.xyzw = BeamUVOffsets.zwzy + r2.zwzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.xy).xyzw;
+  r3.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.zw).xyzw;
+  r3.xyzw = r4.xyzw + r3.xyzw;
+  r4.xyzw = BeamUVOffsets.xyxw + r2.zwzw;
+  r5.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.xy).xyzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.zw).xyzw;
+  r3.xyzw = r5.xyzw + r3.xyzw;
+  r3.xyzw = r3.xyzw + r4.xyzw;
+  r3.xyzw = float4(0.25,0.25,0.25,0.25) * r3.xyzw;
+  r4.xyzw = BeamUVOffsets.zwzy + r2.xyxy;
+  r2.xyzw = BeamUVOffsets.xyxw + r2.xyxy;
+  r5.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.xy).xyzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.zw).xyzw;
+  r4.xyzw = r5.xyzw + r4.xyzw;
+  r5.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r2.xy).xyzw;
+  r2.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r2.zw).xyzw;
+  r4.xyzw = r5.xyzw + r4.xyzw;
+  r2.xyzw = r4.xyzw + r2.xyzw;
+  r2.xyzw = r2.xyzw * float4(0.25,0.25,0.25,0.25) + r3.xyzw;
+  r3.xyzw = BeamUVOffsets.zwzy + r1.xyxy;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.xy).xyzw;
+  r3.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.zw).xyzw;
+  r3.xyzw = r4.xyzw + r3.xyzw;
+  r4.xyzw = BeamUVOffsets.xyxw + r1.xyxy;
+  r5.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.xy).xyzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r4.zw).xyzw;
+  r3.xyzw = r5.xyzw + r3.xyzw;
+  r3.xyzw = r3.xyzw + r4.xyzw;
+  r2.xyzw = r3.xyzw * float4(0.25,0.25,0.25,0.25) + r2.xyzw;
+  r3.xyzw = BeamUVOffsets.zwzy + r1.zwzw;
+  r1.xyzw = BeamUVOffsets.xyxw + r1.zwzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.xy).xyzw;
+  r3.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r3.zw).xyzw;
+  r3.xyzw = r4.xyzw + r3.xyzw;
+  r4.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r1.xy).xyzw;
+  r1.xyzw = LightEffectVolume__BeamTexture__TexObj__.Sample(LightEffectVolume__BeamTexture__SampObj___s, r1.zw).xyzw;
+  r3.xyzw = r4.xyzw + r3.xyzw;
+  r1.xyzw = r3.xyzw + r1.xyzw;
+  r1.xyzw = r1.xyzw * float4(0.25,0.25,0.25,0.25) + r2.xyzw;
+  r1.xyzw = float4(0.25,0.25,0.25,0.25) * r1.xyzw;
+  r1.xyzw = max(float4(0,0,0,0), r1.xyzw);
+  o0.xyz = r1.xyz * r0.xyz;
+  o0.w = r1.w;
+  return;
+}
