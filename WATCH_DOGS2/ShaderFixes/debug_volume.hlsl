@@ -1,5 +1,5 @@
 #define amplify (IniParams[7].w ? IniParams[7].w : 1)
-#define scale 8
+#define scale 1
 
 Texture3D<float> volume : register(t100);
 Texture2DArray<float4> shadow : register(t101);
