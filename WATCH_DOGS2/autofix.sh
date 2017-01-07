@@ -53,6 +53,16 @@ asmtool.py --fix-wd2-lens-grit=y2 -i -f --only-autofixed $(grep -l 'LensDirt' $p
 ps=$(grep -L 'LensDirt' $ps)
 
 
+# Possible fix for uniform fog that sometimes blankets the City at night? These
+# are shaders that seem to take a projection offset parameter - possibly they
+# are designed to work in stereo? Moves the fog to the correct depth, but
+# creates a box shaped artefact in the sky.
+ps_uniform_fog_cube=$(grep -l 'VFProjectionOffset.*[0-9]$' *ps.txt)
+ps=$(grep -L 'VFProjectionOffset.*[0-9]$' *ps.txt)
+asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-autofixed $ps_uniform_fog_cube
+
+
+
 # Apply alternate 2 fog fix to *all* pixel shaders that mention fog (alternate
 # 1 fix completely breaks windshield reflections, while this breaks some fog):
 fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
