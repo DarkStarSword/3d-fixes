@@ -1,3 +1,17 @@
+// Uniform "fill light" volumetric fog cube array
+
+// To see the cubes, add this to d3dx.ini:
+//
+// [ShaderOverrideFogCubes]
+// hash = 6aecd428560649f8
+// ;ResourceDebugVolume = ref ps-t1
+// run = CustomShaderWireframe
+// handling = skip
+//
+// [CustomShaderWireFrame]
+// fill = wireframe
+// draw = from_caller
+
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:12:24 2016
 
 cbuffer Viewport : register(b0)
@@ -164,5 +178,9 @@ void main(
   o0.y = dot(r0.xyzw, ViewRotProjectionMatrix._m01_m11_m21_m31);
   o0.z = dot(r0.xyzw, ViewRotProjectionMatrix._m02_m12_m22_m32);
   o0.w = dot(r0.xyzw, ViewRotProjectionMatrix._m03_m13_m23_m33);
+
+float4 s = StereoParams.Load(0);
+o0.x += s.x * (o0.w - s.y);
+
   return;
 }
