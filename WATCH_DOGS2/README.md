@@ -30,7 +30,7 @@ Fixed
 - Lighting on walls in nethack vision
 - Glass panels in nethack vision
 - "Fake" building interiors (lights through windows render at correct depth)
-- Partial fix for NVIDIA Ansel mode (likely still broken in many areas)
+- Partial fix for NVIDIA Ansel mode (see below)
 
 Installation
 ------------
@@ -89,6 +89,31 @@ Lens Grit
 ---------
 The lens grit texture has been moved to depth to look better. The depth can be
 adjusted with y2 in the d3dx.ini, or disabled by setting y2 = -1.
+
+NVIDIA Ansel Mode
+-----------------
+This is one of the games supported by NVIDIA Ansel, which allows you to
+position the camera, adjust the FOV, etc. and take various types of
+screenshots. Press Alt+F2 in game to pause the game and bring up Ansel HUD,
+then move the camera with WASD, Z, X and rotate by holding the left mouse
+button and use the HUD to adjust other controls.
+
+The various screenshot options provided by Ansel should all work fine, but
+personally I find the stereo screenshot option to be lacking (no off-center
+projection and very little depth), but you can just use it to position the
+camera then take a stereo screenshot with Alt+F1 (beware the 100 screenshot
+limit if you aren't using my auto rename script).
+
+To remove the Ansel HUD for better screenshots in this mode, open the d3dx.ini,
+search for "Ansel" and uncomment the two ShaderOverride sections. Back in game
+press F10 to reload the config and voila - no HUD :) Note that the various
+filters Ansel provides only work in one eye in this game.
+
+Note that there are very likely still broken effects (especially lights,
+shadows and reflections) while using Ansel in many areas / times of day /
+weather conditions - I've fixed a bunch of them, but they only dump on demand
+when Ansel is used, so finding them all is a near impossible task. You can
+still use Ansel's stereo screenshot option if there are broken shaders.
 
 Known Issues
 ------------
