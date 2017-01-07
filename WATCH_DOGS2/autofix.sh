@@ -47,6 +47,13 @@ glass_ps=$(grep -l 'cbuffer MaterialWD2Glass' $ps)
 ps=$(grep -L 'cbuffer MaterialWD2Glass' $ps)
 asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $glass_ps
 
+# Similar problem with some of the hair shaders - adjusting the second camera
+# position causes the reflections to go out of whack, so limit to the first (a
+# lot only use one - they are fine):
+hair_ps=$(grep -l 'cbuffer MaterialWD2Hair' $ps)
+ps=$(grep -L 'cbuffer MaterialWD2Hair' $ps)
+asmtool.py --fix-wd2-camera-pos-limit=1 -i -f --only-autofixed $hair_ps
+
 
 # Lens grit shaders:
 asmtool.py --fix-wd2-lens-grit=y2 -i -f --only-autofixed $(grep -l 'LensDirt' $ps)
