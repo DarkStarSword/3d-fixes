@@ -17,6 +17,7 @@ Fixed
 - Skybox
 - Light flares
 - Volumetric Fog
+- Police Helicopter Searchlight
 - Water refraction
 - Added an automatic stereo crosshair
 - Added an automatic/manual crosshair toggle
