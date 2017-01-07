@@ -54,13 +54,24 @@ ps=$(grep -L 'LensDirt' $ps)
 
 
 # Possible fix for uniform fog that sometimes blankets the City at night? These
-# are shaders that seem to take a projection offset parameter - possibly they
-# are designed to work in stereo? Moves the fog to the correct depth, but
-# creates a box shaped artefact in the sky.
-ps_uniform_fog_cube=$(grep -l 'VFProjectionOffset.*[0-9]$' *ps.txt)
+# shaders are Ansel exclusive and can accept a projection offset parameter -
+# possibly they are designed to work in stereo? Moves the fog to the correct
+# depth in Ansel, but creates a box shaped artefact in the sky.
+ps_uniform_fog_cube_artefact_ansel=$(grep -l 'VFProjectionOffset.*[0-9]$' *ps.txt)
 ps=$(grep -L 'VFProjectionOffset.*[0-9]$' *ps.txt)
-asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-autofixed $ps_uniform_fog_cube
-
+asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-autofixed $ps_uniform_fog_cube_artefact_ansel
+# Based on the shaders that take a VFProjectionOffset in Ansel, we notice they
+# write to a UAV and we might be able to assume that other pixel shaders that
+# write to the same UAV might require the same pattern. Two of the shaders
+# matched in the above pattern write to GIFillLightFog__VFLightOutputBuffer,
+# and the third writes to FogVolumes__VFOutputBuffer1:
+ps_uniform_fog_cube_artefact1=$(grep -l 'GIFillLightFog__VFLightOutputBuffer' *ps.txt)
+ps=$(grep -L 'GIFillLightFog__VFLightOutputBuffer' *ps.txt)
+asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-autofixed $ps_uniform_fog_cube_artefact1
+# FogVolumes__VFOutputBuffer1 shaders had no visible change (not saying they don't, just not in the current weather):
+ps_uniform_fog_cube_artefact2=$(grep -l 'FogVolumes__VFOutputBuffer1' *ps.txt)
+ps=$(grep -L 'FogVolumes__VFOutputBuffer1' *ps.txt)
+asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-autofixed $ps_uniform_fog_cube_artefact2
 
 
 # Apply alternate 2 fog fix to *all* pixel shaders that mention fog (alternate

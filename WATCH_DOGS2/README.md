@@ -126,6 +126,8 @@ Known Issues
   conditions.
 - Police search lights clip momentarily as the camera passes through the
   boundary of the light cone.
+- In certain foggy conditions, there is a box shaped artefact visible in the
+  foggy sky.
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
