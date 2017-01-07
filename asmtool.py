@@ -1177,8 +1177,8 @@ def fix_wd2_view_dir_reconstruction(shader):
 
         off = shader.insert_stereo_params()
 
-        off += shader.insert_vanity_comment(line + off - 1, '%s adjustement (sun/moon volumetric fog) inserted with' % name)
-        shader.insert_multiple_lines(line + off - 1, '''
+        off += shader.insert_vanity_comment(line + off, '%s adjustement (sun/moon volumetric fog) inserted with' % name)
+        shader.insert_multiple_lines(line + off, '''
             add {x}, {x}, -{stereo}.x
         '''.format(
             x = instr.lval.variable + '.x',
