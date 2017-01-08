@@ -13,6 +13,7 @@ Update v1.1
   falling through them.
 - Added shotgun crosshair to auto adjust list
 - Fixed glow of sun/moon when viewed through the thick San Francisco fog
+- Fixed steam explosions
 
 Fixed
 -----
@@ -131,10 +132,12 @@ still use Ansel's stereo screenshot option if there are broken shaders.
 
 Known Issues
 ------------
-- Fog from steam vents is uneven between each eye (conflict with other parts of
-  the volumetric fog fix)
+- Fog from steam vents is falsely obscured when an object is in front of them,
+  which can lead to be being shaded differently in each eye. This is a game bug
+  that occurs in 2D as well.
 - Police search lights clip momentarily as the camera passes through the
-  boundary of the light cone.
+  boundary of the light cone. Probably only noticeable if you freeze the game
+  with Ansel.
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------

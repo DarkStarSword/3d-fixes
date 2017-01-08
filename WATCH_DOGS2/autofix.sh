@@ -125,6 +125,21 @@ autofix_vs()
 	xx=$(grep -l '//   float4 FakeInteriorTextureSize;    // Offset:   32 Size:    16$' $vs)
 	vs=$(grep -L '//   float4 FakeInteriorTextureSize;    // Offset:   32 Size:    16$' $vs)
 	[ -n "$xx" ] && asmtool.py --fix-wd2-camera-pos-excluding=1 -i -f --only-autofixed $xx
+	[ -z "$vs" ] && return
+
+	# Fix halo issues on water. Commented out because these also require a
+	# driver neutralisation to fix the reflections if the pattern applies,
+	# which isn't scripted in asmtool yet.
+	# xx=$(grep -l 'cbuffer (MaterialWD2Water|WaterGrid)' $vs)
+	# vs=$(grep -L 'cbuffer (MaterialWD2Water|WaterGrid)' $vs)
+	# [ -n "$xx" ] && asmtool.py --auto-fix-vertex-halo -i --only-autofixed $xx
+	# [ -z "$vs" ] && return
+
+	# Fix uneven lighting on steam and other effects that consider volumetric fog:
+	xx=$(grep -l 'VolumetricFog__VFLightVolumeTexture__TexObj__' $vs)
+	vs=$(grep -L 'VolumetricFog__VFLightVolumeTexture__TexObj__' $vs)
+	[ -n "$xx" ] && asmtool.py --auto-fix-vertex-halo -i --only-autofixed $xx
+	[ -z "$vs" ] && return
 }
 
 [ -n "$cs" ] && autofix_cs
