@@ -251,7 +251,7 @@ dcl_resource_texture2d (float,float,float,float) t3
 dcl_input_ps linear centroid v0.xy
 dcl_input_ps_siv linear noperspective v1.xy, position
 dcl_output o0.xyzw
-dcl_temps 7
+dcl_temps 8
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 
@@ -270,11 +270,11 @@ dp4 r6.y, r5.xyzw, cb1[18].xyzw
 dp4 r6.z, r5.xyzw, cb1[19].xyzw
 add r4.xyz, cb1[174].xyz, r6.xyz
 
-mad r0.xy, v0.xyxx, l(2.000000, 2.000000, 0.000000, 0.000000), l(-1.000000, -1.000000, 0.000000, 0.000000)
+// Move sun and horizon glow to Infinity:
+mov r7.xy, v0.xyxx
+mad r7.x, r3.x, l(-0.5), r7.x
 
-// Move sun to Infinity:
-add r0.x, r0.x, -r3.x
-
+mad r0.xy, r7.xyxx, l(2.000000, 2.000000, 0.000000, 0.000000), l(-1.000000, -1.000000, 0.000000, 0.000000)
 mul r1.xz, r0.xxyx, cb1[0].xxyx
 mul r0.xy, r1.xzxx, l(0.500000, -0.500000, 0.000000, 0.000000)
 mov r0.z, -cb1[67].x
@@ -320,13 +320,13 @@ mul r0.y, r0.y, cb3[1].y
 exp r0.y, r0.y
 add r0.y, r0.y, l(-1.000000)
 mad r0.y, cb3[1].x, r0.y, l(1.000000)
-sample_indexable(texture2d)(float,float,float,float) r2.xyz, v0.xyxx, t3.xyzw, s2
+sample_indexable(texture2d)(float,float,float,float) r2.xyz, r7.xyxx, t3.xyzw, s2
 mul r0.yzw, r0.yyyy, r2.xxyz
 div_sat r1.w, cb3[6].z, cb3[21].w
 mul r1.w, r1.w, l(-20.000000)
 exp r1.w, r1.w
 mul r1.w, r1.w, cb3[6].w
-sample_indexable(texture2d)(float,float,float,float) r2.xyz, v0.xyxx, t1.xyzw, s1
+sample_indexable(texture2d)(float,float,float,float) r2.xyz, r7.xyxx, t1.xyzw, s1
 mul r2.xyz, r1.wwww, r2.xyzx
 div_sat r1.w, cb3[9].z, cb3[21].w
 mul r1.w, r1.w, l(-20.000000)
@@ -341,7 +341,7 @@ mul r0.x, r0.x, r0.x
 mul r0.x, r0.x, r1.x
 mul r0.x, r0.x, l(10.000000)
 min r0.x, r0.x, l(1.000000)
-sample_indexable(texture2d)(float,float,float,float) r1.xyz, v0.xyxx, t0.xyzw, s0
+sample_indexable(texture2d)(float,float,float,float) r1.xyz, r7.xyxx, t0.xyzw, s0
 mul r1.xyz, r0.xxxx, r1.xyzx
 mul r1.xyz, r1.wwww, r1.xyzx
 add r2.xyz, cb2[0].xyzx, l(0.000010, 0.000010, 0.000010, 0.000000)
