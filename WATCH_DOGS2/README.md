@@ -12,6 +12,7 @@ Update v1.1
 - Fixed brick decals floating a few milimeters above pavement with shadows
   falling through them.
 - Added shotgun crosshair to auto adjust list
+- Fixed glow of sun/moon when viewed through the thick San Francisco fog
 
 Fixed
 -----
@@ -132,8 +133,6 @@ Known Issues
 ------------
 - Fog from steam vents is uneven between each eye (conflict with other parts of
   the volumetric fog fix)
-- Fog glow around the sun / moon is at screen depth under certain weather
-  conditions.
 - Police search lights clip momentarily as the camera passes through the
   boundary of the light cone.
 

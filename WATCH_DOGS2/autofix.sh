@@ -33,11 +33,14 @@ asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fog_shaders
 # Fog fix alternate 2 (Adjusts all CS & PS fog except sun/moon and density. Seems less accurate in some cases?):
 # asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis=1 --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $cs
 
-# Apply alternate 1 fog fix only to FV ("Fog Volume" as opposed to "Volumetric
-# Fog" o_O ?) pixel shaders:
+# Apply fog fix only to FV ("Fog Volume" as opposed to "Volumetric Fog" o_O ?)
+# pixel shaders:
 fv_shaders_ps=$(grep -l 'cbuffer FogVolumeRaymarch' $ps)
 ps=$(grep -L 'cbuffer FogVolumeRaymarch' $ps)
-asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fv_shaders_ps
+# Alternate 1 only fixes fog, not sun/moon glow:
+#asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fv_shaders_ps
+# Alternate 3 fixes fog AND sun/moon glow (the sun can still catch incorrectly on objects, this only fixes the sky):
+asmtool.py --fix-wd2-camera-pos --fix-wd2-camera-z-axis=-1 -i -f --only-autofixed $fv_shaders_ps
 
 
 # Glass shaders use CameraPosition twice, but we only want to correct the first
