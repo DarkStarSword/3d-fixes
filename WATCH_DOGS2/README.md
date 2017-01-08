@@ -1,6 +1,18 @@
 WATCH_DOGS 2
 ============
 
+Update v1.1
+-----------
+- Fixed clipping on thick San Francisco volumetric fog
+- Fixed another type of fog - should make fog 3D under all weather conditions
+- Fixed more instances of 2D transparent effects in nethack vision (glass
+  panels on the Temple of New Dawn glass & shrink wrap)
+- Fixed wrong reflections on some hair
+- Fixed blood decals
+- Fixed brick decals floating a few milimeters above pavement with shadows
+  falling through them.
+- Added shotgun crosshair to auto adjust list
+
 Fixed
 -----
 - Flickering HUD (render target redirection to work around game + driver bug)
@@ -120,14 +132,10 @@ Known Issues
 ------------
 - Fog from steam vents is uneven between each eye (conflict with other parts of
   the volumetric fog fix)
-- Thick fog that occasionally rolls in over the bay is clipping incorrectly
-- Some other fog is slightly uneven between each eye
 - Fog glow around the sun / moon is at screen depth under certain weather
   conditions.
 - Police search lights clip momentarily as the camera passes through the
   boundary of the light cone.
-- In certain foggy conditions, there is a box shaped artefact visible in the
-  foggy sky.
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
