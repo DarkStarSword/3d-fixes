@@ -1,5 +1,8 @@
 #!/bin/sh
 
+DIR=~/3d-fixes
+AUTOFIX="$DIR/WATCH_DOGS2/autofix.sh"
+
 all_bin=$(ls *.bin)
 all_asm=$(ls *s.txt)
 bin_as_asm=$(echo $all_bin | sed 's/bin/txt/g')
@@ -14,7 +17,5 @@ for bin in $new_bin; do
 	mv "$tmp" "$asm"
 	chmod 644 $asm
 
-	if echo "$asm" | grep "ps.txt"; then
-		~/3d-fixes/asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos -i --only-autofixed "$asm"
-	fi
+	"$AUTOFIX" "$asm"
 done
