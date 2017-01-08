@@ -31,7 +31,7 @@ cs=$(grep -L 'cbuffer VolumetricFog' $cs)
 asmtool.py --fix-wd2-volumetric-fog -i -f --only-autofixed $fog_shaders
 
 # Fog fix alternate 2 (Adjusts all CS & PS fog except sun/moon and density. Seems less accurate in some cases?):
-# asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $cs
+# asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis=1 --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $cs
 
 # Apply alternate 1 fog fix only to FV ("Fog Volume" as opposed to "Volumetric
 # Fog" o_O ?) pixel shaders:
@@ -85,7 +85,7 @@ asmtool.py --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction -i -f --only-a
 # Apply alternate 2 fog fix to *all* pixel shaders that mention fog (alternate
 # 1 fix completely breaks windshield reflections, while this breaks some fog):
 fog_shaders_ps=$(grep -l 'cbuffer VolumetricFog' $ps)
-#asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
+#asmtool.py --fix-wd2-unproject --fix-wd2-camera-pos --fix-wd2-view-dir-reconstruction --fix-wd2-camera-z-axis=1 --fix-wd2-screen-space-reflections --fix-wd2-screen-space-reflections-cs -i -f --only-autofixed $fog_shaders_ps
 
 
 # Move fake interior lights to correct depth:

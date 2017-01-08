@@ -1187,7 +1187,7 @@ def fix_wd2_view_dir_reconstruction(shader):
 
         shader.autofixed = True
 
-def fix_wd2_camera_z_axis(shader):
+def fix_wd2_camera_z_axis(shader, multiplier):
     # Experimental alternate method to fix volumetric fog when used in
     # conjunction with --fix-wd2-view-dir-reconstruction by adjusting the
     # camera Z axis to match the off-center projection (i.e. by separation).
@@ -1195,46 +1195,50 @@ def fix_wd2_camera_z_axis(shader):
     # if it is better or worse. This cancels out the sun/moon glow adjustment
     # though, so it can't be used with those shaders.
 
-    try:
-        VFCameraZAxis = cb_offset(*shader.find_cb_entry('float3', 'VFCameraZAxis', used = True))
-        InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
-        InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x3', 'InvViewMatrix'))
-    except KeyError:
-        debug_verbose(0, 'Shader does not declare/use VFCameraZAxis')
-        return
+    neg = {-1: '-', 1: ''}[multiplier]
 
-    off = shader.insert_stereo_params()
-    repl_VFCameraZAxis = shader.allocate_temp_reg()
-    tmp1 = shader.allocate_temp_reg()
-    tmp2 = shader.allocate_temp_reg()
+    for name in ('VFCameraZAxis', 'FVCameraZAxis'):
+        try:
+            CameraZAxis = cb_offset(*shader.find_cb_entry('float3', name, used = True))
+            InvProjectionMatrix = cb_matrix(*shader.find_cb_entry('float4x4', 'InvProjectionMatrix'))
+            InvViewMatrix = cb_matrix(*shader.find_cb_entry('float4x3', 'InvViewMatrix'))
+        except KeyError:
+            debug_verbose(0, 'Shader does not declare/use %s' % name)
+            continue
 
-    shader.replace_reg(VFCameraZAxis, repl_VFCameraZAxis, 'xyz')
-    shader.early_insert_vanity_comment('WATCH_DOGS2 VFCameraZAxis adjustment inserted with')
-    shader.early_insert_multiple_lines('''
-        mul {tmp1}.x, {stereo}.x, {InvProjectionMatrix0}.x
-        mul {tmp1}.y, {stereo}.x, {InvProjectionMatrix1}.x
-        mul {tmp1}.z, {stereo}.x, {InvProjectionMatrix2}.x
-        mul {tmp1}.w, {stereo}.x, {InvProjectionMatrix3}.x
-        dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
-        dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
-        dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
-        add {repl_VFCameraZAxis}.xyz, {VFCameraZAxis}.xyz, {tmp2}.xyz
-    '''.format(
-        stereo = shader.stereo_params_reg,
-        InvProjectionMatrix0 = InvProjectionMatrix[0],
-        InvProjectionMatrix1 = InvProjectionMatrix[1],
-        InvProjectionMatrix2 = InvProjectionMatrix[2],
-        InvProjectionMatrix3 = InvProjectionMatrix[3],
-        InvViewMatrix0 = InvViewMatrix[0],
-        InvViewMatrix1 = InvViewMatrix[1],
-        InvViewMatrix2 = InvViewMatrix[2],
-        VFCameraZAxis = VFCameraZAxis,
-        repl_VFCameraZAxis = repl_VFCameraZAxis,
-        tmp1 = tmp1,
-        tmp2 = tmp2,
-    ))
+        off = shader.insert_stereo_params()
+        repl_CameraZAxis = shader.allocate_temp_reg()
+        tmp1 = shader.allocate_temp_reg()
+        tmp2 = shader.allocate_temp_reg()
 
-    shader.autofixed = True
+        shader.replace_reg(CameraZAxis, repl_CameraZAxis, 'xyz')
+        shader.early_insert_vanity_comment('WATCH_DOGS2 %s adjustment inserted with' % name)
+        shader.early_insert_multiple_lines('''
+            mul {tmp1}.x, {stereo}.x, {InvProjectionMatrix0}.x
+            mul {tmp1}.y, {stereo}.x, {InvProjectionMatrix1}.x
+            mul {tmp1}.z, {stereo}.x, {InvProjectionMatrix2}.x
+            mul {tmp1}.w, {stereo}.x, {InvProjectionMatrix3}.x
+            dp4 {tmp2}.x, {tmp1}.xyzw, {InvViewMatrix0}.xyzw
+            dp4 {tmp2}.y, {tmp1}.xyzw, {InvViewMatrix1}.xyzw
+            dp4 {tmp2}.z, {tmp1}.xyzw, {InvViewMatrix2}.xyzw
+            add {repl_CameraZAxis}.xyz, {CameraZAxis}.xyz, {neg}{tmp2}.xyz
+        '''.format(
+            stereo = shader.stereo_params_reg,
+            InvProjectionMatrix0 = InvProjectionMatrix[0],
+            InvProjectionMatrix1 = InvProjectionMatrix[1],
+            InvProjectionMatrix2 = InvProjectionMatrix[2],
+            InvProjectionMatrix3 = InvProjectionMatrix[3],
+            InvViewMatrix0 = InvViewMatrix[0],
+            InvViewMatrix1 = InvViewMatrix[1],
+            InvViewMatrix2 = InvViewMatrix[2],
+            CameraZAxis = CameraZAxis,
+            repl_CameraZAxis = repl_CameraZAxis,
+            tmp1 = tmp1,
+            tmp2 = tmp2,
+            neg = neg,
+        ))
+
+        shader.autofixed = True
 
 def fix_fcprimal_light_pos(shader):
     try:
@@ -1766,7 +1770,7 @@ def parse_args():
             help="Fix various volumetric fog shaders in WATCH_DOGS2")
     parser.add_argument('--fix-wd2-view-dir-reconstruction', action='store_true',
             help="Fix volumetric fog around the sun/moon (WARNING: Do not apply to other volumetric fog shaders!)")
-    parser.add_argument('--fix-wd2-camera-z-axis', action='store_true',
+    parser.add_argument('--fix-wd2-camera-z-axis', type=int, choices=(-1, 1),
             help="Experimental alternate volumetric fog pattern for WATCH_DOGS2 (use in conjunction with the view direction fix)")
     parser.add_argument('--fix-wd2-screen-space-reflections', action='store_true',
             help="Fix screen space reflections and environmental reflections in WATCH_DOGS2")
@@ -1824,7 +1828,7 @@ def main():
             if args.fix_wd2_view_dir_reconstruction:
                 fix_wd2_view_dir_reconstruction(shader)
             if args.fix_wd2_camera_z_axis:
-                fix_wd2_camera_z_axis(shader)
+                fix_wd2_camera_z_axis(shader, args.fix_wd2_camera_z_axis)
             if args.fix_fcprimal_light_pos:
                 fix_fcprimal_light_pos(shader)
             if args.fix_wd2_screen_space_reflections:
