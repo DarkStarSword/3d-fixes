@@ -1,3 +1,5 @@
+// Fog depth ranges - steroise to fix fog clipping when used with specifc pixel shaders
+
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:58:31 2016
 
 cbuffer FogVolumeMesh : register(b0)
@@ -40,7 +42,6 @@ cbuffer VolumetricFogDepthRange : register(b3)
 }
 
 
-
 // 3Dmigoto declarations
 #define cmp -
 Texture1D<float4> IniParams : register(t120);
@@ -81,5 +82,11 @@ void main(
   o1.y = dot(r0.xyzw, FVProjMatrix._m01_m11_m21_m31);
   o1.z = dot(r0.xyzw, FVProjMatrix._m02_m12_m22_m32);
   o1.w = dot(r0.xyzw, FVProjMatrix._m03_m13_m23_m33);
+
+// Stereoise when used with the fog depth ranges pixel shaders:
+float4 s = StereoParams.Load(0);
+if (IniParams[6].x)
+	o1.x += s.x * (o1.w - s.y);
+
   return;
 }
