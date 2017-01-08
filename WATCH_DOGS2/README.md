@@ -1,6 +1,10 @@
 WATCH_DOGS 2
 ============
 
+Update v1.2
+-----------
+- Fixed a few minor issues on the horizon & around sun
+
 Update v1.1
 -----------
 - Fixed clipping on thick San Francisco volumetric fog
