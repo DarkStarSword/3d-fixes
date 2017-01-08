@@ -1,0 +1,85 @@
+// ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 10:58:31 2016
+
+cbuffer FogVolumeMesh : register(b0)
+{
+  float FVFlowFactor : packoffset(c0);
+}
+
+cbuffer SceneGeometry : register(b1)
+{
+  float4 GeometryPickingID : packoffset(c0);
+  float4 GeometryUserData : packoffset(c1);
+  float4 UVDecompression : packoffset(c2);
+
+  struct
+  {
+    float positionMin;
+    float positionRange;
+    float meshLocalHeight;
+    float isBuildingFacadeInterior;
+  } MeshDecompression : packoffset(c3);
+
+  float3 GeometryBBoxMax : packoffset(c4);
+  float3 GeometryBBoxMin : packoffset(c5);
+}
+
+cbuffer SceneGraphicObjectInstancePart : register(b2)
+{
+  float4x3 WorldMatrix : packoffset(c0);
+}
+
+cbuffer VolumetricFogDepthRange : register(b3)
+{
+  float4x4 FVProjMatrix : packoffset(c0);
+  float4 FVRayMarchFullSize : packoffset(c4);
+  float4 FVRayMarchTextureSize : packoffset(c5);
+  float4x3 FVViewMatrix : packoffset(c6);
+  float3 FVCameraPosition : packoffset(c9);
+  uint FVDepthPassIndex : packoffset(c9.w);
+  float2 FVDepthScaleOffset : packoffset(c10);
+}
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  int4 v0 : position0,
+  float4 v1 : color1,
+  out float o0 : TEXCOORD0,
+  out float4 o1 : SV_Position0)
+{
+  float4 r0,r1,r2;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = 1 + -FVFlowFactor;
+  r0.x = 10000 * r0.x;
+  r0.yzw = (int3)v0.xyz;
+  r1.xyz = r0.yzw * MeshDecompression.positionRange + MeshDecompression.positionMin;
+  r1.w = 1;
+  r2.x = dot(r1.xyzw, WorldMatrix._m00_m10_m20_m30);
+  r2.y = dot(r1.xyzw, WorldMatrix._m01_m11_m21_m31);
+  r2.z = dot(r1.xyzw, WorldMatrix._m02_m12_m22_m32);
+  r0.y = dot(r2.xyz, r2.xyz);
+  r0.y = sqrt(r0.y);
+  r0.x = saturate(r0.y / r0.x);
+  r0.y = -200 + r2.z;
+  r0.z = r2.z + -r0.y;
+  r2.z = r0.x * r0.z + r0.y;
+  r2.w = 1;
+  r0.z = dot(r2.xyzw, FVViewMatrix._m02_m12_m22_m32);
+  o0.x = -r0.z;
+  r0.x = dot(r2.xyzw, FVViewMatrix._m00_m10_m20_m30);
+  r0.y = dot(r2.xyzw, FVViewMatrix._m01_m11_m21_m31);
+  r0.w = 1;
+  o1.x = dot(r0.xyzw, FVProjMatrix._m00_m10_m20_m30);
+  o1.y = dot(r0.xyzw, FVProjMatrix._m01_m11_m21_m31);
+  o1.z = dot(r0.xyzw, FVProjMatrix._m02_m12_m22_m32);
+  o1.w = dot(r0.xyzw, FVProjMatrix._m03_m13_m23_m33);
+  return;
+}
