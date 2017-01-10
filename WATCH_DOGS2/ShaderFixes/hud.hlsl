@@ -99,3 +99,23 @@ void handle_3d_hud(inout float4 pos)
 
 	override_hud_convergence(pos);
 }
+
+bool textures_match(Texture2D<float4> tex1, Texture2D<float4> tex2)
+{
+	uint w1, h1, w2, h2, x, y;
+
+	tex1.GetDimensions(w1, h1);
+	tex2.GetDimensions(w2, h2);
+
+	if (w1 != w2 || h1 != h2)
+		return false;
+
+	for (y = 0; y < h1; y++) {
+		for (x = 0; x < w1; x++) {
+			if (any(tex1[uint2(x, y)] != tex2[uint2(x, y)]))
+				return false;
+		}
+	}
+
+	return true;
+}

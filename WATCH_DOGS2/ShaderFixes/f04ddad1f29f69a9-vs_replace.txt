@@ -104,6 +104,11 @@ Texture2D<float4> StereoParams : register(t125);
 
 #include "hud.hlsl"
 
+// Textures we are going to match in the shader instead of the CPU:
+Texture2D<float4> ps_t0 : register(t100);
+Texture2D<float4> bullet : register(t101);
+// Texture2D<float4> waypoint : register(t102);
+
 void main( 
   float4 v0 : position0,
   float4 v1 : color1,
@@ -128,15 +133,19 @@ void main(
   o2.z = dot(r0.xyzw, ViewRotProjectionMatrixPure._m02_m12_m22_m32);
   o2.w = dot(r0.xyzw, ViewRotProjectionMatrixPure._m03_m13_m23_m33);
 
-float4 s = StereoParams.Load(0);
-
 // Need to return minimap icons to screen depth, while leaving markers on the
-// road alone. Filter based on the pixel shader we are called with:
-if (IniParams[6].z == 1) {
-	if (IniParams[6].w != 2) // Not the throw arc
-		to_screen_depth(o2);
+// road and bullets alone. Filter on the pixel shader used to draw the route
+// on the minimap + throw arcs + bullets in the world:
+if (IniParams[6].z == 1) { // For some reason inverting this test does not work (driver only modifying one return code path?)
+	if (IniParams[6].w != 2) { // Throw arc. Inverting this test also does not work
+		// Check against blacklisted textures that 3DMigoto can't filter due to hash
+		// contamination (without incuring a performance penalty):
+		if (!textures_match(ps_t0, bullet)) {
+			to_screen_depth(o2);
+		}
 
-	// Do not adjust to HUD depth - off screen render target
+		// Do not adjust to HUD depth - off screen render target
+	 }
 }
 
   return;
