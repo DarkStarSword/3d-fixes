@@ -5,7 +5,6 @@
 #define hud_3d_threshold IniParams[2].z
 #define lens_grit_depth IniParams[2].y /* hard coded in asm shaders, do not change */
 #define cursor_showing IniParams[1].w
-#define scope_convergence_override IniParams[3].x
 
 void to_screen_depth(inout float4 pos)
 {
@@ -99,11 +98,6 @@ void handle_3d_hud(inout float4 pos)
 		return;
 
 	override_hud_convergence(pos);
-}
-
-void override_scope_convergence(inout float4 pos)
-{
-	convergence_override(pos, scope_convergence_override);
 }
 
 bool textures_match(Texture2D<float4> tex1, Texture2D<float4> tex2)
