@@ -3,6 +3,8 @@ WATCH_DOGS 2
 
 Update v1.2
 -----------
+- Fixed several crossairs: Sniper scope, Grenade launcher, X hit indicator, red crosshairs
+- Moved bullets and Police sniper laser back to 3D (was caught by a HUD adjustment)
 - Fixed a few minor issues on the horizon & around sun
 
 Update v1.1
