@@ -226,8 +226,12 @@ void main(
   r1.w = ViewRotProjectionMatrix._m03 * r2.y;
   o6.xyzw = r1.xyzw + r0.xyzw;
 
-to_screen_depth(o6);
-o6.x += adjust_from_depth_buffer(0, 0) * o6.w;
+// Filter on the pixel shader - knock some glass bottles over and they start
+// using this vertex shader
+if (IniParams[6].x) {
+	to_screen_depth(o6);
+	o6.x += adjust_from_depth_buffer(0, 0) * o6.w;
+}
 
   return;
 }
