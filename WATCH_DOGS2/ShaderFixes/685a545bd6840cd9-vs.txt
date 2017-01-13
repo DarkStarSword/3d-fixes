@@ -141,18 +141,32 @@ dcl_constantbuffer cb1[11], immediateIndexed
 dcl_input v0.xyz
 dcl_output_siv o0.xyzw, position
 dcl_output_siv o1.x, cull_distance
-dcl_temps 2
+dcl_temps 4
+dcl_resource_texture1d (float,float,float,float) t120
+ld_indexable(texture1d)(float,float,float,float) r2.xyzw, l(2, 0, 0, 0), t120.xyzw
+
 mov r0.xyz, v0.xyzx
 mov r0.w, l(1.000000)
 dp4 r1.x, r0.xyzw, cb1[8].xyzw
 dp4 r1.y, r0.xyzw, cb1[9].xyzw
 dp4 r1.z, r0.xyzw, cb1[10].xyzw
 mov r1.w, l(1.000000)
-dp4 o0.x, r1.xyzw, cb0[54].xyzw
-dp4 o0.y, r1.xyzw, cb0[55].xyzw
-dp4 o0.z, r1.xyzw, cb0[56].xyzw
-dp4 o0.w, r1.xyzw, cb0[57].xyzw
+dp4 r3.x, r1.xyzw, cb0[54].xyzw
+dp4 r3.y, r1.xyzw, cb0[55].xyzw
+dp4 r3.z, r1.xyzw, cb0[56].xyzw
+dp4 r3.w, r1.xyzw, cb0[57].xyzw
 dp4 r0.x, r1.xyzw, cb0[53].xyzw
 mov o1.x, -r0.x
+
+// Similar problem to the "strange blue glitch", but here setting Z = W
+// universally to remove the clipping causes some other issues, so we run two
+// passes - the first is to fix the glitch, the second is to undo any lighting
+// errors we introduced by messing with Z.
+if_nz r2.w
+	mov r3.z, r3.w
+endif
+
+mov o0.xyzw, r3.xyzw
+
 ret 
 // Approximately 13 instruction slots used
