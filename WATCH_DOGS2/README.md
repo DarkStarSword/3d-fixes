@@ -1,6 +1,15 @@
 WATCH_DOGS 2
 ============
 
+Update v1.3
+-----------
+- Fixed an issue where glass bottles would be moved to crosshair depth after
+  flying into them with the quad copter.
+- Removed leaf disable key (no further reports of leaves desynchronising, so I
+  don't think the kill switch is necessary any more)
+- Added very low convergence preset on \ key for ATM cameras, satellites, etc.
+- Added yet another crosshair
+
 Update v1.2
 -----------
 - Fixed several crossairs: Sniper scope, Grenade launcher, X hit indicator, red crosshairs
@@ -44,8 +53,7 @@ Fixed
 - Added a static HUD depth adjustment
 - Added a 3D HUD depth bias
 - Adjusted lens grit depth
-- Synchronised leaves, grass, bushes, etc. between both eyes (if the leaves
-  ever manage to get out of sync you can disable them by pressing backslash)
+- Synchronised leaves, grass, bushes, etc. between both eyes
 - Fixed the "strange blue glitch" at light volume boundaries
 - Targetting lines
 - Lighting on walls in nethack vision
@@ -71,8 +79,9 @@ Keys
 
 - ~: Toggle between two convergence presets for cutscenes and gameplay.
 
-- \: Toggle leaf particles (disable if they are only visible in one eye or are
-  in different positions in each eye)
+- \: Switch to a very low convergence preset - use for the ATM cameras,
+  satellites and one or two other cases where the standard convergence presets
+  are too high.
 
 - F2: Cycle between several preset HUD depths
 
@@ -102,7 +111,7 @@ are convergence override values, so higher values bring the HUD closer and
 lower values push it deeper (0 is infinity). z sets the convergence override
 when the mouse cursor is hidden, and this adjustment will also have a bias
 applied to line it up with any 2D HUD adjustments. w sets the 3D HUD
-convergence override when the mouse cursor is hidden, and does NOT have a bias
+convergence override when the mouse cursor is visible, and does NOT have a bias
 (the idea being that when the mouse cursor is visible you want the HUD near
 screen depth where the mouse cursor is).
 
