@@ -12,6 +12,7 @@ Update v1.3
 - Fixed the "bright white glitch" at particular light volume boundaries (most
   notably, one of the cameras on the barge is positioned right on one of these
   boundaries)
+- Fixed distant lights reflection in a blackout
 
 Update v1.2
 -----------
