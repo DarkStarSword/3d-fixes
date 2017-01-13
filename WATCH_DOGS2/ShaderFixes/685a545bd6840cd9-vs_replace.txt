@@ -1,3 +1,5 @@
+// "White glitch" Lights
+
 // ---- Created with 3Dmigoto v1.2.42 on Tue Dec 27 11:05:31 2016
 
 cbuffer Viewport : register(b0)
@@ -126,5 +128,11 @@ void main(
   o0.w = dot(r1.xyzw, ViewProjectionMatrix._m03_m13_m23_m33);
   r0.x = dot(r1.xyzw, ViewMatrix._m02_m12_m22_m32);
   o1.x = -r0.x;
+
+// Same fix as 1447dd1e16fb2c17 - disable culling to draw both sides of the
+// volume boundary as the camera passes through it and set Z to W to remove clipping.
+if (IniParams[2].w)
+	o0.z = o0.w;
+
   return;
 }

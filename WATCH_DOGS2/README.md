@@ -9,6 +9,9 @@ Update v1.3
   don't think the kill switch is necessary any more)
 - Added very low convergence preset on \ key for ATM cameras, satellites, etc.
 - Added yet another crosshair
+- Fixed the "bright white glitch" at particular light volume boundaries (most
+  notably, one of the cameras on the barge is positioned right on one of these
+  boundaries)
 
 Update v1.2
 -----------
