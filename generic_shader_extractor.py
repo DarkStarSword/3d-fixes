@@ -121,6 +121,7 @@ def search_file(path):
                 if not args.skip_hash_check:
                     hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
                     if hash_embedded != header_hash:
+                        print('Hash mismatch, Embedded: %s Calculated: %s' % (header_hash, hash_embedded))
                         continue
 
                 chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
