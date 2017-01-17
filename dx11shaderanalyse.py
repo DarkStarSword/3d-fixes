@@ -379,8 +379,11 @@ def parse(stream):
     pr_verbose('Embedded hash:', codecs.encode(header.hash, 'hex').decode('ascii'))
     if args.hash:
         stream.seek(20)
+        print('Header size:', header.size)
+        hashable = stream.read(header.size - 20)
+        assert(len(hashable) + 20 == header.size)
         # print('       MD5sum:', hashlib.md5(stream.read(header.size - 20)).hexdigest())
-        print('    DXBC hash:', shader_hash(stream.read(header.size - 20)))
+        print('    DXBC hash:', shader_hash(hashable))
 
     bytecode_hash = None
     if args.bytecode_hash:
