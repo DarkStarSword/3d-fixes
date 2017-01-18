@@ -92,6 +92,9 @@ Installation
 The game has mostly been tested using the 376.33 driver. It may work on others,
 but if you run into problems, try that driver first.
 
+Do not set pixel density higher than 1.30 (There is a report that it breaks the
+sky box).
+
 Keys
 ----
 - K: Cycle between three crosshair modes: auto (enabled only when aiming), on
