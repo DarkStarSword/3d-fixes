@@ -176,6 +176,10 @@ Known Issues
 - Police search lights clip momentarily as the camera passes through the
   boundary of the light cone. Probably only noticeable if you freeze the game
   with Ansel.
+- As of version 1.09 of the game, reflections of glass (not reflections on
+  glass) are totally broken due to a [game bug][1]
+
+  [1]: https://twitter.com/DarkStarSword/status/821723038009802752
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
