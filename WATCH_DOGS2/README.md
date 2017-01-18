@@ -13,9 +13,10 @@ Update v1.3 (WATCH_DOGS2 0.09)
 - Added yet another crosshair
 - Fixed the "bright white glitch" at particular light volume boundaries (most
   notably, one of the cameras on the barge is positioned right on one of these
-  boundaries)
+  boundaries in the Shanghaid mission)
 - Fixed distant lights reflection in a blackout
 - Added HUD kill switch on Ctrl+F2 for better screenshots
+- Added lens grit kill switch on Ctrl+Shift+F2
 
 Update v1.2
 -----------
@@ -97,6 +98,9 @@ Keys
 - Ctrl F2: Kill HUD (for screenshots. Don't try the menu while the HUD is
   killed ;-)
 
+- Ctrl Shift F2: Kill lens grit (for 3D screenshots, especially when using the
+  1st person camera with the scratch grit pattern)
+
 Note about anti-cheat software
 ------------------------------
 This game uses anti-cheat software that is running even while in single player.
@@ -130,7 +134,8 @@ screen depth where the mouse cursor is).
 Lens Grit
 ---------
 The lens grit texture has been moved to depth to look better. The depth can be
-adjusted with y2 in the d3dx.ini, or disabled by setting y2 = -1.
+adjusted with y2 in the d3dx.ini, or disabled by pressing Ctrl+Shift+F2 or
+setting y2 = -1.
 
 NVIDIA Ansel Mode
 -----------------
