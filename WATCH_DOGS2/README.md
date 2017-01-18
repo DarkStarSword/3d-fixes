@@ -10,6 +10,8 @@ Update v1.4
 - Added spider crosshair and weapon heat guage to auto adjust list
 - Disabled white light glitch fix that caused problems in at least one air vent
   in the final mission
+- Removed artefacts in screen space reflections caused by a [game bug][1] in 1.09
+  [1]: https://twitter.com/DarkStarSword/status/821723038009802752
 
 Update v1.3 (WATCH_DOGS2 1.09)
 ------------------------------
@@ -180,9 +182,6 @@ Known Issues
 - Police search lights clip momentarily as the camera passes through the
   boundary of the light cone. Probably only noticeable if you freeze the game
   with Ansel.
-- As of version 1.09 of the game, reflections of glass (not reflections on
-  glass) are totally broken due to a [game bug][1]
-  [1]: https://twitter.com/DarkStarSword/status/821723038009802752
 - There are a few rare spots in the game where the lighting goes bright white
   as the camera passes through a specific point - most of these are very small
   and barely noticeable, but there a camera on the barge in the Shanghaied
