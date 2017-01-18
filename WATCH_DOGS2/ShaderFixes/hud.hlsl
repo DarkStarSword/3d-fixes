@@ -1,10 +1,17 @@
 #define hud_depth IniParams[0].x
+#define hud_kill (IniParams[3].x == 1.0)
 #define hud_depth_mouse_showing IniParams[0].y
 #define hud_3d_convergence_override IniParams[0].z
 #define hud_3d_convergence_override_mouse_showing IniParams[0].w
 #define hud_3d_threshold IniParams[2].z
 #define lens_grit_depth IniParams[2].y /* hard coded in asm shaders, do not change */
 #define cursor_showing IniParams[1].w
+
+void do_hud_kill(inout float4 pos)
+{
+	if (hud_kill)
+		pos = 0;
+}
 
 void to_screen_depth(inout float4 pos)
 {

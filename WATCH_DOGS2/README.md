@@ -15,6 +15,7 @@ Update v1.3 (WATCH_DOGS2 0.09)
   notably, one of the cameras on the barge is positioned right on one of these
   boundaries)
 - Fixed distant lights reflection in a blackout
+- Added HUD kill switch on Ctrl+F2 for better screenshots
 
 Update v1.2
 -----------
@@ -92,6 +93,9 @@ Keys
   too high.
 
 - F2: Cycle between several preset HUD depths
+
+- Ctrl F2: Kill HUD (for screenshots. Don't try the menu while the HUD is
+  killed ;-)
 
 Note about anti-cheat software
 ------------------------------
