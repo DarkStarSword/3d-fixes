@@ -4,6 +4,7 @@ WATCH_DOGS 2
 Update v1.4
 -----------
 - HUD kill switch will now also kill target lines and object highlights
+- Fixed footprint decal on sand (didn't notice this was broken because it was invisible)
 
 Update v1.3 (WATCH_DOGS2 1.09)
 ------------------------------
