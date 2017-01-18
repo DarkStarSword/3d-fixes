@@ -151,8 +151,10 @@ dcl_output o1.xyzw
 dcl_output o2.xyzw
 dcl_output o3.xyzw
 dcl_output_siv o4.xyzw, position
-dcl_temps 9
+dcl_temps 10
 dcl_resource_texture2d (float,float,float,float) t125
+dcl_resource_texture1d (float,float,float,float) t120
+ld_indexable(texture1d)(float,float,float,float) r9.xyzw, l(3, 0, 0, 0), t120.xyzw
 ld_indexable(texture2d)(float,float,float,float) r6.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 mov o0.xyzw, v1.zyxw
@@ -278,6 +280,12 @@ div r6.w, r6.w, r8.w
 mad r7.x, r6.w, r6.x, r7.x
 
 mov o4.xyzw, r7.xyzw
+
+// HUD Kill switch:
+eq r9.x, r9.x, l(1.0)
+if_nz r9.x
+	mov o4.xyzw, l(0.0, 0.0, 0.0, 0.0)
+endif
 
 ret 
 // Approximately 104 instruction slots used

@@ -1,5 +1,5 @@
 #define hud_depth IniParams[0].x
-#define hud_kill (IniParams[3].x == 1.0)
+#define hud_kill (IniParams[3].x == 1.0) /* hard coded in asm shaders, do not change */
 #define hud_depth_mouse_showing IniParams[0].y
 #define hud_3d_convergence_override IniParams[0].z
 #define hud_3d_convergence_override_mouse_showing IniParams[0].w
