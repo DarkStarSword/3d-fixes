@@ -6,6 +6,7 @@ Update v1.4
 - HUD kill switch will now also kill target lines and object highlights
 - Fixed footprint decal on sand (didn't notice this was broken because it was invisible)
 - Fixed road line decals hovering a few millimetres above surface
+- Returned security lasers to correct depth (was caught by the heat distortion fix)
 
 Update v1.3 (WATCH_DOGS2 1.09)
 ------------------------------
