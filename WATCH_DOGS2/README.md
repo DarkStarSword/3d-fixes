@@ -1,13 +1,15 @@
 WATCH_DOGS 2
 ============
 
-Update v1.3
------------
+Update v1.3 (WATCH_DOGS2 0.09)
+------------------------------
+- Re-fixed reflections, etc. for WATCH_DOGS2 0.09 update
 - Fixed an issue where glass bottles would be moved to crosshair depth after
   flying into them with the quad copter.
 - Removed leaf disable key (no further reports of leaves desynchronising, so I
   don't think the kill switch is necessary any more)
-- Added very low convergence preset on \ key for ATM cameras, satellites, etc.
+- Added very low convergence presets on alt+~ and ctrl+~ for ATM cameras,
+  satellites, etc.
 - Added yet another crosshair
 - Fixed the "bright white glitch" at particular light volume boundaries (most
   notably, one of the cameras on the barge is positioned right on one of these
@@ -83,9 +85,11 @@ Keys
 
 - ~: Toggle between two convergence presets for cutscenes and gameplay.
 
-- \: Switch to a very low convergence preset - use for the ATM cameras,
-  satellites and one or two other cases where the standard convergence presets
-  are too high.
+- Alt ~: Switch to a lower convergence preset for some cutscenes
+
+- Ctrl ~: Switch to an even lower convergence preset for ATM cameras,
+  satellites and one or two other cases where the other convergence presets are
+  too high.
 
 - F2: Cycle between several preset HUD depths
 
