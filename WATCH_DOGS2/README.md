@@ -1,9 +1,9 @@
 WATCH_DOGS 2
 ============
 
-Update v1.3 (WATCH_DOGS2 0.09)
+Update v1.3 (WATCH_DOGS2 1.09)
 ------------------------------
-- Re-fixed reflections, etc. for WATCH_DOGS2 0.09 update
+- Re-fixed reflections, etc. for WATCH_DOGS2 1.09 update
 - Fixed an issue where glass bottles would be moved to crosshair depth after
   flying into them with the quad copter.
 - Removed leaf disable key (no further reports of leaves desynchronising, so I
@@ -13,7 +13,7 @@ Update v1.3 (WATCH_DOGS2 0.09)
 - Added yet another crosshair
 - Fixed the "bright white glitch" at particular light volume boundaries (most
   notably, one of the cameras on the barge is positioned right on one of these
-  boundaries in the Shanghaid mission)
+  boundaries in the Shanghaied mission)
 - Fixed distant lights reflection in a blackout
 - Added HUD kill switch on Ctrl+F2 for better screenshots
 - Added lens grit kill switch on Ctrl+Shift+F2
