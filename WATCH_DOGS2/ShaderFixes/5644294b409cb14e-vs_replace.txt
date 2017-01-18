@@ -23,6 +23,8 @@ cbuffer FireUiPrimitive : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "viewport.hlsl"
+#include "crosshair.hlsl"
 #include "hud.hlsl"
 
 void main( 
@@ -47,7 +49,13 @@ void main(
 
 do_hud_kill(o1);
 
-to_hud_depth(o1);
+if (IniParams[3].y) {
+	// Spider crosshair was active in the previous frame, we need to adjust
+	// to crosshair depth to match the weapon heat guage:
+	o1.x += adjust_from_depth_buffer(0, 0);
+} else {
+	to_hud_depth(o1);
+}
 
   return;
 }
