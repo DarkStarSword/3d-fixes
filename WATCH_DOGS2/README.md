@@ -8,6 +8,8 @@ Update v1.4
 - Fixed road line decals hovering a few millimetres above surface
 - Returned security lasers to correct depth (was caught by the heat distortion fix)
 - Added spider crosshair and weapon heat guage to auto adjust list
+- Disabled white light glitch fix that caused problems in at least one air vent
+  in the final mission
 
 Update v1.3 (WATCH_DOGS2 1.09)
 ------------------------------
@@ -180,8 +182,16 @@ Known Issues
   with Ansel.
 - As of version 1.09 of the game, reflections of glass (not reflections on
   glass) are totally broken due to a [game bug][1]
-
   [1]: https://twitter.com/DarkStarSword/status/821723038009802752
+- There are a few rare spots in the game where the lighting goes bright white
+  as the camera passes through a specific point - most of these are very small
+  and barely noticeable, but there a camera on the barge in the Shanghaied
+  mission that is positioned right on one of these glitches which is much more
+  severe. The fix for these is disabled, as it causes other issues in an
+  airvent in the final mission.
+- The above mentioned airvent in the final mission still has one artefact
+  present (caused by the "strange blue glitch" fix), but it is relatively minor
+  (and the blue glitch was prominent throughout the whole game).
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
