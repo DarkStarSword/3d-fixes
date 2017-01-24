@@ -10,6 +10,8 @@ def repeat_extend(s, target_length):
     '''
     return s*(target_length // len(s)) + s[:target_length % len(s)]
 
+processed = set()
+
 def lz4_decompress(file):
     # FIXME: Refactor back into the Unity version. This version includes a bit
     # more functionality than the Unity version that we will need to be careful
@@ -26,6 +28,10 @@ def lz4_decompress(file):
             if header_off != -1 and len(decoded) - header_off >= 0x20:
                 header = dx11shaderanalyse.parse_dxbc_header(io.BytesIO(decoded[header_off : header_off + 0x20]))
                 # print('Found DXBC header at offset 0x%x' % header_off)
+                header_hash = codecs.encode(header.hash, 'hex').decode('ascii')
+                if header_hash in processed:
+                    print('Skipping previously seen shader %s[%s]' % (header_hash[:16], header_hash[16:]))
+                    return None, None, None
 
         file_offset = file.tell()
         decoded_offset = len(decoded)
@@ -43,7 +49,7 @@ def lz4_decompress(file):
         decoded.extend(tmp)
 
         if header is not None and len(decoded) >= header.size + header_off:
-            return decoded[header_off : header.size + header_off], header
+            return decoded[header_off : header.size + header_off], header, header_hash
 
         (match_offset,) = struct.unpack('<H', file.read(2))
         if (match_offset & 0xe000) == 0xe000:
@@ -92,16 +98,22 @@ def lz4_decompress(file):
 def decode_lz4_at(file, offset):
     # print('Trying to decode lz4 stream at 0x%x...' % offset)
     file.seek(offset)
-    decoded, header = lz4_decompress(file)
-    if not decoded:
+    shader, header, header_hash = lz4_decompress(file)
+    if not shader:
         return False
 
-    shader_model = generic_shader_extractor.determine_shader_model(io.BytesIO(decoded), 0, header)
+    hash_embedded = dx11shaderanalyse.shader_hash(shader[20:])
+    if hash_embedded != header_hash:
+        print('Hash mismatch, Embedded: %s Calculated: %s' % (header_hash, hash_embedded))
+        return False
 
-    print('0x%08x: Found LZ4 compressed shader of %d bytes...' % (offset, len(decoded)))
+    shader_model = generic_shader_extractor.determine_shader_model(io.BytesIO(shader), 0, header)
 
-    header_hash = codecs.encode(header.hash, 'hex').decode('ascii')
-    generic_shader_extractor.save_shader_embedded(decoded, header_hash, shader_model)
+    print('0x%08x: Found LZ4 compressed shader %s[%s]' % (offset, header_hash[:16], header_hash[16:]))
+
+    generic_shader_extractor.save_shader_embedded(shader, header_hash, shader_model)
+
+    processed.add(header_hash)
 
     return True
 
