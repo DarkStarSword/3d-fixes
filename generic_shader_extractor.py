@@ -38,23 +38,25 @@ def _save_shader(shader, dir, filename):
     final_asm_path = path + '.txt'
     with open(bin_path, 'wb') as f:
         f.write(shader)
-    if not args.only_bin:
+    if args is not None and not args.only_bin:
         extract_unity_shaders.disassemble_and_decompile_binary_shader(bin_path)
     if os.path.isfile(inter_asm_path):
         os.rename(inter_asm_path, final_asm_path)
     if os.path.isfile(inter_hlsl_path):
         os.rename(inter_hlsl_path, final_hlsl_path)
 
+def save_shader_embedded(shader, hash_embedded, shader_model):
+    _save_shader(shader, target_dir_embedded, '%s-%s' % (hash_embedded[:16], shader_model[:2]))
+
 def save_shader(shader, shader_model, hash_3dmigoto, hash_embedded, hash_bytecode):
-    shader_model = shader_model[:2]
     if args.hash == '3dmigoto':
-        _save_shader(shader, target_dir_3dmigoto, '%016x-%s' % (hash_3dmigoto, shader_model))
+        _save_shader(shader, target_dir_3dmigoto, '%016x-%s' % (hash_3dmigoto, shader_model[:2]))
 
     if args.hash == 'embedded':
-        _save_shader(shader, target_dir_embedded, '%s-%s' % (hash_embedded[:16], shader_model))
+        save_shader_embedded(shader, hash_embedded, shader_model)
 
     if args.hash == 'bytecode':
-        _save_shader(shader, target_dir_bytecode, '00000000%08x-%s' % (hash_bytecode, shader_model))
+        _save_shader(shader, target_dir_bytecode, '00000000%08x-%s' % (hash_bytecode, shader_model[:2]))
 
 def print_parse_error(e, desc):
     if e.__class__ == AssertionError:
@@ -83,6 +85,22 @@ def stream_search(stream, target, off):
             return off
         # Subsequent reads use the page size for maximum speed:
         block_size = mmap.PAGESIZE
+
+def determine_shader_model(fp, off, header, chunk_offsets=None):
+    try:
+        if chunk_offsets is None:
+            fp.seek(off + 0x20)
+            chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
+        for idx in range(header.chunks):
+            shader_model = dx11shaderanalyse.check_chunk_for_shader_model(fp, off + chunk_offsets[idx])
+            if shader_model is not None:
+                return shader_model
+        else:
+            print('No shader model found - missing bytecode section?')
+            return 'xx_x_x'
+    except Exception as e:
+        print_parse_error(e, 'while trying to determine shader model')
+        return 'xx_x_x'
 
 processed = set()
 
@@ -125,17 +143,7 @@ def search_file(path):
                         continue
 
                 chunk_offsets = dx11shaderanalyse.get_chunk_offsets(fp, header)
-                try:
-                    for idx in range(header.chunks):
-                        shader_model = dx11shaderanalyse.check_chunk_for_shader_model(fp, off + chunk_offsets[idx])
-                        if shader_model is not None:
-                            break;
-                    else:
-                        print('No shader model found - missing bytecode section?')
-                        shader_model = 'xx_x_x'
-                except Exception as e:
-                    print_parse_error(e, 'while trying to determine shader model')
-                    shader_model = 'xx_x_x'
+                shader_model = determine_shader_model(fp, off, header, chunk_offsets)
 
                 print('%s+%08x: %s embedded: %s[%s]' %
                     (path, off, shader_model, header_hash[:16], header_hash[16:]), end='')
@@ -167,6 +175,7 @@ def search_file(path):
                 print_parse_error(e, 'while parsing possible shader')
                 continue
 
+args = None
 def parse_args():
     global args, crcmod
     parser = argparse.ArgumentParser(description = 'Generic Shader Extraction Tool')
