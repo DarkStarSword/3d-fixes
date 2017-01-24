@@ -245,6 +245,8 @@ def get_chunk(stream, name):
         if signature == name:
             return stream.read(size)
 
+md5_s = [7, 12, 17, 22]*4 + [5, 9, 14, 20]*4 + [4, 11, 16, 23]*4 + [6, 10, 15, 21]*4
+md5_K = [ np.uint32(math.floor(2**32 * abs(math.sin(i)))) for i in range(1, 65) ]
 def shader_hash(message, real_md5=False):
     '''
     Follows the MD5 psuedocode from:
@@ -269,10 +271,13 @@ def shader_hash(message, real_md5=False):
     # Note: All variables are unsigned 32 bit and wrap modulo 2^32 when calculating
 
     # s specifies the per-round shift amounts
-    s = [7, 12, 17, 22]*4 + [5, 9, 14, 20]*4 + [4, 11, 16, 23]*4 + [6, 10, 15, 21]*4
+    # s = [7, 12, 17, 22]*4 + [5, 9, 14, 20]*4 + [4, 11, 16, 23]*4 + [6, 10, 15, 21]*4
+    s = md5_s
 
     # Use binary integer part of the sines of integers (Radians) as constants:
-    K = [ np.uint32(math.floor(2**32 * abs(math.sin(i)))) for i in range(1, 65) ]
+    # K = [ np.uint32(math.floor(2**32 * abs(math.sin(i)))) for i in range(1, 65) ]
+    # Not pre-calculating for a low hanging (but marginal) performance boost:
+    K = md5_K
 
     # Initialize variables:
     a0 = np.uint32(0x67452301) # A
