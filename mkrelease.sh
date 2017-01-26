@@ -9,7 +9,7 @@ tag=
 version=
 readme_src=README.md
 readme_dst=3Dfix-README.txt
-exclude="autofix.sh exclude devel_notes"
+exclude="autofix.sh exclude devel_notes .git"
 tmp_dir=$(dirname $(readlink -f "$0"))/__MKRELEASE_TMP__
 rm_tmp_dir=
 
