@@ -3,14 +3,44 @@
 # This script is intended to run from cygwin or native Unix to ensure that the
 # symbolically linked DLLs are correctly resolved in the zip file.
 
-dir=$(readlink -f "$1")
-tag="$2"
-game=$(basename "$dir")
+compression="zip"
+dir=
+tag=
+version=
 readme_src=README.md
 readme_dst=3Dfix-README.txt
 exclude="autofix.sh exclude devel_notes"
 tmp_dir=$(dirname $(readlink -f "$0"))/__MKRELEASE_TMP__
 rm_tmp_dir=
+
+for arg in "$@"; do
+	case "$arg" in
+		"--no-repo")
+			if [ -n "$tag" ]; then
+				echo "--no-repo must be specified earlier on the commane line"
+				exit 1
+			fi
+			tag="--no-repo"
+			;;
+
+		"--7z")
+			compression="7z"
+			;;
+
+		*)
+			if [ -z "$dir" ]; then
+				dir=$(readlink -f "$arg")
+			elif [ -z "$tag" ]; then
+				tag="$arg"
+			elif [ -z "$version" ]; then
+				version="$arg"
+			else
+				echo "Unexpected argument: $arg"
+				exit 1
+			fi
+			;;
+	esac
+done
 
 die()
 {
@@ -19,16 +49,16 @@ die()
 }
 
 if [ ! -d "$dir" -o ! "$tag" ]; then
-	echo "Usage: $0 game tag"
-	exit 1
+	die "Usage: $0 game ( tag | --no-repo ) [ version ]"
 fi
 
-date="$3"
-if [ -z "$date" ]; then
-	date=$(date '+%Y-%m-%d')
+game=$(basename "$dir")
+
+if [ -z "$version" ]; then
+	version=$(date '+%Y-%m-%d')
 fi
 
-zip=${PWD}/3Dfix-${game}-$date.zip
+archive="${PWD}/3Dfix-${game}-${version}"
 
 if [ -f "$dir/d3dx.ini" ]; then
 	echo Checking if d3dx.ini is in release mode...
@@ -69,7 +99,7 @@ if [ -n "$broken_symlinks" ]; then
 	exit 1
 fi
 
-rm -fv "$zip" || true
+rm -fv "${archive}.${compression}" || true
 
 need_tmp_dir=0
 if [ -f "$dir/$readme_src" ]; then
@@ -85,6 +115,7 @@ fi
 
 if [ $need_tmp_dir -eq 1 ]; then
 	rm -frv "$tmp_dir"
+	echo "Symlinking files to a temporary directory..."
 	cp -as "$dir" "$tmp_dir"
 	dir="$tmp_dir"
 	rm_tmp_dir=1
@@ -101,16 +132,40 @@ if [ $need_tmp_dir -eq 1 ]; then
 	done
 fi
 
+compress_archive()
+{
+	echo "Creating ${archive}.${compression}"
+
+	if [ "$compression" = "zip" ]; then
+		zip -9 -r "${archive}.zip" . --exclude \*.swp
+	elif [ "$compression" = "7z" ]; then
+		7z a -l -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on "${archive}.7z" .
+	else
+		die "Bug: Unsupported compression $compression"
+	fi
+}
+
+add_readme_to_archive()
+{
+	if [ "$compression" = "zip" ]; then
+		zip -9 -j "${archive}.zip" "$dir/$readme_dst"
+	elif [ "$compression" = "7z" ]; then
+		7z a -l -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on "${archive}.7z" "$dir/$readme_dst"
+	else
+		die "Bug: Unsupported compression $compression"
+	fi
+}
+
 # Run in a subshell so that the current working directory is not changed in
 # this shell. Do this instead of pushd/popd as those are *bash* builtins:
 (
 	if [ -d "$dir/zip" ]; then
-		cd "$dir/zip" && zip -9 -r "$zip" . --exclude \*.swp
+		cd "$dir/zip" && compress_archive
 		if [ -f "$dir/$readme_dst" ]; then
-			zip -9 -j "$zip" "$dir/$readme_dst"
+			add_readme_to_archive
 		fi
 	else
-		cd "$dir" && zip -9 -r "$zip" . --exclude \*.swp
+		cd "$dir" && compress_archive
 	fi
 )
 
@@ -120,7 +175,7 @@ fi
 
 if [ "$tag" != "--no-repo" ]; then
 	echo
-	git tag -f "$tag-$date" -m "$game $date"
+	git tag -f "$tag-$version" -m "$game $version"
 	echo
-	git show -s --format=short "$tag-$date"
+	git show -s --format=short "$tag-$version"
 fi
