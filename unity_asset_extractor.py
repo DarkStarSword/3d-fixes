@@ -182,7 +182,7 @@ def parse_version_14(file, version):
     print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
 
     (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
-    print("Unknown table length: {0}".format(unknown_table_len))
+    print("Type table length: {0}".format(unknown_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
     # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
@@ -233,7 +233,7 @@ def parse_version_15(file, version):
     print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
 
     (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
-    print("Unknown table length: {0}".format(unknown_table_len))
+    print("Type table length: {0}".format(unknown_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
     # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
@@ -268,7 +268,6 @@ def parse_version_15(file, version):
         # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
 
         extract_resource(file, data_off, offset, size, type2, unity_version)
-    input("Press Enter to continue...")
 
 def parse_version_17(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -285,8 +284,8 @@ def parse_version_17(file, version):
     (unity_version, ) = struct.unpack('8s', file.read(8))
     print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
 
-    (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
-    print("Unknown table length: {0}".format(unknown_table_len))
+    (u2, u3, type_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
+    print("Type table length: {0}".format(type_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
     # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
@@ -297,17 +296,21 @@ def parse_version_17(file, version):
     assert(u6 == 0)
     assert(u7 == 0)
 
-    for i in range(unknown_table_len):
-        (id,) = struct.unpack('<i', file.read(4))
-#neovad
-#neovad added 00 FF FF or 00 00 00 pattern (3 byte) in 17 version after id as 4/8 I switch
-        (b1, b2, b3) = struct.unpack('3B', file.read(3))
-        assert(b1 == 0)
-        assert(b2 == 0 or b2 == 0xFF)
-        assert(b3 == 0 or b3 == 0xFF)
+    type_table = []
 
-#neovad if (id < 0):
-        if (b1 == 0 and b2 == 0 and b2 == 0):
+    for i in range(type_table_len):
+        # neovad added 00 FF FF or 00 00 00 pattern (3 byte) in 17 version
+        # after id as 4/8 I switch.
+        (id, b1, b2) = struct.unpack('<iBH', file.read(7))
+        assert(b1 == 0)
+        assert(b2 in (0, 0xffff))
+
+        type_table.append(id)
+
+        # This hash(?) is noteworthy that each type always maps to the same
+        # hash in a given Unity version, though the hash may change between
+        # versions
+        if b2 == 0: # Changed since v15
             u = struct.unpack('>8I', file.read(32))
             print(("   {:3}: {:3}" + " {:08x}" * 8).format(*([i, id] + list(u))))
         else:
@@ -320,20 +323,13 @@ def parse_version_17(file, version):
     assert(u3 == 0)
 
     print("Num resources: {}".format(num_resources))
-    
     for i in range(num_resources):
-#neovad (id, u1, offset, size, type1, type2, type3, u2) = struct.unpack('<4IiHhI', file.read(28))
-        (id, u1, offset, size, type) = struct.unpack('<5I', file.read(20))
+        (id, u1, offset, size, type_idx) = struct.unpack('<5I', file.read(20))
         name = get_resource_name(file, data_off, offset)
-        print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type: 0x{:x}".format(id, offset, size, name, type))
+        print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type_idx: {}".format(id, offset, size, name, type_idx))
         assert(u1 == 0)
-        # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
-        if (type == 1):
-            type2 = 48
-        else:
-            type2 = 0
-#        extract_resource(file, data_off, offset, size, type2, unity_version)
-    input("Press Enter to continue...")
+        type2 = type_table[type_idx]
+        extract_resource(file, data_off, offset, size, type2, unity_version)
 
 def unsupported_version(file, version):
     print("Unsupported file version {}".format(version))
