@@ -297,3 +297,8 @@ This directory contains a custom shader, font and the corresponding d3dx.ini
 sections to interpret a constant buffer as floating point values and show them
 live while in game. This is done entirely on the GPU and uses a geometry shader
 to generate the text.
+
+### get_unity_version.sh ###
+Gets the Unity version of a given executable, or searches for Unity executables
+within a directory. Pass it SteamApps/common/\* to find every Unity game in your
+collection.
