@@ -140,7 +140,7 @@ if __name__ == '__main__':
                 end_offset = int(sys.argv[3], 16)
             else:
                 end_offset = int(sys.argv[3])
-            try_decoding_range(file, offset, end_offset)
+            try_decoding_range(file, offset, end_offset, 1)
         else:
             print('Attempting to decompress lz4 stream starting at 0x%x' % offset)
             decode_lz4_at(file, offset)
