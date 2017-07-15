@@ -100,6 +100,25 @@ def unity_53_or_higher(unity_version):
     (major, minor, point) = unity_version.split(b'.')
     return int(major) > 5 or (int(major) == 5 and int(minor) >= 3)
 
+def extract_raw(file, base_offset, offset, size, unity_version):
+    '''
+    Usually unused, but useful to hook up for debugging purposes
+    '''
+    saved_off = file.tell()
+    try:
+        file.seek(base_offset+offset)
+        path = get_extraction_path(file, '0x%08x' % offset, 'raw')
+
+        print('Dumping {}...'.format(repr(path)))
+        with open(path, 'wb') as out:
+            out.write(file.read(size))
+
+    except:
+        file.seek(saved_off)
+        raise
+    else:
+        file.seek(saved_off)
+
 def extract_shader(file, base_offset, offset, size, unity_version):
     saved_off = file.tell()
     try:
@@ -133,7 +152,23 @@ def extract_shader(file, base_offset, offset, size, unity_version):
     else:
         file.seek(saved_off)
 
+# Shader (Type 48) known UUIDs:
+# 5.1.2 (5.1.0b5): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.1.5 (5.1.0b5): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.2.2 (5.2.1p1): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.2.3 (5.2.1p3): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.3.2 (5.3.0p1): 313f624e 8093f279 302b3b65 25bbb83a
+# 5.3.7 (5.3.6p2): 313f624e 8093f279 302b3b65 25bbb83a
+# 5.4.0 (5.4.0f2): d50ed133 62e98df8 096b2f73 5131fce5
+# 5.4.4 (5.4.0p4): d50ed133 62e98df8 096b2f73 5131fce5
+# 5.5.0 (5.5.0f2): 4496e93f 21792521 04401c8d da0a1751
+# 5.5.2 (5.5.0p3): 4496e93f 21792521 04401c8d da0a1751
+# 5.6.0 (5.6.0f1): a70f7abc 6586fb35 b3a0641a a81e9375
+# 5.6.1 (5.6.0p2): a70f7abc 6586fb35 b3a0641a a81e9375
+# 5.6.2 (5.6.1p1): a70f7abc 6586fb35 b3a0641a a81e9375
+
 extractors = {
+    # 48: extract_raw,
     48: extract_shader,
 }
 
@@ -185,7 +220,7 @@ def parse_version_14(file, version):
     print("Type table length: {0}".format(unknown_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
-    # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    # a single project. Seen 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
     print("Unknown value: 0x{:02x}".format(u2))
     assert(u2 == 0x5 or u2 == 0x13)
 
@@ -236,7 +271,9 @@ def parse_version_15(file, version):
     print("Type table length: {0}".format(unknown_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
-    # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    # a single project. Seen 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    # FIXME: This failed on Mind Unleashed & Stealth Labyrinth (u2 == 0x500),
+    # but these need more work to parse
     print("Unknown value: 0x{:02x}".format(u2))
     assert(u2 == 0x5 or u2 == 0x13)
 
@@ -288,7 +325,7 @@ def parse_version_17(file, version):
     print("Type table length: {0}".format(type_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
-    # a single project. Seem 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
+    # a single project. Seen 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
     print("Unknown value: 0x{:02x}".format(u2))
     assert(u2 == 0x5 or u2 == 0x13)
 
@@ -336,10 +373,10 @@ def unsupported_version(file, version):
 
 parsers = {
     8: unsupported_version,
-    9: parse_version_9,
-    14: parse_version_14,
-    15: parse_version_15, # Seen in The Forest 0.15
-    # 17: parse_version_17, # Not ready for prime time
+    9: parse_version_9,   # Unity ..., 4.3, 4.4, 4.5, 4.6, ...
+    14: parse_version_14, # Unity ...
+    15: parse_version_15, # Unity ..., 5.1, 5.2, 5.3, 5.4
+    17: parse_version_17, # Unity 5.5, 5.6, ...
 }
 
 def analyse(file):
