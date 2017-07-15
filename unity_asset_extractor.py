@@ -339,7 +339,7 @@ parsers = {
     9: parse_version_9,
     14: parse_version_14,
     15: parse_version_15, # Seen in The Forest 0.15
-    17: parse_version_17,
+    # 17: parse_version_17, # Not ready for prime time
 }
 
 def analyse(file):
