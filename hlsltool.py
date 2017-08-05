@@ -968,11 +968,11 @@ def auto_fix_vertex_halo(shader):
         results = shader.scan_shader(temp_reg.variable, components='x', write=True, start=output_line, stop=True)
         scan_until = len(shader.instructions)
         if results:
-            scan_until = results[0].line
+            scan_until = results[0].line + 1
 
         # 8. Scan between the two lines identified by 2 and 7 for any reads of
         #    the temporary register:
-        results = shader.scan_shader(temp_reg.variable, write=False, start=output_line + 1, end=scan_until, stop=True)
+        results = shader.scan_shader(temp_reg.variable, components='x', write=False, start=output_line + 1, end=scan_until, stop=True)
         if not results:
             debug_verbose(0, 'No other reads of temporary variable found, nothing to fix')
             return
