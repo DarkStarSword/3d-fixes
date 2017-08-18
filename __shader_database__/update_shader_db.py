@@ -226,8 +226,11 @@ def process_link(post, link):
         filename = download_file(link)
     except Exception as e:
         print('%s occured while downloading %s: %s' % (e.__class__.__name__, link, str(e)))
-    else:
+        return
+    try:
         index_shaders(post, filename, link)
+    except Exception as e:
+        print('%s occured while processing %s: %s' % (e.__class__.__name__, filename, str(e)))
 
 class JSONSetEncoder(json.JSONEncoder):
     def default(self, o):
