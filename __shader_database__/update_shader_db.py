@@ -189,9 +189,9 @@ def download_file(url):
 
 def list_shaders(filename):
     (_, ext) = os.path.splitext(filename)
-    if ext == '.zip':
+    if ext.lower() == '.zip':
         Handler = zipfile.ZipFile
-    elif ext == '.rar':
+    elif ext.lower() == '.rar':
         Handler = rarfile.RarFile
     else:
         raise AssertionError('Unsupported archive format: %s' % ext)
