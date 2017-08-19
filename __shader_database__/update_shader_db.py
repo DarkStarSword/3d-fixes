@@ -73,7 +73,7 @@ def get_blog_posts():
     return posts
 
 def find_links(content):
-    soup = BeautifulSoup(content)
+    soup = BeautifulSoup(content, "lxml")
     for link in soup.find_all('a'):
         yield link.get('href')
 
