@@ -53,6 +53,7 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name 'f51c2a7085326040-vs*' \
 	       -o -name 'f1dfaa0a76663bf9-vs*' \
 	       -o -name 'bc1b4298b3713fce-vs*' \
+	       -o -name '28a7271021d7155a-vs*' \
 	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
 			hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
 fi
