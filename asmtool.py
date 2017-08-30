@@ -905,29 +905,20 @@ def fix_unity_lighting_ps(shader):
 
     clip_space_adj = shader.allocate_temp_reg()
     world_space_adj = shader.allocate_temp_reg()
-    local_space_adj = shader.allocate_temp_reg()
 
     off = _CameraToWorld_end + off + 1
     off += shader.insert_vanity_comment(off, "Unity light/shadow fix (pixel shader stage) inserted with")
     off += shader.insert_multiple_lines(off, '''
         add {clip_space_adj}.x, {depth}.x, -{stereo}.y
         mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
-        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
-        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {InvVPMatrix0}.xyzw, {clip_space_adj}.xxxx
         add {world_var}.{world_mask}, {world_var}.xyzw, -{world_space_adj}.{world_adj_swizzle}
     '''.format(
         depth = depth_reg,
         stereo = shader.stereo_params_reg,
         clip_space_adj = clip_space_adj,
-        local_space_adj = local_space_adj,
         world_space_adj = world_space_adj,
-        InvMVPMatrix0 = 'cb10[0]',
-        InvMVPMatrix1 = 'cb10[1]',
-        InvMVPMatrix2 = 'cb10[2]',
-        InvMVPMatrix3 = 'cb10[3]',
+        InvVPMatrix0 = 'cb10[0]',
         _Object2World0 = 'cb11[12]',
         _Object2World1 = 'cb11[13]',
         _Object2World2 = 'cb11[14]',
@@ -943,7 +934,7 @@ def fix_unity_lighting_ps(shader):
     # purposes. FIXME: Each copy is lightweight, but with so many they may add
     # up. Consider using a shader resource slot instead - accesses will be
     # marginally slower, but may be overall faster than copying to CB memory:
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
         shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
@@ -966,7 +957,6 @@ def fix_unity_reflection(shader):
     repl_WorldSpaceCameraPos = shader.allocate_temp_reg()
     clip_space_adj = shader.allocate_temp_reg()
     world_space_adj = shader.allocate_temp_reg()
-    local_space_adj = shader.allocate_temp_reg()
 
     # Apply a stereo correction to the world space camera position - this
     # pushes environment reflections, specular highlights, etc to the correct
@@ -976,11 +966,7 @@ def fix_unity_reflection(shader):
     shader.early_insert_multiple_lines('''
         mov {repl_WorldSpaceCameraPos}.xyzw, {_WorldSpaceCameraPos}.xyzw
         mul {clip_space_adj}.x, -{stereo}.x, {stereo}.y
-        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
-        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {InvVPMatrix0}.xyzw, {clip_space_adj}.xxxx
         add {repl_WorldSpaceCameraPos}.xyz, {repl_WorldSpaceCameraPos}.xyz, -{world_space_adj}.xyz
     '''.lstrip().format(
         _WorldSpaceCameraPos = _WorldSpaceCameraPos,
@@ -988,11 +974,7 @@ def fix_unity_reflection(shader):
         stereo = shader.stereo_params_reg,
         clip_space_adj = clip_space_adj,
         world_space_adj = world_space_adj,
-        local_space_adj = local_space_adj,
-        InvMVPMatrix0 = 'cb10[0]',
-        InvMVPMatrix1 = 'cb10[1]',
-        InvMVPMatrix2 = 'cb10[2]',
-        InvMVPMatrix3 = 'cb10[3]',
+        InvVPMatrix0 = 'cb10[0]',
         _Object2World0 = 'cb11[12]',
         _Object2World1 = 'cb11[13]',
         _Object2World2 = 'cb11[14]',
@@ -1008,7 +990,7 @@ def fix_unity_reflection(shader):
     # purposes. FIXME: Each copy is lightweight, but with so many they may add
     # up. Consider using a shader resource slot instead - accesses will be
     # marginally slower, but may be overall faster than copying to CB memory:
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
 
     shader.autofixed = True
 
@@ -1033,7 +1015,6 @@ def fix_unity_frustum_world(shader):
     far = shader.allocate_temp_reg()
     clip_space_adj = shader.allocate_temp_reg()
     world_space_adj = shader.allocate_temp_reg()
-    local_space_adj = shader.allocate_temp_reg()
 
     # Apply a stereo correction to the world space frustum corners - this
     # fixes the glow around the sun in The Forest (shaders called Sunshine
@@ -1044,11 +1025,7 @@ def fix_unity_frustum_world(shader):
         rcp {far}.x, {far}.x
         add {clip_space_adj}.x, {far}.x, -{stereo}.y
         mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
-        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
-        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
-        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {InvVPMatrix0}.xyzw, {clip_space_adj}.xxxx
         // GOTCHA: _FrustumCornersWS is TRANSPOSED vs DX9!
         add {repl_FrustumCornersWS0}.xyzw, {_FrustumCornersWS0}.xyzw, -{world_space_adj}.xxxx
         add {repl_FrustumCornersWS1}.xyzw, {_FrustumCornersWS1}.xyzw, -{world_space_adj}.yyyy
@@ -1059,11 +1036,7 @@ def fix_unity_frustum_world(shader):
         stereo = shader.stereo_params_reg,
         clip_space_adj = clip_space_adj,
         world_space_adj = world_space_adj,
-        local_space_adj = local_space_adj,
-        InvMVPMatrix0 = 'cb10[0]',
-        InvMVPMatrix1 = 'cb10[1]',
-        InvMVPMatrix2 = 'cb10[2]',
-        InvMVPMatrix3 = 'cb10[3]',
+        InvVPMatrix0 = 'cb10[0]',
         _Object2World0 = 'cb11[12]',
         _Object2World1 = 'cb11[13]',
         _Object2World2 = 'cb11[14]',
@@ -1076,7 +1049,7 @@ def fix_unity_frustum_world(shader):
         _FrustumCornersWS2 = _FrustumCornersWS[2],
     ))
 
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
 
