@@ -881,8 +881,7 @@ def fix_unity_lighting_ps(shader):
     # # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
     # shader.add_parameter(False, None, 'float', 'fov', args.fix_unity_lighting_ps)
 
-    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
-    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed VP
     off = shader.insert_stereo_params()
 
     depth_reg = shader.allocate_temp_reg()
@@ -919,21 +918,11 @@ def fix_unity_lighting_ps(shader):
         clip_space_adj = clip_space_adj,
         world_space_adj = world_space_adj,
         InvVPMatrix0 = 'cb10[0]',
-        _Object2World0 = 'cb11[12]',
-        _Object2World1 = 'cb11[13]',
-        _Object2World2 = 'cb11[14]',
-        _Object2World3 = 'cb11[15]',
         world_var = world_reg.variable,
         world_mask = world_reg.components[:3],
         world_adj_swizzle = shader.remap_components('xyz', world_reg.components[:3]),
     ))
 
-    # Do this last so we can use our own resources if we are the first in the frame:
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
-    # "copy" is important since constant buffers cannot be used for other
-    # purposes. FIXME: Each copy is lightweight, but with so many they may add
-    # up. Consider using a shader resource slot instead - accesses will be
-    # marginally slower, but may be overall faster than copying to CB memory:
     shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
@@ -949,8 +938,7 @@ def fix_unity_reflection(shader):
         debug_verbose(0, 'Shader does not use _WorldSpaceCameraPos')
         return
 
-    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
-    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed VP
 
     shader.insert_stereo_params()
 
@@ -975,21 +963,11 @@ def fix_unity_reflection(shader):
         clip_space_adj = clip_space_adj,
         world_space_adj = world_space_adj,
         InvVPMatrix0 = 'cb10[0]',
-        _Object2World0 = 'cb11[12]',
-        _Object2World1 = 'cb11[13]',
-        _Object2World2 = 'cb11[14]',
-        _Object2World3 = 'cb11[15]'
     ))
 
     if hlsltool.possibly_copy_unity_world_matrices(shader):
         shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_MVP')
 
-    # Do this last so we can use our own resources if we are the first in the frame:
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
-    # "copy" is important since constant buffers cannot be used for other
-    # purposes. FIXME: Each copy is lightweight, but with so many they may add
-    # up. Consider using a shader resource slot instead - accesses will be
-    # marginally slower, but may be overall faster than copying to CB memory:
     shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
 
     shader.autofixed = True
@@ -1001,8 +979,7 @@ def fix_unity_frustum_world(shader):
         debug_verbose(0, 'Shader does not use _FrustumCornersWS, or is missing headers (my other scripts can extract these)')
         return
 
-    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
-    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed VP
     shader.insert_decl('dcl_constantbuffer cb13[9], immediateIndexed') # UnityPerCamera
 
     shader.insert_stereo_params()
@@ -1037,10 +1014,6 @@ def fix_unity_frustum_world(shader):
         clip_space_adj = clip_space_adj,
         world_space_adj = world_space_adj,
         InvVPMatrix0 = 'cb10[0]',
-        _Object2World0 = 'cb11[12]',
-        _Object2World1 = 'cb11[13]',
-        _Object2World2 = 'cb11[14]',
-        _Object2World3 = 'cb11[15]',
         repl_FrustumCornersWS0 = repl_FrustumCornersWS[0],
         repl_FrustumCornersWS1 = repl_FrustumCornersWS[1],
         repl_FrustumCornersWS2 = repl_FrustumCornersWS[2],
@@ -1050,7 +1023,6 @@ def fix_unity_frustum_world(shader):
     ))
 
     shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
 
     shader.autofixed = True
