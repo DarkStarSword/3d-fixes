@@ -289,10 +289,10 @@ class DP3Instruction(TwoArgAssignmentInstruction):
 class DP4Instruction(TwoArgAssignmentInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('dp4')
 
-class AddInstruction(TwoArgAssignmentInstruction):
+class AddInstruction(TwoArgAssignmentInstruction, hlsltool.AddInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('add')
 
-class MulInstruction(TwoArgAssignmentInstruction):
+class MulInstruction(TwoArgAssignmentInstruction, hlsltool.MultiplyInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('mul')
 
 class DivInstruction(TwoArgAssignmentInstruction):
@@ -304,7 +304,23 @@ class MinInstruction(TwoArgAssignmentInstruction):
 class MaxInstruction(TwoArgAssignmentInstruction):
     pattern = TwoArgAssignmentInstruction.mkpattern('max')
 
-class MADInstruction(AssignmentInstruction):
+class ReciprocalInstruction(TwoArgAssignmentInstruction, hlsltool.ReciprocalInstruction):
+    pattern = re.compile(r'''
+        \s*
+        (?P<instruction>div)
+        \s+
+        (?P<lval>\S+)
+        \s* , \s*
+        (?P<rval>
+            (?P<arg1>l\(1.0+, \s* 1.0+, \s* 1.0+, \s* 1.0+\))
+            \s* , \s*
+            (?P<arg2>\S+)
+        )
+        \s*
+        $
+    ''', re.MULTILINE | re.VERBOSE)
+
+class MADInstruction(AssignmentInstruction, hlsltool.MADInstruction):
     pattern = re.compile(r'''
         \s*
         (?P<instruction>mad)
@@ -332,6 +348,9 @@ class Declaration(Instruction):
         dcl_.*
         $
     ''', re.MULTILINE | re.VERBOSE)
+
+    def __eq__(self, other):
+        return self.text == other.text
 
 class ICBDeclaration(Declaration):
     pattern = re.compile(r'''
@@ -429,6 +448,7 @@ specific_instructions = (
     DP2Instruction,
     AddInstruction,
     MulInstruction,
+    ReciprocalInstruction,
     DivInstruction,
     MADInstruction,
     MovInstruction,
@@ -632,7 +652,9 @@ class ASMShader(hlsltool.Shader):
         if comment is not None:
             self.declarations.append(hlsltool.Comment('\n// %s' % comment))
         if declaration is not None:
-            self.declarations.append(Declaration('\n' + declaration))
+            d = Declaration('\n' + declaration)
+            if d not in self.declarations:
+                self.declarations.append(d)
         if comment is None and declaration is None:
             self.declarations.append(hlsltool.Comment('\n'))
 
@@ -759,6 +781,177 @@ def fix_unusual_halo_with_inconsistent_w_optimisation(shader):
         mvp_row4 = mvp_row4.variable,
         stereo = shader.stereo_params_reg
     ))
+
+    shader.autofixed = True
+
+def fix_unity_lighting_ps(shader):
+    fix_unity_reflection(shader)
+    try:
+        _CameraToWorld = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_CameraToWorld, 'matrix'))
+        _ZBufferParams_cb, _ZBufferParams_offset = shader.find_unity_cb_entry(shadertool.unity_ZBufferParams, 'constant')
+        _ZBufferParams = cb_offset(_ZBufferParams_cb, _ZBufferParams_offset)
+    except KeyError:
+        debug_verbose(0, 'Shader does not have all required values for the Unity lighting fix')
+        return
+
+    # XXX: Directional lighting shaders seem to have a bogus _ZBufferParams!
+    try:
+        match = shader.find_header(shadertool.unity_headers_attached)
+    except KeyError:
+        debug('Skipping possible depth buffer source - shader does not have Unity headers attached so unable to check what kind of lighting shader it is')
+        has_unity_headers = False
+    else:
+        has_unity_headers = True
+        try:
+            match = shader.find_header(shadertool.unity_shader_directional_lighting)
+        except KeyError:
+            try:
+                match = shader.find_header(shadertool.unity_CameraDepthTexture)
+            except KeyError:
+                debug_verbose(0, 'Shader does not use _CameraDepthTexture')
+                return
+            _CameraDepthTexture = 't' + match.group('texture')
+        else:
+            _CameraDepthTexture = None
+
+    debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld, _ZBufferParams))
+
+    # Find _CameraToWorld usage - adjustment must be above this point, and this
+    # gives us the register with X that needs to be adjusted:
+    x_var, _CameraToWorld_line = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[0])
+
+    # Since the compiler often places y first, for clarity use it's position to insert the correction:
+    _, line_y = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[1])
+    _CameraToWorld_line = min(_CameraToWorld_line, line_y)
+
+    # And once more to find register with Z to use as depth:
+    depth, line_z = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[2])
+    #offset = shader.insert_instr(line_z, comment='depth in %s:' % depth)
+    depth_reg = hlsltool.expression_as_single_register(depth)
+
+    # And to find the end for the fallback world space adjustment:
+    _, _CameraToWorld_end = shader.find_var_component_from_row_major_matrix_multiply(_CameraToWorld[3])
+    _CameraToWorld_end = max(_CameraToWorld_end, line_z, line_y, _CameraToWorld_line)
+    world_reg = hlsltool.expression_as_single_register(shader.instructions[_CameraToWorld_end].lval)
+
+    # Find _ZBufferParams usage to find where depth is sampled (could use
+    # _CameraDepthTexture, but that takes an extra step and more can go wrong)
+    results = shader.scan_shader(_ZBufferParams, write=False, end=_CameraToWorld_line)
+    if len(results) != 1:
+        # XXX: In shadertool.py scan_shader returns the two reads on the one
+        # instruction, currently we only return one per instruction
+        debug_verbose(0, '_ZBufferParams read %i times (only exactly 1 reads currently supported)' % len(results))
+        return
+    (line, instr) = results[0]
+    reg = hlsltool.expression_as_single_register(instr.lval)
+
+    # We're expecting a reciprocal calculation as part of the Z buffer -> world
+    # Z scaling:
+    results = shader.scan_shader(reg.variable, components=reg.components, instr_type=ReciprocalInstruction,
+            write=False, start=line+1, end=_CameraToWorld_line, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected reciprocal instruction')
+        return
+    (line, instr) = results[0]
+    reg = hlsltool.expression_as_single_register(instr.lval)
+
+    # Find where the reciprocal is next used:
+    results = shader.scan_shader(reg.variable, components=reg.components, write=False,
+            start=line+1, end=_CameraToWorld_line, stop=True)
+    if not results:
+        debug_verbose(0, 'Could not find expected instruction')
+        return
+    (line, instr) = results[0]
+    reg = hlsltool.expression_as_single_register(instr.lval)
+
+    # We used to trace the function forwards more here, but Dreamfall Chapters
+    # got complicated after the Unity 5 update. Now we find the depth from the
+    # matrix multiply instead, which hopefully should be more robust.
+
+    # If we ever need the old procedure, it's in the git history of shadertool.py.
+
+    # Find where the depth was set and store it in a variable:
+    results = shader.scan_shader(depth_reg.variable, components=depth_reg.components, write=True,
+            start=line_z - 1, end=line-1, stop=True, direction=-1)
+    if not results:
+        debug_verbose(0, 'Could not find where depth was set')
+        return
+    (depth_line, _) = results[0]
+
+    # # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
+    # shader.add_parameter(False, None, 'float', 'fov', args.fix_unity_lighting_ps)
+
+    shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed MVP
+    shader.insert_decl('dcl_constantbuffer cb11[22], immediateIndexed') # UnityPerDraw
+    off = shader.insert_stereo_params()
+
+    depth_reg = shader.allocate_temp_reg()
+    off += shader.insert_multiple_lines(depth_line + off + 1, '''
+        // copy depth from {depth} to {depth_reg}.x:
+        mov {depth_reg}.x, {depth}
+    '''.format(
+        depth = depth,
+        depth_reg = depth_reg,
+    ))
+
+    # TODO once we can accept a new texcoord from the vertex shader
+    # pos = _CameraToWorld_line + offset
+    # debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos, depth, x_var))
+    # pos += shader.insert_vanity_comment(pos, "Unity light/shadow fix (pixel shader stage) inserted with")
+    # pos += shader.insert_instr(pos, 'if (fov) {')
+    # pos += shader.insert_instr(pos, '  %s -= separation * (depth - convergence) * fov;' % (x_var))
+    # pos += shader.insert_instr(pos, '}')
+    # pos += shader.insert_instr(pos)
+
+    clip_space_adj = shader.allocate_temp_reg()
+    world_space_adj = shader.allocate_temp_reg()
+    local_space_adj = shader.allocate_temp_reg()
+
+    off = _CameraToWorld_end + off + 1
+    off += shader.insert_vanity_comment(off, "Unity light/shadow fix (pixel shader stage) inserted with")
+    off += shader.insert_multiple_lines(off, '''
+        mov {clip_space_adj}.xyzw, l(0)
+        add {clip_space_adj}.x, {depth}.x, -{stereo}.y
+        mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
+        mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
+        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
+        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
+        mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
+        mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
+        mad {world_space_adj}.xyzw, {_Object2World3}.xyzw, {local_space_adj}.wwww, {world_space_adj}.xyzw
+        add {world_var}.{world_mask}, {world_var}.xyzw, -{world_space_adj}.{world_adj_swizzle}
+    '''.format(
+        depth = depth_reg,
+        stereo = shader.stereo_params_reg,
+        clip_space_adj = clip_space_adj,
+        local_space_adj = local_space_adj,
+        world_space_adj = world_space_adj,
+        InvMVPMatrix0 = 'cb10[0]',
+        InvMVPMatrix1 = 'cb10[1]',
+        InvMVPMatrix2 = 'cb10[2]',
+        InvMVPMatrix3 = 'cb10[3]',
+        _Object2World0 = 'cb11[12]',
+        _Object2World1 = 'cb11[13]',
+        _Object2World2 = 'cb11[14]',
+        _Object2World3 = 'cb11[15]',
+        world_var = world_reg.variable,
+        world_mask = world_reg.components[:3],
+        world_adj_swizzle = shader.remap_components('xyz', world_reg.components[:3]),
+    ))
+
+    # Do this last so we can use our own resources if we are the first in the frame:
+    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    # "copy" is important since constant buffers cannot be used for other
+    # purposes. FIXME: Each copy is lightweight, but with so many they may add
+    # up. Consider using a shader resource slot instead - accesses will be
+    # marginally slower, but may be overall faster than copying to CB memory:
+    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_MVP' % (shader.shader_type));
+
+    if has_unity_headers and _CameraDepthTexture is not None:
+        shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting('Resource_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
 
     shader.autofixed = True
 
@@ -1744,6 +1937,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-unusual-halo-with-inconsistent-w-optimisation', action='store_true',
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
+    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+           help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
     parser.add_argument('--fix-unity-frustum-world', action='store_true',
@@ -1811,6 +2006,8 @@ def main():
                 hlsltool.auto_fix_vertex_halo(shader)
             if args.fix_unusual_halo_with_inconsistent_w_optimisation:
                 fix_unusual_halo_with_inconsistent_w_optimisation(shader)
+            if args.fix_unity_lighting_ps:
+                fix_unity_lighting_ps(shader)
             if args.fix_unity_reflection:
                 fix_unity_reflection(shader)
             if args.fix_unity_frustum_world:

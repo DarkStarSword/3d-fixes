@@ -530,6 +530,30 @@ class Shader(object):
         self.adjust_cb_size(cb, cb_size)
         return cb, offset
 
+    def find_var_component_from_row_major_matrix_multiply(self, cb):
+        results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction, AddInstruction))
+        if len(results) != 1:
+            debug_verbose(0, '%s read from %i instructions (only exactly 1 read currently supported)' % (cb, len(results)))
+            return None
+        (line, instr) = results[0]
+
+        if instr.rargs[0].variable == cb:
+            reg = instr.rargs[1]
+        elif instr.rargs[1].variable == cb:
+            reg = instr.rargs[0]
+        else:
+            assert(False)
+
+        if isinstance(instr, AddInstruction):
+            var = '1'
+        elif reg.components:
+            assert(all([ x == reg.components[0] for x in reg.components[1:] ]))
+            var = '%s.%s' % (reg.variable, reg.components[0])
+        else:
+            var = '%s.x' % reg.variable
+
+        return var, line
+
     non_ws_pattern = re.compile('\S')
     def comment_out_instruction(self, line, additional=None):
         instr = str(self.instructions[line])
@@ -578,7 +602,8 @@ class Shader(object):
     def add_shader_override_setting(self, setting, name=None):
         if self.ini_settings is None:
             self.ini_settings = []
-        self.ini_settings.append(setting)
+        if setting not in self.ini_settings:
+            self.ini_settings.append(setting)
 
     def replace_reg_on_line(self, i, old, new, components=None):
         # NOTE: Replaces both lval and rval
@@ -751,30 +776,6 @@ class HLSLShader(Shader):
         if (semantic, output) in self.parameters:
             raise self.ParameterAlreadyExists((semantic, output))
         self.parameters[(semantic, output)] = param
-
-    def find_var_component_from_row_major_matrix_multiply(self, cb):
-        results = self.scan_shader(cb, write=False, instr_type=(MADInstruction, MultiplyInstruction, AddInstruction))
-        if len(results) != 1:
-            debug_verbose(0, '%s read from %i instructions (only exactly 1 read currently supported)' % (cb, len(results)))
-            return None
-        (line, instr) = results[0]
-
-        if instr.rargs[0].variable == cb:
-            reg = instr.rargs[1]
-        elif instr.rargs[1].variable == cb:
-            reg = instr.rargs[0]
-        else:
-            assert(False)
-
-        if isinstance(instr, AddInstruction):
-            var = '1'
-        elif reg.components:
-            assert(all([ x == reg.components[0] for x in reg.components[1:] ]))
-            var = '%s.%s' % (reg.variable, reg.components[0])
-        else:
-            var = '%s.x' % reg.variable
-
-        return var, line
 
     def hlsl_swizzle(self, mask, swizzle):
         return swizzle
