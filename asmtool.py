@@ -910,13 +910,9 @@ def fix_unity_lighting_ps(shader):
     off = _CameraToWorld_end + off + 1
     off += shader.insert_vanity_comment(off, "Unity light/shadow fix (pixel shader stage) inserted with")
     off += shader.insert_multiple_lines(off, '''
-        mov {clip_space_adj}.xyzw, l(0)
         add {clip_space_adj}.x, {depth}.x, -{stereo}.y
         mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
         mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
         mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
         mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
         mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
@@ -979,12 +975,8 @@ def fix_unity_reflection(shader):
     shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
     shader.early_insert_multiple_lines('''
         mov {repl_WorldSpaceCameraPos}.xyzw, {_WorldSpaceCameraPos}.xyzw
-        mov {clip_space_adj}.xyzw, l(0)
         mul {clip_space_adj}.x, -{stereo}.x, {stereo}.y
         mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
         mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
         mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
         mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
@@ -1050,13 +1042,9 @@ def fix_unity_frustum_world(shader):
     shader.early_insert_multiple_lines('''
         add {far}.x, {_ZBufferParams}.z, {_ZBufferParams}.w
         rcp {far}.x, {far}.x
-        mov {clip_space_adj}.xyzw, l(0)
         add {clip_space_adj}.x, {far}.x, -{stereo}.y
         mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
         mul {local_space_adj}.xyzw, {InvMVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        mad {local_space_adj}.xyzw, {InvMVPMatrix1}.xyzw, {clip_space_adj}.yyyy, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix2}.xyzw, {clip_space_adj}.zzzz, {local_space_adj}.xyzw
-        mad {local_space_adj}.xyzw, {InvMVPMatrix3}.xyzw, {clip_space_adj}.wwww, {local_space_adj}.xyzw
         mul {world_space_adj}.xyzw, {_Object2World0}.xyzw, {local_space_adj}.xxxx
         mad {world_space_adj}.xyzw, {_Object2World1}.xyzw, {local_space_adj}.yyyy, {world_space_adj}.xyzw
         mad {world_space_adj}.xyzw, {_Object2World2}.xyzw, {local_space_adj}.zzzz, {world_space_adj}.xyzw
