@@ -934,7 +934,7 @@ def fix_unity_lighting_ps(shader):
     # purposes. FIXME: Each copy is lightweight, but with so many they may add
     # up. Consider using a shader resource slot instead - accesses will be
     # marginally slower, but may be overall faster than copying to CB memory:
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
         shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
@@ -990,7 +990,7 @@ def fix_unity_reflection(shader):
     # purposes. FIXME: Each copy is lightweight, but with so many they may add
     # up. Consider using a shader resource slot instead - accesses will be
     # marginally slower, but may be overall faster than copying to CB memory:
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
 
     shader.autofixed = True
 
@@ -1049,7 +1049,7 @@ def fix_unity_frustum_world(shader):
         _FrustumCornersWS2 = _FrustumCornersWS[2],
     ))
 
-    shader.add_shader_override_setting('%s-cb10 = copy Resource_Inverse_VP' % (shader.shader_type));
+    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
     shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
 
