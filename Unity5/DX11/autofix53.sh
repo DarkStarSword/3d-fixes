@@ -45,8 +45,8 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name '69294277cca1bade-vs*' \
 	       -o -name '99341a34a001a3d1-vs*' \
 	       -o -name '94a6d6474c5424ae-vs*' \
-	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
-			hlsltool.py -I ../.. --fix-unity-lighting-ps --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
+	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps.txt/' | xargs -0 \
+			asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed $LIGHTING_EXTRA | update_ini
 	echo
 	echo "Applying directional lighting fix..."
 	find . \( -name 'bfae1ae6908d87a2-vs*' \
@@ -54,8 +54,8 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name 'f1dfaa0a76663bf9-vs*' \
 	       -o -name 'bc1b4298b3713fce-vs*' \
 	       -o -name '28a7271021d7155a-vs*' \
-	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps_replace.txt/' | xargs -0 \
-			hlsltool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed --fxc "$FXC" $LIGHTING_EXTRA | update_ini
+	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps.txt/' | xargs -0 \
+			asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed $LIGHTING_EXTRA | update_ini
 fi
 
 if [ $FIX_SUN_SHAFTS -eq 1 ]; then
