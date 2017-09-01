@@ -302,3 +302,8 @@ to generate the text.
 Gets the Unity version of a given executable, or searches for Unity executables
 within a directory. Pass it SteamApps/common/\* to find every Unity game in your
 collection.
+
+### unity_cb_to_hlsl.sh ###
+Translates the Unity global constant buffer definition from a shader (or
+shaders) into a cbuffer definition for use in a HLSL shader. If multiple
+shaders are specified, their definitions will be collated and merged together.
