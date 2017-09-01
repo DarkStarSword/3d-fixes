@@ -13,7 +13,7 @@ extract_cb()
 
 translate_unity_types()
 {
-	sed 's/^Vector/float4/;s/^Float/float/;s/^Matrix/row_major matrix/'
+	sed 's/^Vector/float4/;s/^Float/float/;s/^Matrix/matrix/'
 }
 
 strip_comments()
