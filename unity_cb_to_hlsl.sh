@@ -6,7 +6,9 @@
 
 extract_cb()
 {
-	awk '/ConstBuffer|BindCB|SetTexture/{f=0} f; /ConstBuffer \"\$Globals\"/{f=1}' "$@"
+	cb="$1"
+	shift
+	awk '/ConstBuffer|BindCB|SetTexture/{f=0} f; /ConstBuffer \"'$cb'\"/{f=1}' "$@"
 }
 
 translate_unity_types()
@@ -55,6 +57,13 @@ format()
 	column -s \| -t | sed 's/^/  /'
 }
 
-echo "cbuffer globals : register(b) { // FIXME: register"
-extract_cb "$@" | strip_comments | strip_square_brackets | sort -n -k 2 | uniq | byte_offset_to_pack_offset | translate_unity_types | format
+cb="$1"
+if [ "$cb" = "globals" -o "$cb" = "Globals" -o "$cb" = "\$Globals" ]; then
+	cb="\\\$Globals"
+fi
+shift 1
+cb_safe="$(echo "$cb" | tr -d "\$\\\\")"
+
+echo "cbuffer $cb_safe : register(b) { // FIXME: register"
+extract_cb "$cb" "$@" | strip_comments | strip_square_brackets | sort -n -k 2 | uniq | byte_offset_to_pack_offset | translate_unity_types | format
 echo "}"
