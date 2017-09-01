@@ -544,14 +544,17 @@ class ASMShader(hlsltool.Shader):
     def mask_register(self, lval, rval):
         return hlsltool.Register(rval.negate, rval.variable, None, self.hlsl_swizzle(lval.components, rval.components))
 
-    def adjust_cb_size(self, cb, size):
-        search = 'dcl_constantbuffer cb%d[' % cb
+    def find_cb_declaration(self, cb):
         for declaration in self.declarations:
             if not isinstance(declaration, CBDeclaration):
                 continue
             if declaration.cb != cb:
                 continue
+            return declaration
 
+    def adjust_cb_size(self, cb, size):
+        declaration = self.find_cb_declaration(cb)
+        if declaration:
             size = (size + 15) // 16
             if (declaration.size >= size):
                 return
@@ -783,6 +786,48 @@ def fix_unusual_halo_with_inconsistent_w_optimisation(shader):
     ))
 
     shader.autofixed = True
+
+def remap_cb(shader, cb, sb):
+    assert(shader.shader_model.endswith('_4_0') or shader.shader_model.endswith('_5_0'))
+
+    cb_declaration = shader.find_cb_declaration(cb)
+    if not cb_declaration:
+        debug_verbose(0, 'Constant buffer cb{cb} declaration not found'.format(cb=cb))
+        return
+    stride = cb_declaration.size * 16
+
+    pattern = re.compile(r'''
+        cb{cb}\[ (?P<index>\d+) \]
+    '''.format(cb = cb), re.VERBOSE | re.MULTILINE)
+
+    cb_refs = set()
+
+    for instr in shader.instructions:
+        for reg in hlsltool.find_regs_in_expression(str(instr)):
+            match = pattern.match(reg.variable)
+            if match:
+                cb_refs.add(match.group('index'))
+
+    if not cb_refs:
+        debug_verbose(0, 'No constant buffer cb{cb} references found'.format(cb=cb))
+        return
+
+    shader.insert_decl('dcl_resource_structured t{sb}, {stride}'.format(sb = sb, stride = stride))
+
+    shader.early_insert_vanity_comment('cb{cb} remapped to t{sb} with'.format(cb=cb, sb=sb))
+
+    for index in cb_refs:
+        reg = shader.allocate_temp_reg()
+        if shader.shader_model.endswith('_4_0'):
+            shader.early_insert_instr(
+                'ld_structured {reg}.xyzw, l(0), l({offset}), t{sb}.xyzw' \
+                .format(offset = int(index) * 16, reg = reg, sb = sb))
+        elif shader.shader_model.endswith('_5_0'):
+            shader.early_insert_instr(
+                'ld_structured_indexable(structured_buffer, stride={stride})(mixed,mixed,mixed,mixed) {reg}.xyzw, l(0), l({offset}), t{sb}.xyzw' \
+                .format(offset = int(index) * 16, stride = stride, reg = reg, sb = sb))
+        shader.replace_reg('cb{cb}[{idx}]'.format(cb=cb, idx=index), reg)
+    shader.early_insert_instr()
 
 def fix_unity_lighting_ps(shader):
     fix_unity_reflection(shader)
@@ -1870,6 +1915,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-unusual-halo-with-inconsistent-w-optimisation', action='store_true',
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
+    parser.add_argument('--remap-cb', action='append', nargs=2, type=int,
+            help="Remap accesses of a given constant buffer to a structured buffer")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
@@ -1975,6 +2022,9 @@ def main():
                 fix_wd2_soft_shadows(shader)
             if args.fix_wd2_lens_grit:
                 fix_wd2_lens_grit(shader, args.fix_wd2_lens_grit)
+            for cb, sb in args.remap_cb:
+                # Do this late incase it is used in conjunction with other patterns
+                remap_cb(shader, cb, sb)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
