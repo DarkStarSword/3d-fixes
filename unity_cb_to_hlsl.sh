@@ -48,7 +48,7 @@ byte_offset_to_pack_offset()
 				comp = ".???"
 				break
 		}
-		print $1 "|" $3 "|: packoffset(c" offset comp ")"
+		print $1 "|" $3 "|: packoffset(c" offset comp ");"
 	}'
 }
 
