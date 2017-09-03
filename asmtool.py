@@ -1915,7 +1915,7 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for common halo type issues")
     parser.add_argument('--fix-unusual-halo-with-inconsistent-w-optimisation', action='store_true',
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
-    parser.add_argument('--remap-cb', action='append', nargs=2, type=int,
+    parser.add_argument('--remap-cb', action='append', nargs=2, type=int, default=[],
             help="Remap accesses of a given constant buffer to a structured buffer")
     parser.add_argument('--fix-unity-lighting-ps', action='store_true',
            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
@@ -2023,7 +2023,7 @@ def main():
             if args.fix_wd2_lens_grit:
                 fix_wd2_lens_grit(shader, args.fix_wd2_lens_grit)
             for cb, sb in args.remap_cb:
-                # Do this late incase it is used in conjunction with other patterns
+                # Do this late in case it is used in conjunction with other patterns
                 remap_cb(shader, cb, sb)
         except Exception as e:
             if args.ignore_other_errors:
