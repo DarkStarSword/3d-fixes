@@ -93,6 +93,11 @@ nul_to_newlines()
 	xargs -0 -n 1 echo
 }
 
+newlines_to_nul()
+{
+	tr '\n' '\000'
+}
+
 get_hash_from_filename()
 {
 	echo "$@" | sed 's/^.*\///; s/-.s\.txt$//'
@@ -115,16 +120,16 @@ tee_shaders()
 blacklist_shaders()
 {
 	# Blacklist any shaders known to cause issues or with suspicious names:
-	grep -v Text \                                 # Known to cause issues
-		| grep -v GUI \                        # Known to cause issues
-		| grep -v UI_Default \                 # Suspicious name
-		| grep -v Sprites_Default \            # Suspicious name
-		| grep -v Particles_Additive \         # Known to cause issues
-		| grep -v Mobile_ \                    # Suspicious name
-		| grep -v Particles \                  # Suspicious name
-		| grep -v Decal \                      # Suspicious name
-		| grep -v 'Particles_Alpha Blended' \  # Known to cause issues
-		| grep -v 'Unlit_Transparent Colored'  # Known to cause issues
+	grep -v Text \
+		| grep -v GUI \
+		| grep -v UI_Default \
+		| grep -v Sprites_Default \
+		| grep -v Particles_Additive \
+		| grep -v Mobile_ \
+		| grep -v Particles \
+		| grep -v Decal \
+		| grep -v 'Particles_Alpha Blended' \
+		| grep -v 'Unlit_Transparent Colored'
 }
 
 format_shader_override()
@@ -181,14 +186,18 @@ if [ $(basename "$PWD") != ShaderFNVs ]; then
 	exit 1
 fi
 
-find_pixel_shaders \
-	| include_zwrite_off_only \
-	| include_transparent_tags \
-	| exclude_any_non_transparent_queues \
-	| exclude_any_non_transparent_render_type \
-	| exclude_deferred_lighting \
-	| strip_cwd \
-	| nul_to_newlines \
-	| tee_shaders \
-	| blacklist_shaders \
-	| format_shader_override
+if [ $# -eq 0 ]; then
+	find_pixel_shaders \
+		| include_zwrite_off_only \
+		| include_transparent_tags \
+		| exclude_any_non_transparent_queues \
+		| exclude_any_non_transparent_render_type \
+		| exclude_deferred_lighting \
+		| strip_cwd \
+		| nul_to_newlines \
+		| tee_shaders \
+		| blacklist_shaders \
+		| format_shader_override
+else
+	ls "$@" | format_shader_override
+fi
