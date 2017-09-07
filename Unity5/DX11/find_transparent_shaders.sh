@@ -55,6 +55,12 @@ exclude_deferred_lighting()
 	xargs -0 grep -ZL 'Tags {.*"LIGHTMODE"="Deferred'
 }
 
+exclude_plane_preview_type()
+{
+	# Was too agressive unfortunately
+	xargs -0 grep -PLZ 'Tags { ((?!"PreviewType"="Plane").)*$'
+}
+
 include_zwrite_off_only()
 {
 	# Will not include any shaders with a mix of on and off - only includes
@@ -102,7 +108,23 @@ tee_shaders()
 {
 	# TODO: Should probably do this earlier, in case some of the duplicates
 	# don't have matching headers and get filtered inconsistently
-	tee "$SHADER_LIST_FILE"
+	cat > "$SHADER_LIST_FILE"
+	cat "$SHADER_LIST_FILE"
+}
+
+blacklist_shaders()
+{
+	# Blacklist any shaders known to cause issues or with suspicious names:
+	grep -v Text \                                 # Known to cause issues
+		| grep -v GUI \                        # Known to cause issues
+		| grep -v UI_Default \                 # Suspicious name
+		| grep -v Sprites_Default \            # Suspicious name
+		| grep -v Particles_Additive \         # Known to cause issues
+		| grep -v Mobile_ \                    # Suspicious name
+		| grep -v Particles \                  # Suspicious name
+		| grep -v Decal \                      # Suspicious name
+		| grep -v 'Particles_Alpha Blended' \  # Known to cause issues
+		| grep -v 'Unlit_Transparent Colored'  # Known to cause issues
 }
 
 format_shader_override()
@@ -168,4 +190,5 @@ find_pixel_shaders \
 	| strip_cwd \
 	| nul_to_newlines \
 	| tee_shaders \
+	| blacklist_shaders \
 	| format_shader_override
