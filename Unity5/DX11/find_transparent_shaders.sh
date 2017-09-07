@@ -1,10 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
 # Subshader tag reference:
 # https://docs.unity3d.com/462/Documentation/Manual/SL-SubshaderTags.html
 
 # Pass tag reference:
 # https://docs.unity3d.com/462/Documentation/Manual/SL-PassTags.html
+
+SHADER_LIST_FILE=$(mktemp)
+cleanup()
+{
+	if [ -f "$SHADER_LIST_FILE" ]; then
+		rm "$SHADER_LIST_FILE"
+	fi
+}
+trap cleanup EXIT
 
 include_transparent_tags()
 {
@@ -83,23 +92,66 @@ get_hash_from_filename()
 	echo "$@" | sed 's/^.*\///; s/-.s\.txt$//'
 }
 
+remove_duplicate_hashes()
+{
+	# -z flag for zero terminated makes this fail, so do this after nul_to_newlines
+	sort -t \/ -k 2 -u | sort
+}
+
+tee_shaders()
+{
+	# TODO: Should probably do this earlier, in case some of the duplicates
+	# don't have matching headers and get filtered inconsistently
+	tee "$SHADER_LIST_FILE"
+}
+
 format_shader_override()
 {
 	while read filename; do
 		hash=$(get_hash_from_filename "$filename")
-		cat << EOF
+		duplicates=$(grep "$hash" "$SHADER_LIST_FILE")
+		others=$(echo "$duplicates" | grep -v -- "$filename")
+		if [ -z "$(echo "$others")" ]; then
+
+			cat << EOF
+
 [ShaderOverride_Transparent_Depth_Buffer: $filename]
 allow_duplicate_hash = true
 hash = $hash
 run = CustomShader_Render_Transparent_Depth_Buffer
 EOF
-	done
-}
 
-remove_duplicate_hashes()
-{
-	# -z flag for zero terminated makes this fail, so do this after nul_to_newlines
-	sort -t \/ -k 2 -u
+		else
+			first=$(echo "$duplicates" | head -n 1)
+			we_are_first=$(echo "$first" | grep -- "$filename")
+
+			if [ -n "$we_are_first" ]; then
+				duplicate_warning=$(echo "$duplicates" | sed 's/^/; NOTE DUPLICATE: /')
+
+				cat << EOF
+
+[ShaderOverride_Transparent_Depth_Buffer: $filename]
+$duplicate_warning
+allow_duplicate_hash = true
+hash = $hash
+run = CustomShader_Render_Transparent_Depth_Buffer
+EOF
+
+			else
+
+				duplicate_warning=$(echo "$duplicates" | sed 's/^/; ; NOTE DUPLICATE: /')
+				cat << EOF
+
+; [ShaderOverride_Transparent_Depth_Buffer: $filename]
+$duplicate_warning
+; allow_duplicate_hash = true
+; hash = $hash
+; run = CustomShader_Render_Transparent_Depth_Buffer
+EOF
+
+			fi
+		fi
+	done
 }
 
 if [ $(basename "$PWD") != ShaderFNVs ]; then
@@ -115,6 +167,5 @@ find_pixel_shaders \
 	| exclude_deferred_lighting \
 	| strip_cwd \
 	| nul_to_newlines \
-	| remove_duplicate_hashes \
-	| sort \
+	| tee_shaders \
 	| format_shader_override
