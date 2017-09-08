@@ -181,7 +181,7 @@ EOF
 	done
 }
 
-if [ $(basename "$PWD") != ShaderFNVs ]; then
+if [ "$(basename "$PWD")" != ShaderFNVs ]; then
 	echo Must run this from ShaderFNVs
 	exit 1
 fi
