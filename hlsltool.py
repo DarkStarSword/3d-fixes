@@ -504,6 +504,16 @@ class Shader(object):
 
         raise KeyError()
 
+    def find_unity_cb_reg(self, cb_name, pos=None):
+        pos = self.declarations_txt.find('BindCB "%s"' % cb_name, pos)
+        if pos == -1:
+            raise KeyError()
+        match = unity_BindCB_pattern.match(self.declarations_txt, pos)
+        if match is None:
+            raise KeyError()
+
+        return int(match.group('cb'))
+
     def find_unity_cb_entry(self, pattern, type):
         match = self.find_header(pattern)
         offset = int(match.group(type))
@@ -518,14 +528,7 @@ class Shader(object):
         cb_name = match.group('name')
         cb_size = int(match.group('size'))
 
-        pos = self.declarations_txt.find('BindCB "%s"' % cb_name, match.end())
-        if pos == -1:
-            raise KeyError()
-        match = unity_BindCB_pattern.match(self.declarations_txt, pos)
-        if match is None:
-            raise KeyError()
-
-        cb = int(match.group('cb'))
+        cb = find_unity_cb_reg(cb_name, match.end())
 
         self.adjust_cb_size(cb, cb_size)
         return cb, offset
@@ -605,13 +608,30 @@ class Shader(object):
         if setting not in self.ini_settings:
             self.ini_settings.append(setting)
 
-    def replace_reg_on_line(self, i, old, new, components=None):
+    def replace_reg_on_line(self, i, old, new, components=None, remap_components=None):
         # NOTE: Replaces both lval and rval
         instr = self.instructions[i]
         if register_in_expression(str(instr), old, components):
-            # FIXME: Use a regular expression replace to ensure the
-            # replacement is on a word boundary:
-            self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
+            if remap_components is not None:
+                # Could eventually use this for the whole routine, but that
+                # risks a regression
+
+                def remap(match):
+                    reg = Register(**match.groupdict())
+                    if not regs_overlap(reg, old, components):
+                        return str(reg)
+                    assert(remap_components == '') # FIXME: Remap components if > 1, not just drop
+                    reg.variable = new
+                    if remap_components == '':
+                        reg.components = None
+                        return str(reg)
+
+                instr = register_pattern.sub(remap, str(instr))
+                self.instructions[i] = self.InstructionFactory(instr, 0)[0]
+            else:
+                # FIXME: Use a regular expression replace to ensure the
+                # replacement is on a word boundary:
+                self.instructions[i] = self.InstructionFactory(str(instr).replace(old, new), 0)[0]
             return True
         return False
 
@@ -620,7 +640,7 @@ class Shader(object):
         if register_in_expression(instr.rval, old):
             self.instructions[i] = instr.replace_rval_reg(old, new)
 
-    def replace_reg(self, old, new, components = None, limit = None, start = None):
+    def replace_reg(self, old, new, components = None, limit = None, start = None, remap_components = None):
         count = 0
         if start is not None and limit is not None:
             limit += start
@@ -629,7 +649,7 @@ class Shader(object):
                 if register_in_expression(str(self.instructions[i]), old, components):
                     count += 1
                     continue
-            count += self.replace_reg_on_line(i, old, new, components)
+            count += self.replace_reg_on_line(i, old, new, components, remap_components)
             if limit is not None and count >= limit:
                 break
         return count
@@ -793,6 +813,14 @@ class HLSLShader(Shader):
             return
         debug_verbose(0, 'Resizing cb{0}[{1}] declaration to cb{0}[{2}]'.format(cb, old_size, size))
         self.declarations_txt = self.declarations_txt[:pos] + str(size) + self.declarations_txt[pos2:]
+
+    def replace_cb_definition(self, cb, replacement):
+        search = 'cbuffer cb{} : '.format(cb)
+        pos = self.declarations_txt.find(search)
+        pos2 = self.declarations_txt.find('\n}', pos)
+        if pos == -1 or pos2 == -1:
+            return
+        self.declarations_txt = self.declarations_txt[:pos] + replacement + self.declarations_txt[pos2 + 2:]
 
     def append_declaration(self, declaration):
         self.declarations_txt += '\n%s\n\n' % declaration.strip()
@@ -1287,6 +1315,77 @@ def fix_unity_sun_shafts(shader):
 
     shader.autofixed = True
 
+def patch_unity_cbuffers(shader):
+    unity_type_pattern = re.compile(r'''
+        ^
+        \/\/
+        \s*
+        (?P<type>\w+)
+        \s
+        (?P<offset>\d+)
+        \s
+        \[
+        (?P<name>\w+)
+        \]
+        (?:
+            \s
+            (?P<size>\d+)
+        )?
+        $
+    ''', re.VERBOSE)
+
+    def unity_type_generator(start):
+        i = iter(shader.declarations_txt[start:].splitlines())
+        next(i)
+        for line in i:
+            c_match = unity_type_pattern.match(line)
+            if c_match is None:
+                return
+            yield(c_match.groups())
+
+    for cb_match in unity_ConstBuffer_pattern.finditer(shader.declarations_txt):
+        cb_name = cb_match.group('name')
+        cb = shader.find_unity_cb_reg(cb_name, cb_match.end())
+
+        cb_txt = 'cbuffer {} : register(b{}) {{\n'.format(cb_name.replace('$', ''), cb)
+        for unity_type, byte_offset, name, size in sorted(unity_type_generator(cb_match.start()), key=lambda x: int(x[1])):
+            byte_offset = int(byte_offset)
+            pack_offset = byte_offset // 16
+            pack_comp = {0: '', 4: '.y', 8: '.z', 12: '.w'}[byte_offset % 16]
+
+            if unity_type == 'Vector':
+                assert(not pack_comp) # FIXME: Remap components
+                size = size and int(size) or 4
+                components = 'xyzw'[:size]
+                hlsl_type = 'float{}'.format(size and size or 4)
+                if not pack_comp:
+                    cb_reg = 'cb{}[{}]'.format(cb, pack_offset)
+                    debug_verbose(0, 'replacing {} with {} {}'.format(cb_reg, hlsl_type, name))
+                    shader.replace_reg(cb_reg, name, components)
+            elif unity_type == 'Matrix':
+                assert(size is None) # FIXME: smaller than 4x4 matrix
+                assert(not pack_comp)
+                hlsl_type = 'row_major matrix'
+                for i in range(4):
+                    cb_reg = 'cb{}[{}]'.format(cb, pack_offset + i)
+                    repl = '{}[{}]'.format(name, i)
+                    debug_verbose(0, 'replacing {} with matrix {}'.format(cb_reg, repl, i))
+                    shader.replace_reg(cb_reg, repl)
+            else:
+                assert(size is None)
+                hlsl_type = {
+                        'Float': lambda x: 'float',
+                        'ScalarInt': lambda x: 'int',
+                }[unity_type](size)
+                comp = {0: 'x', 4: 'y', 8: 'z', 12: 'w'}[byte_offset % 16]
+                cb_reg = 'cb{}[{}]'.format(cb, pack_offset)
+                debug_verbose(0, 'replacing {}.{} with {} {}'.format(cb_reg, comp, hlsl_type, name))
+                shader.replace_reg(cb_reg, name, components=comp, remap_components='')
+
+            cb_txt += '  {} {} : packoffset(c{}{});\n'.format(hlsl_type, name, pack_offset, pack_comp)
+        cb_txt += '}'
+        shader.replace_cb_definition(cb, cb_txt)
+
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
     if os.path.basename(src_dir).lower() in ('shaderfixes', 'shadercache'):
@@ -1446,6 +1545,8 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
+    parser.add_argument('--patch-unity-cbuffers', action='store_true',
+            help="Patch Unity constant buffers to match the header definitions")
     parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
@@ -1494,6 +1595,9 @@ def main():
                 fix_unity_frustum_world(shader)
             if args.fix_unity_sun_shafts:
                 fix_unity_sun_shafts(shader)
+            if args.patch_unity_cbuffers:
+                # After other Unity fixes, which all depend on the cb[] string
+                patch_unity_cbuffers(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
