@@ -145,7 +145,7 @@ format_shader_override()
 [ShaderOverride_Transparent_Depth_Buffer: $filename]
 allow_duplicate_hash = true
 hash = $hash
-run = CustomShader_Render_Transparent_Depth_Buffer
+run = CommandList_Render_Transparent_Depth_Buffer
 EOF
 
 		else
@@ -161,7 +161,7 @@ EOF
 $duplicate_warning
 allow_duplicate_hash = true
 hash = $hash
-run = CustomShader_Render_Transparent_Depth_Buffer
+run = CommandList_Render_Transparent_Depth_Buffer
 EOF
 
 			else
@@ -173,7 +173,7 @@ EOF
 $duplicate_warning
 ; allow_duplicate_hash = true
 ; hash = $hash
-; run = CustomShader_Render_Transparent_Depth_Buffer
+; run = CommandList_Render_Transparent_Depth_Buffer
 EOF
 
 			fi
