@@ -528,7 +528,7 @@ class Shader(object):
         cb_name = match.group('name')
         cb_size = int(match.group('size'))
 
-        cb = find_unity_cb_reg(cb_name, match.end())
+        cb = self.find_unity_cb_reg(cb_name, match.end())
 
         self.adjust_cb_size(cb, cb_size)
         return cb, offset
