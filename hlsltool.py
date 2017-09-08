@@ -566,6 +566,11 @@ class Shader(object):
             instr += ' // ' + additional
         self.instructions[line] = Comment(instr)
 
+    def insert_vanity_header(self, where, what):
+        comments = vanity_comment(self.args, self, what)
+        comments_txt = ''.join([ '// %s\n' % comment for comment in comments ])
+        self.declarations_txt = '{}\n{}\n{}'.format(self.declarations_txt[:where], comments_txt, self.declarations_txt[where:])
+
     def insert_vanity_comment(self, where, what):
         off = 0
         off += self.insert_instr(where + off)
@@ -821,6 +826,7 @@ class HLSLShader(Shader):
         if pos == -1 or pos2 == -1:
             return
         self.declarations_txt = self.declarations_txt[:pos] + replacement + self.declarations_txt[pos2 + 2:]
+        return pos
 
     def append_declaration(self, declaration):
         self.declarations_txt += '\n%s\n\n' % declaration.strip()
@@ -1315,7 +1321,7 @@ def fix_unity_sun_shafts(shader):
 
     shader.autofixed = True
 
-def patch_unity_cbuffers(shader):
+def reconstruct_unity_cbuffers(shader):
     unity_type_pattern = re.compile(r'''
         ^
         \/\/
@@ -1343,6 +1349,7 @@ def patch_unity_cbuffers(shader):
                 return
             yield(c_match.groups())
 
+    vanity_pos = None
     for cb_match in unity_ConstBuffer_pattern.finditer(shader.declarations_txt):
         cb_name = cb_match.group('name')
         cb = shader.find_unity_cb_reg(cb_name, cb_match.end())
@@ -1384,7 +1391,11 @@ def patch_unity_cbuffers(shader):
 
             cb_txt += '  {} {} : packoffset(c{}{});\n'.format(hlsl_type, name, pack_offset, pack_comp)
         cb_txt += '}'
-        shader.replace_cb_definition(cb, cb_txt)
+        pos = shader.replace_cb_definition(cb, cb_txt)
+        if vanity_pos is None:
+            vanity_pos = pos
+    if vanity_pos:
+        shader.insert_vanity_header(pos, "Unity constant buffers reconstructed with")
 
 def find_game_dir(file):
     src_dir = os.path.dirname(os.path.realpath(os.path.join(os.curdir, file)))
@@ -1545,8 +1556,8 @@ def parse_args():
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
-    parser.add_argument('--patch-unity-cbuffers', action='store_true',
-            help="Patch Unity constant buffers to match the header definitions")
+    parser.add_argument('--reconstruct-unity-cbuffers', action='store_true',
+            help="Reconstruct Unity constant buffers from the extracted Unity headers")
     parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
             help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
@@ -1595,9 +1606,9 @@ def main():
                 fix_unity_frustum_world(shader)
             if args.fix_unity_sun_shafts:
                 fix_unity_sun_shafts(shader)
-            if args.patch_unity_cbuffers:
+            if args.reconstruct_unity_cbuffers:
                 # After other Unity fixes, which all depend on the cb[] string
-                patch_unity_cbuffers(shader)
+                reconstruct_unity_cbuffers(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
