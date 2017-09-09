@@ -529,7 +529,7 @@ class ASMShader(hlsltool.Shader):
             \s+ (?P<format>\w+)
             \s+ (?P<used>[x ][y ][z ][w ])
         $''', re.VERBOSE)
-        SignatureEntry = collections.namedtuple('Input', 'Name Index Mask Register SysValue Format Used'.split())
+        SignatureEntry = collections.namedtuple('Input', 'Name Index Mask Register SysValue Format Used end'.split())
 
         self.isgn = []
 
@@ -548,7 +548,7 @@ class ASMShader(hlsltool.Shader):
 
             (name, index, mask, register, sysvalue, format, used) = match.groups()
             (index, register) = map(int, (index, register))
-            self.isgn.append(SignatureEntry(name, index, mask, register, sysvalue, format, used))
+            self.isgn.append(SignatureEntry(name, index, mask, register, sysvalue, format, used, new_pos + 1))
             pos = new_pos + 1
 
         assert(False)
@@ -562,15 +562,18 @@ class ASMShader(hlsltool.Shader):
 
     def add_ps_texcoord_input(self, texcoord, components, format='float', comment=None):
         assert(components == 1)
-        isgn_end = self.parse_isgn()
+        self.parse_isgn()
         texcoords = filter(lambda x: x.Name == 'TEXCOORD', self.isgn)
         texcoords = sorted(texcoords, key = lambda x: x.Index)
+        if list(filter(lambda x: x.Index == texcoord, texcoords)):
+            raise KeyError('Shader already has TEXCOORD{}'.format(texcoord))
         last_texcoord = texcoords[-1]
         assert(last_texcoord.Mask == 'xyz ') # FIXME: Handle inserting in other cases
+        assert(last_texcoord.Index < texcoord) # FIXME: Handle inserting before other texcoords
         reg_no = last_texcoord.Register # FIXME: Increment register if could not merge
         mask = '   w'
-        # FIXME: Might need to insert this in the middle of the ISGN if there are certain other inputs present?
-        self.append_isgn_entry(isgn_end, 'TEXCOORD', texcoord, mask, reg_no, 'NONE', format, mask)
+        pos = last_texcoord.end
+        self.append_isgn_entry(pos, 'TEXCOORD', texcoord, mask, reg_no, 'NONE', format, mask)
         self.insert_decl()
         if comment:
             self.insert_decl('// ' + comment)
