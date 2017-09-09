@@ -669,8 +669,10 @@ class Shader(object):
         if self.ini_settings is None or self.hash is None:
             return
 
-        section = 'ShaderOverride_%s%016x' % (self.ini_name, self.hash)
-        d3dx_ini.setdefault(section, ['hash = %016x' % self.hash])
+        # Don't include the tool name in the ShaderOverride section name so
+        # that we get warnings if it was patched by both hlsltool and asmtool
+        section = "ShaderOverride_%s%016x Patched by DarkStarSword's shader tools" % (self.ini_name, self.hash)
+        d3dx_ini.setdefault(section, ['allow_duplicate_hash = true', 'hash = %016x' % self.hash])
         d3dx_ini[section].extend(self.ini_settings)
 
 class HLSLShader(Shader):
