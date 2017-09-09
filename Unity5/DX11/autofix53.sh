@@ -55,7 +55,7 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name 'bc1b4298b3713fce-vs*' \
 	       -o -name '28a7271021d7155a-vs*' \
 	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps.txt/' | xargs -0 \
-			asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed $LIGHTING_EXTRA | update_ini
+			asmtool.py -I ../.. --fix-unity-lighting-ps=TEXCOORD4 --only-autofixed $LIGHTING_EXTRA | update_ini
 fi
 
 if [ $FIX_SUN_SHAFTS -eq 1 ]; then

@@ -600,7 +600,7 @@ class Shader(object):
 
     def early_insert_multiple_lines(self, lines):
         off = 0
-        for line in map(str.strip, lines.splitlines()):
+        for line in map(str.rstrip, textwrap.dedent(lines).split('\n')):
             off += self.early_insert_instr(line)
         return off
 

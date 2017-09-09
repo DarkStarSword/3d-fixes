@@ -9,7 +9,7 @@
 # to use an approach based purely on pattern matching instead of the parser in
 # shadertool, which may not be as powerful, but should be simpler.
 
-import sys, os, re, collections, argparse, itertools, copy
+import sys, os, re, collections, argparse, itertools, copy, textwrap
 
 import shadertool, hlsltool
 
@@ -512,6 +512,72 @@ class ASMShader(hlsltool.Shader):
             if isinstance(instruction, Declaration):
                 raise SyntaxError("Bad shader: Mixed declarations with code: %s" % instruction)
 
+    def parse_isgn(self):
+        search_str = textwrap.dedent('''
+            // Input signature:
+            //
+            // Name                 Index   Mask Register SysValue  Format   Used
+            // -------------------- ----- ------ -------- -------- ------- ------
+        ''')
+        signature_pattern = re.compile(r'''
+            ^ \/\/
+            \s+ (?P<name>\w+)
+            \s+ (?P<index>\d+)
+            \s+ (?P<mask>[x ][y ][z ][w ])
+            \s+ (?P<register>\d+)
+            \s+ (?P<sysvalue>\w+)
+            \s+ (?P<format>\w+)
+            \s+ (?P<used>[x ][y ][z ][w ])
+        $''', re.VERBOSE)
+        SignatureEntry = collections.namedtuple('Input', 'Name Index Mask Register SysValue Format Used'.split())
+
+        self.isgn = []
+
+        pos = self.declarations_txt.find(search_str)
+        if pos == -1:
+            return
+
+        pos = pos + len(search_str)
+        while pos != -1:
+            new_pos = self.declarations_txt.find('\n', pos)
+            line = self.declarations_txt[pos:new_pos]
+
+            match = signature_pattern.match(line)
+            if match is None:
+                return pos
+
+            (name, index, mask, register, sysvalue, format, used) = match.groups()
+            (index, register) = map(int, (index, register))
+            self.isgn.append(SignatureEntry(name, index, mask, register, sysvalue, format, used))
+            pos = new_pos + 1
+
+        assert(False)
+
+    def append_isgn_entry(self, isgn_end_pos, name, index, mask, register, sysvalue, format, used):
+        #    // Name                 Index   Mask Register SysValue  Format   Used
+        #    // -------------------- ----- ------ -------- -------- ------- ------
+        x = '// {Name:<20} {Index:>5}   {Mask:>4} {Register:>8} {SysValue:>8} {Format:>7}   {Used:>4}\n'.format(
+                Name=name, Index=index, Mask=mask, Register=register, SysValue=sysvalue, Format=format, Used=used)
+        self.declarations_txt = self.declarations_txt[:isgn_end_pos] + x + self.declarations_txt[isgn_end_pos:]
+
+    def add_ps_texcoord_input(self, texcoord, components, format='float', comment=None):
+        assert(components == 1)
+        isgn_end = self.parse_isgn()
+        texcoords = filter(lambda x: x.Name == 'TEXCOORD', self.isgn)
+        texcoords = sorted(texcoords, key = lambda x: x.Index)
+        last_texcoord = texcoords[-1]
+        assert(last_texcoord.Mask == 'xyz ') # FIXME: Handle inserting in other cases
+        reg_no = last_texcoord.Register # FIXME: Increment register if could not merge
+        mask = '   w'
+        # FIXME: Might need to insert this in the middle of the ISGN if there are certain other inputs present?
+        self.append_isgn_entry(isgn_end, 'TEXCOORD', texcoord, mask, reg_no, 'NONE', format, mask)
+        self.insert_decl()
+        if comment:
+            self.insert_decl('// ' + comment)
+        reg = 'v{}.{}'.format(reg_no, mask.strip())
+        self.insert_decl('dcl_input_ps linear ' + reg)
+        return reg
+
     def find_reg_from_column_major_matrix_multiply(self, cb):
         results = self.scan_shader(cb, write=False, instr_type=DP4Instruction)
         if len(results) != 1:
@@ -830,7 +896,10 @@ def remap_cb(shader, cb, sb):
     shader.early_insert_instr()
 
 def fix_unity_lighting_ps(shader):
-    fix_unity_reflection(shader)
+    if args.fix_unity_lighting_ps[:-1] != 'TEXCOORD':
+        debug('ERROR: --fix-unity-lighting-ps must take a TEXCOORD')
+        return
+
     try:
         _CameraToWorld = cb_matrix(*shader.find_unity_cb_entry(shadertool.unity_CameraToWorld, 'matrix'))
         _ZBufferParams_cb, _ZBufferParams_offset = shader.find_unity_cb_entry(shadertool.unity_ZBufferParams, 'constant')
@@ -860,6 +929,11 @@ def fix_unity_lighting_ps(shader):
             _CameraDepthTexture = None
 
     debug_verbose(0, '_CameraToWorld in %s, _ZBufferParams in %s' % (_CameraToWorld, _ZBufferParams))
+
+    fov_reg = shader.add_ps_texcoord_input(int(args.fix_unity_lighting_ps[-1]), 1,
+            comment='New input from vertex shader with unity_CameraInvProjection[0].x:')
+
+    fix_unity_reflection(shader, fov_reg, _CameraToWorld)
 
     # Find _CameraToWorld usage - adjustment must be above this point, and this
     # gives us the register with X that needs to be adjusted:
@@ -923,9 +997,6 @@ def fix_unity_lighting_ps(shader):
         return
     (depth_line, _) = results[0]
 
-    # # TODO: Add comment 'New input from vertex shader with unity_CameraInvProjection[0].x'
-    # shader.add_parameter(False, None, 'float', 'fov', args.fix_unity_lighting_ps)
-
     shader.insert_decl('dcl_constantbuffer cb10[4], immediateIndexed') # Inversed VP
     off = shader.insert_stereo_params()
 
@@ -938,34 +1009,40 @@ def fix_unity_lighting_ps(shader):
         depth_reg = depth_reg,
     ))
 
-    # TODO once we can accept a new texcoord from the vertex shader
-    # pos = _CameraToWorld_line + offset
-    # debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (pos, depth, x_var))
-    # pos += shader.insert_vanity_comment(pos, "Unity light/shadow fix (pixel shader stage) inserted with")
-    # pos += shader.insert_instr(pos, 'if (fov) {')
-    # pos += shader.insert_instr(pos, '  %s -= separation * (depth - convergence) * fov;' % (x_var))
-    # pos += shader.insert_instr(pos, '}')
-    # pos += shader.insert_instr(pos)
-
     clip_space_adj = shader.allocate_temp_reg()
-    world_space_adj = shader.allocate_temp_reg()
 
-    off = _CameraToWorld_end + off + 1
+    off = _CameraToWorld_line + off
+    debug_verbose(-1, 'Line %i: Applying Unity pixel shader light/shadow fix. depth in %s, x in %s' % (off, depth, x_var))
     off += shader.insert_vanity_comment(off, "Unity light/shadow fix (pixel shader stage) inserted with")
     off += shader.insert_multiple_lines(off, '''
         add {clip_space_adj}.x, {depth}.x, -{stereo}.y
         mul {clip_space_adj}.x, {stereo}.x, {clip_space_adj}.x
-        mul {world_space_adj}.xyzw, {InvVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        add {world_var}.{world_mask}, {world_var}.xyzw, -{world_space_adj}.{world_adj_swizzle}
+        ne {stereo}.w, l(0.0, 0.0, 0.0, 0.0), {fov_reg}
+        if_nz {stereo}.w
+          mad {x_var}, -{clip_space_adj}.x, {fov_reg}, {x_var}
+        endif
     '''.format(
         depth = depth_reg,
         stereo = shader.stereo_params_reg,
         clip_space_adj = clip_space_adj,
-        world_space_adj = world_space_adj,
+        fov_reg = fov_reg,
+        x_var = x_var,
+    ))
+
+    off = off - _CameraToWorld_line + _CameraToWorld_end + 1
+    off += shader.insert_multiple_lines(off, '''
+        if_z {stereo}.w
+          mad {world_var}.{world_mask}, -{clip_space_adj}.xxxx, {InvVPMatrix0}.{world_adj_swizzle}, {world_var}.xyzw
+        endif
+    '''.format(
+        depth = depth_reg,
+        stereo = shader.stereo_params_reg,
+        clip_space_adj = clip_space_adj,
         InvVPMatrix0 = 'cb10[0]',
         world_var = world_reg.variable,
         world_mask = world_reg.components[:3],
         world_adj_swizzle = shader.remap_components('xyz', world_reg.components[:3]),
+        fov_reg = fov_reg,
     ))
 
     shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
@@ -976,7 +1053,7 @@ def fix_unity_lighting_ps(shader):
 
     shader.autofixed = True
 
-def fix_unity_reflection(shader):
+def fix_unity_reflection(shader, fov_reg = None, _CameraToWorld = None):
     try:
         _WorldSpaceCameraPos = cb_offset(*shader.find_unity_cb_entry(shadertool.unity_WorldSpaceCameraPos, 'constant'))
     except KeyError:
@@ -988,27 +1065,42 @@ def fix_unity_reflection(shader):
     shader.insert_stereo_params()
 
     repl_WorldSpaceCameraPos = shader.allocate_temp_reg()
-    clip_space_adj = shader.allocate_temp_reg()
-    world_space_adj = shader.allocate_temp_reg()
 
     # Apply a stereo correction to the world space camera position - this
     # pushes environment reflections, specular highlights, etc to the correct
     # depth
     shader.replace_reg(_WorldSpaceCameraPos, repl_WorldSpaceCameraPos, 'xyz')
     shader.early_insert_vanity_comment("Unity reflection/specular fix inserted with")
-    shader.early_insert_multiple_lines('''
-        mov {repl_WorldSpaceCameraPos}.xyzw, {_WorldSpaceCameraPos}.xyzw
-        mul {clip_space_adj}.x, -{stereo}.x, {stereo}.y
-        mul {world_space_adj}.xyzw, {InvVPMatrix0}.xyzw, {clip_space_adj}.xxxx
-        add {repl_WorldSpaceCameraPos}.xyz, {repl_WorldSpaceCameraPos}.xyz, -{world_space_adj}.xyz
-    '''.lstrip().format(
-        _WorldSpaceCameraPos = _WorldSpaceCameraPos,
-        repl_WorldSpaceCameraPos = repl_WorldSpaceCameraPos,
-        stereo = shader.stereo_params_reg,
-        clip_space_adj = clip_space_adj,
-        world_space_adj = world_space_adj,
-        InvVPMatrix0 = 'cb10[0]',
-    ))
+    if fov_reg is None:
+        shader.early_insert_multiple_lines('''
+            mul {stereo}.w, -{stereo}.x, {stereo}.y
+            mad {repl_WorldSpaceCameraPos}.xyz, -{stereo}.wwww, {InvVPMatrix0}.xyzw, {_WorldSpaceCameraPos}.xyzw
+        '''.format(
+            _WorldSpaceCameraPos = _WorldSpaceCameraPos,
+            repl_WorldSpaceCameraPos = repl_WorldSpaceCameraPos,
+            stereo = shader.stereo_params_reg,
+            InvVPMatrix0 = 'cb10[0]',
+        ))
+    else:
+        tmp = shader.allocate_temp_reg()
+        shader.early_insert_multiple_lines('''
+            mul {stereo}.w, -{stereo}.x, {stereo}.y
+            ne {tmp}.x, l(0.0, 0.0, 0.0, 0.0), {fov_reg}
+            if_nz {tmp}.x
+              mul {stereo}.w, {stereo}.w, {fov_reg}
+              mad {repl_WorldSpaceCameraPos}.xyz, -{stereo}.wwww, {_CameraToWorld0}.xyzw, {_WorldSpaceCameraPos}.xyzw
+            else
+              mad {repl_WorldSpaceCameraPos}.xyz, -{stereo}.wwww, {InvVPMatrix0}.xyzw, {_WorldSpaceCameraPos}.xyzw
+            endif
+        '''.format(
+            _WorldSpaceCameraPos = _WorldSpaceCameraPos,
+            repl_WorldSpaceCameraPos = repl_WorldSpaceCameraPos,
+            stereo = shader.stereo_params_reg,
+            tmp = tmp,
+            fov_reg = fov_reg,
+            _CameraToWorld0 = _CameraToWorld[0],
+            InvVPMatrix0 = 'cb10[0]',
+        ))
 
     if hlsltool.possibly_copy_unity_world_matrices(shader):
         shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_MVP')
@@ -1052,7 +1144,7 @@ def fix_unity_frustum_world(shader):
         add {repl_FrustumCornersWS0}.xyzw, {_FrustumCornersWS0}.xyzw, -{world_space_adj}.xxxx
         add {repl_FrustumCornersWS1}.xyzw, {_FrustumCornersWS1}.xyzw, -{world_space_adj}.yyyy
         add {repl_FrustumCornersWS2}.xyzw, {_FrustumCornersWS2}.xyzw, -{world_space_adj}.zzzz
-    '''.lstrip().format(
+    '''.format(
         far = far,
         _ZBufferParams = 'cb13[7]',
         stereo = shader.stereo_params_reg,
@@ -1917,7 +2009,7 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
     parser.add_argument('--remap-cb', action='append', nargs=2, type=int, default=[],
             help="Remap accesses of a given constant buffer to a structured buffer")
-    parser.add_argument('--fix-unity-lighting-ps', action='store_true',
+    parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
             help="Correct the Unity camera position to fix certain cases of specular highlights, reflections and some fake transparent windows. Requires a valid MVP and _Object2World matrices copied from elsewhere")
