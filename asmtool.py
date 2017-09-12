@@ -905,6 +905,21 @@ def remap_cb(shader, cb, sb):
         shader.replace_reg('cb{cb}[{idx}]'.format(cb=cb, idx=cb_idx), reg)
     shader.early_insert_instr()
 
+def disable_driver_stereo_cb(shader):
+    if not shader.shader_model.startswith('vs_') and not shader.shader_model.startswith('ds_'):
+        debug_verbose(0, 'Disabling the driver stereo correction is only applicable to vertex and domain shaders')
+        return
+
+    cb = args.disable_driver_stereo_cb
+
+    cb_declaration = shader.find_cb_declaration(cb)
+    if cb_declaration:
+        debug_verbose(0, 'Shader already declares cb{}'.format(cb))
+        return
+
+    shader.insert_decl('// Disables driver stereo correction:')
+    shader.insert_decl('dcl_constantbuffer cb{}[4], immediateIndexed'.format(cb))
+
 def fix_unity_lighting_ps(shader):
     if args.fix_unity_lighting_ps[:-1] != 'TEXCOORD':
         debug('ERROR: --fix-unity-lighting-ps must take a TEXCOORD')
@@ -2019,6 +2034,8 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
     parser.add_argument('--remap-cb', action='append', nargs=2, type=int, default=[],
             help="Remap accesses of a given constant buffer to a structured buffer")
+    parser.add_argument('--disable-driver-stereo-cb', nargs='?', type=int, const=12,
+            help="Disable the driver stereo correction by defining the same constant buffer it uses")
     parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
            help="Apply a correction to Unity lighting pixel shaders. NOTE: This is only one part of the Unity lighting fix - you also need the vertex shaders & d3dx.ini from my template!")
     parser.add_argument('--fix-unity-reflection', action='store_true',
@@ -2127,6 +2144,8 @@ def main():
             for cb, sb in args.remap_cb:
                 # Do this late in case it is used in conjunction with other patterns
                 remap_cb(shader, cb, sb)
+            if args.disable_driver_stereo_cb is not None:
+                disable_driver_stereo_cb(shader)
         except Exception as e:
             if args.ignore_other_errors:
                 collected_errors.append((file, e))
