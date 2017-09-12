@@ -863,7 +863,11 @@ def remap_cb(shader, cb, sb):
     if not cb_declaration:
         debug_verbose(0, 'Constant buffer cb{cb} declaration not found'.format(cb=cb))
         return
-    stride = cb_declaration.size * 16
+
+    # Structured buffers max stride is 2048. While it seems to still assemble
+    # and run ok if we ignore that, let's play it safe and use the structure
+    # index to give us access to anything above the 2048 mark:
+    stride = min(cb_declaration.size * 16, 2048)
 
     pattern = re.compile(r'''
         cb{cb}\[ (?P<index>\d+) \]
@@ -885,17 +889,20 @@ def remap_cb(shader, cb, sb):
 
     shader.early_insert_vanity_comment('cb{cb} remapped to t{sb} with'.format(cb=cb, sb=sb))
 
-    for index in cb_refs:
+    for cb_idx in sorted(map(int, cb_refs)):
         reg = shader.allocate_temp_reg()
+        cb_offset = int(cb_idx) * 16
+        structure_idx = cb_offset // stride
+        structure_offset = cb_offset % stride
         if shader.shader_model.endswith('_4_0'):
             shader.early_insert_instr(
-                'ld_structured {reg}.xyzw, l(0), l({offset}), t{sb}.xyzw' \
-                .format(offset = int(index) * 16, reg = reg, sb = sb))
+                'ld_structured {reg}.xyzw, l({idx}), l({offset}), t{sb}.xyzw' \
+                .format(idx = structure_idx, offset = structure_offset, reg = reg, sb = sb))
         elif shader.shader_model.endswith('_5_0'):
             shader.early_insert_instr(
-                'ld_structured_indexable(structured_buffer, stride={stride})(mixed,mixed,mixed,mixed) {reg}.xyzw, l(0), l({offset}), t{sb}.xyzw' \
-                .format(offset = int(index) * 16, stride = stride, reg = reg, sb = sb))
-        shader.replace_reg('cb{cb}[{idx}]'.format(cb=cb, idx=index), reg)
+                'ld_structured_indexable(structured_buffer, stride={stride})(mixed,mixed,mixed,mixed) {reg}.xyzw, l({idx}), l({offset}), t{sb}.xyzw' \
+                .format(idx = structure_idx, offset = structure_offset, stride = stride, reg = reg, sb = sb))
+        shader.replace_reg('cb{cb}[{idx}]'.format(cb=cb, idx=cb_idx), reg)
     shader.early_insert_instr()
 
 def fix_unity_lighting_ps(shader):
