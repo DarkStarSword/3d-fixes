@@ -288,9 +288,19 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// Get the inverse stereo injection matrices:
 	matrix stereo_injection_i = inverse(stereo_injection_f);
 
-	// Use the stereo injection matrices to add a stereo correction to
-	// ClipToTranslatedWorld:
-	matrix Stereo_ClipToTranslatedWorld = mul(stereo_injection_i, mono.ClipToTranslatedWorld);
+	// Use the stereo injection matrices to add a stereo corrections to
+	// various matrices (not all of these are tested):
+	stereo[0].TranslatedWorldToClip = mul(mono.TranslatedWorldToClip, stereo_injection_f);
+	matrix stereo_WorldToClip = mul(mono.WorldToClip, stereo_injection_f);
+	stereo[0].WorldToClip = stereo_WorldToClip;
+	// stereo[0].TranslatedWorldToView; // TODO: Reflections
+	// stereo[0].ViewToTranslatedWorld; // TODO: Reflections
+	// stereo[0].TranslatedWorldToCameraView; // TODO: Reflections
+	// stereo[0].CameraViewToTranslatedWorld; // TODO: Reflections
+	stereo[0].ViewToClip = stereo_projection; // TODO: Reflections
+	stereo[0].ClipToView = mul(stereo_injection_i, mono.ClipToView); // TODO: Reflections
+	matrix stereo_ClipToTranslatedWorld = mul(stereo_injection_i, mono.ClipToTranslatedWorld);
+	stereo[0].ClipToTranslatedWorld = stereo_ClipToTranslatedWorld;
 
 	// We actually need to alter SVPositionToTranslatedWorld, but that
 	// matrix does not begin with an inverse projection matrix - it has an
@@ -300,10 +310,22 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// need to be certain that we are always using the same values as the
 	// game):
 	matrix SVPositionToClip = mul(mono.SVPositionToTranslatedWorld, mono.TranslatedWorldToClip);
+	stereo[0].SVPositionToTranslatedWorld = mul(SVPositionToClip, stereo_ClipToTranslatedWorld);
 
-	// Create a stereo version of SVPositionToTranslatedWorld:
-	stereo[0].SVPositionToTranslatedWorld = mul(SVPositionToClip, Stereo_ClipToTranslatedWorld);
+	matrix ScreenToClip = mul(mono.ScreenToWorld, mono.WorldToClip);
+	// Should be able to do better than inversing another matrix - we can
+	// multiply the stereo_ClipToTranslatedWorld by a translation matrix:
+	matrix stereo_ClipToWorld = inverse(stereo_WorldToClip);
+	stereo[0].ScreenToWorld = mul(ScreenToClip, stereo_ClipToWorld);
+	stereo[0].ScreenToTranslatedWorld = mul(ScreenToClip, stereo_ClipToTranslatedWorld);
 
-	// TODO: Create a modified version of the whole buffer, possibly with
-	// other projection matrices modified to fix other effects
+	// WorldCameraOrigin and WorldViewOrigin appear to be the same thing - is there a difference?
+	float4 cam_adj_clip = float4(-sep * conv, 0, 0, 0);
+	float3 cam_adj_world = mul(cam_adj_clip, mono.ClipToTranslatedWorld).xyz;
+	stereo[0].WorldCameraOrigin = mono.WorldCameraOrigin - cam_adj_world;
+	stereo[0].WorldViewOrigin = mono.WorldViewOrigin - cam_adj_world;
+	//stereo[0].PreViewTranslation = mono.PreViewTranslation + cam_adj_world; // XXX: Breaks depth buffer ray traced shadows
+
+	// TODO: Adjust previous frame translations, or copy from previous
+	//       frame buffer (might fix things like temporal AA)
 }
