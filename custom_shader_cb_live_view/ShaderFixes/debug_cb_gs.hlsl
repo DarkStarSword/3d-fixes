@@ -12,6 +12,8 @@ cbuffer cb13 : register(b13)
 	float4 cb13[4096];
 }
 
+Buffer<float4> t113 : register(t113);
+
 struct vs2gs {
 	uint idx : TEXCOORD0;
 };
@@ -173,6 +175,12 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	float4 cval = cb13[idx];
 	float char_height = char_size.y / resolution.y * 2 * font_scale;
 	int max_y = resolution.y / char_size.y * font_scale;
+	uint t113len;
+
+	// If t113 is set we use that instead of cb13:
+	t113.GetDimensions(t113len);
+	if (t113len)
+		cval = t113[idx];
 
 	cur_pos = float2(-1 + (idx / max_y * 0.32), 1 - (idx % max_y) * char_height);
 	if (cur_pos.x >= 1)
