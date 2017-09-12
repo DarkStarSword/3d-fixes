@@ -30,6 +30,9 @@ typedef float float_half;
 
 // UnrealEngine/Engine/Source/Runtime/Engine/Public/SceneView.h
 // UnrealEngine/Engine/Source/Runtime/Engine/Private/SceneView.cpp
+// Note that since this is used for a UAV structure definition we need to
+// manually pad it so that it will match the HLSL constant buffer packing:
+// https://msdn.microsoft.com/en-us/library/windows/desktop/bb509632(v=vs.85).aspx
 struct FViewUniformShaderParameters {
 	/*   0[4]  */ FMatrix TranslatedWorldToClip;
 	/*   4[4]  */ FMatrix WorldToClip;
@@ -45,13 +48,18 @@ struct FViewUniformShaderParameters {
 	/*  44[4]  */ FMatrix ScreenToTranslatedWorld;
 
 	/*  48.xyz */ FVector_half ViewForward;
+	/* PAD.w   */ float UAV_PADDING_ViewForward;
 	/*  49.xyz */ FVector_half ViewUp;
+	/* PAD.w   */ float UAV_PADDING_ViewUp;
 	/*  50.xyz */ FVector_half ViewRight;
+	/* PAD.w   */ float UAV_PADDING_ViewRight;
 #ifdef NEW_UE4
 	// Newer versions of UE4 only (if not sure, check if these match the
 	// values in ViewUp/Right with no HMD present):
 	/*  51.xyz */ FVector_half HMDViewNoRollUp;
+	/* PAD.w   */ float UAV_PADDING_HMDViewNoRollUp;
 	/*  52.xyz */ FVector_half HMDViewNoRollRight;
+	/* PAD.w   */ float UAV_PADDING_HMDViewNoRollRight;
 #endif
 	/*  53     */ FVector4 InvDeviceZToWorldZTransform;
 	/*  54     */ FVector4_half ScreenPositionScaleBias;
@@ -60,9 +68,13 @@ struct FViewUniformShaderParameters {
 	/*  55     */ FVector4_half senua_specific_56;
 #endif
 	/*  55.xyz */ FVector WorldCameraOrigin;
+	/* PAD.w   */ float UAV_PADDING_WorldCameraOrigin;
 	/*  56.xyz */ FVector TranslatedWorldCameraOrigin;
+	/* PAD.w   */ float UAV_PADDING_TranslatedWorldCameraOrigin;
 	/*  57.xyz */ FVector WorldViewOrigin;
+	/* PAD.w   */ float UAV_PADDING_WorldViewOrigin;
 	/*  58.xyz */ FVector PreViewTranslation;
+	/* PAD.w   */ float UAV_PADDING_PreViewTranslation;
 
 	/*  59[4]  */ FMatrix PrevProjection;
 	/*  63[4]  */ FMatrix PrevViewProj;
@@ -76,8 +88,11 @@ struct FViewUniformShaderParameters {
 	/*  95[4]  */ FMatrix PrevCameraViewToTranslatedWorld;
 
 	/*  99.xyz */ FVector PrevWorldCameraOrigin;
+	/* PAD.w   */ float UAV_PADDING_PrevWorldCameraOrigin;
 	/* 100.xyz */ FVector PrevWorldViewOrigin;
+	/* PAD.w   */ float UAV_PADDING_PrevWorldViewOrigin;
 	/* 101.xyz */ FVector PrevPreViewTranslation;
+	/* PAD.w   */ float UAV_PADDING_PrevPreViewTranslation;
 
 	/* 102[4]  */ FMatrix PrevInvViewProj;
 	/* 106[4]  */ FMatrix PrevScreenToTranslatedWorld;
@@ -100,6 +115,7 @@ struct FViewUniformShaderParameters {
 	/* 117     */ FVector4 ViewSizeAndInvSize;
 	/* 118     */ FVector4 BufferSizeAndInvSize;
 	/* 119.x   */ int32 NumSceneColorMSAASamples;
+	/* PAD.yzw */ float3 UAV_PADDING_NumSceneColorMSAASamples;
 	/* 120     */ FVector4_half ExposureScale;
 	/* 121     */ FVector4_half DiffuseOverrideParameter;
 	/* 122     */ FVector4_half SpecularOverrideParameter;
@@ -114,6 +130,7 @@ struct FViewUniformShaderParameters {
 	/* 124.z   */ float PrevFrameGameTime;
 	/* 124.w   */ float PrevFrameRealTime;
 	/* 125.x   */ float_half OutOfBoundsMask;
+	/* PAD.yzw */ float3 UAV_PADDING_OutOfBoundsMask;
 	/* 126.xyz */ FVector WorldCameraMovementSinceLastFrame;
 	/* 126.w   */ float CullingSign;
 	/* 127.x   */ float_half NearPlane;
@@ -127,6 +144,7 @@ struct FViewUniformShaderParameters {
 	/* 128.z   */ uint32 StateFrameIndexMod8;
 	/* 128.w   */ float_half CameraCut;
 	/* 129.x   */ float_half UnlitViewmodeMask;
+	/* PAD.yzw */ float3 UAV_PADDING_UnlitViewmodeMask;
 	/* 130     */ FLinearColor_half DirectionalLightColor;
 	/* 131     */ FVector_half DirectionalLightDirection;
 	/* 132[2]  */ FVector4 TranslucencyLightingVolumeMin[TVC_MAX];
@@ -166,6 +184,7 @@ struct FViewUniformShaderParameters {
 	/* 148     */ FLinearColor AmbientCubemapTint;
 	/* 149.x   */ float AmbientCubemapIntensity;
 	/* 149.y   */ float SkyLightParameters;
+	/* PAD.zw  */ float UAV_PADDING_SkyLightParameters;
 	/* 150     */ FVector4 SceneTextureMinMax;
 	/* 151     */ FLinearColor SkyLightColor;
 	/* 152[7]  */ FVector4 SkyIrradianceEnvironmentMap[7];
@@ -175,6 +194,7 @@ struct FViewUniformShaderParameters {
 	/* 159.w   */ float ShowDecalsMask;
 	/* 160.x   */ uint32 DistanceFieldAOSpecularOcclusionMode;
 	/* 160.y   */ float IndirectCapsuleSelfShadowingIntensity;
+	/* PAD.zw  */ float UAV_PADDING_IndirectCapsuleSelfShadowingIntensity;
 	/* 161.xyz */ FVector ReflectionEnvironmentRoughnessMixingScaleBiasAndLargestWeight;
 	/* 161.w   */ int32 StereoPassIndex;
 	/* 162[4]  */ FVector4 GlobalVolumeCenterAndExtent_UB[GMaxGlobalDistanceFieldClipmaps];
