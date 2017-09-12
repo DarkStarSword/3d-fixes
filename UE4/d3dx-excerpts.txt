@@ -1,0 +1,46 @@
+;;;;;;;;;;;;;;; DarkStarSword's UE4 Constant Buffer Stereoisation Technique ;;;;;;;;;;;;;
+
+[ResourceFViewUniformShaderParameters_Mono_CB]
+[ResourceFViewUniformShaderParameters_Stereo_SRV_UAV]
+; When copying a constant buffer into a SRV, UAV or RTV, 3DMigoto will try to
+; create the destination as a structured buffer with the stride equal to the
+; total buffer size, which in this case is 4096 and that turns out to be too
+; large and DirectX refuses to create the resource. Forcing the stride to any
+; multiple of 16 up to 2048 works just fine, and doesn't seem to have an impact
+; on the stride used when accessing the buffer inside the shader. Future
+; releases of 3DMigoto might do this automatically if I can confirm that this
+; will work universally, including older graphics cards.
+stride = 2048
+
+[ResourceBakCB]
+[CustomShader_Stereoise_FViewUniformShaderParameters]
+max_executions_per_frame = 1
+cs = ShaderFixes/stereoise_FViewUniformShaderParameters.hlsl
+ResourceFViewUniformShaderParameters_Stereo_SRV_UAV = stereo copy ResourceFViewUniformShaderParameters_Mono_CB
+cs-cb13 = ResourceFViewUniformShaderParameters_Mono_CB
+post cs-cb13 = null
+ResourceBakCB = ref cs-u0
+cs-u0 = ResourceFViewUniformShaderParameters_Stereo_SRV_UAV
+post cs-u0 = ResourceBakCB
+dispatch = 1, 1, 1
+
+; If the game ever renders a second off-screen scene we may need this:
+;[ClearDepthStencilView]
+;reset_per_frame_limits = CustomShader_Stereoise_FViewUniformShaderParameters
+
+; [ShaderOverrideStereoiseCBExample]
+; ; Remap the FViewUniformShaderParameters constant buffer to t100 with asmtool
+; ; and add a section like this. e.g. if the constant buffer is bound as cb0
+; ; in the shader you would do:
+; ; asmtool --remap-cb 0 100 -i xxxxxxxxxxxxxxxx-ps.txt
+; hash = xxxxxxxxxxxxxxxx
+; ResourceFViewUniformShaderParameters_Mono_CB = ref ps-cb0
+; run = CustomShader_Stereoise_FViewUniformShaderParameters
+; ps-t100 = ResourceFViewUniformShaderParameters_Stereo_SRV_UAV
+; post ps-t100 = null
+; ; This can be used in conjunction with my constant buffer debug shader to see
+; ; either the original mono or modified stereo buffers:
+; ;ResourceDebugCB = ps-cb0
+; ;ResourceDebugBuf = ps-t100
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
