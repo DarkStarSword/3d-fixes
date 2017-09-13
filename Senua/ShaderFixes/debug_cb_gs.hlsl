@@ -1,4 +1,5 @@
 Texture2D<float> font : register(t100);
+Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
 static const float font_scale = 1.0;
@@ -177,10 +178,13 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	int max_y = resolution.y / char_size.y * font_scale;
 	uint t113len;
 
-	// If t113 is set we use that instead of cb13:
+	// If t113 is set we use that instead of cb13, if neither are set
+	// (using 3DMigoto 1.2.65 feature to test if cb13 is bound) we bail:
 	t113.GetDimensions(t113len);
 	if (t113len)
 		cval = t113[idx];
+	else if (asint(IniParams[7].w) == asint(-0.0))
+		return;
 
 	cur_pos = float2(-1 + (idx / max_y * 0.32), 1 - (idx % max_y) * char_height);
 	if (cur_pos.x >= 1)
