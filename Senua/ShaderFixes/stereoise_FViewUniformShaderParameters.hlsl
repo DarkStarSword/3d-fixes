@@ -323,6 +323,7 @@ void main(uint3 tid: SV_DispatchThreadID)
 	float4 cam_adj_clip = float4(-sep * conv, 0, 0, 0);
 	float3 cam_adj_world = mul(cam_adj_clip, mono.ClipToTranslatedWorld).xyz;
 	stereo[0].WorldCameraOrigin = mono.WorldCameraOrigin - cam_adj_world;
+	stereo[0].TranslatedWorldCameraOrigin = mono.TranslatedWorldCameraOrigin - cam_adj_world; // Fixes reflections
 	stereo[0].WorldViewOrigin = mono.WorldViewOrigin - cam_adj_world;
 	//stereo[0].PreViewTranslation = mono.PreViewTranslation + cam_adj_world; // XXX: Breaks depth buffer ray traced shadows
 
