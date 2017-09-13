@@ -905,6 +905,8 @@ def remap_cb(shader, cb, sb):
         shader.replace_reg('cb{cb}[{idx}]'.format(cb=cb, idx=cb_idx), reg)
     shader.early_insert_instr()
 
+    shader.autofixed = True
+
 def disable_driver_stereo_cb(shader):
     if not shader.shader_model.startswith('vs_') and not shader.shader_model.startswith('ds_'):
         debug_verbose(0, 'Disabling the driver stereo correction is only applicable to vertex and domain shaders')
@@ -919,6 +921,9 @@ def disable_driver_stereo_cb(shader):
 
     shader.insert_decl('// Disables driver stereo correction:')
     shader.insert_decl('dcl_constantbuffer cb{}[4], immediateIndexed'.format(cb))
+
+    # Not counting this as autofixed since we expect to be doing something else
+    # as well. Important for UE4 autofix script.
 
 def fix_unity_lighting_ps(shader):
     if args.fix_unity_lighting_ps[:-1] != 'TEXCOORD':
@@ -2096,6 +2101,7 @@ def parse_args():
 def main():
     parse_args()
     shadertool.expand_wildcards(args)
+    success = False
     for file in args.files:
         debug_verbose(-2, 'parsing %s...' % file)
         shader = ASMShader(file)
@@ -2162,26 +2168,31 @@ def main():
             if args.output:
                 print(shader, end='', file=args.output)
                 shader.update_ini()
+                success = True
             if args.in_place:
                 tmp = '%s.new' % real_file
                 print(shader, end='', file=open(tmp, 'w'))
                 os.rename(tmp, real_file)
                 shader.update_ini()
+                success = True
             if args.install:
                 if hlsltool.install_shader(shader, file, args):
                     shader.update_ini()
-                    pass
+                    success = True
             if args.install_to:
                 if hlsltool.install_shader_to(shader, file, args, os.path.expanduser(args.install_to), True):
                     shader.update_ini()
-                    pass
+                    success = True
             if args.to_git:
                 a = copy.copy(args)
                 a.force = True
                 if hlsltool.install_shader_to_git(shader, file, a):
                     shader.update_ini()
+                    success = True
     show_collected_errors()
     hlsltool.do_ini_updates()
+    if not success:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
