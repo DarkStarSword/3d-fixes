@@ -213,6 +213,7 @@ cbuffer FViewUniformShaderParameters : register(b13)
 }
 
 RWStructuredBuffer<struct FViewUniformShaderParameters> stereo : register(u0);
+StructuredBuffer<struct FViewUniformShaderParameters> prev : register(t113);
 
 matrix inverse(matrix m)
 {
@@ -282,23 +283,39 @@ void main(uint3 tid: SV_DispatchThreadID)
 	stereo_projection._m20 = sep;
 	stereo_projection._m30 = -sep * conv;
 
+	float4 cam_adj_clip = float4(-sep * conv, 0, 0, 0);
+	float3 cam_adj_view = mul(cam_adj_clip, mono.ClipToView).xyz;
+	float3 cam_adj_world = mul(cam_adj_clip, mono.ClipToTranslatedWorld).xyz;
+
 	// Calculate the forwards stereo injection matrices, by multiplying the
 	// inverse projection matrix by the forwards stereo projection matrix:
 	matrix stereo_injection_f = mul(mono.ClipToView, stereo_projection);
 	// Get the inverse stereo injection matrices:
 	matrix stereo_injection_i = inverse(stereo_injection_f);
 
+	matrix view_correction_f = matrix(
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			cam_adj_view.x, cam_adj_view.y, cam_adj_view.z, 1);
+
+	matrix view_correction_i = matrix(
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			-cam_adj_view.x, -cam_adj_view.y, -cam_adj_view.z, 1);
+
 	// Use the stereo injection matrices to add a stereo corrections to
 	// various matrices (not all of these are tested):
 	stereo[0].TranslatedWorldToClip = mul(mono.TranslatedWorldToClip, stereo_injection_f);
 	matrix stereo_WorldToClip = mul(mono.WorldToClip, stereo_injection_f);
 	stereo[0].WorldToClip = stereo_WorldToClip;
-	// stereo[0].TranslatedWorldToView; // TODO: Reflections
-	// stereo[0].ViewToTranslatedWorld; // TODO: Reflections
-	// stereo[0].TranslatedWorldToCameraView; // TODO: Reflections
-	// stereo[0].CameraViewToTranslatedWorld; // TODO: Reflections
-	stereo[0].ViewToClip = stereo_projection; // TODO: Reflections
-	stereo[0].ClipToView = mul(stereo_injection_i, mono.ClipToView); // TODO: Reflections
+	stereo[0].TranslatedWorldToView = mul(mono.TranslatedWorldToView, view_correction_f);
+	stereo[0].ViewToTranslatedWorld = mul(view_correction_i, mono.ViewToTranslatedWorld);
+	stereo[0].TranslatedWorldToCameraView = mul(mono.TranslatedWorldToCameraView, view_correction_f);
+	stereo[0].CameraViewToTranslatedWorld = mul(view_correction_i, mono.CameraViewToTranslatedWorld);
+	stereo[0].ViewToClip = mul(view_correction_i, stereo_projection);
+	stereo[0].ClipToView = mul(mul(stereo_injection_i, mono.ClipToView), view_correction_f);
 	matrix stereo_ClipToTranslatedWorld = mul(stereo_injection_i, mono.ClipToTranslatedWorld);
 	stereo[0].ClipToTranslatedWorld = stereo_ClipToTranslatedWorld;
 
@@ -320,13 +337,28 @@ void main(uint3 tid: SV_DispatchThreadID)
 	stereo[0].ScreenToTranslatedWorld = mul(ScreenToClip, stereo_ClipToTranslatedWorld);
 
 	// WorldCameraOrigin and WorldViewOrigin appear to be the same thing - is there a difference?
-	float4 cam_adj_clip = float4(-sep * conv, 0, 0, 0);
-	float3 cam_adj_world = mul(cam_adj_clip, mono.ClipToTranslatedWorld).xyz;
 	stereo[0].WorldCameraOrigin = mono.WorldCameraOrigin - cam_adj_world;
 	stereo[0].TranslatedWorldCameraOrigin = mono.TranslatedWorldCameraOrigin - cam_adj_world; // Fixes reflections
 	stereo[0].WorldViewOrigin = mono.WorldViewOrigin - cam_adj_world;
 	//stereo[0].PreViewTranslation = mono.PreViewTranslation + cam_adj_world; // XXX: Breaks depth buffer ray traced shadows
 
-	// TODO: Adjust previous frame translations, or copy from previous
-	//       frame buffer (might fix things like temporal AA)
+	stereo[0].PrevProjection = prev[0].ViewToClip;
+	stereo[0].PrevViewProj = prev[0].WorldToClip;
+	//TODO: stereo[0].PrevViewRotationProj
+	stereo[0].PrevViewToClip = prev[0].ViewToClip;
+	stereo[0].PrevClipToView = prev[0].ClipToView;
+	stereo[0].PrevTranslatedWorldToClip = prev[0].TranslatedWorldToClip;
+	stereo[0].PrevTranslatedWorldToView = prev[0].TranslatedWorldToView;
+	stereo[0].PrevViewToTranslatedWorld = prev[0].ViewToTranslatedWorld;
+	stereo[0].PrevTranslatedWorldToCameraView = prev[0].TranslatedWorldToCameraView;
+	stereo[0].PrevCameraViewToTranslatedWorld = prev[0].CameraViewToTranslatedWorld;
+	stereo[0].PrevWorldCameraOrigin = prev[0].WorldCameraOrigin;
+	stereo[0].PrevWorldViewOrigin = prev[0].WorldViewOrigin;
+	stereo[0].PrevPreViewTranslation = prev[0].PreViewTranslation;
+	// TODO stereo[0].PrevInvViewProj = ClipToWorld;
+	stereo[0].PrevScreenToTranslatedWorld = prev[0].ScreenToTranslatedWorld;
+#ifdef SENUA
+	stereo[0].senua_specific_111 = prev[0].WorldToClip;
+#endif
+	// TODO: stereo[0].ClipToPrevClip
 }
