@@ -1,3 +1,10 @@
+// These control known variations in the structure definition. This can be game
+// specific and you might need to study the constant buffer with my debug
+// shader to work out if the specific game you are looking at has altered it in
+// some other way.
+#define NEW_UE4
+#define SENUA
+
 // Mapping of UE4 types into HLSL. half isn't specified like this in UE4 and we
 // just turn them into regular floats anyway, but still leaving in the tags
 // incase this ever gets adapted to something where half precision matters

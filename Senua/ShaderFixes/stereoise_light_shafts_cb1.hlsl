@@ -1,8 +1,5 @@
 // DarkStarSword's Senua's Sacrifice Light Shaft Steroisation Shader
 
-#define NEW_UE4
-#define SENUA
-
 #include "UE4FViewUniformShaderParameters.hlsl"
 
 // Clearly not a stock UE4 effect - most of these are readily available in

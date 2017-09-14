@@ -1,12 +1,5 @@
 // DarkStarSword's UE4 FViewUniformShaderParameters steroisation shader
 
-// These control known variations in the structure definition. This can be game
-// specific and you might need to study the constant buffer with my debug
-// shader to work out if the specific game you are looking at has altered it in
-// some other way.
-#define NEW_UE4
-#define SENUA
-
 // If this is defined the shader will copy the previous frame translations from
 // a copy of the previous frame's UAV in t113. If it is not defined the shader
 // will calculate them from scratch. Not sure which will perform better.
