@@ -1509,10 +1509,14 @@ def install_shader_to(shader, file, args, base_dir, show_full_path=False):
 
     dest = os.path.join(shader_dir, dest_name)
 
-    if show_full_path:
-        debug_verbose(0, 'Installing to %s...' % dest)
-    else:
-        debug_verbose(0, 'Installing to %s...' % os.path.relpath(dest, os.curdir))
+    debug_path = dest
+    if not show_full_path:
+        try:
+            debug_path = os.path.relpath(dest, os.curdir)
+        except ValueError:
+            # Can get this if installing to a different drive in Windows
+            pass
+    debug_verbose(0, 'Installing to %s...' % debug_path)
     print(shader, end='', file=open(dest, 'w'))
 
     if hasattr(args, 'validate') and args.validate and args.fxc:
