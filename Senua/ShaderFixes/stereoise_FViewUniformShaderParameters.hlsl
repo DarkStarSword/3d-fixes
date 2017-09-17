@@ -6,6 +6,7 @@
 #define COPY_PREV_FRAME
 
 #include "UE4FViewUniformShaderParameters.hlsl"
+#include "stereo_injection_matrices.hlsl"
 
 cbuffer FViewUniformShaderParameters : register(b13)
 {
@@ -13,6 +14,7 @@ cbuffer FViewUniformShaderParameters : register(b13)
 }
 
 RWStructuredBuffer<struct FViewUniformShaderParameters> stereo : register(u0);
+RWStructuredBuffer<struct stereo_injection_matrices> stereo_injection : register(u1);
 StructuredBuffer<struct FViewUniformShaderParameters> prev : register(t113);
 
 matrix inverse(matrix m)
@@ -195,8 +197,15 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// Should be able to do better than inversing another matrix - we can
 	// multiply the stereo_ClipToTranslatedWorld by a translation matrix:
 	matrix stereo_ClipToWorld = inverse(stereo_WorldToClip);
-	stereo[0].ScreenToWorld = mul(ScreenToClip, stereo_ClipToWorld);
+	matrix stereo_ScreenToWorld = mul(ScreenToClip, stereo_ClipToWorld);
+	stereo[0].ScreenToWorld = stereo_ScreenToWorld;
 	stereo[0].ScreenToTranslatedWorld = mul(ScreenToClip, stereo_ClipToTranslatedWorld);
+
+	// Shadow shaders use ScreenToShadowMatrix that we need to stereoise,
+	// but that is a per-shadow matrix so we cannot do so from here. Put an
+	// inverse screen space stereo injection matrix into a buffer we can
+	// use from the relevant shaders:
+	stereo_injection[0].screen_inverse = mul(stereo_ScreenToWorld, inverse(mono.ScreenToWorld));
 
 	// WorldCameraOrigin and WorldViewOrigin appear to be the same thing - is there a difference?
 	stereo[0].WorldCameraOrigin = mono.WorldCameraOrigin - cam_adj_world;
