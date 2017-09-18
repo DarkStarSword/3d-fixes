@@ -3,7 +3,7 @@
 // If this is defined the shader will copy the previous frame translations from
 // a copy of the previous frame's UAV in t113. If it is not defined the shader
 // will calculate them from scratch. Not sure which will perform better.
-#define COPY_PREV_FRAME
+#undef COPY_PREV_FRAME
 
 #include "UE4FViewUniformShaderParameters.hlsl"
 
