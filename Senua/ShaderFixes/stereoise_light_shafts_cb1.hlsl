@@ -28,10 +28,10 @@ void main(uint3 tid: SV_DispatchThreadID)
 {
 	light_shafts_cb1[0].WorldToClip = stereo[0].WorldToClip;
 	light_shafts_cb1[0].ScreenToTranslatedWorld = stereo[0].ScreenToTranslatedWorld;
-	light_shafts_cb1[0].TranslatedWorldToView = stereo[0].TranslatedWorldToView;
+	// light_shafts_cb1[0].TranslatedWorldToView = stereo[0].TranslatedWorldToView;
 	light_shafts_cb1[0].WorldCameraOrigin = stereo[0].WorldCameraOrigin;
 	light_shafts_cb1[0].PrevViewProj = stereo[0].PrevViewProj;
 	light_shafts_cb1[0].PrevScreenToTranslatedWorld = stereo[0].PrevScreenToTranslatedWorld;
-	light_shafts_cb1[0].PrevTranslatedWorldToView = stereo[0].PrevTranslatedWorldToView;
+	// light_shafts_cb1[0].PrevTranslatedWorldToView = stereo[0].PrevTranslatedWorldToView;
 	light_shafts_cb1[0].PrevWorldCameraOrigin = stereo[0].PrevWorldCameraOrigin;
 }

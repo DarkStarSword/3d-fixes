@@ -23,6 +23,6 @@ void main(uint3 tid: SV_DispatchThreadID)
 {
 	light_shafts_cb0[0].WorldToClip = stereo[0].WorldToClip;
 	light_shafts_cb0[0].ScreenToTranslatedWorld = stereo[0].ScreenToTranslatedWorld;
-	light_shafts_cb0[0].TranslatedWorldToView = stereo[0].TranslatedWorldToView;
+	// light_shafts_cb0[0].TranslatedWorldToView = stereo[0].TranslatedWorldToView;
 	light_shafts_cb0[0].WorldCameraOrigin = stereo[0].WorldCameraOrigin;
 }
