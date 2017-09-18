@@ -1,11 +1,90 @@
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 #include <stdio.h>
 #include <regex>
 
 #define LogInfo printf
 #define D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT 14
+
+static std::unordered_set<unsigned> ue4_patch_cb_offset;
+
+#define NEW_UE4
+#undef SENUA
+
+static void init_ue4_patch_cb_offset(unsigned offset, unsigned count)
+{
+	unsigned i;
+
+	for (i = 0; i < count; i++) {
+		ue4_patch_cb_offset.insert(offset + i);
+	}
+}
+
+static void init_ue4_patch_cb_offsets()
+{
+	static bool init = false;
+	unsigned off = 0;
+
+	if (init)
+		return;
+	init = true;
+
+	init_ue4_patch_cb_offset(0 + off, 4); // FMatrix TranslatedWorldToClip;
+	init_ue4_patch_cb_offset(4 + off, 4); // FMatrix WorldToClip;
+	// init_ue4_patch_cb_offset(8 + off, 4); // FMatrix TranslatedWorldToView;
+	// init_ue4_patch_cb_offset(12 + off, 4); // FMatrix ViewToTranslatedWorld;
+	// init_ue4_patch_cb_offset(16 + off, 4); // FMatrix TranslatedWorldToCameraView;
+	// init_ue4_patch_cb_offset(20 + off, 4); // FMatrix CameraViewToTranslatedWorld;
+	init_ue4_patch_cb_offset(24 + off, 4); // FMatrix ViewToClip;
+	init_ue4_patch_cb_offset(28 + off, 4); // FMatrix ClipToView;
+	init_ue4_patch_cb_offset(32 + off, 4); // FMatrix ClipToTranslatedWorld;
+	init_ue4_patch_cb_offset(36 + off, 4); // FMatrix SVPositionToTranslatedWorld;
+	init_ue4_patch_cb_offset(40 + off, 4); // FMatrix ScreenToWorld;
+	init_ue4_patch_cb_offset(44 + off, 4); // FMatrix ScreenToTranslatedWorld;
+
+#ifdef NEW_UE4
+	off += 2; // HMDViewNoRollUp & HMDViewNoRollRight
+#endif
+
+#ifdef SENUA
+	off += 1;
+#endif
+
+	init_ue4_patch_cb_offset(53 + off, 1); // FVector WorldCameraOrigin;
+	init_ue4_patch_cb_offset(54 + off, 1); // FVector TranslatedWorldCameraOrigin;
+	init_ue4_patch_cb_offset(55 + off, 1); // FVector WorldViewOrigin;
+	// init_ue4_patch_cb_offset(56 + off, 1); // FVector PreViewTranslation;
+
+	init_ue4_patch_cb_offset(57 + off, 4); // FMatrix PrevProjection;
+	init_ue4_patch_cb_offset(61 + off, 4); // FMatrix PrevViewProj;
+	init_ue4_patch_cb_offset(65 + off, 4); // FMatrix PrevViewRotationProj;
+	init_ue4_patch_cb_offset(69 + off, 4); // FMatrix PrevViewToClip;
+	init_ue4_patch_cb_offset(73 + off, 4); // FMatrix PrevClipToView;
+	init_ue4_patch_cb_offset(77 + off, 4); // FMatrix PrevTranslatedWorldToClip;
+	// init_ue4_patch_cb_offset(81 + off, 4); // FMatrix PrevTranslatedWorldToView;
+	// init_ue4_patch_cb_offset(85 + off, 4); // FMatrix PrevViewToTranslatedWorld;
+	// init_ue4_patch_cb_offset(89 + off, 4); // FMatrix PrevTranslatedWorldToCameraView;
+	// init_ue4_patch_cb_offset(93 + off, 4); // FMatrix PrevCameraViewToTranslatedWorld;
+
+	init_ue4_patch_cb_offset(97 + off, 1); // FVector PrevWorldCameraOrigin;
+	init_ue4_patch_cb_offset(98 + off, 1); // FVector PrevWorldViewOrigin;
+	// init_ue4_patch_cb_offset(99 + off, 1); // FVector PrevPreViewTranslation;
+
+	init_ue4_patch_cb_offset(100 + off, 4); // FMatrix PrevInvViewProj;
+	init_ue4_patch_cb_offset(104 + off, 4); // FMatrix PrevScreenToTranslatedWorld;
+#ifdef SENUA
+	// Senua's Sacrifice specific. Looks like a duplicate of PrevViewProj
+	// (or TranslatedWorldToClip). I bet I know what happened - UE4's
+	// inconsistent matrix naming scheme confused the devs and they didn't
+	// realise that "PrevTranslatedWorldToClip" was already present under
+	// the name "PrevViewProj", so they added a second copy of it:
+	init_ue4_patch_cb_offset(108 + off, 4);
+	off += 4;
+#endif
+	init_ue4_patch_cb_offset(108 + off, 4); // FMatrix ClipToPrevClip;
+}
 
 static bool patch_cb(std::string *asm_text, unsigned cb_reg, size_t *dcl_end, unsigned *tmp_regs, unsigned shader_model_major)
 {
@@ -29,10 +108,15 @@ static bool patch_cb(std::string *asm_text, unsigned cb_reg, size_t *dcl_end, un
 		cb_idx_end = asm_text->find("]", cb_idx_start);
 		cb_index_str = asm_text->substr(cb_idx_start, cb_idx_end - cb_idx_start);
 		if (cb_index_str[0] < '0' || cb_index_str[0] > '9') {
-			LogInfo("Cannot patch cb[%s]\n", cb_index_str.c_str()); // yet ;-)
+			LogInfo("Cannot patch cb%d[%s]\n", cb_reg, cb_index_str.c_str()); // yet ;-)
 			continue;
 		}
 		cb_idx = stoul(asm_text->substr(cb_idx_start, 4));
+
+		if (!ue4_patch_cb_offset.count(cb_idx)) {
+			LogInfo("Skipping cb%d[%s]\n", cb_reg, cb_index_str.c_str());
+			continue;
+		}
 
 		try {
 			tmp_reg = cb_idx_to_tmp_reg.at(cb_idx);
@@ -98,6 +182,8 @@ static bool patch_asm_redirect_cb(std::string *asm_text,
 	unsigned shader_model_major, tmp_regs = 0, cb_reg;
 	std::string insert_str;
 	int disable_driver_stereo_reg = -1;
+
+	init_ue4_patch_cb_offsets();
 
 	LogInfo("Analysing shader constant buffer usage...\n");
 	for (
@@ -256,19 +342,17 @@ static std::regex ue4_shadow_regex(ue4_shadow_pattern, std::regex::ECMAScript | 
 static char ue4_shadow_replace[] =
 	"$1 {dcl_temps}\n"
 
-	//"\n// StereoParams automatically inserted by DarkStarSword's UE4 autofix:\n"
-        "dcl_resource_texture2d (float,float,float,float) t125\n"
-        "\n"
+	"dcl_resource_texture2d (float,float,float,float) t125\n"
 
 	"$3"
 
 	"\n// Shadows automatically corrected by DarkStarSword's UE4 autofix:\n"
 	// NOTE: which ld instruction we use depends on the shader model.
 	// Since we only matched ps_5_0 we are fine to use ld_indexable:
-        "ld_indexable(texture2d)(float,float,float,float) r{stereo}.xyzw, l(0, 0, 0, 0), t125.xyzw\n"
-        "add r{stereo}.w, r0.z, -r{stereo}.y\n"
-        "mad r1.x, -r{stereo}.w, r{stereo}.x, r1.x\n"
-        "\n"
+	"ld_indexable(texture2d)(float,float,float,float) r{stereo}.xyzw, l(0, 0, 0, 0), t125.xyzw\n"
+	"add r{stereo}.w, r0.z, -r{stereo}.y\n"
+	"mad r1.x, -r{stereo}.w, r{stereo}.x, r1.x\n"
+	"\n"
 
 	"$4"
 ;
@@ -314,7 +398,8 @@ int main(int argc, char *argv[])
 {
 	bool patch_cbuffers [D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {false};
 	std::string shader;
-	unsigned i, j;
+	int i;
+	unsigned j;
 	bool patched = false;
 
 	if (argc < 2) {
