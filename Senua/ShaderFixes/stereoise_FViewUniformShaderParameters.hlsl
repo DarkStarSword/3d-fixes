@@ -7,12 +7,17 @@
 
 #include "UE4FViewUniformShaderParameters.hlsl"
 
+struct StereoInjectionMatrices {
+	row_major matrix sv_position_inv;
+};
+
 cbuffer FViewUniformShaderParameters : register(b13)
 {
 	struct FViewUniformShaderParameters mono;
 }
 
 RWStructuredBuffer<struct FViewUniformShaderParameters> stereo : register(u0);
+RWStructuredBuffer<struct StereoInjectionMatrices> injection : register(u1);
 StructuredBuffer<struct FViewUniformShaderParameters> prev : register(t113);
 
 matrix inverse(matrix m)
@@ -189,7 +194,11 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// need to be certain that we are always using the same values as the
 	// game):
 	matrix SVPositionToClip = mul(mono.SVPositionToTranslatedWorld, mono.TranslatedWorldToClip);
-	stereo[0].SVPositionToTranslatedWorld = mul(SVPositionToClip, stereo_ClipToTranslatedWorld);
+	matrix stereo_SVPositionToTranslatedWorld = mul(SVPositionToClip, stereo_ClipToTranslatedWorld);
+	stereo[0].SVPositionToTranslatedWorld = stereo_SVPositionToTranslatedWorld;
+
+	// Calculate SVPosition inverse steroisation matrix for SVPositionToDecal:
+	injection[0].sv_position_inv = mul(stereo_SVPositionToTranslatedWorld, inverse(mono.SVPositionToTranslatedWorld));
 
 	matrix ScreenToClip = mul(mono.ScreenToWorld, mono.WorldToClip);
 	// Should be able to do better than inversing another matrix - we can
