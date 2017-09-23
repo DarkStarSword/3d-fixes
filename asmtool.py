@@ -377,7 +377,7 @@ class CBDeclaration(Declaration):
         (?P<access_pattern>\S+)
         \s*
         $
-    ''', re.MULTILINE | re.VERBOSE | re.DOTALL)
+    ''', re.MULTILINE | re.VERBOSE | re.DOTALL | re.IGNORECASE)
 
     def __init__(self, text, cb, size, access_pattern):
         Declaration.__init__(self, text)
