@@ -289,6 +289,7 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, det):
     dst1 = pyasm.Register()
     dst2 = pyasm.Register()
     dst3 = pyasm.Register()
+    inv_det = pyasm.Register()
 
     # 1st row, simplifying by assuimg the 4th column 0,0,0,1
     # dst0.x = (m1.y*m2.z - m1.z*m2.y)
@@ -329,7 +330,7 @@ def _inverse_euclidean_asm_col_major(col0, col1, col2, det):
     dst3.xyz  = pyasm.mov(-dst3)
 
     # Multiply against 1/determinant (and zero out 4th column):
-    inv_det = pyasm.rcp(det.x)
+    inv_det.x = pyasm.rcp(det.x)
     inv_det.y = pyasm.mov(std_consts.x)
     dst0 = pyasm.mul(dst0, inv_det.xxxy)
     dst1 = pyasm.mul(dst1, inv_det.xxxy)
