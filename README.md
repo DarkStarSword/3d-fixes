@@ -33,17 +33,15 @@ these fixes.
 - [The Witness](The Witness) - Automatic stereo mouse cursor, reflections, etc.
 - [Firewatch](Firewatch) - First game to use the DX11 port of my Unity scripts
 - [Far Cry Primal](Far Cry Primal) - Volumetric fog / light shafts / shadow volumes, accurate specular highlights, etc.
+- [Far Cry 4](Far Cry 4) (with mike_ar69) - fixes pretty much everything, adds an auto HUD
+- [Witcher 3](Witcher3) (with mike_ar69 & others) - Highlight: physical lighting compute shaders
 
 Several of my fixes are in their own dedicated repository due to their size:
 - [WATCH_DOGS2](https://github.com/DarkStarSword/3d-fixes-WATCH_DOGS2) - First ever accurate Screen Space Reflection fix, accurate San Francisco volumetric fog, etc.
 
-Several of my fixes can be found in the 3DMigoto repository instead:
-- [Far Cry 4](https://github.com/bo3b/3Dmigoto/tree/master/FC4) (with mike_ar69) - fixes pretty much everything, adds an auto HUD
-- [Witcher 3](https://github.com/bo3b/3Dmigoto/tree/master/Witcher3) (with mike_ar69 & others) - Highlight: physical lighting compute shaders
-
 ### Works In Progress ###
 - [Submerged](Submerged) (UE4 3DMigoto approach WIP, fixes shadows)
-- [Batman: Arkham Knight](https://github.com/bo3b/3Dmigoto/tree/master/Batman) (with mike_ar69) - fixes tile lighting compute shaders and halos
+- [Batman: Arkham Knight](Batman) (with mike_ar69) - fixes tile lighting compute shaders and halos
 - [Demonicon](demonicon) - Quick fix to make the game playable, fixes lights and some halos
 - [Akiba's Trip](Akiba's Trip Undead & Undressed) - Adds a toggle for an auto UI depth adjustment (unpolished)
 
