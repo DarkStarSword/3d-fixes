@@ -19,7 +19,7 @@ If you know of other tweak guides or would like to write one, please post in <a 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script><!--
 // @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
-// HelixMod blog game list script copyright (C) 2014 Ian Munsie <darkstarsword@gmail.com>
+// HelixMod blog game list script copyright (C) 2014-2017 Ian Munsie <darkstarsword@gmail.com>
 
 var hidden_posts = [
   "2010/12/how-to-guides.html",
@@ -195,12 +195,55 @@ function add_game(post)
   }
 }
 
+function set_loading_message(message)
+{
+  var loading_elem = document.getElementById("loading_content");
+  if (message) {
+    loading_elem.innerHTML = "<p><em>" + message + "</em></p>";
+  } else {
+    loading_elem.innerHTML = "";
+  }
+}
+
+function error_callback()
+{
+  set_loading_message("An error occurred, please try again!");
+  jQuery.ajax({
+    url : "https://valen.darkstarsword.net/heartbeat/game_list_error"
+  });
+}
+
+var progress = 0;
+var total_posts = 0;
+
+function update_progress()
+{
+  set_loading_message("Loading posts " + progress + "/" + total_posts + "...");
+}
+
+function blog_info_callback(response)
+{
+  progress = 0;
+  total_posts = response["posts"]["totalItems"];
+  update_progress();
+
+  jQuery.ajax({
+    url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&key=GET_YOUR_OWN_API_KEY",
+    success : collate_responses,
+    error: error_callback
+  });
+}
+
 function collate_responses(response)
 {
+  progress += response.items.length;
+  update_progress();
+
   if (response.nextPageToken) {
     jQuery.ajax({
       url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&key=GET_YOUR_OWN_API_KEY&pageToken=" + response.nextPageToken,
-      success : collate_responses
+      success : collate_responses,
+      error: error_callback
     });
   }
 
@@ -221,10 +264,8 @@ function collate_responses(response)
 
   show_game_list();
 
-  if (!response.nextPageToken) {
-    var loading_elem = document.getElementById("loading_content");
-    loading_elem.innerHTML = "";
-  }
+  if (!response.nextPageToken)
+    set_loading_message(null);
 
   if (response.error) {
     jQuery.ajax({
@@ -268,5 +309,5 @@ jQuery.ajax({
 });
 // @license end
 //--></script>
-<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&callback=collate_responses&key=GET_YOUR_OWN_API_KEY"></script>
+<script src="https://www.googleapis.com/blogger/v3/blogs/5003459283230164005?fields=posts(totalItems)&callback=blog_info_callback&key=GET_YOUR_OWN_API_KEY"></script>
 <!-- vi:se et sw=2 ts=2 ai:-->
