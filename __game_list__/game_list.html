@@ -205,20 +205,51 @@ function set_loading_message(message)
   }
 }
 
-function error_callback()
-{
-  set_loading_message("An error occurred, please try again!");
-  jQuery.ajax({
-    url : "https://valen.darkstarsword.net/heartbeat/game_list_error"
-  });
-}
-
+var request_url = null;
+var errors = 0;
 var progress = 0;
 var total_posts = 0;
 
-function update_progress()
+function update_progress(extra)
 {
-  set_loading_message("Loading posts " + progress + "/" + total_posts + "...");
+  message = "Loading posts " + progress + "/" + total_posts;
+  if (extra)
+    message += " (" + extra + ")";
+  message += "...";
+  set_loading_message(message);
+}
+
+function error_callback()
+{
+  jQuery.ajax({
+    url : "https://valen.darkstarsword.net/heartbeat/game_list_error"
+  });
+
+  errors++;
+  if (errors > 5) {
+    set_loading_message("An error occurred, please try again!");
+  } else {
+    update_progress("An error occured - retrying " + errors + "/5");
+    jQuery.ajax({
+      url : request_url,
+      success : collate_responses,
+      error: error_callback
+    });
+  }
+}
+
+function get_next_page(token)
+{
+  request_url = "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&key=GET_YOUR_OWN_API_KEY"
+  if (token)
+    request_url = request_url + "&pageToken=" + token;
+
+  errors = 0;
+  jQuery.ajax({
+    url : request_url,
+    success : collate_responses,
+    error: error_callback
+  });
 }
 
 function blog_info_callback(response)
@@ -226,26 +257,15 @@ function blog_info_callback(response)
   progress = 0;
   total_posts = response["posts"]["totalItems"];
   update_progress();
-
-  jQuery.ajax({
-    url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&key=GET_YOUR_OWN_API_KEY",
-    success : collate_responses,
-    error: error_callback
-  });
+  get_next_page();
 }
 
 function collate_responses(response)
 {
   progress += response.items.length;
   update_progress();
-
-  if (response.nextPageToken) {
-    jQuery.ajax({
-      url : "https://www.googleapis.com/blogger/v3/blogs/5003459283230164005/posts?fields=items(labels%2Ctitle%2Curl%2Cpublished)%2CnextPageToken&maxResults=100&key=GET_YOUR_OWN_API_KEY&pageToken=" + response.nextPageToken,
-      success : collate_responses,
-      error: error_callback
-    });
-  }
+  if (response.nextPageToken)
+    get_next_page(response.nextPageToken);
 
   for (var idx in response.items) {
     var post = response.items[idx];
