@@ -14,7 +14,7 @@ def get_resource_name(file, base_offset, offset):
 
     return ret
 
-def get_extraction_path(asset_file, resource_name, extension):
+def get_extraction_path(asset_file, resource_name, resource_offset, extension):
     (dir, ext) = os.path.splitext(os.path.basename(asset_file.name))
 
     if not os.path.isdir('extracted'):
@@ -24,7 +24,10 @@ def get_extraction_path(asset_file, resource_name, extension):
     if not os.path.isdir(dir):
         os.mkdir(dir)
 
-    filename = '{}.{}'.format(resource_name, extension)
+    if resource_name:
+        filename = '{}.{}'.format(resource_name, extension)
+    else:
+        filename = '0x{:08x}.{}'.format(resource_offset, extension)
     return os.path.join(dir, filename)
 
 def align(file, alignment):
@@ -100,14 +103,14 @@ def unity_53_or_higher(unity_version):
     (major, minor, point) = unity_version.split(b'.')
     return int(major) > 5 or (int(major) == 5 and int(minor) >= 3)
 
-def extract_raw(file, base_offset, offset, size, unity_version):
+def extract_raw(file, base_offset, offset, size, unity_version, file_version):
     '''
     Usually unused, but useful to hook up for debugging purposes
     '''
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
-        path = get_extraction_path(file, '0x%08x' % offset, 'raw')
+        path = get_extraction_path(file, None, offset, 'raw')
 
         print('Dumping {}...'.format(repr(path)))
         with open(path, 'wb') as out:
@@ -119,14 +122,14 @@ def extract_raw(file, base_offset, offset, size, unity_version):
     else:
         file.seek(saved_off)
 
-def extract_shader(file, base_offset, offset, size, unity_version):
+def extract_shader(file, base_offset, offset, size, unity_version, file_version):
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
 
         (name_len,) = struct.unpack('<I', file.read(4))
         resource_name = file.read(name_len).decode('ascii')
-        path = get_extraction_path(file, resource_name, 'shader')
+        path = get_extraction_path(file, resource_name, offset, 'shader')
 
         align(file, 4)
         (shader_len,) = struct.unpack('<I', file.read(4))
@@ -172,9 +175,9 @@ extractors = {
     48: extract_shader,
 }
 
-def extract_resource(file, base_offset, offset, size, type, unity_version):
+def extract_resource(file, base_offset, offset, size, type, unity_version, file_version):
     if type in extractors:
-        extractors[type](file, base_offset, offset, size, unity_version)
+        extractors[type](file, base_offset, offset, size, unity_version, file_version)
 
 def parse_version_9(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -201,7 +204,7 @@ def parse_version_9(file, version):
         print("   Resource {}: offset 0x{:08x}, size {}, type(?) {}, type: {}".format(id, offset, size, type1, type2))
         # assert(id == i+1) - no
 
-        extract_resource(file, data_off, offset, size, type2, unity_version)
+        extract_resource(file, data_off, offset, size, type2, unity_version, version)
 
 def parse_version_14(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -250,7 +253,7 @@ def parse_version_14(file, version):
         print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, {}, {}, {}".format(id, offset, size, type1, type2, type3, name))
         assert(u1 == 0)
 
-        extract_resource(file, data_off, offset, size, type2, unity_version)
+        extract_resource(file, data_off, offset, size, type2, unity_version, version)
 
 def parse_version_15(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -304,7 +307,7 @@ def parse_version_15(file, version):
         assert(u1 == 0)
         # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
 
-        extract_resource(file, data_off, offset, size, type2, unity_version)
+        extract_resource(file, data_off, offset, size, type2, unity_version, version)
 
 def parse_version_17(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -366,7 +369,7 @@ def parse_version_17(file, version):
         print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type_idx: {}".format(id, offset, size, name, type_idx))
         assert(u1 == 0)
         type2 = type_table[type_idx]
-        extract_resource(file, data_off, offset, size, type2, unity_version)
+        extract_resource(file, data_off, offset, size, type2, unity_version, version)
 
 def unsupported_version(file, version):
     print("Unsupported file version {}".format(version))
