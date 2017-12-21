@@ -103,14 +103,14 @@ def unity_53_or_higher(unity_version):
     (major, minor, point) = unity_version.split(b'.')
     return int(major) > 5 or (int(major) == 5 and int(minor) >= 3)
 
-def extract_raw(file, base_offset, offset, size, unity_version, file_version):
+def extract_raw(file, base_offset, offset, size, unity_version, file_version, extension='raw'):
     '''
     Usually unused, but useful to hook up for debugging purposes
     '''
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
-        path = get_extraction_path(file, None, offset, 'raw')
+        path = get_extraction_path(file, None, offset, extension)
 
         print('Dumping {}...'.format(repr(path)))
         with open(path, 'wb') as out:
@@ -123,6 +123,12 @@ def extract_raw(file, base_offset, offset, size, unity_version, file_version):
         file.seek(saved_off)
 
 def extract_shader(file, base_offset, offset, size, unity_version, file_version):
+    if file_version >= 17:
+        # All textual metadata has been replaced by a custom binary format,
+        # which we leave for extract_unity55_shaders to deal with. Just extract
+        # the raw shader asset instead:
+        return extract_raw(file, base_offset, offset, size, unity_version, file_version, 'shader.raw')
+
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
