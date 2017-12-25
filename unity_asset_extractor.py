@@ -349,21 +349,20 @@ def parse_version_17(file, version):
     for i in range(type_table_len):
         # neovad added 00 FF FF or 00 00 00 pattern (3 byte) in 17 version
         # after id as 4/8 I switch.
-        (id, b1, b2) = struct.unpack('<iBH', file.read(7))
+        (id, b1, b2) = struct.unpack('<iBh', file.read(7))
         assert(b1 == 0)
-        assert(b2 in (0, 0xffff))
 
         type_table.append(id)
 
         # This hash(?) is noteworthy that each type always maps to the same
         # hash in a given Unity version, though the hash may change between
         # versions
-        if b2 == 0: # Changed since v15
+        if b2 >= 0: # Changed since v15
             u = struct.unpack('>8I', file.read(32))
-            print(("   {:3}: {:3}" + " {:08x}" * 8).format(*([i, id] + list(u))))
+            print(("   {:3}: {:3} {:2}" + " {:08x}" * 8).format(*([i, id, b2] + list(u))))
         else:
             u = struct.unpack('>4I', file.read(16))
-            print(("   {:3}: {:3}" + " {:08x}" * 4).format(*([i, id] + list(u))))
+            print(("   {:3}: {:3} {:2}" + " {:08x}" * 4).format(*([i, id, b2] + list(u))))
 
     (num_resources,) = struct.unpack('<I', file.read(4))
     align(file, 4)
