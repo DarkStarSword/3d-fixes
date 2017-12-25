@@ -248,6 +248,7 @@ def parse_version_14(file, version):
             print(("   {:3}: {:3}" + " {:08x}" * 4).format(*([i, id] + list(u))))
 
     (num_resources, u1, u2, u3) = struct.unpack('<I3B', file.read(7))
+    # FIXME: This is very likely supposed to be align(file, 4) like in v17 - needs testing
     assert(u1 == 0)
     assert(u2 == 0)
     assert(u3 == 0)
@@ -301,6 +302,7 @@ def parse_version_15(file, version):
             print(("   {:3}: {:3}" + " {:08x}" * 4).format(*([i, id] + list(u))))
 
     (num_resources, u1, u2, u3) = struct.unpack('<I3B', file.read(7))
+    # FIXME: This is very likely supposed to be align(file, 4) like in v17 - needs testing
     assert(u1 == 0)
     assert(u2 == 0)
     assert(u3 == 0)
@@ -363,10 +365,8 @@ def parse_version_17(file, version):
             u = struct.unpack('>4I', file.read(16))
             print(("   {:3}: {:3}" + " {:08x}" * 4).format(*([i, id] + list(u))))
 
-    (num_resources, u1, u2, u3) = struct.unpack('<I3B', file.read(7))
-    assert(u1 == 0)
-    assert(u2 == 0)
-    assert(u3 == 0)
+    (num_resources,) = struct.unpack('<I', file.read(4))
+    align(file, 4)
 
     print("Num resources: {}".format(num_resources))
     for i in range(num_resources):
