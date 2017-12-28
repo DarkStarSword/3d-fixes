@@ -43,7 +43,7 @@ def check_init_indices(i, name):
     # For now going on the assumption that the order of this table is constant,
     # but not all entries are valid - if that is true, than we should see
     # consistent names in the same position.
-    if name == '<noinit>': return
+    if name == '<noninit>': return
     if i == 77: assert(name == 'unity_FogStart')
     if i == 78: assert(name == 'unity_FogEnd')
     if i == 79: assert(name == 'unity_FogDensity')
@@ -122,12 +122,46 @@ def parse_unknown_subshader_table(file):
             print(' "%s"="%s"' % (parse_string(file), parse_string(file)), end='')
         print(' }')
 
-    (u1, u2, u3, u4, u5) = struct.unpack('<5I', file.read(20))
+    (u1, u2, u3, unknown_table_len) = struct.unpack('<4I', file.read(16))
     assert(u1 == 0)
     assert(u2 == 0)
     assert(u3 == 6)
-    assert(u4 in (0x6, 0x12)) # Maybe an array length?
+    print('    Unknown table 1 len: %u' % unknown_table_len)
+
+    for i in range(unknown_table_len):
+        print('      Unknown table 1 entry %i' % i)
+        data = file.read(136)
+        hexdump(data, file.tell(), indent=6, width=24)
+
+    (unknown_table_len,) = struct.unpack('<I', file.read(4))
+    print('    Unknown table 2 len: %u' % unknown_table_len)
+
+    for i in range(unknown_table_len):
+        print('      Unknown table 2 entry %i' % i)
+        data = file.read(64)
+        hexdump(data, file.tell(), indent=6, width=24)
+
+    u4 = struct.unpack('<8I', file.read(32))
+    assert(u4 == (0,)*8)
+
+    (num_pass_tags,) = struct.unpack('<I', file.read(4))
+    if num_pass_tags:
+        print('      Tags {', end='')
+        for i in range(num_pass_tags):
+            print(' "%s"="%s"' % (parse_string(file), parse_string(file)), end='')
+        print(' }')
+
+    (u5,) = struct.unpack('<I', file.read(4))
     assert(u5 == 0)
+
+    shader_name = parse_string(file)
+    print('Shader Name: %s' % shader_name)
+
+    u6 = struct.unpack('<4I', file.read(16))
+    assert(u6 == (0,)*4)
+
+    data = file.read(100)
+    hexdump(data, file.tell(), indent=4, width=24)
 
     # FIXME: Remove this
     hack_data = file.read(hack_end - file.tell())
