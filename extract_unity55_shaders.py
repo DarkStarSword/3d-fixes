@@ -315,6 +315,17 @@ def parse_dependencies_2(file):
         (FileID, PathID) = struct.unpack('<IQ', file.read(12))
         print('   FileID: %i PathID: %i' % (FileID, PathID))
 
+def parse_decompressed_blob(blob):
+    num_shaders = parse_u4(blob, 'Num shaders in blob', indent=3)
+    shader_offsets = []
+    for i in range(num_shaders):
+        shader_offsets.append(struct.unpack('<2I', blob.read(8)))
+
+    for i, (offset, length) in enumerate(shader_offsets):
+        print('    Shader %i:' % i)
+        blob.seek(offset)
+        hexdump(blob.read(length), indent=3)
+
 def parse_unity55_shader(filename):
     file = open(filename, 'rb')
 
@@ -375,7 +386,7 @@ def parse_unity55_shader(filename):
     assert(num_compressed_bytes == sum(compressed_lengths))
     compressed_blob = file.read(num_compressed_bytes)
     align(file, 4)
-    hexdump(compressed_blob, indent=1)
+    # hexdump(compressed_blob, indent=1)
 
     parse_dependencies_2(file)
     parse_byte(file, 'ShaderIsBaked', indent=2)
@@ -386,7 +397,8 @@ def parse_unity55_shader(filename):
         print('  Decompressed Blob %i (platform %i):' % (i, platforms[i]))
         blob = io.BytesIO(compressed_blob[offsets[i]:offsets[i]+compressed_lengths[i]])
         decompressed = lz4_decompress(blob, decompressed_lengths[i])
-        hexdump(decompressed, indent=1)
+        # hexdump(decompressed, indent=1)
+        parse_decompressed_blob(io.BytesIO(decompressed))
 
 def parse_args():
     global args
