@@ -11,10 +11,12 @@ def align(file, alignment):
     data = file.read(alignment - mod)
     assert(data == b'\0' * (alignment - mod))
 
-def parse_string(file):
+def parse_string(file, name=None, indent=0):
     (length,) = struct.unpack('<I', file.read(4))
     string = file.read(length).decode('ascii')
     align(file, 4)
+    if name is not None:
+        print_field(name, '%s' % string, indent=indent)
     return string
 
 def parse_properties_table(file):
@@ -299,6 +301,19 @@ def parse_pass(file):
     print('   TextureName: %s' % TextureName)
     parse_tags(file)
 
+def parse_dependencies_1(file):
+    num = parse_u4(file, 'Num Dependencies', indent=2)
+    for i in range(num):
+        dependency_from = parse_string(file)
+        dependency_to = parse_string(file)
+        print('   from: %s to: %s' % (dependency_from, dependency_to))
+
+def parse_dependencies_2(file):
+    num = parse_u4(file, 'Num Dependencies', indent=2)
+    for i in range(num):
+        (FileID, PathID) = struct.unpack('<IQ', file.read(12))
+        print('   FileID: %i PathID: %i' % (FileID, PathID))
+
 def parse_unity55_shader(filename):
     file = open(filename, 'rb')
 
@@ -321,19 +336,45 @@ def parse_unity55_shader(filename):
         parse_tags(file, indent=2)
         parse_u4(file, 'LOD', indent=2)
 
-    # TODO: Name = parse_string(file)
-    # TODO: CustomEditorName = parse_string(file)
-    # TODO: FallbackName = parse_string(file)
-    # TODO: Dependencies
-    # TODO: DisableNoSubshadersMessage
+    Name = parse_string(file)
+    CustomEditorName = parse_string(file)
+    FallbackName = parse_string(file)
+    print('  Name: %s' % Name)
+    print('  CustomEditorName: %s' % CustomEditorName)
+    print('  FallbackName: %s' % FallbackName)
 
-    # TODO: platforms
-    # TODO: offsets
-    # TODO: compressedLengths
-    # TODO: decompressedLengths
-    # TODO: compressedBlob
+    parse_dependencies_1(file)
 
-    print('TODO: Extract actual shaders...')
+    parse_byte(file, 'DisableNoSubshadersMessage', indent=2)
+    align(file, 4)
+
+    num_platforms = parse_u4(file, 'Num Platforms', indent=2)
+    for i in range(num_platforms):
+        parse_x4(file, 'Platform', indent=3)
+
+    num_offsets = parse_u4(file, 'Num Offsets', indent=2)
+    for i in range(num_offsets):
+        parse_x4(file, 'Offset', indent=3)
+
+    num_compressed_lengths = parse_u4(file, 'Num Compressed Lengths', indent=2)
+    compressed_lengths = []
+    for i in range(num_compressed_lengths):
+        compressed_lengths.append(parse_u4(file, 'Compressed Length', indent=3))
+
+    num_decompressed_lengths = parse_u4(file, 'Num Decompressed Lengths', indent=2)
+    for i in range(num_decompressed_lengths):
+        parse_u4(file, 'Decompressed Length', indent=3)
+
+    num_compressed_bytes = parse_u4(file, 'Num Compressed Bytes', indent=2)
+    assert(num_compressed_bytes == sum(compressed_lengths))
+    compressed_blob = file.read(num_compressed_bytes)
+    align(file, 4)
+    hexdump(compressed_blob, indent=1)
+
+    parse_dependencies_2(file)
+    parse_byte(file, 'ShaderIsBaked', indent=2)
+    align(file, 4)
+    assert(file.read(1) == b'') # Check whole resource was parsed
 
 def parse_args():
     global args
