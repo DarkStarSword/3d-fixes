@@ -279,8 +279,7 @@ def parse_subprograms(file, subprogram_type, name_dict):
 def parse_pass(file):
     name_dict = parse_name_indices_table(file)
 
-    (type,) = struct.unpack('<I', file.read(4))
-    assert(type == 0)
+    type = parse_x4(file, 'Type', indent=3)
 
     parse_state(file)
 
@@ -315,7 +314,7 @@ def parse_dependencies_2(file):
         (FileID, PathID) = struct.unpack('<IQ', file.read(12))
         print('   FileID: %i PathID: %i' % (FileID, PathID))
 
-def parse_decompressed_blob(blob):
+def parse_decompressed_blob(blob, filename):
     num_shaders = parse_u4(blob, 'Num shaders in blob', indent=3)
     shader_offsets = []
     for i in range(num_shaders):
@@ -323,8 +322,13 @@ def parse_decompressed_blob(blob):
 
     for i, (offset, length) in enumerate(shader_offsets):
         print('    Shader %i:' % i)
-        blob.seek(offset)
-        hexdump(blob.read(length), indent=3)
+        extract_unity53_shaders.args = args
+        extract_unity53_shaders.extract_shader_at(blob, offset, length, filename, None, True)
+
+def safe_filename(filename):
+    filename = filename.replace('/', '_')
+    # FIXME: Probably need to sanitise other characters
+    return filename
 
 def parse_unity55_shader(filename):
     file = open(filename, 'rb')
@@ -398,15 +402,15 @@ def parse_unity55_shader(filename):
         blob = io.BytesIO(compressed_blob[offsets[i]:offsets[i]+compressed_lengths[i]])
         decompressed = lz4_decompress(blob, decompressed_lengths[i])
         # hexdump(decompressed, indent=1)
-        parse_decompressed_blob(io.BytesIO(decompressed))
+        parse_decompressed_blob(io.BytesIO(decompressed), safe_filename(Name))
 
 def parse_args():
     global args
     parser = argparse.ArgumentParser(description = 'Unity 5.5 Shader Extractor')
     parser.add_argument('shaders', nargs='+',
             help='List of compiled Unity shader files to parse')
-    # TODO parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11'),
-    # TODO         help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
+    parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11'),
+            help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
     args = parser.parse_args()
 
 def main():
@@ -427,7 +431,7 @@ def main():
         parse_unity55_shader(filename)
         print()
 
-    # TODO write_delayed_shaders()
+    extract_unity53_shaders.write_delayed_shaders()
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -894,7 +894,7 @@ def export_shader(sub_program, args):
     return _export_shader(sub_program, headers, path_components)
 
 def shader_name(tree):
-    while tree.parent is not None:
+    while hasattr(tree, 'parent') and tree.parent is not None:
         tree = tree.parent
     return tree.name
 

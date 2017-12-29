@@ -324,7 +324,7 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     # maybe just check the Unity version for 5.4?
     if date == 201509030:
         u8len = 5
-    elif date == 201510240: # Seen in Firewatch Unity 5.4 update
+    elif date in (201510240, 201608170): # Seen in Firewatch Unity 5.4 update / 2016 date in Unity 5.5
         u8len = 6
     else:
         assert(False)
@@ -388,9 +388,10 @@ def synthesize_sub_program(name):
             self.parent = Program(name)
     return SubProgram(name)
 
-def extract_shader_at(file, offset, size, filename, sub_programs):
+# NOTE: Also called from extract_unity55_shaders.py
+def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_headers=False):
     headers = []
-    if args.skip_classic_headers:
+    if skip_classic_headers:
         sub_program = synthesize_sub_program(os.path.splitext(os.path.splitext(filename)[0])[0])
     else:
         sub_program = sub_programs[0]
@@ -401,8 +402,12 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
     saved_offset = file.tell()
     file.seek(offset)
     try:
-        (date, shader_type, u3, u4, u5, num_keywords) = struct.unpack('<6i', file.read(24))
-        assert(date in (201509030, 201510240)) # New date/version(?) seen in Firewatch Unity 5.4 update
+        (date, shader_type, u3, u4, u5) = struct.unpack('<5i', file.read(20))
+        assert(date in (201509030, 201510240, 201608170)) # New date/version(?) seen in Firewatch Unity 5.4 update
+        u6 = None
+        if date == 201608170: # Unity 5.5
+            (u6,) = struct.unpack('<i', file.read(4))
+        (num_keywords,) = struct.unpack('<i', file.read(4))
         api, conceptual_api = get_shader_api(shader_type)
 
         if args.type and conceptual_api not in args.type:
@@ -413,7 +418,9 @@ def extract_shader_at(file, offset, size, filename, sub_programs):
         add_header(headers, 'API {}'.format(api))
         add_header(headers, 'Shader model {}'.format(get_shader_model(shader_type)))
         add_header(headers, 'undeciphered1: {} {} {} {}'.format(date, u3, u4, u5))
-        if args.skip_classic_headers:
+        if u6 is not None:
+            add_header(headers, 'undeciphered1a: {}'.format(u6))
+        if skip_classic_headers:
             shader.program.name = program_name
             shader.sub_program.name = api
         else:
@@ -463,7 +470,7 @@ def parse_unity53_shader(filename):
         sub_programs = next(sub_program_generator)
         (offset, size) = struct.unpack('<II', file.read(8))
         print('Shader %i offset: %i, size: %i' % (i, offset, size))
-        extract_shader_at(file, offset, size, os.path.basename(filename), sub_programs)
+        extract_shader_at(file, offset, size, os.path.basename(filename), sub_programs, args.skip_classic_headers)
 
 def parse_args():
     global args
