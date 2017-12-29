@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import sys, os, argparse, glob, struct, zlib, itertools
+import sys, os, argparse, glob, struct, zlib, itertools, io
 import extract_unity_shaders, extract_unity53_shaders
+from unity_asset_extractor import lz4_decompress
 
 def align(file, alignment):
     off = file.tell()
@@ -349,12 +350,14 @@ def parse_unity55_shader(filename):
     align(file, 4)
 
     num_platforms = parse_u4(file, 'Num Platforms', indent=2)
+    platforms = []
     for i in range(num_platforms):
-        parse_x4(file, 'Platform', indent=3)
+        platforms.append(parse_x4(file, 'Platform', indent=3))
 
     num_offsets = parse_u4(file, 'Num Offsets', indent=2)
+    offsets = []
     for i in range(num_offsets):
-        parse_x4(file, 'Offset', indent=3)
+        offsets.append(parse_x4(file, 'Offset', indent=3))
 
     num_compressed_lengths = parse_u4(file, 'Num Compressed Lengths', indent=2)
     compressed_lengths = []
@@ -362,8 +365,11 @@ def parse_unity55_shader(filename):
         compressed_lengths.append(parse_u4(file, 'Compressed Length', indent=3))
 
     num_decompressed_lengths = parse_u4(file, 'Num Decompressed Lengths', indent=2)
+    decompressed_lengths = []
     for i in range(num_decompressed_lengths):
-        parse_u4(file, 'Decompressed Length', indent=3)
+        decompressed_lengths.append(parse_u4(file, 'Decompressed Length', indent=3))
+
+    assert(num_platforms == num_offsets == num_compressed_lengths == num_decompressed_lengths)
 
     num_compressed_bytes = parse_u4(file, 'Num Compressed Bytes', indent=2)
     assert(num_compressed_bytes == sum(compressed_lengths))
@@ -375,6 +381,12 @@ def parse_unity55_shader(filename):
     parse_byte(file, 'ShaderIsBaked', indent=2)
     align(file, 4)
     assert(file.read(1) == b'') # Check whole resource was parsed
+
+    for i in range(num_offsets):
+        print('  Decompressed Blob %i (platform %i):' % (i, platforms[i]))
+        blob = io.BytesIO(compressed_blob[offsets[i]:offsets[i]+compressed_lengths[i]])
+        decompressed = lz4_decompress(blob, decompressed_lengths[i])
+        hexdump(decompressed, indent=1)
 
 def parse_args():
     global args
