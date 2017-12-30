@@ -67,7 +67,11 @@ class Pass(UnnamedTree):
             yield self.tags
         if self.tags1 is not None:
             yield self.tags1
-        if not self.ZWrite:
+
+        # Not positive this is right, but seems likely:
+        if self.ZWrite[1] != '<noninit>':
+            yield 'ZWrite [%s]' % self.ZWrite[1]
+        elif not self.ZWrite[0]:
             yield 'ZWrite Off'
 
 class Program(NamedTree):
@@ -151,7 +155,7 @@ def parse_state_float(file, verify_name, indent=4):
     (val,) = struct.unpack('<f', file.read(4))
     name = parse_string(file)
     print_state_entry(verify_name, '%.9g' % val, name, indent=indent)
-    return val
+    return val, name
 
 def parse_rt_blend_state(file, rt):
     print('   RT Blend State[%i]:' % rt)
