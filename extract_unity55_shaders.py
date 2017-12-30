@@ -4,6 +4,63 @@ import sys, os, argparse, glob, struct, zlib, itertools, io
 import extract_unity_shaders, extract_unity53_shaders
 from unity_asset_extractor import lz4_decompress
 
+# Data structure we manufacture to create classic Unity style headers. For now
+# we only create fairly minimal headers with the information we need later,
+# such as Tags to detect SHADOWCASTERs. We also skip some information like
+# bindings that is redundantly available in the 5.3 style headers.
+
+class UnnamedTree(list):
+    @property
+    def parent_counter_attr(self):
+        return '%s_counter' % self.keyword
+
+    @property
+    def parent_counter(self):
+        return getattr(self.parent, self.parent_counter_attr, 0)
+
+    @parent_counter.setter
+    def parent_counter(self, val):
+        return setattr(self.parent, self.parent_counter_attr, val)
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.parent_counter += 1
+        self.counter = self.parent_counter
+
+    def header(self):
+        return '%s %i/%i {' % (self.__class__.__name__, self.counter, self.parent_counter)
+
+class NamedTree(list):
+    def header(self):
+        return '%s "%s" {' % (self.__class__.__name__, self.name)
+
+class Shader(NamedTree):
+    keyword = 'Shader'
+    parent = None
+
+    @property
+    def filename(self):
+        return safe_filename(self.name)
+
+class SubShader(UnnamedTree):
+    keyword = 'SubShader'
+    def __init__(self, parent):
+        UnnamedTree.__init__(self, parent)
+class Pass(UnnamedTree):
+    keyword = 'Pass'
+    def __init__(self, parent):
+        UnnamedTree.__init__(self, parent)
+class Program(NamedTree):
+    keyword = 'Program'
+    def __init__(self, parent, name):
+        self.parent = parent
+        self.name = name
+class SubProgram(NamedTree):
+    keyword = 'SubProgram'
+    def __init__(self, parent, name):
+        self.parent = parent
+        self.name = name
+
 def align(file, alignment):
     off = file.tell()
     mod = off % alignment
@@ -255,12 +312,13 @@ def parse_uav_params(file, name_dict):
         (NameIndex, Index, OriginalIndex) = struct.unpack('<3I', file.read(12))
         print('      %s: %i %i' % (name_dict[NameIndex], Index, OriginalIndex))
 
-def parse_subprograms(file, subprogram_type, name_dict):
-    print('   %s:' % subprogram_type)
+def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
+    print('   %s:' % program_type)
+    program = Program(pass_info, program_type)
     num_subprograms = parse_u4(file, 'Num Subprograms')
     for i in range(num_subprograms):
         print('    Subprogram %i:' % i)
-        parse_x4(file, 'BlobIndex', indent=5)
+        BlobIndex = parse_u4(file, 'BlobIndex', indent=5)
         parse_channels(file)
         parse_keywords(file, name_dict)
         (ShaderHardwareTier, GpuProgramType) = struct.unpack('<2B', file.read(2))
@@ -276,7 +334,12 @@ def parse_subprograms(file, subprogram_type, name_dict):
         parse_cb_bindings(file, name_dict)
         parse_uav_params(file, name_dict)
 
-def parse_pass(file):
+        sub_program = SubProgram(program, extract_unity53_shaders.get_shader_api(GpuProgramType)[0])
+        assert((BlobIndex, GpuProgramType) not in sub_programs)
+        sub_programs[(BlobIndex, GpuProgramType)] = sub_program
+
+def parse_pass(file, sub_shader, sub_programs):
+    pass_info = Pass(sub_shader)
     name_dict = parse_name_indices_table(file)
 
     type = parse_x4(file, 'Type', indent=3)
@@ -285,11 +348,11 @@ def parse_pass(file):
 
     parse_x4(file, 'ProgramMask', indent=3)
 
-    parse_subprograms(file, 'progVertex', name_dict)
-    parse_subprograms(file, 'progFragment', name_dict)
-    parse_subprograms(file, 'progGeometry', name_dict)
-    parse_subprograms(file, 'progHull', name_dict)
-    parse_subprograms(file, 'progDomain', name_dict)
+    parse_programs(file, 'vp', name_dict, pass_info, sub_programs)
+    parse_programs(file, 'fp', name_dict, pass_info, sub_programs)
+    parse_programs(file, 'gp', name_dict, pass_info, sub_programs)
+    parse_programs(file, 'hp', name_dict, pass_info, sub_programs)
+    parse_programs(file, 'dp', name_dict, pass_info, sub_programs)
 
     parse_byte(file, 'hasInstancingVariant', indent=3)
     align(file, 4)
@@ -314,7 +377,7 @@ def parse_dependencies_2(file):
         (FileID, PathID) = struct.unpack('<IQ', file.read(12))
         print('   FileID: %i PathID: %i' % (FileID, PathID))
 
-def parse_decompressed_blob(blob, filename):
+def parse_decompressed_blob(blob, filename, sub_programs):
     num_shaders = parse_u4(blob, 'Num shaders in blob', indent=3)
     shader_offsets = []
     for i in range(num_shaders):
@@ -322,8 +385,9 @@ def parse_decompressed_blob(blob, filename):
 
     for i, (offset, length) in enumerate(shader_offsets):
         print('    Shader %i:' % i)
+        sub_program = lambda shader_type: sub_programs[(i, shader_type)]
         extract_unity53_shaders.args = args
-        extract_unity53_shaders.extract_shader_at(blob, offset, length, filename, None, True)
+        extract_unity53_shaders.extract_shader_at(blob, offset, length, filename, sub_program, False)
 
 def safe_filename(filename):
     filename = filename.replace('/', '_')
@@ -332,6 +396,8 @@ def safe_filename(filename):
 
 def parse_unity55_shader(filename):
     file = open(filename, 'rb')
+    shader = Shader()
+    sub_programs = {}
 
     (asset_name_len,) = struct.unpack('<I', file.read(4))
     assert(asset_name_len == 0)
@@ -342,20 +408,21 @@ def parse_unity55_shader(filename):
     print('Number of subshaders: %i' % num_subshaders)
     for subshader in range(num_subshaders):
         print(' Subshader %i:' % subshader)
+        sub_shader = SubShader(shader)
 
         (num_passes,) = struct.unpack('<I', file.read(4))
         print('  Number of passes: %i' % num_passes)
         for pass_no in range(num_passes):
             print('  Pass %i:' % pass_no)
-            parse_pass(file)
+            parse_pass(file, sub_shader, sub_programs)
 
         parse_tags(file, indent=2)
         parse_u4(file, 'LOD', indent=2)
 
-    Name = parse_string(file)
+    shader.name = parse_string(file)
     CustomEditorName = parse_string(file)
     FallbackName = parse_string(file)
-    print('  Name: %s' % Name)
+    print('  Name: %s' % shader.name)
     print('  CustomEditorName: %s' % CustomEditorName)
     print('  FallbackName: %s' % FallbackName)
 
@@ -402,7 +469,7 @@ def parse_unity55_shader(filename):
         blob = io.BytesIO(compressed_blob[offsets[i]:offsets[i]+compressed_lengths[i]])
         decompressed = lz4_decompress(blob, decompressed_lengths[i])
         # hexdump(decompressed, indent=1)
-        parse_decompressed_blob(io.BytesIO(decompressed), safe_filename(Name))
+        parse_decompressed_blob(io.BytesIO(decompressed), shader.filename, sub_programs)
 
 def parse_args():
     global args

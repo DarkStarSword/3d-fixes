@@ -390,15 +390,6 @@ def synthesize_sub_program(name):
 
 # NOTE: Also called from extract_unity55_shaders.py
 def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_headers=False):
-    headers = []
-    if skip_classic_headers:
-        sub_program = synthesize_sub_program(os.path.splitext(os.path.splitext(filename)[0])[0])
-    else:
-        sub_program = sub_programs[0]
-        headers.extend(extract_unity_shaders.combine_similar_headers(sub_programs) + [''])
-    headers.append('Unity 5.3 headers extracted from %s:' % filename)
-    shader = extract_unity_shaders.get_parents(sub_program)
-
     saved_offset = file.tell()
     file.seek(offset)
     try:
@@ -413,6 +404,19 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         if args.type and conceptual_api not in args.type:
                 file.seek(saved_offset)
                 return
+
+        headers = []
+        if skip_classic_headers:
+            sub_program = synthesize_sub_program(os.path.splitext(os.path.splitext(filename)[0])[0])
+        elif callable(sub_programs):
+            sub_program = sub_programs(shader_type)
+            headers = extract_unity_shaders.collect_headers(sub_program)
+            headers.append('')
+        else:
+            sub_program = sub_programs[0]
+            headers.extend(extract_unity_shaders.combine_similar_headers(sub_programs) + [''])
+        headers.append('Unity 5.3 headers extracted from %s:' % filename)
+        shader = extract_unity_shaders.get_parents(sub_program)
 
         program_name = get_program_name(shader_type)
         add_header(headers, 'API {}'.format(api))
