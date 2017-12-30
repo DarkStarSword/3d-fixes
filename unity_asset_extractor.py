@@ -110,7 +110,7 @@ def extract_raw(file, base_offset, offset, size, unity_version, file_version, ex
     saved_off = file.tell()
     try:
         file.seek(base_offset+offset)
-        path = get_extraction_path(file, None, offset, extension)
+        path = get_extraction_path(file, None, base_offset + offset, extension)
 
         print('Dumping {}...'.format(repr(path)))
         with open(path, 'wb') as out:
@@ -135,7 +135,7 @@ def extract_shader(file, base_offset, offset, size, unity_version, file_version)
 
         (name_len,) = struct.unpack('<I', file.read(4))
         resource_name = file.read(name_len).decode('ascii')
-        path = get_extraction_path(file, resource_name, offset, 'shader')
+        path = get_extraction_path(file, resource_name, base_offset + offset, 'shader')
 
         align(file, 4)
         (shader_len,) = struct.unpack('<I', file.read(4))
