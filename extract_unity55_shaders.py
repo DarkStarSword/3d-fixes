@@ -48,12 +48,20 @@ class Shader(NamedTree):
     def filename(self):
         return safe_filename(self.name)
 
+    def __iter__(self):
+        if self.CustomEditorName:
+            yield 'CustomEditor "%s"' % self.CustomEditorName
+        if self.FallbackName:
+            yield 'Fallback "%s"' % self.FallbackName
+
 class SubShader(UnnamedTree):
     keyword = 'SubShader'
     def __init__(self, parent):
         UnnamedTree.__init__(self, parent)
 
     def __iter__(self):
+        if self.lod:
+            yield 'LOD %i' % self.lod
         if self.tags is not None:
             yield self.tags
 
@@ -63,6 +71,11 @@ class Pass(UnnamedTree):
         UnnamedTree.__init__(self, parent)
 
     def __iter__(self):
+        # TODO: if self.lod:
+        # TODO:     yield 'LOD %i' % self.lod
+        if self.name:
+            yield 'Name "%s"' % self.name
+
         if self.tags is not None:
             yield self.tags
         if self.tags1 is not None:
@@ -211,7 +224,8 @@ def parse_tags(file, indent=3):
         return ret
 
 def parse_state(file, pass_info):
-    print('   State Name: %s' % parse_string(file))
+    pass_info.name = parse_string(file)
+    print('   State Name: %s' % pass_info.name)
 
     for rt in range(8):
         parse_rt_blend_state(file, rt)
@@ -245,7 +259,7 @@ def parse_state(file, pass_info):
 
     pass_info.tags = parse_tags(file)
 
-    parse_x4(file, 'LOD', indent=3)
+    pass_info.lod = parse_u4(file, 'LOD', indent=3)
     parse_x4(file, 'lighting', indent=3)
 
 def hexdump(buf, start=0, width=16, indent=0):
@@ -446,14 +460,14 @@ def parse_unity55_shader(filename):
             parse_pass(file, sub_shader, sub_programs)
 
         sub_shader.tags = parse_tags(file, indent=2)
-        parse_u4(file, 'LOD', indent=2)
+        sub_shader.lod = parse_u4(file, 'LOD', indent=2)
 
     shader.name = parse_string(file)
-    CustomEditorName = parse_string(file)
-    FallbackName = parse_string(file)
+    shader.CustomEditorName = parse_string(file)
+    shader.FallbackName = parse_string(file)
     print('  Name: %s' % shader.name)
-    print('  CustomEditorName: %s' % CustomEditorName)
-    print('  FallbackName: %s' % FallbackName)
+    print('  CustomEditorName: %s' % shader.CustomEditorName)
+    print('  FallbackName: %s' % shader.FallbackName)
 
     parse_dependencies_1(file)
 
