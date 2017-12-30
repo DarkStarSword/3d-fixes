@@ -9,7 +9,7 @@ from unity_asset_extractor import lz4_decompress
 # such as Tags to detect SHADOWCASTERs. We also skip some information like
 # bindings that is redundantly available in the 5.3 style headers.
 
-class UnnamedTree(list):
+class UnnamedTree(object):
     @property
     def parent_counter_attr(self):
         return '%s_counter' % self.keyword
@@ -30,9 +30,15 @@ class UnnamedTree(list):
     def header(self):
         return '%s %i/%i {' % (self.__class__.__name__, self.counter, self.parent_counter)
 
-class NamedTree(list):
+    def __iter__(self):
+        return iter([])
+
+class NamedTree(object):
     def header(self):
         return '%s "%s" {' % (self.__class__.__name__, self.name)
+
+    def __iter__(self):
+        return iter([])
 
 class Shader(NamedTree):
     keyword = 'Shader'
@@ -46,10 +52,22 @@ class SubShader(UnnamedTree):
     keyword = 'SubShader'
     def __init__(self, parent):
         UnnamedTree.__init__(self, parent)
+
+    def __iter__(self):
+        if self.tags is not None:
+            yield self.tags
+
 class Pass(UnnamedTree):
     keyword = 'Pass'
     def __init__(self, parent):
         UnnamedTree.__init__(self, parent)
+
+    def __iter__(self):
+        if self.tags is not None:
+            yield self.tags
+        if self.tags1 is not None:
+            yield self.tags1
+
 class Program(NamedTree):
     keyword = 'Program'
     def __init__(self, parent, name):
@@ -178,12 +196,14 @@ def parse_byte(file, name=None, indent=4):
 def parse_tags(file, indent=3):
     (num_pass_tags,) = struct.unpack('<I', file.read(4))
     if num_pass_tags:
-        print('%sTags {' % (' ' * indent), end='')
+        ret = 'Tags {'
         for i in range(num_pass_tags):
-            print(' "%s"="%s"' % (parse_string(file), parse_string(file)), end='')
-        print(' }')
+            ret += ' "%s"="%s"' % (parse_string(file), parse_string(file))
+        ret += ' }'
+        print('%s%s' % (' ' * indent, ret))
+        return ret
 
-def parse_state(file):
+def parse_state(file, pass_info):
     print('   State Name: %s' % parse_string(file))
 
     for rt in range(8):
@@ -216,7 +236,7 @@ def parse_state(file):
     parse_x4(file, 'fogMode', indent=3)
     parse_x4(file, 'gpuProgramID', indent=3)
 
-    parse_tags(file)
+    pass_info.tags = parse_tags(file)
 
     parse_x4(file, 'LOD', indent=3)
     parse_x4(file, 'lighting', indent=3)
@@ -335,8 +355,9 @@ def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
         parse_uav_params(file, name_dict)
 
         sub_program = SubProgram(program, extract_unity53_shaders.get_shader_api(GpuProgramType)[0])
-        assert((BlobIndex, GpuProgramType) not in sub_programs)
-        sub_programs[(BlobIndex, GpuProgramType)] = sub_program
+        if (BlobIndex, GpuProgramType) not in sub_programs:
+            sub_programs[(BlobIndex, GpuProgramType)] = []
+        sub_programs[(BlobIndex, GpuProgramType)].append(sub_program)
 
 def parse_pass(file, sub_shader, sub_programs):
     pass_info = Pass(sub_shader)
@@ -344,7 +365,7 @@ def parse_pass(file, sub_shader, sub_programs):
 
     type = parse_x4(file, 'Type', indent=3)
 
-    parse_state(file)
+    parse_state(file, pass_info)
 
     parse_x4(file, 'ProgramMask', indent=3)
 
@@ -362,7 +383,8 @@ def parse_pass(file, sub_shader, sub_programs):
     print('   UseName: %s' % UseName)
     print('   Name: %s' % Name)
     print('   TextureName: %s' % TextureName)
-    parse_tags(file)
+    pass_info.tags1 = parse_tags(file)
+    assert(pass_info.tags1 is None)
 
 def parse_dependencies_1(file):
     num = parse_u4(file, 'Num Dependencies', indent=2)
@@ -416,7 +438,7 @@ def parse_unity55_shader(filename):
             print('  Pass %i:' % pass_no)
             parse_pass(file, sub_shader, sub_programs)
 
-        parse_tags(file, indent=2)
+        sub_shader.tags = parse_tags(file, indent=2)
         parse_u4(file, 'LOD', indent=2)
 
     shader.name = parse_string(file)

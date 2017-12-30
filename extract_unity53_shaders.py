@@ -408,11 +408,9 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         headers = []
         if skip_classic_headers:
             sub_program = synthesize_sub_program(os.path.splitext(os.path.splitext(filename)[0])[0])
-        elif callable(sub_programs):
-            sub_program = sub_programs(shader_type)
-            headers = extract_unity_shaders.collect_headers(sub_program)
-            headers.append('')
         else:
+            if callable(sub_programs):
+                sub_programs = sub_programs(shader_type)
             sub_program = sub_programs[0]
             headers.extend(extract_unity_shaders.combine_similar_headers(sub_programs) + [''])
         headers.append('Unity 5.3 headers extracted from %s:' % filename)
