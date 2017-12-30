@@ -67,6 +67,8 @@ class Pass(UnnamedTree):
             yield self.tags
         if self.tags1 is not None:
             yield self.tags1
+        if not self.ZWrite:
+            yield 'ZWrite Off'
 
 class Program(NamedTree):
     keyword = 'Program'
@@ -149,6 +151,7 @@ def parse_state_float(file, verify_name, indent=4):
     (val,) = struct.unpack('<f', file.read(4))
     name = parse_string(file)
     print_state_entry(verify_name, '%.9g' % val, name, indent=indent)
+    return val
 
 def parse_rt_blend_state(file, rt):
     print('   RT Blend State[%i]:' % rt)
@@ -214,7 +217,7 @@ def parse_state(file, pass_info):
     align(file, 4)
 
     parse_state_float(file, 'zTest', indent=3)
-    parse_state_float(file, 'zWrite', indent=3)
+    pass_info.ZWrite = parse_state_float(file, 'zWrite', indent=3)
     parse_state_float(file, 'culling', indent=3)
     parse_state_float(file, 'offsetFactor', indent=3)
     parse_state_float(file, 'offsetUnits', indent=3)
