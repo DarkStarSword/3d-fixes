@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, struct, io
+import unity_asset_extractor
 from unity_asset_extractor import lz4_decompress
 
 def read_cstring(file):
@@ -8,18 +9,18 @@ def read_cstring(file):
     while True:
         c = file.read(1)
         if c == b'\0':
-            return s
+            return s.decode('ascii')
         s += c
 
 def analyse(file):
     magic = read_cstring(file)
-    assert(magic == b'UnityFS')
+    assert(magic == 'UnityFS')
 
     (file_version,) = struct.unpack('>I', file.read(4))
     assert(file_version == 6)
 
-    compat_version = read_cstring(file).decode('ascii')
-    created_version = read_cstring(file).decode('ascii')
+    compat_version = read_cstring(file)
+    created_version = read_cstring(file)
     print('Bundle compatible with Unity %s' % compat_version)
     print('Bundle created with Unity %s' % created_version)
 
@@ -64,8 +65,10 @@ def analyse(file):
     for i in range(num_files):
         (offset, size, flags) = struct.unpack('>QQI', data_header.read(20))
         name = read_cstring(data_header)
-        print(' File %i: 0x%016x %10u 0x%08x "%s"' % (i, offset, size, flags, name.decode('ascii')))
-        open(name, 'wb').write(decompressed[offset:offset+size])
+        print(' File %i: 0x%016x %10u 0x%08x "%s"' % (i, offset, size, flags, name))
+        stream = io.BytesIO(decompressed[offset:offset+size])
+        stream.name = name
+        unity_asset_extractor.analyse(stream)
 
     assert(data_header.read(1) == b'')
 

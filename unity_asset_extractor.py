@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, struct, itertools, codecs
+import sys, os, struct, itertools, codecs, io
 
 def hexdump(buf, start=0, width=16, indent=0):
 	a = ''
@@ -439,7 +439,10 @@ def analyse(file):
     # print(repr(file.read(16)))
 
     # print("File size: {0} bytes".format(file_len))
-    assert(os.fstat(file.fileno()).st_size == file_len)
+    try:
+        assert(os.fstat(file.fileno()).st_size == file_len)
+    except io.UnsupportedOperation:
+        pass
 
     # 8 in Creavures, 9 in most Unity 4 games, 14 in Ori (Unity 5)
     print("File Version: {0}".format(version))
