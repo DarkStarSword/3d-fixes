@@ -200,6 +200,7 @@ def extract_shader(file, base_offset, offset, size, unity_version, file_version)
 extractors = {
     # 48: extract_raw,
     48: extract_shader,
+    # TODO: 142: extract_asset_bundle... yeah, looks like an asset file can contain an asset bundle, which contains more asset files...
 }
 
 def extract_resource(file, base_offset, offset, size, type, unity_version, file_version):
@@ -412,10 +413,9 @@ def parse_version_17(file, version):
 
     print("Num resources: {}".format(num_resources))
     for i in range(num_resources):
-        (id, u1, offset, size, type_idx) = struct.unpack('<5I', file.read(20))
+        (id, offset, size, type_idx) = struct.unpack('<Q3I', file.read(20))
         name = get_resource_name(file, data_off, offset)
         print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type_idx: {}".format(id, offset, size, name, type_idx))
-        assert(u1 == 0)
         type2 = type_table[type_idx]
         extract_resource(file, data_off, offset, size, type2, unity_version, version)
 
