@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import sys, os, struct, itertools
-import unity_asset_extractor
+import sys, os, struct, io
+from unity_asset_extractor import lz4_decompress
 
 def read_cstring(file):
     s = b''
@@ -23,15 +23,51 @@ def analyse(file):
     print('Bundle compatible with Unity %s' % compat_version)
     print('Bundle created with Unity %s' % created_version)
 
-    (zero, file_size, compressed_size, decompressed_size, header_size, flags) = struct.unpack('>6I', file.read(24))
-    assert(zero == 0)
+    (file_size, compressed_size, decompressed_size, flags) = struct.unpack('>Q3I', file.read(20))
     assert(os.fstat(file.fileno()).st_size == file_size)
-    print('compressed size: %i' % compressed_size) # data start or TOC len?
-    print('decompressed size: %i' % decompressed_size)
-    print('header size: %i' % header_size)
-    assert(header_size == 67)
+    print('file size: %i' % file_size)
+    print('compressed data header size: %i' % compressed_size)
+    print('data header size: %i' % decompressed_size)
     print('flags: 0x%08x' % flags)
-    assert(flags in (0x1d000100, 0x1e000100))
+
+    data_header = file.read(compressed_size)
+    if flags & 0x3f == 0x0:
+        pass
+    elif flags & 0x3f == 0x3:
+        data_header = io.BytesIO(lz4_decompress(io.BytesIO(data_header), decompressed_size))
+    else:
+        assert(False) # FIXME: Unsupported compression scheme
+
+    assert(data_header.read(16) == b'\0' * 16)
+
+    decompressed = b''
+
+    (num_blocks,) = struct.unpack('>I', data_header.read(4))
+    print('Number of blocks: %i' % num_blocks)
+    for i in range(num_blocks):
+        (decompressed_size, compressed_size, flags) = struct.unpack('>IIH', data_header.read(10))
+        print('Decompressing block %i/%i' % (i+1, num_blocks))
+        # print('  decompressed size: %i' % decompressed_size)
+        # print('  compressed size: %i' % compressed_size)
+        # print('  flags: 0x%04x' % flags)
+        block = file.read(compressed_size)
+        if flags & 0x3f == 0x0:
+            pass
+        elif flags & 0x3f == 0x3:
+            block = lz4_decompress(io.BytesIO(block), decompressed_size)
+        else:
+            assert(False) # FIXME: Unsupported compression scheme
+        decompressed += block
+
+    (num_files,) = struct.unpack('>I', data_header.read(4))
+    print('Number of files: %i' % num_files)
+    for i in range(num_files):
+        (offset, size, flags) = struct.unpack('>QQI', data_header.read(20))
+        name = read_cstring(data_header)
+        print(' File %i: 0x%016x %10u 0x%08x "%s"' % (i, offset, size, flags, name.decode('ascii')))
+        open(name, 'wb').write(decompressed[offset:offset+size])
+
+    assert(data_header.read(1) == b'')
 
 def main():
 
