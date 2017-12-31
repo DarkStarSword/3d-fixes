@@ -155,9 +155,15 @@ def analyse(file):
         name = read_cstring(data_header)
         print(' File %i: 0x%016x %10u 0x%08x "%s"' % (i, offset, size, flags, name))
 
-        asset_stream = OffsetIO(name, block_stream, offset, size)
-
-        unity_asset_extractor.analyse(asset_stream)
+        # Flag 0x4 appears to signify that the file is an asset container,
+        # which we will analyse using unity_asset_extractor. Not 100% positive
+        # that is correct, but seems to be the case on the files I've looked at
+        # so far.
+        if flags & 0x4:
+            asset_stream = OffsetIO(name, block_stream, offset, size)
+            unity_asset_extractor.analyse(asset_stream)
+        else:
+            print('  Skipping analysis due to missing flag 0x4')
 
     assert(data_header.read(1) == b'')
 
