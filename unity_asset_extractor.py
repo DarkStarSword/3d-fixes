@@ -1,6 +1,27 @@
 #!/usr/bin/env python3
 
-import sys, os, struct, itertools
+import sys, os, struct, itertools, codecs
+
+def hexdump(buf, start=0, width=16, indent=0):
+	a = ''
+	for i, b in enumerate(buf):
+		if i % width == 0:
+			if i:
+				print(' | %s |' % a)
+			print('%s  %08x: ' % (' ' * indent, start + i), end='')
+			a = ''
+		elif i and i % 4 == 0:
+			print(' ', end='')
+		if b >= ord(' ') and b <= ord('~'):
+			a += chr(b)
+		else:
+			a += '.'
+		print('%02X' % b, end='')
+	if a:
+		rem = width - (i % width) - 1
+		print(' ' * (rem*2), end='')
+		print(' ' * (rem//4 + 1), end='')
+		print('| %s%s |' % (a, ' ' * rem))
 
 # FIXME: Not all resource types have a filename!
 def get_resource_name(file, base_offset, offset):
@@ -332,15 +353,15 @@ def parse_version_17(file, version):
     (unity_version, ) = struct.unpack('8s', file.read(8))
     print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
 
-    (u2, u3, type_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
+    (u2, embedded, type_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
     print("Type table length: {0}".format(type_table_len))
 
     # Not sure what this value represents, but it seems to be consistent within
     # a single project. Seen 0x5 in Ori, 0x13 in Unity 5.0.0 personal (Viking sample)
     print("Unknown value: 0x{:02x}".format(u2))
+    print("Has data structure descriptions embedded in type table: %i" % embedded)
     assert(u2 == 0x5 or u2 == 0x13)
 
-    assert(u3 == 0)
     assert(u6 == 0)
     assert(u7 == 0)
 
@@ -363,6 +384,28 @@ def parse_version_17(file, version):
         else:
             u = struct.unpack('>4I', file.read(16))
             print(("   {:3}: {:3} {:2}" + " {:08x}" * 4).format(*([i, id, b2] + list(u))))
+
+        if embedded:
+            (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
+            if False:
+                # TODO: Actually might want to parse this, as it describes the
+                # data structure hardcoded in extract_unity55_shaders, which
+                # may allow it to be future proofed (but only for asset bundles
+                # that contain this section - regular asset files omit this)
+                print('        Num fields: %i, String table len: %i' % (num_fields, string_table_len))
+                for j in range(num_fields):
+                    entry = file.read(24)
+                    print('        ' + codecs.encode(entry, 'hex').decode('ascii'))
+                string_table = file.read(string_table_len).decode('ascii')
+                print('        "' + '"\n        "'.join(string_table.rstrip('\0').split('\0')) + '"')
+            else:
+                print('        Skipping data structure description...')
+                file.seek(num_fields * 24 + string_table_len, 1)
+
+    if set(extractors.keys()).intersection(type_table) == set():
+        print()
+        print('Bailing: Type table indicates that no assets of desired types are present')
+        return
 
     (num_resources,) = struct.unpack('<I', file.read(4))
     align(file, 4)
