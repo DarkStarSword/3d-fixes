@@ -212,6 +212,17 @@ Small wrapper around shaderasm.exe to calculate a shader's current CRC32.
 An alternative to Unity Asset Explorer, to extract assets (currently limited to
 shaders) from Unity 4 and Unity 5 games in batch.
 
+### unity_asset_bundle_extractor.py ###
+Parses Unity asset bundle files from games that use them (currently Unity 5.3+
+UnityFS LZ4 & uncompressed variants only) to extract shaders in batch. These
+files are conceptually similar to the files parsed with
+unity_asset_extractor.py, but they are distinct in that they use an additional
+container format, and are typically used for DLC. These may be found in the
+\*\_Data/StreamingAssets/Bundles directory of a Unity game. They contain asset
+files that unity_asset_extractor.py can parse, and it will automatically be
+called on these files. This script uses a block based on-demand decompression
+scheme to significantly speed up the process for larger asset bundles.
+
 ### dx11shaderanalyse.py ###
 Decodes some information in the ISGN & OSGN sections of DX11 shaders.
 
