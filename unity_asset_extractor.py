@@ -386,6 +386,19 @@ def parse_version_17(file, version):
             u = struct.unpack('>4I', file.read(16))
             print(("   {:3}: {:3} {:2}" + " {:08x}" * 4).format(*([i, id, b2] + list(u))))
 
+            if id == 114 and b2 == -1 and u == (0, 0, 0, 0) and embedded:
+                # Seen in LisBtS DLC/E2/e2_s01_d_loc.bytes in contained file
+                # "BuildPlayer-E2_S01D_BlackwellLot". Has numerous type 114
+                # entries, some with b2 positive and valid 32 byte hashes,
+                # others with b2 == -1, but still 32 byte hashes, all zero.
+                # Not positive of the correct way to detect this - zero hash,
+                # negative b2 following other positive b2s for the same type,
+                # a special case for this specific combination, or something
+                # else? For now being as specific as possible.
+                u = struct.unpack('>4I', file.read(16))
+                assert(u == (0, 0, 0, 0))
+                print(("        !!!!!!" + " {:08x}" * 4).format(*list(u)))
+
         if embedded:
             (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
             if False:
