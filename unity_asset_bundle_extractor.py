@@ -109,17 +109,30 @@ class OffsetIO(object):
     def fileno(self):
         raise io.UnsupportedOperation()
 
-def read_cstring(file):
+def _read_cstring(file, size=None):
     s = b''
     while True:
         c = file.read(1)
+        if c == b'':
+            raise EOFError()
         if c == b'\0':
-            return s.decode('ascii')
+            return s
+        if size is not None and len(s) >= size:
+            raise IndexError()
         s += c
 
+def read_cstring(file, size=None):
+    return _read_cstring(file, size=size).decode('ascii')
+
 def analyse(file):
-    magic = read_cstring(file)
-    assert(magic == 'UnityFS')
+    try:
+        magic = _read_cstring(file, 7)
+    except Exception as e:
+        print('%s occurred while looking for UnityFS signature' % e.__class__.__name__)
+        return
+    if magic != b'UnityFS':
+        print('Not a UnityFS file')
+        return
 
     (file_version,) = struct.unpack('>I', file.read(4))
     assert(file_version == 6)
