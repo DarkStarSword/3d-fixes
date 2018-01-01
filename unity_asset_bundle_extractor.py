@@ -23,6 +23,7 @@ class BlockStream(object):
     def activate_block(self):
         try:
             self.block = self.cache[self.block_idx]
+            self.block.seek(0)
         except KeyError:
             print('BlockStream %s: Reading block %i/%i' % (self.name, self.block_idx + 1, self.num_blocks))
         else:
