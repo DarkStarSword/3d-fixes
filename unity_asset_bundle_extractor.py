@@ -58,7 +58,7 @@ class BlockStream(object):
 
     def read(self, size):
         buf = self.block.read(size)
-        while len(buf) < size and self.block is not None:
+        while len(buf) < size and self.block_idx is not None:
             self.next_block()
             buf += self.block.read(size - len(buf))
         return buf
