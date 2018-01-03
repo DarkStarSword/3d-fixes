@@ -4,6 +4,16 @@ import sys, os, argparse, glob, struct, zlib, itertools, io
 import extract_unity_shaders, extract_unity53_shaders
 from unity_asset_extractor import lz4_decompress
 
+platform_map = {
+        1: "d3d9",
+        4: "d3d11",
+        8: "d3d11_9x",
+}
+
+def get_platform_api(platform_id):
+    api = platform_map[platform_id]
+    return (api, extract_unity53_shaders.api_mapping[api])
+
 def pr_verbose(*a, verbosity=2, **kw):
     if args.verbose >= verbosity:
         print(*a, **kw)
@@ -495,7 +505,18 @@ def parse_unity55_shader(filename):
     assert(file.read(1) == b'') # Check whole resource was parsed
 
     for i in range(num_offsets):
-        print('  Platform %i:' % platforms[i])
+        try:
+            api, conceptual_api = get_platform_api(platforms[i])
+            if args.type and conceptual_api not in args.type:
+                    continue
+        except:
+            # We haven't identified this platform ID yet. We will still be able
+            # to filter out individual shaders so this will still work as
+            # intended, but we will waste time decompressing these unidentified
+            # blobs.
+            api = 'FIXME: UNIDENTIFIED'
+
+        print('  Platform %s (%i):' % (api, platforms[i]))
         blob = io.BytesIO(compressed_blob[offsets[i]:offsets[i]+compressed_lengths[i]])
         decompressed = lz4_decompress(blob, decompressed_lengths[i])
         parse_decompressed_blob(io.BytesIO(decompressed), shader.filename, sub_programs)
