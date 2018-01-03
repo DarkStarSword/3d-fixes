@@ -404,8 +404,13 @@ def parse_pass(file, sub_shader, sub_programs):
     print('   UseName: %s' % UseName)
     print('   Name: %s' % Name)
     print('   TextureName: %s' % TextureName)
+
+    # I don't know how these tags differ from those in parse_state, since they
+    # both seem to apply to passes. LiSBtS has a shader asset containing both
+    # tags fields set, but the pass with this particular tags field has no
+    # subprograms (i.e. no shaders associated with it), so... I dunno???
+    # DLC/E2/e2_s04_a.bytes/CAB-f8a9698b4eaca505856ce5da8de78688/0x08ac37e0.shader.raw
     pass_info.tags1 = parse_tags(file)
-    assert(pass_info.tags1 is None)
 
 def parse_dependencies_1(file):
     num = parse_u4(file, 'Num Dependencies', indent=2)
