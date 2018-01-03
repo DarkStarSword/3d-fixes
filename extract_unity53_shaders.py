@@ -186,7 +186,7 @@ def decode_dx9_bind_info(file, headers):
     decode_binds(file, headers)
 
 def decode_dx11_bind_info(file, num_sections, headers):
-    print('num dx11 bind info sections: {0}'.format(num_sections))
+    print('     num dx11 bind info sections: {0}'.format(num_sections))
     decode_constbuffers(file, num_sections-1, headers, ShaderType.dx11)
     decode_binds(file, headers)
 
@@ -451,7 +451,7 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 
-        print()
+        # print()
         file.seek(saved_offset)
     except:
         file.seek(saved_offset)
