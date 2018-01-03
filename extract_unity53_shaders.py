@@ -47,6 +47,16 @@ def get_shader_model(shader_type):
 
 class ParseError(Exception): pass
 
+# We don't have verbosity in this script itself, but extract_unity55_shaders
+# does, and will adjust this before calling this script. Therefore, we want a
+# very high verbosity be default in this script to show all messages (until/if
+# we later add a verbose option to this script):
+verbosity = 100
+
+def pr_verbose(*a, verbosity=1, **kw):
+    if globals()['verbosity'] >= verbosity:
+        print(*a, **kw)
+
 class ShaderType(object):
     dx9 = 1
     dx11 = 2
@@ -186,7 +196,7 @@ def decode_dx9_bind_info(file, headers):
     decode_binds(file, headers)
 
 def decode_dx11_bind_info(file, num_sections, headers):
-    print('     num dx11 bind info sections: {0}'.format(num_sections))
+    pr_verbose('     num dx11 bind info sections: {0}'.format(num_sections), verbosity=2)
     decode_constbuffers(file, num_sections-1, headers, ShaderType.dx11)
     decode_binds(file, headers)
 

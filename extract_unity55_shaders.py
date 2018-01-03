@@ -4,7 +4,7 @@ import sys, os, argparse, glob, struct, zlib, itertools, io
 import extract_unity_shaders, extract_unity53_shaders
 from unity_asset_extractor import lz4_decompress
 
-def pr_verbose(*a, verbosity=1, **kw):
+def pr_verbose(*a, verbosity=2, **kw):
     if args.verbose >= verbosity:
         print(*a, **kw)
 
@@ -160,7 +160,7 @@ def print_state_entry(name1, val, name2, indent=4):
     #if name2 != '<noninit>':
     #    assert(name1 == name2)
 
-def print_field(name, val, indent=4, verbosity=1):
+def print_field(name, val, indent=4, verbosity=2):
     pr_verbose('{indent}{name:20}: {val}'.format(name=name, val=val, indent = ' ' * indent), verbosity=verbosity)
 
 def parse_state_x4(file, verify_name, indent=4):
@@ -205,7 +205,7 @@ def parse_x4(file, name, indent=4):
     print_field(name, '0x%08x' % val, indent=indent)
     return val
 
-def parse_u4(file, name=None, indent=4, verbosity=1):
+def parse_u4(file, name=None, indent=4, verbosity=2):
     (val,) = struct.unpack('<I', file.read(4))
     if name is not None:
         print_field(name, '%i' % val, indent=indent, verbosity=verbosity)
@@ -341,7 +341,7 @@ def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
     program = Program(pass_info, program_type)
     num_subprograms = parse_u4(file, 'Num Subprograms')
     for i in range(num_subprograms):
-        print('    Subprogram %s %i/%i:' % (program_type, i+1, num_subprograms))
+        pr_verbose('    Subprogram %s %i/%i:' % (program_type, i+1, num_subprograms), verbosity=1)
         BlobIndex = parse_u4(file, 'BlobIndex', indent=5)
         parse_channels(file)
         parse_keywords(file, name_dict)
@@ -409,13 +409,13 @@ def parse_dependencies_2(file):
         pr_verbose('   FileID: %i PathID: %i' % (FileID, PathID))
 
 def parse_decompressed_blob(blob, filename, sub_programs):
-    num_shaders = parse_u4(blob, 'Num shaders in blob', indent=3)
+    num_shaders = parse_u4(blob, 'Num shaders', indent=3, verbosity=0)
     shader_offsets = []
     for i in range(num_shaders):
         shader_offsets.append(struct.unpack('<2I', blob.read(8)))
 
     for i, (offset, length) in enumerate(shader_offsets):
-        print('    Shader %i/%i:' % (i+1, num_shaders))
+        pr_verbose('    Shader %i/%i:' % (i+1, num_shaders), verbosity=1)
         sub_program = lambda shader_type: sub_programs[(i, shader_type)]
         extract_unity53_shaders.args = args
         extract_unity53_shaders.extract_shader_at(blob, offset, length, filename, sub_program, False)
@@ -438,13 +438,13 @@ def parse_unity55_shader(filename):
     (num_subshaders,) = struct.unpack('<I', file.read(4))
     pr_verbose('Number of subshaders: %i' % num_subshaders)
     for subshader in range(num_subshaders):
-        print(' Subshader %i/%i:' % (subshader+1, num_subshaders))
+        pr_verbose(' Subshader %i/%i:' % (subshader+1, num_subshaders), verbosity=1)
         sub_shader = SubShader(shader)
 
         (num_passes,) = struct.unpack('<I', file.read(4))
         pr_verbose('  Number of passes: %i' % num_passes)
         for pass_no in range(num_passes):
-            print('  Pass %i/%i:' % (pass_no+1, num_passes))
+            pr_verbose('  Pass %i/%i:' % (pass_no+1, num_passes), verbosity=1)
             parse_pass(file, sub_shader, sub_programs)
 
         sub_shader.tags = parse_tags(file, indent=2)
@@ -508,8 +508,10 @@ def parse_args():
     parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11'),
             help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
     parser.add_argument('--verbose', '-v', action='count', default=0,
-            help='Level of verbosity')
+            help='Level of verbosity. One level shows basic progress, two levels dumps every parsed field')
     args = parser.parse_args()
+
+    extract_unity53_shaders.verbosity = args.verbose
 
 def main():
     parse_args()
