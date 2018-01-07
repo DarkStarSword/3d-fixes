@@ -1,4 +1,5 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 3a3e478e1594ce20-vs.txt
+// Glow in cutscene (e.g. talking to Frank) - do not autofix - reflection fix messes up glow!
+
 // 3DMigoto: 3a3e478e1594ce20 | Matched 136 variants of 1 shaders: Dawn/Glows/AndysGlow
 //
 //                                        Unity headers extracted from Dawn_Glows_AndysGlow
@@ -84,19 +85,15 @@ dcl_output o2.xyz
 dcl_output o3.xyz
 dcl_output o4.xyzw
 dcl_temps 5
-
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 dcl_constantbuffer cb10[4], immediateIndexed
-
 ld_indexable(texture2d)(float,float,float,float) r3.xyzw, l(0, 0, 0, 0), t125.xyzw
 
-
-// Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 3a3e478e1594ce20-vs.txt
-
-mul r3.w, -r3.x, r3.y
-mad r4.xyz, -r3.wwww, cb10[0].xyzw, cb1[4].xyzw
+// Reflection autofix disabled, as it messes up glow in cutscenes:
+mov r4.xyzw, cb1[4].xyzw
+//mul r3.w, -r3.x, r3.y
+//mad r4.xyz, -r3.wwww, cb10[0].xyzw, cb1[4].xyzw
 
 mul r0.xyzw, v0.yyyy, cb2[1].xyzw
 mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
@@ -104,8 +101,6 @@ mad r0.xyzw, cb2[2].xyzw, v0.zzzz, r0.xyzw
 mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
 mov o0.xyzw, r0.xyzw
 
-// Automatic vertex shader halo fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 3a3e478e1594ce20-vs.txt
 ne r3.w, r0.w, l(1.0)
 if_nz r3.w
   add r3.w, r0.w, -r3.y
