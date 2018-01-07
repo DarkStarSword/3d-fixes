@@ -45,6 +45,7 @@ if [ $FIX_LIGHTING -eq 1 ]; then
 	       -o -name '69294277cca1bade-vs*' \
 	       -o -name '99341a34a001a3d1-vs*' \
 	       -o -name '94a6d6474c5424ae-vs*' \
+	       -o -name '4a87a6742ed6d7a9-vs*' \
 	       \) -a -print0 | xargs -0 dirname -z | sort -uz | sed -z 's/$/\/*-ps.txt/' | xargs -0 \
 			asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed $LIGHTING_EXTRA | update_ini
 	echo
