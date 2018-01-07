@@ -26,6 +26,11 @@ Installation
 
 3. I suggest disabling subtitles, as these are a little distracting.
 
+Troubleshooting
+---------------
+If you see any "nuclear glow" around objects, or the screen goes black when
+looking in certain directions, quit and relaunch the game.
+
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise
