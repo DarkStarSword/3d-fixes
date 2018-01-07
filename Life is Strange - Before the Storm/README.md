@@ -24,6 +24,8 @@ Installation
    Options" and enter "-window-mode exclusive" (without the quotes) and click
    "Ok"
 
+3. I suggest disabling subtitles, as these are a little distracting.
+
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise
