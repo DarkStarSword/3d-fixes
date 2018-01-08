@@ -3,6 +3,7 @@ Texture1D<float4> IniParams : register(t120);
 
 #define min_convergence IniParams[1].x
 #define max_convergence IniParams[1].y
+#define convergence_bias IniParams[1].z
 
 // Copied from lighting shaders with 3DMigoto, definition from
 // CGIncludes/UnityShaderVariables.cginc:
@@ -52,5 +53,5 @@ void main(out float convergence : SV_Target0)
 	z = max(downscaled_zbuffer.Load(float3(1, 1, 0)), z);
 
 	convergence = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
-	convergence = min(max(convergence, min_convergence), max_convergence);
+	convergence = max(min(max(convergence, min_convergence), max_convergence) + convergence_bias, 0);
 }
