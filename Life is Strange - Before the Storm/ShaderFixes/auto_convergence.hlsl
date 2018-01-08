@@ -1,9 +1,14 @@
 Texture2D<float> downscaled_zbuffer : register(t110);
+
+Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
 #define min_convergence IniParams[1].x
 #define max_convergence IniParams[1].y
 #define convergence_bias IniParams[1].z
+#define slow_convergence_rate IniParams[1].w
+#define slow_convergence_trigger IniParams[2].x
+#define instant_convergence_trigger IniParams[2].y
 
 // Copied from lighting shaders with 3DMigoto, definition from
 // CGIncludes/UnityShaderVariables.cginc:
@@ -45,6 +50,8 @@ cbuffer UnityPerCamera : register(b13)
 
 void main(out float convergence : SV_Target0)
 {
+	float target_convergence, convergence_difference;
+	float current_convergence = StereoParams.Load(0).y;
 	float z;
 
 	z =     downscaled_zbuffer.Load(float3(0, 0, 0));
@@ -52,6 +59,18 @@ void main(out float convergence : SV_Target0)
 	z = max(downscaled_zbuffer.Load(float3(0, 1, 0)), z);
 	z = max(downscaled_zbuffer.Load(float3(1, 1, 0)), z);
 
-	convergence = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
-	convergence = max(min(max(convergence, min_convergence), max_convergence) + convergence_bias, 0);
+	target_convergence = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
+	target_convergence = max(min(max(target_convergence, min_convergence), max_convergence) + convergence_bias, 0);
+
+	convergence_difference = distance(target_convergence, current_convergence);
+	if (convergence_difference >= instant_convergence_trigger) {
+		convergence = target_convergence;
+	} else if (convergence_difference >= slow_convergence_trigger) {
+		if (target_convergence > current_convergence)
+			convergence = min(target_convergence, current_convergence + slow_convergence_rate);
+		else
+			convergence = max(target_convergence, current_convergence - slow_convergence_rate);
+	} else {
+		convergence = 1.#QNAN;
+	}
 }
