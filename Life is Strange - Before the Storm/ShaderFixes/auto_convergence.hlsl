@@ -13,6 +13,13 @@ Texture1D<float4> IniParams : register(t120);
 #define instant_convergence_threshold IniParams[2].w
 #define time IniParams[3].x
 #define prev_time IniParams[3].y
+#define anti_judder_threshold IniParams[3].w
+
+struct auto_convergence_state {
+	float4 last_convergence;
+};
+
+RWStructuredBuffer<struct auto_convergence_state> state : register(u1);
 
 // Copied from lighting shaders with 3DMigoto, definition from
 // CGIncludes/UnityShaderVariables.cginc:
@@ -114,6 +121,15 @@ void main(out float auto_convergence : SV_Target0)
 	// convergence to prevent us going near infinity:
 	new_convergence = min(max(new_convergence, min_convergence), max_convergence_hard);
 
+	if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
+		// FIXME: This just prevents the change, but that might
+		// sometimes leave it with something obscuring the camera. We
+		// might be better selecting the minimum convergence, but have
+		// to be careful that doesn't cause us other problems.
+		auto_convergence = 1.#SNAN;
+		return;
+	}
+
 	// The *2 here is to compensate for the lag in setting the
 	// convergence due to the asynchronous transfer.
 	float diff = slow_convergence_rate * (time - prev_time) * 2;
@@ -128,4 +144,6 @@ void main(out float auto_convergence : SV_Target0)
 	} else {
 		auto_convergence = 1.#QNAN;
 	}
+
+	state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
 }
