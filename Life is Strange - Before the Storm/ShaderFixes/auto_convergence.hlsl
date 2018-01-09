@@ -4,11 +4,12 @@ Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
 #define min_convergence IniParams[1].x
-#define max_convergence IniParams[1].y
-#define convergence_bias IniParams[1].z
-#define slow_convergence_rate IniParams[1].w
-#define slow_convergence_trigger IniParams[2].x
-#define instant_convergence_trigger IniParams[2].y
+#define max_convergence_soft IniParams[1].y
+#define max_convergence_hard IniParams[1].z
+#define popout IniParams[1].w
+#define slow_convergence_rate IniParams[2].x
+#define slow_convergence_trigger IniParams[2].y
+#define instant_convergence_trigger IniParams[2].z
 
 // Copied from lighting shaders with 3DMigoto, definition from
 // CGIncludes/UnityShaderVariables.cginc:
@@ -48,29 +49,77 @@ cbuffer UnityPerCamera : register(b13)
 	uniform float4 unity_OrthoParams;
 }
 
-void main(out float convergence : SV_Target0)
+void main(out float auto_convergence : SV_Target0)
 {
 	float target_convergence, convergence_difference;
 	float current_convergence = StereoParams.Load(0).y;
-	float z;
+	float z, w;
+
+	float4 stereo = StereoParams.Load(0);
+	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
 
 	z =     downscaled_zbuffer.Load(float3(0, 0, 0));
 	z = max(downscaled_zbuffer.Load(float3(1, 0, 0)), z);
 	z = max(downscaled_zbuffer.Load(float3(0, 1, 0)), z);
 	z = max(downscaled_zbuffer.Load(float3(1, 1, 0)), z);
+	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
 
-	target_convergence = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
-	target_convergence = max(min(max(target_convergence, min_convergence), max_convergence) + convergence_bias, 0);
+	// A lot of the maths below is experimental to try to find a good
+	// auto-convergence algorithm that works well with a wide variety of
+	// screen sizes, seating distances, and varying scenes in the game.
 
-	convergence_difference = distance(target_convergence, current_convergence);
+	// Apply the max convergence now, before we apply the popout bias, on
+	// the theory that the max suitable convergence is going to vary based
+	// on screen size
+	target_convergence = min(w, max_convergence_soft);
+
+	// Apply the popout bias. This experimental formula is derived by
+	// taking the nvidia formula with the perspective divide and the
+	// original x=0:
+	//
+	//   x' = x + separation * (depth - convergence) / depth
+	//   x' = separation * (depth - convergence) / depth
+	//
+	// That gives us our original stereo corrected X value using a
+	// convergence that would place the closest object at screen depth
+	// (barring the result of capping the convergence). We want to find a
+	// new convergence value that would instead position the object
+	// slightly popped out - to do so in a way that is comfortable
+	// regardless of scene, screen size, and player distance from the
+	// screen we apply the popout bias to the x', call it x''. Because we
+	// are modifying this post-separation, we will need to multiply by the
+	// raw separation value so that it scales with separation (otherwise we
+	// would always end with the full pop-out regardless of separation -
+	// which is actually kind of cool - people who like toyification might
+	// appreciate it, but we do want turning the stereo effect down to
+	// reduce the stereo effect):
+	//
+	//   x'' = x' - (popout_bias * raw_separation)
+	//
+	// Then we rearrange the nvidia formula and substitute in the two
+	// previous formulas to find the new convergence:
+	//
+	//   x'' = separation * (depth - convergence') / depth
+	//   convergence' = depth * (1 - (x'' / separation))
+	//   convergence' = depth * (((popout_bias * raw_separation) - x') / separation + 1)
+	//   convergence' = depth * popout * raw_separation / separation + convergence
+	//
+	float new_convergence = w * popout * raw_sep / separation + target_convergence;
+
+	// Apply the minimum convergence now to ensure we can't go negative
+	// regardless of what the popout bias did, and a hard maximum
+	// convergence to prevent us going near infinity:
+	new_convergence = min(max(new_convergence, min_convergence), max_convergence_hard);
+
+	convergence_difference = distance(new_convergence, current_convergence);
 	if (convergence_difference >= instant_convergence_trigger) {
-		convergence = target_convergence;
+		auto_convergence = new_convergence;
 	} else if (convergence_difference >= slow_convergence_trigger) {
-		if (target_convergence > current_convergence)
-			convergence = min(target_convergence, current_convergence + slow_convergence_rate);
+		if (new_convergence > current_convergence)
+			auto_convergence = min(new_convergence, current_convergence + slow_convergence_rate);
 		else
-			convergence = max(target_convergence, current_convergence - slow_convergence_rate);
+			auto_convergence = max(new_convergence, current_convergence - slow_convergence_rate);
 	} else {
-		convergence = 1.#QNAN;
+		auto_convergence = 1.#QNAN;
 	}
 }
