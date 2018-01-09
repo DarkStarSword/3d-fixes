@@ -8,8 +8,11 @@ Texture1D<float4> IniParams : register(t120);
 #define max_convergence_hard IniParams[1].z
 #define popout IniParams[1].w
 #define slow_convergence_rate IniParams[2].x
-#define slow_convergence_trigger IniParams[2].y
-#define instant_convergence_trigger IniParams[2].z
+#define slow_convergence_threshold_near IniParams[2].y
+#define slow_convergence_threshold_far IniParams[2].z
+#define instant_convergence_threshold IniParams[2].w
+#define time IniParams[3].x
+#define prev_time IniParams[3].y
 
 // Copied from lighting shaders with 3DMigoto, definition from
 // CGIncludes/UnityShaderVariables.cginc:
@@ -111,14 +114,17 @@ void main(out float auto_convergence : SV_Target0)
 	// convergence to prevent us going near infinity:
 	new_convergence = min(max(new_convergence, min_convergence), max_convergence_hard);
 
-	convergence_difference = distance(new_convergence, current_convergence);
-	if (convergence_difference >= instant_convergence_trigger) {
+	// The *2 here is to compensate for the lag in setting the
+	// convergence due to the asynchronous transfer.
+	float diff = slow_convergence_rate * (time - prev_time) * 2;
+
+	convergence_difference = new_convergence - current_convergence;
+	if (abs(convergence_difference) >= instant_convergence_threshold) {
 		auto_convergence = new_convergence;
-	} else if (convergence_difference >= slow_convergence_trigger) {
-		if (new_convergence > current_convergence)
-			auto_convergence = min(new_convergence, current_convergence + slow_convergence_rate);
-		else
-			auto_convergence = max(new_convergence, current_convergence - slow_convergence_rate);
+	} else if (-convergence_difference > slow_convergence_threshold_near) {
+		auto_convergence = max(new_convergence, current_convergence - diff);
+	} else if (convergence_difference > slow_convergence_threshold_far) {
+		auto_convergence = min(new_convergence, current_convergence + diff);
 	} else {
 		auto_convergence = 1.#QNAN;
 	}
