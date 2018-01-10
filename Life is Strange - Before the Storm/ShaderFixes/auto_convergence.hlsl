@@ -6,17 +6,19 @@ Texture1D<float4> IniParams : register(t120);
 #define min_convergence IniParams[1].x
 #define max_convergence_soft IniParams[1].y
 #define max_convergence_hard IniParams[1].z
-#define popout IniParams[1].w
+#define ini_popout_bias IniParams[1].w
 #define slow_convergence_rate IniParams[2].x
 #define slow_convergence_threshold_near IniParams[2].y
 #define slow_convergence_threshold_far IniParams[2].z
 #define instant_convergence_threshold IniParams[2].w
 #define time IniParams[3].x
 #define prev_time IniParams[3].y
+#define prev_convergence IniParams[3].z
 #define anti_judder_threshold IniParams[3].w
 
 struct auto_convergence_state {
 	float4 last_convergence;
+	float user_popout_bias;
 };
 
 RWStructuredBuffer<struct auto_convergence_state> state : register(u1);
@@ -83,6 +85,13 @@ void main(out float auto_convergence : SV_Target0)
 	// on screen size
 	target_convergence = min(w, max_convergence_soft);
 
+	if (prev_convergence && convergence != prev_convergence) {
+		// User adjusted the convergence. Convert this to an equivalent
+		// popout bias for auto-convergence that we save in a buffer on
+		// the GPU. This is the below formula re-arranged:
+		state[0].user_popout_bias = (separation*(convergence - target_convergence)/(raw_sep*w)) - ini_popout_bias;
+	}
+
 	// Apply the popout bias. This experimental formula is derived by
 	// taking the nvidia formula with the perspective divide and the
 	// original x=0:
@@ -114,7 +123,7 @@ void main(out float auto_convergence : SV_Target0)
 	//   convergence' = depth * (((popout_bias * raw_separation) - x') / separation + 1)
 	//   convergence' = depth * popout * raw_separation / separation + convergence
 	//
-	float new_convergence = w * popout * raw_sep / separation + target_convergence;
+	float new_convergence = w * (ini_popout_bias + state[0].user_popout_bias) * raw_sep / separation + target_convergence;
 
 	// Apply the minimum convergence now to ensure we can't go negative
 	// regardless of what the popout bias did, and a hard maximum
