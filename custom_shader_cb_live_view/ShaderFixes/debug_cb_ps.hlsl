@@ -24,4 +24,7 @@ void main(gs2ps input, out float4 o0 : SV_Target0)
 	pos.xy += input.tex * char_size;
 
 	o0.xyzw = font.Load(int3(pos, 0)) * float4(colour, 1);
+
+	// Uncomment to darken the background for contrast:
+	// o0.w = max(o0.w, 0.75);
 }
