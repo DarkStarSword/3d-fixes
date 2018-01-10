@@ -87,9 +87,7 @@ void main(out float auto_convergence : SV_Target0)
 		// the GPU. This is the below formula re-arranged:
 		target_popout_bias = (separation*(convergence - target_convergence)/(raw_sep*w));
 		target_popout_bias = min(max(target_popout_bias, -1), 1) - ini_popout_bias;
-		// Ensure we aren't going backwards:
-		if (sign(target_popout_bias - state[0].user_popout_bias) == sign(convergence - prev_convergence))
-			state[0].user_popout_bias = target_popout_bias;
+		state[0].user_popout_bias = target_popout_bias;
 		state[0].last_adjust_time = time;
 		state[0].show_hud = true;
 	}
@@ -132,21 +130,32 @@ void main(out float auto_convergence : SV_Target0)
 	// convergence to prevent us going near infinity:
 	new_convergence = min(max(new_convergence, min_convergence), max_convergence_hard);
 
-	if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
-		// FIXME: This just prevents the change, but that might
-		// sometimes leave it with something obscuring the camera. We
-		// might be better selecting the minimum convergence, but have
-		// to be careful that doesn't cause us other problems.
-		auto_convergence = 1.#SNAN;
-		return;
-	}
-
 	// The *2 here is to compensate for the lag in setting the
 	// convergence due to the asynchronous transfer.
 	float diff = slow_convergence_rate * (time - prev_time) * 2;
 
 	convergence_difference = new_convergence - current_convergence;
 	if (abs(convergence_difference) >= instant_convergence_threshold) {
+
+		// The anti-judder countermeasure aims to detect situations
+		// where the auto-convergence makes an adjustment that moves
+		// something on or off screen, that in turn triggers another
+		// auto-convergence correction causing an oscillation between
+		// two or more convergence values. In this situation we want to
+		// stop trying to set the convergence back to a value it
+		// recently was, but we also have to choose which state we stop
+		// in. To try to avoid the camera being obscured, we try to
+		// stop in the lower convergence state
+		if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
+			if (new_convergence < current_convergence) {
+				auto_convergence = new_convergence;
+				state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
+				return;
+			}
+			auto_convergence = 1.#SNAN;
+			return;
+		}
+
 		auto_convergence = new_convergence;
 	} else if (-convergence_difference > slow_convergence_threshold_near) {
 		auto_convergence = max(new_convergence, current_convergence - diff);
