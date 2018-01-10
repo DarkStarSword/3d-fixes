@@ -1,3 +1,5 @@
+// Unusual lighting pattern (PCF_5x5_FORCE_INV_PROJECTION_IN_PS). Smashing mirror in junkyard.
+//
 // 3DMigoto: c3947cf574931d30 |    Unity headers extracted from Hidden_Internal-ScreenSpaceShadows
 //    Shader "Hidden/Internal-ScreenSpaceShadows" {
 //      SubShader 4/4 {
@@ -79,6 +81,7 @@ cbuffer cb0 : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main( 
   float4 v0 : TEXCOORD0,
@@ -96,15 +99,27 @@ void main(
   r0.z = 1 + -r0.x;
   r0.xy = v0.zw;
   r0.xyz = r0.xyz * float3(2,2,2) + float3(-1,-1,-1);
+
+// This shader doesn't do the usual thing to get the linear depth.
+// Use the inverse projection matrix to find the linear depth:
+float4 s = StereoParams.Load(0);
+float4 tmp = mul(r0, MATRIX(cb1, 10));
+float depth = -tmp.z / tmp.w;
+r0.x -= s.x * (depth - s.y) / depth;
+
+// unity_CameraInvProjection:
   r1.xyzw = cb1[11].xyzw * r0.yyyy;
   r1.xyzw = cb1[10].xyzw * r0.xxxx + r1.xyzw;
   r0.xyzw = cb1[12].xyzw * r0.zzzz + r1.xyzw;
   r0.xyzw = cb1[13].xyzw + r0.xyzw;
   r0.xyz = r0.xyz / r0.www;
+
+// unity_CameraToWorld:
   r1.xyzw = cb1[19].xyzw * r0.yyyy;
   r1.xyzw = cb1[18].xyzw * r0.xxxx + r1.xyzw;
   r0.xyzw = cb1[20].xyzw * -r0.zzzz + r1.xyzw;
   r0.xyzw = cb1[21].xyzw + r0.xyzw;
+
   r1.xyz = -cb2[0].xyz + r0.xyz;
   r1.x = dot(r1.xyz, r1.xyz);
   r2.xyz = -cb2[1].xyz + r0.xyz;
