@@ -70,7 +70,7 @@ void main(out float auto_convergence : SV_Target0)
 	// on screen size
 	target_convergence = min(w, max_convergence_soft);
 
-	if (prev_convergence && convergence != prev_convergence) {
+	if (separation && prev_convergence && convergence != prev_convergence) {
 		// User adjusted the convergence. Convert this to an equivalent
 		// popout bias for auto-convergence that we save in a buffer on
 		// the GPU. This is the below formula re-arranged:
