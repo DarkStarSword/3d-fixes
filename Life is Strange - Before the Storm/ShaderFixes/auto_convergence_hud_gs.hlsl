@@ -50,11 +50,12 @@ float2 get_char_dimensions(uint c)
 
 void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 {
-	if (c > ' ' && c < 0x7f) {
+	float2 cdim = get_char_dimensions(c);
+
+	if (c >= ' ' && c < 0x7f) {
 		gs2ps output;
-		// Not taking specific character width into account for simplicity.
-		// Could save some pixels by doing so, but who cares?
-		float2 dim = char_size / resolution.xy * 2 * font_scale;
+		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale;
+		float texture_x_percent = cdim.x / char_size.x;
 
 		output.character = c;
 
@@ -62,20 +63,19 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 		output.tex = float2(0, 1);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y - dim.y, 0, 1);
-		output.tex = float2(1, 1);
+		output.tex = float2(texture_x_percent, 1);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x        , cur_pos.y        , 0, 1);
 		output.tex = float2(0, 0);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y        , 0, 1);
-		output.tex = float2(1, 0);
+		output.tex = float2(texture_x_percent, 0);
 		ostream.Append(output);
 
 		ostream.RestartStrip();
 	}
 
 	// Increment current position taking specific character width into account:
-	float2 cdim = get_char_dimensions(c);
 	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
 }
 
