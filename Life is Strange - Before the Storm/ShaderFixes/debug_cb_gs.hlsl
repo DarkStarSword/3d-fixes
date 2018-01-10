@@ -99,7 +99,7 @@ void emit_int(int val, inout TriangleStream<gs2ps> ostream)
 	}
 	e = log10(val);
 	while (e >= 0) {
-		digit = int(val / pow(10, e)) % 10;
+		digit = uint(val / pow(10, e)) % 10;
 		emit_char(digit + 0x30, ostream);
 		e--;
 	}
@@ -142,7 +142,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 		if (e > 6)
 			scientific = e;
 		while (e - scientific >= 0) {
-			digit = int(val / pow(10, e)) % 10;
+			digit = uint(val / pow(10, e)) % 10;
 			emit_char(digit + 0x30, ostream);
 			if (digit || significant) // Don't count leading 0 as significant, but do count following 0s
 				significant++;
@@ -154,7 +154,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 	emit_char('.', ostream);
 	bool emitted = false;
 	while (!emitted || (significant < 6 && frac(val / pow(10, e + 1)))) {
-		digit = int(val / pow(10, e)) % 10;
+		digit = uint(val / pow(10, e)) % 10;
 		emit_char(digit + 0x30, ostream);
 		significant++;
 		e--;
