@@ -52,6 +52,17 @@ void main(out float auto_convergence : SV_Target0)
 	float target_popout_bias;
 	float z, w;
 
+	if (state[0].prev_auto_convergence_enabled != auto_convergence_enabled) {
+		state[0].last_adjust_time = time;
+		state[0].show_hud = true;
+	}
+	state[0].prev_auto_convergence_enabled = auto_convergence_enabled;
+
+	if (!auto_convergence_enabled) {
+		auto_convergence = 1.#SNAN;
+		return;
+	}
+
 	float4 stereo = StereoParams.Load(0);
 	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
 

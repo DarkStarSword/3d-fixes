@@ -11,10 +11,12 @@
 #define prev_convergence IniParams[3].z
 #define anti_judder_threshold IniParams[3].w
 #define auto_convergence_hud_timeout IniParams[4].x
+#define auto_convergence_enabled IniParams[4].y
 
 struct auto_convergence_state {
 	float4 last_convergence;
 	float user_popout_bias;
 	float last_adjust_time;
 	bool show_hud;
+	bool prev_auto_convergence_enabled;
 };
