@@ -15,6 +15,32 @@ I have at last managed to decipher the new format and we can now enjoy modern
 Unity games in stereo 3D once again, beginning with the prequel to one of my
 favourite games of all time :)
 
+Auto-Convergence
+----------------
+This fix introduces a brand new feature to automatically adjust the convergence
+while playing to suit the wide range of camera angles this game has. This
+feature tries to always maintain a small amount of pop-out to maximise the 3D
+effect, while preventing excessive popout that could make the scene
+uncomfortable to view and lowering the convergence when necessary to prevent
+objects near the camera from obscuring the view of the game.
+
+The auto-convergence feature replaces the traditional meaning of 3D Vision's
+convergence setting with a "popout" setting, which is similar to convergence,
+but gives better results with a wider range of camera angles, monitor sizes and
+viewing distances. The same keys that normally adjust the convergence will
+adjust the popout instead when auto-convergence is enabled, and the popout
+value will be displayed on screen while adjusting it.
+
+This feature has a number of tunable parameters, which can be tweaked by
+editing the [Constants] section in the d3dx.ini. These tunables include things
+such as the initial popout, minimum and maximum allowable convergence values,
+thresholds for how far the convergence is allowed to get away from the target,
+and anti-judder countermeasures.
+
+- ~: Toggle auto-convergence feature on and off
+- Ctrl+F5: Reduce popout when auto-convergence is on
+- Ctrl+F6: Increase popout when auto-convergence is on
+
 Installation
 ------------
 
@@ -26,10 +52,12 @@ Installation
 
 3. I suggest disabling subtitles, as these are a little distracting.
 
-Troubleshooting
----------------
-If you see any "nuclear glow" around objects, or the screen goes black when
-looking in certain directions, quit and relaunch the game.
+Known Issues
+------------
+- Activating the SBS/TAB shader will crash the game.
+- In some scenes an object obscuring the camera in only the left eye will fail
+  to trigger auto-convergence to move it out of the way. Fixing this would lead
+  to the same crash plaguing the SBS/TAB shader in this game.
 
 Like my Work?
 -------------
