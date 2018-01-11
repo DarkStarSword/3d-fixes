@@ -31,11 +31,17 @@ viewing distances. The same keys that normally adjust the convergence will
 adjust the popout instead when auto-convergence is enabled, and the popout
 value will be displayed on screen while adjusting it.
 
+Occasionally the auto-convergence may start jumping back and forth between high
+and low convergence. It has countermeasures to automatically detect when this
+happens and temporarily lock it to the lower convergence to stop it, but if it
+happens anyway and you find it distracting you can toggle the auto-convergence
+feature off by pressing ~
+
 This feature has a number of tunable parameters, which can be tweaked by
 editing the [Constants] section in the d3dx.ini. These tunables include things
 such as the initial popout, minimum and maximum allowable convergence values,
 thresholds for how far the convergence is allowed to get away from the target,
-and anti-judder countermeasures.
+and threshold for the anti-judder countermeasure.
 
 - ~: Toggle auto-convergence feature on and off
 - Ctrl+F5: Reduce popout when auto-convergence is on
