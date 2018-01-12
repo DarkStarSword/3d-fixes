@@ -316,3 +316,8 @@ collection.
 Translates the Unity global constant buffer definition from a shader (or
 shaders) into a cbuffer definition for use in a HLSL shader. If multiple
 shaders are specified, their definitions will be collated and merged together.
+
+### matrix.hlsl ###
+Includes functions to inverse a matrix in HLSL, a convinience macro to grab a
+matrix out of a constant buffer with no resource description, and functions to
+create the usual array of translation matrices.
