@@ -58,13 +58,6 @@ Installation
 
 3. I suggest disabling subtitles, as these are a little distracting.
 
-Known Issues
-------------
-- Activating the SBS/TAB shader will crash the game.
-- In some scenes an object obscuring the camera in only the left eye will fail
-  to trigger auto-convergence to move it out of the way. Fixing this would lead
-  to the same crash plaguing the SBS/TAB shader in this game.
-
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise

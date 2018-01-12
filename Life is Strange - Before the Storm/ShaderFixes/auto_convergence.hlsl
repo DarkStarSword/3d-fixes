@@ -1,4 +1,4 @@
-Texture2D<float> downscaled_zbuffer : register(t110);
+Texture2D<float> stereo2mono_downscaled_zbuffer : register(t110);
 
 Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
@@ -50,7 +50,7 @@ void main(out float auto_convergence : SV_Target0)
 	float target_convergence, convergence_difference;
 	float current_convergence = StereoParams.Load(0).y;
 	float target_popout_bias;
-	float z, w;
+	float z, zr, zl, w;
 
 	if (state[0].prev_auto_convergence_enabled != auto_convergence_enabled) {
 		state[0].last_convergence.xyzw = 0;
@@ -68,10 +68,17 @@ void main(out float auto_convergence : SV_Target0)
 	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
 	bool user_updated_convergence = separation && prev_convergence && convergence != prev_convergence;
 
-	z =     downscaled_zbuffer.Load(float3(0, 0, 0));
-	z = max(downscaled_zbuffer.Load(float3(1, 0, 0)), z);
-	z = max(downscaled_zbuffer.Load(float3(0, 1, 0)), z);
-	z = max(downscaled_zbuffer.Load(float3(1, 1, 0)), z);
+	zr = stereo2mono_downscaled_zbuffer.Load(int3(0, 0, 0));
+	zl = stereo2mono_downscaled_zbuffer.Load(int3(1, 0, 0));
+
+	// stereo2mono seems ok in Life is Strange: Before the Storm without
+	// the valid setting in StereoFlagsDX10, but it is known that this
+	// feature sometimes doesn't work on SLI, so only use the value from
+	// the left eye if it is valid to try to be safe (but, this is
+	// untested, and if it does happen it will mean that objects that only
+	// obscure the camera in the left eye won't trigger auto-convergence):
+	z = (zl ? min(zl, zr) : zr);
+
 	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
 
 	if (isinf(w)) {
