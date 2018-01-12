@@ -77,7 +77,7 @@ void main(out float auto_convergence : SV_Target0)
 	// the left eye if it is valid to try to be safe (but, this is
 	// untested, and if it does happen it will mean that objects that only
 	// obscure the camera in the left eye won't trigger auto-convergence):
-	z = (zl ? min(zl, zr) : zr);
+	z = (zl ? max(zl, zr) : zr);
 
 	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
 
