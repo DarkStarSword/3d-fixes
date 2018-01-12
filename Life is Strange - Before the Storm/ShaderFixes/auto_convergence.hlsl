@@ -66,12 +66,26 @@ void main(out float auto_convergence : SV_Target0)
 
 	float4 stereo = StereoParams.Load(0);
 	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
+	bool user_updated_convergence = separation && prev_convergence && convergence != prev_convergence;
 
 	z =     downscaled_zbuffer.Load(float3(0, 0, 0));
 	z = max(downscaled_zbuffer.Load(float3(1, 0, 0)), z);
 	z = max(downscaled_zbuffer.Load(float3(0, 1, 0)), z);
 	z = max(downscaled_zbuffer.Load(float3(1, 1, 0)), z);
 	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
+
+	if (isinf(w)) {
+		// No depth buffer, auto-convergence cannot work. Bail now,
+		// otherwise we would set the hard maximum convergence limit
+		auto_convergence = 1.#QNAN;
+		// Display a notice in the HUD if the user tries to change the
+		// convergence:
+		if (user_updated_convergence || warn_no_z_buffer)
+			state[0].last_adjust_time = time;
+		state[0].no_z_buffer = true;
+		return;
+	}
+	state[0].no_z_buffer = false;
 
 	// A lot of the maths below is experimental to try to find a good
 	// auto-convergence algorithm that works well with a wide variety of
@@ -82,7 +96,7 @@ void main(out float auto_convergence : SV_Target0)
 	// on screen size
 	target_convergence = min(w, max_convergence_soft);
 
-	if (separation && prev_convergence && convergence != prev_convergence) {
+	if (user_updated_convergence) {
 		// User adjusted the convergence. Convert this to an equivalent
 		// popout bias for auto-convergence that we save in a buffer on
 		// the GPU. This is the below formula re-arranged:

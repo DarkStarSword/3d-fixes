@@ -196,15 +196,31 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	emit_char(' ', ostream);
 
 	if (auto_convergence_enabled) {
-		emit_char('P', ostream);
-		emit_char('o', ostream);
-		emit_char('p', ostream);
-		emit_char('o', ostream);
-		emit_char('u', ostream);
-		emit_char('t', ostream);
-		emit_char(':', ostream);
-		emit_char(' ', ostream);
-		emit_float(ini_popout_bias + state[0].user_popout_bias, ostream);
+		if (state[0].no_z_buffer) {
+			emit_char(':', ostream);
+			emit_char(' ', ostream);
+			emit_char('N', ostream);
+			emit_char('o', ostream);
+			emit_char(' ', ostream);
+			emit_char('Z', ostream);
+			emit_char(' ', ostream);
+			emit_char('B', ostream);
+			emit_char('u', ostream);
+			emit_char('f', ostream);
+			emit_char('f', ostream);
+			emit_char('e', ostream);
+			emit_char('r', ostream);
+		} else {
+			emit_char('P', ostream);
+			emit_char('o', ostream);
+			emit_char('p', ostream);
+			emit_char('o', ostream);
+			emit_char('u', ostream);
+			emit_char('t', ostream);
+			emit_char(':', ostream);
+			emit_char(' ', ostream);
+			emit_float(ini_popout_bias + state[0].user_popout_bias, ostream);
+		}
 	} else {
 		emit_char('D', ostream);
 		emit_char('i', ostream);
