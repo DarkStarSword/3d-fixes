@@ -58,6 +58,11 @@ Installation
 
 3. I suggest disabling subtitles, as these are a little distracting.
 
+Troubleshooting
+---------------
+If 3D disengages after leaving the game idle for a while, press alt+enter
+twice to re-enable it.
+
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise
