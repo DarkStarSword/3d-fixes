@@ -88,9 +88,33 @@ def hex_to_best_double_str(val):
 
 	return _hex_to_best_str(val, _hex_to_double, _double_to_hex)
 
-def process_vals(vals):
-	yield ('from', 'float', 'check', 'double', 'check')
-	yield ('----', '-----', '-----', '------', '-----')
+def f32_sign(val):
+	return (val & 0x80000000) and '-' or '+'
+
+def f32_exponent(val):
+	biased = (val & 0x7f800000) >> 23
+	if biased == 0:
+		return 'zero/subnorm'
+	if biased == 0xff:
+		return 'inf/NAN'
+	return str(biased - 127)
+
+def is_subnormal(val):
+	return (val & 0x7f800000) == 0x00000000
+
+def f32_mantissa(val):
+	m = val & 0x007fffff
+	if is_subnormal(val):
+		return str(m / float(0x00800000))
+	return str((m | 0x00800000) / float(0x00800000))
+
+def process_vals(vals, verbose=False):
+	if verbose:
+		yield ('from', 'float', 'check', 'double', 'check', 'sign', 'exponent', 'mantissa')
+		yield ('----', '-----', '-----', '------', '-----', '----', '--------', '--------')
+	else:
+		yield ('from', 'float', 'check', 'double', 'check')
+		yield ('----', '-----', '-----', '------', '-----')
 	for val_str in vals:
 		if val_str.startswith('0x'):
 			val = int(val_str, 16)
@@ -106,14 +130,21 @@ def process_vals(vals):
 			dm = int(dc,16) == int(val_str,16)
 			if not dm:
 					dm = '%s (%s)' % (str(dm), dc)
-			yield (val_str, f, str(fm), hex_to_best_double_str(val), str(dm))
+			if verbose:
+				yield (val_str, f, str(fm), hex_to_best_double_str(val), str(dm), f32_sign(val), f32_exponent(val), f32_mantissa(val))
+			else:
+				yield (val_str, f, str(fm), hex_to_best_double_str(val), str(dm))
 		else:
 			val = float(val_str)
 			f = float_to_hex(val)
-			fm = hex_to_best_float_str(int(f, 16))
+			i = int(f, 16)
+			fm = hex_to_best_float_str(i)
 			d = double_to_hex(val)
 			dm = hex_to_best_double_str(int(d, 16))
-			yield (val_str, f, fm, d, dm)
+			if verbose:
+				yield (val_str, f, fm, d, dm, f32_sign(i), f32_exponent(i), f32_mantissa(i))
+			else:
+				yield (val_str, f, fm, d, dm)
 
 def align_output(input):
 	lengths = [ map(len, x) for x in input ]
@@ -160,6 +191,36 @@ def run_tests_64():
 		tests.append('0x%016x' % f)
 	print(align_output(list(process_vals(tests))))
 
+def run_tests_ms_accuracy():
+	def _run_tests_ms_accuracy(start = 16384, length = 100):
+		for s in range(start, start + length):
+			for ms in range(1000):
+				dec = '%i.%03i' % (s, ms)
+				f = float(dec)
+
+				fe = struct.pack('f', f)
+				f, = struct.unpack('f', fe)
+
+				cs = int(f)
+				cms = int(round(f * 1000)) % 1000
+				cdec = '%i.%03i' % (cs, cms)
+
+				if (cs != s or cms != ms):
+					print('Resolution lost at %s, became %s 0x%08x' % (dec, cdec, struct.unpack('I', fe)[0]))
+	x = 16384
+
+	#_run_tests_ms_accuracy(0, x) # No resolution loss
+	_run_tests_ms_accuracy(x, 10) # 4.5 hours, resolution down to 2ms
+	#_run_tests_ms_accuracy(x << 1, 10) # 9 hours, resolution down to 4ms
+	#_run_tests_ms_accuracy(x << 2, 10) # 18 hours, resolution down to 8ms
+	#_run_tests_ms_accuracy(x << 3, 10) # 36 hours, resolution down to 16ms - on par with system timer
+	#_run_tests_ms_accuracy(x << 4, 10) # 72 hours, resolution down to 31-32ms - worse than system timer
+	#_run_tests_ms_accuracy(x << 5, 10) # 6 days, resolution down to 62-63ms
+	#_run_tests_ms_accuracy(x << 6, 10) # 12.1 days, resolution down to 125ms
+	#_run_tests_ms_accuracy(x << 7, 10) # 24.3 days, resolution down to 249-251ms
+	#_run_tests_ms_accuracy(x << 8, 10) # 48.5 days, resolution down to 499ms
+	# GetTickCount() wraps around at 49.7 days
+
 def main():
 	import sys
 	if len(sys.argv) == 1:
@@ -171,6 +232,13 @@ def main():
 
 	if sys.argv[1] == 'test64':
 		return run_tests_64()
+
+	if sys.argv[1] == 'testms':
+		return run_tests_ms_accuracy()
+
+	if sys.argv[1] == '-v':
+		print(align_output(list(process_vals(sys.argv[2:], True))))
+		return
 
 	print(align_output(list(process_vals(sys.argv[1:]))))
 
