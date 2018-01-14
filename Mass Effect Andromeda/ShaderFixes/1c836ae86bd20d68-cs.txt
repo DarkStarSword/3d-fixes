@@ -100,6 +100,23 @@ movc r5.y, r4.y, -r3.y, -r2.z
 ubfe r2.y, l(1), l(2), vThreadIDInGroupFlattened.x
 movc r5.z, r2.y, l(1.000000), r2.x
 mov r5.w, l(1.000000)
+
+// Convert Z to W:
+dp4 r11.x, r3.xyzw, cb0[0].xyzw
+dp4 r11.y, r3.xyzw, cb0[1].xyzw
+dp4 r11.z, r3.xyzw, cb0[2].xyzw
+dp4 r11.w, r3.xyzw, cb0[3].xyzw
+div r11.xyzw, r11.xyzw, r11.wwww
+dp4 r12.x, r11.xyzw, cb1[0].xyzw
+dp4 r12.y, r11.xyzw, cb1[1].xyzw
+dp4 r12.z, r11.xyzw, cb1[2].xyzw
+dp4 r12.w, r11.xyzw, cb1[3].xyzw
+
+add r9.w, r12.w, -r9.y
+mad r12.x, -r9.w, r9.x, r12.x
+mov r3.xyzw, r12.xyzw
+
+// Threaded matrix multiply:
 dp4 r2.x, r5.xyzw, cb0[r2.w + 0].xyzw
 store_structured g0.x, r3.z, r3.w, r2.x
 sync_g_t
@@ -134,31 +151,6 @@ if_nz r1.y
     ge r2.z, r3.z, l(1.000000)
     if_nz r2.z
       ld_structured_indexable(structured_buffer, stride=112)(mixed,mixed,mixed,mixed) r4.xyzw, r2.y, l(0), t2.xyzw
-
-mov r13.xyz, r4.xyzx
-mov r13.w, l(1.0)
-dp4 r14.x, r13.xyzw, cb1[0].xyzw
-dp4 r14.y, r13.xyzw, cb1[1].xyzw
-dp4 r14.z, r13.xyzw, cb1[2].xyzw
-dp4 r14.w, r13.xyzw, cb1[3].xyzw
-
-add r11.w, r14.w, -r11.y
-mul r11.w, r11.w, r12.y // IniParams for debugging
-mad r14.x, r11.w, r11.x, r14.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r14.xyzw
-
-dp4 r13.x, r14.xyzw, cb0[0].xyzw
-dp4 r13.y, r14.xyzw, cb0[1].xyzw
-dp4 r13.z, r14.xyzw, cb0[2].xyzw
-dp4 r13.w, r14.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r13.xyzw
-
-mov r4.xyz, r13.xyzx
-
       div r2.z, l(1.000000, 1.000000, 1.000000, 1.000000), r4.w
       lt r2.w, r3.y, l(2.000000)
       if_nz r2.w
@@ -353,31 +345,6 @@ if_nz r0.y
     ge r2.w, r2.w, l(1.000000)
     if_nz r2.w
       ld_structured_indexable(structured_buffer, stride=304)(mixed,mixed,mixed,mixed) r3.xyzw, r2.x, l(0), t3.xyzw
-
-mov r13.xyz, r3.xyzx
-mov r13.w, l(1.0)
-dp4 r14.x, r13.xyzw, cb1[0].xyzw
-dp4 r14.y, r13.xyzw, cb1[1].xyzw
-dp4 r14.z, r13.xyzw, cb1[2].xyzw
-dp4 r14.w, r13.xyzw, cb1[3].xyzw
-
-add r11.w, r14.w, -r11.y
-mul r11.w, r11.w, r12.y // IniParams for debugging
-mad r14.x, r11.w, r11.x, r14.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r14.xyzw
-
-dp4 r13.x, r14.xyzw, cb0[0].xyzw
-dp4 r13.y, r14.xyzw, cb0[1].xyzw
-dp4 r13.z, r14.xyzw, cb0[2].xyzw
-dp4 r13.w, r14.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r13.xyzw
-
-mov r3.xyz, r13.xyzx
-
       div r2.w, l(1.000000, 1.000000, 1.000000, 1.000000), r3.w
       lt r3.w, r2.z, l(2.000000)
       if_nz r3.w

@@ -77,6 +77,23 @@ ubfe r0.x, l(1), l(2), vThreadIDInGroupFlattened.x
 movc r3.z, r0.x, l(1.000000), l(0)
 mov r3.w, l(1.000000)
 
+
+// Convert Z to W:
+dp4 r11.x, r3.xyzw, cb0[0].xyzw
+dp4 r11.y, r3.xyzw, cb0[1].xyzw
+dp4 r11.z, r3.xyzw, cb0[2].xyzw
+dp4 r11.w, r3.xyzw, cb0[3].xyzw
+div r11.xyzw, r11.xyzw, r11.wwww
+dp4 r12.x, r11.xyzw, cb1[0].xyzw
+dp4 r12.y, r11.xyzw, cb1[1].xyzw
+dp4 r12.z, r11.xyzw, cb1[2].xyzw
+dp4 r12.w, r11.xyzw, cb1[3].xyzw
+
+add r9.w, r12.w, -r9.y
+mad r12.x, -r9.w, r9.x, r12.x
+mov r3.xyzw, r12.xyzw
+
+
 // Threaded matrix multiply:
 dp4 r0.x, r3.xyzw, cb0[r1.x + 0].xyzw
 store_structured g0.x, r1.y, r1.z, r0.x
@@ -136,33 +153,6 @@ if_nz cb0[6].x
     uge r1.x, r0.w, cb0[6].x
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=112)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t2.xyzw
-
-// *large* blocks tiles in a cardinal direction - world space coords
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
@@ -211,31 +201,6 @@ if_nz cb0[6].y
     uge r1.x, r0.w, cb0[6].y
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=304)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t3.xyzw
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
@@ -286,34 +251,6 @@ if_nz cb0[6].z
     uge r1.x, r0.w, cb0[6].z
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=144)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t4.xyzw
-
-//mad r1.x, r10.y, l(100.0), r1.x
-//store_structured u3.xyzw, r0.w, l(0), r1.xyzw
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
@@ -364,34 +301,6 @@ if_nz cb0[6].w
     uge r1.x, r0.w, cb0[6].w
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=336)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t5.xyzw
-
-//mad r1.x, r10.y, l(100.0), r1.x
-//store_structured u3.xyzw, r0.w, l(0), r1.xyzw
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
@@ -442,34 +351,6 @@ if_nz cb0[7].y
     uge r1.x, r0.w, cb0[7].y
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=256)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t7.xyzw
-
-//mad r1.x, r10.y, l(100.0), r1.x
-//store_structured u3.xyzw, r0.w, l(0), r1.xyzw
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
     dp3 r2.x, r1.xyzx, r2.xyzx
@@ -519,34 +400,6 @@ if_nz cb0[7].x
     uge r1.x, r0.w, cb0[7].x
     breakc_nz r1.x
     ld_structured_indexable(structured_buffer, stride=176)(mixed,mixed,mixed,mixed) r1.xyzw, r0.w, l(0), t6.xyzw
-
-//mad r1.x, r10.y, l(100.0), r1.x
-//store_structured u3.xyzw, r0.w, l(0), r1.xyzw
-
-mov r11.xyz, r1.xyzx
-mov r11.w, l(1.0)
-dp4 r12.x, r11.xyzw, cb1[0].xyzw
-dp4 r12.y, r11.xyzw, cb1[1].xyzw
-dp4 r12.z, r11.xyzw, cb1[2].xyzw
-dp4 r12.w, r11.xyzw, cb1[3].xyzw
-
-add r9.w, r12.w, -r9.y
-mul r9.w, r9.w, r10.y // IniParams for debugging
-mad r12.x, r9.w, r9.x, r12.x
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r12.xyzw
-
-dp4 r11.x, r12.xyzw, cb0[0].xyzw
-dp4 r11.y, r12.xyzw, cb0[1].xyzw
-dp4 r11.z, r12.xyzw, cb0[2].xyzw
-dp4 r11.w, r12.xyzw, cb0[3].xyzw
-
-// Debugging:
-//store_structured u3.xyzw, r0.w, l(0), r11.xyzw
-
-mov r1.xyz, r11.xyzx
-
     sqrt r1.w, r1.w
     ld_structured r2.xyz, l(1), l(0), g1.xyzx
     dp3 r2.x, r1.xyzx, r2.xyzx
