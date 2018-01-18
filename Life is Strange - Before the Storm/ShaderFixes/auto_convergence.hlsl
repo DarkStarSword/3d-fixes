@@ -71,12 +71,11 @@ void main(out float auto_convergence : SV_Target0)
 	zr = stereo2mono_downscaled_zbuffer.Load(int3(0, 0, 0));
 	zl = stereo2mono_downscaled_zbuffer.Load(int3(1, 0, 0));
 
-	// stereo2mono seems ok in Life is Strange: Before the Storm without
-	// the valid setting in StereoFlagsDX10, but it is known that this
-	// feature sometimes doesn't work on SLI, so only use the value from
-	// the left eye if it is valid to try to be safe (but, this is
-	// untested, and if it does happen it will mean that objects that only
-	// obscure the camera in the left eye won't trigger auto-convergence):
+	// stereo2mono will only work in SLI if StereoFlagsDX10=0x00000008 or
+	// the profile supports CM, so we might not have data from the left
+	// eye here and check that it is valid before using it - that way at
+	// least we will have some auto-convergence, but objects that only
+	// obscure the camera in the left eye won't trigger auto-convergence:
 	z = (zl ? max(zl, zr) : zr);
 
 	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
