@@ -321,3 +321,8 @@ shaders are specified, their definitions will be collated and merged together.
 Includes functions to inverse a matrix in HLSL, a convinience macro to grab a
 matrix out of a constant buffer with no resource description, and functions to
 create the usual array of translation matrices.
+
+### stereo_buffer_tests ###
+This directory contains test cases for whether buffers will be stereoised or
+not with varying combinations of bind flags and creation modes. Compare the
+results when running with different StereoFlagsDX10.
