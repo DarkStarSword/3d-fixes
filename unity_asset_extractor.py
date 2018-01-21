@@ -2,6 +2,14 @@
 
 import sys, os, struct, itertools, codecs, io
 
+def read_cstring(file):
+    s = b''
+    while True:
+        c = file.read(1)
+        if c == '' or c == b'\0':
+            return s
+        s += c
+
 def hexdump(buf, start=0, width=16, indent=0):
 	a = ''
 	for i, b in enumerate(buf):
@@ -216,8 +224,8 @@ def parse_version_9(file, version):
     # print("Unknown1: 0x{0:08x} ({0})".format(u1))
     assert(u1 == 0)
 
-    (unity_version, ) = struct.unpack('8s', file.read(8))
-    print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
+    unity_version = read_cstring(file)
+    print("Unity version: {0}".format(unity_version.decode('ascii')))
 
     (u2, u3, u4, num_resources) = struct.unpack('<4I', file.read(16))
     print("Unknown2: 0x{0:08x} ({0})".format(u2))
@@ -244,8 +252,8 @@ def parse_version_14(file, version):
     # Non-zero in version 8
     assert(u1 == 0)
 
-    (unity_version, ) = struct.unpack('8s', file.read(8))
-    print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
+    unity_version = read_cstring(file)
+    print("Unity version: {0}".format(unity_version.decode('ascii')))
 
     (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
     print("Type table length: {0}".format(unknown_table_len))
@@ -296,8 +304,8 @@ def parse_version_15(file, version):
     # Non-zero in version 8
     assert(u1 == 0)
 
-    (unity_version, ) = struct.unpack('8s', file.read(8))
-    print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
+    unity_version = read_cstring(file)
+    print("Unity version: {0}".format(unity_version.decode('ascii')))
 
     (u2, u3, unknown_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
     print("Type table length: {0}".format(unknown_table_len))
@@ -351,8 +359,8 @@ def parse_version_17(file, version):
     # Non-zero in version 8
     assert(u1 == 0)
 
-    (unity_version, ) = struct.unpack('8s', file.read(8))
-    print("Unity version: {0}".format(unity_version.decode('ascii').rstrip('\0')))
+    unity_version = read_cstring(file)
+    print("Unity version: {0}".format(unity_version.decode('ascii')))
 
     (u2, embedded, type_table_len, u6, u7) = struct.unpack('<IBHBB', file.read(9))
     print("Type table length: {0}".format(type_table_len))
