@@ -386,7 +386,7 @@ def parse_version_17(file, version):
             u = struct.unpack('>4I', file.read(16))
             print(("   {:3}: {:3} {:2}" + " {:08x}" * 4).format(*([i, id, b2] + list(u))))
 
-            if id == 114 and b2 == -1 and u == (0, 0, 0, 0) and embedded:
+            if id == 114 and b2 == -1 and u == (0, 0, 0, 0):
                 # Seen in LisBtS DLC/E2/e2_s01_d_loc.bytes in contained file
                 # "BuildPlayer-E2_S01D_BlackwellLot". Has numerous type 114
                 # entries, some with b2 positive and valid 32 byte hashes,

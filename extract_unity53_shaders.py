@@ -25,6 +25,11 @@ shader_type_mapping = {
     20: ("gp", "d3d11", "gs_5_0"),
     21: ("hp", "d3d11", "hs_5_0"),
     22: ("dp", "d3d11", "ds_5_0"),
+
+    # New in 5.6:
+    23: (None, "metal", None),
+    24: (None, "metal", None),
+    25: (None, "metal", None),
 }
 
 api_mapping = {
@@ -35,6 +40,7 @@ api_mapping = {
     "d3d9": "d3d9",
     "d3d11_9x": "d3d11",
     "d3d11": "d3d11",
+    "metal": "metal",
 }
 
 def get_program_name(shader_type):
@@ -178,6 +184,7 @@ def decode_binds(file, headers):
                     2: '2D',
                     3: '3D',
                     4: 'CUBE',
+                    5: '2D_ARRAY', # FIXME: Check what text Unity uses and match
             }[texture_type]
             add_header(headers, 'SetTexture {} [{}] {} {}'.format(bind_slot, bind_name, texture_type, sampler_slot))
         elif bind_type == 1:
@@ -332,9 +339,9 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     # looks suspiciously like a date (but 2015? Last year for an update
     # released this year?), so I'm not certain this is correct. If not this,
     # maybe just check the Unity version for 5.4?
-    if date == 201509030:
+    if date == 201509030: # Unity 5.3
         u8len = 5
-    elif date in (201510240, 201608170): # Seen in Firewatch Unity 5.4 update / 2016 date in Unity 5.5
+    elif date >= 201510240: # Unity 5.4+
         u8len = 6
     else:
         assert(False)
@@ -404,9 +411,13 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
     file.seek(offset)
     try:
         (date, shader_type, u3, u4, u5) = struct.unpack('<5i', file.read(20))
-        assert(date in (201509030, 201510240, 201608170)) # New date/version(?) seen in Firewatch Unity 5.4 update
+        # 201509030 = Unity 5.3
+        # 201510240 = Unity 5.4
+        # 201608170 = Unity 5.5
+        # 201609010 = Unity 5.6
+        assert(date in (201509030, 201510240, 201608170, 201609010))
         u6 = None
-        if date == 201608170: # Unity 5.5
+        if date >= 201608170: # Unity 5.5+
             (u6,) = struct.unpack('<i', file.read(4))
         (num_keywords,) = struct.unpack('<i', file.read(4))
         api, conceptual_api = get_shader_api(shader_type)
@@ -457,6 +468,11 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
             extract_directx11_shader(file, shader_size, headers, offset, size, shader, date)
         elif api in ('gles', 'gles3'):
             # See explanation in is_opengl_shader
+            pass
+        elif api in ('metal'):
+            # New in 5.6. Stored plaintext like OpenGL shaders, and like OpenGL
+            # a single shader appears to be able to serve as both vp and fp,
+            # but there is a binary header we would need to decode
             pass
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
