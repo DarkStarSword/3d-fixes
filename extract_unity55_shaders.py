@@ -24,7 +24,12 @@ version_uuids = {
 platform_map = {
         1: "d3d9",
         4: "d3d11",
+        5: "gles",
         8: "d3d11_9x",
+        9: "gles3",
+        14: "metal", # Not sure why there are two metals - metal/metal2?
+        15: "glcore",
+        18: "metal", # Not sure why there are two metals - metal/metal2?
 }
 
 def get_platform_api(platform_id):
