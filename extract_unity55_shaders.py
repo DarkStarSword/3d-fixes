@@ -11,13 +11,14 @@ from unity_asset_extractor import lz4_decompress, hexdump
 UNITY_5_5    =    55 # Initially written based on this version
 UNITY_5_6    =    56 # Seems to extract OK with 55 format, though the UUID has changed so there may be some difference
 UNITY_2017_1 = 20171 # New sampler bind info and padding changes
+UNITY_2017_2 = 20172 # Untested
 UNITY_2017_3 = 20173 # Untested
 
 version_uuids = {
     '4496e93f2179252104401c8dda0a1751': UNITY_5_5,
     'a70f7abc6586fb35b3a0641aa81e9375': UNITY_5_6,
     '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1, # 2017.1.0 and 2017.1.1
-    # 2017.1.2 unknown
+    '71556c0fc74d861cf024e0cd349bd987': UNITY_2017_2,
     '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_3,
 }
 

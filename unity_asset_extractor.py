@@ -331,7 +331,7 @@ def extract_shader(file, base_offset, offset, size, unity_version, file_version,
 # 5.6.2 (5.6.1p1):        a70f7abc 6586fb35 b3a0641a a81e9375
 # 2017.1.0 (2017.1.0f1):  5d6434c0 4f879e08 410f5935 5c6dfe0a
 # 2017.1.1 (2017.1.0f1):  5d6434c0 4f879e08 410f5935 5c6dfe0a
-# 2017.2
+# 2017.2.0 (2017.2.0f3):  71556c0f c74d861c f024e0cd 349bd987
 # 2017.3.0 (2017.3.0b10): 266d5311 3fa30d2b 858f2768 f92eaa14
 
 extractors = {
