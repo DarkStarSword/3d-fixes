@@ -9,7 +9,7 @@ from unity_asset_extractor import lz4_decompress, hexdump
 # the actual numbers are not significant and can be changed if desired:
 
 UNITY_5_5    =    55 # Initially written based on this version
-UNITY_5_6    =    56 # Seems to extract OK with 55 format, though the UUID has changed so there may be some difference
+UNITY_5_6    =    56 # Data structure removed string wrapper and m_SourceMap became signed - no parsing changes.
 UNITY_2017_1 = 20171 # New sampler bind info and padding changes
 UNITY_2017_2 = 20172 # Untested
 UNITY_2017_3 = 20173 # Untested
@@ -151,7 +151,7 @@ def parse_string(file, name=None, indent=0):
         print_field(name, '%s' % string, indent=indent)
     return string
 
-def parse_properties_table(file):
+def parse_properties_table(file, file_version):
     (table_len,) = struct.unpack('<I', file.read(4))
     if table_len == 0:
         return
@@ -164,6 +164,8 @@ def parse_properties_table(file):
         attributes = []
         for i in range(num_attributes):
             attributes.append(parse_string(file))
+        if file_version >= UNITY_2017_1:
+            align(file, 4)
         (type, flags, def0, def1, def2, def3) = struct.unpack('<2I4f', file.read(6*4))
         def_texture = parse_string(file)
         (texdim,) = struct.unpack('<I', file.read(4))
@@ -173,6 +175,8 @@ def parse_properties_table(file):
             def1=def1, def2=def2, def3=def3, def_texture=def_texture, texdim=texdim))
         if attributes:
             pr_verbose('    Attributes: ' + ', '.join(attributes))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
     pr_verbose('}')
 
 def parse_name_indices_table(file):
@@ -299,75 +303,103 @@ def parse_state(file, pass_info):
     pass_info.lod = parse_u4(file, 'LOD', indent=3)
     parse_x4(file, 'lighting', indent=3)
 
-def parse_channels(file):
+def parse_channels(file, file_version):
     (num_bindings,) = struct.unpack('<I', file.read(4))
     pr_verbose('     Num Channel Bindings: %i' % num_bindings)
 
     for i in range(num_bindings):
         (source, dest) = struct.unpack('<2B', file.read(2))
         pr_verbose('      Channel binding %i -> %i' % (source, dest))
+    # Pointless extra align here - there's an extra layer of data structure and
+    # Unity 2017.1 added an extra align when popping it off, in addition to the
+    # one 5.5 already had on the data structure just above it. But still:
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
     align(file, 4)
 
     parse_x4(file, 'SourceMap', indent=5)
 
-def parse_keywords(file, name_dict):
+def parse_keywords(file, file_version, name_dict):
     (num_keywords,) = struct.unpack('<I', file.read(4))
     for i in range(num_keywords):
         (idx,) = struct.unpack('<H', file.read(2))
         pr_verbose('     Keyword: %s' % name_dict[idx])
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_vector_params(file, name_dict, indent=5):
+def parse_vector_params(file, file_version, name_dict, indent=5):
     num = parse_u4(file, 'Num Vectors', indent=indent)
     for i in range(num):
         (NameIndex, Index, ArraySize, Type, Dim) = struct.unpack('<IIIBB', file.read(14))
         pr_verbose('%s Name: %s Index: %i ArraySize: %i Type: %i Dim: %i' %
                 (' ' * indent, name_dict[NameIndex], Index, ArraySize, Type, Dim))
         align(file, 4)
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_matrix_params(file, name_dict, indent=5):
+def parse_matrix_params(file, file_version, name_dict, indent=5):
     num = parse_u4(file, 'Num Matrices', indent=indent)
     for i in range(num):
         (NameIndex, Index, ArraySize, Type, RowCount) = struct.unpack('<IIIBB', file.read(14))
         pr_verbose('%s Name: %s Index: %i ArraySize: %i Type: %i RowCount: %i' %
                 (' ' * indent, name_dict[NameIndex], Index, ArraySize, Type, RowCount))
         align(file, 4)
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_texture_params(file, name_dict, indent=5):
+def parse_texture_params(file, file_version, name_dict, indent=5):
     num = parse_u4(file, 'Num Textures', indent=indent)
     for i in range(num):
         (NameIndex, Index, SamplerIndex, Dim) = struct.unpack('<IIIB', file.read(13))
         pr_verbose('%s Name: %s Index: %i SamplerIndex: %i Dim: %i' %
                 (' ' * indent, name_dict[NameIndex], Index, SamplerIndex, Dim))
         align(file, 4)
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_buffer_params(file, name_dict, indent=5):
+def parse_buffer_params(file, file_version, name_dict, indent=5):
     num = parse_u4(file, 'Num Buffers', indent=indent)
     for i in range(num):
         (NameIndex, Index) = struct.unpack('<II', file.read(8))
         pr_verbose('      %s: %i' % (name_dict[NameIndex], Index))
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_cb_params(file, name_dict):
+def parse_cb_params(file, file_version, name_dict):
     num = parse_u4(file, 'Num Constant Buffers', indent=5)
     for i in range(num):
         pr_verbose('     Constant Buffer %i' % i)
         NameIndex = parse_u4(file)
         pr_verbose('      Name: %s' % name_dict[NameIndex])
-        parse_matrix_params(file, name_dict, indent=6)
-        parse_vector_params(file, name_dict, indent=6)
+        parse_matrix_params(file, file_version, name_dict, indent=6)
+        parse_vector_params(file, file_version, name_dict, indent=6)
         Size = parse_u4(file, 'Size', indent=6)
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_cb_bindings(file, name_dict):
+def parse_cb_bindings(file, file_version, name_dict):
     num = parse_u4(file, 'Num Constant Buffer Bindings', indent=5)
     for i in range(num):
         (NameIndex, Index) = struct.unpack('<II', file.read(8))
         pr_verbose('      %s: %i' % (name_dict[NameIndex], Index))
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_uav_params(file, name_dict):
+def parse_uav_params(file, file_version, name_dict):
     num = parse_u4(file, 'Num UAVs', indent=5)
     for i in range(num):
         pr_verbose('     UAV %i' % i)
         (NameIndex, Index, OriginalIndex) = struct.unpack('<3I', file.read(12))
         pr_verbose('      %s: %i %i' % (name_dict[NameIndex], Index, OriginalIndex))
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
 def parse_sampler_params(file, name_dict):
     num = parse_u4(file, 'Num Samplers', indent=5)
@@ -375,6 +407,7 @@ def parse_sampler_params(file, name_dict):
         pr_verbose('     Sampler %i' % i)
         (sampler, bindPoint) = struct.unpack('<2I', file.read(8))
         pr_verbose('      Sampler: %i bindPoint: %i' % (sampler, bindPoint))
+    align(file, 4)
 
 def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_programs):
     pr_verbose('   %s:' % program_type)
@@ -383,23 +416,21 @@ def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_p
     for i in range(num_subprograms):
         pr_verbose('    Subprogram %s %i/%i:' % (program_type, i+1, num_subprograms), verbosity=1)
         BlobIndex = parse_u4(file, 'BlobIndex', indent=5)
-        parse_channels(file)
-        parse_keywords(file, name_dict)
-        if file_version >= UNITY_2017_1: # Not positive which version introduced this, or if LiSBtS fluked alignment.
-            align(file, 4)
+        parse_channels(file, file_version)
+        parse_keywords(file, file_version, name_dict)
 
         (ShaderHardwareTier, GpuProgramType) = struct.unpack('<2B', file.read(2))
         pr_verbose('     ShaderHardwareTier: %i' % ShaderHardwareTier)
         pr_verbose('     GpuProgramType: %i' % GpuProgramType)
         align(file, 4)
 
-        parse_vector_params(file, name_dict)
-        parse_matrix_params(file, name_dict)
-        parse_texture_params(file, name_dict)
-        parse_buffer_params(file, name_dict)
-        parse_cb_params(file, name_dict)
-        parse_cb_bindings(file, name_dict)
-        parse_uav_params(file, name_dict)
+        parse_vector_params(file, file_version, name_dict)
+        parse_matrix_params(file, file_version, name_dict)
+        parse_texture_params(file, file_version, name_dict)
+        parse_buffer_params(file, file_version, name_dict)
+        parse_cb_params(file, file_version, name_dict)
+        parse_cb_bindings(file, file_version, name_dict)
+        parse_uav_params(file, file_version, name_dict)
         if file_version >= UNITY_2017_1:
             parse_sampler_params(file, name_dict)
 
@@ -407,6 +438,8 @@ def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_p
         if (BlobIndex, GpuProgramType) not in sub_programs:
             sub_programs[(BlobIndex, GpuProgramType)] = []
         sub_programs[(BlobIndex, GpuProgramType)].append(sub_program)
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
 def parse_pass(file, file_version, sub_shader, sub_programs):
     pass_info = Pass(sub_shader)
@@ -440,18 +473,23 @@ def parse_pass(file, file_version, sub_shader, sub_programs):
     # DLC/E2/e2_s04_a.bytes/CAB-f8a9698b4eaca505856ce5da8de78688/0x08ac37e0.shader.raw
     pass_info.tags1 = parse_tags(file)
 
-def parse_dependencies_1(file):
+def parse_dependencies_1(file, file_version):
     num = parse_u4(file, 'Num Dependencies', indent=2)
     for i in range(num):
         dependency_from = parse_string(file)
         dependency_to = parse_string(file)
         pr_verbose('   from: %s to: %s' % (dependency_from, dependency_to))
+    # Pointless extra align added in 2017.1 (they're adding them after every array):
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
-def parse_dependencies_2(file):
+def parse_dependencies_2(file, file_version):
     num = parse_u4(file, 'Num Dependencies', indent=2)
     for i in range(num):
         (FileID, PathID) = struct.unpack('<IQ', file.read(12))
         pr_verbose('   FileID: %i PathID: %i' % (FileID, PathID))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
 def parse_decompressed_blob(blob, filename, sub_programs):
     num_shaders = parse_u4(blob, 'Num shaders', indent=3, verbosity=0)
@@ -497,7 +535,7 @@ def parse_unity55_shader(filename):
     (asset_name_len,) = struct.unpack('<I', file.read(4))
     assert(asset_name_len == 0)
 
-    parse_properties_table(file)
+    parse_properties_table(file, file_version)
 
     (num_subshaders,) = struct.unpack('<I', file.read(4))
     pr_verbose('Number of subshaders: %i' % num_subshaders)
@@ -510,9 +548,13 @@ def parse_unity55_shader(filename):
         for pass_no in range(num_passes):
             pr_verbose('  Pass %i/%i:' % (pass_no+1, num_passes), verbosity=1)
             parse_pass(file, file_version, sub_shader, sub_programs)
+        if file_version >= UNITY_2017_1:
+            align(file, 4)
 
         sub_shader.tags = parse_tags(file, indent=2)
         sub_shader.lod = parse_u4(file, 'LOD', indent=2)
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
     shader.name = parse_string(file)
     shader.CustomEditorName = parse_string(file)
@@ -521,7 +563,7 @@ def parse_unity55_shader(filename):
     pr_verbose(' CustomEditorName: %s' % shader.CustomEditorName)
     pr_verbose(' FallbackName: %s' % shader.FallbackName)
 
-    parse_dependencies_1(file)
+    parse_dependencies_1(file, file_version)
 
     parse_byte(file, 'DisableNoSubshadersMessage', indent=1)
     align(file, 4)
@@ -530,21 +572,29 @@ def parse_unity55_shader(filename):
     platforms = []
     for i in range(num_platforms):
         platforms.append(parse_x4(file, 'Platform', indent=2))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
     num_offsets = parse_u4(file, 'Num Offsets', indent=1)
     offsets = []
     for i in range(num_offsets):
         offsets.append(parse_x4(file, 'Offset', indent=2))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
     num_compressed_lengths = parse_u4(file, 'Num Compressed Lengths', indent=1)
     compressed_lengths = []
     for i in range(num_compressed_lengths):
         compressed_lengths.append(parse_u4(file, 'Compressed Length', indent=2))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
     num_decompressed_lengths = parse_u4(file, 'Num Decompressed Lengths', indent=1)
     decompressed_lengths = []
     for i in range(num_decompressed_lengths):
         decompressed_lengths.append(parse_u4(file, 'Decompressed Length', indent=2))
+    if file_version >= UNITY_2017_1:
+        align(file, 4)
 
     assert(num_platforms == num_offsets == num_compressed_lengths == num_decompressed_lengths)
 
@@ -553,7 +603,7 @@ def parse_unity55_shader(filename):
     compressed_blob = file.read(num_compressed_bytes)
     align(file, 4)
 
-    parse_dependencies_2(file)
+    parse_dependencies_2(file, file_version)
     parse_byte(file, 'ShaderIsBaked', indent=1)
     align(file, 4)
     assert(file.read(1) == b'') # Check whole resource was parsed
