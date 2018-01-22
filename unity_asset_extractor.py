@@ -31,19 +31,97 @@ def hexdump(buf, start=0, width=16, indent=0):
 		print(' ' * (rem//4 + 1), end='')
 		print('| %s%s |' % (a, ' ' * rem))
 
-def decode_embedded_type_info(file):
-    (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
+type_map = {
+        0x80000031: 'array',
+        0x8000004c: 'bool',
+        0x80000051: 'char',
+        0x800000a1: 'float',
+        0x800000de: 'int',
+        0x800000f1: 'string_map',
+        0x8000021f: 'string_map_entry',
+        0x8000032e: 'u64',
+        0x80000335: 'byte',
+        0x80000348: 'string',
+        0x8000038b: 'half',
+        0x800003a0: 'blob', # Same as byte?
+        0x800003a6: 'unsigned',
+        0x800003d5: 'struct', # ? flags & 0x8000
+}
 
+name_map = {
+        0x8000031b: 'length',
+}
+
+def decode_embedded_type_info(file):
     # TODO: Actually might want to parse this, as it describes the
     # data structure hardcoded in extract_unity55_shaders, which
     # may allow it to be future proofed (but only for asset bundles
     # that contain this section - regular asset files omit this)
-    print('        Num fields: %i, String table len: %i' % (num_fields, string_table_len))
-    for j in range(num_fields):
-        entry = file.read(24)
-        print('        ' + codecs.encode(entry, 'hex').decode('ascii'))
-    string_table = file.read(string_table_len).decode('ascii')
-    print('        "' + '"\n        "'.join(string_table.rstrip('\0').split('\0')) + '"')
+
+    (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
+
+    file.seek(num_fields * 24, 1)
+    string_table_raw = file.read(string_table_len).decode('ascii')
+    string_table = string_table_raw.rstrip('\0').split('\0')
+    # print('        "' + '"\n        "'.join(string_table) + '"')
+
+    def pop_flags():
+        popped_flags = flags_recursion.pop()
+        if popped_flags & 0x4000:
+            print('%*sAlign(4)' % (base_indentation + len(flags_recursion)*2 - 1, ''))
+        if popped_flags & 0x8000:
+            print('%*s' % (base_indentation + len(flags_recursion)*2, '}'))
+
+    file.seek(8)
+    last_level = 0
+    base_indentation = 25
+    flags_recursion = []
+    is_array_len = False
+    for idx in range(num_fields):
+        (u0, z1, level, is_array, type_id, name_id, field_size, idx2, flags) = struct.unpack('''<
+          B   B      B   B     I   I           i     I      I''', file.read(24))
+
+        while len(flags_recursion) > level:
+            pop_flags()
+
+        if type_id & 0x80000000:
+            type_name = type_map.get(type_id, '0x%08x' % type_id)
+        else:
+            type_name = string_table_raw[type_id:type_id+string_table_raw[type_id:].find('\0')]
+
+        if name_id & 0x80000000:
+            member_name = name_map.get(name_id, '') # '0x%08x' % name_id)
+        else:
+            member_name = string_table_raw[name_id:name_id+string_table_raw[name_id:].find('\0')]
+
+        align = flags & 0x4000 # Aligns when object is popped
+        scope = flags & 0x8000 and ' {' or ''
+        # flags & 0x1 seems to indicate it is part of a string - the array, int
+        # length, or chars
+
+        if len(flags_recursion) <= level:
+            flags_recursion += [0] * (level - len(flags_recursion) + 1)
+        flags_recursion[level] = flags
+
+        print('%i %8x %2i 0x%06x %*s %s%s %s%s%s' %
+               (u0, name_id, field_size, flags,
+                   level*2, "",
+                   is_array_len and '[ ' or '',
+                   type_name,
+                   member_name,
+                   is_array_len and ' ]' or '',
+                   scope))
+
+        is_array_len = is_array
+
+        assert(u0 in (1, 2)) # SerializedShaderState and SerializedSubProgram are 2, everything else is 1
+        assert(z1 == 0) # Maybe part of u0?
+        assert(is_array in (0, 1))
+        assert(idx2 == idx)
+        assert(flags & 0x0080c001 == flags)
+
+    while flags_recursion:
+        pop_flags()
 
 def dump_embedded_type_info(in_file, type_id, type_uuid):
     # Dumping this in a raw binary format in case we find a mistake in our
