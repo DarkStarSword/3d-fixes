@@ -11,7 +11,7 @@ from unity_asset_extractor import lz4_decompress, hexdump
 UNITY_5_5    =    55 # Initially written based on this version
 UNITY_5_6    =    56 # Data structure removed string wrapper and m_SourceMap became signed - no parsing changes.
 UNITY_2017_1 = 20171 # New sampler bind info and padding changes
-UNITY_2017_2 = 20172 # Untested
+UNITY_2017_2 = 20172 # Added zClip and m_ShaderRequirements
 UNITY_2017_3 = 20173 # Untested
 
 version_uuids = {
@@ -264,7 +264,7 @@ def parse_tags(file, indent=3):
         pr_verbose('%s%s' % (' ' * indent, ret))
         return ret
 
-def parse_state(file, pass_info):
+def parse_state(file, file_version, pass_info):
     pass_info.name = parse_string(file)
     pr_verbose('   State Name: %s' % pass_info.name)
 
@@ -274,6 +274,9 @@ def parse_state(file, pass_info):
     (rtSeparateBlend,) = struct.unpack('B', file.read(1))
     pr_verbose('   RT Separate Blend: %i' % rtSeparateBlend)
     align(file, 4)
+
+    if file_version >= UNITY_2017_2:
+        parse_state_float(file, 'zClip', indent=3)
 
     parse_state_float(file, 'zTest', indent=3)
     pass_info.ZWrite = parse_state_float(file, 'zWrite', indent=3)
@@ -434,6 +437,9 @@ def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_p
         if file_version >= UNITY_2017_1:
             parse_sampler_params(file, name_dict)
 
+        if file_version >= UNITY_2017_2:
+            parse_x4(file, 'ShaderRequirements', indent=5)
+
         sub_program = SubProgram(program, extract_unity53_shaders.get_shader_api(GpuProgramType)[0])
         if (BlobIndex, GpuProgramType) not in sub_programs:
             sub_programs[(BlobIndex, GpuProgramType)] = []
@@ -447,7 +453,7 @@ def parse_pass(file, file_version, sub_shader, sub_programs):
 
     type = parse_x4(file, 'Type', indent=3)
 
-    parse_state(file, pass_info)
+    parse_state(file, file_version, pass_info)
 
     parse_x4(file, 'ProgramMask', indent=3)
 
