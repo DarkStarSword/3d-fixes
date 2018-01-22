@@ -114,7 +114,7 @@ def decode_embedded_type_info(file):
 
         is_array_len = is_array
 
-        assert(u0 in (1, 2)) # SerializedShaderState and SerializedSubProgram are 2, everything else is 1
+        assert(u0 in range(2)) # SerializedShaderState and SerializedSubProgram are 2, everything else is 1
         assert(z1 == 0) # Maybe part of u0?
         assert(is_array in (0, 1))
         assert(idx2 == idx)
@@ -139,7 +139,11 @@ def dump_embedded_type_info(in_file, type_id, type_uuid):
         out_file.write(data.getvalue())
 
     data.seek(0)
-    decode_embedded_type_info(data)
+    try:
+        decode_embedded_type_info(data)
+    except Exception as e:
+        import traceback, time
+        traceback.print_exc()
 
 # FIXME: Not all resource types have a filename!
 def get_resource_name(file, base_offset, offset):
