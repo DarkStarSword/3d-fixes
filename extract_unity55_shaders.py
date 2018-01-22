@@ -2,7 +2,24 @@
 
 import sys, os, argparse, glob, struct, zlib, itertools, io
 import extract_unity_shaders, extract_unity53_shaders
-from unity_asset_extractor import lz4_decompress
+from unity_asset_extractor import lz4_decompress, hexdump
+
+# Map the format UUIDs to numeric numbers so we can just do "if version >=
+# UNITY_2017_1_0" and have it work. Make sure these sort numerically, though
+# the actual numbers are not significant and can be changed if desired:
+
+UNITY_5_5      =     55 # Initially written based on this version
+UNITY_5_6      =     56 # Seems to extract OK with 55 format, though the UUID has changed so there may be some difference
+UNITY_2017_1_0 = 201710 # New sampler bind info and padding changes
+UNITY_2017_1_3 = 201711 # Untested
+
+version_uuids = {
+    '4496e93f2179252104401c8dda0a1751': UNITY_5_5,
+    'a70f7abc6586fb35b3a0641aa81e9375': UNITY_5_6,
+    '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1_0, # 2017.1.0 and 2017.1.1
+    # 2017.1.2 unknown
+    '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_1_3,
+}
 
 platform_map = {
         1: "d3d9",
@@ -346,7 +363,14 @@ def parse_uav_params(file, name_dict):
         (NameIndex, Index, OriginalIndex) = struct.unpack('<3I', file.read(12))
         pr_verbose('      %s: %i %i' % (name_dict[NameIndex], Index, OriginalIndex))
 
-def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
+def parse_sampler_params(file, name_dict):
+    num = parse_u4(file, 'Num Samplers', indent=5)
+    for i in range(num):
+        pr_verbose('     Sampler %i' % i)
+        (sampler, bindPoint) = struct.unpack('<2I', file.read(8))
+        pr_verbose('      Sampler: %i bindPoint: %i' % (sampler, bindPoint))
+
+def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_programs):
     pr_verbose('   %s:' % program_type)
     program = Program(pass_info, program_type)
     num_subprograms = parse_u4(file, 'Num Subprograms')
@@ -355,6 +379,9 @@ def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
         BlobIndex = parse_u4(file, 'BlobIndex', indent=5)
         parse_channels(file)
         parse_keywords(file, name_dict)
+        if file_version >= UNITY_2017_1_0: # Not positive which version introduced this, or if LiSBtS fluked alignment.
+            align(file, 4)
+
         (ShaderHardwareTier, GpuProgramType) = struct.unpack('<2B', file.read(2))
         pr_verbose('     ShaderHardwareTier: %i' % ShaderHardwareTier)
         pr_verbose('     GpuProgramType: %i' % GpuProgramType)
@@ -367,13 +394,15 @@ def parse_programs(file, program_type, name_dict, pass_info, sub_programs):
         parse_cb_params(file, name_dict)
         parse_cb_bindings(file, name_dict)
         parse_uav_params(file, name_dict)
+        if file_version >= UNITY_2017_1_0:
+            parse_sampler_params(file, name_dict)
 
         sub_program = SubProgram(program, extract_unity53_shaders.get_shader_api(GpuProgramType)[0])
         if (BlobIndex, GpuProgramType) not in sub_programs:
             sub_programs[(BlobIndex, GpuProgramType)] = []
         sub_programs[(BlobIndex, GpuProgramType)].append(sub_program)
 
-def parse_pass(file, sub_shader, sub_programs):
+def parse_pass(file, file_version, sub_shader, sub_programs):
     pass_info = Pass(sub_shader)
     name_dict = parse_name_indices_table(file)
 
@@ -383,11 +412,11 @@ def parse_pass(file, sub_shader, sub_programs):
 
     parse_x4(file, 'ProgramMask', indent=3)
 
-    parse_programs(file, 'vp', name_dict, pass_info, sub_programs)
-    parse_programs(file, 'fp', name_dict, pass_info, sub_programs)
-    parse_programs(file, 'gp', name_dict, pass_info, sub_programs)
-    parse_programs(file, 'hp', name_dict, pass_info, sub_programs)
-    parse_programs(file, 'dp', name_dict, pass_info, sub_programs)
+    parse_programs(file, file_version, 'vp', name_dict, pass_info, sub_programs)
+    parse_programs(file, file_version, 'fp', name_dict, pass_info, sub_programs)
+    parse_programs(file, file_version, 'gp', name_dict, pass_info, sub_programs)
+    parse_programs(file, file_version, 'hp', name_dict, pass_info, sub_programs)
+    parse_programs(file, file_version, 'dp', name_dict, pass_info, sub_programs)
 
     parse_byte(file, 'hasInstancingVariant', indent=3)
     align(file, 4)
@@ -435,7 +464,26 @@ def safe_filename(filename):
     # FIXME: Probably need to sanitise other characters
     return filename
 
+def get_version_from_filename(filename):
+    filename = os.path.basename(filename)
+    parts = filename.lower().split('.')
+    if len(parts) not in (3, 4) or not parts[0].startswith('0x') or parts[-2] != 'shader' or parts[-1] != 'raw':
+        print('WARNING: Bad filename "%s" - could not determine type UUID' % filename)
+        sys.exit(1)
+
+    if len(parts) == 3:
+        # unity_asset_extractor was modified to embed the type uuid in the
+        # filename starting with Unity 2017.1, so if it's missing assume it
+        # must predate that
+        print('\n*** WARNING: No Type UUID in filename - assuming Unity 5.5 ***\n')
+        return 0
+
+    type_uuid = parts[1]
+    return version_uuids[type_uuid.lower()] # New shader format - update the parser as required and add the UUID to version_uuids
+
 def parse_unity55_shader(filename):
+    file_version = get_version_from_filename(filename)
+
     file = open(filename, 'rb')
     shader = Shader()
     sub_programs = {}
@@ -455,7 +503,7 @@ def parse_unity55_shader(filename):
         pr_verbose('  Number of passes: %i' % num_passes)
         for pass_no in range(num_passes):
             pr_verbose('  Pass %i/%i:' % (pass_no+1, num_passes), verbosity=1)
-            parse_pass(file, sub_shader, sub_programs)
+            parse_pass(file, file_version, sub_shader, sub_programs)
 
         sub_shader.tags = parse_tags(file, indent=2)
         sub_shader.lod = parse_u4(file, 'LOD', indent=2)

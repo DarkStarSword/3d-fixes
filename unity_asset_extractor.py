@@ -132,7 +132,7 @@ def unity_53_or_higher(unity_version):
     (major, minor, point) = unity_version.split(b'.')
     return int(major) > 5 or (int(major) == 5 and int(minor) >= 3)
 
-def extract_raw(file, base_offset, offset, size, unity_version, file_version, extension='raw'):
+def extract_raw(file, base_offset, offset, size, unity_version, file_version, type_uuid, extension='raw'):
     '''
     Usually unused, but useful to hook up for debugging purposes
     '''
@@ -151,12 +151,16 @@ def extract_raw(file, base_offset, offset, size, unity_version, file_version, ex
     else:
         file.seek(saved_off)
 
-def extract_shader(file, base_offset, offset, size, unity_version, file_version):
+def extract_shader(file, base_offset, offset, size, unity_version, file_version, type_uuid):
     if file_version >= 17:
         # All textual metadata has been replaced by a custom binary format,
         # which we leave for extract_unity55_shaders to deal with. Just extract
-        # the raw shader asset instead:
-        return extract_raw(file, base_offset, offset, size, unity_version, file_version, 'shader.raw')
+        # the raw shader asset instead. This binary format can change of
+        # course, and is only self-describing in asset bundles that we can't
+        # rely on, so we write the type uuid to the filename for the next
+        # script to pick up:
+        extension = '{:08x}{:08x}{:08x}{:08x}.shader.raw'.format(*type_uuid)
+        return extract_raw(file, base_offset, offset, size, unity_version, file_version, type_uuid, extension)
 
     saved_off = file.tell()
     try:
@@ -190,20 +194,31 @@ def extract_shader(file, base_offset, offset, size, unity_version, file_version)
     else:
         file.seek(saved_off)
 
-# Shader (Type 48) known UUIDs:
-# 5.1.2 (5.1.0b5): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
-# 5.1.5 (5.1.0b5): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
-# 5.2.2 (5.2.1p1): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
-# 5.2.3 (5.2.1p3): 82cbe6ba 9f2fd496 d8e14747 a764dc4f
-# 5.3.2 (5.3.0p1): 313f624e 8093f279 302b3b65 25bbb83a
-# 5.3.7 (5.3.6p2): 313f624e 8093f279 302b3b65 25bbb83a
-# 5.4.0 (5.4.0f2): d50ed133 62e98df8 096b2f73 5131fce5
-# 5.4.4 (5.4.0p4): d50ed133 62e98df8 096b2f73 5131fce5
-# 5.5.0 (5.5.0f2): 4496e93f 21792521 04401c8d da0a1751
-# 5.5.2 (5.5.0p3): 4496e93f 21792521 04401c8d da0a1751
-# 5.6.0 (5.6.0f1): a70f7abc 6586fb35 b3a0641a a81e9375
-# 5.6.1 (5.6.0p2): a70f7abc 6586fb35 b3a0641a a81e9375
-# 5.6.2 (5.6.1p1): a70f7abc 6586fb35 b3a0641a a81e9375
+# Shader (Type 48) known UUIDs - this tells us when the shader file format has
+# changed. Asset Bundles include a data structure self-describing the formats
+# these correspond to (in case they are opened by older/other Unity versions I
+# presume), but regular asset files assume that Unity already knows the format.
+#
+# Unity version from exe on left (excluding build number), Unity version in
+# asset file in brackets.
+#
+# 5.1.2 (5.1.0b5):        82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.1.5 (5.1.0b5):        82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.2.2 (5.2.1p1):        82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.2.3 (5.2.1p3):        82cbe6ba 9f2fd496 d8e14747 a764dc4f
+# 5.3.2 (5.3.0p1):        313f624e 8093f279 302b3b65 25bbb83a
+# 5.3.7 (5.3.6p2):        313f624e 8093f279 302b3b65 25bbb83a
+# 5.4.0 (5.4.0f2):        d50ed133 62e98df8 096b2f73 5131fce5
+# 5.4.4 (5.4.0p4):        d50ed133 62e98df8 096b2f73 5131fce5
+# 5.5.0 (5.5.0f2):        4496e93f 21792521 04401c8d da0a1751
+# 5.5.2 (5.5.0p3):        4496e93f 21792521 04401c8d da0a1751
+# 5.6.0 (5.6.0f1):        a70f7abc 6586fb35 b3a0641a a81e9375
+# 5.6.1 (5.6.0p2):        a70f7abc 6586fb35 b3a0641a a81e9375
+# 5.6.2 (5.6.1p1):        a70f7abc 6586fb35 b3a0641a a81e9375
+# 2017.1.0 (2017.1.0f1):  5d6434c0 4f879e08 410f5935 5c6dfe0a
+# 2017.1.1 (2017.1.0f1):  5d6434c0 4f879e08 410f5935 5c6dfe0a
+# 2017.1.2
+# 2017.1.3 (2017.3.0b10): 266d5311 3fa30d2b 858f2768 f92eaa14
 
 extractors = {
     # 48: extract_raw,
@@ -211,9 +226,9 @@ extractors = {
     # TODO: 142: extract_asset_bundle... yeah, looks like an asset file can contain an asset bundle, which contains more asset files...
 }
 
-def extract_resource(file, base_offset, offset, size, type, unity_version, file_version):
+def extract_resource(file, base_offset, offset, size, type, type_uuid, unity_version, file_version):
     if type in extractors:
-        extractors[type](file, base_offset, offset, size, unity_version, file_version)
+        extractors[type](file, base_offset, offset, size, unity_version, file_version, type_uuid)
 
 def parse_version_9(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -240,7 +255,7 @@ def parse_version_9(file, version):
         print("   Resource {}: offset 0x{:08x}, size {}, type(?) {}, type: {}".format(id, offset, size, type1, type2))
         # assert(id == i+1) - no
 
-        extract_resource(file, data_off, offset, size, type2, unity_version, version)
+        extract_resource(file, data_off, offset, size, type2, None, unity_version, version)
 
 def parse_version_14(file, version):
     (data_off, u1) = struct.unpack('>2I', file.read(8))
@@ -290,7 +305,7 @@ def parse_version_14(file, version):
         print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, {}, {}, {}".format(id, offset, size, type1, type2, type3, name))
         assert(u1 == 0)
 
-        extract_resource(file, data_off, offset, size, type2, unity_version, version)
+        extract_resource(file, data_off, offset, size, type2, None, unity_version, version)
 
 def parse_version_15(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -345,7 +360,7 @@ def parse_version_15(file, version):
         assert(u1 == 0)
         # assert(u2 == 0) Last resource was non-zero. Possibly followed by another table?
 
-        extract_resource(file, data_off, offset, size, type2, unity_version, version)
+        extract_resource(file, data_off, offset, size, type2, None, unity_version, version)
 
 def parse_version_17(file, version):
     # Looks almost identical to version 14, but each TOC entry has extra padding
@@ -374,7 +389,8 @@ def parse_version_17(file, version):
     assert(u6 == 0)
     assert(u7 == 0)
 
-    type_table = []
+    type_uuids = []
+    types = set()
 
     for i in range(type_table_len):
         # neovad added 00 FF FF or 00 00 00 pattern (3 byte) in 17 version
@@ -382,16 +398,19 @@ def parse_version_17(file, version):
         (id, b1, b2) = struct.unpack('<iBh', file.read(7))
         assert(b1 == 0)
 
-        type_table.append(id)
+        # This UUID is noteworthy that each type always maps to the same hash
+        # in a given Unity version, though the hash may change between
+        # versions. extract_unity55_shaders now uses this to distinguish
+        # between different variations in the new shader binary format:
+        u = struct.unpack('>4I', file.read(16))
+        types.add(id)
+        type_uuids.append((id, u))
 
-        # This hash(?) is noteworthy that each type always maps to the same
-        # hash in a given Unity version, though the hash may change between
-        # versions
+        # Some types have larger uuids than others, indicated by b2:
         if b2 >= 0: # Changed since v15
-            u = struct.unpack('>8I', file.read(32))
-            print(("   {:3}: {:3} {:2}" + " {:08x}" * 8).format(*([i, id, b2] + list(u))))
+            u1 = struct.unpack('>4I', file.read(16))
+            print(("   {:3}: {:3} {:2}" + " {:08x}" * 8).format(*([i, id, b2] + list(u) + list(u1))))
         else:
-            u = struct.unpack('>4I', file.read(16))
             print(("   {:3}: {:3} {:2}" + " {:08x}" * 4).format(*([i, id, b2] + list(u))))
 
             if id == 114 and b2 == -1 and u == (0, 0, 0, 0):
@@ -424,7 +443,7 @@ def parse_version_17(file, version):
                 print('        Skipping data structure description...')
                 file.seek(num_fields * 24 + string_table_len, 1)
 
-    if set(extractors.keys()).intersection(type_table) == set():
+    if set(extractors.keys()).intersection(types) == set():
         print()
         print('Bailing: Type table indicates that no assets of desired types are present')
         return
@@ -436,9 +455,9 @@ def parse_version_17(file, version):
     for i in range(num_resources):
         (id, offset, size, type_idx) = struct.unpack('<Q3I', file.read(20))
         name = get_resource_name(file, data_off, offset)
-        print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type_idx: {}".format(id, offset, size, name, type_idx))
-        type2 = type_table[type_idx]
-        extract_resource(file, data_off, offset, size, type2, unity_version, version)
+        (type2, type_uuid) = type_uuids[type_idx]
+        print("   Resource {}: offset: 0x{:08x}, size: {:6}, {}, type: {}".format(id, offset, size, name, type2))
+        extract_resource(file, data_off, offset, size, type2, type_uuid, unity_version, version)
 
 def unsupported_version(file, version):
     print("Unsupported file version {}".format(version))
