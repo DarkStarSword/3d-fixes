@@ -5,20 +5,20 @@ import extract_unity_shaders, extract_unity53_shaders
 from unity_asset_extractor import lz4_decompress, hexdump
 
 # Map the format UUIDs to numeric numbers so we can just do "if version >=
-# UNITY_2017_1_0" and have it work. Make sure these sort numerically, though
+# UNITY_2017_1" and have it work. Make sure these sort numerically, though
 # the actual numbers are not significant and can be changed if desired:
 
-UNITY_5_5      =     55 # Initially written based on this version
-UNITY_5_6      =     56 # Seems to extract OK with 55 format, though the UUID has changed so there may be some difference
-UNITY_2017_1_0 = 201710 # New sampler bind info and padding changes
-UNITY_2017_1_3 = 201711 # Untested
+UNITY_5_5    =    55 # Initially written based on this version
+UNITY_5_6    =    56 # Seems to extract OK with 55 format, though the UUID has changed so there may be some difference
+UNITY_2017_1 = 20171 # New sampler bind info and padding changes
+UNITY_2017_3 = 20173 # Untested
 
 version_uuids = {
     '4496e93f2179252104401c8dda0a1751': UNITY_5_5,
     'a70f7abc6586fb35b3a0641aa81e9375': UNITY_5_6,
-    '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1_0, # 2017.1.0 and 2017.1.1
+    '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1, # 2017.1.0 and 2017.1.1
     # 2017.1.2 unknown
-    '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_1_3,
+    '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_3,
 }
 
 platform_map = {
@@ -384,7 +384,7 @@ def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_p
         BlobIndex = parse_u4(file, 'BlobIndex', indent=5)
         parse_channels(file)
         parse_keywords(file, name_dict)
-        if file_version >= UNITY_2017_1_0: # Not positive which version introduced this, or if LiSBtS fluked alignment.
+        if file_version >= UNITY_2017_1: # Not positive which version introduced this, or if LiSBtS fluked alignment.
             align(file, 4)
 
         (ShaderHardwareTier, GpuProgramType) = struct.unpack('<2B', file.read(2))
@@ -399,7 +399,7 @@ def parse_programs(file, file_version, program_type, name_dict, pass_info, sub_p
         parse_cb_params(file, name_dict)
         parse_cb_bindings(file, name_dict)
         parse_uav_params(file, name_dict)
-        if file_version >= UNITY_2017_1_0:
+        if file_version >= UNITY_2017_1:
             parse_sampler_params(file, name_dict)
 
         sub_program = SubProgram(program, extract_unity53_shaders.get_shader_api(GpuProgramType)[0])
