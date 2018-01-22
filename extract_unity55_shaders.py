@@ -12,7 +12,7 @@ UNITY_5_5    =    55 # Initially written based on this version
 UNITY_5_6    =    56 # Data structure removed string wrapper and m_SourceMap became signed - no parsing changes.
 UNITY_2017_1 = 20171 # New sampler bind info and padding changes
 UNITY_2017_2 = 20172 # Added zClip and m_ShaderRequirements
-UNITY_2017_3 = 20173 # Untested
+UNITY_2017_3 = 20173 # Texture bind info added multisampled flag. Constant buffers can now contain structs.
 
 version_uuids = {
     '4496e93f2179252104401c8dda0a1751': UNITY_5_5,
@@ -355,9 +355,16 @@ def parse_matrix_params(file, file_version, name_dict, indent=5):
 def parse_texture_params(file, file_version, name_dict, indent=5):
     num = parse_u4(file, 'Num Textures', indent=indent)
     for i in range(num):
-        (NameIndex, Index, SamplerIndex, Dim) = struct.unpack('<IIIB', file.read(13))
-        pr_verbose('%s Name: %s Index: %i SamplerIndex: %i Dim: %i' %
-                (' ' * indent, name_dict[NameIndex], Index, SamplerIndex, Dim))
+        (NameIndex, Index, SamplerIndex) = struct.unpack('<III', file.read(12))
+
+        Multisampled = False
+        if file_version >= UNITY_2017_3:
+            (Multisampled,) = struct.unpack('<B', file.read(1))
+
+        (Dim,) = struct.unpack('<B', file.read(1))
+
+        pr_verbose('%s Name: %s Index: %i SamplerIndex: %i Multisampled: %i Dim: %i' %
+                (' ' * indent, name_dict[NameIndex], Index, SamplerIndex, Multisampled, Dim))
         align(file, 4)
     # Pointless extra align added in 2017.1 (they're adding them after every array):
     if file_version >= UNITY_2017_1:
@@ -372,6 +379,19 @@ def parse_buffer_params(file, file_version, name_dict, indent=5):
     if file_version >= UNITY_2017_1:
         align(file, 4)
 
+def parse_struct_params(file, file_version, name_dict, indent=6):
+    num = parse_u4(file, 'Num Structs', indent=indent)
+    for i in range(num):
+        pr_verbose('     Struct %i' % i)
+        (NameIndex, Index, ArraySize, StructSize) = struct.unpack('<IIII', file.read(16))
+        pr_verbose('%s Name: %s Index: %i ArraySize: %i StructSize: %i' %
+                (' ' * indent, name_dict[NameIndex], ArraySize, StructSize))
+
+        parse_vector_params(file, file_version, name_dict, indent=indent+1)
+        parse_matrix_params(file, file_version, name_dict, indent=indent+1)
+
+    align(file, 4)
+
 def parse_cb_params(file, file_version, name_dict):
     num = parse_u4(file, 'Num Constant Buffers', indent=5)
     for i in range(num):
@@ -380,6 +400,10 @@ def parse_cb_params(file, file_version, name_dict):
         pr_verbose('      Name: %s' % name_dict[NameIndex])
         parse_matrix_params(file, file_version, name_dict, indent=6)
         parse_vector_params(file, file_version, name_dict, indent=6)
+
+        if file_version >= UNITY_2017_3:
+            parse_struct_params(file, file_version, name_dict, indent=6)
+
         Size = parse_u4(file, 'Size', indent=6)
     # Pointless extra align added in 2017.1 (they're adding them after every array):
     if file_version >= UNITY_2017_1:
