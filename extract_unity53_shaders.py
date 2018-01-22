@@ -310,7 +310,7 @@ def extract_opengl_shader(file, shader_size, headers, shader):
 def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader):
     bin = file.read(shader_size)
     align(file, 4) # Seems ok without this - looks like the shader binary is always a multiple of 4 bytes
-    assert(bin[8:12] == b'CTAB') # XXX: May fail for shaders without embedded constant tables
+    assert(bin[8:12] in (b'CTAB', b'DBUG')) # XXX: May fail for shaders without embedded constant tables. Debug section seen in Salt Hidden_GlobalFog
 
     hash = zlib.crc32(bin)
 
