@@ -2,7 +2,8 @@
 
 import sys, os, struct, io
 import unity_asset_extractor
-from unity_asset_extractor import lz4_decompress
+from unity_asset_extractor import lz4_decompress, hexdump
+import lzma
 
 class BlockStream(object):
     def __init__(self, name, data_header, file):
@@ -43,6 +44,20 @@ class BlockStream(object):
 
         if flags & 0x3f == 0:
             pass
+        elif flags & 0x3f == 0x1:
+            (lclppb, dict_size) = struct.unpack('<BI', self.block.read(5))
+            compression_filter = {'id': lzma.FILTER_LZMA1, 'dict_size': dict_size}
+
+            # Procedure taken from liblzma lzma_lzma_lclppb_decode:
+            assert(lclppb <= (4 * 5 + 4) * 9 + 8) # otherwise liblzma just returns true
+            compression_filter['pb'] = lclppb // (9 * 5);
+            lclppb -= compression_filter['pb'] * 9 * 5;
+            compression_filter['lp'] = lclppb // 9;
+            compression_filter['lc'] = lclppb - compression_filter['lp'] * 9;
+            # print(compression_filter)
+
+            self.block = io.BytesIO(lzma.decompress(self.block.read(decompressed_size), format=lzma.FORMAT_RAW, filters=[compression_filter]))
+
         elif flags & 0x3f == 0x3:
             self.block = io.BytesIO(lz4_decompress(self.block, decompressed_size))
         else:
