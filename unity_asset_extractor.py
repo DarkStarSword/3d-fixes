@@ -93,6 +93,7 @@ def decode_embedded_type_info(file):
             member_name = name_map.get(name_id, '') # '0x%08x' % name_id)
         else:
             member_name = string_table_raw[name_id:name_id+string_table_raw[name_id:].find('\0')]
+            name_id = None # The string offset makes diffs too noisy
 
         align = flags & 0x4000 # Aligns when object is popped
         scope = flags & 0x8000 and ' {' or ''
@@ -103,8 +104,11 @@ def decode_embedded_type_info(file):
             flags_recursion += [0] * (level - len(flags_recursion) + 1)
         flags_recursion[level] = flags
 
-        print('%i %8x %2i 0x%06x %*s %s%s %s%s%s' %
-               (u0, name_id, field_size, flags,
+        print('%i %8s %2i 0x%06x %*s %s%s %s%s%s' %
+               (u0,
+                   name_id is not None and '%08x' % name_id or '',
+                   field_size,
+                   flags,
                    level*2, "",
                    is_array_len and '[ ' or '',
                    type_name,
