@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, struct, io
+import sys, os, struct, io, argparse
 import unity_asset_extractor
 from unity_asset_extractor import lz4_decompress, hexdump
 import lzma
@@ -196,12 +196,23 @@ def analyse(file):
 
     assert(data_header.read(1) == b'')
 
+def parse_args():
+    global args
+    parser = argparse.ArgumentParser(description = 'Unity Asset Bundle Extractor')
+    parser.add_argument('assets', nargs='+',
+            help='List of Unity asset bundle files to parse')
+    parser.add_argument('--dump-type-info', action='store_true',
+            help='Dump self-describing type info found in Unity Asset Bundles')
+    args = parser.parse_args()
+    unity_asset_extractor.args = args
+
 def main():
+    parse_args()
 
     # Windows command prompt passes us a literal *, so expand any that we were passed:
     import glob
     f = []
-    for file in sys.argv[1:]:
+    for file in args.assets:
         if '*' in file:
             f.extend(glob.glob(file))
         else:

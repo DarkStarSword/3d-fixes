@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, struct, itertools, codecs, io
+import sys, os, struct, itertools, codecs, io, argparse
 
 def read_cstring(file):
     s = b''
@@ -30,6 +30,38 @@ def hexdump(buf, start=0, width=16, indent=0):
 		print(' ' * (rem*2), end='')
 		print(' ' * (rem//4 + 1), end='')
 		print('| %s%s |' % (a, ' ' * rem))
+
+def decode_embedded_type_info(file):
+    (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
+
+    # TODO: Actually might want to parse this, as it describes the
+    # data structure hardcoded in extract_unity55_shaders, which
+    # may allow it to be future proofed (but only for asset bundles
+    # that contain this section - regular asset files omit this)
+    print('        Num fields: %i, String table len: %i' % (num_fields, string_table_len))
+    for j in range(num_fields):
+        entry = file.read(24)
+        print('        ' + codecs.encode(entry, 'hex').decode('ascii'))
+    string_table = file.read(string_table_len).decode('ascii')
+    print('        "' + '"\n        "'.join(string_table.rstrip('\0').split('\0')) + '"')
+
+def dump_embedded_type_info(in_file, type_id, type_uuid):
+    # Dumping this in a raw binary format in case we find a mistake in our
+    # decoder, so we still have the original description to decode.
+    filename = 'unity_types/{}-{:08x}{:08x}{:08x}{:08x}'.format(*([type_id] + list(type_uuid)))
+    data = io.BytesIO()
+    data.write(in_file.read(8))
+    (num_fields, string_table_len) = struct.unpack('<2I', data.getvalue())
+    data.write(in_file.read(num_fields * 24 + string_table_len))
+
+    print('        Dumping raw type info to %s...' % filename)
+    if not os.path.isdir('unity_types'):
+        os.mkdir('unity_types')
+    with open(filename, 'wb') as out_file:
+        out_file.write(data.getvalue())
+
+    data.seek(0)
+    decode_embedded_type_info(data)
 
 # FIXME: Not all resource types have a filename!
 def get_resource_name(file, base_offset, offset):
@@ -427,20 +459,11 @@ def parse_version_17(file, version):
                 print(("        !!!!!!" + " {:08x}" * 4).format(*list(u)))
 
         if embedded:
-            (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
-            if False:
-                # TODO: Actually might want to parse this, as it describes the
-                # data structure hardcoded in extract_unity55_shaders, which
-                # may allow it to be future proofed (but only for asset bundles
-                # that contain this section - regular asset files omit this)
-                print('        Num fields: %i, String table len: %i' % (num_fields, string_table_len))
-                for j in range(num_fields):
-                    entry = file.read(24)
-                    print('        ' + codecs.encode(entry, 'hex').decode('ascii'))
-                string_table = file.read(string_table_len).decode('ascii')
-                print('        "' + '"\n        "'.join(string_table.rstrip('\0').split('\0')) + '"')
+            if args.dump_type_info:
+                dump_embedded_type_info(file, id, u)
             else:
                 print('        Skipping data structure description...')
+                (num_fields, string_table_len) = struct.unpack('<2I', file.read(8))
                 file.seek(num_fields * 24 + string_table_len, 1)
 
     if set(extractors.keys()).intersection(types) == set():
@@ -488,12 +511,27 @@ def analyse(file):
     print("File Version: {0}".format(version))
     parsers.get(version, unsupported_version)(file, version)
 
+def parse_args():
+    global args
+    parser = argparse.ArgumentParser(description = 'Unity Asset Extractor')
+    parser.add_argument('assets', nargs='*',
+            help='List of Unity asset files to parse')
+    parser.add_argument('--dump-type-info', action='store_true',
+            help='Dump self-describing type info found in Unity Asset Bundles')
+    parser.add_argument('--decode-type-info',
+            help='Decodes a previously extracted type info file')
+    args = parser.parse_args()
+
 def main():
+    parse_args()
+
+    if args.decode_type_info:
+        decode_embedded_type_info(open(args.decode_type_info, 'rb'))
 
     # Windows command prompt passes us a literal *, so expand any that we were passed:
     import glob
     f = []
-    for file in sys.argv[1:]:
+    for file in args.assets:
         if '*' in file:
             f.extend(glob.glob(file))
         else:
