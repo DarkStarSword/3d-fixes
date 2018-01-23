@@ -17,7 +17,7 @@ def unity_header(name, type):
         unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+Matrix\s(?P<matrix>[0-9]+)\s\[' + name + '\](?:\s[34]$)?')
         unity53_header = re.compile(r'//\s+' + name + '\s+c(?P<matrix>[0-9]+)\s+3$')
     if type == 'texture':
-        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<texture>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler>[0-9]+)')
+        unity_header   = re.compile(r'//(?:\s[0-9a-f]+:)?\s+SetTexture\s(?P<texture>[0-9]+)\s\[' + name + '\]\s2D\s(?P<sampler>[0-9]+)(?:\sMSAA)?')
         unity53_header = re.compile(r'//\s+' + name + '\s+s(?P<texture>[0-9]+)\s+1$')
     return unity_header, unity53_header
 

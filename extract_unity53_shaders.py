@@ -2,6 +2,7 @@
 
 import sys, os, argparse, glob, struct, zlib, itertools
 import extract_unity_shaders
+from unity_asset_extractor import hexdump
 
 shader_type_mapping = {
      1: (None, "opengl", "version 120"),
@@ -92,7 +93,7 @@ def consume_until_dx11_num_sections(file, undeciphered3):
 
 def add_header(headers, header):
     headers.append('  ' + header)
-    # print(header)
+    pr_verbose(header)
 
 def decode_consts(file, headers, shader_type):
     (num_entries,) = struct.unpack('<I', file.read(4))
@@ -159,8 +160,16 @@ def decode_consts(file, headers, shader_type):
                 raise ParseError('Unknown name: {} type1: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type1, type_size1, type_size2, type3, offset))
             offset += type_size1 * type_size2 * 4
 
-def decode_constbuffers(file, num_cbs, headers, shader_type):
+def decode_constbuffers(file, date, num_cbs, headers, shader_type):
     for i in range(num_cbs):
+
+        if date >= 201708220:
+            # New in 2017.3. Note that this version added structs to constant
+            # buffers that can themselves contain vectors and matrices, so it
+            # is very likely this will be related to that, and we may need to
+            # decode it properly.
+            assert(file.read(4) == b'\0\0\0\0')
+
         (name_len,) = struct.unpack('<I', file.read(4))
         cb_name = file.read(name_len).decode('ascii')
         align(file, 4)
@@ -168,7 +177,7 @@ def decode_constbuffers(file, num_cbs, headers, shader_type):
         add_header(headers, 'ConstBuffer "{}" {}'.format(cb_name, cb_size))
         decode_consts(file, headers, shader_type)
 
-def decode_binds(file, headers):
+def decode_binds(file, date, headers):
     (num_binds,) = struct.unpack('<I', file.read(4))
     for i in range(num_binds):
         (name_len,) = struct.unpack('<I', file.read(4))
@@ -180,13 +189,21 @@ def decode_binds(file, headers):
         assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
 
         if bind_type == 0:
+            msaa = ''
+            if date >= 201708220:
+                # New in 2017.3
+                msaa, = struct.unpack('<I', file.read(4))
+                assert(msaa in (0, 1)) # Is this a boolean, or an MSAA level?
+                if msaa:
+                    msaa = ' MSAA' # FIXME: Check what text Unity uses and match
+
             texture_type = {
                     2: '2D',
                     3: '3D',
                     4: 'CUBE',
                     5: '2D_ARRAY', # FIXME: Check what text Unity uses and match
             }[texture_type]
-            add_header(headers, 'SetTexture {} [{}] {} {}'.format(bind_slot, bind_name, texture_type, sampler_slot))
+            add_header(headers, 'SetTexture {} [{}] {} {}{}'.format(bind_slot, bind_name, texture_type, sampler_slot, msaa))
         elif bind_type == 1:
             assert(texture_type == 0)
             assert(sampler_slot == 0)
@@ -198,14 +215,19 @@ def decode_binds(file, headers):
         else:
             assert(False)
 
-def decode_dx9_bind_info(file, headers):
+def decode_dx9_bind_info(file, date, headers):
     decode_consts(file, headers, ShaderType.dx9)
-    decode_binds(file, headers)
+    decode_binds(file, date, headers)
 
-def decode_dx11_bind_info(file, num_sections, headers):
+def decode_dx11_bind_info(file, date, num_sections, headers):
     pr_verbose('     num dx11 bind info sections: {0}'.format(num_sections), verbosity=2)
-    decode_constbuffers(file, num_sections-1, headers, ShaderType.dx11)
-    decode_binds(file, headers)
+    decode_constbuffers(file, date, num_sections-1, headers, ShaderType.dx11)
+
+    if date >= 201708220:
+        # New in 2017.3. FIXME: Verify where this is supposed to go wrt dx9
+        assert(file.read(4) == b'\0\0\0\0')
+
+    decode_binds(file, date, headers)
 
 def dump_raw_bind_info(file, dest, section_offset, section_size):
     return # Remove to enable debugging dump
@@ -307,7 +329,7 @@ def extract_opengl_shader(file, shader_size, headers, shader):
     except extract_unity_shaders.BogusShader:
         return
 
-def extract_directx9_shader(file, shader_size, headers, section_offset, section_size, shader):
+def extract_directx9_shader(file, date, shader_size, headers, section_offset, section_size, shader):
     bin = file.read(shader_size)
     align(file, 4) # Seems ok without this - looks like the shader binary is always a multiple of 4 bytes
     assert(bin[8:12] in (b'CTAB', b'DBUG')) # XXX: May fail for shaders without embedded constant tables. Debug section seen in Salt Hidden_GlobalFog
@@ -329,7 +351,7 @@ def extract_directx9_shader(file, shader_size, headers, section_offset, section_
     undeciphered3.extend(consume_until_double_zero(file))
     add_header(headers, ('undeciphered3:' + ' {}'*len(undeciphered3)).format(*undeciphered3))
 
-    decode_dx9_bind_info(file, headers)
+    decode_dx9_bind_info(file, date, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
     delay_writing_dx9_shader(hash, dest, bin, headers, shader.sub_program)
@@ -377,7 +399,7 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
     num_sections = consume_until_dx11_num_sections(file, undeciphered3)
     add_header(headers, ('undeciphered3:' + ' {}'*len(undeciphered3)).format(*undeciphered3))
 
-    decode_dx11_bind_info(file, num_sections, headers)
+    decode_dx11_bind_info(file, date, num_sections, headers)
     assert(file.tell() - section_size - section_offset == 0)
 
     delay_writing_dx11_shader(hash, dest, bin, headers, shader.sub_program)
@@ -414,8 +436,9 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         # 201509030 = Unity 5.3
         # 201510240 = Unity 5.4
         # 201608170 = Unity 5.5
-        # 201609010 = Unity 5.6
-        assert(date in (201509030, 201510240, 201608170, 201609010))
+        # 201609010 = Unity 5.6, 2017.1 & 2017.2
+        # 201708220 = Unity 2017.3
+        assert(date in (201509030, 201510240, 201608170, 201609010, 201708220))
         u6 = None
         if date >= 201608170: # Unity 5.5+
             (u6,) = struct.unpack('<i', file.read(4))
@@ -463,7 +486,7 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         if extract_unity_shaders.is_opengl_shader(sub_program):
             extract_opengl_shader(file, shader_size, headers, shader)
         elif api == 'd3d9':
-            extract_directx9_shader(file, shader_size, headers, offset, size, shader)
+            extract_directx9_shader(file, date, shader_size, headers, offset, size, shader)
         elif api in ('d3d11', 'd3d11_9x'):
             extract_directx11_shader(file, shader_size, headers, offset, size, shader, date)
         elif api in ('gles', 'gles3'):
