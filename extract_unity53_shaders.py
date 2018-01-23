@@ -160,22 +160,28 @@ def decode_consts(file, headers, shader_type):
                 raise ParseError('Unknown name: {} type1: {} type_size1: {} type_size2: {} type3: {} offset: {}'.format(entry_name, type1, type_size1, type_size2, type3, offset))
             offset += type_size1 * type_size2 * 4
 
+def decode_cb_structs(file, date, headers, shader_type):
+    (num_structs,) = struct.unpack('<I', file.read(4))
+    for i in range(num_structs):
+        (name_len,) = struct.unpack('<I', file.read(4))
+        struct_name = file.read(name_len).decode('ascii')
+        align(file, 4)
+        (idx, array_size, struct_size) = struct.unpack('<3I', file.read(12))
+        # FIXME: Check Unity text format and match
+        add_header(headers, 'Struct {} [{}] {} {}'.format(idx, struct_name, array_size, struct_size))
+        decode_consts(file, headers, shader_type)
+
 def decode_constbuffers(file, date, num_cbs, headers, shader_type):
     for i in range(num_cbs):
-
-        if date >= 201708220:
-            # New in 2017.3. Note that this version added structs to constant
-            # buffers that can themselves contain vectors and matrices, so it
-            # is very likely this will be related to that, and we may need to
-            # decode it properly.
-            assert(file.read(4) == b'\0\0\0\0')
-
         (name_len,) = struct.unpack('<I', file.read(4))
         cb_name = file.read(name_len).decode('ascii')
         align(file, 4)
         (cb_size,) = struct.unpack('<I', file.read(4))
         add_header(headers, 'ConstBuffer "{}" {}'.format(cb_name, cb_size))
         decode_consts(file, headers, shader_type)
+
+        if date >= 201708220: # New in 2017.3
+            decode_cb_structs(file, date, headers, shader_type)
 
 def decode_binds(file, date, headers):
     (num_binds,) = struct.unpack('<I', file.read(4))
@@ -229,11 +235,12 @@ def decode_dx9_bind_info(file, date, headers):
 
 def decode_dx11_bind_info(file, date, num_sections, headers):
     pr_verbose('     num dx11 bind info sections: {0}'.format(num_sections), verbosity=2)
-    decode_constbuffers(file, date, num_sections-1, headers, ShaderType.dx11)
 
     if date >= 201708220:
         # New in 2017.3. FIXME: Verify where this is supposed to go wrt dx9
         assert(file.read(4) == b'\0\0\0\0')
+
+    decode_constbuffers(file, date, num_sections-1, headers, ShaderType.dx11)
 
     decode_binds(file, date, headers)
 

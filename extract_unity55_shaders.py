@@ -382,10 +382,10 @@ def parse_buffer_params(file, file_version, name_dict, indent=5):
 def parse_struct_params(file, file_version, name_dict, indent=6):
     num = parse_u4(file, 'Num Structs', indent=indent)
     for i in range(num):
-        pr_verbose('     Struct %i' % i)
+        pr_verbose(' ' * indent + 'Struct %i' % i)
         (NameIndex, Index, ArraySize, StructSize) = struct.unpack('<IIII', file.read(16))
         pr_verbose('%s Name: %s Index: %i ArraySize: %i StructSize: %i' %
-                (' ' * indent, name_dict[NameIndex], ArraySize, StructSize))
+                (' ' * indent, name_dict[NameIndex], Index, ArraySize, StructSize))
 
         parse_vector_params(file, file_version, name_dict, indent=indent+1)
         parse_matrix_params(file, file_version, name_dict, indent=indent+1)
