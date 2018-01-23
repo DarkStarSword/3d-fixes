@@ -562,8 +562,13 @@ def parse_unity55_shader(filename):
     shader = Shader()
     sub_programs = {}
 
-    (asset_name_len,) = struct.unpack('<I', file.read(4))
-    assert(asset_name_len == 0)
+    # From 5.5 onwards most shaders no longer have their name at the start of
+    # the asset, but the field still exists, so we must parse it, and at least
+    # some shaders do still use this (e.g.  Audioshield ->
+    # globalgamemanegers.assets -> Vertex Color unlit):
+    asset_name = parse_string(file)
+    if asset_name:
+        print('Asset Name: %s' % asset_name)
 
     parse_properties_table(file, file_version)
 
