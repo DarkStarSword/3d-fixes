@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, re, math, copy
+import sys, os, re, math, copy, itertools
 import json, hashlib, collections, struct
 
 shader_idx_filename = 'ShaderHeaders.json'
@@ -791,15 +791,23 @@ def disassemble_and_decompile_binary_shader(bin_filename, disassemble_flugan=Tru
     args.append(os.path.basename(bin_filename))
 
     try:
-        subprocess.call(args)
+        for retry in itertools.count():
+            try:
+                subprocess.call(args)
+                break
+            except BlockingIOError:
+                # Occasionally see these transient failures - not sure why, but I
+                # blame Windows. Let's see if retrying is enough.
+                if retry >= 5:
+                    raise
+                print('BlockingIOError spawning cmd_Decompiler. Transient failure? Waiting a sec and retrying...')
+                import time
+                time.sleep(1)
     except FileNotFoundError:
-        os.chdir(cwd)
         return False
-    except:
+    finally:
         os.chdir(cwd)
-        raise
 
-    os.chdir(cwd)
     return True
 
 def attach_headers(old_file_path, new_file_path, headers, remove=True):
