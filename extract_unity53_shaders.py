@@ -183,12 +183,13 @@ def decode_binds(file, date, headers):
         (name_len,) = struct.unpack('<I', file.read(4))
         bind_name = file.read(name_len).decode('ascii')
         align(file, 4)
-        (bind_type, bind_slot, texture_type, sampler_slot, zero) = struct.unpack('<2i2bh', file.read(12))
-
-        # Hmmm, could almost be a 3 byte integer, but that would be weird. Maybe just padding / stack garbage?
-        assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
+        (bind_type, bind_slot) = struct.unpack('<2i', file.read(8))
 
         if bind_type == 0:
+            (texture_type, sampler_slot, zero) = struct.unpack('<2bh', file.read(4))
+            # Hmmm, could almost be a 3 byte integer, but that would be weird. Maybe just padding / stack garbage?
+            assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
+
             msaa = ''
             if date >= 201708220:
                 # New in 2017.3
@@ -205,13 +206,20 @@ def decode_binds(file, date, headers):
             }[texture_type]
             add_header(headers, 'SetTexture {} [{}] {} {}{}'.format(bind_slot, bind_name, texture_type, sampler_slot, msaa))
         elif bind_type == 1:
-            assert(texture_type == 0)
-            assert(sampler_slot == 0)
+            assert(file.read(4) == b'\0\0\0\0')
             add_header(headers, 'BindCB "{}" {}'.format(bind_name, bind_slot))
         elif bind_type == 2:
-            assert(texture_type == 0)
-            assert(sampler_slot == 0)
+            assert(file.read(4) == b'\0\0\0\0')
             add_header(headers, 'SetBuffer {} [{}]'.format(bind_slot, bind_name))
+        elif bind_type == 4:
+            sampler, = struct.unpack('<I', file.read(4))
+            # No idea what the sampler is. Most shaders don't use this at all
+            # since the texture binds already have sampler info.
+            # Hidden/PostProcessing/TemporalAntialiasing is an exception, which
+            # has one of these bindPoint=0 sampler=85 (the 5.5 style headers
+            # also showed this)
+            # FIXME: Check what text Unity uses and match
+            add_header(headers, 'SetSampler {} {}'.format(bind_slot, sampler))
         else:
             assert(False)
 
