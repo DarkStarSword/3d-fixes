@@ -88,6 +88,10 @@ def consume_until_double_zero(file):
 
 def consume_until_dx11_num_sections(file, undeciphered3):
     data = consume_until_double_zero(file)
+    if data == []:
+        # Seen in Subnautica UI/ResourcesBlip
+        undeciphered3.extend([0, 0])
+        data = consume_until_double_zero(file)
     undeciphered3.extend(data[:-2])
     num_sections = data[-2]
     assert(data[-1] == 0)
