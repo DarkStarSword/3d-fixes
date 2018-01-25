@@ -9,6 +9,7 @@ shader_type_mapping = {
      4: (None, "gles3",  "version 300 es"),
      5: (None, "gles",   "version 100"),
      6: (None, "glcore", "version 150"),
+     8: (None, "glcore", "version 420"), # Seen in Subnautica Hidden/Post FX/Eye Adaptation
 
      9: ("vp", "d3d9", "vs_2_0"),
     10: ("vp", "d3d9", "vs_3_0"),
@@ -42,6 +43,7 @@ api_mapping = {
     "d3d11_9x": "d3d11",
     "d3d11": "d3d11",
     "metal": "metal",
+    "unknown": "unknown",
 }
 
 def get_program_name(shader_type):
@@ -419,6 +421,20 @@ def extract_directx11_shader(file, shader_size, headers, section_offset, section
 
     delay_writing_dx11_shader(hash, dest, bin, headers, shader.sub_program)
 
+def extract_unknown_shader(file, shader_size, headers, shader):
+    raw = file.read(shader_size)
+    hash = zlib.crc32(raw)
+
+    extract_unity_shaders._add_shader_hash_unknown(shader.sub_program, hash)
+    path_components = extract_unity_shaders.export_filename_combined_short(shader)
+    dest = extract_unity_shaders.path_components_to_dest(path_components)
+
+    print('Extracting %s.raw...' % dest)
+    with open('%s.raw' % dest, 'wb') as out:
+        out.write(raw)
+    with open('%s.headers' % dest, 'w') as f:
+        f.write('\n'.join(headers))
+
 def synthesize_sub_program(name):
     class Shader(object):
         keyword = 'Shader'
@@ -512,6 +528,8 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
             # a single shader appears to be able to serve as both vp and fp,
             # but there is a binary header we would need to decode
             pass
+        elif api in ('unknown'):
+            extract_unknown_shader(file, shader_size, headers, shader)
         else:
             raise ParseError('Unknown shader type %i' % shader_type)
 

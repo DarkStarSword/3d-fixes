@@ -364,6 +364,9 @@ def get_hash_filename_base(shader):
             raise Exception("Unknown program type: %s" % shader.program.name)
         return ('%s_' + shader.sub_program.hash_fmt) % (shader_type, shader.sub_program.hash)
 
+    if shader.sub_program.hash_type == 'unknown':
+        return (shader.sub_program.hash_fmt % shader.sub_program.hash)
+
     assert(False)
 
 def sanitise_filename(path_components):
@@ -414,7 +417,7 @@ def export_filename_combined_long(shaders, args):
     return sanitise_filename(ret)
 
 def export_filename_combined_short(shader):
-    if not shader.sub_program.hash:
+    if shader.sub_program.hash is None:
         return None
 
     if shader.sub_program.hash_type == 'asm_crc32':
@@ -435,6 +438,14 @@ def export_filename_combined_short(shader):
     if shader.sub_program.hash_type == 'gl_crc32':
         return sanitise_filename([
             'ShaderGL',
+            shader.shader.name,
+            shader.program.name,
+            get_hash_filename_base(shader),
+        ])
+
+    if shader.sub_program.hash_type == 'unknown':
+        return sanitise_filename([
+            'ShaderUnknown',
             shader.shader.name,
             shader.program.name,
             get_hash_filename_base(shader),
@@ -611,6 +622,11 @@ def fnv_3Dmigoto_shader(input):
         hash = (hash * fnv_prime) & 0xffffffffffffffff
         hash = hash ^ octet
     return hash
+
+def _add_shader_hash_unknown(sub_program, hash):
+    sub_program.hash = hash
+    sub_program.hash_type = 'unknown'
+    sub_program.hash_fmt = '%.8x'
 
 def _add_shader_hash_fnv(sub_program, hash):
     sub_program.hash = hash
