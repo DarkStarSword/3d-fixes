@@ -72,6 +72,7 @@ if [ -f "$dir/d3dx.ini" ]; then
 	grep "separation=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
 	grep "force_cpu_affinity=1" "$dir/d3dx.ini" && die ABORTING: CPU Affinity is being forced
 	grep "export_fixed=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "export_binary=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
 	grep "export_shaders=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
 	grep "export_hlsl=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
 	grep "export_hlsl=2" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
