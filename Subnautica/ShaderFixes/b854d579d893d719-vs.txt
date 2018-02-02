@@ -1,4 +1,5 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed b854d579d893d719-vs.txt
+// Mask & Other objects - depth test to return mask to screen depth
+
 // 3DMigoto: b854d579d893d719 | Matched 16 variants of 1 shaders: MarmosetUBER
 //
 //          Unity headers extracted from MarmosetUBER
@@ -114,18 +115,15 @@ dcl_output o5.xyzw
 dcl_output o6.xyz
 dcl_output o7.xyzw
 dcl_output o8.xyz
-dcl_temps 6
+dcl_temps 7
 dcl_constantbuffer cb10[4], immediateIndexed
-
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
 
 ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
 
 
-// Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed b854d579d893d719-vs.txt
-
+// Unity reflection/specular fix:
 mul r4.w, -r4.x, r4.y
 mad r5.xyz, -r4.wwww, cb10[0].xyzw, cb1[4].xyzw
 
@@ -136,7 +134,17 @@ add r0.xyzw, r0.xyzw, cb2[3].xyzw
 mul r1.xyzw, r0.yyyy, cb3[18].xyzw
 mad r1.xyzw, cb3[17].xyzw, r0.xxxx, r1.xyzw
 mad r1.xyzw, cb3[19].xyzw, r0.zzzz, r1.xyzw
-mad o0.xyzw, cb3[20].xyzw, r0.wwww, r1.xyzw
+mad r6.xyzw, cb3[20].xyzw, r0.wwww, r1.xyzw
+
+// Return anything closer than 0.1 to screen depth to fix mask:
+lt r4.w, r6.w, l(0.1)
+if_nz r4.w
+	add r4.w, r6.w, -r4.y
+	mad r6.x, r4.w, -r4.x, r6.x
+endif
+
+mov o0.xyzw, r6.xyzw
+
 mul r0.x, v1.w, cb2[9].w
 dp3 r1.x, v2.xyzx, cb2[4].xyzx
 dp3 r1.y, v2.xyzx, cb2[5].xyzx
