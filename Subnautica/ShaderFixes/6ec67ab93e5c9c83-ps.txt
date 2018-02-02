@@ -1,4 +1,4 @@
-// asmtool.py -I ../.. --fix-unity-reflection --only-autofixed 6ec67ab93e5c9c83-ps.txt
+// asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f 6ec67ab93e5c9c83-ps.txt
 // 3DMigoto: 6ec67ab93e5c9c83 | Matched 3 variants of 1 shaders: Hidden/Internal-PrePassLightingOLD
 //
 //       Unity headers extracted from Hidden_Internal-PrePassLightingOLD
@@ -69,6 +69,7 @@
 // SV_POSITION              0   xyzw        0      POS   float       
 // TEXCOORD                 0   xyzw        1     NONE   float   xy w
 // TEXCOORD                 1   xyz         2     NONE   float   xyz 
+// TEXCOORD                 3      w        2     NONE   float      w
 //
 //
 // Output signature:
@@ -95,7 +96,10 @@ dcl_resource_texture2d (float,float,float,float) t4
 dcl_input_ps linear v1.xyw
 dcl_input_ps linear v2.xyz
 dcl_output o0.xyzw
-dcl_temps 7
+dcl_temps 10
+
+// New input from vertex shader with unity_CameraInvProjection[0].x:
+dcl_input_ps linear v2.w
 dcl_constantbuffer cb10[4], immediateIndexed
 
 // 3DMigoto StereoParams:
@@ -105,10 +109,16 @@ ld_indexable(texture2d)(float,float,float,float) r5.xyzw, l(0, 0, 0, 0), t125.xy
 
 
 // Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --fix-unity-reflection --only-autofixed 6ec67ab93e5c9c83-ps.txt
+// asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f 6ec67ab93e5c9c83-ps.txt
 
 mul r5.w, -r5.x, r5.y
-mad r6.xyz, -r5.wwww, cb10[0].xyzw, cb1[4].xyzw
+ne r7.x, l(0.0, 0.0, 0.0, 0.0), v2.w
+if_nz r7.x
+  mul r5.w, r5.w, v2.w
+  mad r6.xyz, -r5.wwww, cb2[18].xyzw, cb1[4].xyzw
+else
+  mad r6.xyz, -r5.wwww, cb10[0].xyzw, cb1[4].xyzw
+endif
 
 add r0.x, -cb3[24].x, l(1.000000)
 div r0.yz, v1.xxyx, v1.wwww
@@ -119,10 +129,30 @@ div r0.y, l(1.000000, 1.000000, 1.000000, 1.000000), r0.y
 div r0.z, cb1[5].z, v2.z
 mul r1.xyz, r0.zzzz, v2.xyzx
 mul r1.xyw, r0.yyyy, r1.xyxz
+
+// copy depth from r1.w to r8.x:
+mov r8.x, r1.w
+
+
+// Unity light/shadow fix (pixel shader stage) inserted with DarkStarSword's asmtool.py:
+// asmtool.py -I ../.. --fix-unity-lighting-ps --only-autofixed -f 6ec67ab93e5c9c83-ps.txt
+
+add r9.x, r8.x, -r5.y
+mul r9.x, r5.x, r9.x
+ne r5.w, l(0.0, 0.0, 0.0, 0.0), v2.w
+if_nz r5.w
+  mad r1.x, -r9.x, v2.w, r1.x
+endif
+
 mul r3.xyz, r1.yyyy, cb2[19].xyzx
 mad r3.xyz, cb2[18].xyzx, r1.xxxx, r3.xyzx
 mad r3.xyz, cb2[20].xyzx, r1.wwww, r3.xyzx
 add r3.xyz, r3.xyzx, cb2[21].xyzx
+
+if_z r5.w
+  mad r3.xyz, -r9.xxxx, cb10[0].xyzx, r3.xyzw
+endif
+
 mul r4.xyzw, r3.yyyy, cb3[9].xyzw
 mad r4.xyzw, cb3[8].xyzw, r3.xxxx, r4.xyzw
 mad r4.xyzw, cb3[10].xyzw, r3.zzzz, r4.xyzw
