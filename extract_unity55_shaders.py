@@ -665,7 +665,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Unity 5.5 Shader Extractor')
     parser.add_argument('shaders', nargs='+',
             help='List of compiled Unity shader files to parse')
-    parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11'),
+    parser.add_argument('--type', action='append', choices=('d3d9', 'd3d11', 'opengl'),
             help='Filter types of shaders to process, useful to avoid unnecessary slow hash calculations')
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity. One level shows basic progress, two levels dumps every parsed field')
