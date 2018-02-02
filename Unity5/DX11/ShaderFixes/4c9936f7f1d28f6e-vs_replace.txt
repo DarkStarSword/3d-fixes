@@ -76,14 +76,46 @@
 // https://github.com/DarkStarSword/3d-fixes
 
 // ---- Created with 3Dmigoto v1.2.65 on Thu Jan 25 16:19:14 2018
+
+// Replace definition with UnityPerFrame from Unity Cg source code:
+// Note that matrix order is transposed between Cg and HLSL, so add row_major
+// keywords to each float4x4 entry
+// NEW IN 5.6
+#define fixed4 float4
 cbuffer cb3 : register(b3)
 {
-  float4 cb3[21];
+  // float4 cb3[21];
+
+    fixed4 glstate_lightmodel_ambient;
+    fixed4 unity_AmbientSky;
+    fixed4 unity_AmbientEquator;
+    fixed4 unity_AmbientGround;
+    fixed4 unity_IndirectSpecColor;
+
+#if !defined(USING_STEREO_MATRICES)
+    row_major float4x4 glstate_matrix_projection; // cb3[ 5: 8]
+    row_major float4x4 unity_MatrixV;             // cb3[ 9:12]
+    row_major float4x4 unity_MatrixInvV;          // cb3[13:16]
+    row_major float4x4 unity_MatrixVP;            // cb3[17:20]
+    float4 unity_StereoScaleOffset;
+    int unity_StereoEyeIndex;
+#endif
+
+    fixed4 unity_ShadowColor;
 }
 
+// Replace definition with UnityPerDraw from Unity Cg source code:
+// Note that matrix order is transposed between Cg and HLSL, so add row_major
+// keywords to each float4x4 entry
+// CHANGED IN 5.6
 cbuffer cb2 : register(b2)
 {
-  float4 cb2[4];
+  // float4 cb2[4];
+
+  row_major float4x4 unity_ObjectToWorld;
+  row_major float4x4 unity_WorldToObject;
+  float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+  float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
 }
 
 cbuffer cb1 : register(b1)
@@ -97,6 +129,17 @@ cbuffer cb0 : register(b0)
 }
 
 
+// Copied from the directional lighting shader using 3DMigoto
+cbuffer UnityPerCameraRare : register(b13)
+{
+  uniform float4 unity_CameraWorldClipPlanes[6];
+
+  // Projection matrices of the camera. Note that this might be different from projection matrix
+  // that is set right now, e.g. while rendering shadows the matrices below are still the projection
+  // of original camera.
+  row_major uniform float4x4 unity_CameraProjection;
+  row_major uniform float4x4 unity_CameraInvProjection;
+}
 
 
 // 3Dmigoto declarations
@@ -110,29 +153,44 @@ void main(
   float3 v1 : NORMAL0,
   out float4 o0 : SV_POSITION0,
   out float4 o1 : TEXCOORD0,
-  out float3 o2 : TEXCOORD1)
+  out float3 o2 : TEXCOORD1,
+  out float fov : TEXCOORD2) // New output to pass FOV to pixel shaders
 {
   float4 r0,r1,r2;
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyzw = cb2[1].xyzw * v0.yyyy;
-  r0.xyzw = cb2[0].xyzw * v0.xxxx + r0.xyzw;
-  r0.xyzw = cb2[2].xyzw * v0.zzzz + r0.xyzw;
-  r0.xyzw = cb2[3].xyzw + r0.xyzw;
-  r1.xyzw = cb3[18].xyzw * r0.yyyy;
-  r1.xyzw = cb3[17].xyzw * r0.xxxx + r1.xyzw;
-  r1.xyzw = cb3[19].xyzw * r0.zzzz + r1.xyzw;
-  r1.xyzw = cb3[20].xyzw * r0.wwww + r1.xyzw;
+float4 stereo = StereoParams.Load(0);
+float separation = stereo.x; float convergence = stereo.y;
+
+  r0.xyzw = unity_ObjectToWorld[1].xyzw * v0.yyyy;
+  r0.xyzw = unity_ObjectToWorld[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[3].xyzw + r0.xyzw;
+  r1.xyzw = unity_MatrixVP[1].xyzw * r0.yyyy;
+  r1.xyzw = unity_MatrixVP[0].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = unity_MatrixVP[2].xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = unity_MatrixVP[3].xyzw * r0.wwww + r1.xyzw;
   o0.xyzw = r1.xyzw;
+
+bool full_screen = (r1.w == 1);
+float depth = r1.w;
+
+if (!full_screen) {
+	r1.x += separation * (depth - convergence);
+}
+
   r1.y = cb1[5].x * r1.y;
   r2.xzw = float3(0.5,0.5,0.5) * r1.xwy;
   o1.zw = r1.zw;
   o1.xy = r2.xw + r2.zz;
-  r1.xyz = cb3[10].xyz * r0.yyy;
-  r1.xyz = cb3[9].xyz * r0.xxx + r1.xyz;
-  r0.xyz = cb3[11].xyz * r0.zzz + r1.xyz;
-  r0.xyz = cb3[12].xyz * r0.www + r0.xyz;
+  r1.xyz = unity_MatrixV[1].xyz * r0.yyy;
+  r1.xyz = unity_MatrixV[0].xyz * r0.xxx + r1.xyz;
+  r0.xyz = unity_MatrixV[2].xyz * r0.zzz + r1.xyz;
+  r0.xyz = unity_MatrixV[3].xyz * r0.www + r0.xyz;
+
+// TODO: Adjust ray. Pattern changed in 5.6, need to verify this live.
+
   r1.xyz = float3(-1,-1,1) * r0.xyz;
   r0.xyz = -r0.xyz * float3(-1,-1,1) + v1.xyz;
   o2.xyz = cb0[2].xxx * r0.xyz + r1.xyz;
