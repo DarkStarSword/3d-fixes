@@ -260,7 +260,37 @@ if (!full_screen) {
   r1.xyz = unity_MatrixV[3].xyz * unity_ObjectToWorld[3].www + r1.xyz;
   r0.xyz = r1.xyz * v0.www + r0.xyz;
 
-// TODO: Adjust ray. Pattern changed in 5.6, need to verify this live.
+if (!full_screen) {
+	// Looks like unity_MatrixInvV is 0, so we can't just do this:
+	//    float4x4 projection = mul(unity_MatrixInvV, unity_MatrixVP);
+	//    fov = 1 / projection[0].x;
+
+	// Instead, we have to calculate this the long way:
+
+	// I already have an optimised version of this calculation in assembler for
+	// Unity 4 (the committed version is for column-major order, but the optimised
+	// row-major version was only slightly longer). I'm guessing the HLSL
+	// determinant() function won't be optimised because it can't make assumptions
+	// about the matrix (and that is a *large* amount of multiplications that could
+	// be eliminated), so we can probably do better, but for now this is clearer:
+	float det = 1 / determinant(unity_MatrixV);
+
+	float3 mvi;
+	mvi.x = ((unity_MatrixV._m11 * unity_MatrixV._m22) - (unity_MatrixV._m21 * unity_MatrixV._m12)) * det;
+	mvi.y = ((unity_MatrixV._m21 * unity_MatrixV._m02) - (unity_MatrixV._m01 * unity_MatrixV._m22)) * det;
+	mvi.z = ((unity_MatrixV._m01 * unity_MatrixV._m12) - (unity_MatrixV._m11 * unity_MatrixV._m02)) * det;
+
+	fov = 1 / dot(mvi, unity_MatrixVP._m00_m10_m20);
+
+	r0.x += separation * (depth - convergence) * fov;
+} else {
+	// Can't determine the FOV from the values passed to this shader, so
+	// use the FOV copied from directional lighting shader with 3DMigoto.
+	// We could probably get away with using only this and scrapping the
+	// above code for games that always have directional lighting enabled.
+
+	fov = unity_CameraInvProjection[0].x;
+}
 
   r1.xyz = float3(-1,-1,1) * r0.xyz;
   r0.xyz = -r0.xyz * float3(-1,-1,1) + v1.xyz;
