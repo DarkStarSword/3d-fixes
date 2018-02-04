@@ -255,7 +255,13 @@ function get_next_page(token)
 function blog_info_callback(response)
 {
   progress = 0;
-  total_posts = response["posts"]["totalItems"];
+
+  // February 2018: blogger.blogs.get API returning errors
+  if (response.error)
+    total_posts = "???";
+  else
+    total_posts = response["posts"]["totalItems"];
+
   update_progress();
   get_next_page();
 }
