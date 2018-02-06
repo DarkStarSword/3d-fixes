@@ -59,6 +59,14 @@ cbuffer VSBones : register(b6)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+// struct transformation_buffer {
+// 	matrix transformation;
+// 	float time;
+// 	float inc;
+// 	float2 pad;
+// };
+// 
+// StructuredBuffer<transformation_buffer> transform : register(t100);
 
 void main( 
   float4 v0 : POSITION0,
@@ -79,6 +87,23 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+// Bone matrix 0 is garbage (game bug) - the position is hugely distorted in
+// the direction of the camera (by like 40+ units), which means in 2D it isn't
+// really noticeable, but in 3D skews the outline pretty badly around the
+// waistline.
+//
+// To work around this, use bone matrix 1 instead of matrix 0 - the outline
+// will be a slightly broken by this, but nowhere near as bad as when using the
+// bad bone matrix from the game, and probably not noticeable.  Later I might
+// look at copying the real bone 0 matrix out of the soldier shaders, but that
+// is more complex since I'd need to match up the m_world matrices to ensure I'm
+// copying from the right soldier (note that the m_viewWorld matrix does not
+// match), and match bone matrix 1 to ensure I'm copying from the right body
+// part.
+uint workaround = 0;
+if (IniParams.Load(int2(2, 0)).x == 1)
+	workaround = 1;
+
   r0.xyz = v0.xyz;
   r1.xyz = v1.xyz;
   r2.xyzw = v5.xyzw;
@@ -86,27 +111,51 @@ void main(
   if (r3.x != 0) {
     r2.xyzw = r2.xyzw;
     r3.x = (int)v4.x * 3;
-    r4.xyzw = g_vsBone.m_boneMatrices[v4.x]._m00_m10_m20_m30 * r2.xxxx;
-    r5.xyzw = g_vsBone.m_boneMatrices[v4.x]._m01_m11_m21_m31 * r2.xxxx;
-    r3.xyzw = g_vsBone.m_boneMatrices[v4.x]._m02_m12_m22_m32 * r2.xxxx;
+    if (v4.x) {
+	    r4.xyzw = g_vsBone.m_boneMatrices[v4.x]._m00_m10_m20_m30 * r2.xxxx;
+	    r5.xyzw = g_vsBone.m_boneMatrices[v4.x]._m01_m11_m21_m31 * r2.xxxx;
+	    r3.xyzw = g_vsBone.m_boneMatrices[v4.x]._m02_m12_m22_m32 * r2.xxxx;
+    } else {
+            r4.xyzw = g_vsBone.m_boneMatrices[workaround]._m00_m10_m20_m30 * r2.xxxx;
+            r5.xyzw = g_vsBone.m_boneMatrices[workaround]._m01_m11_m21_m31 * r2.xxxx;
+            r3.xyzw = g_vsBone.m_boneMatrices[workaround]._m02_m12_m22_m32 * r2.xxxx;
+    }
     r2.x = (int)v4.y * 3;
-    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r2.yyyy;
-    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r2.yyyy;
-    r8.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r2.yyyy;
+    if (v4.y) {
+	    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r2.yyyy;
+	    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r2.yyyy;
+	    r8.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r2.yyyy;
+    } else {
+	    r6.xyzw = g_vsBone.m_boneMatrices[workaround]._m00_m10_m20_m30 * r2.yyyy;
+	    r7.xyzw = g_vsBone.m_boneMatrices[workaround]._m01_m11_m21_m31 * r2.yyyy;
+	    r8.xyzw = g_vsBone.m_boneMatrices[workaround]._m02_m12_m22_m32 * r2.yyyy;
+    }
     r4.xyzw = r6.xyzw + r4.xyzw;
     r5.xyzw = r7.xyzw + r5.xyzw;
     r3.xyzw = r8.xyzw + r3.xyzw;
     r2.x = (int)v4.z * 3;
-    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r2.zzzz;
-    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r2.zzzz;
-    r8.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r2.zzzz;
+    if (v4.z) {
+	    r6.xyzw = g_vsBone.m_boneMatrices[v4.z]._m00_m10_m20_m30 * r2.zzzz;
+	    r7.xyzw = g_vsBone.m_boneMatrices[v4.z]._m01_m11_m21_m31 * r2.zzzz;
+	    r8.xyzw = g_vsBone.m_boneMatrices[v4.z]._m02_m12_m22_m32 * r2.zzzz;
+    } else {
+	    r6.xyzw = g_vsBone.m_boneMatrices[workaround]._m00_m10_m20_m30 * r2.zzzz;
+	    r7.xyzw = g_vsBone.m_boneMatrices[workaround]._m01_m11_m21_m31 * r2.zzzz;
+	    r8.xyzw = g_vsBone.m_boneMatrices[workaround]._m02_m12_m22_m32 * r2.zzzz;
+    }
     r4.xyzw = r6.xyzw + r4.xyzw;
     r5.xyzw = r7.xyzw + r5.xyzw;
     r3.xyzw = r8.xyzw + r3.xyzw;
     r2.x = (int)v4.w * 3;
-    r6.xyzw = g_vsBone.m_boneMatrices[v4.y]._m00_m10_m20_m30 * r2.wwww;
-    r7.xyzw = g_vsBone.m_boneMatrices[v4.y]._m01_m11_m21_m31 * r2.wwww;
-    r2.xyzw = g_vsBone.m_boneMatrices[v4.y]._m02_m12_m22_m32 * r2.wwww;
+    if (v4.w) {
+	    r6.xyzw = g_vsBone.m_boneMatrices[v4.w]._m00_m10_m20_m30 * r2.wwww;
+	    r7.xyzw = g_vsBone.m_boneMatrices[v4.w]._m01_m11_m21_m31 * r2.wwww;
+	    r2.xyzw = g_vsBone.m_boneMatrices[v4.w]._m02_m12_m22_m32 * r2.wwww;
+    } else {
+	    r6.xyzw = g_vsBone.m_boneMatrices[workaround]._m00_m10_m20_m30 * r2.wwww;
+	    r7.xyzw = g_vsBone.m_boneMatrices[workaround]._m01_m11_m21_m31 * r2.wwww;
+	    r2.xyzw = g_vsBone.m_boneMatrices[workaround]._m02_m12_m22_m32 * r2.wwww;
+    }
     r4.xyzw = r6.xyzw + r4.xyzw;
     r5.xyzw = r7.xyzw + r5.xyzw;
     r2.xyzw = r3.xyzw + r2.xyzw;
@@ -117,6 +166,19 @@ void main(
 // r0.xyz is already broken by this point. v0 is fine (at least the 2D outline
 // is, not confirmed if it's fine in 3D), suggesting that it's the bone
 // matrices that are breaking this effect.
+//
+// The below can be used to apply a transformation matrix to move and rotate
+// the outlines around to observe this from different angles. The inc is used
+// to restrict this to a specific draw call so we can match it up with
+// ResourceDebugCB's max_copies_per_frame to examine the matching buffer.
+
+//if (transform[0].inc == 6) {
+	// Using bone matrices. Posed, but broken:
+	//r0.xyz = mul(float4(r0.xyz, 1), transform[0].transformation);
+	// Skipping bone matrices. Neutral pose, but not broken::
+	//r0.xyz = mul(v0.xyzw, transform[0].transformation);
+//}
+
     r3.w = 0;
     r3.xyz = v1.xyz;
     r1.x = dot(r3.xyzw, r4.xyzw);
@@ -124,6 +186,7 @@ void main(
     r1.z = dot(r3.xyzw, r2.xyzw);
   }
   r1.w = 0;
+
   r2.x = dot(r1.xyzw, g_vsObject.m_world._m00_m10_m20_m30);
   r2.y = dot(r1.xyzw, g_vsObject.m_world._m01_m11_m21_m31);
   r2.z = dot(r1.xyzw, g_vsObject.m_world._m02_m12_m22_m32);
@@ -139,6 +202,9 @@ void main(
   r3.y = dot(r0.xyzw, g_vsObject.m_viewWorld._m01_m11_m21_m31);
   r3.z = dot(r0.xyzw, g_vsObject.m_viewWorld._m02_m12_m22_m32);
   r3.w = dot(r0.xyzw, g_vsObject.m_viewWorld._m03_m13_m23_m33);
+
+//r3 = mul(r3, transform[0].transformation);
+
   r4.x = r3.x;
   r4.y = r3.y;
   r4.z = r3.z;
@@ -167,8 +233,7 @@ void main(
   o0.y = r5.w;
 
 // Effect is broken (even in 2D), disable:
-float4 params = IniParams.Load(int2(2,0));
-if (IniParams.Load(int2(2, 0)).x)
+if (IniParams.Load(int2(2, 0)).x == 2)
 	o5 = 0;
 
   return;
