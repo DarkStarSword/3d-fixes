@@ -2,7 +2,7 @@
 
 import os, re, time
 
-pattern = re.compile(r'(?P<game>.*)\d\d(?:_\d)?\d.(?P<extension>jps|pns)', re.IGNORECASE)
+pattern = re.compile(r'(?P<game>.*?)\d\d\d?(?:_\d)?\d\d?.(?P<extension>jps|pns)', re.IGNORECASE)
 
 def archive():
 	for filename in os.listdir(os.curdir):
