@@ -4,3 +4,5 @@ Installation
 
 2.  If you are running the 32bit version of the game, replace the DLLS with the
     ones in the 32bit directory.
+
+3.  Disable motion blur in the game settings.
