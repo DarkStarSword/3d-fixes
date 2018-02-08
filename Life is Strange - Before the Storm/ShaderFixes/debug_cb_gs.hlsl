@@ -14,6 +14,7 @@ cbuffer cb13 : register(b13)
 }
 
 Buffer<float4> t113 : register(t113);
+Buffer<uint4> t114 : register(t114);
 
 struct vs2gs {
 	uint idx : TEXCOORD0;
@@ -139,7 +140,16 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 
 	int e = log10(val);
 	if (e < 0) {
-		emit_char('0', ostream);
+		if (e < -4) {
+			scientific = --e;
+			digit = uint(val / pow(10, e)) % 10;
+			emit_char(digit + 0x30, ostream);
+			significant++;
+			e--;
+		} else {
+			emit_char('0', ostream);
+			e = -1;
+		}
 	} else {
 		if (e > 6)
 			scientific = e;
@@ -176,17 +186,24 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	get_meta();
 	uint idx = input[0].idx;
 	float4 cval = cb13[idx];
+	uint4 ival = asint(cb13[idx]);
 	float char_height = char_size.y / resolution.y * 2 * font_scale;
 	int max_y = resolution.y / char_size.y * font_scale;
-	uint t113len;
+	uint t113len, t114len;
+	bool use_int = false;
 
 	// If t113 is set we use that instead of cb13, if neither are set
 	// (using 3DMigoto 1.2.65 feature to test if cb13 is bound) we bail:
 	t113.GetDimensions(t113len);
-	if (t113len)
+	t114.GetDimensions(t114len);
+	if (t113len) {
 		cval = t113[idx];
-	else if (asint(IniParams[7].w) == asint(-0.0))
+	} else if (t114len) {
+		ival = t114[idx];
+		use_int = true;
+	} else if (asint(IniParams[7].w) == asint(-0.0)) {
 		return;
+	}
 
 	cur_pos = float2(-1 + (idx / max_y * 0.32), 1 - (idx % max_y) * char_height);
 	if (cur_pos.x >= 1)
@@ -195,11 +212,23 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	emit_int(idx, ostream);
 	emit_char(':', ostream);
 	emit_char(' ', ostream);
-	emit_float(cval.x, ostream);
+	if (use_int)
+		emit_int(ival.x, ostream);
+	else
+		emit_float(cval.x, ostream);
 	emit_char(' ', ostream);
-	emit_float(cval.y, ostream);
+	if (use_int)
+		emit_int(ival.y, ostream);
+	else
+		emit_float(cval.y, ostream);
 	emit_char(' ', ostream);
-	emit_float(cval.z, ostream);
+	if (use_int)
+		emit_int(ival.z, ostream);
+	else
+		emit_float(cval.z, ostream);
 	emit_char(' ', ostream);
-	emit_float(cval.w, ostream);
+	if (use_int)
+		emit_int(ival.w, ostream);
+	else
+		emit_float(cval.w, ostream);
 }

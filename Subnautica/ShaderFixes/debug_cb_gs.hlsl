@@ -140,7 +140,16 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 
 	int e = log10(val);
 	if (e < 0) {
-		emit_char('0', ostream);
+		if (e < -4) {
+			scientific = --e;
+			digit = uint(val / pow(10, e)) % 10;
+			emit_char(digit + 0x30, ostream);
+			significant++;
+			e--;
+		} else {
+			emit_char('0', ostream);
+			e = -1;
+		}
 	} else {
 		if (e > 6)
 			scientific = e;
