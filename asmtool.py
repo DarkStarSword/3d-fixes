@@ -856,7 +856,7 @@ def fix_unusual_halo_with_inconsistent_w_optimisation(shader):
 
     shader.autofixed = True
 
-def remap_cb(shader, cb, sb, start_offset=0, length=4096):
+def remap_cb(shader, cb, sb, start_offset=0, dest_offset=0, length=4096):
     assert(shader.shader_model.endswith('_4_0') or shader.shader_model.endswith('_5_0'))
 
     cb_declaration = shader.find_cb_declaration(cb)
@@ -884,26 +884,34 @@ def remap_cb(shader, cb, sb, start_offset=0, length=4096):
                     cb_refs.add(idx)
 
     if start_offset == 0 and length == 4096:
-        offset_txt = ''
+        src_offset_txt = ''
     elif length == 1:
-        offset_txt = '[{}]'.format(start_offset)
+        src_offset_txt = '[{}]'.format(start_offset)
     else:
-        offset_txt = '[{}:{}]'.format(start_offset, start_offset + length)
+        src_offset_txt = '[{}:{}]'.format(start_offset, start_offset + length)
+
+    if dest_offset == start_offset:
+        dst_offset_txt = ''
+    elif length == 1:
+        dst_offset_txt = '[{}]'.format(dest_offset)
+    else:
+        dst_offset_txt = '[{}:{}]'.format(dest_offset, dest_offset + length)
 
     if not cb_refs:
-        debug_verbose(0, 'No constant buffer cb{cb}{offset} references found'.format(cb=cb, offset=offset_txt))
+        debug_verbose(0, 'No constant buffer cb{cb}{offset} references found'.format(cb=cb, offset=src_offset_txt))
         return
 
     shader.insert_decl('dcl_resource_structured t{sb}, {stride}'.format(sb = sb, stride = stride))
 
-    shader.early_insert_vanity_comment('cb{cb}{offset} remapped to t{sb}{offset} with'.
-            format(cb=cb, sb=sb, offset=offset_txt))
+    shader.early_insert_vanity_comment('cb{cb}{src_offset} remapped to t{sb}{dst_offset} with'.
+            format(cb=cb, sb=sb, src_offset=src_offset_txt, dst_offset=dst_offset_txt))
 
     for cb_idx in sorted(cb_refs):
         reg = shader.allocate_temp_reg()
         cb_offset = int(cb_idx) * 16
-        structure_idx = cb_offset // stride
-        structure_offset = cb_offset % stride
+        adjusted_offset = cb_offset + (dest_offset - start_offset) * 16
+        structure_idx = adjusted_offset // stride
+        structure_offset = adjusted_offset % stride
         if shader.shader_model.endswith('_4_0'):
             shader.early_insert_instr(
                 'ld_structured {reg}.xyzw, l({idx}), l({offset}), t{sb}.xyzw' \
@@ -2049,9 +2057,9 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
     parser.add_argument('--remap-cb', action='append', nargs=2, type=int, default=[],
             help="Remap accesses of a given constant buffer to a structured buffer")
-    parser.add_argument('--remap-cb-offset', action='append', nargs=3, type=int, default=[],
+    parser.add_argument('--remap-cb-offset', action='append', nargs=4, type=int, default=[],
             help="Remap accesses of an individual offset in a given constant buffer to a structured buffer")
-    parser.add_argument('--remap-cb-matrix', action='append', nargs=3, type=int, default=[],
+    parser.add_argument('--remap-cb-matrix', action='append', nargs=4, type=int, default=[],
             help="Remap accesses of an individual 4x4 matrix in a given constant buffer to a structured buffer")
     parser.add_argument('--disable-driver-stereo-cb', nargs='?', type=int, const=12,
             help="Disable the driver stereo correction by defining the same constant buffer it uses")
@@ -2164,10 +2172,10 @@ def main():
             for cb, sb in args.remap_cb:
                 # Do this late in case it is used in conjunction with other patterns
                 remap_cb(shader, cb, sb);
-            for cb, offset, sb in args.remap_cb_offset:
-                remap_cb(shader, cb, sb, offset, 1)
-            for cb, offset, sb in args.remap_cb_matrix:
-                remap_cb(shader, cb, sb, offset, 4)
+            for cb, src_offset, sb, dst_offset in args.remap_cb_offset:
+                remap_cb(shader, cb, sb, src_offset, dst_offset, 1)
+            for cb, src_offset, sb, dst_offset in args.remap_cb_matrix:
+                remap_cb(shader, cb, sb, src_offset, dst_offset, 4)
             if args.disable_driver_stereo_cb is not None:
                 disable_driver_stereo_cb(shader)
         except Exception as e:
