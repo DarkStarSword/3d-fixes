@@ -6,3 +6,5 @@ Installation
     ones in the 32bit directory.
 
 3.  Disable motion blur in the game settings.
+
+4.  Set Anti-Aliasing=FXAA
