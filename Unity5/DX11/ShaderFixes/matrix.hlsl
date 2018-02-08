@@ -84,3 +84,11 @@ matrix rotation_z_matrix(float radians)
 		       0, 0, 1, 0,
 		       0, 0, 0, 1);
 }
+
+bool is_identity(matrix m)
+{
+	return all(m == matrix(1, 0, 0, 0,
+	                       0, 1, 0, 0,
+	                       0, 0, 1, 0,
+	                       0, 0, 0, 1));
+}

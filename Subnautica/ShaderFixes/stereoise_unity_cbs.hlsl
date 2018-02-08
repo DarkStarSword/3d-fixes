@@ -1,5 +1,7 @@
-// Not positive if this will apply in the general case - Unity is known to only
-// update matrices in the constant buffers that are actually being used.
+// To make this work in the general case in Unity we would need to be a little
+// smarter - Unity only updates matrices when they are used, so some matrices
+// may just be the identity matrix, or worse - an old stale matrix from a
+// previous frame / different viewpoint / etc.
 
 #include "unity_cbuffers.hlsl"
 
@@ -83,13 +85,52 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// principles. We start by creating a pair of projection matrices with
 	// built in stereo corrections:
 
-	matrix stereo_projection = MonoPerFrame.glstate_matrix_projection;
-	stereo_projection._m20 = -sep; // EXPLAIN ME: Why negative when UE4 is positive?
+	// unity_MatrixInvV may be the identity matrix, or worse - may be stale
+	// data from an old frame, so we inverse it ourselves:
+	matrix inv_view = MonoPerFrame.unity_MatrixInvV;
+	// if (is_identity(inv_view))
+		inv_view = inverse(MonoPerFrame.unity_MatrixV);
+
+	// glstate_matrix_projection is valid if drawing SSR in the menu, but
+	// not in game when SSR is disabled. Therefore, we have to derive it.
+#if 0
+	matrix projection = MonoPerFrame.glstate_matrix_projection;
+#else
+	matrix inv_vp = inverse(MonoPerFrame.unity_MatrixVP);
+
+	// Flipped projection, so z=0 is far, z=1 is near
+	float4 tmp = mul(float4(0, 0, 0, 1), inv_vp);
+	float far = mul(tmp / tmp.w, MonoPerFrame.unity_MatrixVP).w;
+	tmp = mul(float4(0, 0, 1, 1), inv_vp);
+	float near = mul(tmp / tmp.w, MonoPerFrame.unity_MatrixVP).w;
+
+	// Deriving the projection matrix like this gives bad results, but the
+	// FOV is fine, so we still use it to get that:
+	matrix derived_projection = mul(inv_view, MonoPerFrame.unity_MatrixVP);
+
+	// Then we make our own cleaned up projection matrix, matching Unity's
+	// flipped projection with our stereo correction inserted.
+	float w = derived_projection._m00;
+	float h = derived_projection._m11;
+	// Flipped projection, so near instead of far:
+	float a = near / (far - near);
+	float b = (near * far) / (far - near);
+	float c = -1; // Flipped projection
+	matrix projection = matrix(
+		w, 0, 0, 0,
+		0, h, 0, 0,
+		0, 0, a, c,
+		0, 0, b, 0
+	);
+#endif
+
+	matrix stereo_projection = projection;
+	stereo_projection._m20 = -sep; // EXPLAIN ME: Why negative when UE4 is positive? Flipped projection?
 	stereo_projection._m30 = -sep * conv;
 
 	// FIXME: If we have UnityPerFrameRare, we can get the inverse projection matrix from there
 	// FIXME: Use inverse optimised for projection matrices
-	matrix inv_projection = inverse(MonoPerFrame.glstate_matrix_projection);
+	matrix inv_projection = inverse(projection);
 
 	// Calculate the forwards stereo injection matrices, by multiplying the
 	// inverse projection matrix by the forwards stereo projection matrix:
@@ -99,9 +140,6 @@ void main(uint3 tid: SV_DispatchThreadID)
 
 	// Note: This may replace the driver correction, so be sure to --disable-driver-stereo-cb
 	StereoPerFrame[0].unity_MatrixVP = mul(MonoPerFrame.unity_MatrixVP, stereo_injection_f);
-
-	// unity_MatrixInvV may be the identity matrix, so inverse it ourselves:
-	matrix inv_view = inverse(MonoPerFrame.unity_MatrixV);
 
 	// Calculate the camera offset in various spaces to correct reflections:
 	float4 cam_adj_clip = float4(-sep * conv, 0, 0, 0);
