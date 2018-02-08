@@ -1,4 +1,4 @@
-// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
+// asmtool.py --remap-cb-offset 1 4 101 4 --remap-cb-matrix 3 5 103 5 --remap-cb-matrix 3 17 103 17 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
 // 3DMigoto: 5a7e5dc518a9c2c4 | Matched 2 variants of 1 shaders: Custom/WaterSurface
 //
 //       Unity headers extracted from Custom_WaterSurface
@@ -81,28 +81,23 @@ dcl_output o2.xyz
 dcl_output o3.xyzw
 dcl_output o4.xyzw
 dcl_output o5.xyzw
-dcl_temps 14
+dcl_temps 9
 dcl_resource_structured t101, 96
 dcl_resource_structured t103, 336
 // Disables driver stereo correction:
 dcl_constantbuffer cb12[4], immediateIndexed
 
-// cb1 remapped to t101 with DarkStarSword's asmtool.py:
-// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
+// cb1[4] remapped to t101 with DarkStarSword's asmtool.py:
+// asmtool.py --remap-cb-offset 1 4 101 4 --remap-cb-matrix 3 5 103 5 --remap-cb-matrix 3 17 103 17 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
 ld_structured r4.xyzw, l(0), l(64), t101.xyzw
-ld_structured r5.xyzw, l(0), l(80), t101.xyzw
 
 
-// cb3 remapped to t103 with DarkStarSword's asmtool.py:
-// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
-ld_structured r6.xyzw, l(0), l(144), t103.xyzw
-ld_structured r7.xyzw, l(0), l(160), t103.xyzw
-ld_structured r8.xyzw, l(0), l(176), t103.xyzw
-ld_structured r9.xyzw, l(0), l(192), t103.xyzw
-ld_structured r10.xyzw, l(0), l(272), t103.xyzw
-ld_structured r11.xyzw, l(0), l(288), t103.xyzw
-ld_structured r12.xyzw, l(0), l(304), t103.xyzw
-ld_structured r13.xyzw, l(0), l(320), t103.xyzw
+// cb3[17:21] remapped to t103 with DarkStarSword's asmtool.py:
+// asmtool.py --remap-cb-offset 1 4 101 4 --remap-cb-matrix 3 5 103 5 --remap-cb-matrix 3 17 103 17 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
+ld_structured r5.xyzw, l(0), l(272), t103.xyzw
+ld_structured r6.xyzw, l(0), l(288), t103.xyzw
+ld_structured r7.xyzw, l(0), l(304), t103.xyzw
+ld_structured r8.xyzw, l(0), l(320), t103.xyzw
 
 mul r0.xyzw, v0.yyyy, cb2[1].xyzw
 mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
@@ -123,20 +118,20 @@ else
   mov r2.xyz, l(0,0,0,0)
 endif 
 mad r0.xyz, r2.xyzx, r1.zzzz, r0.xyzx
-mul r2.xyzw, r0.yyyy, r11.xyzw
-mad r2.xyzw, r10.xyzw, r0.xxxx, r2.xyzw
-mad r2.xyzw, r12.xyzw, r0.zzzz, r2.xyzw
-mad r2.xyzw, r13.xyzw, r0.wwww, r2.xyzw
+mul r2.xyzw, r0.yyyy, r6.xyzw
+mad r2.xyzw, r5.xyzw, r0.xxxx, r2.xyzw
+mad r2.xyzw, r7.xyzw, r0.zzzz, r2.xyzw
+mad r2.xyzw, r8.xyzw, r0.wwww, r2.xyzw
 mul r3.xz, r2.xxwx, l(0.500000, 0.000000, 0.500000, 0.000000)
-mul r0.w, r2.y, r5.x
+mul r0.w, r2.y, cb1[5].x
 mul r3.w, r0.w, l(0.500000)
 add o3.xy, r3.zzzz, r3.xwxx
 mad r1.zw, r2.xxxy, l(0.000000, 0.000000, 1.000000, -1.000000), r2.wwww
 mul o5.xy, r1.zwzz, l(0.500000, 0.500000, 0.000000, 0.000000)
-mul r3.xyzw, r0.yyyy, r7.xyzw
-mad r3.xyzw, r6.xyzw, r0.xxxx, r3.xyzw
-mad r3.xyzw, r8.xyzw, r0.zzzz, r3.xyzw
-add o4.xyzw, r3.xyzw, r9.xyzw
+mul r3.xyzw, r0.yyyy, cb3[10].xyzw
+mad r3.xyzw, cb3[9].xyzw, r0.xxxx, r3.xyzw
+mad r3.xyzw, cb3[11].xyzw, r0.zzzz, r3.xyzw
+add o4.xyzw, r3.xyzw, cb3[12].xyzw
 mov o0.xyzw, r2.xyzw
 mov o3.zw, r2.zzzw
 mov o5.zw, r2.zzzw

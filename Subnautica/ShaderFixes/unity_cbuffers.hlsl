@@ -52,18 +52,18 @@ struct UnityPerDraw {
 };
 
 struct UnityPerFrame {
-    fixed4 glstate_lightmodel_ambient;
-    fixed4 unity_AmbientSky;
-    fixed4 unity_AmbientEquator;
-    fixed4 unity_AmbientGround;
-    fixed4 unity_IndirectSpecColor;
+    /*  0 */ fixed4 glstate_lightmodel_ambient;
+    /*  1 */ fixed4 unity_AmbientSky;
+    /*  2 */ fixed4 unity_AmbientEquator;
+    /*  3 */ fixed4 unity_AmbientGround;
+    /*  4 */ fixed4 unity_IndirectSpecColor;
 
 #if !defined(UNITY_SINGLE_PASS_STEREO) && !defined(STEREO_INSTANCING_ON)
-    row_major float4x4 glstate_matrix_projection;
-    row_major float4x4 unity_MatrixV;
-    row_major float4x4 unity_MatrixInvV; // Beware: May just be the identity matrix
-    row_major float4x4 unity_MatrixVP;
-    int unity_StereoEyeIndex;
+    /*  5[4] */ row_major float4x4 glstate_matrix_projection;
+    /*  9[4] */ row_major float4x4 unity_MatrixV;
+    /* 13[4] */ row_major float4x4 unity_MatrixInvV; // Beware: May just be the identity matrix
+    /* 17[4] */ row_major float4x4 unity_MatrixVP;
+    /* 21    */ int unity_StereoEyeIndex;
     float3 UAV_PADDING_unity_StereoEyeIndex;
 #endif
 };

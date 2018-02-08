@@ -1,4 +1,4 @@
-// asmtool.py --remap-cb 1 101 --remap-cb 2 102 -I ../../.. -f bb9e80982dbcec6f-ps.txt
+// asmtool.py --remap-cb-offset 1 4 101 4 --remap-cb-matrix 2 5 102 5 --remap-cb-matrix 2 17 102 17 -I ../../.. -f bb9e80982dbcec6f-ps.txt
 // 3DMigoto: bb9e80982dbcec6f |    Unity headers extracted from Custom_WaterSurface
 //    Shader "Custom/WaterSurface" {
 //      SubShader 1/1 {
@@ -138,21 +138,12 @@ dcl_input_ps linear v4.xyz
 dcl_input_ps linear v5.xyw
 dcl_input_ps_sgv v6.x, is_front_face
 dcl_output o0.xyzw
-dcl_temps 19
+dcl_temps 15
 dcl_resource_structured t101, 128
-dcl_resource_structured t102, 192
 
-// cb1 remapped to t101 with DarkStarSword's asmtool.py:
-// asmtool.py --remap-cb 1 101 --remap-cb 2 102 -I ../../.. -f bb9e80982dbcec6f-ps.txt
+// cb1[4] remapped to t101 with DarkStarSword's asmtool.py:
+// asmtool.py --remap-cb-offset 1 4 101 4 --remap-cb-matrix 2 5 102 5 --remap-cb-matrix 2 17 102 17 -I ../../.. -f bb9e80982dbcec6f-ps.txt
 ld_structured r14.xyzw, l(0), l(64), t101.xyzw
-ld_structured r15.xyzw, l(0), l(112), t101.xyzw
-
-
-// cb2 remapped to t102 with DarkStarSword's asmtool.py:
-// asmtool.py --remap-cb 1 101 --remap-cb 2 102 -I ../../.. -f bb9e80982dbcec6f-ps.txt
-ld_structured r16.xyzw, l(0), l(144), t102.xyzw
-ld_structured r17.xyzw, l(0), l(160), t102.xyzw
-ld_structured r18.xyzw, l(0), l(176), t102.xyzw
 
 mul r0.xyz, v2.yyyy, cb0[30].xywx
 mad r0.xyz, cb0[29].xywx, v2.xxxx, r0.xyzx
@@ -210,9 +201,9 @@ if_nz v6.x
   mul r5.xyz, r2.xyzx, r0.wwww
   mad r5.xyz, cb0[36].xxxx, -r1.yzwy, -r5.xyzx
   and r5.xyz, r2.wwww, r5.xyzx
-  mul r5.yw, r5.yyyy, r17.xxxy
-  mad r5.xy, r16.xyxx, r5.xxxx, r5.ywyy
-  mad r5.xy, r18.xyxx, r5.zzzz, r5.xyxx
+  mul r5.yw, r5.yyyy, cb2[10].xxxy
+  mad r5.xy, cb2[9].xyxx, r5.xxxx, r5.ywyy
+  mad r5.xy, cb2[11].xyxx, r5.zzzz, r5.xyxx
   div r0.w, l(1.000000, 1.000000, 1.000000, 1.000000), v5.w
   mul r5.zw, r0.wwww, v5.xxxy
   mul r5.xy, r0.wwww, r5.xyxx
@@ -224,7 +215,7 @@ if_nz v6.x
   add r6.z, -|r0.w|, l(1.000000)
   sample r7.xyzw, r6.xzxx, t3.xyzw, s0
   sample r6.xyzw, r6.xzxx, t4.xyzw, s4
-  mad r0.w, r15.z, r6.x, r15.w
+  mad r0.w, cb1[7].z, r6.x, cb1[7].w
   div r0.w, l(1.000000, 1.000000, 1.000000, 1.000000), r0.w
   sample r5.xyzw, r5.zwzz, t3.xyzw, s0
   add r0.w, -r0.w, v3.w
@@ -276,9 +267,9 @@ else
     dp3 r2.w, -r1.yzwy, -r2.xyzx
     add r2.w, r2.w, r2.w
     mad r4.xyz, r2.xyzx, r2.wwww, -r1.yzwy
-    mul r5.xyz, -|r4.yyyy|, r17.xyzx
-    mad r4.xyw, r16.xyxz, r4.xxxx, r5.xyxz
-    mad r4.xyz, r18.xyzx, r4.zzzz, r4.xywx
+    mul r5.xyz, -|r4.yyyy|, cb2[10].xyzx
+    mad r4.xyw, cb2[9].xyxz, r4.xxxx, r5.xyxz
+    mad r4.xyz, cb2[11].xyzx, r4.zzzz, r4.xywx
     mul r5.xyz, v4.yyyy, cb0[8].xyzx
     mad r5.xyz, cb0[7].xyzx, v4.xxxx, r5.xyzx
     mad r5.xyz, cb0[9].xyzx, v4.zzzz, r5.xyzx
@@ -459,13 +450,13 @@ else
     mad r0.z, cb0[45].y, r0.z, r0.w
     mul r2.xyz, -r2.xyzx, r0.zzzz
     mad r1.yzw, cb0[45].yyyy, -r1.yyzw, -r2.xxyz
-    mul r0.zw, r1.zzzz, r17.xxxy
-    mad r0.zw, r16.xxxy, r1.yyyy, r0.zzzw
-    mad r0.zw, r18.xxxy, r1.wwww, r0.zzzw
+    mul r0.zw, r1.zzzz, cb2[10].xxxy
+    mad r0.zw, cb2[9].xxxy, r1.yyyy, r0.zzzw
+    mad r0.zw, cb2[11].xxxy, r1.wwww, r0.zzzw
     mad r0.zw, r0.zzzw, l(0.000000, 0.000000, -0.100000, 0.200000), v5.xxxy
     div r0.zw, r0.zzzw, v5.wwww
     sample r2.xyzw, r0.zwzz, t4.xyzw, s4
-    mad r2.x, r15.z, r2.x, r15.w
+    mad r2.x, cb1[7].z, r2.x, cb1[7].w
     div r2.x, l(1.000000, 1.000000, 1.000000, 1.000000), r2.x
     ge r2.y, r2.x, l(1000.000000)
     lt r2.x, r2.x, v3.w
