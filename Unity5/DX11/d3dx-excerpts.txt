@@ -10,6 +10,7 @@ post Resource_UnityPerCameraRare = null
 post Resource_CameraDepthTexture = null
 post Resource_UnityPerCamera = null
 post Resource_UnityPerDraw = null
+post Resource_UnityPerFrame = null
 
 
 ;;;;;;;;;;;;;;;;;;;;;;; DARKSTARSWORD'S UNITY 5 TEMPLATE ;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,6 +26,9 @@ max_copies_per_frame = 1
 max_copies_per_frame = 1
 
 [Resource_UnityPerDraw]
+max_copies_per_frame = 1
+
+[Resource_UnityPerFrame]
 max_copies_per_frame = 1
 
 [Resource_Inverse_MVP]
@@ -98,13 +102,25 @@ post cs-u1 = null
 post Resource_Inverse_MVP_CB = copy Resource_Inverse_MVP
 post Resource_Inverse_VP_CB = copy Resource_Inverse_VP
 
+[CustomShader_Inverse_Unity_VP]
+max_executions_per_frame = 1
+cs = ShaderFixes/inverse_unity_vp.hlsl
+cs-cb11 = Resource_UnityPerFrame
+cs-u0 = Resource_Inverse_VP
+Dispatch = 1, 1, 1
+post cs-cb11 = null
+post cs-u0 = null
+post Resource_Inverse_VP_CB = copy Resource_Inverse_VP
+
 ; Reset the per frame copy / execution limits every time a depth buffer is
 ; cleared to fix games that render additional off-screen scenes.
 [CommandListResetPerFrameLimits]
 reset_per_frame_limits = CustomShader_Inverse_Unity_MVP
+reset_per_frame_limits = CustomShader_Inverse_Unity_VP
 reset_per_frame_limits = Resource_UnityPerCameraRare
 reset_per_frame_limits = Resource_UnityPerCamera
 reset_per_frame_limits = Resource_UnityPerDraw
+reset_per_frame_limits = Resource_UnityPerFrame
 reset_per_frame_limits = Resource_CameraDepthTexture
 [ClearRenderTargetView]
 ; LiSBtS needs this reset from RTV clear or reflections are messed up:

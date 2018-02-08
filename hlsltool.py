@@ -1200,9 +1200,9 @@ def fix_unity_lighting_ps(shader):
 
     shader.autofixed = True
 
-def possibly_copy_unity_world_matrices(shader):
-    # We might possibly use this shader as a source of the MVP and
-    # _Object2World matrices, but only if it is rendering from the POV of the
+def possibly_copy_unity_matrices_common(shader):
+    # We might possibly use this shader as a source of the view / world
+    # translation matrices, but only if it is rendering from the POV of the
     # camera. Blacklist shadow casters which are rendered from the POV of a
     # light.
     #
@@ -1213,12 +1213,13 @@ def possibly_copy_unity_world_matrices(shader):
     #
     # This blacklisting may not be necessary - I doubt that any shadow casters
     # will have used _WorldSpaceCameraPos and we won't have got this far.
+
     try:
         match = shader.find_header(shadertool.unity_headers_attached)
     except KeyError:
         debug('Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER')
         # tree.ini.append((None, None, 'Skipping possible matrix source - shader does not have Unity headers attached so unable to check if it is a SHADOWCASTER'))
-        return False
+        raise
 
     try:
         match = shader.find_header(shadertool.unity_tag_shadow_caster)
@@ -1227,6 +1228,13 @@ def possibly_copy_unity_world_matrices(shader):
     else:
         debug('Skipping possible matrix source - shader is a SHADOWCASTER')
         # tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
+        raise
+
+def possibly_copy_unity_world_matrices(shader):
+    # Variant for pre-multiplied M and MVP matrices in UnityPerDraw
+    try:
+        possibly_copy_unity_matrices_common(shader)
+    except:
         return False
 
     try:
@@ -1238,6 +1246,25 @@ def possibly_copy_unity_world_matrices(shader):
         assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
         assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
         shader.add_shader_override_setting('Resource_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
+        return True
+    except KeyError:
+        return False
+
+def possibly_copy_unity_view_matrices(shader):
+    # Unity 5.6 variant used in Subnautica - no pre-multiplied MVP matrices
+    # in UnityPerDraw, instead find VP in UnityPerFrame
+    try:
+        possibly_copy_unity_matrices_common(shader)
+    except:
+        return False
+
+    try:
+        vp_cb, vp_offset = shader.find_unity_cb_entry(shadertool.unity_MatrixVP_pattern, 'matrix')
+        if vp_offset != 272:
+            # Has been at offset 144 in older Unity versions
+            debug_verbose(0, 'FIXME: May need to adjust possibly_copy_unity_view_matrices to deal with VP matrix at different offset, if VP not otherwise available')
+            return False
+        shader.add_shader_override_setting('Resource_UnityPerFrame = %s-cb%d' % (shader.shader_type, vp_cb));
         return True
     except KeyError:
         return False

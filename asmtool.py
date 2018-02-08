@@ -1152,6 +1152,8 @@ def fix_unity_reflection(shader, fov_reg = None, _CameraToWorld = None):
 
     if hlsltool.possibly_copy_unity_world_matrices(shader):
         shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_MVP')
+    if hlsltool.possibly_copy_unity_view_matrices(shader):
+        shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_VP')
 
     shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
 
