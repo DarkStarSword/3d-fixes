@@ -856,7 +856,7 @@ def fix_unusual_halo_with_inconsistent_w_optimisation(shader):
 
     shader.autofixed = True
 
-def remap_cb(shader, cb, sb):
+def remap_cb(shader, cb, sb, start_offset=0, length=4096):
     assert(shader.shader_model.endswith('_4_0') or shader.shader_model.endswith('_5_0'))
 
     cb_declaration = shader.find_cb_declaration(cb)
@@ -879,17 +879,27 @@ def remap_cb(shader, cb, sb):
         for reg in hlsltool.find_regs_in_expression(str(instr)):
             match = pattern.match(reg.variable)
             if match:
-                cb_refs.add(match.group('index'))
+                idx = int(match.group('index'))
+                if idx >= start_offset and idx < start_offset + length:
+                    cb_refs.add(idx)
+
+    if start_offset == 0 and length == 4096:
+        offset_txt = ''
+    elif length == 1:
+        offset_txt = '[{}]'.format(start_offset)
+    else:
+        offset_txt = '[{}:{}]'.format(start_offset, start_offset + length)
 
     if not cb_refs:
-        debug_verbose(0, 'No constant buffer cb{cb} references found'.format(cb=cb))
+        debug_verbose(0, 'No constant buffer cb{cb}{offset} references found'.format(cb=cb, offset=offset_txt))
         return
 
     shader.insert_decl('dcl_resource_structured t{sb}, {stride}'.format(sb = sb, stride = stride))
 
-    shader.early_insert_vanity_comment('cb{cb} remapped to t{sb} with'.format(cb=cb, sb=sb))
+    shader.early_insert_vanity_comment('cb{cb}{offset} remapped to t{sb}{offset} with'.
+            format(cb=cb, sb=sb, offset=offset_txt))
 
-    for cb_idx in sorted(map(int, cb_refs)):
+    for cb_idx in sorted(cb_refs):
         reg = shader.allocate_temp_reg()
         cb_offset = int(cb_idx) * 16
         structure_idx = cb_offset // stride
@@ -2039,6 +2049,10 @@ def parse_args():
             help="Attempt to automatically fix a vertex shader for an unusual halo pattern seen in some Unity 5.4 games (Stranded Deep)")
     parser.add_argument('--remap-cb', action='append', nargs=2, type=int, default=[],
             help="Remap accesses of a given constant buffer to a structured buffer")
+    parser.add_argument('--remap-cb-offset', action='append', nargs=3, type=int, default=[],
+            help="Remap accesses of an individual offset in a given constant buffer to a structured buffer")
+    parser.add_argument('--remap-cb-matrix', action='append', nargs=3, type=int, default=[],
+            help="Remap accesses of an individual 4x4 matrix in a given constant buffer to a structured buffer")
     parser.add_argument('--disable-driver-stereo-cb', nargs='?', type=int, const=12,
             help="Disable the driver stereo correction by defining the same constant buffer it uses")
     parser.add_argument('--fix-unity-lighting-ps', nargs='?', const='TEXCOORD3',
@@ -2149,7 +2163,11 @@ def main():
                 fix_wd2_lens_grit(shader, args.fix_wd2_lens_grit)
             for cb, sb in args.remap_cb:
                 # Do this late in case it is used in conjunction with other patterns
-                remap_cb(shader, cb, sb)
+                remap_cb(shader, cb, sb);
+            for cb, offset, sb in args.remap_cb_offset:
+                remap_cb(shader, cb, sb, offset, 1)
+            for cb, offset, sb in args.remap_cb_matrix:
+                remap_cb(shader, cb, sb, offset, 4)
             if args.disable_driver_stereo_cb is not None:
                 disable_driver_stereo_cb(shader)
         except Exception as e:
