@@ -1,4 +1,4 @@
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 5a7e5dc518a9c2c4-vs.txt
+// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
 // 3DMigoto: 5a7e5dc518a9c2c4 | Matched 2 variants of 1 shaders: Custom/WaterSurface
 //
 //       Unity headers extracted from Custom_WaterSurface
@@ -69,7 +69,7 @@
 //
 vs_4_0
 dcl_constantbuffer cb0[34], immediateIndexed
-dcl_constantbuffer cb1[9], immediateIndexed
+dcl_constantbuffer cb1[6], immediateIndexed
 dcl_constantbuffer cb2[4], immediateIndexed
 dcl_constantbuffer cb3[21], immediateIndexed
 dcl_sampler s0, mode_default
@@ -81,20 +81,28 @@ dcl_output o2.xyz
 dcl_output o3.xyzw
 dcl_output o4.xyzw
 dcl_output o5.xyzw
-dcl_temps 6
+dcl_temps 14
+dcl_resource_structured t101, 96
+dcl_resource_structured t103, 336
+// Disables driver stereo correction:
+dcl_constantbuffer cb12[4], immediateIndexed
 
-// 3DMigoto StereoParams:
-dcl_resource_texture2d (float,float,float,float) t125
-dcl_constantbuffer cb10[4], immediateIndexed
+// cb1 remapped to t101 with DarkStarSword's asmtool.py:
+// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
+ld_structured r4.xyzw, l(0), l(64), t101.xyzw
+ld_structured r5.xyzw, l(0), l(80), t101.xyzw
 
-ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
 
-
-// Unity reflection/specular fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 5a7e5dc518a9c2c4-vs.txt
-
-mul r4.w, -r4.x, r4.y
-mad r5.xyz, -r4.wwww, cb10[0].xyzw, cb1[4].xyzw
+// cb3 remapped to t103 with DarkStarSword's asmtool.py:
+// asmtool.py --remap-cb 1 101 --remap-cb 3 103 --disable-driver-stereo-cb -I ../../.. -f 5a7e5dc518a9c2c4-vs.txt
+ld_structured r6.xyzw, l(0), l(144), t103.xyzw
+ld_structured r7.xyzw, l(0), l(160), t103.xyzw
+ld_structured r8.xyzw, l(0), l(176), t103.xyzw
+ld_structured r9.xyzw, l(0), l(192), t103.xyzw
+ld_structured r10.xyzw, l(0), l(272), t103.xyzw
+ld_structured r11.xyzw, l(0), l(288), t103.xyzw
+ld_structured r12.xyzw, l(0), l(304), t103.xyzw
+ld_structured r13.xyzw, l(0), l(320), t103.xyzw
 
 mul r0.xyzw, v0.yyyy, cb2[1].xyzw
 mad r0.xyzw, cb2[0].xyzw, v0.xxxx, r0.xyzw
@@ -102,7 +110,7 @@ mad r0.xyzw, cb2[2].xyzw, v0.zzzz, r0.xyzw
 mad r0.xyzw, cb2[3].xyzw, v0.wwww, r0.xyzw
 mul r1.xy, r0.xzxx, l(100.000000, 100.000000, 0.000000, 0.000000)
 div r1.xy, r1.xyxx, cb0[33].xxxx
-add r1.zw, -r0.xxxz, r5.xxxz
+add r1.zw, -r0.xxxz, r4.xxxz
 dp2 r1.z, r1.zwzz, r1.zwzz
 sqrt r1.z, r1.z
 add r1.z, -r1.z, l(200.000000)
@@ -115,35 +123,21 @@ else
   mov r2.xyz, l(0,0,0,0)
 endif 
 mad r0.xyz, r2.xyzx, r1.zzzz, r0.xyzx
-mul r2.xyzw, r0.yyyy, cb3[18].xyzw
-mad r2.xyzw, cb3[17].xyzw, r0.xxxx, r2.xyzw
-mad r2.xyzw, cb3[19].xyzw, r0.zzzz, r2.xyzw
-mad r2.xyzw, cb3[20].xyzw, r0.wwww, r2.xyzw
-
-// Relocated to here with asmtool.py
-mov o0.xyzw, r2.xyzw
-
-// Automatic vertex shader halo fix inserted with DarkStarSword's asmtool.py:
-// asmtool.py -I ../.. --auto-fix-vertex-halo --fix-unusual-halo-with-inconsistent-w-optimisation --fix-unity-reflection --fix-unity-frustum-world --only-autofixed 5a7e5dc518a9c2c4-vs.txt
-ne r4.w, r2.w, l(1.0)
-if_nz r4.w
-  add r4.w, r2.w, -r4.y
-  mad r2.x, r4.w, r4.x, r2.x
-endif
-
+mul r2.xyzw, r0.yyyy, r11.xyzw
+mad r2.xyzw, r10.xyzw, r0.xxxx, r2.xyzw
+mad r2.xyzw, r12.xyzw, r0.zzzz, r2.xyzw
+mad r2.xyzw, r13.xyzw, r0.wwww, r2.xyzw
 mul r3.xz, r2.xxwx, l(0.500000, 0.000000, 0.500000, 0.000000)
-mul r0.w, r2.y, cb1[5].x
+mul r0.w, r2.y, r5.x
 mul r3.w, r0.w, l(0.500000)
 add o3.xy, r3.zzzz, r3.xwxx
 mad r1.zw, r2.xxxy, l(0.000000, 0.000000, 1.000000, -1.000000), r2.wwww
 mul o5.xy, r1.zwzz, l(0.500000, 0.500000, 0.000000, 0.000000)
-mul r3.xyzw, r0.yyyy, cb3[10].xyzw
-mad r3.xyzw, cb3[9].xyzw, r0.xxxx, r3.xyzw
-mad r3.xyzw, cb3[11].xyzw, r0.zzzz, r3.xyzw
-add o4.xyzw, r3.xyzw, cb3[12].xyzw
-
-// mov o0.xyzw, r2.xyzw // Relocated from here with asmtool.py
-
+mul r3.xyzw, r0.yyyy, r7.xyzw
+mad r3.xyzw, r6.xyzw, r0.xxxx, r3.xyzw
+mad r3.xyzw, r8.xyzw, r0.zzzz, r3.xyzw
+add o4.xyzw, r3.xyzw, r9.xyzw
+mov o0.xyzw, r2.xyzw
 mov o3.zw, r2.zzzw
 mov o5.zw, r2.zzzw
 mov o2.xyz, r0.xyzx

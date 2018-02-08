@@ -39,6 +39,11 @@ matrix translation_matrix(float x, float y, float z)
 		      x, y, z, 1);
 }
 
+matrix translation_matrix(float3 c)
+{
+	return translation_matrix(c.x, c.y, c.z);
+}
+
 matrix scale_matrix(float x, float y, float z)
 {
 	return matrix(x, 0, 0, 0,
