@@ -1,3 +1,6 @@
+#ifndef __UNITY_CBUFFERS__
+#define __UNITY_CBUFFERS__
+
 #define fixed4 float4
 
 struct UnityPerCamera {
@@ -67,3 +70,5 @@ struct UnityPerFrame {
     float3 UAV_PADDING_unity_StereoEyeIndex;
 #endif
 };
+
+#endif /* __UNITY_CBUFFERS__ */
