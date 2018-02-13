@@ -1253,6 +1253,12 @@ def possibly_copy_unity_world_matrices(shader):
 def possibly_copy_unity_view_matrices(shader):
     # Unity 5.6 variant used in Subnautica - no pre-multiplied MVP matrices
     # in UnityPerDraw, instead find VP in UnityPerFrame
+    # FIXME: We might need to try to blacklist post-processing effects, as this
+    # matrix may be a full screen matrix in that case, as in:
+    # [ 2  0  0   0]
+    # [ 0 -2  0   0]
+    # [ 0  0 ~0.1 0]
+    # [-1  1 ~1   1]
     try:
         possibly_copy_unity_matrices_common(shader)
     except:

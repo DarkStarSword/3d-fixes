@@ -62,7 +62,7 @@ struct UnityPerFrame {
     /*  5[4] */ row_major float4x4 glstate_matrix_projection;
     /*  9[4] */ row_major float4x4 unity_MatrixV;
     /* 13[4] */ row_major float4x4 unity_MatrixInvV; // Beware: May just be the identity matrix
-    /* 17[4] */ row_major float4x4 unity_MatrixVP;
+    /* 17[4] */ row_major float4x4 unity_MatrixVP; // Beware: May be [2 0 0 0] [0 -2 0 0] [0 0 ~0.01 0] [-1 1 ~1 1] for post effects / HUD
     /* 21    */ int unity_StereoEyeIndex;
     float3 UAV_PADDING_unity_StereoEyeIndex;
 #endif
