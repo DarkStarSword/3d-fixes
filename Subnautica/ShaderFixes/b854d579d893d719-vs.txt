@@ -115,12 +115,14 @@ dcl_output o5.xyzw
 dcl_output o6.xyz
 dcl_output o7.xyzw
 dcl_output o8.xyz
-dcl_temps 7
+dcl_temps 8
 dcl_constantbuffer cb10[4], immediateIndexed
 // 3DMigoto StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
+dcl_resource_texture1d (float,float,float,float) t120
 
 ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
+ld_indexable(texture1d)(float,float,float,float) r7.xyzw, l(1, 0, 0, 0), t120.xyzw
 
 
 // Unity reflection/specular fix:
@@ -136,11 +138,17 @@ mad r1.xyzw, cb3[17].xyzw, r0.xxxx, r1.xyzw
 mad r1.xyzw, cb3[19].xyzw, r0.zzzz, r1.xyzw
 mad r6.xyzw, cb3[20].xyzw, r0.wwww, r1.xyzw
 
-// Return anything closer than 0.1 to screen depth to fix mask:
-lt r4.w, r6.w, l(0.1)
+// Check for scuba mask texture:
+eq r4.w, r7.y, l(1.0)
 if_nz r4.w
-	add r4.w, r6.w, -r4.y
-	mad r6.x, r4.w, -r4.x, r6.x
+	// Must be closer than 0.1 for safety:
+	lt r4.w, r6.w, l(0.1)
+	if_nz r4.w
+		// Convergence override formula:
+		// x += separation * (convergence - convergence_override)
+		add r4.w, r4.y, -r7.x
+		mad r6.x, r4.x, r4.w, r6.x
+	endif
 endif
 
 mov o0.xyzw, r6.xyzw
