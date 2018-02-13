@@ -52,8 +52,12 @@ float4 draw_cursor_color(float2 texcoord, float2 dimensions)
 	// Format=DXGI_FORMAT_B8G8R8X8_UNORM_SRGB to indicate there is no alpha
 	// channel, which will cause the read here to return 1 for opaque.
 
-	if (!result.w)
-		result.w = 1;
+	// XXX: Subnautica: We have an alpha channel that is *NOT*
+	// pre-multiplied (needs blend = ADD SRC_ALPHA INV_SRC_ALPHA), has
+	// garbage in the transparent pixels and has and no mask to remove
+	// them, so disable this:
+	//if (!result.w)
+	//	result.w = 1;
 
 	if (mask)
 		result.w = 0;
