@@ -1,6 +1,5 @@
-Texture2D<float> font : register(t100);
-Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
+// Edit this line to change the font colour:
+static const float3 colour = float3(1, 0.5, 0.25);
 
 static const float font_scale = 1.0;
 static float2 cur_pos;
@@ -8,13 +7,9 @@ static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
-cbuffer cb13 : register(b13)
-{
-	float4 cb13[4096];
-}
-
-Buffer<float4> t113 : register(t113);
-Buffer<uint4> t114 : register(t114);
+Texture2D<float> font : register(t100);
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
 struct vs2gs {
 	uint idx : TEXCOORD0;
@@ -25,6 +20,22 @@ struct gs2ps {
 	float2 tex : TEXCOORD1;
 	uint character : TEXCOORD2;
 };
+
+#ifdef VERTEX_SHADER
+void main(uint id : SV_VertexID, out vs2gs output)
+{
+	output.idx = id;
+}
+#endif
+
+#ifdef GEOMETRY_SHADER
+cbuffer cb13 : register(b13)
+{
+	float4 cb13[4096];
+}
+
+Buffer<float4> t113 : register(t113);
+Buffer<uint4> t114 : register(t114);
 
 void get_meta()
 {
@@ -108,13 +119,23 @@ void emit_int(int val, inout TriangleStream<gs2ps> ostream)
 	}
 }
 
+// isnan() is optimised out by the compiler, which produces a warning that we
+// need the /Gis (IEEE Strictness) option to enable it... but that doesn't work
+// either... neither does disabling optimisations... Uhh, good job Microsoft?
+// Whatever, just implement it ourselves by testing for an exponent of all 1s
+// and a non-zero mantissa:
+bool workaround_broken_isnan(float x)
+{
+	return (((asuint(x) & 0x7f800000) == 0x7f800000) && ((asuint(x) & 0x007fffff) != 0));
+}
+
 void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 {
 	int digit;
 	int significant = 0;
 	int scientific = 0;
 
-	if (isnan(val)) {
+	if (workaround_broken_isnan(val)) {
 		emit_char('N', ostream);
 		emit_char('a', ostream);
 		emit_char('N', ostream);
@@ -232,3 +253,26 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	else
 		emit_float(cval.w, ostream);
 }
+#endif
+
+#ifdef PIXEL_SHADER
+void main(gs2ps input, out float4 o0 : SV_Target0)
+{
+	float font_width, font_height;
+	float2 char_size;
+	float2 pos;
+
+	font.GetDimensions(font_width, font_height);
+	char_size = float2(font_width, font_height) / float2(16, 6);
+
+	pos.x = (input.character % 16) * char_size.x;
+	pos.y = (input.character / 16 - 2) * char_size.y;
+
+	pos.xy += input.tex * char_size;
+
+	o0.xyzw = font.Load(int3(pos, 0)) * float4(colour, 1);
+
+	// Uncomment to darken the background for contrast:
+	// o0.w = max(o0.w, 0.75);
+}
+#endif
