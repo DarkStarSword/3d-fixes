@@ -3,6 +3,7 @@
 #define cursor_showing IniParams[7].y
 #define texture_filter IniParams[1].y
 #define pda_preset IniParams[1].z
+#define loading_screen_preset IniParams[1].w
 
 #define crosshair_texture 2
 #define screen_depth_texture 3
@@ -35,6 +36,10 @@ bool is_fullscreen(float4 pos)
 void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 {
 	float4 s = StereoParams.Load(0);
+
+	// If the loading screen icon is visible we don't adjust the HUD at all:
+	if (loading_screen_preset)
+		return;
 
 #ifdef UNITY_PER_DRAW
 	if (!all(UNITY_PER_DRAW.unity_ObjectToWorld._m30_m31_m32_m33 == float4(0, 0, 1, 1))) {
