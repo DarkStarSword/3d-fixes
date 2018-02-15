@@ -3,6 +3,7 @@
 #define cursor_hotspot  IniParams[6].zw
 #define cursor_showing  IniParams[7].y
 #define window_size     IniParams[7].zw
+#define cursor_depth    IniParams[1].z
 
 Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
@@ -77,6 +78,11 @@ void main(out vs2ps output, uint vertex : SV_VertexID)
 	// could automatically adjust it from the depth buffer:
 	//float2 mouse_pos = (cursor_window / window_size * 2 - 1);
 	//output.pos.x += adjust_from_depth_buffer(mouse_pos.x, mouse_pos.y);
+
+	if (cursor_depth) {
+		float4 s = StereoParams.Load(0);
+		output.pos.x += s.x * (cursor_depth - s.y) / cursor_depth;
+	}
 }
 #endif /* VERTEX_SHADER */
 
