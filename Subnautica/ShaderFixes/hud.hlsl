@@ -27,6 +27,11 @@ void handle_in_world_hud(inout float4 pos)
 		pos.x -= s.x * (pos.w - s.y);
 }
 
+bool is_fullscreen(float4 pos)
+{
+	return all(abs(pos.xy) > 0.99);
+}
+
 void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 {
 	float4 s = StereoParams.Load(0);
@@ -59,6 +64,12 @@ void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 		pos = 0;
 		return;
 	}
+
+	// If full-screen HUD is displayed we disable all HUD adjustments this
+	// frame. Necessary to disable all to avoid breaking text on loading
+	// screen.
+	if (is_fullscreen(pos))
+		return;
 
 	// Otherwise, adjust to crosshair depth if allowed for this shader:
 	if (allow_crosshair_adjust)
