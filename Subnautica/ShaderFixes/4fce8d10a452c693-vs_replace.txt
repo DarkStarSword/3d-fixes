@@ -39,6 +39,9 @@
 // https://github.com/DarkStarSword/3d-fixes
 
 // ---- Created with 3Dmigoto v1.2.65 on Thu Jan 25 16:55:33 2018
+
+#include "unity_cbuffers.hlsl"
+
 cbuffer cb2 : register(b2)
 {
   float4 cb2[21];
@@ -46,8 +49,10 @@ cbuffer cb2 : register(b2)
 
 cbuffer cb1 : register(b1)
 {
-  float4 cb1[4];
+  //float4 cb1[4];
+  struct UnityPerDraw _UnityPerDraw;
 }
+#define UNITY_PER_DRAW _UnityPerDraw
 
 cbuffer cb0 : register(b0)
 {
@@ -77,10 +82,10 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyzw = cb1[1].xyzw * v0.yyyy;
-  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
-  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
-  r0.xyzw = cb1[3].xyzw + r0.xyzw;
+  r0.xyzw = _UnityPerDraw.unity_ObjectToWorld[1].xyzw * v0.yyyy;
+  r0.xyzw = _UnityPerDraw.unity_ObjectToWorld[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = _UnityPerDraw.unity_ObjectToWorld[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = _UnityPerDraw.unity_ObjectToWorld[3].xyzw + r0.xyzw;
   r1.xyzw = cb2[18].xyzw * r0.yyyy;
   r1.xyzw = cb2[17].xyzw * r0.xxxx + r1.xyzw;
   r1.xyzw = cb2[19].xyzw * r0.zzzz + r1.xyzw;
