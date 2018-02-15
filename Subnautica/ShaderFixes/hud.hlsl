@@ -11,10 +11,18 @@ void handle_hud(inout float4 pos)
 {
 	float4 s = StereoParams.Load(0);
 
-	if (!all(_UnityPerDraw.unity_ObjectToWorld._m30_m31_m32_m33 == float4(0, 0, 1, 1))) {
+#ifdef UNITY_PER_DRAW
+	if (!all(UNITY_PER_DRAW.unity_ObjectToWorld._m30_m31_m32_m33 == float4(0, 0, 1, 1))) {
 		// Tablet or some other in-world HUD
+		// Gah, main menu also matches this, so the "Primary" &
+		// "Secondary" text in keyboard shortcuts remains adjusted (W
+		// ~= 1), while the rest of the menu is at screen depth (W ==
+		// 1). The menu actually appears to be positioned in-world then
+		// projected back to screen... probably for VR?
+		// nvm, it's minor
 		return;
 	}
+#endif
 
 	// Return all HUD items to screen depth:
 	if (pos.w != 1)
