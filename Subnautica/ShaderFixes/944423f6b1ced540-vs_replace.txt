@@ -1,0 +1,271 @@
+// 3DMigoto: 944423f6b1ced540 |    Unity headers extracted from FX_WBOIT-WaterBase
+//    Shader "FX/WBOIT-WaterBase" {
+//      Fallback "Diffuse"
+//      SubShader 1/1 {
+//        Tags { "IGNOREPROJECTOR"="true" "QUEUE"="Transparent+101" "RenderType"="Transparent" }
+//        Pass 1/2 {
+//          Name "FORWARD"
+//          Tags { "IGNOREPROJECTOR"="true" "LIGHTMODE"="FORWARDBASE" "QUEUE"="Transparent+101" "RenderType"="Transparent" }
+//          ZWrite Off
+//          Program "vp" {
+//            SubProgram "d3d11" {
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from FX_WBOIT-WaterBase:
+//   API d3d11
+//   Shader model vs_4_0
+//   undeciphered1: 201609010 122 0 0
+//   undeciphered1a: 6
+//   Keywords { "DIRECTIONAL" "VERTEXLIGHT_ON" }
+//   undeciphered2: 1 0 5 0 0 0
+//   undeciphered3: 143 5 0 0 7 8 1 2 3 4 2 1
+//   ConstBuffer "$Globals" 560
+//   Vector 416 [_Scale]
+//   Vector 448 [_Frequency]
+//   Float 464 [_Speed]
+//   Float 468 [_Dir]
+//   Float 496 [_ClipedValue]
+//   Float 500 [_UWE_EditorTime]
+//   Vector 544 [_MaskMap_ST]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 0 [_Time]
+//   Vector 80 [_ProjectionParams]
+//   ConstBuffer "UnityLighting" 752
+//   Vector 32 [unity_4LightPosX0]
+//   Vector 48 [unity_4LightPosY0]
+//   Vector 64 [unity_4LightPosZ0]
+//   Vector 80 [unity_4LightAtten0]
+//   Vector 96 [unity_LightColor0]
+//   Vector 112 [unity_LightColor1]
+//   Vector 128 [unity_LightColor2]
+//   Vector 144 [unity_LightColor3]
+//   Vector 160 [unity_LightColor4]
+//   Vector 176 [unity_LightColor5]
+//   Vector 192 [unity_LightColor6]
+//   Vector 208 [unity_LightColor7]
+//   Vector 656 [unity_SHBr]
+//   Vector 672 [unity_SHBg]
+//   Vector 688 [unity_SHBb]
+//   Vector 704 [unity_SHC]
+//   ConstBuffer "UnityPerDraw" 160
+//   Matrix 0 [unity_ObjectToWorld]
+//   Matrix 64 [unity_WorldToObject]
+//   ConstBuffer "UnityPerFrame" 384
+//   Matrix 144 [unity_MatrixV]
+//   Matrix 272 [unity_MatrixVP]
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//   BindCB "UnityLighting" 2
+//   BindCB "UnityPerDraw" 3
+//   BindCB "UnityPerFrame" 4
+//
+// Headers extracted with DarkStarSword's extract_unity55_shaders.py
+// https://github.com/DarkStarSword/3d-fixes
+
+// ---- Created with 3Dmigoto v1.2.65 on Thu Jan 25 16:57:46 2018
+cbuffer cb4 : register(b4)
+{
+  float4 cb4[21];
+}
+
+cbuffer cb3 : register(b3)
+{
+  float4 cb3[8];
+}
+
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[45];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[6];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[35];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+
+
+void main( 
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float3 v2 : NORMAL0,
+  float4 v3 : TEXCOORD0,
+  float4 v4 : TEXCOORD1,
+  float4 v5 : TEXCOORD2,
+  float4 v6 : TEXCOORD3,
+  float4 v7 : COLOR0,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD0,
+  out float4 o2 : TEXCOORD1,
+  out float4 o3 : TEXCOORD2,
+  out float4 o4 : TEXCOORD3,
+  out float4 o5 : TEXCOORD4,
+  out float4 o6 : TEXCOORD5,
+  out float4 o7 : TEXCOORD6,
+  out float4 o8 : TEXCOORD7,
+  out float4 o9 : TEXCOORD8,
+  out float4 o10 : TEXCOORD9)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = cb3[1].yxzy * v0.yyyy;
+  r0.xyzw = cb3[0].yxzy * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb3[2].yxzy * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb3[3].yxzy * v0.wwww + r0.xyzw;
+  r1.x = cb1[0].y + cb0[31].y;
+  r0.xyzw = r1.xxxx * cb0[29].xxxx + r0.xyzw;
+  r1.xy = float2(0.200000003,0.200000003) * r0.xy;
+  r2.xyz = r0.zzw * float3(0.200000003,0.200000003,0.200000003) + -r1.xyy;
+  r0.x = -0.349999994 + cb0[29].y;
+  r1.xyz = r0.xxx * r2.xyz + r1.xyy;
+  r2.xyz = float3(8,8,8) * cb0[28].xyz;
+  r1.xyz = r2.xyz * r1.xyz + float3(0.5,0.5,0.5);
+  r1.xyz = frac(r1.xyz);
+  r1.xyz = r1.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r2.xyz = abs(r1.xyz) * abs(r1.xyz);
+  r1.xyz = -abs(r1.xyz) * float3(2,2,2) + float3(3,3,3);
+  r1.xyz = r2.xyz * r1.xyz;
+  r1.xyz = r1.xyz * float3(0.833333313,0.833333313,0.833333313) + float3(0.25,0.25,0.25);
+  r2.xyz = r0.zzw + -r0.wyy;
+  r0.xyz = cb0[29].yyy * r2.xyz + r0.wyy;
+  r0.xyz = cb0[28].xyz * r0.xyz + float3(0.5,0.5,0.5);
+  r0.xyz = frac(r0.xyz);
+  r0.xyz = r0.xyz * float3(2,2,2) + float3(-1,-1,-1);
+  r2.xyz = abs(r0.xyz) * abs(r0.xyz);
+  r0.xyz = -abs(r0.xyz) * float3(2,2,2) + float3(3,3,3);
+  r0.xyz = r2.xyz * r0.xyz;
+  r0.xyz = r0.xyz * r1.xyz;
+  r0.xyz = cb0[26].xyz * r0.xyz;
+  r0.xyz = v7.xyz * r0.xyz;
+  r1.xyz = cb3[5].xyz * r0.yyy;
+  r1.xyz = cb3[4].xyz * r0.xxx + r1.xyz;
+  r0.yzw = cb3[6].xyz * r0.zzz + r1.xyz;
+  r0.xyz = cb3[7].xyz * r0.xxx + r0.yzw;
+  r0.w = 1 + -cb0[31].x;
+  r0.xyz = r0.xyz * r0.www + v0.xyz;
+  r1.xyzw = cb3[1].xyzw * r0.yyyy;
+  r1.xyzw = cb3[0].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = cb3[2].xyzw * r0.zzzz + r1.xyzw;
+  r2.xyzw = cb3[3].xyzw + r1.xyzw;
+  r3.xyzw = cb4[18].xyzw * r2.yyyy;
+  r3.xyzw = cb4[17].xyzw * r2.xxxx + r3.xyzw;
+  r3.xyzw = cb4[19].xyzw * r2.zzzz + r3.xyzw;
+  r3.xyzw = cb4[20].xyzw * r2.wwww + r3.xyzw;
+  o0.xyzw = r3.xyzw;
+  o10.w = r3.z;
+  o1.xy = v3.xy * cb0[34].xy + cb0[34].zw;
+  r3.xyz = cb3[3].xyz * v0.www + r1.xyz;
+  o8.xyzw = cb3[3].xyzw * v0.wwww + r1.xyzw;
+  o2.w = r3.x;
+  r1.xyz = cb3[1].yzx * v1.yyy;
+  r1.xyz = cb3[0].yzx * v1.xxx + r1.xyz;
+  r1.xyz = cb3[2].yzx * v1.zzz + r1.xyz;
+  r0.w = dot(r1.xyz, r1.xyz);
+  r0.w = rsqrt(r0.w);
+  r1.xyz = r1.xyz * r0.www;
+  o2.x = r1.z;
+  r4.x = dot(v2.xyz, cb3[4].xyz);
+  r4.y = dot(v2.xyz, cb3[5].xyz);
+  r4.z = dot(v2.xyz, cb3[6].xyz);
+  r0.w = dot(r4.xyz, r4.xyz);
+  r0.w = rsqrt(r0.w);
+  r4.xyzw = r4.xyzz * r0.wwww;
+  r5.xyz = r4.wxy * r1.xyz;
+  r5.xyz = r4.ywx * r1.yzx + -r5.xyz;
+  r5.xyz = v1.www * r5.xyz;
+  o2.y = r5.x;
+  o2.z = r4.x;
+  o3.x = r1.x;
+  o4.x = r1.y;
+  o3.w = r3.y;
+  o3.y = r5.y;
+  o4.y = r5.z;
+  o3.z = r4.y;
+  o4.w = r3.z;
+  o4.z = r4.w;
+  r0.w = cb4[10].z * r2.y;
+  r0.w = cb4[9].z * r2.x + r0.w;
+  r0.w = cb4[11].z * r2.z + r0.w;
+  r0.w = cb4[12].z * r2.w + r0.w;
+  o5.z = -r0.w;
+  r1.xyz = cb4[18].xyw * r2.yyy;
+  r1.xyz = cb4[17].xyw * r2.xxx + r1.xyz;
+  r1.xyz = cb4[19].xyw * r2.zzz + r1.xyz;
+  r1.xyz = cb4[20].xyw * r2.www + r1.xyz;
+  r0.w = cb1[5].x * r1.y;
+  r2.w = 0.5 * r0.w;
+  r2.xz = float2(0.5,0.5) * r1.xz;
+  o5.w = r1.z;
+  o5.xy = r2.xw + r2.zz;
+  o6.xyz = r0.xyz;
+  o6.w = v0.w;
+  r1.xyzw = cb4[10].xyzw * cb3[1].yyyy;
+  r1.xyzw = cb4[9].xyzw * cb3[1].xxxx + r1.xyzw;
+  r1.xyzw = cb4[11].xyzw * cb3[1].zzzz + r1.xyzw;
+  r1.xyzw = cb4[12].xyzw * cb3[1].wwww + r1.xyzw;
+  r1.xyzw = r1.xyzw * r0.yyyy;
+  r2.xyzw = cb4[10].xyzw * cb3[0].yyyy;
+  r2.xyzw = cb4[9].xyzw * cb3[0].xxxx + r2.xyzw;
+  r2.xyzw = cb4[11].xyzw * cb3[0].zzzz + r2.xyzw;
+  r2.xyzw = cb4[12].xyzw * cb3[0].wwww + r2.xyzw;
+  r1.xyzw = r2.xyzw * r0.xxxx + r1.xyzw;
+  r2.xyzw = cb4[10].xyzw * cb3[2].yyyy;
+  r2.xyzw = cb4[9].xyzw * cb3[2].xxxx + r2.xyzw;
+  r2.xyzw = cb4[11].xyzw * cb3[2].zzzz + r2.xyzw;
+  r2.xyzw = cb4[12].xyzw * cb3[2].wwww + r2.xyzw;
+  r0.xyzw = r2.xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = cb4[10].xyzw * cb3[3].yyyy;
+  r1.xyzw = cb4[9].xyzw * cb3[3].xxxx + r1.xyzw;
+  r1.xyzw = cb4[11].xyzw * cb3[3].zzzz + r1.xyzw;
+  r1.xyzw = cb4[12].xyzw * cb3[3].wwww + r1.xyzw;
+  r0.xyzw = r1.xyzw * v0.wwww + r0.xyzw;
+  o7.xyzw = r0.xyzw;
+  o10.xyz = r0.xyz;
+  r0.xyzw = cb2[4].xyzw + -r3.zzzz;
+  r1.xyzw = cb2[2].xyzw + -r3.xxxx;
+  r2.xyzw = cb2[3].xyzw + -r3.yyyy;
+  r3.xyzw = r2.xyzw * r4.yyyy;
+  r2.xyzw = r2.xyzw * r2.xyzw;
+  r2.xyzw = r1.xyzw * r1.xyzw + r2.xyzw;
+  r1.xyzw = r1.xyzw * r4.xxxx + r3.xyzw;
+  r1.xyzw = r0.xyzw * r4.wwww + r1.xyzw;
+  r0.xyzw = r0.xyzw * r0.xyzw + r2.xyzw;
+  r0.xyzw = max(float4(9.99999997e-007,9.99999997e-007,9.99999997e-007,9.99999997e-007), r0.xyzw);
+  r2.xyzw = rsqrt(r0.xyzw);
+  r0.xyzw = r0.xyzw * cb2[5].xyzw + float4(1,1,1,1);
+  r0.xyzw = float4(1,1,1,1) / r0.xyzw;
+  r1.xyzw = r2.xyzw * r1.xyzw;
+  r1.xyzw = max(float4(0,0,0,0), r1.xyzw);
+  r0.xyzw = r1.xyzw * r0.xyzw;
+  r1.xyz = cb2[7].xyz * r0.yyy;
+  r1.xyz = cb2[6].xyz * r0.xxx + r1.xyz;
+  r0.xyz = cb2[8].xyz * r0.zzz + r1.xyz;
+  r0.xyz = cb2[9].xyz * r0.www + r0.xyz;
+  r0.w = r4.y * r4.y;
+  r0.w = r4.x * r4.x + -r0.w;
+  r1.xyzw = r4.xyzw * r4.ywzx;
+  r2.x = dot(cb2[41].xyzw, r1.xyzw);
+  r2.y = dot(cb2[42].xyzw, r1.xyzw);
+  r2.z = dot(cb2[43].xyzw, r1.xyzw);
+  r1.xyz = cb2[44].xyz * r0.www + r2.xyz;
+  o9.xyz = r1.xyz + r0.xyz;
+  return;
+}
