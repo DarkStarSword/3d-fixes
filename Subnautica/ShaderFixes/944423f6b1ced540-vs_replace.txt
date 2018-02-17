@@ -1,3 +1,5 @@
+// Water in Alien base
+
 // 3DMigoto: 944423f6b1ced540 |    Unity headers extracted from FX_WBOIT-WaterBase
 //    Shader "FX/WBOIT-WaterBase" {
 //      Fallback "Diffuse"
@@ -67,29 +69,52 @@
 // https://github.com/DarkStarSword/3d-fixes
 
 // ---- Created with 3Dmigoto v1.2.65 on Thu Jan 25 16:57:46 2018
-cbuffer cb4 : register(b4)
-{
-  float4 cb4[21];
+
+// Unity constant buffers reconstructed with DarkStarSword's hlsltool.py:
+// hlsltool.py --reconstruct-unity-cbuffers --in-place 944423f6b1ced540-vs_replace.txt
+
+cbuffer UnityPerFrame : register(b4) {
+  row_major matrix unity_MatrixV : packoffset(c9);
+  row_major matrix unity_MatrixVP : packoffset(c17);
 }
 
-cbuffer cb3 : register(b3)
-{
-  float4 cb3[8];
+cbuffer UnityPerDraw : register(b3) {
+  row_major matrix unity_ObjectToWorld : packoffset(c0);
+  row_major matrix unity_WorldToObject : packoffset(c4);
 }
 
-cbuffer cb2 : register(b2)
-{
-  float4 cb2[45];
+cbuffer UnityLighting : register(b2) {
+  float4 unity_4LightPosX0 : packoffset(c2);
+  float4 unity_4LightPosY0 : packoffset(c3);
+  float4 unity_4LightPosZ0 : packoffset(c4);
+  float4 unity_4LightAtten0 : packoffset(c5);
+  float4 unity_LightColor0 : packoffset(c6);
+  float4 unity_LightColor1 : packoffset(c7);
+  float4 unity_LightColor2 : packoffset(c8);
+  float4 unity_LightColor3 : packoffset(c9);
+  float4 unity_LightColor4 : packoffset(c10);
+  float4 unity_LightColor5 : packoffset(c11);
+  float4 unity_LightColor6 : packoffset(c12);
+  float4 unity_LightColor7 : packoffset(c13);
+  float4 unity_SHBr : packoffset(c41);
+  float4 unity_SHBg : packoffset(c42);
+  float4 unity_SHBb : packoffset(c43);
+  float4 unity_SHC : packoffset(c44);
 }
 
-cbuffer cb1 : register(b1)
-{
-  float4 cb1[6];
+cbuffer UnityPerCamera : register(b1) {
+  float4 _Time : packoffset(c0);
+  float4 _ProjectionParams : packoffset(c5);
 }
 
-cbuffer cb0 : register(b0)
-{
-  float4 cb0[35];
+cbuffer Globals : register(b0) {
+  float4 _Scale : packoffset(c26);
+  float4 _Frequency : packoffset(c28);
+  float _Speed : packoffset(c29);
+  float _Dir : packoffset(c29.y);
+  float _ClipedValue : packoffset(c31);
+  float _UWE_EditorTime : packoffset(c31.y);
+  float4 _MaskMap_ST : packoffset(c34);
 }
 
 
@@ -126,17 +151,17 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyzw = cb3[1].yxzy * v0.yyyy;
-  r0.xyzw = cb3[0].yxzy * v0.xxxx + r0.xyzw;
-  r0.xyzw = cb3[2].yxzy * v0.zzzz + r0.xyzw;
-  r0.xyzw = cb3[3].yxzy * v0.wwww + r0.xyzw;
-  r1.x = cb1[0].y + cb0[31].y;
-  r0.xyzw = r1.xxxx * cb0[29].xxxx + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[1].yxzy * v0.yyyy;
+  r0.xyzw = unity_ObjectToWorld[0].yxzy * v0.xxxx + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[2].yxzy * v0.zzzz + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[3].yxzy * v0.wwww + r0.xyzw;
+  r1.x = _Time.y + _UWE_EditorTime;
+  r0.xyzw = r1.xxxx * _Speed + r0.xyzw;
   r1.xy = float2(0.200000003,0.200000003) * r0.xy;
   r2.xyz = r0.zzw * float3(0.200000003,0.200000003,0.200000003) + -r1.xyy;
-  r0.x = -0.349999994 + cb0[29].y;
+  r0.x = -0.349999994 + _Dir;
   r1.xyz = r0.xxx * r2.xyz + r1.xyy;
-  r2.xyz = float3(8,8,8) * cb0[28].xyz;
+  r2.xyz = float3(8,8,8) * _Frequency.xyz;
   r1.xyz = r2.xyz * r1.xyz + float3(0.5,0.5,0.5);
   r1.xyz = frac(r1.xyz);
   r1.xyz = r1.xyz * float3(2,2,2) + float3(-1,-1,-1);
@@ -145,46 +170,46 @@ void main(
   r1.xyz = r2.xyz * r1.xyz;
   r1.xyz = r1.xyz * float3(0.833333313,0.833333313,0.833333313) + float3(0.25,0.25,0.25);
   r2.xyz = r0.zzw + -r0.wyy;
-  r0.xyz = cb0[29].yyy * r2.xyz + r0.wyy;
-  r0.xyz = cb0[28].xyz * r0.xyz + float3(0.5,0.5,0.5);
+  r0.xyz = _Dir * r2.xyz + r0.wyy;
+  r0.xyz = _Frequency.xyz * r0.xyz + float3(0.5,0.5,0.5);
   r0.xyz = frac(r0.xyz);
   r0.xyz = r0.xyz * float3(2,2,2) + float3(-1,-1,-1);
   r2.xyz = abs(r0.xyz) * abs(r0.xyz);
   r0.xyz = -abs(r0.xyz) * float3(2,2,2) + float3(3,3,3);
   r0.xyz = r2.xyz * r0.xyz;
   r0.xyz = r0.xyz * r1.xyz;
-  r0.xyz = cb0[26].xyz * r0.xyz;
+  r0.xyz = _Scale.xyz * r0.xyz;
   r0.xyz = v7.xyz * r0.xyz;
-  r1.xyz = cb3[5].xyz * r0.yyy;
-  r1.xyz = cb3[4].xyz * r0.xxx + r1.xyz;
-  r0.yzw = cb3[6].xyz * r0.zzz + r1.xyz;
-  r0.xyz = cb3[7].xyz * r0.xxx + r0.yzw;
-  r0.w = 1 + -cb0[31].x;
+  r1.xyz = unity_WorldToObject[1].xyz * r0.yyy;
+  r1.xyz = unity_WorldToObject[0].xyz * r0.xxx + r1.xyz;
+  r0.yzw = unity_WorldToObject[2].xyz * r0.zzz + r1.xyz;
+  r0.xyz = unity_WorldToObject[3].xyz * r0.xxx + r0.yzw;
+  r0.w = 1 + -_ClipedValue;
   r0.xyz = r0.xyz * r0.www + v0.xyz;
-  r1.xyzw = cb3[1].xyzw * r0.yyyy;
-  r1.xyzw = cb3[0].xyzw * r0.xxxx + r1.xyzw;
-  r1.xyzw = cb3[2].xyzw * r0.zzzz + r1.xyzw;
-  r2.xyzw = cb3[3].xyzw + r1.xyzw;
-  r3.xyzw = cb4[18].xyzw * r2.yyyy;
-  r3.xyzw = cb4[17].xyzw * r2.xxxx + r3.xyzw;
-  r3.xyzw = cb4[19].xyzw * r2.zzzz + r3.xyzw;
-  r3.xyzw = cb4[20].xyzw * r2.wwww + r3.xyzw;
+  r1.xyzw = unity_ObjectToWorld[1].xyzw * r0.yyyy;
+  r1.xyzw = unity_ObjectToWorld[0].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = unity_ObjectToWorld[2].xyzw * r0.zzzz + r1.xyzw;
+  r2.xyzw = unity_ObjectToWorld[3].xyzw + r1.xyzw;
+  r3.xyzw = unity_MatrixVP[1].xyzw * r2.yyyy;
+  r3.xyzw = unity_MatrixVP[0].xyzw * r2.xxxx + r3.xyzw;
+  r3.xyzw = unity_MatrixVP[2].xyzw * r2.zzzz + r3.xyzw;
+  r3.xyzw = unity_MatrixVP[3].xyzw * r2.wwww + r3.xyzw;
   o0.xyzw = r3.xyzw;
   o10.w = r3.z;
-  o1.xy = v3.xy * cb0[34].xy + cb0[34].zw;
-  r3.xyz = cb3[3].xyz * v0.www + r1.xyz;
-  o8.xyzw = cb3[3].xyzw * v0.wwww + r1.xyzw;
+  o1.xy = v3.xy * _MaskMap_ST.xy + _MaskMap_ST.zw;
+  r3.xyz = unity_ObjectToWorld[3].xyz * v0.www + r1.xyz;
+  o8.xyzw = unity_ObjectToWorld[3].xyzw * v0.wwww + r1.xyzw;
   o2.w = r3.x;
-  r1.xyz = cb3[1].yzx * v1.yyy;
-  r1.xyz = cb3[0].yzx * v1.xxx + r1.xyz;
-  r1.xyz = cb3[2].yzx * v1.zzz + r1.xyz;
+  r1.xyz = unity_ObjectToWorld[1].yzx * v1.yyy;
+  r1.xyz = unity_ObjectToWorld[0].yzx * v1.xxx + r1.xyz;
+  r1.xyz = unity_ObjectToWorld[2].yzx * v1.zzz + r1.xyz;
   r0.w = dot(r1.xyz, r1.xyz);
   r0.w = rsqrt(r0.w);
   r1.xyz = r1.xyz * r0.www;
   o2.x = r1.z;
-  r4.x = dot(v2.xyz, cb3[4].xyz);
-  r4.y = dot(v2.xyz, cb3[5].xyz);
-  r4.z = dot(v2.xyz, cb3[6].xyz);
+  r4.x = dot(v2.xyz, unity_WorldToObject[0].xyz);
+  r4.y = dot(v2.xyz, unity_WorldToObject[1].xyz);
+  r4.z = dot(v2.xyz, unity_WorldToObject[2].xyz);
   r0.w = dot(r4.xyz, r4.xyz);
   r0.w = rsqrt(r0.w);
   r4.xyzw = r4.xyzz * r0.wwww;
@@ -201,47 +226,51 @@ void main(
   o3.z = r4.y;
   o4.w = r3.z;
   o4.z = r4.w;
-  r0.w = cb4[10].z * r2.y;
-  r0.w = cb4[9].z * r2.x + r0.w;
-  r0.w = cb4[11].z * r2.z + r0.w;
-  r0.w = cb4[12].z * r2.w + r0.w;
+  r0.w = unity_MatrixV[1].z * r2.y;
+  r0.w = unity_MatrixV[0].z * r2.x + r0.w;
+  r0.w = unity_MatrixV[2].z * r2.z + r0.w;
+  r0.w = unity_MatrixV[3].z * r2.w + r0.w;
   o5.z = -r0.w;
-  r1.xyz = cb4[18].xyw * r2.yyy;
-  r1.xyz = cb4[17].xyw * r2.xxx + r1.xyz;
-  r1.xyz = cb4[19].xyw * r2.zzz + r1.xyz;
-  r1.xyz = cb4[20].xyw * r2.www + r1.xyz;
-  r0.w = cb1[5].x * r1.y;
+  r1.xyz = unity_MatrixVP[1].xyw * r2.yyy;
+  r1.xyz = unity_MatrixVP[0].xyw * r2.xxx + r1.xyz;
+  r1.xyz = unity_MatrixVP[2].xyw * r2.zzz + r1.xyz;
+  r1.xyz = unity_MatrixVP[3].xyw * r2.www + r1.xyz;
+
+float4 s = StereoParams.Load(0);
+r1.x += s.x * (r1.z - s.y);
+
+  r0.w = _ProjectionParams.x * r1.y;
   r2.w = 0.5 * r0.w;
   r2.xz = float2(0.5,0.5) * r1.xz;
   o5.w = r1.z;
   o5.xy = r2.xw + r2.zz;
   o6.xyz = r0.xyz;
   o6.w = v0.w;
-  r1.xyzw = cb4[10].xyzw * cb3[1].yyyy;
-  r1.xyzw = cb4[9].xyzw * cb3[1].xxxx + r1.xyzw;
-  r1.xyzw = cb4[11].xyzw * cb3[1].zzzz + r1.xyzw;
-  r1.xyzw = cb4[12].xyzw * cb3[1].wwww + r1.xyzw;
+  r1.xyzw = unity_MatrixV[1].xyzw * unity_ObjectToWorld[1].yyyy;
+  r1.xyzw = unity_MatrixV[0].xyzw * unity_ObjectToWorld[1].xxxx + r1.xyzw;
+  r1.xyzw = unity_MatrixV[2].xyzw * unity_ObjectToWorld[1].zzzz + r1.xyzw;
+  r1.xyzw = unity_MatrixV[3].xyzw * unity_ObjectToWorld[1].wwww + r1.xyzw;
   r1.xyzw = r1.xyzw * r0.yyyy;
-  r2.xyzw = cb4[10].xyzw * cb3[0].yyyy;
-  r2.xyzw = cb4[9].xyzw * cb3[0].xxxx + r2.xyzw;
-  r2.xyzw = cb4[11].xyzw * cb3[0].zzzz + r2.xyzw;
-  r2.xyzw = cb4[12].xyzw * cb3[0].wwww + r2.xyzw;
+  r2.xyzw = unity_MatrixV[1].xyzw * unity_ObjectToWorld[0].yyyy;
+  r2.xyzw = unity_MatrixV[0].xyzw * unity_ObjectToWorld[0].xxxx + r2.xyzw;
+  r2.xyzw = unity_MatrixV[2].xyzw * unity_ObjectToWorld[0].zzzz + r2.xyzw;
+  r2.xyzw = unity_MatrixV[3].xyzw * unity_ObjectToWorld[0].wwww + r2.xyzw;
   r1.xyzw = r2.xyzw * r0.xxxx + r1.xyzw;
-  r2.xyzw = cb4[10].xyzw * cb3[2].yyyy;
-  r2.xyzw = cb4[9].xyzw * cb3[2].xxxx + r2.xyzw;
-  r2.xyzw = cb4[11].xyzw * cb3[2].zzzz + r2.xyzw;
-  r2.xyzw = cb4[12].xyzw * cb3[2].wwww + r2.xyzw;
+  r2.xyzw = unity_MatrixV[1].xyzw * unity_ObjectToWorld[2].yyyy;
+  r2.xyzw = unity_MatrixV[0].xyzw * unity_ObjectToWorld[2].xxxx + r2.xyzw;
+  r2.xyzw = unity_MatrixV[2].xyzw * unity_ObjectToWorld[2].zzzz + r2.xyzw;
+  r2.xyzw = unity_MatrixV[3].xyzw * unity_ObjectToWorld[2].wwww + r2.xyzw;
   r0.xyzw = r2.xyzw * r0.zzzz + r1.xyzw;
-  r1.xyzw = cb4[10].xyzw * cb3[3].yyyy;
-  r1.xyzw = cb4[9].xyzw * cb3[3].xxxx + r1.xyzw;
-  r1.xyzw = cb4[11].xyzw * cb3[3].zzzz + r1.xyzw;
-  r1.xyzw = cb4[12].xyzw * cb3[3].wwww + r1.xyzw;
+  r1.xyzw = unity_MatrixV[1].xyzw * unity_ObjectToWorld[3].yyyy;
+  r1.xyzw = unity_MatrixV[0].xyzw * unity_ObjectToWorld[3].xxxx + r1.xyzw;
+  r1.xyzw = unity_MatrixV[2].xyzw * unity_ObjectToWorld[3].zzzz + r1.xyzw;
+  r1.xyzw = unity_MatrixV[3].xyzw * unity_ObjectToWorld[3].wwww + r1.xyzw;
   r0.xyzw = r1.xyzw * v0.wwww + r0.xyzw;
   o7.xyzw = r0.xyzw;
   o10.xyz = r0.xyz;
-  r0.xyzw = cb2[4].xyzw + -r3.zzzz;
-  r1.xyzw = cb2[2].xyzw + -r3.xxxx;
-  r2.xyzw = cb2[3].xyzw + -r3.yyyy;
+  r0.xyzw = unity_4LightPosZ0.xyzw + -r3.zzzz;
+  r1.xyzw = unity_4LightPosX0.xyzw + -r3.xxxx;
+  r2.xyzw = unity_4LightPosY0.xyzw + -r3.yyyy;
   r3.xyzw = r2.xyzw * r4.yyyy;
   r2.xyzw = r2.xyzw * r2.xyzw;
   r2.xyzw = r1.xyzw * r1.xyzw + r2.xyzw;
@@ -250,22 +279,22 @@ void main(
   r0.xyzw = r0.xyzw * r0.xyzw + r2.xyzw;
   r0.xyzw = max(float4(9.99999997e-007,9.99999997e-007,9.99999997e-007,9.99999997e-007), r0.xyzw);
   r2.xyzw = rsqrt(r0.xyzw);
-  r0.xyzw = r0.xyzw * cb2[5].xyzw + float4(1,1,1,1);
+  r0.xyzw = r0.xyzw * unity_4LightAtten0.xyzw + float4(1,1,1,1);
   r0.xyzw = float4(1,1,1,1) / r0.xyzw;
   r1.xyzw = r2.xyzw * r1.xyzw;
   r1.xyzw = max(float4(0,0,0,0), r1.xyzw);
   r0.xyzw = r1.xyzw * r0.xyzw;
-  r1.xyz = cb2[7].xyz * r0.yyy;
-  r1.xyz = cb2[6].xyz * r0.xxx + r1.xyz;
-  r0.xyz = cb2[8].xyz * r0.zzz + r1.xyz;
-  r0.xyz = cb2[9].xyz * r0.www + r0.xyz;
+  r1.xyz = unity_LightColor1.xyz * r0.yyy;
+  r1.xyz = unity_LightColor0.xyz * r0.xxx + r1.xyz;
+  r0.xyz = unity_LightColor2.xyz * r0.zzz + r1.xyz;
+  r0.xyz = unity_LightColor3.xyz * r0.www + r0.xyz;
   r0.w = r4.y * r4.y;
   r0.w = r4.x * r4.x + -r0.w;
   r1.xyzw = r4.xyzw * r4.ywzx;
-  r2.x = dot(cb2[41].xyzw, r1.xyzw);
-  r2.y = dot(cb2[42].xyzw, r1.xyzw);
-  r2.z = dot(cb2[43].xyzw, r1.xyzw);
-  r1.xyz = cb2[44].xyz * r0.www + r2.xyz;
+  r2.x = dot(unity_SHBr.xyzw, r1.xyzw);
+  r2.y = dot(unity_SHBg.xyzw, r1.xyzw);
+  r2.z = dot(unity_SHBb.xyzw, r1.xyzw);
+  r1.xyz = unity_SHC.xyz * r0.www + r2.xyz;
   o9.xyz = r1.xyz + r0.xyz;
   return;
 }
