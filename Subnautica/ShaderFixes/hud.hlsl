@@ -1,6 +1,7 @@
 #define crosshair_visible IniParams[0].x
 #define hud_w1_tolerance IniParams[0].y
-#define hud_y_cutoff IniParams[0].z
+#define hud_x_cutoff IniParams[0].z
+#define hud_y_cutoff IniParams[0].w
 #define cursor_showing IniParams[7].y
 #define texture_filter IniParams[1].y
 #define pda_preset IniParams[1].z
@@ -67,7 +68,7 @@ void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 	//	return;
 	// Battery swap icons need to be adjusted (or the text around them
 	// unadjusted), so now switching to Y cutoff:
-	if (pos.y < hud_y_cutoff)
+	if ((pos.y < hud_y_cutoff) && (abs(pos.x) < hud_x_cutoff))
 		return;
 
 	if (texture_filter == crosshair_texture && !crosshair_visible) {
