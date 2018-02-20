@@ -53,6 +53,9 @@ Known Issues
 - Certain fog effects are not quite even between both eyes.
 - Performing a self-scan underwater briefly reveals the original depth of the
   scuba mask.
+- The mouse cursor does not line up with the vehicle modification station when
+  customising a vehicle's colour (no apparent way to distinguish between this
+  scenario and the main menu).
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------

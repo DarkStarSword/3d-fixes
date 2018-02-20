@@ -56,20 +56,27 @@ bool is_hud_depth_pass()
 	return (width == 0);
 }
 
-void handle_hud_depth_pass(inout float4 pos)
+void handle_hud_depth_pass(inout float4 pos, float4 color)
 {
 	if (!is_in_world_hud()) {
 		pos = 0;
 		return;
 	}
+
+	if (color.w == 0) {
+		// Prevent considering the warning display in middle of the the
+		// Cyclops cockpit when it is invisible
+		pos = 0;
+		return;
+	}
 }
 
-void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
+void handle_hud(inout float4 pos, float4 color = 0)
 {
 	float4 s = StereoParams.Load(0);
 
 	if (is_hud_depth_pass()) {
-		handle_hud_depth_pass(pos);
+		handle_hud_depth_pass(pos, color);
 		return;
 	}
 
@@ -115,6 +122,5 @@ void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 		return;
 
 	// Otherwise, adjust to crosshair depth if allowed for this shader:
-	if (allow_crosshair_adjust)
-		pos.x += adjust_from_depth_buffer(0, 0);
+	pos.x += adjust_from_depth_buffer(0, 0);
 }
