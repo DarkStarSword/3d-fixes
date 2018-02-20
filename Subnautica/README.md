@@ -38,10 +38,8 @@ Keys
 ----
 X: Toggle crosshair visibility
 
-~: Toggle low convergence preset to keep the hands behind the mask and make the
-   Seaglide's terrain hologram easier to see. NOTE: this should be the key
-   immediately left of 1, which may be marked differently on non-US keyboard
-   layouts (please tell me if I'm mistaken - I have no way to check this).
+Caps Lock: Toggle low convergence preset to keep the hands behind the mask and
+           make the Seaglide's terrain hologram easier to see.
 
 \: Set high convergence preset recommended for a stronger 3D effect.
 
