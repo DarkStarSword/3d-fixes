@@ -15,4 +15,7 @@ void main(float4 pos : SV_Position0, float4 spos: TEXCOORD0, float2 tpos: TEXCOO
 		tpos.y = 1 - tpos.y;
 
 	result = tex.Load(int3(tpos.xy * float2(width, height), 0)) * amplify;
+
+	if (result.x == 0)
+		discard;
 }

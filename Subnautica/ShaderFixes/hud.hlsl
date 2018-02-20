@@ -35,20 +35,52 @@ bool is_fullscreen(float4 pos)
 	return all(abs(pos.xy) > 0.99);
 }
 
+#ifdef UNITY_PER_DRAW
+bool is_in_world_hud()
+{
+	return !all(UNITY_PER_DRAW.unity_ObjectToWorld._m30_m31_m32_m33 == float4(0, 0, 1, 1));
+}
+#else
+bool is_in_world_hud()
+{
+	return false;
+}
+#endif
+
+bool is_hud_depth_pass()
+{
+	uint width, height;
+
+	InWorldHUDZBuffer.GetDimensions(width, height);
+
+	return (width == 0);
+}
+
+void handle_hud_depth_pass(inout float4 pos)
+{
+	if (!is_in_world_hud()) {
+		pos = 0;
+		return;
+	}
+}
+
 void handle_hud(inout float4 pos, bool allow_crosshair_adjust = true)
 {
 	float4 s = StereoParams.Load(0);
+
+	if (is_hud_depth_pass()) {
+		handle_hud_depth_pass(pos);
+		return;
+	}
 
 	// If the loading screen icon is visible we don't adjust the HUD at all:
 	if (loading_screen_preset)
 		return;
 
-#ifdef UNITY_PER_DRAW
-	if (!all(UNITY_PER_DRAW.unity_ObjectToWorld._m30_m31_m32_m33 == float4(0, 0, 1, 1))) {
+	if (is_in_world_hud()) {
 		handle_in_world_hud(pos);
 		return;
 	}
-#endif
 
 	// Return all HUD items to screen depth:
 	if (pos.w != 1)

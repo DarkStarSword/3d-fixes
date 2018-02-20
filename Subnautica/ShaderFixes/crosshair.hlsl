@@ -1,5 +1,7 @@
 // Depth buffer copied from other shaders to this input with 3Dmigoto:
 Texture2D<float4> ZBuffer : register(t110);
+// Extra Z-Buffer used to capture the HUD depth of in-world menus:
+Texture2D<float4> InWorldHUDZBuffer : register(t111);
 
 #include "unity_cbuffers.hlsl"
 cbuffer UnityPerCamera : register(b13)
@@ -17,6 +19,7 @@ float world_z_from_depth_buffer(float x, float y)
 	x = min(max((x / 2 + 0.5) * width, 0), width - 1);
 	y = min(max((-y / 2 + 0.5) * height, 0), height - 1);
 	z = ZBuffer.Load(int3(x, y, 0)).x;
+	z = max(z, InWorldHUDZBuffer.Load(int3(x, y, 0)).x);
 
 	// Changed in Unity 5.5:
 	return 1 / (_UnityPerCamera._ZBufferParams.z * z + _UnityPerCamera._ZBufferParams.w);
