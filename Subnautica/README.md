@@ -4,6 +4,16 @@ Subnautica
 This release officially brings support for Unity 5.6 to my template (shader
 extraction support is also added for Unity 2017.1, 2017.2 & 2017.3 formats) :)
 
+Update v1.1
+-----------
+- Adjusted several more HUD elements (resource blips, battery swap icons)
+- Fixed various interior water surfaces (e.g. Moon Pool)
+- Fixed Seamoth & Cyclops sonar ping
+- Low convergence toggle key added (useful for the Seaglide's terrain hologram)
+- Auto HUD adjustment now rests on in-world HUD elements (e.g. Cyclops Cockpit)
+- Crosshair re-enabled by default to make in-world HUD elements easier to use
+  (press X to disable as before)
+
 Fixed
 -----
 - Halos
