@@ -146,13 +146,23 @@ void emit_int(int val, inout TriangleStream<gs2ps> ostream)
 	}
 }
 
+// isnan() is optimised out by the compiler, which produces a warning that we
+// need the /Gis (IEEE Strictness) option to enable it... but that doesn't work
+// either... neither does disabling optimisations... Uhh, good job Microsoft?
+// Whatever, just implement it ourselves by testing for an exponent of all 1s
+// and a non-zero mantissa:
+bool workaround_broken_isnan(float x)
+{
+	return (((asuint(x) & 0x7f800000) == 0x7f800000) && ((asuint(x) & 0x007fffff) != 0));
+}
+
 void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 {
 	int digit;
 	int significant = 0;
 	int scientific = 0;
 
-	if (isnan(val)) {
+	if (workaround_broken_isnan(val)) {
 		emit_char('N', ostream);
 		emit_char('a', ostream);
 		emit_char('N', ostream);
@@ -178,7 +188,16 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 
 	int e = log10(val);
 	if (e < 0) {
-		emit_char('0', ostream);
+		if (e < -4) {
+			scientific = --e;
+			digit = uint(val / pow(10, e)) % 10;
+			emit_char(digit + 0x30, ostream);
+			significant++;
+			e--;
+		} else {
+			emit_char('0', ostream);
+			e = -1;
+		}
 	} else {
 		if (e > 6)
 			scientific = e;
