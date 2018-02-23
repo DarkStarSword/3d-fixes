@@ -70,6 +70,12 @@ nice ionice -c 3 git filter-branch --env-filter "$ENV_FILTER" --index-filter "$I
 
 nice ionice -c 3 "$GITSTATS" "$MIGOTO_DIR" "$STATS_DIR"
 
+# Remove the alpha channel on all produced images so they can be embedded in
+# the geforce forums:
+for x in $STATS_DIR/*.png; do
+	convert "$x" -alpha deactivate "$x"
+done
+
 git branch -f last origin/master
 
 # Cleanup references to keep the repository size small:
