@@ -1087,6 +1087,12 @@ def find_declaration(tree, type, prefix = None):
             return r
     raise IndexError()
 
+def find_declaration_by_reg(tree, reg):
+    for (t, r) in tree.declared:
+        if r.reg == reg:
+            return r
+    raise IndexError()
+
 def adjust_ui_depth(tree, args):
     if not isinstance(tree, VS3):
         raise Exception('UI Depth adjustment must be done on a vertex shader')
@@ -1192,8 +1198,12 @@ def _adjust_input(tree, reg, args, stereo_const=None, tmp_reg=None, vanity="Inpu
         declared_reg = find_declaration(tree, 'dcl_%s' % reg, 'v')
         org_reg = declared_reg.reg
     else:
-        # FIXME: Look up mask in declaration
-        declared_reg = org_reg = reg
+        # Used to use reg passed in directly, but GG:DP (UE3) had a funny case
+        # where it passed v4.xxyw from PS DD0B24FC.txt which we tried to use as
+        # a mask, preventing the shader from assembling and crashing Helix Mod
+        # on F10 reload
+        declared_reg = find_declaration_by_reg(tree, reg.reg)
+        org_reg = reg.reg
     replace_regs = {org_reg: repl_reg}
     tree.do_replacements(replace_regs, False)
 
