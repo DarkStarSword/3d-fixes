@@ -231,7 +231,7 @@ dcl_uav_typed_buffer (uint,uint,uint,uint) u5
 dcl_input vThreadGroupID.xy
 dcl_input vThreadIDInGroup.xy
 dcl_input vThreadID.xy
-dcl_temps 31
+dcl_temps 32
 dcl_tgsm_raw g0, 4
 dcl_tgsm_raw g1, 4
 dcl_tgsm_structured g2, 4, 256
@@ -245,18 +245,31 @@ dcl_tgsm_raw g9, 4
 dcl_tgsm_raw g10, 4
 dcl_tgsm_raw g11, 4
 dcl_thread_group 16, 16, 1
+
+dcl_resource_texture2d (float,float,float,float) t125
+ld_indexable(texture2d)(float,float,float,float) r31.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 mov r0.xy, vThreadID.xyxx
 mov r0.zw, l(0,0,0,0)
 ld_indexable(texture2d)(float,float,float,float) r1.x, r0.xyww, t0.xyzw
 utof r1.yz, vThreadID.xxyx
 add r1.yz, r1.yyzy, l(0.000000, 0.500000, 0.500000, 0.000000)
 mad r1.yz, r1.yyzy, cb0[34].xxyx, cb0[34].zzwz
+
+// Inv projection:
 mul r2.xyzw, r1.zzzz, cb0[19].xyzw
 mad r2.xyzw, r1.yyyy, cb0[18].xyzw, r2.xyzw
 mad r1.xyzw, r1.xxxx, cb0[20].xyzw, r2.xyzw
 add r1.xyzw, r1.xyzw, cb0[21].xyzw
 div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
 mul r2.xyz, r1.wwww, r1.xyzx
+
+// View space correction:
+add r31.w, r2.z, -r31.y
+mul r31.w, r31.w, r31.x
+mul r31.w, r31.w, cb0[18].x
+add r2.x, r2.x, -r31.w
+
 imad r3.x, vThreadIDInGroup.y, l(16), vThreadIDInGroup.x
 if_z r3.x
   store_raw g6.x, l(0), l(0)
