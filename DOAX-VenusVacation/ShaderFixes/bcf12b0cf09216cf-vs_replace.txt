@@ -1,4 +1,6 @@
-// HUD - mouse click sparkle
+// HUD - mouse click sparkle + Pool sparkle
+#define hud_depth_cutoff IniParams[0].x
+
 // ---- Created with 3Dmigoto v1.3.4 on Mon Mar  5 06:57:18 2018
 
 cbuffer vector_register_block : register(b0)
@@ -136,9 +138,11 @@ void main(
   r1.xyz = r1.xyz * r0.www + r2.xyz;
   o3.xyz = gEnableLightScatter ? r1.xyz : r0.xyz;
 
-// Return HUD to screen depth:
+// Return HUD to screen depth, but use a cutoff depth to prevent breaking the
+// pool sparkle.
 float4 s = StereoParams.Load(0);
-o0.x -= s.x * (o0.w - s.y);
+if (o0.w < hud_depth_cutoff)
+	o0.x -= s.x * (o0.w - s.y);
 
   return;
 }
