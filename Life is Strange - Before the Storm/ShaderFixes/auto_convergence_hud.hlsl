@@ -1,12 +1,15 @@
-Texture2D<float> font : register(t100);
-Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
+// Edit this line to change the font colour:
+static const float3 colour = float3(0.25, 1, 0.25);
 
 static const float font_scale = 1.0;
 static float2 cur_pos;
 static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
+
+Texture2D<float> font : register(t100);
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
 #include "auto_convergence_state.hlsl"
 StructuredBuffer<struct auto_convergence_state> state : register(t113);
@@ -21,6 +24,14 @@ struct gs2ps {
 	uint character : TEXCOORD2;
 };
 
+#ifdef VERTEX_SHADER
+void main(uint id : SV_VertexID, out vs2gs output)
+{
+	output.idx = id;
+}
+#endif
+
+#ifdef GEOMETRY_SHADER
 void get_meta()
 {
 	float font_width, font_height;
@@ -251,3 +262,26 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 		emit_char('d', ostream);
 	}
 }
+#endif
+
+#ifdef PIXEL_SHADER
+void main(gs2ps input, out float4 o0 : SV_Target0)
+{
+	float font_width, font_height;
+	float2 char_size;
+	float2 pos;
+
+	font.GetDimensions(font_width, font_height);
+	char_size = float2(font_width, font_height) / float2(16, 6);
+
+	pos.x = (input.character % 16) * char_size.x;
+	pos.y = (input.character / 16 - 2) * char_size.y;
+
+	pos.xy += input.tex * char_size;
+
+	o0.xyzw = font.Load(int3(pos, 0)) * float4(colour, 1);
+
+	// Cap alpha to make background dark for contrast:
+	o0.w = max(o0.w, 0.75);
+}
+#endif
