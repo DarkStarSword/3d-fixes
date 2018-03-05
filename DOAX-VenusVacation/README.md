@@ -28,6 +28,11 @@ Installing
    full screen mode to engage 3D. Repeat this anytime you alt+tab out of the
    game to re-engage 3D.**
 
+Keys
+----
+Mouse back button: Toggle HUD visibility (change by editing KeyToggleHUD in
+                   d3dx.ini)
+
 Compatibility with third party Modding Tools
 --------------------------------------------
 I am aware that some players will wish to use this in conjunction with other
