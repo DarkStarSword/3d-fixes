@@ -264,11 +264,14 @@ add r1.xyzw, r1.xyzw, cb0[21].xyzw
 div r1.w, l(1.000000, 1.000000, 1.000000, 1.000000), r1.w
 mul r2.xyz, r1.wwww, r1.xyzx
 
-// View space correction:
+// View space correction for shadows:
 add r31.w, r2.z, -r31.y
 mul r31.w, r31.w, r31.x
 mul r31.w, r31.w, cb0[18].x
 add r2.x, r2.x, -r31.w
+
+// Correction for reflections:
+div r1.xzy, r2.xyz, r1.wwww
 
 imad r3.x, vThreadIDInGroup.y, l(16), vThreadIDInGroup.x
 if_z r3.x
