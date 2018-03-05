@@ -21,4 +21,5 @@ struct auto_convergence_state {
 	bool show_hud;
 	bool prev_auto_convergence_enabled;
 	bool no_z_buffer;
+	float last_set_convergence;
 };
