@@ -1,157 +1,8 @@
 // HUD - mouse click sparkle + Pool sparkle
-#define hud_depth_cutoff IniParams[0].x
-
-// ---- Created with 3Dmigoto v1.3.4 on Mon Mar  5 06:57:18 2018
-
-cbuffer vector_register_block : register(b0)
-{
-  float3 gEffectHemisphereVector : packoffset(c0);
-  float3 gEffectHemisphereColor0 : packoffset(c1);
-  float3 gEffectHemisphereColor1 : packoffset(c2);
-  row_major float3x3 gEffectLightDirection : packoffset(c3);
-  row_major float3x3 gEffectLightColorDir : packoffset(c6);
-  float4 gEffectLightPosition[4] : packoffset(c9);
-  float4 gEffectLightColorPoint[4] : packoffset(c13);
-  float3 gEffectIblDiffuseColor : packoffset(c19);
-  row_major float4x4 gEffectWorldViewProj : packoffset(c30);
-  row_major float4x4 gEffectShadingMatrix : packoffset(c34);
-  float3 gEffectEyePosition : packoffset(c38);
-  float4 gEffectUVOffset : packoffset(c39);
-  float4 gEffectConstantColor : packoffset(c40);
-  float4 gEffectDistanceFade_VThickness : packoffset(c41);
-}
-
-cbuffer bool_register_block : register(b1)
-{
-  bool gEnableMultiUV : packoffset(c0);
-  bool gEnableVertexColor : packoffset(c0.y);
-  bool gEnableLighting : packoffset(c0.z);
-  bool gEnablePointLight0 : packoffset(c0.w);
-  bool gEnablePointLight1 : packoffset(c1);
-  bool gEnablePointLight2 : packoffset(c1.y);
-  bool gEnablePointLight3 : packoffset(c1.z);
-  bool gFogEnable : packoffset(c1.w);
-  bool gEnableLightScatter : packoffset(c2);
-  bool gBlendUnDestOne : packoffset(c2.y);
-  bool gEnableSoftParticle : packoffset(c2.z);
-  int bool_register_block_padding : packoffset(c2.w);
-}
-
-cbuffer model_low_frequency_block : register(b9)
-{
-  row_major float4x4 gViewProjection : packoffset(c0);
-  float4 gEyePosition : packoffset(c4);
-  row_major float4x4 gViewMatrix : packoffset(c5);
-  row_major float4x4 gShadowMatrix : packoffset(c9);
-  float4 gClipPlane0 : packoffset(c13);
-  float4 gLScatterSunColor : packoffset(c14);
-  float4 gLScatterSunDir : packoffset(c15);
-  float4 gLScatterOutTmp : packoffset(c16);
-  float4 gLScatterRayTmp : packoffset(c17);
-  float4 gLScatterMieTmp : packoffset(c18);
-  float4 gFogMiddle : packoffset(c19);
-  float4 gFogFarMiddle : packoffset(c20);
-  float4 gFogDistance : packoffset(c21);
-  float4 gFogDensity : packoffset(c22);
-  float4 gHeightFogMiddle : packoffset(c23);
-  float4 gHeightFogFarMiddle : packoffset(c24);
-  float4 gHeightFogDistance : packoffset(c25);
-  float4 gHeightFogDensity : packoffset(c26);
-  row_major float4x4 gSecondShadowMatrix : packoffset(c27);
-}
-
-
-
-// 3Dmigoto declarations
-#define cmp -
-Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
-
-
-void main(
-  float3 v0 : POSITION0,
-  float4 v1 : COLOR0,
-  float4 v2 : TEXCOORD0,
-  out float4 o0 : SV_Position0,
-  out float4 o1 : TEXCOORD0,
-  out float4 o2 : TEXCOORD1,
-  out float4 o3 : TEXCOORD2)
-{
-  float4 r0,r1,r2,r3;
-  uint4 bitmask, uiDest;
-  float4 fDest;
-
-  r0.xyzw = gEffectWorldViewProj._m10_m11_m12_m13 * v0.yyyy;
-  r0.xyzw = v0.xxxx * gEffectWorldViewProj._m00_m01_m02_m03 + r0.xyzw;
-  r0.xyzw = v0.zzzz * gEffectWorldViewProj._m20_m21_m22_m23 + r0.xyzw;
-  r0.xyzw = gEffectWorldViewProj._m30_m31_m32_m33 + r0.xyzw;
-  o0.xyzw = r0.xyzw;
-  r1.xyz = gEffectConstantColor.xyz;
-  r1.w = 1;
-  r2.xyzw = v1.xyzw * r1.xyzw;
-  r1.xyzw = gEnableMultiUV ? r2.xyzw : r1.xyzw;
-  o1.w = gEffectConstantColor.w * r1.w;
-  o1.xyz = r1.xyz;
-  r1.xyzw = gEffectUVOffset.xyzw + v2.xyzw;
-  o2.xyzw = gEnableMultiUV ? r1.xyzw : r1.xyxy;
-  r0.xyz = -gEffectEyePosition.xyz + v0.xyz;
-  r1.x = dot(r0.xyz, r0.xyz);
-  r1.x = sqrt(r1.x);
-  r0.xyz = r0.xyz / r1.xxx;
-  r1.xyz = gLScatterOutTmp.xyz * r1.xxx;
-  r1.xyz = exp2(r1.xyz);
-  r1.xyz = float3(1,1,1) + -r1.xyz;
-  r2.xyz = gEffectShadingMatrix._m10_m11_m12 * r0.yyy;
-  r2.xyz = r0.xxx * gEffectShadingMatrix._m00_m01_m02 + r2.xyz;
-  r0.xyz = r0.zzz * gEffectShadingMatrix._m20_m21_m22 + r2.xyz;
-  r1.w = dot(r0.xyz, r0.xyz);
-  r1.w = rsqrt(r1.w);
-  r0.xyz = r1.www * r0.xyz;
-  r0.x = dot(gLScatterSunDir.xyz, r0.xyz);
-  r0.y = gLScatterMieTmp.w * r0.x + gLScatterRayTmp.w;
-  r0.x = r0.x * r0.x + 1;
-  r0.z = r0.y * r0.y;
-  r0.y = r0.z * r0.y;
-  r0.y = sqrt(r0.y);
-  r2.xyz = gLScatterMieTmp.xyz / r0.yyy;
-  r0.xyz = gLScatterRayTmp.xyz * r0.xxx + r2.xyz;
-  r0.xyz = r0.xyz * r1.xyz;
-  r0.xyz = gLScatterSunColor.xyz * r0.xyz;
-  r0.xyz = gEnableLightScatter ? r0.xyz : float3(0,0,0);
-  r0.xyz = gEnableLightScatter ? r0.xyz : float3(0,0,0);
-  r1.xy = -gHeightFogDistance.xy + v0.yy;
-  r1.xy = saturate(gHeightFogDistance.zw * r1.xy);
-  r2.xyz = gHeightFogFarMiddle.xyz * r1.yyy + gHeightFogMiddle.xyz;
-  r1.zw = gEnablePointLight1 ? gHeightFogDensity.xy : float2(0,0);
-  r1.x = dot(r1.xy, r1.zw);
-  r1.yzw = r2.xyz * r1.xxx;
-  r1.x = 1 + -r1.x;
-  r1.xyz = r0.xyz * r1.xxx + r1.yzw;
-  r2.xy = -gFogDistance.xy + r0.ww;
-  o3.w = gEffectDistanceFade_VThickness.x * r0.w + gEffectDistanceFade_VThickness.y;
-  r2.xy = saturate(gFogDistance.zw * r2.xy);
-  r3.xyz = gFogFarMiddle.xyz * r2.yyy + gFogMiddle.xyz;
-  r2.zw = gEnablePointLight1 ? gFogDensity.xy : float2(0,0);
-  r0.w = dot(r2.xy, r2.zw);
-  r2.xyz = r3.xyz * r0.www;
-  r0.w = 1 + -r0.w;
-  r1.xyz = r1.xyz * r0.www + r2.xyz;
-  o3.xyz = gEnableLightScatter ? r1.xyz : r0.xyz;
-
-// Return HUD to screen depth, but use a cutoff depth to prevent breaking the
-// pool sparkle.
-float4 s = StereoParams.Load(0);
-if (o0.w < hud_depth_cutoff)
-	o0.x -= s.x * (o0.w - s.y);
-
-  return;
-}
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Generated by Microsoft (R) HLSL Shader Compiler 6.3.9600.16384
 //
-//   using 3Dmigoto v1.3.4 on Mon Mar  5 06:57:18 2018
+//   using 3Dmigoto v1.3.4 on Mon Mar 05 05:00:39 2018
 //
 //
 // Buffer Definitions:
@@ -222,11 +73,11 @@ if (o0.w < hud_depth_cutoff)
 //
 // Resource Bindings:
 //
-// Name                                 Type  Format         Dim      HLSL Bind  Count
-// ------------------------------ ---------- ------- ----------- -------------- ------
-// vector_register_block             cbuffer      NA          NA            cb0      1
-// bool_register_block               cbuffer      NA          NA            cb1      1
-// model_low_frequency_block         cbuffer      NA          NA            cb9      1
+// Name                                 Type  Format         Dim Slot Elements
+// ------------------------------ ---------- ------- ----------- ---- --------
+// vector_register_block             cbuffer      NA          NA    0        1
+// bool_register_block               cbuffer      NA          NA    1        1
+// model_low_frequency_block         cbuffer      NA          NA    9        1
 //
 //
 //
@@ -250,9 +101,9 @@ if (o0.w < hud_depth_cutoff)
 //
 vs_5_0
 dcl_globalFlags refactoringAllowed
-dcl_constantbuffer CB0[42], immediateIndexed
-dcl_constantbuffer CB1[3], immediateIndexed
-dcl_constantbuffer CB9[27], immediateIndexed
+dcl_constantbuffer cb0[42], immediateIndexed
+dcl_constantbuffer cb1[3], immediateIndexed
+dcl_constantbuffer cb9[27], immediateIndexed
 dcl_input v0.xyz
 dcl_input v1.xyzw
 dcl_input v2.xyzw
@@ -260,11 +111,28 @@ dcl_output_siv o0.xyzw, position
 dcl_output o1.xyzw
 dcl_output o2.xyzw
 dcl_output o3.xyzw
-dcl_temps 4
+dcl_temps 6
+dcl_resource_texture2d (float,float,float,float) t125
+dcl_resource_texture1d (float,float,float,float) t120
+ld_indexable(texture2d)(float,float,float,float) r4.xyzw, l(0, 0, 0, 0), t125.xyzw
+ld_indexable(texture1d)(float,float,float,float) r5.xyzw, l(0, 0, 0, 0), t120.xyzw
+
 mul r0.xyzw, v0.yyyy, cb0[31].xyzw
 mad r0.xyzw, v0.xxxx, cb0[30].xyzw, r0.xyzw
 mad r0.xyzw, v0.zzzz, cb0[32].xyzw, r0.xyzw
 add r0.xyzw, r0.xyzw, cb0[33].xyzw
+
+// Return HUD to screen depth, but use a cutoff depth to prevent breaking the
+// pool sparkle.
+
+//if (o0.w < hud_depth_cutoff)
+lt r4.w, r0.w, r5.x
+if_nz r4.w
+	// o0.x -= s.x * (o0.w - s.y);
+	add r4.w, r0.w, -r4.y
+	mad r0.x, -r4.w, r4.x, r0.x
+endif
+
 mov o0.xyzw, r0.xyzw
 mov r1.xyz, cb0[40].xyzx
 mov r1.w, l(1.000000)
@@ -319,5 +187,3 @@ mad r1.xyz, r1.xyzx, r0.wwww, r2.xyzx
 movc o3.xyz, cb1[2].yyyy, r1.xyzx, r0.xyzx
 ret
 // Approximately 57 instruction slots used
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
