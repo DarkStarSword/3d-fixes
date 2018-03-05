@@ -45,12 +45,36 @@ cbuffer UnityPerCamera : register(b13)
 	uniform float4 unity_OrthoParams;
 }
 
+float z_to_w(float z)
+{
+	// This is game specific - adjust as needed.
+	// For Unity we use _ZBufferParams:
+	return 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
+}
+
 void main(out float auto_convergence : SV_Target0)
 {
 	float target_convergence, convergence_difference;
-	float current_convergence = StereoParams.Load(0).y;
+	float current_convergence;
 	float target_popout_bias;
 	float z, zr, zl, w;
+
+	// Since there is some lag between setting the auto-convergence and it
+	// taking effect, the convergence from this frame may not be the
+	// convergence we previously set (which may still be in flight to the
+	// CPU). This can lead to the slow convergence transitions appearing to
+	// stutter, since although we are using the same convergence in the
+	// calculation as last time, the depth buffer (and in particular, the
+	// small subset of points we sample from it) is different and we may
+	// come up with a different result (even sometimes going backwards).
+	// To counter this and eliminate the stutter, if we tried to set a
+	// convergence in the last frame we will use it as a starting point for
+	// the calculations in this frame instead of the current convergence.
+	current_convergence = state[0].last_set_convergence;
+	if (isnan(current_convergence))
+		current_convergence = StereoParams.Load(0).y;
+	else
+		state[0].last_set_convergence = 1.#QNAN;
 
 	if (state[0].prev_auto_convergence_enabled != auto_convergence_enabled) {
 		state[0].last_convergence.xyzw = 0;
@@ -78,7 +102,7 @@ void main(out float auto_convergence : SV_Target0)
 	// obscure the camera in the left eye won't trigger auto-convergence:
 	z = (zl ? max(zl, zr) : zr);
 
-	w = 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
+	w = z_to_w(z);
 
 	if (isinf(w)) {
 		// No depth buffer, auto-convergence cannot work. Bail now,
