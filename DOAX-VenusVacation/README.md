@@ -10,11 +10,33 @@ have changed since this article was written):
 
 https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
 
+Auto-Convergence
+----------------
+This fix uses my new auto-convergence feature (first introduced in my Life is
+Strange: Before the Storm fix) to automatically adjust the convergence while
+playing to suit the various scenes and quick camera angles changes this game
+does. For this game I have set it to try to keep everything inside the screen
+(behind the HUD), while still maximising the 3D effect in any given scene.
+
+The auto-convergence feature replaces the traditional meaning of 3D Vision's
+convergence setting with a "popout" setting, which is similar to convergence,
+but gives better results with a wider range of camera angles, monitor sizes and
+viewing distances. The same keys that normally adjust the convergence will
+adjust the popout instead when auto-convergence is enabled, and the popout
+value will be displayed on screen while adjusting it.
+
+This feature has a number of tunable parameters, which can be tweaked by
+editing the [Constants] section in the d3dx.ini. These tunables include things
+such as the initial popout, minimum and maximum allowable convergence values,
+thresholds for how far the convergence is allowed to get away from the target,
+and threshold for the anti-judder countermeasure.
+
 Fixed
 -----
 - Lights & shadows
 - Water
 - HUD
+- Added automatic convergence
 
 Installing
 ----------
@@ -30,8 +52,10 @@ Installing
 
 Keys
 ----
-Mouse back button: Toggle HUD visibility (change by editing KeyToggleHUD in
-                   d3dx.ini)
+- Mouse back button: Toggle HUD visibility
+- ~: Toggle auto-convergence feature on and off
+- Ctrl+F5: Reduce popout when auto-convergence is on
+- Ctrl+F6: Increase popout when auto-convergence is on
 
 Compatibility with third party Modding Tools
 --------------------------------------------
