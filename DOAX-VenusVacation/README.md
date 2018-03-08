@@ -4,11 +4,11 @@ This is not to be confused with the console exclusive game Dead or Alive Xtreme
 3: Venus. This is a free to play casual volleyball *management* game, and lacks
 the volleyball gameplay or minigames of its console counterpart and has no
 English translation, but - at least it is on PC. For help with installing this
-game and understanding some of the gameplay, refer to this article (the camera
-mode of the Google Translate Android app may also be helpful for any steps that
-have changed since this article was written):
+game and understanding some of the gameplay, refer to [this article][1] (the
+camera mode of the Google Translate Android app may also be helpful for any
+steps that have changed since this article was written).
 
-https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
+[1]: https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
 
 Auto-Convergence
 ----------------
@@ -57,6 +57,15 @@ Keys
 - Ctrl+F5: Reduce popout when auto-convergence is on
 - Ctrl+F6: Increase popout when auto-convergence is on
 
+Known Issues
+------------
+The news and Gacha probabilities windows are blank. Alt+tab out of the game
+(not just disabling 3D) and they will appear, and press F7 to re-enable 3D when
+done, but of course it is all in Japanese anyway. Visit [this site][2] for
+English translations.
+
+[2]: http://www.doax-venusvacation.com for English translations.
+
 Compatibility with third party Modding Tools
 --------------------------------------------
 I am aware that some players will wish to use this in conjunction with other
@@ -81,22 +90,22 @@ nvidia control panel to output checkerboard to remove the 720p limitation.
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise
-unemployed largely due to my ongoing [battle with mental health issues][1].
+unemployed largely due to my ongoing [battle with mental health issues][3].
 
 If you are in a position where you are able to do so, please consider
-[supporting me with a monthly donation on Patreon][2], and thanks again to
+[supporting me with a monthly donation on Patreon][4], and thanks again to
 those that already do! While I prefer the more stable monthly support that
 Patreon offers, I can of course understand that some of you prefer to make
-one-off donations when you can, and for that you can use [my Paypal][3]. As a
+one-off donations when you can, and for that you can use [my Paypal][5]. As a
 reminder, these donations are to support me personally, and do not go to other
 modders on this site.
 
-[1]: https://forums.geforce.com/default/topic/1000942/3d-vision/where-has-darkstarsword-been-/
-[2]: https://www.patreon.com/DarkStarSword
-[3]: https://www.paypal.me/DarkStarSword
+[3]: https://forums.geforce.com/default/topic/1000942/3d-vision/where-has-darkstarsword-been-/
+[4]: https://www.patreon.com/DarkStarSword
+[5]: https://www.paypal.me/DarkStarSword
 
 _This mod is created with 3DMigoto (primarily written by myself, Bo3b and
-Chiri), and uses Flugan's Assembler. See [here][4] for a full list of
+Chiri), and uses Flugan's Assembler. See [here][6] for a full list of
 contributors to 3DMigoto_
 
-[4]: https://darkstarsword.net/3Dmigoto-stats/authors.html
+[6]: https://darkstarsword.net/3Dmigoto-stats/authors.html
