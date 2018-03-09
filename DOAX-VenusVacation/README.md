@@ -1,14 +1,17 @@
 Dead or Alive Xtreme Venus Vacation
+===================================
 
 This is not to be confused with the console exclusive game Dead or Alive Xtreme
 3: Venus. This is a free to play casual volleyball *management* game, and lacks
 the volleyball gameplay or minigames of its console counterpart and has no
 English translation, but - at least it is on PC. For help with installing this
-game and understanding some of the gameplay, refer to [this article][1] (the
-camera mode of the Google Translate Android app may also be helpful for any
-steps that have changed since this article was written).
+game refer to [this article][1] (the camera mode of the Google Translate
+Android app may also be helpful for any steps that have changed since this
+article was written), and [the beginners guide][2] to understand the game
+itself.
 
 [1]: https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
+[2]: https://docs.google.com/spreadsheets/d/1rkWZB4DcKsKydZgpZzXrj7f1MGXRMJ3GDiqmEXeVQUw/edit#gid=1887486128
 
 Auto-Convergence
 ----------------
@@ -61,20 +64,10 @@ Known Issues
 ------------
 The news and Gacha probabilities windows are blank. Alt+tab out of the game
 (not just disabling 3D) and they will appear, and press F7 to re-enable 3D when
-done, but of course it is all in Japanese anyway. Visit [this site][2] for
+done, but of course it is all in Japanese anyway. Visit [this site][3] for
 English translations.
 
-[2]: http://www.doax-venusvacation.com for English translations.
-
-Compatibility with third party Modding Tools
---------------------------------------------
-I am aware that some players will wish to use this in conjunction with other
-modding tools to take the fan service further than the developers intended.
-This should be possible, but is not something I have personally tried and I
-cannot guarantee whether or not it will work. You may try naming 3DMigoto
-d3d11.dll and using the proxy_d3d11 option to load the third party modding tool
-after 3DMigoto, or if the third party tool has a similar option you may be able
-to do the reverse.
+[3]: http://www.doax-venusvacation.com
 
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
@@ -90,22 +83,22 @@ nvidia control panel to output checkerboard to remove the 720p limitation.
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I am currently otherwise
-unemployed largely due to my ongoing [battle with mental health issues][3].
+unemployed largely due to my ongoing [battle with mental health issues][4].
 
 If you are in a position where you are able to do so, please consider
-[supporting me with a monthly donation on Patreon][4], and thanks again to
+[supporting me with a monthly donation on Patreon][5], and thanks again to
 those that already do! While I prefer the more stable monthly support that
 Patreon offers, I can of course understand that some of you prefer to make
-one-off donations when you can, and for that you can use [my Paypal][5]. As a
+one-off donations when you can, and for that you can use [my Paypal][6]. As a
 reminder, these donations are to support me personally, and do not go to other
 modders on this site.
 
-[3]: https://forums.geforce.com/default/topic/1000942/3d-vision/where-has-darkstarsword-been-/
-[4]: https://www.patreon.com/DarkStarSword
-[5]: https://www.paypal.me/DarkStarSword
+[4]: https://forums.geforce.com/default/topic/1000942/3d-vision/where-has-darkstarsword-been-/
+[5]: https://www.patreon.com/DarkStarSword
+[6]: https://www.paypal.me/DarkStarSword
 
 _This mod is created with 3DMigoto (primarily written by myself, Bo3b and
-Chiri), and uses Flugan's Assembler. See [here][6] for a full list of
+Chiri), and uses Flugan's Assembler. See [here][7] for a full list of
 contributors to 3DMigoto_
 
-[6]: https://darkstarsword.net/3Dmigoto-stats/authors.html
+[7]: https://darkstarsword.net/3Dmigoto-stats/authors.html
