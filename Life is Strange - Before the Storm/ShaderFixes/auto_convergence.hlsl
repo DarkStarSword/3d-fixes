@@ -90,7 +90,7 @@ void main(out float auto_convergence : SV_Target0)
 
 	float4 stereo = StereoParams.Load(0);
 	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
-	bool user_updated_convergence = separation && prev_convergence && convergence != prev_convergence;
+	bool user_updated_convergence = separation && prev_stereo_active && convergence != prev_convergence;
 
 	zr = stereo2mono_downscaled_zbuffer.Load(int3(0, 0, 0));
 	zl = stereo2mono_downscaled_zbuffer.Load(int3(1, 0, 0));
@@ -194,6 +194,7 @@ void main(out float auto_convergence : SV_Target0)
 		if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
 			if (new_convergence < current_convergence) {
 				auto_convergence = new_convergence;
+				state[0].last_set_convergence = auto_convergence;
 				state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
 				return;
 			}
@@ -211,4 +212,5 @@ void main(out float auto_convergence : SV_Target0)
 	}
 
 	state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
+	state[0].last_set_convergence = auto_convergence;
 }

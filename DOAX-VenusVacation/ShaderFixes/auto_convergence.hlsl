@@ -75,7 +75,7 @@ void main(out float auto_convergence : SV_Target0)
 
 	float4 stereo = StereoParams.Load(0);
 	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
-	bool user_updated_convergence = separation && prev_convergence && convergence != prev_convergence;
+	bool user_updated_convergence = separation && prev_stereo_active && convergence != prev_convergence;
 
 	zr = stereo2mono_downscaled_zbuffer.Load(int3(0, 0, 0));
 	zl = stereo2mono_downscaled_zbuffer.Load(int3(1, 0, 0));

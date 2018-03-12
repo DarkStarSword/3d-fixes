@@ -13,6 +13,7 @@
 #define auto_convergence_hud_timeout IniParams[4].x
 #define auto_convergence_enabled IniParams[4].y
 #define warn_no_z_buffer IniParams[4].z
+#define prev_stereo_active IniParams[4].w
 
 struct auto_convergence_state {
 	float4 last_convergence;
