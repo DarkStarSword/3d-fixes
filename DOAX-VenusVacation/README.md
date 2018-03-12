@@ -69,6 +69,9 @@ English translations.
 
 [3]: http://www.doax-venusvacation.com
 
+- Some of the ripples in certain character cutscenes are rendered underneath
+  the surface of the water (game bug).
+
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
 This fix is bundled with the SBS / TAB output mode support in 3DMigoto. To
