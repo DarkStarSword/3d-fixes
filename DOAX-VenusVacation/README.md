@@ -41,6 +41,12 @@ Fixed
 - HUD
 - Added automatic convergence
 
+Update v1.1
+-----------
+- Fixed ripples
+- Fixed auto-convergence popout bias changing on full screen
+- Use a lower convergence preset when Burst is activated
+
 Installing
 ----------
 1. Extract the contents of the zip file to the game directory.
