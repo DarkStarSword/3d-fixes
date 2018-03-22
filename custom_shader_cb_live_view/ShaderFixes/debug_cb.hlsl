@@ -97,6 +97,23 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
 }
 
+// Using a macro for this because a function requires us to know the size of the buffer
+#define EMIT_CHAR_ARRAY(strlen, buf, ostream) \
+{ \
+	for (uint i = 0; i < strlen; i++) \
+		emit_char(buf[i], ostream); \
+} \
+
+void print_string_buffer(Buffer<uint> buf, inout TriangleStream<gs2ps> ostream)
+{
+	uint strlen, i;
+
+	buf.GetDimensions(strlen);
+
+	for (i = 0; i < strlen; i++)
+		emit_char(buf[i], ostream);
+}
+
 void emit_int(int val, inout TriangleStream<gs2ps> ostream)
 {
 	int digit;

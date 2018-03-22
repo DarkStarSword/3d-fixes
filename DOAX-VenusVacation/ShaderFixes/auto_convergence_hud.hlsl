@@ -7,6 +7,11 @@ static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
+static const uint AUTO_CONVERGENCE[] = {'A', 'u', 't', 'o', '-', 'C', 'o', 'n', 'v', 'e', 'r', 'g', 'e', 'n', 'c', 'e', ' '};
+static const uint NO_Z_BUFFER[] = {':', ' ', 'N', 'o', ' ', 'Z', ' ', 'B', 'u', 'f', 'f', 'e', 'r'};
+static const uint POPOUT[] = {'P', 'o', 'p', 'o', 'u', 't', ':', ' '};
+static const uint DISABLED[] = {'D', 'i', 's', 'a', 'b', 'l', 'e', 'd'};
+
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
@@ -88,6 +93,23 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 
 	// Increment current position taking specific character width into account:
 	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
+}
+
+// Using a macro for this because a function requires us to know the size of the buffer
+#define EMIT_CHAR_ARRAY(strlen, buf, ostream) \
+{ \
+	for (uint i = 0; i < strlen; i++) \
+		emit_char(buf[i], ostream); \
+} \
+
+void print_string_buffer(Buffer<uint> buf, inout TriangleStream<gs2ps> ostream)
+{
+	uint strlen, i;
+
+	buf.GetDimensions(strlen);
+
+	for (i = 0; i < strlen; i++)
+		emit_char(buf[i], ostream);
 }
 
 void emit_int(int val, inout TriangleStream<gs2ps> ostream)
@@ -207,59 +229,17 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 
 	cur_pos = float2(-1, -1 + char_height);
 
-	emit_char('A', ostream);
-	emit_char('u', ostream);
-	emit_char('t', ostream);
-	emit_char('o', ostream);
-	emit_char('-', ostream);
-	emit_char('C', ostream);
-	emit_char('o', ostream);
-	emit_char('n', ostream);
-	emit_char('v', ostream);
-	emit_char('e', ostream);
-	emit_char('r', ostream);
-	emit_char('g', ostream);
-	emit_char('e', ostream);
-	emit_char('n', ostream);
-	emit_char('c', ostream);
-	emit_char('e', ostream);
-	emit_char(' ', ostream);
+	EMIT_CHAR_ARRAY(17, AUTO_CONVERGENCE, ostream);
 
 	if (auto_convergence_enabled) {
 		if (state[0].no_z_buffer) {
-			emit_char(':', ostream);
-			emit_char(' ', ostream);
-			emit_char('N', ostream);
-			emit_char('o', ostream);
-			emit_char(' ', ostream);
-			emit_char('Z', ostream);
-			emit_char(' ', ostream);
-			emit_char('B', ostream);
-			emit_char('u', ostream);
-			emit_char('f', ostream);
-			emit_char('f', ostream);
-			emit_char('e', ostream);
-			emit_char('r', ostream);
+			EMIT_CHAR_ARRAY(13, NO_Z_BUFFER, ostream);
 		} else {
-			emit_char('P', ostream);
-			emit_char('o', ostream);
-			emit_char('p', ostream);
-			emit_char('o', ostream);
-			emit_char('u', ostream);
-			emit_char('t', ostream);
-			emit_char(':', ostream);
-			emit_char(' ', ostream);
+			EMIT_CHAR_ARRAY(8, POPOUT, ostream);
 			emit_float(ini_popout_bias + state[0].user_popout_bias, ostream);
 		}
 	} else {
-		emit_char('D', ostream);
-		emit_char('i', ostream);
-		emit_char('s', ostream);
-		emit_char('a', ostream);
-		emit_char('b', ostream);
-		emit_char('l', ostream);
-		emit_char('e', ostream);
-		emit_char('d', ostream);
+		EMIT_CHAR_ARRAY(8, DISABLED, ostream);
 	}
 }
 #endif
