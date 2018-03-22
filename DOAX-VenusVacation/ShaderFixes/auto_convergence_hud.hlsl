@@ -20,8 +20,22 @@ struct vs2gs {
 
 struct gs2ps {
 	float4 pos : SV_Position0;
-	float2 tex : TEXCOORD1;
+	float tex_y : TEXCOORD1;
 };
+
+void pack_texcoord(inout gs2ps output, float2 texcoord)
+{
+	// Packs one coordinate of the texcoord into the SV_Position Z to give
+	// us room for a few extra characters per geometry shader invocation.
+	// Requires 'depth_clip_enable = false' in the d3dx.ini
+	output.pos.z = texcoord.x;
+	output.tex_y = texcoord.y;
+}
+
+float2 unpack_texcoord(gs2ps input)
+{
+	return float2(input.pos.z, input.tex_y);
+}
 
 #ifdef VERTEX_SHADER
 void main(uint id : SV_VertexID, out vs2gs output)
@@ -72,16 +86,16 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 		texcoord.y = (c / 16 - 2) * char_size.y;
 
 		output.pos = float4(cur_pos.x        , cur_pos.y - dim.y, 0, 1);
-		output.tex = texcoord + float2(0, 1) * char_size;
+		pack_texcoord(output, texcoord + float2(0, 1) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y - dim.y, 0, 1);
-		output.tex = texcoord + float2(texture_x_percent, 1) * char_size;
+		pack_texcoord(output, texcoord + float2(texture_x_percent, 1) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x        , cur_pos.y        , 0, 1);
-		output.tex = texcoord + float2(0, 0) * char_size;
+		pack_texcoord(output, texcoord + float2(0, 0) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y        , 0, 1);
-		output.tex = texcoord + float2(texture_x_percent, 0) * char_size;
+		pack_texcoord(output, texcoord + float2(texture_x_percent, 0) * char_size);
 		ostream.Append(output);
 
 		ostream.RestartStrip();
@@ -212,7 +226,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 }
 
 // The max here is dictated by 1024 / sizeof(gs2ps)
-[maxvertexcount(168)]
+[maxvertexcount(204)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 
@@ -251,7 +265,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 #ifdef PIXEL_SHADER
 void main(gs2ps input, out float4 o0 : SV_Target0)
 {
-	o0.xyzw = font.Load(int3(input.tex, 0)) * float4(colour, 1);
+	o0.xyzw = font.Load(int3(unpack_texcoord(input), 0)) * float4(colour, 1);
 
 	// Cap alpha to make background dark for contrast:
 	o0.w = max(o0.w, 0.75);
