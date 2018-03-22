@@ -7,11 +7,6 @@ static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
-static const uint AUTO_CONVERGENCE[] = {'A', 'u', 't', 'o', '-', 'C', 'o', 'n', 'v', 'e', 'r', 'g', 'e', 'n', 'c', 'e', ' '};
-static const uint NO_Z_BUFFER[] = {':', ' ', 'N', 'o', ' ', 'Z', ' ', 'B', 'u', 'f', 'f', 'e', 'r'};
-static const uint POPOUT[] = {'P', 'o', 'p', 'o', 'u', 't', ':', ' '};
-static const uint DISABLED[] = {'D', 'i', 's', 'a', 'b', 'l', 'e', 'd'};
-
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
@@ -230,16 +225,24 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 
 	cur_pos = float2(-1, -1 + char_height);
 
+	static const uint AUTO_CONVERGENCE[] =
+		{'A', 'u', 't', 'o', '-', 'C', 'o', 'n', 'v', 'e', 'r', 'g', 'e', 'n', 'c', 'e', ' '};
 	EMIT_CHAR_ARRAY(17, AUTO_CONVERGENCE, ostream);
 
 	if (auto_convergence_enabled) {
 		if (state[0].no_z_buffer) {
+			static const uint NO_Z_BUFFER[] =
+				{':', ' ', 'N', 'o', ' ', 'Z', ' ', 'B', 'u', 'f', 'f', 'e', 'r'};
 			EMIT_CHAR_ARRAY(13, NO_Z_BUFFER, ostream);
 		} else {
+			static const uint POPOUT[] =
+				{'P', 'o', 'p', 'o', 'u', 't', ':', ' '};
 			EMIT_CHAR_ARRAY(8, POPOUT, ostream);
 			emit_float(ini_popout_bias + state[0].user_popout_bias, ostream);
 		}
 	} else {
+		static const uint DISABLED[] =
+			{'D', 'i', 's', 'a', 'b', 'l', 'e', 'd'};
 		EMIT_CHAR_ARRAY(8, DISABLED, ostream);
 	}
 }
