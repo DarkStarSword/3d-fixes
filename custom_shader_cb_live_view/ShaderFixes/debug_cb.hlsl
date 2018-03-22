@@ -18,7 +18,6 @@ struct vs2gs {
 struct gs2ps {
 	float4 pos : SV_Position0;
 	float2 tex : TEXCOORD1;
-	uint character : TEXCOORD2;
 };
 
 #ifdef VERTEX_SHADER
@@ -67,6 +66,7 @@ float2 get_char_dimensions(uint c)
 void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 {
 	float2 cdim = get_char_dimensions(c);
+	float2 texcoord;
 
 	// This does not emit space characters, but if you want to shade the
 	// background of the text you will need to change the > to a >= here
@@ -75,19 +75,20 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale;
 		float texture_x_percent = cdim.x / char_size.x;
 
-		output.character = c;
+		texcoord.x = (c % 16) * char_size.x;
+		texcoord.y = (c / 16 - 2) * char_size.y;
 
 		output.pos = float4(cur_pos.x        , cur_pos.y - dim.y, 0, 1);
-		output.tex = float2(0, 1);
+		output.tex = texcoord + float2(0, 1) * char_size;
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y - dim.y, 0, 1);
-		output.tex = float2(texture_x_percent, 1);
+		output.tex = texcoord + float2(texture_x_percent, 1) * char_size;
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x        , cur_pos.y        , 0, 1);
-		output.tex = float2(0, 0);
+		output.tex = texcoord + float2(0, 0) * char_size;
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y        , 0, 1);
-		output.tex = float2(texture_x_percent, 0);
+		output.tex = texcoord + float2(texture_x_percent, 0) * char_size;
 		ostream.Append(output);
 
 		ostream.RestartStrip();
@@ -218,7 +219,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 }
 
 // The max here is dictated by 1024 / sizeof(gs2ps)
-[maxvertexcount(144)]
+[maxvertexcount(168)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 	get_meta();
@@ -275,19 +276,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 #ifdef PIXEL_SHADER
 void main(gs2ps input, out float4 o0 : SV_Target0)
 {
-	float font_width, font_height;
-	float2 char_size;
-	float2 pos;
-
-	font.GetDimensions(font_width, font_height);
-	char_size = float2(font_width, font_height) / float2(16, 6);
-
-	pos.x = (input.character % 16) * char_size.x;
-	pos.y = (input.character / 16 - 2) * char_size.y;
-
-	pos.xy += input.tex * char_size;
-
-	o0.xyzw = font.Load(int3(pos, 0)) * float4(colour, 1);
+	o0.xyzw = font.Load(int3(input.tex, 0)) * float4(colour, 1);
 
 	// Uncomment to darken the background for contrast:
 	// o0.w = max(o0.w, 0.75);
