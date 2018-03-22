@@ -7,6 +7,10 @@ static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
+// Must be set high enough to counter floating point error in the perspective
+// divide. Should be set to at least the font texture width * font_scale.
+#define TEXCOORD2_BIAS 4096 * font_scale
+
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
@@ -17,7 +21,6 @@ struct vs2gs {
 
 struct gs2ps {
 	float4 pos : SV_Position0;
-	float tex_y : TEXCOORD1;
 };
 
 void pack_texcoord(inout gs2ps output, float2 texcoord)
@@ -26,12 +29,23 @@ void pack_texcoord(inout gs2ps output, float2 texcoord)
 	// us room for a few extra characters per geometry shader invocation.
 	// Requires 'depth_clip_enable = false' in the d3dx.ini
 	output.pos.z = texcoord.x;
-	output.tex_y = texcoord.y;
+
+	// We can encode the Y texcoord in the SV_Position's W component to
+	// maximise the number of characters the geometry shader can produce
+	// per invocation. This is a little tricky, since the rasterizer will
+	// perform a perspective divide by this value (and "noperspective"
+	// doesn't seem to prevent this), so we cannot encode 0 here and must
+	// be wary of floating point error that may be introduced by this
+	// divide. To counter this problem, we add a fixed bias to the texcoord
+	// that will prevent it from being 0 and ensure that floating point
+	// error is reduced enough that it will not make a visible difference.
+	output.pos.w = texcoord.y + TEXCOORD2_BIAS;
+	output.pos.xyz *= output.pos.w;
 }
 
 float2 unpack_texcoord(gs2ps input)
 {
-	return float2(input.pos.z, input.tex_y);
+	return float2(input.pos.z, input.pos.w - TEXCOORD2_BIAS);
 }
 
 #ifdef VERTEX_SHADER
@@ -233,7 +247,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 }
 
 // The max here is dictated by 1024 / sizeof(gs2ps)
-[maxvertexcount(204)]
+[maxvertexcount(256)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 	get_meta();
