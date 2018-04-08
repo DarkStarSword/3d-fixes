@@ -740,21 +740,32 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper):
             default=True,
             )
 
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row(align=True)
-        row.prop(self, 'flip_texcoord_v')
+    load_related = BoolProperty(
+            name="Auto-load related meshes",
+            description="Automatically load related meshes found in the frame analysis dump",
+            default=False,
+            )
 
     def get_vb_ib_paths(self):
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)=[0-9a-f]+(?=[^0-9a-f])''')
         dirname = os.path.dirname(self.filepath)
         ret = set()
-        for path in self.files:
-            match = buffer_pattern.search(path.name)
+
+        if self.load_related:
+            files = []
+            for filename in self.files:
+                match = buffer_pattern.search(filename.name)
+                assert(match is not None)
+                paths = glob(os.path.join(dirname, '*%s*.txt' % filename.name[match.start():match.end()]))
+                files.extend([os.path.basename(x) for x in paths])
+        else:
+            files = [x.name for x in self.files]
+
+        for filename in files:
+            match = buffer_pattern.search(filename)
             assert(match is not None)
-            ib_pattern = path.name[:match.start()] + '-ib=*' + path.name[match.end():]
-            vb_pattern = path.name[:match.start()] + '-vb*=*' + path.name[match.end():]
+            ib_pattern = filename[:match.start()] + '-ib=*' + filename[match.end():]
+            vb_pattern = filename[:match.start()] + '-vb*=*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
             vb_paths = glob(os.path.join(dirname, vb_pattern))
             if len(ib_paths) != 1 or len(vb_paths) != 1:
@@ -764,7 +775,7 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         try:
-            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob'))
+            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related'))
             paths = self.get_vb_ib_paths()
 
             name = os.path.basename(self.filepath)
