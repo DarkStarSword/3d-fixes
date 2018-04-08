@@ -77,7 +77,7 @@ def Encoder(fmt):
         return lambda data: numpy.fromiter(data, numpy.int16).tobytes()
     if s8_pattern.match(fmt):
         return lambda data: numpy.fromiter(data, numpy.int8).tobytes()
-    raise Fatal('File uses an unsupported DXGI Format')
+    raise Fatal('File uses an unsupported DXGI Format: %s' % fmt)
 
 class InputLayoutElement(object):
     def __init__(self, arg):
@@ -362,9 +362,6 @@ def load_3dmigoto_mesh(operator, paths):
         for ib_path in ib_paths[1:]:
             tmp = IndexBuffer(open(ib_path, 'r'))
             ib.merge(tmp)
-        if ib.first != 0:
-            operator.report({'WARNING'}, 'Index buffer does not start at 0, '
-                    'maybe missing partial mesh from another draw call? first=%i' % ib.first)
 
     return vb, ib
 
@@ -419,7 +416,7 @@ def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
                     if w == 0.0:
                         continue
                     obj.vertex_groups[i].add((vertex.index,), w, 'REPLACE')
-def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v, textures={}):
+def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
     for i, (texcoord, data) in enumerate(sorted(texcoords.items())):
         assert(i == texcoord) # FIXME: What to do if some TEXCOORDs are skipped?
 
@@ -525,9 +522,22 @@ def import_vertices(mesh, vb):
 
     return (blend_indices, blend_weights, texcoords, use_normals)
 
-def import_3dmigoto(operator, context, paths, name='test', textures={}, flip_texcoord_v=True):
+def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
+    if merge_meshes:
+        import_3dmigoto_vb_ib(operator, context, paths, **kwargs)
+    else:
+        obj = []
+        for p in paths:
+            try:
+                obj.append(import_3dmigoto_vb_ib(operator, context, [p], **kwargs))
+            except Fatal as e:
+                operator.report({'ERROR'}, str(e))
+        # FIXME: Group objects together
+
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True):
     vb, ib = load_3dmigoto_mesh(operator, paths)
 
+    name = os.path.basename(paths[0][0])
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
 
@@ -545,7 +555,7 @@ def import_3dmigoto(operator, context, paths, name='test', textures={}, flip_tex
 
     (blend_indices, blend_weights, texcoords, use_normals) = import_vertices(mesh, vb)
 
-    import_uv_layers(mesh, obj, texcoords, flip_texcoord_v, textures)
+    import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
 
     import_vertex_groups(mesh, obj, blend_indices, blend_weights)
 
@@ -562,6 +572,8 @@ def import_3dmigoto(operator, context, paths, name='test', textures={}, flip_tex
 
     base = context.scene.objects.link(obj)
     base.select = True
+
+    return obj
 
 # from export_obj:
 def mesh_triangulate(me):
@@ -743,6 +755,12 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper):
     load_related = BoolProperty(
             name="Auto-load related meshes",
             description="Automatically load related meshes found in the frame analysis dump",
+            default=True,
+            )
+
+    merge_meshes = BoolProperty(
+            name="Merge meshes together",
+            description="Merge all selected meshes together into one object. Meshes must be related.",
             default=False,
             )
 
@@ -778,9 +796,7 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper):
             keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related'))
             paths = self.get_vb_ib_paths()
 
-            name = os.path.basename(self.filepath)
-
-            import_3dmigoto(self, context, paths, name=name, **keywords)
+            import_3dmigoto(self, context, paths, **keywords)
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
