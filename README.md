@@ -326,3 +326,8 @@ create the usual array of translation matrices.
 This directory contains test cases for whether buffers will be stereoised or
 not with varying combinations of bind flags and creation modes. Compare the
 results when running with different StereoFlagsDX10.
+
+### blender_3dmigoto.py ###
+Addon for Blender to import meshes from 3DMigoto Frame Analysis dumps
+(analyse_options = dump_vb txt), and export binary vertex & index buffers
+suitable for re-injection.

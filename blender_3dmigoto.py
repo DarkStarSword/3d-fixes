@@ -1,0 +1,827 @@
+#!/usr/bin/env/python3
+
+bl_info = {
+    "name": "3DMigoto",
+    "author": "Ian Munsie (darkstarsword@gmail.com)",
+    "location": "File > Import-Export",
+    "description": "Imports meshes dumped with 3DMigoto's frame analysis and exports meshes suitable for re-injection",
+    "category": "Import-Export",
+    "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
+}
+
+# TODO:
+# - On export, use (unique) loop vertices instead of regular blender vertices,
+#   since blender vertices may share the same position, but have different
+#   normals, UV coords, etc, which are associated with the loop vertices.
+#   - Reduce vertices on import to simplify mesh
+# - Option to untesselate triangles on import?
+# - Operator to generate vertex group map
+# - Operator to remap bones
+# - Operator to set current pose from a constant buffer dump
+# - Generate bones, using vertex groups to approximate position
+#   - And maybe orientation & magnitude, but I'll have to figure out some funky
+#     maths to have it follow the mesh like a cylinder
+# - Add support for games using multiple VBs per mesh, e.g. Witcher 3
+# - Test in a wider variety of games
+# - Fix exporter making assumptions about layout element sizes
+# - Handle TANGENT better on both import & export?
+
+import io
+import re
+from array import array
+import struct
+import numpy
+import itertools
+import collections
+import os
+from glob import glob
+
+import bpy
+from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper
+from bpy.props import BoolProperty, StringProperty, CollectionProperty
+from bpy_extras.image_utils import load_image
+
+class Fatal(Exception): pass
+
+# TODO: Support more DXGI formats:
+f32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_FLOAT''')
+f16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_FLOAT''')
+u32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_UINT''')
+u16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_UINT''')
+u8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_UINT''')
+s32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_SINT''')
+s16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_SINT''')
+s8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_SINT''')
+
+def Encoder(fmt):
+    if f32_pattern.match(fmt):
+        return lambda data: b''.join(struct.pack('<f', x) for x in data)
+    if f16_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.float16).tobytes()
+    if u32_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.uint32).tobytes()
+    if u16_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.uint16).tobytes()
+    if u8_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.uint8).tobytes()
+    if s32_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.int32).tobytes()
+    if s16_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.int16).tobytes()
+    if s8_pattern.match(fmt):
+        return lambda data: numpy.fromiter(data, numpy.int8).tobytes()
+    raise Fatal('File uses an unsupported DXGI Format')
+
+class InputLayoutElement(object):
+    def __init__(self, arg):
+        if isinstance(arg, io.IOBase):
+            self.from_file(arg)
+        else:
+            self.from_dict(arg)
+
+        self.encoder = Encoder(self.Format)
+
+    def from_file(self, f):
+        self.SemanticName = self.next_validate(f, 'SemanticName')
+        self.SemanticIndex = int(self.next_validate(f, 'SemanticIndex'))
+        self.Format = self.next_validate(f, 'Format')
+        self.InputSlot = int(self.next_validate(f, 'InputSlot'))
+        self.AlignedByteOffset = self.next_validate(f, 'AlignedByteOffset')
+        if self.AlignedByteOffset == 'append':
+            raise Fatal('Input layouts using "AlignedByteOffset=append" are not yet supported')
+        self.AlignedByteOffset = int(self.AlignedByteOffset)
+        self.InputSlotClass = self.next_validate(f, 'InputSlotClass')
+        self.InstanceDataStepRate = int(self.next_validate(f, 'InstanceDataStepRate'))
+
+    def to_dict(self):
+        d = {}
+        d['SemanticName'] = self.SemanticName
+        d['SemanticIndex'] = self.SemanticIndex
+        d['Format'] = self.Format
+        d['InputSlot'] = self.InputSlot
+        d['AlignedByteOffset'] = self.AlignedByteOffset
+        d['InputSlotClass'] = self.InputSlotClass
+        d['InstanceDataStepRate'] = self.InstanceDataStepRate
+        return d
+
+    def from_dict(self, d):
+        self.SemanticName = d['SemanticName']
+        self.SemanticIndex = d['SemanticIndex']
+        self.Format = d['Format']
+        self.InputSlot = d['InputSlot']
+        self.AlignedByteOffset = d['AlignedByteOffset']
+        self.InputSlotClass = d['InputSlotClass']
+        self.InstanceDataStepRate = d['InstanceDataStepRate']
+
+    @staticmethod
+    def next_validate(f, field):
+        line = next(f).strip()
+        assert(line.startswith(field + ': '))
+        return line[len(field) + 2:]
+
+    @property
+    def name(self):
+        if self.SemanticIndex:
+            return '%s%i' % (self.SemanticName, self.SemanticIndex)
+        return self.SemanticName
+
+    def encode(self, data):
+        # print(self.Format, data)
+        return self.encoder(data)
+
+    def __eq__(self, other):
+        return \
+            self.SemanticName == other.SemanticName and \
+            self.SemanticIndex == other.SemanticIndex and \
+            self.Format == other.Format and \
+            self.InputSlot == other.InputSlot and \
+            self.AlignedByteOffset == other.AlignedByteOffset and \
+            self.InputSlotClass == other.InputSlotClass and \
+            self.InstanceDataStepRate == other.InstanceDataStepRate
+
+class InputLayout(object):
+    def __init__(self, custom_prop=[], stride=0):
+        self.elems = collections.OrderedDict()
+        self.stride = stride
+        for item in custom_prop:
+            elem = InputLayoutElement(item)
+            self.elems[elem.name] = elem
+
+    def serialise(self):
+        return [x.to_dict() for x in self.elems.values()]
+
+    def parse_element(self, f):
+        elem = InputLayoutElement(f)
+        self.elems[elem.name] = elem
+
+    def __iter__(self):
+        return iter(self.elems.values())
+
+    def __getitem__(self, semantic):
+        return self.elems[semantic]
+
+    def encode(self, vertex):
+        buf = bytearray(self.stride)
+
+        for semantic, data in vertex.items():
+            elem = self.elems[semantic]
+            data = elem.encode(data)
+            buf[elem.AlignedByteOffset:elem.AlignedByteOffset + len(data)] = data
+
+        assert(len(buf) == self.stride)
+        return buf
+
+    def __eq__(self, other):
+        return self.elems == other.elems
+
+class VertexBuffer(object):
+    vb_elem_pattern = re.compile(r'''vb\d+\[\d*\]\+\d+ (?P<semantic>[^:]+): (?P<data>.*)$''')
+
+    # Python gotcha - do not set layout=InputLayout() in the default function
+    # parameters, as they would all share the *same* InputLayout since the
+    # default values are only evaluated once on file load
+    def __init__(self, f=None, layout=None):
+        self.vertices = []
+        self.layout = layout and layout or InputLayout()
+        self.first = 0
+        self.vertex_count = 0
+
+        if f is not None:
+            self.parse_vb(f)
+
+    def parse_vb(self, f):
+        for line in map(str.strip, f):
+            # print(line)
+            if line.startswith('first vertex:'):
+                self.first = int(line[14:])
+            if line.startswith('vertex count:'):
+                self.vertex_count = int(line[14:])
+            if line.startswith('stride:'):
+                self.layout.stride = int(line[7:])
+            if line.startswith('element['):
+                self.layout.parse_element(f)
+            if line.startswith('topology:'):
+                if line != 'topology: trianglelist':
+                    raise Fatal('"%s" is not yet supported' % line)
+            if line.startswith('vertex-data:'):
+                self.parse_vertex_data(f)
+        assert(len(self.vertices) == self.vertex_count)
+
+    def append(self, vertex):
+        self.vertices.append(vertex)
+        self.vertex_count += 1
+
+    def parse_vertex_data(self, f):
+        vertex = {}
+        for line in map(str.strip, f):
+            #print(line)
+            if line.startswith('instance-data:'):
+                break
+
+            match = self.vb_elem_pattern.match(line)
+            if match:
+                vertex[match.group('semantic')] = self.parse_vertex_element(match)
+            elif line == '' and vertex:
+                self.vertices.append(vertex)
+                vertex = {}
+        if vertex:
+            self.vertices.append(vertex)
+
+    def parse_vertex_element(self, match):
+        fields = match.group('data').split(',')
+
+        if self.layout[match.group('semantic')].Format.endswith('INT'):
+            return tuple(map(int, fields))
+
+        return tuple(map(float, fields))
+
+    def remap_blendindices(self, mapping):
+        for vertex in self.vertices:
+            for semantic in ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2'):
+                vertex[semantic] = tuple(mapping.get(x, x) for x in vertex[semantic])
+
+    def disable_blendweights(self):
+        for vertex in self.vertices:
+            for semantic in ('BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2'):
+                vertex[semantic] = (0, 0, 0, 0)
+
+    def write(self, output):
+        for vertex in self.vertices:
+            output.write(self.layout.encode(vertex))
+
+    def __len__(self):
+        return len(self.vertices)
+
+    def merge(self, other):
+        if self.layout != other.layout:
+            raise Fatal('Vertex buffers have different input layouts - ensure you are only trying to merge the same vertex buffer split across multiple draw calls')
+        if self.first != other.first:
+            # FIXME: Future 3DMigoto might automatically set first from the
+            # index buffer and chop off unreferenced vertices to save space
+            raise Fatal('Cannot merge multiple vertex buffers - please check for updates of the 3DMigoto import script, or import each buffer separately')
+        self.vertices.extend(other.vertices[self.vertex_count:])
+        self.vertex_count = max(self.vertex_count, other.vertex_count)
+        assert(len(self.vertices) == self.vertex_count)
+
+def create_blendindices_map(input, reference):
+    # match_keys = ('POSITION', 'BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2', 'NORMAL', 'TANGENT', 'TEXCOORD', 'TEXCOORD1') # Excludes too many
+    # match_keys = ('POSITION', 'BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2') # Excludes too many
+    match_keys = ('POSITION',) # Lots of conflicts, but works 100%
+    map_keys = ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2')
+    mask_keys = ('BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2')
+    a = { tuple( v for k,v in x.items() if k in match_keys ): x for x in input }
+    b = { tuple( v for k,v in x.items() if k in match_keys ): x for x in reference }
+    common = set(a.keys()).intersection(b.keys())
+    # print(common)
+
+    mapping = {}
+    for k in common:
+        from_map  = tuple( v for k,v in a[k].items() if k in map_keys )
+        to_map    = tuple( v for k,v in b[k].items() if k in map_keys )
+        from_mask = tuple( v for k,v in a[k].items() if k in mask_keys )
+        to_mask   = tuple( v for k,v in b[k].items() if k in mask_keys )
+        for f1,t1,fmask1,tmask1 in zip(from_map, to_map, from_mask, to_mask):
+            for f2,t2,fmask2,tmask2 in zip(f1,t1,fmask1,tmask1):
+                if fmask2 == 0.0 or tmask2 == 0.0:
+                    continue
+                #print(f2, t2)
+                if f2 in mapping:
+                    if t2 in mapping[f2]:
+                        mapping[f2][t2] += 1
+                    else:
+                        mapping[f2][t2] = 1
+                else:
+                    mapping[f2] = {t2: 1}
+
+    for f, v in mapping.items():
+        mapping[f] = sorted(v, key = lambda x: v[x])[-1]
+        if len(v) > 1:
+            print('WARNING: Conflicting BLENDINDICES mapping: %s -> %s, using most common value: %s' % (f, list(v.keys()), mapping[f]))
+
+    return mapping
+
+class IndexBuffer(object):
+    def __init__(self, *args):
+        self.faces = []
+        self.first = 0
+        self.index_count = None
+        self.format = 'DXGI_FORMAT_UNKNOWN'
+
+        if isinstance(args[0], io.IOBase):
+            assert(len(args) == 1)
+            self.parse_ib(args[0])
+        else:
+            self.faces, self.format = args
+            self.index_count = len(self.faces)
+
+        self.encoder = Encoder(self.format)
+
+    def parse_ib(self, f):
+        for line in map(str.strip, f):
+            if line.startswith('first index:'):
+                self.first = int(line[13:])
+            elif line.startswith('index count:'):
+                self.index_count = int(line[13:])
+            elif line.startswith('topology:'):
+                if line != 'topology: trianglelist':
+                    raise Fatal('"%s" is not yet supported' % line)
+            elif line.startswith('format:'):
+                self.format = line[8:]
+            elif line == '':
+                self.parse_index_data(f)
+        assert(len(self.faces) * 3 == self.index_count)
+
+    def parse_index_data(self, f):
+        for line in map(str.strip, f):
+            face = tuple(map(int, line.split()))
+            assert(len(face) == 3)
+            self.faces.append(face)
+
+    def merge(self, other):
+        if self.format != other.format:
+            raise Fatal('Index buffers have different formats - ensure you are only trying to merge the same index buffer split across multiple draw calls')
+        self.first = min(self.first, other.first)
+        self.index_count += other.index_count
+        self.faces.extend(other.faces)
+
+    def write(self, output):
+        for face in self.faces:
+            output.write(self.encoder(face))
+
+    def __len__(self):
+        return len(self.faces) * 3
+
+#def main():
+#    parse_args()
+#
+#    input_vb = VertexBuffer(args.input)
+#
+#    mapping = {}
+#
+#    if args.reference:
+#        reference_vb = VertexBuffer(args.reference)
+#        mapping = create_blendindices_map(input_vb.vertices, reference_vb.vertices)
+#        input_vb.remap_blendindices(mapping)
+#
+#    input_vb.write(args.output)
+
+def load_3dmigoto_mesh(operator, paths):
+    vb_paths, ib_paths = zip(*paths)
+
+    vb = VertexBuffer(open(vb_paths[0], 'r'))
+    # Merge additional vertex buffers for meshes split over multiple draw calls:
+    for vb_path in vb_paths[1:]:
+        tmp = VertexBuffer(open(vb_path, 'r'))
+        vb.merge(tmp)
+
+    ib = None
+    if ib_paths:
+        ib = IndexBuffer(open(ib_paths[0], 'r'))
+        # Merge additional vertex buffers for meshes split over multiple draw calls:
+        for ib_path in ib_paths[1:]:
+            tmp = IndexBuffer(open(ib_path, 'r'))
+            ib.merge(tmp)
+        if ib.first != 0:
+            operator.report({'WARNING'}, 'Index buffer does not start at 0, '
+                    'maybe missing partial mesh from another draw call? first=%i' % ib.first)
+
+    return vb, ib
+
+def import_normals_step1(mesh, data):
+    # Ensure normals are 3-dimensional:
+    if len(data[0]) == 4:
+        assert([x[3] for x in data] == [0.0]*len(data))
+    normals = [(x[0], x[1], x[2]) for x in data]
+
+    # To make sure the normals don't get lost by Blender's edit mode,
+    # or mesh.update() we need to set custom normals in the loops, not
+    # vertices.
+    #
+    # For testing, to make sure our normals are preserved let's use
+    # garbage ones:
+    #import random
+    #normals = [(random.random() * 2 - 1,random.random() * 2 - 1,random.random() * 2 - 1) for x in normals]
+    #
+    # Comment from other import scripts:
+    # Note: we store 'temp' normals in loops, since validate() may alter final mesh,
+    #       we can only set custom lnors *after* calling it.
+    mesh.create_normals_split()
+    for l in mesh.loops:
+        l.normal[:] = normals[l.vertex_index]
+
+def import_normals_step2(mesh):
+    # Taken from import_obj/import_fbx
+    clnors = array('f', [0.0] * (len(mesh.loops) * 3))
+    mesh.loops.foreach_get("normal", clnors)
+
+    # Not sure this is still required with use_auto_smooth, but the other
+    # importers do it, and at the very least it shouldn't hurt...
+    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+
+    mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
+    mesh.use_auto_smooth = True # This has a double meaning, one of which is to use the custom normals
+    mesh.show_edge_sharp = True
+
+def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
+    assert(len(blend_indices) == len(blend_weights))
+    if blend_indices:
+        # We will need to make sure we re-export the same blend indices later -
+        # that they haven't been renumbered. Not positive whether it is better
+        # to use the vertex group index, vertex group name or attach some extra
+        # data. Make sure the indices and names match:
+        num_vertex_groups = max(itertools.chain(*itertools.chain(*blend_indices.values()))) + 1
+        for i in range(num_vertex_groups):
+            obj.vertex_groups.new(str(i))
+        for vertex in mesh.vertices:
+            for semantic_index in sorted(blend_indices.keys()):
+                for i, w in zip(blend_indices[semantic_index][vertex.index], blend_weights[semantic_index][vertex.index]):
+                    if w == 0.0:
+                        continue
+                    obj.vertex_groups[i].add((vertex.index,), w, 'REPLACE')
+def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v, textures={}):
+    for i, (texcoord, data) in enumerate(sorted(texcoords.items())):
+        assert(i == texcoord) # FIXME: What to do if some TEXCOORDs are skipped?
+
+        # TEXCOORDS can have up to four components, but UVs can only have two
+        # dimensions. Not positive of the best way to handle this in general,
+        # but for now I'm thinking that splitting the TEXCOORD into two sets of
+        # UV coordinates might work:
+        dim = len(data[0])
+        if dim == 4:
+            components_list = ('xy', 'zw')
+        elif dim == 2:
+            components_list = ('xy',)
+        else:
+            raise Fatal('Unhandled TEXCOORD dimension: %i' % dim)
+        cmap = {'x': 0, 'y': 1, 'z': 2, 'w': 3}
+
+        for components in components_list:
+            uv_name = 'TEXCOORD%s.%s' % (texcoord and texcoord or '', components)
+            mesh.uv_textures.new(uv_name)
+            blender_uvs = mesh.uv_layers[uv_name]
+
+            # This will assign a texture to the UV layer, which works fine but
+            # working out which texture maps to which UV layer is guesswork
+            # before the import and the artist may as well just assign it
+            # themselves in the UV editor pane when they can see the unwrapped
+            # mesh to compare it with the dumped textures:
+            #
+            #path = textures.get(uv_layer, None)
+            #if path is not None:
+            #    image = load_image(path)
+            #    for i in range(len(mesh.polygons)):
+            #        mesh.uv_textures[uv_layer].data[i].image = image
+
+            # Can't find an easy way to flip the display of V in Blender, so
+            # add an option to flip it on import & export:
+            if flip_texcoord_v:
+                flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
+                # Record that V was flipped so we know to undo it when exporting:
+                obj['3DMigoto:' + uv_name] = {'flip_v': True}
+            else:
+                flip_uv = lambda uv: uv
+
+            uvs = [[d[cmap[c]] for c in components] for d in data]
+            for l in mesh.loops:
+                blender_uvs.data[l.index].uv = flip_uv(uvs[l.vertex_index])
+
+def import_faces_from_ib(mesh, ib):
+    mesh.loops.add(len(ib.faces) * 3)
+    mesh.polygons.add(len(ib.faces))
+    mesh.loops.foreach_set('vertex_index', unpack_list(ib.faces))
+    mesh.polygons.foreach_set('loop_start', [x*3 for x in range(len(ib.faces))])
+    mesh.polygons.foreach_set('loop_total', [3] * len(ib.faces))
+
+def import_faces_from_vb(mesh, vb):
+    # Only lightly tested
+    num_faces = len(vb.vertices) // 3
+    mesh.loops.add(num_faces * 3)
+    mesh.polygons.add(num_faces)
+    mesh.loops.foreach_set('vertex_index', [x for x in range(num_faces * 3)])
+    mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
+    mesh.polygons.foreach_set('loop_total', [3] * num_faces)
+
+def import_vertices(mesh, vb):
+    mesh.vertices.add(len(vb.vertices))
+
+    seen_offsets = set()
+    blend_indices = {}
+    blend_weights = {}
+    texcoords = {}
+    use_normals = False
+
+    for elem in vb.layout:
+        if elem.InputSlotClass != 'per-vertex':
+            continue
+
+        # Discard elements that reuse offsets in the vertex buffer, e.g. COLOR
+        # and some TEXCOORDs may be aliases of POSITION:
+        if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
+            assert(elem.name != 'POSITION')
+            continue
+        seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
+
+        data = tuple( x[elem.name] for x in vb.vertices )
+        if elem.name == 'POSITION':
+            mesh.vertices.foreach_set('co', unpack_list(data))
+        elif elem.name == 'NORMAL':
+            use_normals = True
+            import_normals_step1(mesh, data)
+        #elif elem.name.startswith('TANGENT'):
+        #    # XXX: loops.tangent is read only. Not positive how to handle
+        #    # this, or if we should just calculate it when re-exporting.
+        #    for l in mesh.loops:
+        #        assert(data[l.vertex_index][3] in (1.0, -1.0))
+        #        l.tangent[:] = data[l.vertex_index][0:3]
+        elif elem.name.startswith('BLENDINDICES'):
+            blend_indices[elem.SemanticIndex] = data
+        elif elem.name.startswith('BLENDWEIGHT'):
+            blend_weights[elem.SemanticIndex] = data
+        elif elem.name.startswith('TEXCOORD'):
+            texcoords[elem.SemanticIndex] = data
+        else:
+            print('NOTICE: Unhandled vertex element: %s' % elem.name)
+
+    return (blend_indices, blend_weights, texcoords, use_normals)
+
+def import_3dmigoto(operator, context, paths, name='test', textures={}, flip_texcoord_v=True):
+    vb, ib = load_3dmigoto_mesh(operator, paths)
+
+    mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(mesh.name, mesh)
+
+    # Attach the vertex buffer layout to the object for later exporting. Can't
+    # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
+    obj['3DMigoto:VBLayout'] = vb.layout.serialise()
+    obj['3DMigoto:VBStride'] = vb.layout.stride # FIXME: Strides of multiple vertex buffers
+
+    if ib is not None:
+        import_faces_from_ib(mesh, ib)
+        # Attach the index buffer layout to the object for later exporting.
+        obj['3DMigoto:IBFormat'] = ib.format
+    else:
+        import_faces_from_vb(mesh, vb)
+
+    (blend_indices, blend_weights, texcoords, use_normals) = import_vertices(mesh, vb)
+
+    import_uv_layers(mesh, obj, texcoords, flip_texcoord_v, textures)
+
+    import_vertex_groups(mesh, obj, blend_indices, blend_weights)
+
+    # Validate closes the loops so they don't disappear after edit mode and probably other important things:
+    mesh.validate(verbose=False, clean_customdata=False)  # *Very* important to not remove lnors here!
+    # Not actually sure update is necessary. It seems to update the vertex normals, not sure what else:
+    mesh.update()
+
+    # Must be done after validate step:
+    if use_normals:
+        import_normals_step2(mesh)
+    else:
+        mesh.calc_normals()
+
+    base = context.scene.objects.link(obj)
+    base.select = True
+
+# from export_obj:
+def mesh_triangulate(me):
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+
+def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals, tangents, texcoords):
+    vertex = {}
+    seen_offsets = set()
+
+    for elem in layout:
+        if elem.InputSlotClass != 'per-vertex':
+            continue
+
+        if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
+            continue
+        seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
+
+        if elem.name == 'POSITION':
+            vertex[elem.name] = list(blender_vertex.co)
+        elif elem.name == 'NORMAL':
+            # Want the custom normals we placed in the loops, not those in the
+            # vertices:
+            tmp = normals[blender_vertex.index]
+            vertex[elem.name] = tmp + ([0.0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+        elif elem.name.startswith('TANGENT'):
+            vertex[elem.name] = tangents[blender_vertex.index]
+        elif elem.name.startswith('BLENDINDICES'):
+            # TODO: Warn if vertex is in too many vertex groups for this layout
+            i = elem.SemanticIndex * 4
+            groups = blender_vertex.groups[i:i+4]
+            tmp = [ x.group for x in groups ]
+            vertex[elem.name] = tmp + ([0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+        elif elem.name.startswith('BLENDWEIGHT'):
+            # TODO: Warn if vertex is in too many vertex groups for this layout
+            i = elem.SemanticIndex * 4
+            groups = blender_vertex.groups[i:i+4]
+            tmp = [ x.weight for x in groups ]
+            vertex[elem.name] = tmp + ([0.0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+        elif elem.name.startswith('TEXCOORD'):
+            # FIXME: Handle texcoords of other dimensions
+            uvs = []
+            for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
+                uvs += texcoords[uv_name][blender_vertex.index]
+            vertex[elem.name] = uvs
+        if elem.name not in vertex:
+            print('NOTICE: Unhandled vertex element: %s' % elem.name)
+        else:
+            # print('%s: %s' % (elem.name, repr(vertex[elem.name])))
+            pass
+
+    return vertex
+
+def export_3dmigoto(operator, context, vb_path, ib_path):
+    objects = context.selected_objects
+
+    if len(objects) != 1:
+        raise Fatal('Exactly one object must be selected')
+
+    for obj in objects:
+        stride = obj['3DMigoto:VBStride']
+        layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
+        mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+        mesh_triangulate(mesh)
+
+        indices = [ l.vertex_index for l in mesh.loops ]
+        faces = [ indices[i:i+3] for i in range(0, len(indices), 3) ]
+        try:
+            ib_format = obj['3DMigoto:IBFormat']
+        except KeyError:
+            ib = None
+            raise Fatal('FIXME: Add capability to export without an index buffer')
+        else:
+            ib = IndexBuffer(faces, ib_format)
+
+        # Calculates tangents and makes loop normals valid (still with our
+        # custom normal data from import time):
+        mesh.calc_tangents()
+
+        normals = {}
+        tangents = {}
+        for l in mesh.loops:
+            tangents.setdefault(l.vertex_index, []).append((l.tangent, l.bitangent_sign))
+            normals.setdefault(l.vertex_index, []).append(l.normal)
+            #bitangent = l.bitangent_sign * l.normal.cross(l.tangent)
+
+        # Our custom normal data is in the loops, but we need it per-vertex.
+        # The per-vertex normals in Blender are missing our custom normal data,
+        # and the loop data can have several potentially distinct normals for
+        # the same vertex, so try averaging the loop normals for each vertex:
+        normals = {k: [ sum(c) / len(v) for c in zip(*map(list, v)) ] for k,v in normals.items()}
+
+        # As for the tangents... I'm not entirely sure what to do with these.
+        # I presume we can use the calculated tangents, but these tangents are
+        # in the loops, and again we need it per-vertex. The tangents in the
+        # loops for the same vertices don't match either, and DOAXVV included a
+        # 4th component for each tangent that was either +1 or -1. I need to
+        # read more on this, but I'm wondering if the bitangent sign may be
+        # that 4th component (and if so, what if the first three were actually
+        # the bitangent?), and may also be related to which tangent is in the
+        # loops.
+        # For now, until I know better, try just using one of the tangents for
+        # each vertex and the bitangent sign:
+        tangents = {k: list(v[0][0]) + [v[0][1]] for k,v in tangents.items()}
+
+        # UV coordinates are also stored in loops, but we need them per-vertex.
+        # Pull them out in a per-vertex manner, and warn about any vertices
+        # that have conflicting UV coordinates in a different loop (we could
+        # maybe duplicate the vertices if this becomes a significant
+        # problem?... Maybe we should do that anyway?).
+        texcoord_layers = {}
+        for uv_layer in mesh.uv_layers:
+            texcoords = {}
+
+            flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]
+            if flip_texcoord_v:
+                flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
+            else:
+                flip_uv = lambda uv: uv
+
+            for l in mesh.loops:
+                uv = flip_uv(uv_layer.data[l.index].uv)
+                if l.vertex_index not in texcoords:
+                    texcoords[l.vertex_index] = uv
+                elif texcoords[l.vertex_index] != uv:
+                    print('WARNING: Mismatched UV coordinate!', uv, texcoords[l.vertex_index])
+            texcoord_layers[uv_layer.name] = texcoords
+
+        vb = VertexBuffer(layout=layout)
+        for blender_vertex in mesh.vertices:
+            vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals, tangents, texcoord_layers)
+            vb.append(vertex)
+
+        vb.write(open(vb_path, 'wb'))
+        ib.write(open(ib_path, 'wb'))
+
+        operator.report({'INFO'}, 'Wrote %i vertices to %s' % (len(vb), vb_path))
+        operator.report({'INFO'}, 'Wrote %i indices to %s' % (len(ib), ib_path))
+
+class Import3DMigoto(bpy.types.Operator, ImportHelper):
+    """Load a mesh dumped with 3DMigoto's frame analysis"""
+    bl_idname = "import_mesh.3dmigoto"
+    bl_label = "Import 3DMigoto Mesh"
+    #bl_options = {'PRESET', 'UNDO'}
+    bl_options = {'UNDO'}
+
+    filename_ext = '.txt'
+    filter_glob = StringProperty(
+            default='*.txt',
+            options={'HIDDEN'},
+            )
+
+    files = CollectionProperty(
+            name="File Path",
+            type=bpy.types.OperatorFileListElement,
+            )
+
+    flip_texcoord_v = BoolProperty(
+            name="Flip TEXCOORD V",
+            description="Flip TEXCOORD V asix during importing",
+            default=True,
+            )
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align=True)
+        row.prop(self, 'flip_texcoord_v')
+
+    def get_vb_ib_paths(self):
+        buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)=[0-9a-f]+(?=[^0-9a-f])''')
+        dirname = os.path.dirname(self.filepath)
+        ret = set()
+        for path in self.files:
+            match = buffer_pattern.search(path.name)
+            assert(match is not None)
+            ib_pattern = path.name[:match.start()] + '-ib=*' + path.name[match.end():]
+            vb_pattern = path.name[:match.start()] + '-vb*=*' + path.name[match.end():]
+            ib_paths = glob(os.path.join(dirname, ib_pattern))
+            vb_paths = glob(os.path.join(dirname, vb_pattern))
+            if len(ib_paths) != 1 or len(vb_paths) != 1:
+                raise Fatal('Only draw calls using a single vertex buffer and a single index buffer are supported for now')
+            ret.add((vb_paths[0], ib_paths[0]))
+        return ret
+
+    def execute(self, context):
+        try:
+            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob'))
+            paths = self.get_vb_ib_paths()
+
+            name = os.path.basename(self.filepath)
+
+            import_3dmigoto(self, context, paths, name=name, **keywords)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
+class Export3DMigoto(bpy.types.Operator, ExportHelper):
+    """Export a mesh for re-injection into a game with 3DMigoto"""
+    bl_idname = "export_mesh.3dmigoto"
+    bl_label = "Export 3DMigoto Vertex & Index Buffers"
+
+    filename_ext = '.vb'
+    filter_glob = StringProperty(
+            default='*.vb',
+            options={'HIDDEN'},
+            )
+
+    def execute(self, context):
+        try:
+            vb_path = self.filepath
+            ib_path = os.path.splitext(vb_path)[0] + '.ib'
+
+            # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
+
+            export_3dmigoto(self, context, vb_path, ib_path)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
+def menu_func_import(self, context):
+    self.layout.operator(Import3DMigoto.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
+
+def menu_func_export(self, context):
+    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+
+def register():
+    bpy.utils.register_module(__name__)
+
+    bpy.types.INFO_MT_file_import.append(menu_func_import)
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+
+if __name__ == "__main__":
+    register()
