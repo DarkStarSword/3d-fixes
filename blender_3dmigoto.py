@@ -39,7 +39,7 @@ import json
 import copy
 
 import bpy
-from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper
+from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, orientation_helper_factory, axis_conversion
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
 
@@ -534,12 +534,15 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
                 operator.report({'ERROR'}, str(e))
         # FIXME: Group objects together
 
-def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True):
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
     vb, ib = load_3dmigoto_mesh(operator, paths)
 
     name = os.path.basename(paths[0][0])
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
+
+    global_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
+    obj.matrix_world = global_matrix
 
     # Attach the vertex buffer layout to the object for later exporting. Can't
     # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
@@ -728,7 +731,9 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
 
         ib.write(open(ib_path, 'wb'), operator=operator)
 
-class Import3DMigoto(bpy.types.Operator, ImportHelper):
+IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
+
+class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Load a mesh dumped with 3DMigoto's frame analysis"""
     bl_idname = "import_mesh.3dmigoto"
     bl_label = "Import 3DMigoto Mesh"
@@ -760,7 +765,7 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper):
 
     merge_meshes = BoolProperty(
             name="Merge meshes together",
-            description="Merge all selected meshes together into one object. Meshes must be related.",
+            description="Merge all selected meshes together into one object. Meshes must be related",
             default=False,
             )
 
