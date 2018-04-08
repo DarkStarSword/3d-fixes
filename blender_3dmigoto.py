@@ -35,11 +35,18 @@ import itertools
 import collections
 import os
 from glob import glob
+import json
+import copy
 
 import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
+
+def keys_to_ints(d):
+    return {int(k):v for k,v in d.items()}
+def keys_to_strings(d):
+    return {str(k):v for k,v in d.items()}
 
 class Fatal(Exception): pass
 
@@ -164,6 +171,8 @@ class InputLayout(object):
         buf = bytearray(self.stride)
 
         for semantic, data in vertex.items():
+            if semantic.startswith('~'):
+                continue
             elem = self.elems[semantic]
             data = elem.encode(data)
             buf[elem.AlignedByteOffset:elem.AlignedByteOffset + len(data)] = data
@@ -238,16 +247,33 @@ class VertexBuffer(object):
     def remap_blendindices(self, mapping):
         for vertex in self.vertices:
             for semantic in ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2'):
-                vertex[semantic] = tuple(mapping.get(x, x) for x in vertex[semantic])
+                if semantic in vertex:
+                    vertex['~' + semantic] = vertex[semantic]
+                    vertex[semantic] = tuple(mapping.get(x, x) for x in vertex[semantic])
+
+    def revert_blendindices_remap(self):
+        # Significantly faster than doing a deep copy
+        for vertex in self.vertices:
+            for semantic in list(vertex):
+                if semantic.startswith('BLENDINDICES'):
+                    vertex[semantic] = vertex['~' + semantic]
+                    del vertex['~' + semantic]
 
     def disable_blendweights(self):
         for vertex in self.vertices:
-            for semantic in ('BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2'):
-                vertex[semantic] = (0, 0, 0, 0)
+            for semantic in list(vertex):
+                if semantic.startswith('BLENDINDICES'):
+                    vertex[semantic] = (0, 0, 0, 0)
 
-    def write(self, output):
+    def write(self, output, operator=None):
         for vertex in self.vertices:
             output.write(self.layout.encode(vertex))
+
+        msg = 'Wrote %i vertices to %s' % (len(self), output.name)
+        if operator:
+            operator.report({'INFO'}, msg)
+        else:
+            print(msg)
 
     def __len__(self):
         return len(self.vertices)
@@ -262,43 +288,6 @@ class VertexBuffer(object):
         self.vertices.extend(other.vertices[self.vertex_count:])
         self.vertex_count = max(self.vertex_count, other.vertex_count)
         assert(len(self.vertices) == self.vertex_count)
-
-def create_blendindices_map(input, reference):
-    # match_keys = ('POSITION', 'BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2', 'NORMAL', 'TANGENT', 'TEXCOORD', 'TEXCOORD1') # Excludes too many
-    # match_keys = ('POSITION', 'BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2') # Excludes too many
-    match_keys = ('POSITION',) # Lots of conflicts, but works 100%
-    map_keys = ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2')
-    mask_keys = ('BLENDWEIGHT', 'BLENDWEIGHT1', 'BLENDWEIGHT2')
-    a = { tuple( v for k,v in x.items() if k in match_keys ): x for x in input }
-    b = { tuple( v for k,v in x.items() if k in match_keys ): x for x in reference }
-    common = set(a.keys()).intersection(b.keys())
-    # print(common)
-
-    mapping = {}
-    for k in common:
-        from_map  = tuple( v for k,v in a[k].items() if k in map_keys )
-        to_map    = tuple( v for k,v in b[k].items() if k in map_keys )
-        from_mask = tuple( v for k,v in a[k].items() if k in mask_keys )
-        to_mask   = tuple( v for k,v in b[k].items() if k in mask_keys )
-        for f1,t1,fmask1,tmask1 in zip(from_map, to_map, from_mask, to_mask):
-            for f2,t2,fmask2,tmask2 in zip(f1,t1,fmask1,tmask1):
-                if fmask2 == 0.0 or tmask2 == 0.0:
-                    continue
-                #print(f2, t2)
-                if f2 in mapping:
-                    if t2 in mapping[f2]:
-                        mapping[f2][t2] += 1
-                    else:
-                        mapping[f2][t2] = 1
-                else:
-                    mapping[f2] = {t2: 1}
-
-    for f, v in mapping.items():
-        mapping[f] = sorted(v, key = lambda x: v[x])[-1]
-        if len(v) > 1:
-            print('WARNING: Conflicting BLENDINDICES mapping: %s -> %s, using most common value: %s' % (f, list(v.keys()), mapping[f]))
-
-    return mapping
 
 class IndexBuffer(object):
     def __init__(self, *args):
@@ -344,26 +333,18 @@ class IndexBuffer(object):
         self.index_count += other.index_count
         self.faces.extend(other.faces)
 
-    def write(self, output):
+    def write(self, output, operator=None):
         for face in self.faces:
             output.write(self.encoder(face))
 
+        msg = 'Wrote %i indices to %s' % (len(self), output.name)
+        if operator:
+            operator.report({'INFO'}, msg)
+        else:
+            print(msg)
+
     def __len__(self):
         return len(self.faces) * 3
-
-#def main():
-#    parse_args()
-#
-#    input_vb = VertexBuffer(args.input)
-#
-#    mapping = {}
-#
-#    if args.reference:
-#        reference_vb = VertexBuffer(args.reference)
-#        mapping = create_blendindices_map(input_vb.vertices, reference_vb.vertices)
-#        input_vb.remap_blendindices(mapping)
-#
-#    input_vb.write(args.output)
 
 def load_3dmigoto_mesh(operator, paths):
     vb_paths, ib_paths = zip(*paths)
@@ -718,11 +699,22 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals, tangents, texcoord_layers)
             vb.append(vertex)
 
-        vb.write(open(vb_path, 'wb'))
-        ib.write(open(ib_path, 'wb'))
+        vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
-        operator.report({'INFO'}, 'Wrote %i vertices to %s' % (len(vb), vb_path))
-        operator.report({'INFO'}, 'Wrote %i indices to %s' % (len(ib), ib_path))
+        if '' not in vgmaps:
+            vb.write(open(vb_path, 'wb'), operator=operator)
+
+        base, ext = os.path.splitext(vb_path)
+        for (suffix, vgmap) in vgmaps.items():
+            path = vb_path
+            if suffix:
+                path = '%s-%s%s' % (base, suffix, ext)
+            print('Exporting %s...' % path)
+            vb.remap_blendindices(vgmap)
+            vb.write(open(path, 'wb'), operator=operator)
+            vb.revert_blendindices_remap()
+
+        ib.write(open(ib_path, 'wb'), operator=operator)
 
 class Import3DMigoto(bpy.types.Operator, ImportHelper):
     """Load a mesh dumped with 3DMigoto's frame analysis"""
@@ -805,23 +797,93 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suffix=''):
+    if not context.selected_objects:
+        raise Fatal('No object selected')
+
+    vgmap = json.load(open(filepath, 'r'))
+
+    if reverse:
+        vgmap = {int(v):int(k) for k,v in vgmap.items()}
+    else:
+        vgmap = {int(k):int(v) for k,v in vgmap.items()}
+
+    for obj in context.selected_objects:
+        if commit:
+            raise Fatal('commit not yet implemented')
+
+        prop_name = '3DMigoto:VGMap:' + suffix
+        obj[prop_name] = keys_to_strings(vgmap)
+
+        if '3DMigoto:VBLayout' not in obj:
+            operator.report({'WARNING'}, '%s is not a 3DMigoto mesh. Vertex Group Map custom property applied anyway' % obj.name)
+        else:
+            operator.report({'INFO'}, 'Applied vgmap to %s' % obj.name)
+
+class ApplyVGMap(bpy.types.Operator, ImportHelper):
+    """Apply vertex group map to the selected object"""
+    bl_idname = "mesh.3dmigoto_vertex_group_map"
+    bl_label = "Apply 3DMigoto vgmap"
+    bl_options = {'UNDO'}
+
+    filename_ext = '.vgmap'
+    filter_glob = StringProperty(
+            default='*.vgmap',
+            options={'HIDDEN'},
+            )
+
+    #commit = BoolProperty(
+    #        name="Commit to current mesh",
+    #        description="Directly alters the vertex groups of the current mesh, rather than performing the mapping at export time",
+    #        default=False,
+    #        )
+
+    reverse = BoolProperty(
+            name="Swap from & to",
+            description="Switch the order of the vertex group map - if this mesh is the 'to' and you want to use the bones in the 'from'",
+            default=False,
+            )
+
+    suffix = StringProperty(
+            name="Suffix",
+            description="Suffix to add to the vertex buffer filename when exporting, for bulk exports of a single mesh with multiple distinct vertex group maps",
+            default='',
+            )
+
+    def invoke(self, context, event):
+        self.suffix = ''
+        return ImportHelper.invoke(self, context, event)
+
+    def execute(self, context):
+        try:
+            keywords = self.as_keywords(ignore=('filter_glob',))
+            apply_vgmap(self, context, **keywords)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
 def menu_func_import(self, context):
     self.layout.operator(Import3DMigoto.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
 
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
 
+def menu_func_apply_vgmap(self, context):
+    self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
+
 def register():
     bpy.utils.register_module(__name__)
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
+    bpy.types.INFO_MT_file_import.append(menu_func_apply_vgmap)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
 
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.INFO_MT_file_import.remove(menu_func_apply_vgmap)
 
 if __name__ == "__main__":
     register()
