@@ -566,11 +566,13 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
     obj['3DMigoto:VBLayout'] = vb.layout.serialise()
     obj['3DMigoto:VBStride'] = vb.layout.stride # FIXME: Strides of multiple vertex buffers
+    obj['3DMigoto:FirstVertex'] = vb.first
 
     if ib is not None:
         import_faces_from_ib(mesh, ib)
         # Attach the index buffer layout to the object for later exporting.
         obj['3DMigoto:IBFormat'] = ib.format
+        obj['3DMigoto:FirstIndex'] = ib.first
     else:
         import_faces_from_vb(mesh, vb)
 
