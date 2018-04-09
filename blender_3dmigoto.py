@@ -10,13 +10,9 @@ bl_info = {
 }
 
 # TODO:
-# - On export, use (unique) loop vertices instead of regular blender vertices,
-#   since blender vertices may share the same position, but have different
-#   normals, UV coords, etc, which are associated with the loop vertices.
-#   - Reduce vertices on import to simplify mesh
+# - Option to reduce vertices on import to simplify mesh (can be noticeably lossy)
 # - Option to untesselate triangles on import?
 # - Operator to generate vertex group map
-# - Operator to remap bones
 # - Operator to set current pose from a constant buffer dump
 # - Generate bones, using vertex groups to approximate position
 #   - And maybe orientation & magnitude, but I'll have to figure out some funky
@@ -79,6 +75,10 @@ def Encoder(fmt):
         return lambda data: numpy.fromiter(data, numpy.int8).tobytes()
     raise Fatal('File uses an unsupported DXGI Format: %s' % fmt)
 
+components_pattern = re.compile(r'''(?<![0-9])[0-9]+(?![0-9])''')
+def format_components(fmt):
+    return len(components_pattern.findall(fmt))
+
 class InputLayoutElement(object):
     def __init__(self, arg):
         if isinstance(arg, io.IOBase):
@@ -131,6 +131,11 @@ class InputLayoutElement(object):
         if self.SemanticIndex:
             return '%s%i' % (self.SemanticName, self.SemanticIndex)
         return self.SemanticName
+
+    def pad(self, data, val):
+        padding = format_components(self.Format) - len(data)
+        assert(padding >= 0)
+        return data + [val]*padding
 
     def encode(self, data):
         # print(self.Format, data)
@@ -510,7 +515,11 @@ def import_vertices(mesh, vb):
 
         data = tuple( x[elem.name] for x in vb.vertices )
         if elem.name == 'POSITION':
-            mesh.vertices.foreach_set('co', unpack_list(data))
+            # Ensure positions are 3-dimensional:
+            if len(data[0]) == 4:
+                assert([x[3] for x in data] == [1.0]*len(data))
+            positions = [(x[0], x[1], x[2]) for x in data]
+            mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name == 'NORMAL':
             use_normals = True
             import_normals_step1(mesh, data)
@@ -546,7 +555,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
     vb, ib = load_3dmigoto_mesh(operator, paths)
 
-    name = os.path.basename(paths[0][0])
+    name = os.path.basename(list(paths)[0][0])
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
 
@@ -610,27 +619,24 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         if elem.name == 'POSITION':
-            vertex[elem.name] = list(blender_vertex.undeformed_co)
+            vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
         elif elem.name == 'NORMAL':
-            tmp = list(blender_loop_vertex.normal)
-            vertex[elem.name] = tmp + ([0.0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+            vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
         elif elem.name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
-            vertex[elem.name] = list(blender_loop_vertex.tangent) + [blender_loop_vertex.bitangent_sign]
+            vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
         elif elem.name.startswith('BLENDINDICES'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
             groups = blender_vertex.groups[i:i+4]
-            tmp = [ x.group for x in groups ]
-            vertex[elem.name] = tmp + ([0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+            vertex[elem.name] = elem.pad([ x.group for x in groups ], 0)
         elif elem.name.startswith('BLENDWEIGHT'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
             groups = blender_vertex.groups[i:i+4]
-            tmp = [ x.weight for x in groups ]
-            vertex[elem.name] = tmp + ([0.0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
+            vertex[elem.name] = elem.pad([ x.weight for x in groups ], 0.0)
         elif elem.name.startswith('TEXCOORD'):
             # FIXME: Handle texcoords of other dimensions
             uvs = []
