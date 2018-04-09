@@ -19,7 +19,6 @@ bl_info = {
 #     maths to have it follow the mesh like a cylinder
 # - Add support for games using multiple VBs per mesh, e.g. Witcher 3
 # - Test in a wider variety of games
-# - Fix exporter making assumptions about layout element sizes
 # - Handle TANGENT better on both import & export?
 
 import io
@@ -679,11 +678,6 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
         # custom normal data from import time):
         mesh.calc_tangents()
 
-        # UV coordinates are also stored in loops, but we need them per-vertex.
-        # Pull them out in a per-vertex manner, and warn about any vertices
-        # that have conflicting UV coordinates in a different loop (we could
-        # maybe duplicate the vertices if this becomes a significant
-        # problem?... Maybe we should do that anyway?).
         texcoord_layers = {}
         for uv_layer in mesh.uv_layers:
             texcoords = {}
