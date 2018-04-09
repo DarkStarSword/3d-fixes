@@ -183,6 +183,12 @@ class InputLayout(object):
     def __eq__(self, other):
         return self.elems == other.elems
 
+class HashableVertex(dict):
+    def __hash__(self):
+        # Convert keys and values into immutable types that can be hashed
+        immutable = tuple((k, tuple(v)) for k,v in sorted(self.items()))
+        return hash(immutable)
+
 class VertexBuffer(object):
     vb_elem_pattern = re.compile(r'''vb\d+\[\d*\]\+\d+ (?P<semantic>[^:]+): (?P<data>.*)$''')
 
@@ -293,17 +299,20 @@ class IndexBuffer(object):
     def __init__(self, *args):
         self.faces = []
         self.first = 0
-        self.index_count = None
+        self.index_count = 0
         self.format = 'DXGI_FORMAT_UNKNOWN'
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
             self.parse_ib(args[0])
         else:
-            self.faces, self.format = args
-            self.index_count = len(self.faces)
+            self.format, = args
 
         self.encoder = Encoder(self.format)
+
+    def append(self, face):
+        self.faces.append(face)
+        self.index_count += len(face)
 
     def parse_ib(self, f):
         for line in map(str.strip, f):
@@ -587,7 +596,8 @@ def mesh_triangulate(me):
     bm.to_mesh(me)
     bm.free()
 
-def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals, tangents, texcoords):
+def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords):
+    blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
     vertex = {}
     seen_offsets = set()
 
@@ -600,14 +610,15 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         if elem.name == 'POSITION':
-            vertex[elem.name] = list(blender_vertex.co)
+            vertex[elem.name] = list(blender_vertex.undeformed_co)
         elif elem.name == 'NORMAL':
-            # Want the custom normals we placed in the loops, not those in the
-            # vertices:
-            tmp = normals[blender_vertex.index]
+            tmp = list(blender_loop_vertex.normal)
             vertex[elem.name] = tmp + ([0.0]*(4-len(tmp))) # FIXME: Dynamically extend based on format
         elif elem.name.startswith('TANGENT'):
-            vertex[elem.name] = tangents[blender_vertex.index]
+            # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
+            # but guessing maybe the bitangent sign? Not even sure it is used...
+            # FIXME: Other games
+            vertex[elem.name] = list(blender_loop_vertex.tangent) + [blender_loop_vertex.bitangent_sign]
         elif elem.name.startswith('BLENDINDICES'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
@@ -624,7 +635,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals
             # FIXME: Handle texcoords of other dimensions
             uvs = []
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
-                uvs += texcoords[uv_name][blender_vertex.index]
+                uvs += texcoords[uv_name][blender_loop_vertex.index]
             vertex[elem.name] = uvs
         if elem.name not in vertex:
             print('NOTICE: Unhandled vertex element: %s' % elem.name)
@@ -654,37 +665,11 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
             ib = None
             raise Fatal('FIXME: Add capability to export without an index buffer')
         else:
-            ib = IndexBuffer(faces, ib_format)
+            ib = IndexBuffer(ib_format)
 
         # Calculates tangents and makes loop normals valid (still with our
         # custom normal data from import time):
         mesh.calc_tangents()
-
-        normals = {}
-        tangents = {}
-        for l in mesh.loops:
-            tangents.setdefault(l.vertex_index, []).append((l.tangent, l.bitangent_sign))
-            normals.setdefault(l.vertex_index, []).append(l.normal)
-            #bitangent = l.bitangent_sign * l.normal.cross(l.tangent)
-
-        # Our custom normal data is in the loops, but we need it per-vertex.
-        # The per-vertex normals in Blender are missing our custom normal data,
-        # and the loop data can have several potentially distinct normals for
-        # the same vertex, so try averaging the loop normals for each vertex:
-        normals = {k: [ sum(c) / len(v) for c in zip(*map(list, v)) ] for k,v in normals.items()}
-
-        # As for the tangents... I'm not entirely sure what to do with these.
-        # I presume we can use the calculated tangents, but these tangents are
-        # in the loops, and again we need it per-vertex. The tangents in the
-        # loops for the same vertices don't match either, and DOAXVV included a
-        # 4th component for each tangent that was either +1 or -1. I need to
-        # read more on this, but I'm wondering if the bitangent sign may be
-        # that 4th component (and if so, what if the first three were actually
-        # the bitangent?), and may also be related to which tangent is in the
-        # loops.
-        # For now, until I know better, try just using one of the tangents for
-        # each vertex and the bitangent sign:
-        tangents = {k: list(v[0][0]) + [v[0][1]] for k,v in tangents.items()}
 
         # UV coordinates are also stored in loops, but we need them per-vertex.
         # Pull them out in a per-vertex manner, and warn about any vertices
@@ -703,15 +688,27 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
 
             for l in mesh.loops:
                 uv = flip_uv(uv_layer.data[l.index].uv)
-                if l.vertex_index not in texcoords:
-                    texcoords[l.vertex_index] = uv
-                elif texcoords[l.vertex_index] != uv:
-                    print('WARNING: Mismatched UV coordinate!', uv, texcoords[l.vertex_index])
+                texcoords[l.index] = uv
             texcoord_layers[uv_layer.name] = texcoords
 
+        # Blender's vertices have unique positions, but may have multiple
+        # normals, tangents, UV coordinates, etc - these are stored in the
+        # loops. To export back to DX we need these combined together such that
+        # a vertex is a unique set of all attributes, but we don't want to
+        # completely blow this out - we still want to reuse identical vertices
+        # via the index buffer. There might be a convenience function in
+        # Blender to do this, but it's easy enough to do this ourselves
+        indexed_vertices = collections.OrderedDict()
+        for poly in mesh.polygons:
+            face = []
+            for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
+                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+                face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
+            if ib is not None:
+                ib.append(face)
+
         vb = VertexBuffer(layout=layout)
-        for blender_vertex in mesh.vertices:
-            vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_vertex, layout, normals, tangents, texcoord_layers)
+        for vertex in indexed_vertices:
             vb.append(vertex)
 
         vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
@@ -729,7 +726,8 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
             vb.write(open(path, 'wb'), operator=operator)
             vb.revert_blendindices_remap()
 
-        ib.write(open(ib_path, 'wb'), operator=operator)
+        if ib is not None:
+            ib.write(open(ib_path, 'wb'), operator=operator)
 
 IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
 
