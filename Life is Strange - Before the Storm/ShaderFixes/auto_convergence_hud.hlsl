@@ -243,8 +243,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 [maxvertexcount(256)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
-
-	if (!state[0].show_hud || (time - state[0].last_adjust_time > auto_convergence_hud_timeout))
+	if (!state[0].show_hud || (time - state[0].last_adjust_time > auto_convergence_hud_timeout) || (StereoParams.Load(0).x == 0))
 		return;
 
 	get_meta();
