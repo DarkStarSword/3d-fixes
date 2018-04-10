@@ -611,6 +611,10 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
     vertex = {}
     seen_offsets = set()
 
+    # TODO: Warn if vertex is in too many vertex groups for this layout,
+    # ignoring groups with weight=0.0
+    vertex_groups = sorted(blender_vertex.groups, key=lambda x: x.weight, reverse=True)
+
     for elem in layout:
         if elem.InputSlotClass != 'per-vertex':
             continue
@@ -629,15 +633,12 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # FIXME: Other games
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
         elif elem.name.startswith('BLENDINDICES'):
-            # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
-            groups = blender_vertex.groups[i:i+4]
-            vertex[elem.name] = elem.pad([ x.group for x in groups ], 0)
+            vertex[elem.name] = elem.pad([ x.group for x in vertex_groups[i:i+4] ], 0)
         elif elem.name.startswith('BLENDWEIGHT'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
-            groups = blender_vertex.groups[i:i+4]
-            vertex[elem.name] = elem.pad([ x.weight for x in groups ], 0.0)
+            vertex[elem.name] = elem.pad([ x.weight for x in vertex_groups[i:i+4] ], 0.0)
         elif elem.name.startswith('TEXCOORD'):
             # FIXME: Handle texcoords of other dimensions
             uvs = []
