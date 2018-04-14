@@ -13,14 +13,21 @@ itself.
 [1]: https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
 [2]: https://docs.google.com/spreadsheets/d/1rkWZB4DcKsKydZgpZzXrj7f1MGXRMJ3GDiqmEXeVQUw/edit#gid=1887486128
 
-Costume & Character Mods
-------------------------
+Costume Mods
+------------
 This mod primarily adds support for NVIDIA 3D Vision to the game, but it is
-also required for the costume and mesh mods available for this game. If this is
-why you are here you can ignore any of the information below that is specific
-to 3D Vision users, and just follow the instructions on the website that led
-you here - you will also need the starter mod pack from the other site, and any
-other third party mods you wish to use.
+also required for the costume mods available for this game. If this is why you
+are here you can ignore any of the information below that is specific to 3D
+Vision users and just follow the instructions on the website that led you here.
+
+This mod by itself will not change any costumes - for that you will need mod
+packs available from elsewhere and extract them into the Mods directory. You
+don't need to restart the game after installing a new mod - just press F10 in
+game to load any new mods.
+
+Some mod packs ship with optional parts of the mods that are not enabled by
+default - look for any files or directories in the mod pack that is named
+"DISABLED something", and remove the "DISABLED" from the filename to enable it.
 
 Installing (3D Vision + Costume Mod users)
 ------------------------------------------
