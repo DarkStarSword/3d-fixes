@@ -13,8 +13,39 @@ itself.
 [1]: https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
 [2]: https://docs.google.com/spreadsheets/d/1rkWZB4DcKsKydZgpZzXrj7f1MGXRMJ3GDiqmEXeVQUw/edit#gid=1887486128
 
-Auto-Convergence
-----------------
+Costume & Character Mods
+------------------------
+This mod primarily adds support for NVIDIA 3D Vision to the game, but it is
+also required for the costume and mesh mods available for this game. If this is
+why you are here you can ignore any of the information below that is specific
+to 3D Vision users, and just follow the instructions on the website that led
+you here - you will also need the starter mod pack from the other site, and any
+other third party mods you wish to use.
+
+Installing (3D Vision + Costume Mod users)
+------------------------------------------
+1. Extract the contents of the zip file to the game directory.
+
+2. In the launcher (not the game), open settings (2nd button from the top) and
+   change everything to the left-most option (lower quality options are known
+   not to work).
+
+3. **IMPORTANT (3D Vision Users only): Once the main game launches, press F7 to
+   switch to exclusive full screen mode to engage 3D. Repeat this anytime you
+   alt+tab out of the game to re-engage 3D.**
+
+Keys (3D Vision + Costume Mod Users)
+------------------------------------
+- Mouse back button: Toggle HUD visibility
+
+Keys (3D Vision Users Only)
+---------------------------
+- ~: Toggle auto-convergence feature on and off
+- Ctrl+F5: Reduce popout when auto-convergence is on
+- Ctrl+F6: Increase popout when auto-convergence is on
+
+Auto-Convergence (3D Vision Users Only)
+---------------------------------------
 This fix uses my new auto-convergence feature (first introduced in my Life is
 Strange: Before the Storm fix) to automatically adjust the convergence while
 playing to suit the various scenes and quick camera angles changes this game
@@ -34,49 +65,35 @@ such as the initial popout, minimum and maximum allowable convergence values,
 thresholds for how far the convergence is allowed to get away from the target,
 and threshold for the anti-judder countermeasure.
 
-Fixed
------
+3D Vision Fixes
+---------------
 - Lights & shadows
 - Water
 - HUD
 - Added automatic convergence
 
-Update v1.1
------------
+3D Vision Update v1.1
+---------------------
 - Fixed ripples
 - Fixed auto-convergence popout bias changing on full screen
 - Use a lower convergence preset when Burst is activated
 
-Installing
-----------
-1. Extract the contents of the zip file to the game directory.
+Update v1.2
+-----------
+- Fixed shadow glitch
+- This fix now forms the basis for third party costume mods
 
-2. In the launcher (not the game), open settings (2nd button from the top) and
-   change everything to the left-most option (this is what I tested on - other
-   options may or may not work).
-
-3. **IMPORTANT: Once the main game launches, press F7 to switch to exclusive
-   full screen mode to engage 3D. Repeat this anytime you alt+tab out of the
-   game to re-engage 3D.**
-
-Keys
-----
-- Mouse back button: Toggle HUD visibility
-- ~: Toggle auto-convergence feature on and off
-- Ctrl+F5: Reduce popout when auto-convergence is on
-- Ctrl+F6: Increase popout when auto-convergence is on
-
-Known Issues
-------------
-The news and Gacha probabilities windows are blank. Alt+tab out of the game
-(not just disabling 3D) and they will appear, and press F7 to re-enable 3D when
-done, but of course it is all in Japanese anyway. Visit [this site][3] for
-English translations.
+Known Issues (3D Vision Users Only)
+-----------------------------------
+The news and Gacha probabilities windows and certain text boxes are blank while
+in full screen. Alt+tab out of the game (not just disabling 3D) and they will
+appear, and press F7 to re-enable 3D when done, but of course it is all in
+Japanese anyway. Visit [this site][3] for English translations.
 
 [3]: http://www.doax-venusvacation.com
 
-Side-by-Side / Top-and-Bottom Output Modes
-------------------------------------------
+Side-by-Side / Top-and-Bottom Output Modes (3D Vision Users Only)
+-----------------------------------------------------------------
 This fix is bundled with the SBS / TAB output mode support in 3DMigoto. To
 enable it, edit the d3dx.ini, find the [Present] section and uncomment (remove
 the semicolon) the line that reads:
