@@ -771,25 +771,28 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
             )
 
     def get_vb_ib_paths(self):
-        buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)=[0-9a-f]+(?=[^0-9a-f])''')
+        buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
+
         dirname = os.path.dirname(self.filepath)
         ret = set()
 
+        files = []
         if self.load_related:
-            files = []
             for filename in self.files:
                 match = buffer_pattern.search(filename.name)
-                assert(match is not None)
+                if match is None or not match.group('hash'):
+                    continue
                 paths = glob(os.path.join(dirname, '*%s*.txt' % filename.name[match.start():match.end()]))
                 files.extend([os.path.basename(x) for x in paths])
-        else:
+        if not files:
             files = [x.name for x in self.files]
 
         for filename in files:
             match = buffer_pattern.search(filename)
-            assert(match is not None)
-            ib_pattern = filename[:match.start()] + '-ib=*' + filename[match.end():]
-            vb_pattern = filename[:match.start()] + '-vb*=*' + filename[match.end():]
+            if match is None:
+                raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
+            ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
+            vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
             vb_paths = glob(os.path.join(dirname, vb_pattern))
             if len(ib_paths) != 1 or len(vb_paths) != 1:
