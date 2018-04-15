@@ -791,6 +791,8 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
             match = buffer_pattern.search(filename)
             if match is None:
                 raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
+            if not match.group('hash'):
+                self.report({'WARNING'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete')
             ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
             vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
