@@ -899,7 +899,7 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
                 raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
             use_bin = self.load_buf
             if not match.group('hash') and not use_bin:
-                self.report({'WARNING'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete, attempting to use .buf files instead')
+                self.report({'INFO'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete, Using .buf files instead')
                 use_bin = True # FIXME: Ask
             ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
             vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
