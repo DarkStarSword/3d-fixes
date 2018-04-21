@@ -725,6 +725,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
 
     base = context.scene.objects.link(obj)
     base.select = True
+    context.scene.objects.active = obj
 
     return obj
 
@@ -792,86 +793,85 @@ def write_fmt_file(f, vb, ib):
     f.write(vb.layout.to_string())
 
 def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
-    objects = context.selected_objects
+    obj = context.object
 
-    if len(objects) != 1:
-        raise Fatal('Exactly one object must be selected')
+    if obj is None:
+        raise Fatal('No object selected')
 
-    for obj in objects:
-        stride = obj['3DMigoto:VBStride']
-        layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
-        mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-        mesh_triangulate(mesh)
+    stride = obj['3DMigoto:VBStride']
+    layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
+    mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+    mesh_triangulate(mesh)
 
-        indices = [ l.vertex_index for l in mesh.loops ]
-        faces = [ indices[i:i+3] for i in range(0, len(indices), 3) ]
-        try:
-            ib_format = obj['3DMigoto:IBFormat']
-        except KeyError:
-            ib = None
-            raise Fatal('FIXME: Add capability to export without an index buffer')
+    indices = [ l.vertex_index for l in mesh.loops ]
+    faces = [ indices[i:i+3] for i in range(0, len(indices), 3) ]
+    try:
+        ib_format = obj['3DMigoto:IBFormat']
+    except KeyError:
+        ib = None
+        raise Fatal('FIXME: Add capability to export without an index buffer')
+    else:
+        ib = IndexBuffer(ib_format)
+
+    # Calculates tangents and makes loop normals valid (still with our
+    # custom normal data from import time):
+    mesh.calc_tangents()
+
+    texcoord_layers = {}
+    for uv_layer in mesh.uv_layers:
+        texcoords = {}
+
+        flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]
+        if flip_texcoord_v:
+            flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
         else:
-            ib = IndexBuffer(ib_format)
+            flip_uv = lambda uv: uv
 
-        # Calculates tangents and makes loop normals valid (still with our
-        # custom normal data from import time):
-        mesh.calc_tangents()
+        for l in mesh.loops:
+            uv = flip_uv(uv_layer.data[l.index].uv)
+            texcoords[l.index] = uv
+        texcoord_layers[uv_layer.name] = texcoords
 
-        texcoord_layers = {}
-        for uv_layer in mesh.uv_layers:
-            texcoords = {}
-
-            flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]
-            if flip_texcoord_v:
-                flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
-            else:
-                flip_uv = lambda uv: uv
-
-            for l in mesh.loops:
-                uv = flip_uv(uv_layer.data[l.index].uv)
-                texcoords[l.index] = uv
-            texcoord_layers[uv_layer.name] = texcoords
-
-        # Blender's vertices have unique positions, but may have multiple
-        # normals, tangents, UV coordinates, etc - these are stored in the
-        # loops. To export back to DX we need these combined together such that
-        # a vertex is a unique set of all attributes, but we don't want to
-        # completely blow this out - we still want to reuse identical vertices
-        # via the index buffer. There might be a convenience function in
-        # Blender to do this, but it's easy enough to do this ourselves
-        indexed_vertices = collections.OrderedDict()
-        for poly in mesh.polygons:
-            face = []
-            for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
-                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
-                face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
-            if ib is not None:
-                ib.append(face)
-
-        vb = VertexBuffer(layout=layout)
-        for vertex in indexed_vertices:
-            vb.append(vertex)
-
-        vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
-
-        if '' not in vgmaps:
-            vb.write(open(vb_path, 'wb'), operator=operator)
-
-        base, ext = os.path.splitext(vb_path)
-        for (suffix, vgmap) in vgmaps.items():
-            path = vb_path
-            if suffix:
-                path = '%s-%s%s' % (base, suffix, ext)
-            print('Exporting %s...' % path)
-            vb.remap_blendindices(vgmap)
-            vb.write(open(path, 'wb'), operator=operator)
-            vb.revert_blendindices_remap()
-
+    # Blender's vertices have unique positions, but may have multiple
+    # normals, tangents, UV coordinates, etc - these are stored in the
+    # loops. To export back to DX we need these combined together such that
+    # a vertex is a unique set of all attributes, but we don't want to
+    # completely blow this out - we still want to reuse identical vertices
+    # via the index buffer. There might be a convenience function in
+    # Blender to do this, but it's easy enough to do this ourselves
+    indexed_vertices = collections.OrderedDict()
+    for poly in mesh.polygons:
+        face = []
+        for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
+            vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+            face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
         if ib is not None:
-            ib.write(open(ib_path, 'wb'), operator=operator)
+            ib.append(face)
 
-        # Write format reference file
-        write_fmt_file(open(fmt_path, 'w'), vb, ib)
+    vb = VertexBuffer(layout=layout)
+    for vertex in indexed_vertices:
+        vb.append(vertex)
+
+    vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
+
+    if '' not in vgmaps:
+        vb.write(open(vb_path, 'wb'), operator=operator)
+
+    base, ext = os.path.splitext(vb_path)
+    for (suffix, vgmap) in vgmaps.items():
+        path = vb_path
+        if suffix:
+            path = '%s-%s%s' % (base, suffix, ext)
+        print('Exporting %s...' % path)
+        vb.remap_blendindices(vgmap)
+        vb.write(open(path, 'wb'), operator=operator)
+        vb.revert_blendindices_remap()
+
+    if ib is not None:
+        ib.write(open(ib_path, 'wb'), operator=operator)
+
+    # Write format reference file
+    write_fmt_file(open(fmt_path, 'w'), vb, ib)
 
 IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
 
