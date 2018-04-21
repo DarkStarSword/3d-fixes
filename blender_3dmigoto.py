@@ -1006,9 +1006,12 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
     def get_vb_ib_paths(self):
         vb_bin_path = os.path.splitext(self.filepath)[0] + '.vb'
         ib_bin_path = os.path.splitext(self.filepath)[0] + '.ib'
+        fmt_path = os.path.splitext(self.filepath)[0] + '.fmt'
         if not all(map(os.path.exists, (vb_bin_path, ib_bin_path))):
             raise Fatal('Unable to find matching .vb and .ib files')
-        return (vb_bin_path, ib_bin_path)
+        if not os.path.exists(fmt_path):
+            fmt_path = None
+        return (vb_bin_path, ib_bin_path, fmt_path)
 
     def execute(self, context):
         # I'm not sure how to find the Import3DMigotoReferenceInputFormat
@@ -1020,11 +1023,15 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         try:
             # TODO: Locate corresponding .txt files automatically if this is a
             # frame analysis dump, or save a .fmt file along with the buffers
-            vb_path, ib_path = self.get_vb_ib_paths()
-            migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
-            migoto_raw_import_options['vb_path'] = vb_path
-            migoto_raw_import_options['ib_path'] = ib_path
-            bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
+            vb_path, ib_path, fmt_path = self.get_vb_ib_paths()
+
+            if fmt_path is not None:
+                import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, **migoto_raw_import_options)
+            else:
+                migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
+                migoto_raw_import_options['vb_path'] = vb_path
+                migoto_raw_import_options['ib_path'] = ib_path
+                bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
