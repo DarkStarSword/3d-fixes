@@ -834,10 +834,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
 
 IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
 
-class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
-    """Load a mesh dumped with 3DMigoto's frame analysis"""
-    bl_idname = "import_mesh.3dmigoto"
-    bl_label = "Import 3DMigoto Mesh"
+class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
+    """Import a mesh dumped with 3DMigoto's frame analysis"""
+    bl_idname = "import_mesh.migoto_frame_analysis"
+    bl_label = "Import 3DMigoto Frame Analysis Dump"
     #bl_options = {'PRESET', 'UNDO'}
     bl_options = {'UNDO'}
 
@@ -939,9 +939,96 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, **kwargs):
+    paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True),)
+    return import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
+
+class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
+    """Import raw 3DMigoto vertex and index buffers"""
+    bl_idname = "import_mesh.migoto_raw_buffers"
+    bl_label = "Import 3DMigoto Raw Buffers"
+    #bl_options = {'PRESET', 'UNDO'}
+    bl_options = {'UNDO'}
+
+    filename_ext = '.vb;.ib'
+    filter_glob = StringProperty(
+            default='*.vb;*.ib',
+            options={'HIDDEN'},
+            )
+
+    flip_texcoord_v = BoolProperty(
+            name="Flip TEXCOORD V",
+            description="Flip TEXCOORD V asix during importing",
+            default=True,
+            )
+
+    def get_vb_ib_paths(self):
+        vb_bin_path = os.path.splitext(self.filepath)[0] + '.vb'
+        ib_bin_path = os.path.splitext(self.filepath)[0] + '.ib'
+        if not all(map(os.path.exists, (vb_bin_path, ib_bin_path))):
+            raise Fatal('Unable to find matching .vb and .ib files')
+        return (vb_bin_path, ib_bin_path)
+
+    def execute(self, context):
+        # I'm not sure how to find the Import3DMigotoReferenceInputFormat
+        # instance that Blender instantiated to pass the values from one
+        # import dialog to another, but since everything is modal we can
+        # just use globals:
+        global migoto_raw_import_options
+
+        try:
+            # TODO: Locate corresponding .txt files automatically if this is a
+            # frame analysis dump, or save a .fmt file along with the buffers
+            vb_path, ib_path = self.get_vb_ib_paths()
+            migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
+            migoto_raw_import_options['vb_path'] = vb_path
+            migoto_raw_import_options['ib_path'] = ib_path
+            bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
+class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_mesh.migoto_input_format"
+    bl_label = "Select a .txt file with matching format"
+    bl_options = {'UNDO', 'INTERNAL'}
+
+    filename_ext = '.txt'
+    filter_glob = StringProperty(
+            default='*.txt',
+            options={'HIDDEN'},
+            )
+
+    def get_vb_ib_paths(self):
+        buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
+
+        dirname = os.path.dirname(self.filepath)
+        filename = os.path.basename(self.filepath)
+
+        match = buffer_pattern.search(filename)
+        if match is None:
+            raise Fatal('Reference .txt filename does not look like a 3DMigoto timestamped Frame Analysis Dump')
+        ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
+        vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
+        ib_paths = glob(os.path.join(dirname, ib_pattern))
+        vb_paths = glob(os.path.join(dirname, vb_pattern))
+        if len(ib_paths) < 1 or len(vb_paths) < 1:
+            raise Fatal('Unable to locate reference files for both vertex buffer and index buffer format descriptions')
+        return (vb_paths[0], ib_paths[0])
+
+    def execute(self, context):
+        global migoto_raw_import_options
+
+        try:
+            vb_fmt_path, ib_fmt_path = self.get_vb_ib_paths()
+            import_3dmigoto_raw_buffers(self, context, vb_fmt_path, ib_fmt_path, **migoto_raw_import_options)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
 class Export3DMigoto(bpy.types.Operator, ExportHelper):
     """Export a mesh for re-injection into a game with 3DMigoto"""
-    bl_idname = "export_mesh.3dmigoto"
+    bl_idname = "export_mesh.migoto"
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
 
     filename_ext = '.vb'
@@ -987,7 +1074,7 @@ def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suf
 
 class ApplyVGMap(bpy.types.Operator, ImportHelper):
     """Apply vertex group map to the selected object"""
-    bl_idname = "mesh.3dmigoto_vertex_group_map"
+    bl_idname = "mesh.migoto_vertex_group_map"
     bl_label = "Apply 3DMigoto vgmap"
     bl_options = {'UNDO'}
 
@@ -1027,8 +1114,11 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
-def menu_func_import(self, context):
-    self.layout.operator(Import3DMigoto.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
+def menu_func_import_fa(self, context):
+    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
+
+def menu_func_import_raw(self, context):
+    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
 
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
@@ -1039,14 +1129,16 @@ def menu_func_apply_vgmap(self, context):
 def register():
     bpy.utils.register_module(__name__)
 
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
+    bpy.types.INFO_MT_file_import.append(menu_func_import_fa)
+    bpy.types.INFO_MT_file_import.append(menu_func_import_raw)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
     bpy.types.INFO_MT_file_import.append(menu_func_apply_vgmap)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
 
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+    bpy.types.INFO_MT_file_import.remove(menu_func_import_fa)
+    bpy.types.INFO_MT_file_import.remove(menu_func_import_raw)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
     bpy.types.INFO_MT_file_import.remove(menu_func_apply_vgmap)
 
