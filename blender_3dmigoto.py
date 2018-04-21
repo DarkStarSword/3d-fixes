@@ -32,6 +32,7 @@ import os
 from glob import glob
 import json
 import copy
+import textwrap
 
 import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, orientation_helper_factory, axis_conversion
@@ -122,6 +123,25 @@ class InputLayoutElement(object):
         d['InstanceDataStepRate'] = self.InstanceDataStepRate
         return d
 
+    def to_string(self, indent=2):
+        return textwrap.indent(textwrap.dedent('''
+            SemanticName: %s
+            SemanticIndex: %i
+            Format: %s
+            InputSlot: %i
+            AlignedByteOffset: %i
+            InputSlotClass: %s
+            InstanceDataStepRate: %i
+        ''').lstrip() % (
+            self.SemanticName,
+            self.SemanticIndex,
+            self.Format,
+            self.InputSlot,
+            self.AlignedByteOffset,
+            self.InputSlotClass,
+            self.InstanceDataStepRate,
+        ), ' '*indent)
+
     def from_dict(self, d):
         self.SemanticName = d['SemanticName']
         self.SemanticIndex = d['SemanticIndex']
@@ -179,6 +199,13 @@ class InputLayout(object):
     def serialise(self):
         return [x.to_dict() for x in self.elems.values()]
 
+    def to_string(self):
+        ret = ''
+        for i, elem in enumerate(self.elems.values()):
+            ret += 'element[%i]:\n' % i
+            ret += elem.to_string()
+        return ret
+
     def parse_element(self, f):
         elem = InputLayoutElement(f)
         self.elems[elem.name] = elem
@@ -230,6 +257,7 @@ class VertexBuffer(object):
         self.first = 0
         self.vertex_count = 0
         self.offset = 0
+        self.topology = 'trianglelist'
 
         if f is not None:
             self.parse_vb_txt(f, load_vertices)
@@ -248,6 +276,7 @@ class VertexBuffer(object):
             if line.startswith('element['):
                 self.layout.parse_element(f)
             if line.startswith('topology:'):
+                self.topology = line[10:]
                 if line != 'topology: trianglelist':
                     raise Fatal('"%s" is not yet supported' % line)
             if line.startswith('vertex-data:'):
@@ -354,6 +383,7 @@ class IndexBuffer(object):
         self.index_count = 0
         self.format = 'DXGI_FORMAT_UNKNOWN'
         self.offset = 0
+        self.topology = 'trianglelist'
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
@@ -376,6 +406,7 @@ class IndexBuffer(object):
             elif line.startswith('index count:'):
                 self.index_count = int(line[13:])
             elif line.startswith('topology:'):
+                self.topology = line[10:]
                 if line != 'topology: trianglelist':
                     raise Fatal('"%s" is not yet supported' % line)
             elif line.startswith('format:'):
@@ -753,7 +784,14 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
 
     return vertex
 
-def export_3dmigoto(operator, context, vb_path, ib_path):
+def write_fmt_file(f, vb, ib):
+    f.write('stride: %i\n' % vb.layout.stride)
+    f.write('topology: %s\n' % vb.topology)
+    if ib is not None:
+        f.write('format: %s\n' % ib.format)
+    f.write(vb.layout.to_string())
+
+def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     objects = context.selected_objects
 
     if len(objects) != 1:
@@ -831,6 +869,9 @@ def export_3dmigoto(operator, context, vb_path, ib_path):
 
         if ib is not None:
             ib.write(open(ib_path, 'wb'), operator=operator)
+
+        # Write format reference file
+        write_fmt_file(open(fmt_path, 'w'), vb, ib)
 
 IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
 
@@ -1041,10 +1082,11 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
         try:
             vb_path = self.filepath
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
+            fmt_path = os.path.splitext(vb_path)[0] + '.fmt'
 
             # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
-            export_3dmigoto(self, context, vb_path, ib_path)
+            export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
