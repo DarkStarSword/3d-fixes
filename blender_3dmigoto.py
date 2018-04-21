@@ -1041,13 +1041,16 @@ class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
     bl_label = "Select a .txt file with matching format"
     bl_options = {'UNDO', 'INTERNAL'}
 
-    filename_ext = '.txt'
+    filename_ext = '.txt;.fmt'
     filter_glob = StringProperty(
-            default='*.txt',
+            default='*.txt;*.fmt',
             options={'HIDDEN'},
             )
 
     def get_vb_ib_paths(self):
+        if os.path.splitext(self.filepath)[1].lower() == '.fmt':
+            return (self.filepath, self.filepath)
+
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
 
         dirname = os.path.dirname(self.filepath)
