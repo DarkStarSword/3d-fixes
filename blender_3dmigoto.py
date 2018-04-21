@@ -55,28 +55,40 @@ s32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_SINT''')
 s16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_SINT''')
 s8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_SINT''')
 
-def Encoder(fmt):
+def EncoderDecoder(fmt):
     if f32_pattern.match(fmt):
-        return lambda data: b''.join(struct.pack('<f', x) for x in data)
+        return (lambda data: b''.join(struct.pack('<f', x) for x in data),
+                lambda data: numpy.frombuffer(data, numpy.float32).tolist())
     if f16_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.float16).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.float16).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.float16).tolist())
     if u32_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.uint32).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.uint32).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.uint32).tolist())
     if u16_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.uint16).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.uint16).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.uint16).tolist())
     if u8_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.uint8).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.uint8).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.uint8).tolist())
     if s32_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.int32).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.int32).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.int32).tolist())
     if s16_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.int16).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.int16).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.int16).tolist())
     if s8_pattern.match(fmt):
-        return lambda data: numpy.fromiter(data, numpy.int8).tobytes()
+        return (lambda data: numpy.fromiter(data, numpy.int8).tobytes(),
+                lambda data: numpy.frombuffer(data, numpy.int8).tolist())
     raise Fatal('File uses an unsupported DXGI Format: %s' % fmt)
 
 components_pattern = re.compile(r'''(?<![0-9])[0-9]+(?![0-9])''')
 def format_components(fmt):
     return len(components_pattern.findall(fmt))
+
+def format_size(fmt):
+    matches = components_pattern.findall(fmt)
+    return sum(map(int, matches)) // 8
 
 class InputLayoutElement(object):
     def __init__(self, arg):
@@ -85,7 +97,7 @@ class InputLayoutElement(object):
         else:
             self.from_dict(arg)
 
-        self.encoder = Encoder(self.Format)
+        self.encoder, self.decoder = EncoderDecoder(self.Format)
 
     def from_file(self, f):
         self.SemanticName = self.next_validate(f, 'SemanticName')
@@ -136,9 +148,15 @@ class InputLayoutElement(object):
         assert(padding >= 0)
         return data + [val]*padding
 
+    def size(self):
+        return format_size(self.Format)
+
     def encode(self, data):
         # print(self.Format, data)
         return self.encoder(data)
+
+    def decode(self, data):
+        return self.decoder(data)
 
     def __eq__(self, other):
         return \
@@ -184,6 +202,13 @@ class InputLayout(object):
         assert(len(buf) == self.stride)
         return buf
 
+    def decode(self, buf):
+        vertex = {}
+        for elem in self.elems.values():
+            data = buf[elem.AlignedByteOffset:elem.AlignedByteOffset + elem.size()]
+            vertex[elem.name] = elem.decode(data)
+        return vertex
+
     def __eq__(self, other):
         return self.elems == other.elems
 
@@ -199,18 +224,21 @@ class VertexBuffer(object):
     # Python gotcha - do not set layout=InputLayout() in the default function
     # parameters, as they would all share the *same* InputLayout since the
     # default values are only evaluated once on file load
-    def __init__(self, f=None, layout=None):
+    def __init__(self, f=None, layout=None, load_vertices=True):
         self.vertices = []
         self.layout = layout and layout or InputLayout()
         self.first = 0
         self.vertex_count = 0
+        self.offset = 0
 
         if f is not None:
-            self.parse_vb(f)
+            self.parse_vb_txt(f, load_vertices)
 
-    def parse_vb(self, f):
+    def parse_vb_txt(self, f, load_vertices):
         for line in map(str.strip, f):
             # print(line)
+            if line.startswith('byte offset:'):
+                self.offset = int(line[13:])
             if line.startswith('first vertex:'):
                 self.first = int(line[14:])
             if line.startswith('vertex count:'):
@@ -223,8 +251,28 @@ class VertexBuffer(object):
                 if line != 'topology: trianglelist':
                     raise Fatal('"%s" is not yet supported' % line)
             if line.startswith('vertex-data:'):
+                if not load_vertices:
+                    return
                 self.parse_vertex_data(f)
         assert(len(self.vertices) == self.vertex_count)
+
+    def parse_vb_bin(self, f):
+        f.seek(self.offset)
+        # XXX: Should we respect the first/base vertex?
+        # f.seek(self.first * self.layout.stride, whence=1)
+        self.first = 0
+        while True:
+            vertex = f.read(self.layout.stride)
+            if not vertex:
+                break
+            self.vertices.append(self.layout.decode(vertex))
+        # We intentionally disregard the vertex count when loading from a
+        # binary file, as we assume frame analysis might have only dumped a
+        # partial buffer to the .txt files (e.g. if this was from a dump where
+        # the draw call index count was overridden it may be cut short, or
+        # where the .txt files contain only sub-meshes from each draw call and
+        # we are loading the .buf file because it contains the entire mesh):
+        self.vertex_count = len(self.vertices)
 
     def append(self, vertex):
         self.vertices.append(vertex)
@@ -300,26 +348,29 @@ class VertexBuffer(object):
         assert(len(self.vertices) == self.vertex_count)
 
 class IndexBuffer(object):
-    def __init__(self, *args):
+    def __init__(self, *args, load_indices=True):
         self.faces = []
         self.first = 0
         self.index_count = 0
         self.format = 'DXGI_FORMAT_UNKNOWN'
+        self.offset = 0
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
-            self.parse_ib(args[0])
+            self.parse_ib_txt(args[0], load_indices)
         else:
             self.format, = args
 
-        self.encoder = Encoder(self.format)
+        self.encoder, self.decoder = EncoderDecoder(self.format)
 
     def append(self, face):
         self.faces.append(face)
         self.index_count += len(face)
 
-    def parse_ib(self, f):
+    def parse_ib_txt(self, f, load_indices):
         for line in map(str.strip, f):
+            if line.startswith('byte offset:'):
+                self.offset = int(line[13:])
             if line.startswith('first index:'):
                 self.first = int(line[13:])
             elif line.startswith('index count:'):
@@ -330,8 +381,36 @@ class IndexBuffer(object):
             elif line.startswith('format:'):
                 self.format = line[8:]
             elif line == '':
+                if not load_indices:
+                    return
                 self.parse_index_data(f)
         assert(len(self.faces) * 3 == self.index_count)
+
+    def parse_ib_bin(self, f):
+        f.seek(self.offset)
+        stride = format_size(self.format)
+        # XXX: Should we respect the first index?
+        # f.seek(self.first * stride, whence=1)
+        self.first = 0
+
+        face = []
+        while True:
+            index = f.read(stride)
+            if not index:
+                break
+            face.append(*self.decoder(index))
+            if len(face) == 3:
+                self.faces.append(tuple(face))
+                face = []
+        assert(len(face) == 0)
+
+        # We intentionally disregard the index count when loading from a
+        # binary file, as we assume frame analysis might have only dumped a
+        # partial buffer to the .txt files (e.g. if this was from a dump where
+        # the draw call index count was overridden it may be cut short, or
+        # where the .txt files contain only sub-meshes from each draw call and
+        # we are loading the .buf file because it contains the entire mesh):
+        self.index_count = len(self.faces) * 3
 
     def parse_index_data(self, f):
         for line in map(str.strip, f):
@@ -359,8 +438,30 @@ class IndexBuffer(object):
     def __len__(self):
         return len(self.faces) * 3
 
+def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths):
+    if len(vb_paths) != 1 or len(ib_paths) > 1:
+        raise Fatal('Cannot merge meshes loaded from binary files')
+
+    # Loading from binary files, but still need to use the .txt files as a
+    # reference for the format:
+    vb_bin_path, vb_txt_path = vb_paths[0]
+    ib_bin_path, ib_txt_path = ib_paths[0]
+
+    vb = VertexBuffer(open(vb_txt_path, 'r'), load_vertices=False)
+    vb.parse_vb_bin(open(vb_bin_path, 'rb'))
+
+    ib = None
+    if ib_paths:
+        ib = IndexBuffer(open(ib_txt_path, 'r'), load_indices=False)
+        ib.parse_ib_bin(open(ib_bin_path, 'rb'))
+
+    return vb, ib, os.path.basename(vb_bin_path)
+
 def load_3dmigoto_mesh(operator, paths):
-    vb_paths, ib_paths = zip(*paths)
+    vb_paths, ib_paths, use_bin = zip(*paths)
+
+    if use_bin[0]:
+        return load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths)
 
     vb = VertexBuffer(open(vb_paths[0], 'r'))
     # Merge additional vertex buffers for meshes split over multiple draw calls:
@@ -376,7 +477,7 @@ def load_3dmigoto_mesh(operator, paths):
             tmp = IndexBuffer(open(ib_path, 'r'))
             ib.merge(tmp)
 
-    return vb, ib
+    return vb, ib, os.path.basename(vb_paths[0])
 
 def import_normals_step1(mesh, data):
     # Ensure normals are 3-dimensional:
@@ -552,9 +653,8 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
         # FIXME: Group objects together
 
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
-    vb, ib = load_3dmigoto_mesh(operator, paths)
+    vb, ib, name = load_3dmigoto_mesh(operator, paths)
 
-    name = os.path.basename(list(paths)[0][0])
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
 
@@ -764,6 +864,12 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
             default=True,
             )
 
+    load_buf = BoolProperty(
+            name="Load .buf files instead",
+            description="Load the mesh from the binary .buf dumps instead of the .txt files\nThis will load the entire mesh as a single object instead of separate objects from each draw call",
+            default=False,
+            )
+
     merge_meshes = BoolProperty(
             name="Merge meshes together",
             description="Merge all selected meshes together into one object. Meshes must be related",
@@ -791,20 +897,33 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
             match = buffer_pattern.search(filename)
             if match is None:
                 raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
-            if not match.group('hash'):
-                self.report({'WARNING'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete')
+            use_bin = self.load_buf
+            if not match.group('hash') and not use_bin:
+                self.report({'WARNING'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete, attempting to use .buf files instead')
+                use_bin = True # FIXME: Ask
             ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
             vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
             vb_paths = glob(os.path.join(dirname, vb_pattern))
+            if vb_paths and use_bin:
+                vb_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in vb_paths ]
+                ib_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in ib_paths ]
+                if all([ os.path.exists(x) for x in itertools.chain(vb_bin_paths, ib_bin_paths) ]):
+                    # When loading the binary files, we still need to process
+                    # the .txt files as well, as they indicate the format:
+                    ib_paths = list(zip(ib_bin_paths, ib_paths))
+                    vb_paths = list(zip(vb_bin_paths, vb_paths))
+                else:
+                    self.report({'WARNING'}, 'Corresponding .buf files not found - using .txt files')
+                    use_bin = False
             if len(ib_paths) != 1 or len(vb_paths) != 1:
                 raise Fatal('Only draw calls using a single vertex buffer and a single index buffer are supported for now')
-            ret.add((vb_paths[0], ib_paths[0]))
+            ret.add((vb_paths[0], ib_paths[0], use_bin))
         return ret
 
     def execute(self, context):
         try:
-            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related'))
+            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
