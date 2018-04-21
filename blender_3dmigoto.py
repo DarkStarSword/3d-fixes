@@ -922,6 +922,14 @@ class Import3DMigoto(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
         return ret
 
     def execute(self, context):
+        if self.load_buf:
+            # Is there a way to have the mutual exclusivity reflected in
+            # the UI? Grey out options or use radio buttons or whatever?
+            if self.merge_meshes or self.load_related:
+                self.report({'INFO'}, 'Loading .buf files selected: Disabled incompatible options')
+            self.merge_meshes = False
+            self.load_related = False
+
         try:
             keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf'))
             paths = self.get_vb_ib_paths()
