@@ -1026,10 +1026,11 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
             # frame analysis dump, or save a .fmt file along with the buffers
             vb_path, ib_path, fmt_path = self.get_vb_ib_paths()
 
+            migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
+
             if fmt_path is not None:
-                import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, **migoto_raw_import_options)
+                import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, **migoto_raw_import_options)
             else:
-                migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
                 migoto_raw_import_options['vb_path'] = vb_path
                 migoto_raw_import_options['ib_path'] = ib_path
                 bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
