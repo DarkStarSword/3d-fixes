@@ -731,6 +731,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
 
     if pose_path is not None:
         import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True, axis_forward=axis_forward, axis_up=axis_up)
+        context.scene.objects.active = obj
 
     return obj
 
@@ -1246,6 +1247,8 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
         mod = obj.modifiers.new(arm.name, 'ARMATURE')
         mod.object = arm
         obj.parent = arm
+        # Hide pose object if it was applied to another object:
+        arm.hide = True
 
 class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a pose from a 3DMigoto constant buffer dump"""
