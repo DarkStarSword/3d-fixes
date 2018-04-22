@@ -38,6 +38,7 @@ import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, orientation_helper_factory, axis_conversion
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
+from mathutils import Matrix, Vector
 
 def keys_to_ints(d):
     return {int(k):v for k,v in d.items()}
@@ -1168,11 +1169,88 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+class ConstantBuffer(object):
+    def __init__(self, f):
+        self.entries = []
+        entry = []
+        for line in map(str.strip, f):
+            if line.startswith('buf') or line.startswith('cb'):
+                entry.append(float(line.split()[1]))
+                if len(entry) == 4:
+                    self.entries.append(entry)
+                    entry = []
+        assert(entry == [])
+
+    def as_3x4_matrices(self):
+        return [ Matrix(self.entries[i:i+3]) for i in range(0, len(self.entries), 3) ]
+
+def import_pose(operator, context, filepath=None, axis_forward='-Z', axis_up='Y'):
+    pose_buffer = ConstantBuffer(open(filepath, 'r'))
+
+    matrices = pose_buffer.as_3x4_matrices()
+
+    obj = context.object
+    if not context.selected_objects:
+        obj = None
+
+    name = os.path.basename(filepath)
+    arm_data = bpy.data.armatures.new(name)
+    arm = bpy.data.objects.new(name, object_data=arm_data)
+
+    conversion_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
+
+    context.scene.objects.link(arm)
+
+    # Construct bones (FIXME: Position these better)
+    # Must be in edit mode to add new bones
+    arm.select = True
+    context.scene.objects.active = arm
+    bpy.ops.object.mode_set(mode='EDIT')
+    for i in range(len(matrices)):
+        bone = arm_data.edit_bones.new(str(i))
+        bone.tail = Vector((0.0, 0.10, 0.0))
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # Set pose:
+    for i, matrix in enumerate(matrices):
+        bone = arm.pose.bones[str(i)]
+        matrix.resize_4x4()
+        bone.matrix_basis = conversion_matrix * matrix * conversion_matrix.inverted()
+
+    # Apply pose to selected object, if any:
+    if obj is not None:
+        mod = obj.modifiers.new(arm.name, 'ARMATURE')
+        mod.object = arm
+        obj.parent = arm
+
+class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
+    """Import a pose from a 3DMigoto constant buffer dump"""
+    bl_idname = "armature.migoto_pose"
+    bl_label = "Import 3DMigoto Pose"
+    bl_options = {'UNDO'}
+
+    filename_ext = '.txt'
+    filter_glob = StringProperty(
+            default='*.txt',
+            options={'HIDDEN'},
+            )
+
+    def execute(self, context):
+        try:
+            keywords = self.as_keywords(ignore=('filter_glob',))
+            import_pose(self, context, **keywords)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
 def menu_func_import_fa(self, context):
     self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
 
 def menu_func_import_raw(self, context):
     self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+
+def menu_func_import_pose(self, context):
+    self.layout.operator(Import3DMigotoPose.bl_idname, text="3DMigoto pose (.txt)")
 
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
@@ -1187,6 +1265,7 @@ def register():
     bpy.types.INFO_MT_file_import.append(menu_func_import_raw)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
     bpy.types.INFO_MT_file_import.append(menu_func_apply_vgmap)
+    bpy.types.INFO_MT_file_import.append(menu_func_import_pose)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
@@ -1195,6 +1274,7 @@ def unregister():
     bpy.types.INFO_MT_file_import.remove(menu_func_import_raw)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
     bpy.types.INFO_MT_file_import.remove(menu_func_apply_vgmap)
+    bpy.types.INFO_MT_file_import.remove(menu_func_import_pose)
 
 if __name__ == "__main__":
     register()
