@@ -775,7 +775,8 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # FIXME: Handle texcoords of other dimensions
             uvs = []
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
-                uvs += texcoords[uv_name][blender_loop_vertex.index]
+                if uv_name in texcoords:
+                    uvs += texcoords[uv_name][blender_loop_vertex.index]
             vertex[elem.name] = uvs
         if elem.name not in vertex:
             print('NOTICE: Unhandled vertex element: %s' % elem.name)
