@@ -1184,7 +1184,7 @@ class ConstantBuffer(object):
     def as_3x4_matrices(self):
         return [ Matrix(self.entries[i:i+3]) for i in range(0, len(self.entries), 3) ]
 
-def import_pose(operator, context, filepath=None, axis_forward='-Z', axis_up='Y'):
+def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y'):
     pose_buffer = ConstantBuffer(open(filepath, 'r'))
 
     matrices = pose_buffer.as_3x4_matrices()
@@ -1192,6 +1192,9 @@ def import_pose(operator, context, filepath=None, axis_forward='-Z', axis_up='Y'
     obj = context.object
     if not context.selected_objects:
         obj = None
+
+    if limit_bones_to_vertex_groups and obj:
+        matrices = matrices[:len(obj.vertex_groups)]
 
     name = os.path.basename(filepath)
     arm_data = bpy.data.armatures.new(name)
@@ -1233,6 +1236,12 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
     filter_glob = StringProperty(
             default='*.txt',
             options={'HIDDEN'},
+            )
+
+    limit_bones_to_vertex_groups = BoolProperty(
+            name="Limit Bones to Vertex Groups",
+            description="Limits the maximum number of bones imported to the number of vertex groups of the active object",
+            default=True,
             )
 
     def execute(self, context):
