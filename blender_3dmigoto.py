@@ -470,7 +470,7 @@ class IndexBuffer(object):
     def __len__(self):
         return len(self.faces) * 3
 
-def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths):
+def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     if len(vb_paths) != 1 or len(ib_paths) > 1:
         raise Fatal('Cannot merge meshes loaded from binary files')
 
@@ -487,13 +487,14 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths):
         ib = IndexBuffer(open(ib_txt_path, 'r'), load_indices=False)
         ib.parse_ib_bin(open(ib_bin_path, 'rb'))
 
-    return vb, ib, os.path.basename(vb_bin_path)
+    return vb, ib, os.path.basename(vb_bin_path), pose_path
 
 def load_3dmigoto_mesh(operator, paths):
-    vb_paths, ib_paths, use_bin = zip(*paths)
+    vb_paths, ib_paths, use_bin, pose_path = zip(*paths)
+    pose_path = pose_path[0]
 
     if use_bin[0]:
-        return load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths)
+        return load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path)
 
     vb = VertexBuffer(open(vb_paths[0], 'r'))
     # Merge additional vertex buffers for meshes split over multiple draw calls:
@@ -509,7 +510,7 @@ def load_3dmigoto_mesh(operator, paths):
             tmp = IndexBuffer(open(ib_path, 'r'))
             ib.merge(tmp)
 
-    return vb, ib, os.path.basename(vb_paths[0])
+    return vb, ib, os.path.basename(vb_paths[0]), pose_path
 
 def import_normals_step1(mesh, data):
     # Ensure normals are 3-dimensional:
@@ -685,7 +686,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
         # FIXME: Group objects together
 
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
-    vb, ib, name = load_3dmigoto_mesh(operator, paths)
+    vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
@@ -727,6 +728,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     base = context.scene.objects.link(obj)
     base.select = True
     context.scene.objects.active = obj
+
+    if pose_path is not None:
+        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True, axis_forward=axis_forward, axis_up=axis_up)
 
     return obj
 
@@ -881,8 +885,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
     """Import a mesh dumped with 3DMigoto's frame analysis"""
     bl_idname = "import_mesh.migoto_frame_analysis"
     bl_label = "Import 3DMigoto Frame Analysis Dump"
-    #bl_options = {'PRESET', 'UNDO'}
-    bl_options = {'UNDO'}
+    bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.txt'
     filter_glob = StringProperty(
@@ -919,6 +922,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=False,
             )
 
+    pose_cb = StringProperty(
+            name="Bone CB",
+            description='Indicate a constant buffer slot (e.g. "vs-cb2") containing the bone matrices',
+            default="",
+            )
+
     def get_vb_ib_paths(self):
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
 
@@ -940,14 +949,17 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             match = buffer_pattern.search(filename)
             if match is None:
                 raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
+
             use_bin = self.load_buf
             if not match.group('hash') and not use_bin:
                 self.report({'INFO'}, 'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete, Using .buf files instead')
                 use_bin = True # FIXME: Ask
+
             ib_pattern = filename[:match.start()] + '-ib*' + filename[match.end():]
             vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
             vb_paths = glob(os.path.join(dirname, vb_pattern))
+
             if vb_paths and use_bin:
                 vb_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in vb_paths ]
                 ib_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in ib_paths ]
@@ -959,9 +971,18 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 else:
                     self.report({'WARNING'}, 'Corresponding .buf files not found - using .txt files')
                     use_bin = False
+
+            pose_path = None
+            if self.pose_cb:
+                pose_pattern = filename[:match.start()] + '*-' + self.pose_cb + '=*.txt'
+                try:
+                    pose_path = glob(os.path.join(dirname, pose_pattern))[0]
+                except IndexError:
+                    pass
+
             if len(ib_paths) != 1 or len(vb_paths) != 1:
                 raise Fatal('Only draw calls using a single vertex buffer and a single index buffer are supported for now')
-            ret.add((vb_paths[0], ib_paths[0], use_bin))
+            ret.add((vb_paths[0], ib_paths[0], use_bin, pose_path))
         return ret
 
     def execute(self, context):
@@ -974,7 +995,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             self.load_related = False
 
         try:
-            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf'))
+            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
@@ -983,7 +1004,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         return {'FINISHED'}
 
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, **kwargs):
-    paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True),)
+    paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
     return import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
 
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
