@@ -1276,6 +1276,98 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+def find_armature(obj):
+    if obj is None:
+        return None
+    if obj.type == 'ARMATURE':
+        return obj
+    return obj.find_armature()
+
+def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
+    is_hidden = target_arm.hide
+    is_selected = target_arm.select
+    prev_active = context.scene.objects.active
+    target_arm.hide = False
+    target_arm.select = True
+    context.scene.objects.active = target_arm
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    bone = target_arm.data.edit_bones.new(new_name)
+    bone.tail = Vector((0.0, 0.10, 0.0))
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    bone = target_arm.pose.bones[new_name]
+    bone.matrix_basis = src_bone.matrix_basis
+
+    context.scene.objects.active = prev_active
+    target_arm.select = is_selected
+    target_arm.hide = is_hidden
+
+def merge_armatures(operator, context):
+    target_arm = find_armature(context.object)
+    if target_arm is None:
+        raise Fatal('No active target armature')
+    #print('target:', target_arm)
+
+    for src_obj in context.selected_objects:
+        src_arm = find_armature(src_obj)
+        if src_arm is None or src_arm == target_arm:
+            continue
+        #print('src:', src_arm)
+
+        # Create mapping between common bones:
+        bone_map = {}
+        for src_bone in src_arm.pose.bones:
+            for dst_bone in target_arm.pose.bones:
+                # Seems important to use matrix_basis - if using 'matrix'
+                # and merging multiple objects together, the last inserted bone
+                # still has the identity matrix when merging the next pose in
+                if src_bone.matrix_basis == dst_bone.matrix_basis:
+                    if src_bone.name in bone_map:
+                        operator.report({'WARNING'}, 'Source bone %s.%s matched multiple bones in the destination: %s, %s' %
+                                (src_arm.name, src_bone.name, bone_map[src_bone.name], dst_bone.name))
+                    else:
+                        bone_map[src_bone.name] = dst_bone.name
+
+        # Can't have a duplicate name, even temporarily, so rename all the
+        # vertex groups first, and rename the source pose bones to match:
+        orig_names = {}
+        for vg in src_obj.vertex_groups:
+            new_name = '%s.%s' % (src_arm.name, vg.name)
+            orig_names[new_name] = vg.name
+            vg.name = new_name
+
+        # Reassign vertex groups to matching bones in target armature:
+        for vg in src_obj.vertex_groups:
+            orig_name = orig_names[vg.name]
+            bone = src_arm.pose.bones[orig_name]
+            if orig_name in bone_map:
+                print('%s.%s -> %s' % (src_arm.name, orig_name, bone_map[orig_name]))
+                vg.name = bone_map[orig_name]
+            else: # FIXME: Make optional
+                print('%s.%s -> new %s' % (src_arm.name, orig_name, vg.name))
+                copy_bone_to_target_skeleton(context, target_arm, vg.name, src_arm.pose.bones[orig_name])
+
+        # Change existing armature modifier to target:
+        for modifier in src_obj.modifiers:
+            if modifier.type == 'ARMATURE' and modifier.object == src_arm:
+                modifier.object = target_arm
+        src_obj.parent = target_arm
+        context.scene.objects.unlink(src_arm)
+
+class Merge3DMigotoPose(bpy.types.Operator):
+    """Merge identically posed bones of related armatures into one"""
+    bl_idname = "armature.merge_pose"
+    bl_label = "Merge 3DMigoto Poses"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        try:
+            merge_armatures(self, context)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
 def menu_func_import_fa(self, context):
     self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
 
