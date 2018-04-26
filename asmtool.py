@@ -527,7 +527,7 @@ class ASMShader(hlsltool.Shader):
             \s+ (?P<register>\d+)
             \s+ (?P<sysvalue>\w+)
             \s+ (?P<format>\w+)
-            \s+ (?P<used>[x ][y ][z ][w ])
+            \s* (?P<used>[xyzw ]*)
         $''', re.VERBOSE)
         SignatureEntry = collections.namedtuple('Input', 'Name Index Mask Register SysValue Format Used end'.split())
 
