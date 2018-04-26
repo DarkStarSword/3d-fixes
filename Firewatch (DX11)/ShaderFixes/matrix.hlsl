@@ -30,3 +30,65 @@ matrix inverse(float4 m0, float4 m1, float4 m2, float4 m3)
 }
 
 #define MATRIX(cb, idx) matrix(cb[idx], cb[idx+1], cb[idx+2], cb[idx+3])
+
+matrix translation_matrix(float x, float y, float z)
+{
+	return matrix(1, 0, 0, 0,
+	              0, 1, 0, 0,
+		      0, 0, 1, 0,
+		      x, y, z, 1);
+}
+
+matrix translation_matrix(float3 c)
+{
+	return translation_matrix(c.x, c.y, c.z);
+}
+
+matrix scale_matrix(float x, float y, float z)
+{
+	return matrix(x, 0, 0, 0,
+	              0, y, 0, 0,
+		      0, 0, z, 0,
+		      0, 0, 0, 1);
+}
+
+matrix rotation_x_matrix(float radians)
+{
+	float s, c;
+
+	sincos(radians, s, c);
+	return matrix(1,  0, 0, 0,
+	              0,  c, s, 0,
+		      0, -s, c, 0,
+		      0,  0, 0, 1);
+}
+
+matrix rotation_y_matrix(float radians)
+{
+	float s, c;
+
+	sincos(radians, s, c);
+	return matrix(c,  0, -s, 0,
+	              0,  1,  0, 0,
+		      s,  0,  c, 0,
+		      0,  0,  0, 1);
+}
+
+matrix rotation_z_matrix(float radians)
+{
+	float s, c;
+
+	sincos(radians, s, c);
+	return matrix( c, s, 0, 0,
+	              -s, c, 0, 0,
+		       0, 0, 1, 0,
+		       0, 0, 0, 1);
+}
+
+bool is_identity(matrix m)
+{
+	return all(m == matrix(1, 0, 0, 0,
+	                       0, 1, 0, 0,
+	                       0, 0, 1, 0,
+	                       0, 0, 0, 1));
+}

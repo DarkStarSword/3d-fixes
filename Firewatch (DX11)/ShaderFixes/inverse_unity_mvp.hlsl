@@ -12,7 +12,9 @@ cbuffer UnityPerDraw : register(b11) {
 	uniform float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
 }
 
-RWBuffer<float4> OutputMatrix : register(u0);
+RWBuffer<float4> OutputInverseMVP : register(u0);
+RWBuffer<float4> OutputInverseVP : register(u1);
+groupshared matrix inv_mvp;
 
 float4 inverse_transpose_parallel(matrix m, uint pos)
 {
@@ -49,5 +51,13 @@ void main(uint3 tid: SV_DispatchThreadID)
 	// mathematically equivalent). Note that if you legitimately wanted a
 	// transposed output for some reason you could save some (13)
 	// instructions in this shader by doing the opposite of this advice.
-	OutputMatrix[tid.x] = inverse_transpose_parallel(glstate_matrix_mvp, tid.x);
+	float4 inv_mvp_slice = inverse_transpose_parallel(glstate_matrix_mvp, tid.x);
+	inv_mvp[tid.x] = inv_mvp_slice;
+	OutputInverseMVP[tid.x] = inv_mvp_slice;
+
+	// Sync all threads in (our one and only) group to make sure inv_mvp is written:
+	GroupMemoryBarrierWithGroupSync();
+
+	// Calculate inverse view-projection matrix:
+	OutputInverseVP[tid.x] = transpose(mul(_Object2World, transpose(inv_mvp)))[tid.x];
 }
