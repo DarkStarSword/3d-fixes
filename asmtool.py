@@ -1093,11 +1093,11 @@ def fix_unity_lighting_ps(shader):
         fov_reg = fov_reg,
     ))
 
-    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb10 = Resource\ShaderFixes\unity.ini\_Inverse_VP_CB' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
-        shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
-        shader.add_shader_override_setting('Resource_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
 
     shader.autofixed = True
 
@@ -1151,11 +1151,11 @@ def fix_unity_reflection(shader, fov_reg = None, _CameraToWorld = None):
         ))
 
     if hlsltool.possibly_copy_unity_world_matrices(shader):
-        shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_MVP')
+        shader.add_shader_override_setting(r'run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_MVP')
     if hlsltool.possibly_copy_unity_view_matrices(shader):
-        shader.add_shader_override_setting('run = CustomShader_Inverse_Unity_VP')
+        shader.add_shader_override_setting(r'run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_VP')
 
-    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb10 = Resource\ShaderFixes\unity.ini\_Inverse_VP_CB' % (shader.shader_type));
 
     shader.autofixed = True
 
@@ -1209,8 +1209,8 @@ def fix_unity_frustum_world(shader):
         _FrustumCornersWS2 = _FrustumCornersWS[2],
     ))
 
-    shader.add_shader_override_setting('%s-cb10 = Resource_Inverse_VP_CB' % (shader.shader_type));
-    shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb10 = Resource\ShaderFixes\unity.ini\_Inverse_VP_CB' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb13 = Resource\ShaderFixes\unity.ini\_UnityPerCamera' % (shader.shader_type));
 
     shader.autofixed = True
 

@@ -1192,11 +1192,11 @@ def fix_unity_lighting_ps(shader):
     pos += shader.insert_instr(pos, '}')
     pos += shader.insert_instr(pos)
 
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb11 = Resource\ShaderFixes\unity.ini\_UnityPerDraw' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
-        shader.add_shader_override_setting('Resource_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
-        shader.add_shader_override_setting('Resource_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
 
     shader.autofixed = True
 
@@ -1245,7 +1245,7 @@ def possibly_copy_unity_world_matrices(shader):
                 shader.find_unity_cb_entry(shadertool.unity_Object2World, 'matrix')
         assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
         assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
-        shader.add_shader_override_setting('Resource_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
         return True
     except KeyError:
         return False
@@ -1270,7 +1270,7 @@ def possibly_copy_unity_view_matrices(shader):
             # Has been at offset 144 in older Unity versions
             debug_verbose(0, 'FIXME: May need to adjust possibly_copy_unity_view_matrices to deal with VP matrix at different offset, if VP not otherwise available')
             return False
-        shader.add_shader_override_setting('Resource_UnityPerFrame = %s-cb%d' % (shader.shader_type, vp_cb));
+        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerFrame = %s-cb%d' % (shader.shader_type, vp_cb));
         return True
     except KeyError:
         return False
@@ -1301,7 +1301,7 @@ def fix_unity_reflection(shader):
     possibly_copy_unity_world_matrices(shader)
 
     # Do this last so we can use our own resources if we are the first in the frame:
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb11 = Resource\ShaderFixes\unity.ini\_UnityPerDraw' % (shader.shader_type));
 
     shader.autofixed = True
 
@@ -1335,8 +1335,8 @@ def fix_unity_frustum_world(shader):
     shader.early_insert_instr('_FrustumCornersWS[1].xyzw -= world_space_adj.y;')
     shader.early_insert_instr('_FrustumCornersWS[2].xyzw -= world_space_adj.z;')
 
-    shader.add_shader_override_setting('%s-cb11 = Resource_UnityPerDraw' % (shader.shader_type));
-    shader.add_shader_override_setting('%s-cb13 = Resource_UnityPerCamera' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb11 = Resource\ShaderFixes\unity.ini\_UnityPerDraw' % (shader.shader_type));
+    shader.add_shader_override_setting(r'%s-cb13 = Resource\ShaderFixes\unity.ini\_UnityPerCamera' % (shader.shader_type));
 
     shader.autofixed = True
 
