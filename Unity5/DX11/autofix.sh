@@ -6,6 +6,7 @@ PATH="$DIR:$PATH"
 
 EXTRACT=1
 CLEANUP=1
+COPY_TEMPLATE=1
 UPDATE_INI=1
 
 FIX_LIGHTING=1
@@ -34,6 +35,10 @@ fi
 
 if [ $CLEANUP -eq 1 ]; then
 	cleanup_unity_shaders.py ../..
+fi
+
+if [ $COPY_TEMPLATE -eq 1 ]; then
+	cp -vr "$DIR/Unity5/DX11/ShaderFixes" ../..
 fi
 
 if [ $FIX_LIGHTING -eq 1 ]; then
