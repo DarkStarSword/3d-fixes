@@ -19,7 +19,7 @@ LIGHTING_EXTRA=""
 update_ini()
 {
 	if [ $UPDATE_INI -eq 1 ]; then
-		cat | dos2unix | tee -a ../../d3dx.ini
+		cat | dos2unix | tee -a ../../ShaderFixes/unity_generated.ini
 	else
 		cat > /dev/null
 	fi

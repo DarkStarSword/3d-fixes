@@ -178,11 +178,15 @@ class CleanupDX9(object):
 		self.cleanup_ini = lambda path, removed_basenames, preserve_basenames : cleanup_dx9_ini(path, ini_prefix, removed_basenames, preserve_basenames)
 
 class CleanupDX11(object):
-	def __init__(self):
-		self.extracted_glob = 'extracted/ShaderFNVs/*/*.txt'
-		self.shader_path = 'ShaderFixes'
-		self.ini_filename = 'd3dx.ini'
-		self.cleanup_ini = lambda path, removed_basenames, preserve_basenames : cleanup_dx11_ini(path, removed_basenames, preserve_basenames)
+	extracted_glob = 'extracted/ShaderFNVs/*/*.txt'
+	shader_path = 'ShaderFixes'
+	ini_filename = 'd3dx.ini'
+
+	def cleanup_ini(self, path, removed_basenames, preserve_basenames):
+		cleanup_dx11_ini(path, removed_basenames, preserve_basenames)
+
+class CleanupDX11SplitConfig(CleanupDX11):
+	ini_filename = os.path.join('ShaderFixes', 'unity_generated.ini')
 
 def parse_args():
 	global args
@@ -218,7 +222,11 @@ def main():
 			cleanup(game_dir, git_path, master_path, CleanupDX9('vp', 'VS', 'VertexShaders'))
 			cleanup(game_dir, git_path, master_path, CleanupDX9('fp', 'PS', 'PixelShaders'))
 			found = True
-		if os.path.exists(os.path.join(master_path, 'd3dx.ini')):
+
+		if os.path.exists(os.path.join(master_path, CleanupDX11SplitConfig.ini_filename)):
+			cleanup(game_dir, git_path, master_path, CleanupDX11SplitConfig())
+			found = True
+		elif os.path.exists(os.path.join(master_path, CleanupDX11.ini_filename)):
 			cleanup(game_dir, git_path, master_path, CleanupDX11())
 			found = True
 
@@ -233,3 +241,5 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+# vi:noet:ts=8:sw=8
