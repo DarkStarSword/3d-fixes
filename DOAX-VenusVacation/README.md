@@ -43,10 +43,15 @@ Installing (3D Vision + Costume Mod users)
 
 Keys (3D Vision + Costume Mod Users)
 ------------------------------------
+- F1: Show help
+- F2: Toggle costume mods
+- Shift+F2: Cycle costume mod shadow modes (on/off/original)
 - Mouse back button: Toggle HUD visibility
+- Ctrl+F9: 3DMigoto performance monitor
 
 Keys (3D Vision Users Only)
 ---------------------------
+- F7: Full Screen
 - ~: Toggle auto-convergence feature on and off
 - Ctrl+F5: Reduce popout when auto-convergence is on
 - Ctrl+F6: Increase popout when auto-convergence is on
@@ -89,6 +94,17 @@ Update v1.2
 -----------
 - Fixed shadow glitch
 - This fix now forms the basis for third party costume mods
+
+Update v1.4
+-----------
+- Major 3DMigoto update (conditional logic, performance monitor)
+- Auto-convergence performance cost will be skipped when 3D Vision is disabled
+- Added toggle keys for costume mods and shadows (try cycling shadow modes if performance is an issue)
+- New built in help shown by pressing F1
+- Enabled costume mods for missing costume + shadow shaders
+- Enabled costume and fingernail texture replacement mods
+- Fix cases where a shadow could go missing from a costume mod
+- HUD will always be shown in burst mode
 
 Known Issues (3D Vision Users Only)
 -----------------------------------
