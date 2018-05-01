@@ -7,6 +7,7 @@ struct TextParameters {
 	float2 border;
 	float h_anchor;
 	float v_anchor;
+	float h_align;
 	float font_scale;
 };
 StructuredBuffer<TextParameters> params : register(t114);
@@ -82,10 +83,12 @@ void main()
 	uint pos;
 	uint c;
 	uint gs = 1;
+	uint gs_linestart = 1;
 	uint start = 0;
 	uint space = -1;
 	float space_x = 0;
 	float max_x = -1;
+	float rect_width = params[0].rect.z - params[0].rect.x;
 
 	cur_pos = 0;
 	textpos[gs].start = 0;
@@ -93,6 +96,8 @@ void main()
 
 	// Can't use GetDimensions in a compute shader - it crashes
 	//buf.GetDimensions(strlen);
+
+	// FIXME: Refactor
 
 	for (pos = 0; c = text[pos]; pos++) {
 		if (c == ' ') {
@@ -102,11 +107,24 @@ void main()
 
 		cur_pos.x += get_char_dimensions(c).x / resolution.x * 2 * params[0].font_scale;
 
+		// FIXME: Refactor
+
 		if (c == '\n') {
 			textpos[gs].len = pos - start + 1;
 			max_x = max(max_x, cur_pos.x);
 
+			if (params[0].h_align == 1) {
+				// Center align
+				for (uint i = gs_linestart; i <= gs; i++)
+					textpos[i].pos.x = (rect_width - cur_pos.x) / 2 + textpos[i].pos.x;
+			} else if (params[0].h_align == 2) {
+				// Right align
+				for (uint i = gs_linestart; i <= gs; i++)
+					textpos[i].pos.x = rect_width - cur_pos.x + textpos[i].pos.x;
+			}
+
 			gs++;
+			gs_linestart = gs;
 			start = pos + 1;
 			space = -1;
 			cur_pos.y -= char_dim.y;
@@ -115,16 +133,27 @@ void main()
 			textpos[gs].start = start;
 			textpos[gs].pos = cur_pos;
 			//continue; // XXX: Use of > 1 continue statements triggers a HLSL BUG
-		} else if (cur_pos.x >= params[0].rect.z - params[0].rect.x) {
+		} else if (cur_pos.x >= rect_width) {
 			// Long line - wrap text
 			if (space != -1) {
-				// No space encountered on the line, wrap at this point
+				// Wrap at the position of the most recent space
 				textpos[gs].len = space - start;
 				max_x = max(max_x, space_x);
 				start = space + 1;
 				pos = space;
 
+				if (params[0].h_align == 1) {
+					// Center align
+					for (uint i = gs_linestart; i <= gs; i++)
+						textpos[i].pos.x = (rect_width - space_x) / 2 + textpos[i].pos.x;
+				} else if (params[0].h_align == 2) {
+					// Right align
+					for (uint i = gs_linestart; i <= gs; i++)
+						textpos[i].pos.x = rect_width - space_x + textpos[i].pos.x;
+				}
+
 				gs++;
+				gs_linestart = gs;
 				space = -1;
 				cur_pos.y -= char_dim.y;
 				cur_pos.x = 0;
@@ -133,11 +162,22 @@ void main()
 				textpos[gs].pos = cur_pos;
 				//continue; // XXX: Use of > 1 continue statements triggers a HLSL BUG
 			} else {
-				// Wrap at the position of the most recent space
+				// No space encountered on the line, wrap at this point
 				textpos[gs].len = pos - start + 1;
 				max_x = max(max_x, cur_pos.x);
 
+				if (params[0].h_align == 1) {
+					// Center align
+					for (uint i = gs_linestart; i <= gs; i++)
+						textpos[i].pos.x = (rect_width - cur_pos.x) / 2 + textpos[i].pos.x;
+				} else if (params[0].h_align == 2) {
+					// Right align
+					for (uint i = gs_linestart; i <= gs; i++)
+						textpos[i].pos.x = rect_width - cur_pos.x + textpos[i].pos.x;
+				}
+
 				gs++;
+				gs_linestart = gs;
 				start = pos + 1;
 				space = -1;
 				cur_pos.y -= char_dim.y;
@@ -398,12 +438,24 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	// Anchor the text & rectangle as requested. This will also resize the
 	// background to fit around the text
 	float2 center = r.xy + float2(r.z - r.x, r.w - r.y) / 2;
-	if (params[0].h_anchor == 1) // Anchor Left
+	float2 text_shift = 0;
+
+	if (params[0].h_anchor == 1) { // Anchor Left
 		r.xz = float2(r.x, r.x + textpos[0].pos.x);
-	else if (params[0].h_anchor == 2) // Anchor Center
+		if (params[0].h_align)
+			text_shift.x = (r.z - params[0].rect.z);
+	} else if (params[0].h_anchor == 2) { // Anchor Center
 		r.xz = float2(center.x - textpos[0].pos.x/2, center.x + textpos[0].pos.x/2);
-	else if (params[0].h_anchor == 3) // Anchor Right
+		if (params[0].h_align)
+			text_shift.x = (r.z - params[0].rect.z) * 2;
+	} else if (params[0].h_anchor == 3) { // Anchor Right
 		r.xz = float2(r.z - textpos[0].pos.x, r.z);
+		if (params[0].h_align)
+			text_shift.x = (params[0].rect.x - r.x);
+	}
+
+	if (params[0].h_align == 1)
+		text_shift.x /= 2;
 
 	if (params[0].v_anchor == 1) // Anchor Top
 		r.yw = float2(r.y, r.y + textpos[0].pos.y);
@@ -415,7 +467,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	if (idx == 0) {
 		draw_outline_rectangle(r, ostream);
 	} else {
-		cur_pos = r.xy + textpos[idx].pos;
+		cur_pos = r.xy + textpos[idx].pos + text_shift;
 		print_string_buffer(text, textpos[idx].start, textpos[idx].len, ostream);
 	}
 }
