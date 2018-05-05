@@ -200,8 +200,19 @@ void main()
 	}
 	textpos[gs].len = pos - start + 1;
 	max_x = max(max_x, cur_pos.x);
-	if (text[pos-1] != '\n' && text[pos-1] != '\r')
+	if (text[pos-1] != '\n' && text[pos-1] != '\r') {
 		cur_pos.y -= char_dim.y;
+
+		if (params[0].h_align == 1) {
+			// Center align
+			for (uint i = gs_linestart; i <= gs; i++)
+				textpos[i].pos.x = (rect_width - cur_pos.x) / 2 + textpos[i].pos.x;
+		} else if (params[0].h_align == 2) {
+			// Right align
+			for (uint i = gs_linestart; i <= gs; i++)
+				textpos[i].pos.x = rect_width - cur_pos.x + textpos[i].pos.x;
+		}
+	}
 
 	// Store the final y position in index 0, which is used to
 	// automatically size the background rectangle:

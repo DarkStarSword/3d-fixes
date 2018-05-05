@@ -106,6 +106,11 @@ Update v1.4
 - Fix cases where a shadow could go missing from a costume mod
 - HUD will always be shown in burst mode
 
+Update v1.5
+-----------
+- Fix missing legs in some costume mods
+- F2/Shift+F2 hotkeys now show status in overlay
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
