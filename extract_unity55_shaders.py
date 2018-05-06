@@ -13,13 +13,15 @@ UNITY_5_6    =    56 # Data structure removed string wrapper and m_SourceMap bec
 UNITY_2017_1 = 20171 # New sampler bind info and padding changes
 UNITY_2017_2 = 20172 # Added zClip and m_ShaderRequirements
 UNITY_2017_3 = 20173 # Texture bind info added multisampled flag. Constant buffers can now contain structs.
+UNITY_2018_1 = 20181 # Non-modifiable textures, procedural instancing variant flag.
 
 version_uuids = {
     '4496e93f2179252104401c8dda0a1751': UNITY_5_5,
     'a70f7abc6586fb35b3a0641aa81e9375': UNITY_5_6,
-    '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1, # 2017.1.0 and 2017.1.1
+    '5d6434c04f879e08410f59355c6dfe0a': UNITY_2017_1,
     '71556c0fc74d861cf024e0cd349bd987': UNITY_2017_2,
-    '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_3,
+    '266d53113fa30d2b858f2768f92eaa14': UNITY_2017_3, # 2017.4 uses the same format
+    '8db760073e1392061e4a36995f0735af': UNITY_2018_1,
 }
 
 platform_map = {
@@ -488,6 +490,8 @@ def parse_pass(file, file_version, sub_shader, sub_programs):
     parse_programs(file, file_version, 'dp', name_dict, pass_info, sub_programs)
 
     parse_byte(file, 'hasInstancingVariant', indent=3)
+    if file_version >= UNITY_2018_1:
+        parse_byte(file, 'hasProceduralInstancingVariant', indent=3)
     align(file, 4)
     UseName = parse_string(file)
     Name = parse_string(file)
@@ -520,6 +524,13 @@ def parse_dependencies_2(file, file_version):
         pr_verbose('   FileID: %i PathID: %i' % (FileID, PathID))
     if file_version >= UNITY_2017_1:
         align(file, 4)
+
+def parse_non_modifiable_textures(file, file_version):
+    num = parse_u4(file, 'Num Non-Modifiable Textures', indent=2)
+    for i in range(num):
+        name = parse_string(file)
+        (FileID, PathID) = struct.unpack('<IQ', file.read(12))
+        pr_verbose('   Name: %s FileID: %i PathID: %i' % (name, FileID, PathID))
 
 def parse_decompressed_blob(blob, filename, sub_programs):
     num_shaders = parse_u4(blob, 'Num shaders', indent=3, verbosity=0)
@@ -639,6 +650,8 @@ def parse_unity55_shader(filename):
     align(file, 4)
 
     parse_dependencies_2(file, file_version)
+    if file_version >= UNITY_2018_1:
+        parse_non_modifiable_textures(file, file_version)
     parse_byte(file, 'ShaderIsBaked', indent=1)
     align(file, 4)
     assert(file.read(1) == b'') # Check whole resource was parsed
