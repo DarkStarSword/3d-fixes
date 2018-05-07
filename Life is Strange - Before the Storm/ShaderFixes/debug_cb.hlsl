@@ -1,6 +1,5 @@
-Texture2D<float> font : register(t100);
-Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
+// Edit this line to change the font colour:
+static const float3 colour = float3(1, 0.5, 0.25);
 
 static const float font_scale = 1.0;
 static float2 cur_pos;
@@ -8,13 +7,13 @@ static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
-cbuffer cb13 : register(b13)
-{
-	float4 cb13[4096];
-}
+// Must be set high enough to counter floating point error in the perspective
+// divide. Should be set to at least the font texture width * font_scale.
+#define TEXCOORD2_BIAS 4096 * font_scale
 
-Buffer<float4> t113 : register(t113);
-Buffer<uint4> t114 : register(t114);
+Texture2D<float> font : register(t100);
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
 struct vs2gs {
 	uint idx : TEXCOORD0;
@@ -22,9 +21,48 @@ struct vs2gs {
 
 struct gs2ps {
 	float4 pos : SV_Position0;
-	float2 tex : TEXCOORD1;
-	uint character : TEXCOORD2;
 };
+
+void pack_texcoord(inout gs2ps output, float2 texcoord)
+{
+	// Packs one coordinate of the texcoord into the SV_Position Z to give
+	// us room for a few extra characters per geometry shader invocation.
+	// Requires 'depth_clip_enable = false' in the d3dx.ini
+	output.pos.z = texcoord.x;
+
+	// We can encode the Y texcoord in the SV_Position's W component to
+	// maximise the number of characters the geometry shader can produce
+	// per invocation. This is a little tricky, since the rasterizer will
+	// perform a perspective divide by this value (and "noperspective"
+	// doesn't seem to prevent this), so we cannot encode 0 here and must
+	// be wary of floating point error that may be introduced by this
+	// divide. To counter this problem, we add a fixed bias to the texcoord
+	// that will prevent it from being 0 and ensure that floating point
+	// error is reduced enough that it will not make a visible difference.
+	output.pos.w = texcoord.y + TEXCOORD2_BIAS;
+	output.pos.xyz *= output.pos.w;
+}
+
+float2 unpack_texcoord(gs2ps input)
+{
+	return float2(input.pos.z, input.pos.w - TEXCOORD2_BIAS);
+}
+
+#ifdef VERTEX_SHADER
+void main(uint id : SV_VertexID, out vs2gs output)
+{
+	output.idx = id;
+}
+#endif
+
+#ifdef GEOMETRY_SHADER
+cbuffer cb13 : register(b13)
+{
+	float4 cb13[4096];
+}
+
+Buffer<float4> t113 : register(t113);
+Buffer<uint4> t114 : register(t114);
 
 void get_meta()
 {
@@ -56,6 +94,7 @@ float2 get_char_dimensions(uint c)
 void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 {
 	float2 cdim = get_char_dimensions(c);
+	float2 texcoord;
 
 	// This does not emit space characters, but if you want to shade the
 	// background of the text you will need to change the > to a >= here
@@ -64,19 +103,20 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale;
 		float texture_x_percent = cdim.x / char_size.x;
 
-		output.character = c;
+		texcoord.x = (c % 16) * char_size.x;
+		texcoord.y = (c / 16 - 2) * char_size.y;
 
 		output.pos = float4(cur_pos.x        , cur_pos.y - dim.y, 0, 1);
-		output.tex = float2(0, 1);
+		pack_texcoord(output, texcoord + float2(0, 1) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y - dim.y, 0, 1);
-		output.tex = float2(texture_x_percent, 1);
+		pack_texcoord(output, texcoord + float2(texture_x_percent, 1) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x        , cur_pos.y        , 0, 1);
-		output.tex = float2(0, 0);
+		pack_texcoord(output, texcoord + float2(0, 0) * char_size);
 		ostream.Append(output);
 		output.pos = float4(cur_pos.x + dim.x, cur_pos.y        , 0, 1);
-		output.tex = float2(texture_x_percent, 0);
+		pack_texcoord(output, texcoord + float2(texture_x_percent, 0) * char_size);
 		ostream.Append(output);
 
 		ostream.RestartStrip();
@@ -84,6 +124,23 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 
 	// Increment current position taking specific character width into account:
 	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
+}
+
+// Using a macro for this because a function requires us to know the size of the buffer
+#define EMIT_CHAR_ARRAY(strlen, buf, ostream) \
+{ \
+	for (uint i = 0; i < strlen; i++) \
+		emit_char(buf[i], ostream); \
+} \
+
+void print_string_buffer(Buffer<uint> buf, inout TriangleStream<gs2ps> ostream)
+{
+	uint strlen, i;
+
+	buf.GetDimensions(strlen);
+
+	for (i = 0; i < strlen; i++)
+		emit_char(buf[i], ostream);
 }
 
 void emit_int(int val, inout TriangleStream<gs2ps> ostream)
@@ -108,13 +165,23 @@ void emit_int(int val, inout TriangleStream<gs2ps> ostream)
 	}
 }
 
+// isnan() is optimised out by the compiler, which produces a warning that we
+// need the /Gis (IEEE Strictness) option to enable it... but that doesn't work
+// either... neither does disabling optimisations... Uhh, good job Microsoft?
+// Whatever, just implement it ourselves by testing for an exponent of all 1s
+// and a non-zero mantissa:
+bool workaround_broken_isnan(float x)
+{
+	return (((asuint(x) & 0x7f800000) == 0x7f800000) && ((asuint(x) & 0x007fffff) != 0));
+}
+
 void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 {
 	int digit;
 	int significant = 0;
 	int scientific = 0;
 
-	if (isnan(val)) {
+	if (workaround_broken_isnan(val)) {
 		emit_char('N', ostream);
 		emit_char('a', ostream);
 		emit_char('N', ostream);
@@ -180,7 +247,7 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 }
 
 // The max here is dictated by 1024 / sizeof(gs2ps)
-[maxvertexcount(144)]
+[maxvertexcount(256)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 	get_meta();
@@ -232,3 +299,14 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	else
 		emit_float(cval.w, ostream);
 }
+#endif
+
+#ifdef PIXEL_SHADER
+void main(gs2ps input, out float4 o0 : SV_Target0)
+{
+	o0.xyzw = font.Load(int3(unpack_texcoord(input), 0)) * float4(colour, 1);
+
+	// Uncomment to darken the background for contrast:
+	// o0.w = max(o0.w, 0.75);
+}
+#endif
