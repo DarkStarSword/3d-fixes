@@ -99,7 +99,7 @@ _This mod is created with 3DMigoto (primarily written by myself, Bo3b and
 Chiri), and uses Flugan's Assembler. See [here][4] for a full list of
 contributors to 3DMigoto_
 
-[4]: https://github.com/bo3b/3Dmigoto/blob/master/AUTHORS.txt
+[4]: https://darkstarsword.net/3Dmigoto-stats/authors.html
 
 _Very special thanks to Neovad for a [previous version][5] of this fix while
 the game was still in early access, and all his work applying my Unity
