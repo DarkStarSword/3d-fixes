@@ -52,6 +52,13 @@ float z_to_w(float z)
 	return 1 / (_ZBufferParams.z * z + _ZBufferParams.w);
 }
 
+// A version of isnan() that cannot be optimised out. Use if the compiler
+// throws a warning about isnan.
+bool workaround_broken_isnan(float x)
+{
+       return (((asuint(x) & 0x7f800000) == 0x7f800000) && ((asuint(x) & 0x007fffff) != 0));
+}
+
 void main(out float auto_convergence : SV_Target0)
 {
 	float target_convergence, convergence_difference;
@@ -70,11 +77,16 @@ void main(out float auto_convergence : SV_Target0)
 	// To counter this and eliminate the stutter, if we tried to set a
 	// convergence in the last frame we will use it as a starting point for
 	// the calculations in this frame instead of the current convergence.
-	current_convergence = state[0].last_set_convergence;
-	if (isnan(current_convergence))
+	//
+	// FIXME: This worked pretty well in DOAXVV, but falls short for me in
+	// LiSBtS. We need to be a bit more intelligent here based on whether
+	// the auto_convergence had sucesfully been staged or is still pending.
+	//
+	//current_convergence = state[0].last_set_convergence;
+	//if (workaround_broken_isnan(current_convergence))
 		current_convergence = StereoParams.Load(0).y;
-	else
-		state[0].last_set_convergence = 1.#QNAN;
+	//else
+		//state[0].last_set_convergence = 1.#QNAN;
 
 	if (state[0].prev_auto_convergence_enabled != auto_convergence_enabled) {
 		state[0].last_convergence.xyzw = 0;
@@ -194,7 +206,7 @@ void main(out float auto_convergence : SV_Target0)
 		if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
 			if (new_convergence < current_convergence) {
 				auto_convergence = new_convergence;
-				state[0].last_set_convergence = auto_convergence;
+				//state[0].last_set_convergence = auto_convergence; FIXME
 				state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
 				return;
 			}
@@ -212,5 +224,5 @@ void main(out float auto_convergence : SV_Target0)
 	}
 
 	state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
-	state[0].last_set_convergence = auto_convergence;
+	//state[0].last_set_convergence = auto_convergence; FIXME
 }
