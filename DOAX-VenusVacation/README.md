@@ -111,6 +111,10 @@ Update v1.5
 - Fix missing legs in some costume mods
 - F2/Shift+F2 hotkeys now show status in overlay
 
+Update v1.6
+-----------
+- Re-fixed lighting & auto-convergence broken by game update
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
