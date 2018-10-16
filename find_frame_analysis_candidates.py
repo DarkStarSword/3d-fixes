@@ -3,7 +3,7 @@
 import sys, os, re
 
 set_shader = re.compile(r'''
-    (?:(P<frame>\d+)\.)?
+    (?:(?P<frame>\d+)\.)?
     (?P<call>\d+)
     \s+
     (?P<type>[VHDGPC]S)
@@ -14,7 +14,7 @@ set_shader = re.compile(r'''
 
 #TODO: OMSetRenderTargetsAndUnorderedAccessViews NumRTVs != -1
 set_rtvs = re.compile(r'''
-    (?:(P<frame>\d+)\.)?
+    (?:(?P<frame>\d+)\.)?
     (?P<call>\d+)
     \s+
     OMSetRenderTargets\(.*\)
@@ -35,7 +35,7 @@ set_rtv_details = re.compile(r'''
 ''', re.VERBOSE)
 
 draw = re.compile(r'''
-    (?:(P<frame>\d+)\.)?
+    (?:(?P<frame>\d+)\.)?
     (?P<call>\d+)
     \s+
     Draw\S*\(.*\)
@@ -43,7 +43,7 @@ draw = re.compile(r'''
 ''', re.VERBOSE)
 
 dispatch = re.compile(r'''
-    (?:(P<frame>\d+)\.)?
+    (?:(?P<frame>\d+)\.)?
     (?P<call>\d+)
     \s+
     Dispatch\S*\(.*\)
