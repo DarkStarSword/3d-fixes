@@ -63,6 +63,7 @@ cbuffer cb13 : register(b13)
 
 Buffer<float4> t113 : register(t113);
 Buffer<uint4> t114 : register(t114);
+ByteAddressBuffer t115 : register(t115);
 
 void get_meta()
 {
@@ -256,17 +257,34 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	uint4 ival = asint(cb13[idx]);
 	float char_height = char_size.y / resolution.y * 2 * font_scale;
 	int max_y = resolution.y / char_size.y * font_scale;
-	uint t113len, t114len;
+	uint t113len, t114len, t115len;
 	bool use_int = false;
 
 	// If t113 is set we use that instead of cb13, if neither are set
 	// (using 3DMigoto 1.2.65 feature to test if cb13 is bound) we bail:
 	t113.GetDimensions(t113len);
 	t114.GetDimensions(t114len);
+	t115.GetDimensions(t115len);
 	if (t113len) {
 		cval = t113[idx];
 	} else if (t114len) {
 		ival = t114[idx];
+		use_int = true;
+	} else if (t115len) {
+		// Despite being called a "byte address buffer" and supporting
+		// Load through Load4 it seems it is actually a 32bit aligned
+		// little-endian word address buffer and Load2 through Load4
+		// load subsequent 32bit values... The only "byte" thing about
+		// this is that the address is specified in bytes... but has to
+		// be a multiple of 4 (low address bits are discarded) >_<
+		// If we wanted to actually treat it as a buffer of raw bytes:
+		//   uint tmp = t115.Load(idx * 4);
+		//   ival = uint4(tmp        & 0xff,
+		//               (tmp >>  8) & 0xff,
+		//               (tmp >> 16) & 0xff,
+		//               (tmp >> 24) & 0xff);
+		// But otherwise let's just go with 32bit LE uint value buffer:
+		ival = t115.Load4(idx * 16);
 		use_int = true;
 	} else if (asint(IniParams[7].w) == asint(-0.0)) {
 		return;
