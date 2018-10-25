@@ -1,6 +1,11 @@
 Lichdom: Battlemage
 ===================
 
+Update v1.1
+-----------
+- Improved performance of CryEngine occlusion culling flicker fix
+- Updated to 3DMigoto 1.3.11
+
 Fixed
 -----
 - **First ever CryEngine 3 Shadow fix!!!**
@@ -47,17 +52,6 @@ Troubleshooting
 
 - If your framerate is abnormally low, try changing the resolution and then
   changing it back.
-
-- If the framerate is abnormally low only when facing certain directions you
-  may be able to regain some fps at the cost of objects disappearing when they
-  shouldn't. Edit the d3dx.ini and change deny_cpu_read to 0 at the bottom. You
-  can edit this while the game is running - press F10 to reload the config.
-
-- Driver bugs can cause numerous rendering issues after playing for a while. If
-  you see a stuck image, moving shadows, one eye brighter than the other, the
-  whole screen blanking out, or some other weird glitch it's a sign you should
-  probably save and restart the game soon. Disabling the shader cache in the
-  control panel may help.
 
 - If you find a broken effect please let me know where to find it. Be sure to
   mention what graphics settings you are using (especially water and "visual
