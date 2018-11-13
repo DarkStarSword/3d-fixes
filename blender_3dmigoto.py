@@ -56,6 +56,10 @@ u8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_UINT''')
 s32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_SINT''')
 s16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_SINT''')
 s8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_SINT''')
+unorm16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_UNORM''')
+unorm8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_UNORM''')
+snorm16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_SNORM''')
+snorm8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_SNORM''')
 
 def EncoderDecoder(fmt):
     if f32_pattern.match(fmt):
@@ -82,6 +86,20 @@ def EncoderDecoder(fmt):
     if s8_pattern.match(fmt):
         return (lambda data: numpy.fromiter(data, numpy.int8).tobytes(),
                 lambda data: numpy.frombuffer(data, numpy.int8).tolist())
+
+    if unorm16_pattern.match(fmt):
+        return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 65535.0)).astype(numpy.uint16).tobytes(),
+                lambda data: (numpy.frombuffer(data, numpy.uint16) / 65535.0).tolist())
+    if unorm8_pattern.match(fmt):
+        return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 255.0)).astype(numpy.uint8).tobytes(),
+                lambda data: (numpy.frombuffer(data, numpy.uint8) / 255.0).tolist())
+    if snorm16_pattern.match(fmt):
+        return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 32767.0)).astype(numpy.int16).tobytes(),
+                lambda data: (numpy.frombuffer(data, numpy.int16) / 32767.0).tolist())
+    if snorm8_pattern.match(fmt):
+        return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 127.0)).astype(numpy.int8).tobytes(),
+                lambda data: (numpy.frombuffer(data, numpy.int8) / 127.0).tolist())
+
     raise Fatal('File uses an unsupported DXGI Format: %s' % fmt)
 
 components_pattern = re.compile(r'''(?<![0-9])[0-9]+(?![0-9])''')
