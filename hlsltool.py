@@ -780,6 +780,11 @@ class HLSLShader(Shader):
 
         return None, pos
 
+    def MovInstruction(self, dst, mask, src, swiz):
+        if mask == 'xyzw':
+            return '%s = %s.%s' % (dst, src, swiz)
+        return '%s.%s = %s.%s;' % (dst, mask, src, swiz)
+
     def split_instructions(self, body_txt):
         pos = Shader.split_instructions(self, body_txt)
         self.close_txt = body_txt[pos:] + self.close_txt
@@ -805,6 +810,9 @@ class HLSLShader(Shader):
         self.parameters[(semantic, output)] = param
 
     def hlsl_swizzle(self, mask, swizzle):
+        return swizzle
+
+    def asm_swizzle(self, mask, swizzle):
         return swizzle
 
     def adjust_cb_size(self, cb, size):
@@ -983,9 +991,10 @@ def auto_fix_vertex_halo(shader):
 
             # This comment from shadertool.py:
             #   " Only apply components to destination (as mask) to avoid bugs like this one: "mov o6.yz, r1.yz" "
-            # does not apply here as HLSL does not use a mask in the same way.
-            # Instead we apply the mask to both input & output:
-            instr = '%s.%s = %s.%s;' % (pos_out, components, temp_reg.variable, components)
+            # This doesn't apply in HLSL where we just use the mask as both input & output.
+            # It does apply when this is called from asmtool (e.g. Ori and the Blind Forest),
+            # but this time around we are recreating the 1/4 component assembly swizzle
+            instr = shader.MovInstruction(pos_out, components, temp_reg.variable, shader.asm_swizzle(components, components))
             debug_verbose(-1, "Line %i: Inserting '%s'" % (output_line + 1, instr))
             off = shader.insert_instr(output_line + 1, instr, 'Inserted by %s' % tool_name)
 

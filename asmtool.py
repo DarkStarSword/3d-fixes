@@ -491,6 +491,9 @@ class ASMShader(hlsltool.Shader):
 
         return None, pos
 
+    def MovInstruction(self, dst, mask, src, swiz):
+        return 'mov %s.%s, %s.%s' % (dst, mask, src, swiz)
+
     def process_declarations(self):
         self.declarations = []
         self.sv_outputs = {}
@@ -608,10 +611,24 @@ class ASMShader(hlsltool.Shader):
         return ''.join(ret)
 
     def hlsl_swizzle(self, mask, swizzle):
+        # HLSL style swizzle from assembly style swizzle
         return shadertool.asm_hlsl_swizzle(mask, swizzle)
 
-    def mask_register(self, lval, rval):
-        return hlsltool.Register(rval.negate, rval.variable, None, self.hlsl_swizzle(lval.components, rval.components))
+    def asm_swizzle(self, mask, swizzle):
+        # Assembly style swizzle from HLSL style swizzle
+        if len(mask) == 1:
+            assert(len(swizzle) == 1)
+            return swizzle
+        # DX11 shaders must always use exactly 1 or 4 component swizzles
+        ret = list('xxxx')
+        for (i, component) in enumerate(mask):
+            ret[{
+                'x': 0,
+                'y': 1,
+                'z': 2,
+                'w': 3,
+            }[component]] = swizzle[i]
+        return ''.join(ret)
 
     def find_cb_declaration(self, cb):
         for declaration in self.declarations:
