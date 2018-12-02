@@ -265,12 +265,12 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	t113.GetDimensions(t113len);
 	t114.GetDimensions(t114len);
 	t115.GetDimensions(t115len);
-	if (t113len) {
+	if (idx < t113len) {
 		cval = t113[idx];
-	} else if (t114len) {
+	} else if (idx < t114len) {
 		ival = t114[idx];
 		use_int = true;
-	} else if (t115len) {
+	} else if (idx < t115len) {
 		// Despite being called a "byte address buffer" and supporting
 		// Load through Load4 it seems it is actually a 32bit aligned
 		// little-endian word address buffer and Load2 through Load4
