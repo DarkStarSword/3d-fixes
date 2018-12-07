@@ -62,24 +62,24 @@ archive="${PWD}/3Dfix-${game}-${version}"
 
 if [ -f "$dir/d3dx.ini" ]; then
 	echo Checking if d3dx.ini is in release mode...
-	grep "hunting=1" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
-	grep "hunting=2" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
-	grep "calls=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
-	grep "input=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
-	grep "debug=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
-	grep "unbuffered=1" "$dir/d3dx.ini" && die ABORTING: Logging is unbuffered
-	grep "convergence=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
-	grep "separation=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
-	grep "force_cpu_affinity=1" "$dir/d3dx.ini" && die ABORTING: CPU Affinity is being forced
-	grep "export_fixed=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "export_binary=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "export_shaders=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "export_hlsl=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "export_hlsl=2" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "export_hlsl=3" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
-	grep "dump_usage=1" "$dir/d3dx.ini" && die ABORTING: Collecting usage statistics is enabled
-	grep "waitfordebugger=1" "$dir/d3dx.ini" && die ABORTING: Wait for debugger is enabled
-	grep "cache_shaders=0" "$dir/d3dx.ini" && die ABORTING: Shader cache is disabled
+	grep "^\s*hunting=1" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
+	grep "^\s*hunting=2" "$dir/d3dx.ini" && die ABORTING: Hunting is enabled
+	grep "^\s*calls=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "^\s*input=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "^\s*debug=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "^\s*unbuffered=1" "$dir/d3dx.ini" && die ABORTING: Logging is unbuffered
+	grep "^\s*convergence=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "^\s*separation=1" "$dir/d3dx.ini" && die ABORTING: Logging is enabled
+	grep "^\s*force_cpu_affinity=1" "$dir/d3dx.ini" && die ABORTING: CPU Affinity is being forced
+	grep "^\s*export_fixed=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*export_binary=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*export_shaders=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*export_hlsl=1" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*export_hlsl=2" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*export_hlsl=3" "$dir/d3dx.ini" && die ABORTING: Dumping is enabled
+	grep "^\s*dump_usage=1" "$dir/d3dx.ini" && die ABORTING: Collecting usage statistics is enabled
+	grep "^\s*waitfordebugger=1" "$dir/d3dx.ini" && die ABORTING: Wait for debugger is enabled
+	grep "^\s*cache_shaders=0" "$dir/d3dx.ini" && die ABORTING: Shader cache is disabled
 fi
 
 if [ "$tag" != "--no-repo" ]; then
