@@ -115,6 +115,17 @@ Update v1.6
 -----------
 - Re-fixed lighting & auto-convergence broken by game update
 
+Update v1.7
+-----------
+- Updated costume mod and 3D Vision ripple fix for compatibility with DOAXVV
+  December 6th update
+- Update to 3DMigoto 1.3.12 (adds vertex buffer hunting keys, clipboard marking
+  mode, etc)
+- 3D Vision: Made specular reflections on some (not all) materials render at
+  their accurate depth instead of surface depth.
+- 3D Vision: Tweaked auto-convergence settings for more comfort in some
+  cutscenes.
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
