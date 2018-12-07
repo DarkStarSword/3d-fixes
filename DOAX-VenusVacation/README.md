@@ -126,6 +126,11 @@ Update v1.7
 - 3D Vision: Tweaked auto-convergence settings for more comfort in some
   cutscenes.
 
+Hotfix v1.8
+-----------
+- Fixed pink fingernails
+- Added another missing costume shader
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
