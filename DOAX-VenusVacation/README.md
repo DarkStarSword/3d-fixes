@@ -72,10 +72,10 @@ adjust the popout instead when auto-convergence is enabled, and the popout
 value will be displayed on screen while adjusting it.
 
 This feature has a number of tunable parameters, which can be tweaked by
-editing the [Constants] section in the d3dx.ini. These tunables include things
-such as the initial popout, minimum and maximum allowable convergence values,
-thresholds for how far the convergence is allowed to get away from the target,
-and threshold for the anti-judder countermeasure.
+editing the [Constants] section in the ShaderFixes\auto_convergence.ini. These
+tunables include things such as the initial popout, minimum and maximum
+allowable convergence values, thresholds for how far the convergence is allowed
+to get away from the target, and threshold for the anti-judder countermeasure.
 
 3D Vision Fixes
 ---------------
@@ -130,6 +130,10 @@ Hotfix v1.8
 -----------
 - Fixed pink fingernails
 - Added another missing costume shader
+
+Update v1.9
+-----------
+- 3DMigoto updates to facilitate more advanced modding
 
 Known Issues (3D Vision Users Only)
 -----------------------------------
