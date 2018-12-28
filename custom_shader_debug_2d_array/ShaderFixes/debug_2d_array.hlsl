@@ -1,7 +1,7 @@
 Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
-#define amplify (IniParams[7].w ? IniParams[7].w : 1)
+#define amplify IniParams[0].x
 #define scale 1
 
 struct vs2ps {

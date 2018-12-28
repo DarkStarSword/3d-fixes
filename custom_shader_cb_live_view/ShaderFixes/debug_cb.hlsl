@@ -286,7 +286,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 		// But otherwise let's just go with 32bit LE uint value buffer:
 		ival = t115.Load4(idx * 16);
 		use_int = true;
-	} else if (asint(IniParams[7].w) == asint(-0.0)) {
+	} else if (asint(IniParams[0].x) == asint(-0.0)) {
 		return;
 	}
 

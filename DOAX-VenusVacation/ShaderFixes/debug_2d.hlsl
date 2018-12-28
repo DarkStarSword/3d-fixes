@@ -1,7 +1,7 @@
 Texture1D<float4> IniParams : register(t120);
 
-#define amplify (IniParams[7].w ? IniParams[7].w : 1)
-#define flip IniParams[7].z
+#define amplify IniParams[0].x
+#define flip IniParams[0].y
 
 struct vs2ps {
 	float4 pos : SV_Position0;

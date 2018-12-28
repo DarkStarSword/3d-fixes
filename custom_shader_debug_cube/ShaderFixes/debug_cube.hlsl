@@ -1,6 +1,6 @@
 Texture1D<float4> IniParams : register(t120);
 
-#define amplify (IniParams[7].w ? IniParams[7].w : 1)
+#define amplify IniParams[0].x
 
 
 struct vs2ps {
