@@ -48,6 +48,8 @@ Keys (3D Vision + Costume Mod Users)
 - Shift+F2: Cycle costume mod shadow modes (on/off/original)
 - Mouse back button: Toggle HUD visibility
 - Ctrl+F9: 3DMigoto performance monitor
+- F10: Reload all mods
+- Ctrl+Alt+F10: Reload all mods and reset to default configuration
 
 Keys (3D Vision Users Only)
 ---------------------------
@@ -134,6 +136,8 @@ Hotfix v1.8
 Update v1.9
 -----------
 - 3DMigoto updates to facilitate more advanced modding
+- Now automatically saves the costume & shadow settings on exit/reload.
+  Ctrl+Alt+F10 will revert to the default settings and reload.
 
 Known Issues (3D Vision Users Only)
 -----------------------------------
