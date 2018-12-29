@@ -14,7 +14,7 @@ StructuredBuffer<TextParameters> params : register(t114);
 
 static float2 cur_pos;
 // static float4 resolution;
-#define resolution IniParams[5].xy
+#define resolution IniParams[0].xy
 static float2 char_size;
 static int2 meta_pos_start;
 
@@ -485,7 +485,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 #endif
 
 #ifdef PIXEL_SHADER
-void main(gs2ps input, uint id : SV_InstanceID, out float4 o0 : SV_Target0)
+void main(gs2ps input, out float4 o0 : SV_Target0)
 {
 	float2 texcoord = unpack_texcoord(input);
 
