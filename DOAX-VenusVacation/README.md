@@ -138,6 +138,9 @@ Update v1.9
 - 3DMigoto updates to facilitate more advanced modding
 - Now automatically saves the costume & shadow settings on exit/reload.
   Ctrl+Alt+F10 will revert to the default settings and reload.
+- Frame analysis now has several "profiles" that can be switched with - by
+  default only skin and costumes are dumped. Press Ctrl+F8 to enable/disable
+  dumping hair, fingernails and UI.
 
 Known Issues (3D Vision Users Only)
 -----------------------------------
