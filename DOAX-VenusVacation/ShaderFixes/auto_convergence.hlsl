@@ -86,6 +86,7 @@ void main(out float auto_convergence : SV_Target0)
 		// No depth buffer, auto-convergence cannot work. Bail now,
 		// otherwise we would set the hard maximum convergence limit
 		auto_convergence = 1.#QNAN;
+		state[0].judder = false;
 		return;
 	}
 
@@ -165,6 +166,8 @@ void main(out float auto_convergence : SV_Target0)
 		// in. To try to avoid the camera being obscured, we try to
 		// stop in the lower convergence state
 		if (any(abs(new_convergence - state[0].last_convergence.xyzw) < anti_judder_threshold)) {
+			state[0].judder = true;
+			state[0].judder_time = time;
 			if (new_convergence < current_convergence) {
 				auto_convergence = new_convergence;
 				state[0].last_set_convergence = auto_convergence;
@@ -186,4 +189,5 @@ void main(out float auto_convergence : SV_Target0)
 
 	state[0].last_convergence.xyzw = float4(current_convergence, state[0].last_convergence.xyz);
 	state[0].last_set_convergence = auto_convergence;
+	state[0].judder = false;
 }

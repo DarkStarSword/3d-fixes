@@ -274,6 +274,12 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 		{',', ' ', 'C', 'o', 'n', 'v', 'e', 'r', 'g', 'e', 'n', 'c', 'e', ':', ' '};
 	EMIT_CHAR_ARRAY(15, CONVERGENCE, ostream);
 	emit_float(StereoParams.Load(0).y, ostream);
+
+	if (auto_convergence_enabled && (state[0].judder)) { // || time - state[0].judder_time < 2)) {
+		static const uint CONVERGENCE[] =
+			{',', ' ', 'J', 'u', 'd', 'd', 'e', 'r', '!'};
+		EMIT_CHAR_ARRAY(9, CONVERGENCE, ostream);
+	}
 }
 #endif
 

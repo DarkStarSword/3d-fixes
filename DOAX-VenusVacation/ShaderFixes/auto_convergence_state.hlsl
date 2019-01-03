@@ -18,4 +18,6 @@ struct auto_convergence_state {
 	float4 last_convergence;
 	float user_popout_bias;
 	float last_set_convergence;
+	bool judder;
+	float judder_time;
 };
