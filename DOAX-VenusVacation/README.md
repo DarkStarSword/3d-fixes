@@ -135,9 +135,10 @@ Hotfix v1.8
 
 Update v1.9
 -----------
-- 3DMigoto updates to facilitate more advanced modding
+- 3DMigoto updated to 1.3.14 to facilitate more advanced modding
 - Now automatically saves the costume & shadow settings on exit/reload.
   Ctrl+Alt+F10 will revert to the default settings and reload.
+- Key bindings are no longer processed while alt+tabbed out.
 - Frame analysis now has several "profiles" that can be switched with - by
   default only skin and costumes are dumped to make blender imports faster.
   Press Ctrl+F8 (in hunting mode) to enable/disable dumping hair and
@@ -146,6 +147,10 @@ Update v1.9
   easier to import meshes into blender when a costume mod is active (If you
   want to reimport a modified mesh you should be importing that directly from
   the mod, not a frame analysis dump).
+- Auto-convergence has been updated - the popout bias will be automatically
+  saved in the d3dx_user.ini, and the auto-convergence HUD will show the
+  current convergence value as well. There's a bunch more changes under the
+  hood, so it may behave slightly differently to before.
 
 Known Issues (3D Vision Users Only)
 -----------------------------------

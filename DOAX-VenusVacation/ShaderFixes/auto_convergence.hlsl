@@ -44,6 +44,9 @@ void main(out float auto_convergence : SV_Target0)
 	float target_popout_bias;
 	float z, zr, zl, w;
 
+	float4 stereo = StereoParams.Load(0);
+	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
+
 	// Since there is some lag between setting the auto-convergence and it
 	// taking effect, the convergence from this frame may not be the
 	// convergence we previously set (which may still be in flight to the
@@ -55,27 +58,17 @@ void main(out float auto_convergence : SV_Target0)
 	// To counter this and eliminate the stutter, if we tried to set a
 	// convergence in the last frame we will use it as a starting point for
 	// the calculations in this frame instead of the current convergence.
-	current_convergence = state[0].last_set_convergence;
-	if (isnan(current_convergence))
-		current_convergence = StereoParams.Load(0).y;
-	else
+	if (prev_auto_convergence_enabled) {
+		current_convergence = state[0].last_set_convergence;
+		if (isnan(current_convergence))
+			current_convergence = convergence;
+		else
+			state[0].last_set_convergence = 1.#QNAN;
+	} else {
+		current_convergence = convergence;
 		state[0].last_set_convergence = 1.#QNAN;
-
-	if (state[0].prev_auto_convergence_enabled != auto_convergence_enabled) {
-		state[0].last_convergence.xyzw = 0;
-		state[0].last_adjust_time = time;
-		state[0].show_hud = true;
+		state[0].last_convergence.xyzw = 1.#QNAN;
 	}
-	state[0].prev_auto_convergence_enabled = auto_convergence_enabled;
-
-	if (!auto_convergence_enabled) {
-		auto_convergence = 1.#SNAN;
-		return;
-	}
-
-	float4 stereo = StereoParams.Load(0);
-	float separation = stereo.x, convergence = stereo.y, eye = stereo.z, raw_sep = stereo.w;
-	bool user_updated_convergence = separation && prev_stereo_active && convergence != prev_convergence;
 
 	zr = stereo2mono_downscaled_zbuffer.Load(int3(0, 0, 0));
 	zl = stereo2mono_downscaled_zbuffer.Load(int3(1, 0, 0));
@@ -93,14 +86,8 @@ void main(out float auto_convergence : SV_Target0)
 		// No depth buffer, auto-convergence cannot work. Bail now,
 		// otherwise we would set the hard maximum convergence limit
 		auto_convergence = 1.#QNAN;
-		// Display a notice in the HUD if the user tries to change the
-		// convergence:
-		if (user_updated_convergence || warn_no_z_buffer)
-			state[0].last_adjust_time = time;
-		state[0].no_z_buffer = true;
 		return;
 	}
-	state[0].no_z_buffer = false;
 
 	// A lot of the maths below is experimental to try to find a good
 	// auto-convergence algorithm that works well with a wide variety of
@@ -111,16 +98,17 @@ void main(out float auto_convergence : SV_Target0)
 	// on screen size
 	target_convergence = min(w, max_convergence_soft);
 
-	if (user_updated_convergence) {
-		// User adjusted the convergence. Convert this to an equivalent
-		// popout bias for auto-convergence that we save in a buffer on
-		// the GPU. This is the below formula re-arranged:
-		target_popout_bias = (separation*(convergence - target_convergence)/(raw_sep*w));
-		target_popout_bias = min(max(target_popout_bias, -1), 1) - ini_popout_bias;
-		state[0].user_popout_bias = target_popout_bias;
-		state[0].last_adjust_time = time;
-		state[0].show_hud = true;
-	}
+	// Disabling this for now since we want the user popout bias to be
+	// saved in the d3dx_user.ini, meaning we can't calculate it on the
+	// GPU. TODO: Maybe bring this back once able to stage arbitrary buffers.
+	//if (user_convergence_delta) {
+	//	// User adjusted the convergence. Convert this to an equivalent
+	//	// popout bias for auto-convergence that we save in a buffer on
+	//	// the GPU. This is the below formula re-arranged:
+	//	target_popout_bias = (separation*(convergence - target_convergence)/(raw_sep*w));
+	//	target_popout_bias = min(max(target_popout_bias, -1), 1) - ini_popout_bias;
+	//	state[0].user_popout_bias = target_popout_bias;
+	//}
 
 	// Apply the popout bias. This experimental formula is derived by
 	// taking the nvidia formula with the perspective divide and the

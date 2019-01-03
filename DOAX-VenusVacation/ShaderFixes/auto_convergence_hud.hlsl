@@ -243,9 +243,6 @@ void emit_float(float val, inout TriangleStream<gs2ps> ostream)
 [maxvertexcount(256)]
 void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
-	if (!state[0].show_hud || (time - state[0].last_adjust_time > auto_convergence_hud_timeout) || (StereoParams.Load(0).x == 0))
-		return;
-
 	get_meta();
 	uint idx = input[0].idx;
 	float char_height = char_size.y / resolution.y * 2 * font_scale;
@@ -257,7 +254,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	EMIT_CHAR_ARRAY(17, AUTO_CONVERGENCE, ostream);
 
 	if (auto_convergence_enabled) {
-		if (state[0].no_z_buffer) {
+		if (no_z_buffer) {
 			static const uint NO_Z_BUFFER[] =
 				{':', ' ', 'N', 'o', ' ', 'Z', ' ', 'B', 'u', 'f', 'f', 'e', 'r'};
 			EMIT_CHAR_ARRAY(13, NO_Z_BUFFER, ostream);
@@ -272,6 +269,11 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 			{'D', 'i', 's', 'a', 'b', 'l', 'e', 'd'};
 		EMIT_CHAR_ARRAY(8, DISABLED, ostream);
 	}
+
+	static const uint CONVERGENCE[] =
+		{',', ' ', 'C', 'o', 'n', 'v', 'e', 'r', 'g', 'e', 'n', 'c', 'e', ':', ' '};
+	EMIT_CHAR_ARRAY(15, CONVERGENCE, ostream);
+	emit_float(StereoParams.Load(0).y, ostream);
 }
 #endif
 
