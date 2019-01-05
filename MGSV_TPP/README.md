@@ -1,6 +1,13 @@
 Metal Gear Solid V: The Phantom Pain
 ====================================
 
+Update v1.7
+-----------
+- Worked around game bug breaking blue highlight of enemies behind cover, and
+  re-enabled this effect by default. If you wish to disable this effect again
+  (not recommended for FOBs since it makes Noctocyanin useless) you can change
+  the value of x2 in the d3dx.ini
+
 Update v1.6
 -----------
 - Updated to 3DMigoto 1.2.50
@@ -25,8 +32,8 @@ Update v1.3
   like any multi-player game, your use of this fix or any other mod with MGO is
   at your own risk.
 - Bundled with latest 3DMigoto to enable SBS/TAB output modes (uncomment the
-  'run = CustomShader3DVision2SBS' line to enable then press F11 in game to
-  cycle output modes).
+  'include = ShaderFixes\3dvision2sbs.ini' line to enable then press F11 in
+  game to cycle output modes).
 
 Update v1.2
 -----------
@@ -88,18 +95,13 @@ All these presets can be customised by editing the d3dx.ini.
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
 This fix is bundled with the new SBS / TAB output mode support in 3DMigoto. To
-enable it, edit the d3dx.ini, find the [Present] section and uncomment the line
-that reads:
+enable it, edit the d3dx.ini, find the [Include] section at the top of the file
+and uncomment the line that reads:
 
-    run = CustomShader3DVision2SBS
+    include = ShaderFixes\3dvision2sbs.ini
 
 Then, in game press F11 to cycle output modes. If using 3D TV Play, set the
 nvidia control panel to output checkerboard to remove the 720p limitation.
-
-Known Issues
-------------
-- Blue highlight on enemies behind cover is broken around the hips and
-  disabled. Press F3 to re-enable.
 
 Like my Work?
 -------------
