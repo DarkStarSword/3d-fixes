@@ -208,9 +208,8 @@ class InputLayoutElement(object):
             self.InstanceDataStepRate == other.InstanceDataStepRate
 
 class InputLayout(object):
-    def __init__(self, custom_prop=[], stride=0):
+    def __init__(self, custom_prop=[]):
         self.elems = collections.OrderedDict()
-        self.stride = stride
         for item in custom_prop:
             elem = InputLayoutElement(item)
             self.elems[elem.name] = elem
@@ -235,8 +234,8 @@ class InputLayout(object):
     def __getitem__(self, semantic):
         return self.elems[semantic]
 
-    def encode(self, vertex):
-        buf = bytearray(self.stride)
+    def encode(self, vertex, stride):
+        buf = bytearray(stride)
 
         for semantic, data in vertex.items():
             if semantic.startswith('~'):
@@ -245,7 +244,7 @@ class InputLayout(object):
             data = elem.encode(data)
             buf[elem.AlignedByteOffset:elem.AlignedByteOffset + len(data)] = data
 
-        assert(len(buf) == self.stride)
+        assert(len(buf) == stride)
         return buf
 
     def decode(self, buf):
@@ -264,19 +263,24 @@ class HashableVertex(dict):
         immutable = tuple((k, tuple(v)) for k,v in sorted(self.items()))
         return hash(immutable)
 
-class VertexBuffer(object):
+class IndividualVertexBuffer(object):
+    '''
+    One individual vertex buffer. Multiple vertex buffers may contain
+    individual semantics which when combined together make up a vertex buffer
+    group.
+    '''
+
     vb_elem_pattern = re.compile(r'''vb\d+\[\d*\]\+\d+ (?P<semantic>[^:]+): (?P<data>.*)$''')
 
-    # Python gotcha - do not set layout=InputLayout() in the default function
-    # parameters, as they would all share the *same* InputLayout since the
-    # default values are only evaluated once on file load
-    def __init__(self, f=None, layout=None, load_vertices=True):
+    def __init__(self, idx, f=None, layout=None, load_vertices=True):
         self.vertices = []
         self.layout = layout and layout or InputLayout()
         self.first = 0
         self.vertex_count = 0
         self.offset = 0
         self.topology = 'trianglelist'
+        self.stride = 0
+        self.idx = idx
 
         if f is not None:
             self.parse_vb_txt(f, load_vertices)
@@ -291,7 +295,7 @@ class VertexBuffer(object):
             if line.startswith('vertex count:'):
                 self.vertex_count = int(line[14:])
             if line.startswith('stride:'):
-                self.layout.stride = int(line[7:])
+                self.stride = int(line[7:])
             if line.startswith('element['):
                 self.layout.parse_element(f)
             if line.startswith('topology:'):
@@ -350,6 +354,53 @@ class VertexBuffer(object):
 
         return tuple(map(float, fields))
 
+class VertexBufferGroup(object):
+    '''
+    All the per-vertex data, which may be loaded/saved from potentially
+    multiple individual vertex buffers with different semantics in each.
+    '''
+    vb_idx_pattern = re.compile(r'''-vb([0-9]+)''')
+
+    # Python gotcha - do not set layout=InputLayout() in the default function
+    # parameters, as they would all share the *same* InputLayout since the
+    # default values are only evaluated once on file load
+    def __init__(self, files=None, layout=None, load_vertices=True):
+        self.vertices = []
+        self.layout = layout and layout or InputLayout()
+        self.first = 0
+        self.vertex_count = 0
+        self.topology = 'trianglelist'
+        self.vbs = []
+
+        if files is not None:
+            self.parse_vb_txt(files, load_vertices)
+
+    def parse_vb_txt(self, files, load_vertices):
+        for f in files:
+            match = self.vb_idx_pattern.search(f)
+            if match is None:
+                raise Fatal('Cannot determine vertex buffer index from filename %s' % f)
+            idx = int(match.group(1))
+            vb = IndividualVertexBuffer(idx, open(f, 'r'), self.layout, load_vertices)
+            self.vbs.append(vb)
+
+        # Non buffer specific info:
+        self.first = self.vbs[0].first
+        self.vertex_count = self.vbs[0].vertex_count
+        self.topology = self.vbs[0].topology
+
+        if load_vertices:
+            self.merge_vbs(self.vbs)
+            assert(len(self.vertices) == self.vertex_count)
+
+    def parse_vb_bin(self, files):
+        # FIXME TODO
+        pass
+
+    def append(self, vertex):
+        self.vertices.append(vertex)
+        self.vertex_count += 1
+
     def remap_blendindices(self, mapping):
         for vertex in self.vertices:
             for semantic in ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2'):
@@ -383,6 +434,15 @@ class VertexBuffer(object):
 
     def __len__(self):
         return len(self.vertices)
+
+    def merge_vbs(self, vbs):
+        self.vertices = self.vbs[0].vertices
+        del self.vbs[0].vertices
+        assert(len(self.vertices) == self.vertex_count)
+        for vb in self.vbs[1:]:
+            assert(len(vb.vertices) == self.vertex_count)
+            [ self.vertices[i].update(vertex) for i,vertex in enumerate(vb.vertices) ]
+            del vb.vertices
 
     def merge(self, other):
         if self.layout != other.layout:
@@ -497,7 +557,7 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     vb_bin_path, vb_txt_path = vb_paths[0]
     ib_bin_path, ib_txt_path = ib_paths[0]
 
-    vb = VertexBuffer(open(vb_txt_path, 'r'), load_vertices=False)
+    vb = VertexBufferGroup(vb_txt_path, load_vertices=False)
     vb.parse_vb_bin(open(vb_bin_path, 'rb'))
 
     ib = None
@@ -514,10 +574,10 @@ def load_3dmigoto_mesh(operator, paths):
     if use_bin[0]:
         return load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path)
 
-    vb = VertexBuffer(open(vb_paths[0], 'r'))
+    vb = VertexBufferGroup(vb_paths[0])
     # Merge additional vertex buffers for meshes split over multiple draw calls:
     for vb_path in vb_paths[1:]:
-        tmp = VertexBuffer(open(vb_path, 'r'))
+        tmp = VertexBufferGroup(vb_path)
         vb.merge(tmp)
 
     ib = None
@@ -528,12 +588,13 @@ def load_3dmigoto_mesh(operator, paths):
             tmp = IndexBuffer(open(ib_path, 'r'))
             ib.merge(tmp)
 
-    return vb, ib, os.path.basename(vb_paths[0]), pose_path
+    return vb, ib, os.path.basename(vb_paths[0][0]), pose_path
 
 def import_normals_step1(mesh, data):
     # Ensure normals are 3-dimensional:
     if len(data[0]) == 4:
-        assert([x[3] for x in data] == [0.0]*len(data))
+        assert([x[3] for x in data] == [0.0]*len(data) or # DOAXVV
+               [x[3] for x in data] == [1.0]*len(data))   # MGSV
     normals = [(x[0], x[1], x[2]) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
@@ -715,7 +776,8 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     # Attach the vertex buffer layout to the object for later exporting. Can't
     # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
     obj['3DMigoto:VBLayout'] = vb.layout.serialise()
-    obj['3DMigoto:VBStride'] = vb.layout.stride # FIXME: Strides of multiple vertex buffers
+    for raw_vb in vb.vbs:
+        obj['3DMigoto:VB%iStride' % raw_vb.idx] = raw_vb.stride
     obj['3DMigoto:FirstVertex'] = vb.first
 
     if ib is not None:
@@ -873,7 +935,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         if ib is not None:
             ib.append(face)
 
-    vb = VertexBuffer(layout=layout)
+    vb = VertexBufferGroup(layout=layout)
     for vertex in indexed_vertices:
         vb.append(vertex)
 
@@ -999,9 +1061,9 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 except IndexError:
                     pass
 
-            if len(ib_paths) != 1 or len(vb_paths) != 1:
-                raise Fatal('Only draw calls using a single vertex buffer and a single index buffer are supported for now')
-            ret.add((vb_paths[0], ib_paths[0], use_bin, pose_path))
+            if len(ib_paths) != 1:
+                raise Fatal('Error: excess index buffers in dump?')
+            ret.add((tuple(vb_paths), ib_paths[0], use_bin, pose_path))
         return ret
 
     def execute(self, context):
@@ -1023,7 +1085,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         return {'FINISHED'}
 
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, **kwargs):
-    paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
+    paths = ((((vb_path, vb_fmt_path),), (ib_path, ib_fmt_path), True, None),)
     return import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
 
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
