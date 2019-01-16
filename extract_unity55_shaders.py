@@ -147,7 +147,7 @@ def align(file, alignment):
 
 def parse_string(file, name=None, indent=0):
     (length,) = struct.unpack('<I', file.read(4))
-    string = file.read(length).decode('ascii')
+    string = file.read(length).decode('utf8')
     align(file, 4)
     if name is not None:
         print_field(name, '%s' % string, indent=indent)
