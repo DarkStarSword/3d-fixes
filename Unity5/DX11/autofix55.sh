@@ -1,8 +1,7 @@
 #!/bin/sh -e
 
-DIR=~/3d-fixes
-FXC=~/fxc.exe
-PATH="$DIR:$PATH"
+DIR="$(readlink -f "$(dirname $0)/../..")"
+. "$DIR/Unity5/DX11/checkenv.sh"
 
 EXTRACT=1
 CLEANUP=1

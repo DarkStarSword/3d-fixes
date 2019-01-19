@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-DIR=~/3d-fixes
-PATH="$DIR:$PATH"
+DIR="$(readlink -f "$(dirname $0)/../..")"
+. "$DIR/Unity5/DX9/checkenv.sh"
 
 unity_asset_extractor.py *_Data/Resources/* *_Data/*.assets
 cd extracted
