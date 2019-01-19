@@ -17,7 +17,7 @@ LIGHTING_EXTRA=""
 update_ini()
 {
 	if [ $UPDATE_INI -eq 1 ]; then
-		cat | dos2unix | tee -a ../../DX9Settings.ini
+		tee -a ../../DX9Settings.ini
 	else
 		cat > /dev/null
 	fi

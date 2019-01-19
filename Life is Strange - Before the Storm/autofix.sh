@@ -20,7 +20,7 @@ LIGHTING_EXTRA=""
 update_ini()
 {
 	if [ $UPDATE_INI -eq 1 ]; then
-		cat | dos2unix | tee -a ../../d3dx.ini
+		tee -a ../../d3dx.ini
 	else
 		cat > /dev/null
 	fi
