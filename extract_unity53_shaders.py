@@ -7,9 +7,11 @@ from unity_asset_extractor import hexdump
 shader_type_mapping = {
      1: (None, "opengl", "version 120"),
      2: (None, "gles3",  "version 310 es"), # Seen in Memories Retold: globalgamemanagers.assets: Hidden/BilateralBlur
+     3: (None, "gles3",  "version 310 es"), # Seen in Memories Retold: resources: Hidden/Post FX/Eye Adaptation
      4: (None, "gles3",  "version 300 es"),
      5: (None, "gles",   "version 100"),
      6: (None, "glcore", "version 150"),
+     # 7: ???
      8: (None, "glcore", "version 420"), # Seen in Subnautica Hidden/Post FX/Eye Adaptation
 
      9: ("vp", "d3d9", "vs_2_0"),
