@@ -123,13 +123,16 @@ def cleanup_ini_from_installed_only(game_dir, git_path, master_path, profile):
 
 	if args.use_git:
 		ini_path = os.path.join(git_path, profile.ini_filename)
-		profile.cleanup_ini(ini_path, None, installed_basenames)
+		if os.path.exists(ini_path):
+			profile.cleanup_ini(ini_path, None, installed_basenames)
 
 		command = ['git', '-C', git_path, 'add', profile.ini_filename]
 		print("Running '%s'..." % ' '.join(command))
 		subprocess.call(command)
 
-	profile.cleanup_ini(os.path.join(game_dir, profile.ini_filename), None, installed_basenames)
+	ini_path = os.path.join(game_dir, profile.ini_filename)
+	if os.path.exists(ini_path):
+		profile.cleanup_ini(ini_path, None, installed_basenames)
 
 def cleanup(game_dir, git_path, master_path, profile):
 	if args.remove_ini_sections_for_uninstalled_shaders:
@@ -154,7 +157,8 @@ def cleanup(game_dir, git_path, master_path, profile):
 		subprocess.call(command)
 
 		ini_path = os.path.join(git_path, profile.ini_filename)
-		profile.cleanup_ini(ini_path, removed_basenames, None)
+		if os.path.exists(ini_path):
+			profile.cleanup_ini(ini_path, removed_basenames, None)
 
 		command = ['git', '-C', git_path, 'add', profile.ini_filename]
 		print("Running '%s'..." % ' '.join(command))
@@ -168,7 +172,9 @@ def cleanup(game_dir, git_path, master_path, profile):
 		except FileNotFoundError:
 			pass
 
-	profile.cleanup_ini(os.path.join(game_dir, profile.ini_filename), removed_basenames, None)
+	ini_path = os.path.join(game_dir, profile.ini_filename)
+	if os.path.exists(ini_path):
+		profile.cleanup_ini(ini_path, removed_basenames, None)
 
 class CleanupDX9(object):
 	def __init__(self, unity_type, ini_prefix, helix_type):
