@@ -30,6 +30,8 @@ if [ $EXTRACT -eq 1 ]; then
 	cd extracted
 	extract_unity_shaders.py */*.shader --type=d3d11
 	cd ShaderFNVs
+elif [ -d extracted/ShaderFNVs ]; then
+	cd extracted/ShaderFNVs
 fi
 
 if [ $CLEANUP -eq 1 ]; then

@@ -28,6 +28,8 @@ if [ $EXTRACT -eq 1 ]; then
 	cd extracted
 	extract_unity53_shaders.py */*.shader.decompressed --type=d3d9
 	cd ShaderCRCs
+elif [ -d extracted/ShaderCRCs ]; then
+	cd extracted/ShaderCRCs
 fi
 
 if [ $CLEANUP -eq 1 ]; then
