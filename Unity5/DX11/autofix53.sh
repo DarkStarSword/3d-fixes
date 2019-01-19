@@ -3,18 +3,20 @@
 DIR="$(readlink -f "$(dirname $0)/../..")"
 . "$DIR/Unity5/DX11/checkenv.sh"
 
-EXTRACT=1
-CLEANUP=1
-COPY_TEMPLATE=1
-UPDATE_INI=1
+# You can now pass these options in via environment variables, like:
+# EXTRACT=0 ~/3d-fixes/Unity5/DX11/autofix53.sh
+[ -z "$EXTRACT" ]        && EXTRACT=1
+[ -z "$CLEANUP" ]        && CLEANUP=1
+[ -z "$COPY_TEMPLATE" ]  && COPY_TEMPLATE=1
+[ -z "$UPDATE_INI" ]     && UPDATE_INI=1
 
-FIX_LIGHTING=1
-FIX_SUN_SHAFTS=1
-FIX_HALO=1
-FIX_REFLECTION=1
+[ -z "$FIX_LIGHTING" ]   && FIX_LIGHTING=1
+[ -z "$FIX_SUN_SHAFTS" ] && FIX_SUN_SHAFTS=1
+[ -z "$FIX_HALO" ]       && FIX_HALO=1
+[ -z "$FIX_REFLECTION" ] && FIX_REFLECTION=1
 
 # If you need to force overwrite, add the option here:
-LIGHTING_EXTRA=""
+[ -z "$LIGHTING_EXTRA" ] && LIGHTING_EXTRA=""
 
 update_ini()
 {
