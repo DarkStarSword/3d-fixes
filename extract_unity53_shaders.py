@@ -6,6 +6,7 @@ from unity_asset_extractor import hexdump
 
 shader_type_mapping = {
      1: (None, "opengl", "version 120"),
+     2: (None, "gles3",  "version 310 es"), # Seen in Memories Retold: globalgamemanagers.assets: Hidden/BilateralBlur
      4: (None, "gles3",  "version 300 es"),
      5: (None, "gles",   "version 100"),
      6: (None, "glcore", "version 150"),
