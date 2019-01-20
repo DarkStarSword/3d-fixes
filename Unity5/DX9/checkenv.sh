@@ -23,3 +23,10 @@ if [ ! -x "$DIR/shadertool.py" \
 	echo "       Please double check that you checked out / extracted 3d-fixes correctly."
 	exit 1
 fi
+
+# Check python3 is installed
+if ! which python3 >/dev/null 2>&1; then
+	echo "ERROR: Python3 is not installed."
+	echo "       Please re-run the cygwin installer and choose to install \"python3\" in the package selection."
+	exit 1
+fi

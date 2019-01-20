@@ -26,6 +26,13 @@ if [ ! -x "$DIR/asmtool.py" \
 	exit 1
 fi
 
+# Check python3 is installed
+if ! which python3 >/dev/null 2>&1; then
+	echo "ERROR: Python3 is not installed."
+	echo "       Please re-run the cygwin installer and choose to install \"python3\" in the package selection."
+	exit 1
+fi
+
 # Check cmd_Decompiler is installed and correct permissions. Allow either
 # d3dcompiler version to be present for smoother upgrading when 3DMigoto
 # switches over:
