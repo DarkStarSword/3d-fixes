@@ -161,21 +161,23 @@ shader_types = {
     5: 'cs',
 }
 
-def get_shader_model_section(buf, verify_major = None):
+def get_shader_model_section(buf, section, verify_major = None):
     version, shader_type = struct.unpack('<2H', buf[:4])
     shader_type = shader_types[shader_type]
     major = version >> 4
     minor = version & 0xf
     if verify_major is not None:
-        assert(major == verify_major)
+        if major != verify_major:
+            print('NOTICE: Unexpected section %s for shader model %i' % (section, major))
+            assert(False)
     shader_model = ('{}_{}_{}'.format(shader_type, major, minor))
     pr_verbose('    {}'.format(shader_model), verbosity=0)
     return shader_model
 
 def get_shader_model_shdr(buf):
-    return get_shader_model_section(buf, 4)
+    return get_shader_model_section(buf, 'SHDR', 4)
 def get_shader_model_shex(buf):
-    return get_shader_model_section(buf, 5)
+    return get_shader_model_section(buf, 'SHEX', 5)
 
 chunks = {
     b'ISGN': decode_isgn, # "Input signature"
