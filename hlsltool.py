@@ -17,6 +17,11 @@ from shadertool import game_git_dir, collected_errors, show_collected_errors
 
 unity_ConstBuffer_pattern = re.compile(r'ConstBuffer\s"(?P<name>[^"]+)"\s(?P<size>[0-9]+)$', re.MULTILINE)
 unity_BindCB_pattern = re.compile(r'BindCB\s"(?P<name>[^"]+)"\s(?P<cb>[0-9]+)$', re.MULTILINE)
+StereoParams_pattern = re.compile(r'StereoParams')
+StereoParams_decl = '''
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
+'''
 
 # From CGIncludes/UnityShaderVariables.cginc:
 # TODO: Allocate the register (avoid b12 used by the driver)
@@ -877,6 +882,10 @@ class HLSLShader(Shader):
     def insert_stereo_params(self):
         if self.inserted_stereo_params:
             return 0
+        try:
+            self.find_header(StereoParams_pattern)
+        except KeyError:
+            self.append_declaration(StereoParams_decl)
         self.inserted_stereo_params = True
         off  = self.early_insert_instr()
         off += self.early_insert_instr('float4 stereo = StereoParams.Load(0);')
