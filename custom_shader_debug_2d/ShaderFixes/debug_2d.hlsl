@@ -2,6 +2,7 @@ Texture1D<float4> IniParams : register(t120);
 
 #define amplify IniParams[0].x
 #define flip IniParams[0].y
+#define channel IniParams[0].z
 
 struct vs2ps {
 	float4 pos : SV_Position0;
@@ -50,5 +51,13 @@ void main(vs2ps input, out float4 result : SV_Target0)
 		input.uv.y = 1 - input.uv.y;
 
 	result = tex.Load(int3(input.uv.xy * float2(width, height), 0)) * amplify;
+	if (channel == 1)
+		result = result.x;
+	else if (channel == 2)
+		result = result.y;
+	else if (channel == 3)
+		result = result.z;
+	else if (channel == 4)
+		result = result.w;
 }
 #endif

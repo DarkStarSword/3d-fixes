@@ -2,7 +2,8 @@ Texture2D<float4> StereoParams : register(t125);
 Texture1D<float4> IniParams : register(t120);
 
 #define amplify IniParams[0].x
-#define scale 1
+#define scale IniParams[0].y
+#define channel IniParams[0].z
 
 struct vs2ps {
 	float4 pos : SV_Position0;
@@ -61,5 +62,13 @@ void main(vs2ps input, out float4 result : SV_Target0)
 	p.x = input.pos.x % width;
 	p.y = input.pos.y % height;
 	result = tex.Load(p) * amplify;
+	if (channel == 1)
+		result = result.x;
+	else if (channel == 2)
+		result = result.y;
+	else if (channel == 3)
+		result = result.z;
+	else if (channel == 4)
+		result = result.w;
 }
 #endif
