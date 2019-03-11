@@ -99,14 +99,42 @@ dcl_output o0.xyzw
 dcl_output o1.xyzw
 dcl_output o2.xyzw
 dcl_output o3.xyzw
-dcl_temps 37
+dcl_temps 39
+
+dcl_resource_texture2d (float,float,float,float) t125
+ld_indexable(texture2d)(float,float,float,float) r37.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 mad r0.xy, v1.xyxx, l(0.500000, -0.500000, 0.000000, 0.000000), l(0.500000, 0.500000, 0.000000, 0.000000)
 sample_l_indexable(texture2d)(float,float,float,float) r0.z, r0.xyxx, t6.yzxw, s6, l(0.000000)
+// mP2W
 mul r1.xyzw, v1.yyyy, cb0[9].xyzw
 mad r1.xyzw, v1.xxxx, cb0[8].xyzw, r1.xyzw
 mad r1.xyzw, r0.zzzz, cb0[10].xyzw, r1.xyzw
 add r1.xyzw, r1.xyzw, cb0[11].xyzw
 div r2.xyz, r1.xyzx, r1.wwww
+
+// I don't have mW2P handy, but I can get the linear depth via mW2V instead:
+mul r38.xyzw,  r2.xxxx, cb0[12].xyzw
+mad r38.xyzw,  r2.yyyy, cb0[13].xyzw, r38.xyzw
+mad r38.xyzw,  r2.zzzz, cb0[14].xyzw, r38.xyzw
+add r38.xyzw, r38.xyzw, cb0[15].xyzw
+
+// r38.z is now *negative* linear depth
+
+// I also don't have the projection matrix handy to do a view-space adjustment,
+// but that's okay. Calculate the adjustment magnitude in clip space:
+add r37.w, -r38.z, -r37.y
+mul r38.x, -r37.w, r37.x
+
+// Now use mP2W to convert (clip_adjustment, 0, 0, 0) to world space:
+mul r38.xyzw, r38.xxxx, cb0[8].xyzw
+
+// And adjust the original world-space coord:
+add r2.xyz, r2.xyz, r38.xyz
+
+// Correction must be applied to r1 as well, as it is used again further on:
+mul r1.xyz, r2.xyzw, r1.wwww
+
 deriv_rtx_coarse r3.xyz, r2.xyzx
 deriv_rty_coarse r2.xyz, r2.xyzx
 mad r0.z, r0.z, cb0[2].x, cb0[2].y
