@@ -152,6 +152,18 @@ Update v1.9
   current convergence value as well. There's a bunch more changes under the
   hood, so it may behave slightly differently to before.
 
+Update v2.0
+-----------
+- 3DMigoto updated to 1.3.15
+- F10 reload is now much faster
+- Settings left over from uninstalled mods will be removed on the next F10
+  reload/game exit (You will still see these warnings once)
+- Fix crash when news is displayed while using certain mods
+- Displaying news will no longer reset certain settings
+- Fixed compatibility issue with ReShade (if you couldn't use the two together
+  before, please test again and report back)
+- Fixed crash that could occur on non-nvidia systems in some circumstances
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
