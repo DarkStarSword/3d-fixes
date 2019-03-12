@@ -207,8 +207,12 @@ dcl_resource_buffer (float,float,float,float) t28
 dcl_resource_buffer (float,float,float,float) t29
 dcl_uav_typed_texture3d (float,float,float,float) u0
 dcl_input vThreadID.xyz
-dcl_temps 23
+dcl_temps 25
 dcl_thread_group 8, 8, 4
+
+dcl_resource_texture2d (float,float,float,float) t125
+ld_indexable(texture2d)(float,float,float,float) r23.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 resinfo_indexable(texture3d)(float,float,float,float)_uint r0.xyz, l(0), u0.xyzw
 utof r1.xyz, vThreadID.xyzx
 add r1.xyz, r1.xyzx, l(0.500000, 0.500000, 0.500000, 0.000000)
@@ -247,18 +251,46 @@ mul r0.w, -r0.w, cb1[8].z
 mul r4.xy, r3.xyxx, cb1[8].xyxx
 mul r4.zw, -r1.zzzz, r4.xxxy
 mul r4.xy, -r0.wwww, r4.xyxx
+
+// We need to correct two coordinates in view-space, but we don't have the
+// projection or inverse projection matrix handy. We only need the FOV though,
+// which we can derive from the matrices we do have via
+//   (1,0,0,0) * gV2W * W2P
+// = V2W[top row] * W2P
+
+mul r24.xyzw, cb1[0].xxxx, cb1[17].xyzw
+mad r24.xyzw, cb1[0].yyyy, cb1[18].xyzw, r24.xyzw
+mad r24.xyzw, cb1[0].zzzz, cb1[19].xyzw, r24.xyzw
+mad r24.xyzw, cb1[0].wwww, cb1[20].xyzw, r24.xyzw
+
+// Remember, in this game view-space Z is negative linear depth
+
+add r23.w, -r1.z, -r23.y
+mul r23.w, r23.w, r23.x
+div r23.w, r23.w, r24.x
+add r4.z, r4.z, -r23.w
+
+add r23.w, -r0.w, -r23.y
+mul r23.w, r23.w, r23.x
+div r23.w, r23.w, r24.x
+add r4.x, r4.x, -r23.w
+
+// gV2W
 mul r5.xyzw, r4.wwww, cb1[1].xyzw
 mad r5.xyzw, r4.zzzz, cb1[0].xyzw, r5.xyzw
 mad r5.xyzw, r1.zzzz, cb1[2].xyzw, r5.xyzw
 add r5.xyzw, r5.xyzw, cb1[3].xyzw
+// gV2W
 mul r4.yzw, r4.yyyy, cb1[1].xxyz
 mad r4.xyz, r4.xxxx, cb1[0].xyzx, r4.yzwy
 mad r4.xyz, r0.wwww, cb1[2].xyzx, r4.xyzx
 add r4.xyz, r4.xyzx, cb1[3].xyzx
+// gW2P
 mul r6.xy, r5.yyyy, cb1[18].zwzz
 mad r6.xy, r5.xxxx, cb1[17].zwzz, r6.xyxx
 mad r6.xy, r5.zzzz, cb1[19].zwzz, r6.xyxx
 mad r6.xy, r5.wwww, cb1[20].zwzz, r6.xyxx
+
 div r0.w, r6.x, r6.y
 add r6.xyz, r5.yzxy, -cb1[10].yzxy
 dp3 r1.w, r6.xyzx, r6.xyzx
@@ -967,14 +999,20 @@ mul r4.xyz, r3.xywx, r4.wwww
 if_nz r3.z
   mul r1.xy, r1.xyxx, cb1[8].xyxx
   mul r1.xy, -r1.zzzz, r1.xyxx
+
+// gV2W
   mul r3.xyzw, r1.yyyy, cb1[1].xyzw
   mad r3.xyzw, r1.xxxx, cb1[0].xyzw, r3.xyzw
   mad r1.xyzw, r1.zzzz, cb1[2].xyzw, r3.xyzw
   add r1.xyzw, r1.xyzw, cb1[3].xyzw
+// gPrevW2P
   mul r3.xyzw, r1.yyyy, cb1[5].xyzw
   mad r3.xyzw, r1.xxxx, cb1[4].xyzw, r3.xyzw
   mad r3.xyzw, r1.zzzz, cb1[6].xyzw, r3.xyzw
   mad r1.xyzw, r1.wwww, cb1[7].xyzw, r3.xyzw
+
+// Adjusting here makes things worse
+
   div r1.xyz, r1.xyzx, r1.wwww
   add r0.w, r1.z, cb1[9].y
   div r0.w, -cb1[9].x, r0.w
