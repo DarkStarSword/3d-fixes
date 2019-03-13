@@ -80,8 +80,6 @@ Known Issues
 - Occasionally 3D may be disabled after loading the main menu (possible driver
   bug?). Double check you are in full screen and restart the game (via
   "3DMigoto Launcher.exe") if this happens.
-- There is still some broken lighting in the intro/end cutscenes in some
-  matches.
 - If the game closes down by itself just after the spash screen, make sure you
   have not installed the fix into the game directory. Use the provided
   uninstall.bat to remove it if you put it there by mistake.
