@@ -13,7 +13,7 @@ static int2 meta_pos_start;
 
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
+Texture2D<float4> StereoParams : register(t121);
 
 struct vs2gs {
 	uint idx : TEXCOORD0;

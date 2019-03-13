@@ -1,4 +1,4 @@
-Texture2D<float4> StereoParams : register(t125);
+Texture2D<float4> StereoParams : register(t121);
 Texture1D<float4> IniParams : register(t120);
 
 #define mode IniParams[0].x
