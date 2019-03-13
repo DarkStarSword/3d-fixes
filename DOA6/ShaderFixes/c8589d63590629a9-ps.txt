@@ -108,7 +108,14 @@ dcl_resource_buffer (uint,uint,uint,uint) t21
 dcl_input_ps_siv linear noperspective v0.xy, position
 dcl_input_ps linear v1.xyw
 dcl_output o0.xyzw
-dcl_temps 32
+dcl_temps 35
+
+// mP2W inversed with inverse-cs, i.e. mW2P
+dcl_constantbuffer cb13[4], immediateIndexed
+
+dcl_resource_texture2d (float,float,float,float) t125
+ld_indexable(texture2d)(float,float,float,float) r32.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 ftoi r0.xy, v0.xyxx
 mov r0.zw, l(0,0,1,0)
 ld_indexable(texture2d)(float,float,float,float) r1.xyzw, r0.xyww, t6.xyzw
@@ -119,12 +126,38 @@ ld_indexable(texture2darray)(float,float,float,float) r5.xyz, r0.xyzw, t9.xyzw
 mov r0.z, l(3)
 ld_indexable(texture2darray)(float,float,float,float) r6.xyz, r0.xyzw, t7.xywz
 ld_indexable(texture2d)(float,float,float,float) r0.x, r0.xyww, t5.xyzw
+// mP2W
 mul r7.xyzw, v1.yyyy, cb0[27].xyzw
 mad r7.xyzw, v1.xxxx, cb0[26].xyzw, r7.xyzw
 mad r7.xyzw, r0.xxxx, cb0[28].xyzw, r7.xyzw
 add r7.xyzw, r7.xyzw, cb0[29].xyzw
 div r0.yzw, r7.xxyz, r7.wwww
-add r7.xyz, -r0.yzwy, cb0[11].xyzx
+
+// mW2P
+mul r33.xyzw, r0.yyyy, cb13[0].xyzw
+mad r33.xyzw, r0.zzzz, cb13[1].xyzw, r33.xyzw
+mad r33.xyzw, r0.wwww, cb13[2].xyzw, r33.xyzw
+add r33.xyzw, r33.xyzw, cb13[3].xyzw
+// Stereo correct
+add r32.w, r33.w, -r32.y
+mad r33.x, -r32.w, r32.x, r33.x
+// mP2W
+mul r34.xyzw, r33.xxxx, cb0[26].xyzw
+mad r34.xyzw, r33.yyyy, cb0[27].xyzw, r34.xyzw
+mad r34.xyzw, r33.zzzz, cb0[28].xyzw, r34.xyzw
+mad r34.xyzw, r33.wwww, cb0[29].xyzw, r34.xyzw
+// Do not adjust o0 - breaks refraction
+div r34.xyz, r34.xyzw, r34.wwww
+
+// r7 affects reflections, r0 affects refraction. Use the corrected value for r7 only:
+//add r7.xyz, -r0.yzwy, cb0[11].xyzx
+add r7.xyz, -r34.xyzx, cb0[11].xyzx
+
+// Correct reflections by stereoising eye position (must be at surface depth from above adjustment)
+mul r34.x, r32.x, -r32.y
+mul r34.xyzw, r34.xxxx, cb0[26].xyzw
+add r7.xyz, r7.xyzw, -r34.xyzw
+
 dp3 r2.w, r7.xyzx, r7.xyzx
 rsq r2.w, r2.w
 mul r8.xyz, r2.wwww, r7.xyzx

@@ -68,6 +68,8 @@
 vs_5_0
 dcl_globalFlags refactoringAllowed
 dcl_constantbuffer cb0[24], immediateIndexed
+dcl_constantbuffer cb12[4], immediateIndexed // Disable driver correction
+dcl_constantbuffer cb13[4], immediateIndexed // mP2W
 dcl_sampler s0, mode_default
 dcl_sampler s1, mode_default
 dcl_resource_texture2d (float,float,float,float) t0
@@ -85,7 +87,11 @@ dcl_output o5.xyzw
 dcl_output o6.xyzw
 dcl_output o7.xyzw
 dcl_output o8.x
-dcl_temps 7
+dcl_temps 9
+
+dcl_resource_texture2d (float,float,float,float) t125
+ld_indexable(texture2d)(float,float,float,float) r7.xyzw, l(0, 0, 0, 0), t125.xyzw
+
 mov o0.zw, l(0,0,0,0)
 add r0.xy, v0.zxzz, v2.yxyy
 add r0.zw, r0.yyyx, -cb0[13].zzzw
@@ -159,13 +165,28 @@ mov o5.xyz, r4.xyzx
 mad r6.xyzw, r4.xxxx, cb0[1].xyzw, r6.xyzw
 mad r6.xyzw, r4.zzzz, cb0[3].xyzw, r6.xyzw
 add r6.xyzw, r6.xyzw, cb0[4].xyzw
+
+// Apply the standard stereo correction:
+add r7.w, r6.w, -r7.y
+mad r6.x, r7.w, r7.x, r6.x
+
+// Convert the coorected coordinates back to world space to remove an outline
+// of the character (not exacly a halo, but similar):
+mul r8.xyzw, r6.xxxx, cb13[0].xyzw
+mad r8.xyzw, r6.yyyy, cb13[1].xyzw, r8.xyzw
+mad r8.xyzw, r6.zzzz, cb13[2].xyzw, r8.xyzw
+mad r8.xyzw, r6.wwww, cb13[3].xyzw, r8.xyzw
+div o5.xyz, r8.xyzw, r8.wwww
+
 dp4 o0.x, cb0[9].xyzw, r6.xyzw
 dp4 o0.y, cb0[10].xyzw, r6.xyzw
 dp4 o1.x, cb0[5].xyzw, r6.xyzw
 dp4 o1.y, cb0[6].xyzw, r6.xyzw
 dp4 o1.z, cb0[7].xyzw, r6.xyzw
 dp4 o1.w, cb0[8].xyzw, r6.xyzw
+
 mov o2.xyzw, r6.xyzw
+
 mul o3.zw, r4.xxxz, cb0[12].xxxy
 mul o7.xy, r4.xzxx, cb0[11].xyxx
 mov o3.xy, v3.xyxx
