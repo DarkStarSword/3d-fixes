@@ -172,11 +172,13 @@ mad r6.x, r7.w, r7.x, r6.x
 
 // Convert the coorected coordinates back to world space to remove an outline
 // of the character (not exacly a halo, but similar):
-mul r8.xyzw, r6.xxxx, cb13[0].xyzw
-mad r8.xyzw, r6.yyyy, cb13[1].xyzw, r8.xyzw
-mad r8.xyzw, r6.zzzz, cb13[2].xyzw, r8.xyzw
-mad r8.xyzw, r6.wwww, cb13[3].xyzw, r8.xyzw
-div o5.xyz, r8.xyzw, r8.wwww
+if_nz cb13[0].x
+	mul r8.xyzw, r6.xxxx, cb13[0].xyzw
+	mad r8.xyzw, r6.yyyy, cb13[1].xyzw, r8.xyzw
+	mad r8.xyzw, r6.zzzz, cb13[2].xyzw, r8.xyzw
+	mad r8.xyzw, r6.wwww, cb13[3].xyzw, r8.xyzw
+	div o5.xyz, r8.xyzw, r8.wwww
+endif
 
 dp4 o0.x, cb0[9].xyzw, r6.xyzw
 dp4 o0.y, cb0[10].xyzw, r6.xyzw

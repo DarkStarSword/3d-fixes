@@ -113,25 +113,28 @@ mad r0.xyzw, r0.xxxx, cb0[25].xyzw, r7.xyzw
 add r0.xyzw, r0.xyzw, cb0[26].xyzw
 div r0.xyz, r0.xyzx, r0.wwww
 
-// mW2P
-mul r26.xyzw, r0.xxxx, cb13[0].xyzw
-mad r26.xyzw, r0.yyyy, cb13[1].xyzw, r26.xyzw
-mad r26.xyzw, r0.zzzz, cb13[2].xyzw, r26.xyzw
-add r26.xyzw, r26.xyzw, cb13[3].xyzw
-// Stereo correct
-add r25.w, r26.w, -r25.y
-mad r26.x, -r25.w, r25.x, r26.x
-// mP2W
-mul r27.xyzw, r26.xxxx, cb0[23].xyzw
-mad r27.xyzw, r26.yyyy, cb0[24].xyzw, r27.xyzw
-mad r27.xyzw, r26.zzzz, cb0[25].xyzw, r27.xyzw
-mad r27.xyzw, r26.wwww, cb0[26].xyzw, r27.xyzw
-// Do not adjust o0 - breaks refraction
-div r27.xyz, r27.xyzw, r27.wwww
+if_nz cb13[0].x
+	// mW2P
+	mul r26.xyzw, r0.xxxx, cb13[0].xyzw
+	mad r26.xyzw, r0.yyyy, cb13[1].xyzw, r26.xyzw
+	mad r26.xyzw, r0.zzzz, cb13[2].xyzw, r26.xyzw
+	add r26.xyzw, r26.xyzw, cb13[3].xyzw
+	// Stereo correct
+	add r25.w, r26.w, -r25.y
+	mad r26.x, -r25.w, r25.x, r26.x
+	// mP2W
+	mul r27.xyzw, r26.xxxx, cb0[23].xyzw
+	mad r27.xyzw, r26.yyyy, cb0[24].xyzw, r27.xyzw
+	mad r27.xyzw, r26.zzzz, cb0[25].xyzw, r27.xyzw
+	mad r27.xyzw, r26.wwww, cb0[26].xyzw, r27.xyzw
+	// Do not adjust o0 - breaks refraction
+	div r27.xyz, r27.xyzw, r27.wwww
 
-// r7 affects reflections, r0 affects refraction. Use the corrected value for r7 only:
-//add r7.xyz, -r0.xyzx, cb0[11].xyzx
-add r7.xyz, -r27.xyzx, cb0[11].xyzx
+	// r7 affects reflections, r0 affects refraction. Use the corrected value for r7 only:
+	add r7.xyz, -r27.xyzx, cb0[11].xyzx
+else
+	add r7.xyz, -r0.xyzx, cb0[11].xyzx
+endif
 
 // Correct reflections by stereoising eye position (must be at surface depth from above adjustment)
 mul r27.x, r25.x, -r25.y

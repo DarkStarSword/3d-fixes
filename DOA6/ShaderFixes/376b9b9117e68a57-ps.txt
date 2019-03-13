@@ -91,24 +91,24 @@ add r0.xyzw, r0.xyzw, cb0[55].xyzw
 div r0.xyzw, r0.xyzw, r0.wwww
 
 
+if_nz cb13[0].x
+	// mW2P
+	mul r13.xyzw, r0.xxxx, cb13[0].xyzw
+	mad r13.xyzw, r0.yyyy, cb13[1].xyzw, r13.xyzw
+	mad r13.xyzw, r0.zzzz, cb13[2].xyzw, r13.xyzw
+	add r13.xyzw, r13.xyzw, cb13[3].xyzw
 
-// mW2P
-mul r13.xyzw, r0.xxxx, cb13[0].xyzw
-mad r13.xyzw, r0.yyyy, cb13[1].xyzw, r13.xyzw
-mad r13.xyzw, r0.zzzz, cb13[2].xyzw, r13.xyzw
-add r13.xyzw, r13.xyzw, cb13[3].xyzw
+	// Stereo correct
+	add r12.w, r13.w, -r12.y
+	mad r13.x, -r12.w, r12.x, r13.x
 
-// Stereo correct
-add r12.w, r13.w, -r12.y
-mad r13.x, -r12.w, r12.x, r13.x
-
-// mP2W
-mul r14.xyzw, r13.xxxx, cb0[52].xyzw
-mad r14.xyzw, r13.yyyy, cb0[53].xyzw, r14.xyzw
-mad r14.xyzw, r13.zzzz, cb0[54].xyzw, r14.xyzw
-mad r14.xyzw, r13.wwww, cb0[55].xyzw, r14.xyzw
-div r0.xyzw, r14.xyzw, r14.wwww
-
+	// mP2W
+	mul r14.xyzw, r13.xxxx, cb0[52].xyzw
+	mad r14.xyzw, r13.yyyy, cb0[53].xyzw, r14.xyzw
+	mad r14.xyzw, r13.zzzz, cb0[54].xyzw, r14.xyzw
+	mad r14.xyzw, r13.wwww, cb0[55].xyzw, r14.xyzw
+	div r0.xyzw, r14.xyzw, r14.wwww
+endif
 
 
 // mW2Pt
