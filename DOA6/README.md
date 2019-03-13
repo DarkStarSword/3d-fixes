@@ -20,7 +20,7 @@ Installation
 Keys
 ----
 - F7: Switch to exclusive full Screen mode to enable 3D Vision
-- Press XBox controller right thumbstick inwards: Take 3D screenshot (saved to
+- XBox controller back button: Take 3D screenshot (saved to
   Documents\NVStereoscopic3D.IMG, same as Alt+F1, but without the message)
 
 Fixed
