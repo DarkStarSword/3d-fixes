@@ -1,1 +1,1 @@
-../3Dmigoto-1.3.15/x64/uninstall.bat
+../3Dmigoto-1.3.16/x64/uninstall.bat
