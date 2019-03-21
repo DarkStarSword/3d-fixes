@@ -164,6 +164,12 @@ Update v2.0
   before, please test again and report back)
 - Fixed crash that could occur on non-nvidia systems in some circumstances
 
+Update v2.1
+-----------
+- 3DMigoto updated to 1.3.16
+- Fixed compatibility issue with new versions of ReShade
+- Automatically adjust depth of icons in pool hopping minigame (3D Vision)
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while

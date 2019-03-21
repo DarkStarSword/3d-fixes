@@ -9,6 +9,11 @@ cbuffer _Globals : register(b0)
   float4 mL2W[3] : packoffset(c6);
 }
 
+cbuffer last_pool_bubble : register(b10)
+{
+  row_major float4x4 last_bubble_mW2P : packoffset(c2);
+  float4x3 last_bubble_mL2W : packoffset(c6);
+}
 
 
 // 3Dmigoto declarations
@@ -16,6 +21,7 @@ cbuffer _Globals : register(b0)
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
+#include "crosshair.hlsl"
 
 void main(
   float4 v0 : POSITION0,
@@ -41,9 +47,23 @@ void main(
   o2.xy = v2.xy;
 
 // Return HUD to screen depth:
-if (o0.w != 1.0) {
-	float4 s = StereoParams.Load(0);
-	o0.x -= s.x * (o0.w - s.y);
+float4 s = StereoParams.Load(0);
+if (s.x) {
+	if (o0.w != 1.0) {
+		o0.x -= s.x * (o0.w - s.y);
+	} else {
+		// Floating icons on pool platforms. As usual the game
+		// neglected to give us the depth of a HUD element so we have
+		// to ray trace the depth buffer to find it. The icons are made
+		// up of several component parts, so we need to use a
+		// consistent point to trace through.  We run local position
+		// 0,0 through the matrices of the most recent bubble icon (as
+		// matched in the d3dx.ini) to find the depth of the anchor
+		// point on the platform and adjust all parts to match:
+		float2 center = mul(last_bubble_mL2W[3], last_bubble_mW2P).xy;
+		if (any(center))
+			o0.x += adjust_from_depth_buffer(center.x, center.y);
+	}
 }
 
 // HUD toggle (v1.9 - now done in d3dx.ini):
