@@ -32,4 +32,7 @@ void main(uint3 tid: SV_DispatchThreadID)
 
 	// Inversed matrix:
 	OutputMatrix[tid.x] = inverse_transpose_parallel(transpose(input_matrix), tid.x);
+
+	// Copy input matrix to output for convinence
+	OutputMatrix[tid.x + 4] = input_cb[input_matrix_offset + tid.x];
 }
