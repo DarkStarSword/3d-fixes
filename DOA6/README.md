@@ -8,18 +8,20 @@ Installation
 ------------
 1. Extract the zip file to a directory of your choosing, but **DO NOT extract
    to the game directory** (the game will shut down after the splash screen if
-   you extract it to the game directory).
+   you extract it to the game directory, or any directory with a similar name).
 
 2. Run the "3DMigoto Loader.exe"
 
-3. The loader will launch the game through Steam automatically.
+3. The loader will launch the game through Steam automatically. If the game
+   does not launch, run it manually while the loader window is still open.
 
-4. **Once in game, press F7 to switch to exclusive full screen and engage 3D
-   Vision.**
+4. If 3D Vision does not engage switch the game to windowed mode then back to
+   full screen. You must be running the official v1.02 or later for this to
+   work.
 
 Keys
 ----
-- F7: Switch to exclusive full Screen mode to enable 3D Vision
+- F7: Attempt to force exclusive full Screen mode (for old versions)
 - XBox controller back button: Take 3D screenshot (saved to
   Documents\NVStereoscopic3D.IMG, same as Alt+F1, but without the message)
 
@@ -47,6 +49,15 @@ Fixed
   a 3D screen...) and don't mind straining your eyes to see what lies beyond
   infinity, edit the d3dx.ini and change $mono_in_game_screens to 0 under
   [Constants]
+
+Update v1.1
+-----------
+- Update to 3DMigoto 1.3.16
+- Fixed glitches where the game would go full/partial 2D after some time
+- Improved performance and fixed slow-down issue getting progressively worse
+  over a few hours
+- Fixed compatibility issue with ReShade
+- Improved coin fix - all coins should be visible in both eyes now
 
 ReShade Compatibility
 ---------------------
@@ -77,12 +88,10 @@ nvidia control panel to output checkerboard to remove the 720p limitation.
 
 Known Issues
 ------------
-- Occasionally 3D may be disabled after loading the main menu (possible driver
-  bug?). Double check you are in full screen and restart the game (via
-  "3DMigoto Launcher.exe") if this happens.
 - If the game closes down by itself just after the spash screen, make sure you
-  have not installed the fix into the game directory. Use the provided
-  uninstall.bat to remove it if you put it there by mistake.
+  have not installed the fix into the game directory or any similarly named
+  directory. Use the provided uninstall.bat to remove it if you put it there by
+  mistake.
 
 Like my Work?
 -------------
