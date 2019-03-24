@@ -71,10 +71,6 @@ Rename ReShade's dxgi.dll to reshade.dll and place all the files that it uses
 in the same directory where you extracted this mod. Run the 3DMigoto Loader.exe
 and the game should launch with both 3DMigoto and ReShade loaded.
 
-If you are not using the 3D Vision part of this mod, consider disabling it for
-better performance. In the "Mods" directory you will see a "3d-vision" folder -
-delete this or rename it to "DISABLED 3d-vision".
-
 Side-by-Side / Top-and-Bottom Output Modes
 ------------------------------------------
 This fix is bundled with the SBS / TAB output mode support in 3DMigoto. To
