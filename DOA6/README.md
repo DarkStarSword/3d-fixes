@@ -4,8 +4,24 @@ Dead or Alive 6
 **NOTICE: The installation for this game is different to our other mods -
 please read below!**
 
-Installation
+Costume Mods
 ------------
+This mod primarily adds support for NVIDIA 3D Vision to the game, but it is
+also used by some of the costume mods available for this game. If this is why
+you are here you can ignore any of the information below that is specific to 3D
+Vision users and just follow the instructions on the website that led you here.
+
+This mod by itself will not change any costumes - for that you will need mod
+packs available from elsewhere and extract them into the Mods directory. You
+don't need to restart the game after installing a new mod - just press F10 in
+game to load any new mods.
+
+Some mod packs ship with optional parts of the mods that are not enabled by
+default - look for any files or directories in the mod pack that is named
+"DISABLED something", and remove the "DISABLED" from the filename to enable it.
+
+Installation (3D Vision + Costume Mod Users)
+--------------------------------------------
 1. Extract the zip file to a directory of your choosing, but **DO NOT extract
    to the game directory** (the game will shut down after the splash screen if
    you extract it to the game directory, or any directory with a similar name).
@@ -15,18 +31,22 @@ Installation
 3. The loader will launch the game through Steam automatically. If the game
    does not launch, run it manually while the loader window is still open.
 
-4. If 3D Vision does not engage switch the game to windowed mode then back to
-   full screen. You must be running the official v1.02 or later for this to
-   work.
+4. (3D Vision Users) If 3D Vision does not engage switch the game to windowed
+   mode then back to full screen. You must be running the official v1.02 or
+   later for this to work.
 
-Keys
-----
+Keys (3D Vision + Costume Mod Users)
+------------------------------------
+- F1: Show help
+- F2: Toggle third party costume mods
 - F7: Attempt to force exclusive full Screen mode (for old versions)
-- XBox controller back button: Take 3D screenshot (saved to
-  Documents\NVStereoscopic3D.IMG, same as Alt+F1, but without the message)
+- F10: Reload all mods
+- Ctrl+Alt+F10: Reload all mods and reset to default configuration
+- XBox controller back button: Take 3D screenshot (3D Vision users only. Saved
+  to Documents\NVStereoscopic3D.IMG, same as Alt+F1, but without the message)
 
-Fixed
------
+3D Vision Fixes
+---------------
 - Fix detached body parts (full regex based replacement for the 3D Vision
   stereo correction and driver heuristics)
 - Regex halo fix
@@ -58,6 +78,7 @@ Update v1.1
   over a few hours
 - Fixed compatibility issue with ReShade
 - Improved coin fix - all coins should be visible in both eyes now
+- Added costume mod support
 
 ReShade Compatibility
 ---------------------
@@ -71,8 +92,8 @@ Rename ReShade's dxgi.dll to reshade.dll and place all the files that it uses
 in the same directory where you extracted this mod. Run the 3DMigoto Loader.exe
 and the game should launch with both 3DMigoto and ReShade loaded.
 
-Side-by-Side / Top-and-Bottom Output Modes
-------------------------------------------
+Side-by-Side / Top-and-Bottom Output Modes (3D Vision Users Only)
+-----------------------------------------------------------------
 This fix is bundled with the SBS / TAB output mode support in 3DMigoto. To
 enable it, edit the d3dx.ini, find the [Include] section and uncomment (remove
 the semicolon) the line that reads:
