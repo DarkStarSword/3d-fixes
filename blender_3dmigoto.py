@@ -1,4 +1,4 @@
-#!/usr/bin/env/python3
+#!/usr/bin/env python3
 
 bl_info = {
     "name": "3DMigoto",
@@ -8,6 +8,15 @@ bl_info = {
     "category": "Import-Export",
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
+
+# Add these to the mesh as vertex layers so that they will be retain their data
+# across import and export. TODO: Could probably do this for all unknown vertex
+# elements? FOG, PSIZE and SAMPLE are required for DOA6
+extra_layers = (
+        'FOG',
+        'PSIZE',
+        'SAMPLE',
+)
 
 # TODO:
 # - Option to reduce vertices on import to simplify mesh (can be noticeably lossy)
@@ -582,9 +591,7 @@ def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
                         continue
                     obj.vertex_groups[i].add((vertex.index,), w, 'REPLACE')
 def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
-    for i, (texcoord, data) in enumerate(sorted(texcoords.items())):
-        assert(i == texcoord) # FIXME: What to do if some TEXCOORDs are skipped?
-
+    for (texcoord, data) in sorted(texcoords.items()):
         # TEXCOORDS can have up to four components, but UVs can only have two
         # dimensions. Not positive of the best way to handle this in general,
         # but for now I'm thinking that splitting the TEXCOORD into two sets of
@@ -628,6 +635,25 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
             for l in mesh.loops:
                 blender_uvs.data[l.index].uv = flip_uv(uvs[l.vertex_index])
 
+# This loads unknown data from the vertex buffers as vertex layers
+def import_vertex_layers(mesh, obj, vertex_layers):
+    for (element_name, data) in sorted(vertex_layers.items()):
+        dim = len(data[0])
+        cmap = {0: 'x', 1: 'y', 2: 'z', 3: 'w'}
+        for component in range(dim):
+            layer_name = '%s.%s' % (element_name, cmap[component])
+            if type(data[0][0] == int):
+                mesh.vertex_layers_int.new(layer_name)
+                layer = mesh.vertex_layers_int[layer_name]
+            elif type(data[0][0] == float):
+                mesh.vertex_layers_float.new(layer_name)
+                layer = mesh.vertex_layers_float[layer_name]
+            else:
+                raise Fatal('BUG: Bad layer type %s' % type(data[0][0]))
+
+            for v in mesh.vertices:
+                layer.data[v.index].value = data[v.index][component]
+
 def import_faces_from_ib(mesh, ib):
     mesh.loops.add(len(ib.faces) * 3)
     mesh.polygons.add(len(ib.faces))
@@ -651,6 +677,7 @@ def import_vertices(mesh, vb):
     blend_indices = {}
     blend_weights = {}
     texcoords = {}
+    vertex_layers = {}
     use_normals = False
 
     for elem in vb.layout:
@@ -686,10 +713,12 @@ def import_vertices(mesh, vb):
             blend_weights[elem.SemanticIndex] = data
         elif elem.name.startswith('TEXCOORD'):
             texcoords[elem.SemanticIndex] = data
+        elif any([elem.name.startswith(x) for x in extra_layers]):
+            vertex_layers[elem.name] = data
         else:
             print('NOTICE: Unhandled vertex element: %s' % elem.name)
 
-    return (blend_indices, blend_weights, texcoords, use_normals)
+    return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals)
 
 def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
     if merge_meshes:
@@ -726,9 +755,11 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     else:
         import_faces_from_vb(mesh, vb)
 
-    (blend_indices, blend_weights, texcoords, use_normals) = import_vertices(mesh, vb)
+    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
+
+    import_vertex_layers(mesh, obj, vertex_layers)
 
     import_vertex_groups(mesh, obj, blend_indices, blend_weights)
 
@@ -802,6 +833,15 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                 if uv_name in texcoords:
                     uvs += texcoords[uv_name][blender_loop_vertex.index]
             vertex[elem.name] = uvs
+        elif any([elem.name.startswith(x) for x in extra_layers]):
+            data = []
+            for component in 'xyzw':
+                layer_name = '%s.%s' % (elem.name, component)
+                if layer_name in mesh.vertex_layers_int:
+                    data.append(mesh.vertex_layers_int[layer_name].data[blender_loop_vertex.vertex_index].value)
+                elif layer_name in mesh.vertex_layers_float:
+                    data.append(mesh.vertex_layers_float[layer_name].data[blender_loop_vertex.vertex_index].value)
+            vertex[elem.name] = data
         if elem.name not in vertex:
             print('NOTICE: Unhandled vertex element: %s' % elem.name)
         else:
