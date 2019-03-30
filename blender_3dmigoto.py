@@ -541,8 +541,10 @@ def load_3dmigoto_mesh(operator, paths):
 
 def import_normals_step1(mesh, data):
     # Ensure normals are 3-dimensional:
+    # XXX: Assertion triggers in DOA6
     if len(data[0]) == 4:
-        assert([x[3] for x in data] == [0.0]*len(data))
+        if [x[3] for x in data] != [0.0]*len(data):
+            raise Fatal('Normals are 4D')
     normals = [(x[0], x[1], x[2]) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
@@ -694,8 +696,10 @@ def import_vertices(mesh, vb):
         data = tuple( x[elem.name] for x in vb.vertices )
         if elem.name == 'POSITION':
             # Ensure positions are 3-dimensional:
+            # XXX: Assertion triggers in DOA6
             if len(data[0]) == 4:
-                assert([x[3] for x in data] == [1.0]*len(data))
+                if ([x[3] for x in data] != [1.0]*len(data)):
+                    raise Fatal('Positions are 4D')
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name == 'NORMAL':
@@ -729,7 +733,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
             try:
                 obj.append(import_3dmigoto_vb_ib(operator, context, [p], **kwargs))
             except Fatal as e:
-                operator.report({'ERROR'}, str(e))
+                operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
         # FIXME: Group objects together
 
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
