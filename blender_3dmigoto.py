@@ -196,6 +196,9 @@ class InputLayoutElement(object):
         assert(padding >= 0)
         return data + [val]*padding
 
+    def clip(self, data):
+        return data[:format_components(self.Format)]
+
     def size(self):
         return format_size(self.Format)
 
@@ -703,14 +706,19 @@ def import_vertices(mesh, vb):
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name.startswith('COLOR'):
-            if len(data[0]) == 4:
-                if ([x[3] for x in data] != [1.0]*len(data)):
-                    print('WARNING: Vertex colours have alpha, discarded')
-            colours = [(x[0], x[1], x[2]) for x in data]
-            mesh.vertex_colors.new(elem.name)
-            color_layer = mesh.vertex_colors[elem.name].data
-            for l in mesh.loops:
-                color_layer[l.index].color = colours[l.vertex_index]
+            if len(data[0]) <= 3:
+                mesh.vertex_colors.new(elem.name)
+                color_layer = mesh.vertex_colors[elem.name].data
+                for l in mesh.loops:
+                    color_layer[l.index].color = data[l.vertex_index] + [0]*(3-len(data[l.vertex_index]))
+            else:
+                mesh.vertex_colors.new(elem.name + '.RGB')
+                mesh.vertex_colors.new(elem.name + '.A')
+                color_layer = mesh.vertex_colors[elem.name + '.RGB'].data
+                alpha_layer = mesh.vertex_colors[elem.name + '.A'].data
+                for l in mesh.loops:
+                    color_layer[l.index].color = data[l.vertex_index][:3]
+                    alpha_layer[l.index].color = [data[l.vertex_index][3], 0, 0]
         elif elem.name == 'NORMAL':
             use_normals = True
             import_normals_step1(mesh, data)
@@ -826,7 +834,11 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         if elem.name == 'POSITION':
             vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
         if elem.name.startswith('COLOR'):
-            vertex[elem.name] = elem.pad(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color), 1.0)
+            if elem.name in mesh.vertex_colors:
+                vertex[elem.name] = elem.clip(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color))
+            else:
+                vertex[elem.name] = list(mesh.vertex_colors[elem.name+'.RGB'].data[blender_loop_vertex.index].color) + \
+                                        [mesh.vertex_colors[elem.name+'.A'].data[blender_loop_vertex.index].color[0]]
         elif elem.name == 'NORMAL':
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
         elif elem.name.startswith('TANGENT'):
