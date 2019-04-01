@@ -1106,18 +1106,25 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
             options={'HIDDEN'},
             )
 
+    files = CollectionProperty(
+            name="File Path",
+            type=bpy.types.OperatorFileListElement,
+            )
+
     flip_texcoord_v = BoolProperty(
             name="Flip TEXCOORD V",
             description="Flip TEXCOORD V asix during importing",
             default=True,
             )
 
-    def get_vb_ib_paths(self):
-        vb_bin_path = os.path.splitext(self.filepath)[0] + '.vb'
-        ib_bin_path = os.path.splitext(self.filepath)[0] + '.ib'
-        fmt_path = os.path.splitext(self.filepath)[0] + '.fmt'
-        if not all(map(os.path.exists, (vb_bin_path, ib_bin_path))):
-            raise Fatal('Unable to find matching .vb and .ib files')
+    def get_vb_ib_paths(self, filename):
+        vb_bin_path = os.path.splitext(filename)[0] + '.vb'
+        ib_bin_path = os.path.splitext(filename)[0] + '.ib'
+        fmt_path = os.path.splitext(filename)[0] + '.fmt'
+        if not os.path.exists(vb_bin_path):
+            raise Fatal('Unable to find matching .vb file for %s' % filename)
+        if not os.path.exists(ib_bin_path):
+            raise Fatal('Unable to find matching .ib file for %s' % filename)
         if not os.path.exists(fmt_path):
             fmt_path = None
         return (vb_bin_path, ib_bin_path, fmt_path)
@@ -1128,22 +1135,27 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         # import dialog to another, but since everything is modal we can
         # just use globals:
         global migoto_raw_import_options
+        migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'files', 'filter_glob'))
 
-        try:
-            # TODO: Locate corresponding .txt files automatically if this is a
-            # frame analysis dump, or save a .fmt file along with the buffers
-            vb_path, ib_path, fmt_path = self.get_vb_ib_paths()
+        # TODO: Locate corresponding .txt files automatically if this is a
+        # frame analysis dump, or save a .fmt file along with the buffers
+        done = set()
+        dirname = os.path.dirname(self.filepath)
+        for filename in self.files:
+            try:
+                (vb_path, ib_path, fmt_path) = self.get_vb_ib_paths(os.path.join(dirname, filename.name))
+                if os.path.normcase(vb_path) in done:
+                    continue
+                done.add(os.path.normcase(vb_path))
 
-            migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'filter_glob'))
-
-            if fmt_path is not None:
-                import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, **migoto_raw_import_options)
-            else:
-                migoto_raw_import_options['vb_path'] = vb_path
-                migoto_raw_import_options['ib_path'] = ib_path
-                bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
+                if fmt_path is not None:
+                    import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, **migoto_raw_import_options)
+                else:
+                    migoto_raw_import_options['vb_path'] = vb_path
+                    migoto_raw_import_options['ib_path'] = ib_path
+                    bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
+            except Fatal as e:
+                self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
 class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
