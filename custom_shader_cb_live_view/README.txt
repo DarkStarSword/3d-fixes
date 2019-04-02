@@ -9,7 +9,7 @@ reference) the constant buffer of interest to ResourceDebugCB:
 
     [ShaderOverrideCBDebugTest]
     hash = 3be9e2a31cdc60c2
-    Resource\ShaderFixes\debug_cb.ini\DebugCB = ps-cb1
+    Resource\debug_cb\CB = ps-cb1
 
 Or alternatively, to examine another type of buffer (including stereo buffers),
 use ResourceDebugBuf instead (if both are set, ResourceDebugBuf takes
@@ -17,4 +17,4 @@ precedence):
 
     [ShaderOverrideCBDebugTest]
     hash = 3be9e2a31cdc60c2
-    Resource\ShaderFixes\debug_cb.ini\DebugBuf = cs-u0
+    Resource\debug_cb\Buf = cs-u0
