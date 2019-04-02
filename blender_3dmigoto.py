@@ -650,14 +650,22 @@ def import_vertex_layers(mesh, obj, vertex_layers):
             if type(data[0][0] == int):
                 mesh.vertex_layers_int.new(layer_name)
                 layer = mesh.vertex_layers_int[layer_name]
+                for v in mesh.vertices:
+                    val = data[v.index][component]
+                    # Blender integer layers are 32bit signed and will throw an
+                    # exception if we are assigning an unsigned value that
+                    # can't fit in that range. Reinterpret as signed if necessary:
+                    if val < 0x80000000:
+                        layer.data[v.index].value = val
+                    else:
+                        layer.data[v.index].value = struct.unpack('i', struct.pack('I', val))[0]
             elif type(data[0][0] == float):
                 mesh.vertex_layers_float.new(layer_name)
                 layer = mesh.vertex_layers_float[layer_name]
+                for v in mesh.vertices:
+                    layer.data[v.index].value = data[v.index][component]
             else:
                 raise Fatal('BUG: Bad layer type %s' % type(data[0][0]))
-
-            for v in mesh.vertices:
-                layer.data[v.index].value = data[v.index][component]
 
 def import_faces_from_ib(mesh, ib):
     mesh.loops.add(len(ib.faces) * 3)
