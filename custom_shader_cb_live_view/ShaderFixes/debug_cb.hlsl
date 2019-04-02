@@ -3,7 +3,6 @@ static const float3 colour = float3(1, 0.5, 0.25);
 
 static const float font_scale = 1.0;
 static float2 cur_pos;
-static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
@@ -13,7 +12,10 @@ static int2 meta_pos_start;
 
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t125);
+Texture2D<float4> StereoParams : register(t121);
+
+#define rt_size IniParams[0].xy
+#define cb13_bound IniParams[0].z
 
 struct vs2gs {
 	uint idx : TEXCOORD0;
@@ -69,8 +71,6 @@ void get_meta()
 {
 	float font_width, font_height;
 
-	resolution = StereoParams.Load(int3(2, 0, 0));
-
 	font.GetDimensions(font_width, font_height);
 	char_size = float2(font_width, font_height) / float2(16, 6);
 
@@ -101,7 +101,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	// background of the text you will need to change the > to a >= here
 	if (c > ' ' && c < 0x7f) {
 		gs2ps output;
-		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale;
+		float2 dim = float2(cdim.x, char_size.y) / rt_size.xy * 2 * font_scale;
 		float texture_x_percent = cdim.x / char_size.x;
 
 		texcoord.x = (c % 16) * char_size.x;
@@ -124,7 +124,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	}
 
 	// Increment current position taking specific character width into account:
-	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
+	cur_pos.x += cdim.x / rt_size.x * 2 * font_scale;
 }
 
 // Using a macro for this because a function requires us to know the size of the buffer
@@ -255,8 +255,8 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	uint idx = input[0].idx;
 	float4 cval = cb13[idx];
 	uint4 ival = asint(cb13[idx]);
-	float char_height = char_size.y / resolution.y * 2 * font_scale;
-	int max_y = resolution.y / char_size.y * font_scale;
+	float char_height = char_size.y / rt_size.y * 2 * font_scale;
+	int max_y = rt_size.y / char_size.y * font_scale;
 	uint t113len, t114len, t115len;
 	bool use_int = false;
 
@@ -286,7 +286,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 		// But otherwise let's just go with 32bit LE uint value buffer:
 		ival = t115.Load4(idx * 16);
 		use_int = true;
-	} else if (asint(IniParams[0].x) == asint(-0.0)) {
+	} else if (asint(cb13_bound) == asint(-0.0)) {
 		return;
 	}
 
