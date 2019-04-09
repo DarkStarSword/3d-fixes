@@ -55,10 +55,10 @@ def decode_soft_node_region(f):
     #assert(header == (1, 217, 0, 0, 9, 217, 58, 101, 1, 3, 0, 1, 217)) # len: 21836, pt2 len: 401*4 (217 + 9 + 1 + 3*58 ?), pt3 len: 494*4
     #assert(header == (4, 104, 0, 0, 9, 104, 58, 102, 0, 1, 0, 1, 104)) # len: 12900, pt2 len: 287*4 (104 + 9 + 0 + 3*58 ?), pt3 len: 268*4
     #assert(header == (5, 104, 0, 0, 9, 104, 70, 103, 0, 1, 0, 1, 104)) # len: 13044, pt2 len: 323*4 (104 + 9 + 0 + 3*70 ?), pt3 len: 268*4
-    assert(u1 in (0,1,4,5)) # ID?
+    #assert(u1 in (0,1,2,3,4,5)) # ID?
     assert(z2 == 0)
     assert(z3 == 0)
-    assert(u5 in (100, 101, 102, 103)) # ID?
+    #assert(u5 in (100, 101, 102, 103, 104, 105)) # ID?
     assert(u6 in (0, 1))
     assert(u7 in (1, 3))
     assert(z8 == 0)
@@ -88,7 +88,8 @@ def decode_soft_node_region(f):
     # Next follows a list of floats. Conveniently it gives us the section
     # length in bytes that we can skip over:
     (_6, len5) = struct.unpack('<2I', f.read(8))
-    assert(_6 == 6)
+    print(_6)
+    #assert(_6 == 6) # KOK_COS_004.g1m has 7
     print(numpy.frombuffer(f.read(len5 - 8), numpy.float32))
 
 def decode_soft_node_regions(f):
@@ -147,6 +148,7 @@ def decode_g1m(f):
 
 def main():
     for arg in sys.argv[1:]:
+        print('Parsing %s...' % arg)
         decode_g1m(open(arg, 'rb'))
 
 if __name__ == '__main__':
