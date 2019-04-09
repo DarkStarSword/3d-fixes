@@ -58,7 +58,6 @@ def decode_soft_node_region(f):
     assert(u1 in (0,1,4,5)) # ID?
     assert(z2 == 0)
     assert(z3 == 0)
-    assert(u4 == 9)
     assert(u5 in (100, 101, 102, 103)) # ID?
     assert(u6 in (0, 1))
     assert(u7 in (1, 3))
@@ -114,7 +113,7 @@ def print_unknown(name, buf):
 def dump_unknown_section(f):
     print_unknown('Unknown section:', f.read())
 
-decode_section = {
+decode_soft_section = {
     0x80001: decode_soft_node_regions,
     0x80002: dump_unknown_section,
 }
@@ -123,13 +122,32 @@ def decode_soft(f):
     num_sections, = struct.unpack('<I', f.read(4))
     for i in range(num_sections):
         section_type, section_len = struct.unpack('<2I', f.read(8))
-        decode_section[section_type](io.BytesIO(f.read(section_len - 8)))
+        decode_soft_section[section_type](io.BytesIO(f.read(section_len - 8)))
 
     assert(not f.read())
 
+chunk_decoders = {
+    b'SOFT': decode_soft,
+}
+
+def decode_g1m(f):
+    (eyecatcher, version, file_size, header_size, u10, chunks) = struct.unpack('<4s4s4I', f.read(24))
+    assert(bytes(reversed(eyecatcher)) == b'G1M_')
+    assert(version == b'7300')
+
+    f.seek(header_size)
+    for i in range(chunks):
+        eyecatcher, chunk_version, chunk_size = struct.unpack('<4s2I', f.read(12))
+        eyecatcher = bytes(reversed(eyecatcher))
+        #print(eyecatcher)
+        if eyecatcher in chunk_decoders:
+            chunk_decoders[eyecatcher](io.BytesIO(f.read(chunk_size - 12)))
+        else:
+            f.seek(chunk_size - 12, 1)
+
 def main():
     for arg in sys.argv[1:]:
-        decode_soft(open(arg, 'rb'))
+        decode_g1m(open(arg, 'rb'))
 
 if __name__ == '__main__':
     main()
