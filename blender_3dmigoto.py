@@ -647,7 +647,7 @@ def import_vertex_layers(mesh, obj, vertex_layers):
         cmap = {0: 'x', 1: 'y', 2: 'z', 3: 'w'}
         for component in range(dim):
             layer_name = '%s.%s' % (element_name, cmap[component])
-            if type(data[0][0] == int):
+            if type(data[0][0]) == int:
                 mesh.vertex_layers_int.new(layer_name)
                 layer = mesh.vertex_layers_int[layer_name]
                 for v in mesh.vertices:
@@ -659,7 +659,7 @@ def import_vertex_layers(mesh, obj, vertex_layers):
                         layer.data[v.index].value = val
                     else:
                         layer.data[v.index].value = struct.unpack('i', struct.pack('I', val))[0]
-            elif type(data[0][0] == float):
+            elif type(data[0][0]) == float:
                 mesh.vertex_layers_float.new(layer_name)
                 layer = mesh.vertex_layers_float[layer_name]
                 for v in mesh.vertices:
@@ -1145,8 +1145,6 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         global migoto_raw_import_options
         migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'files', 'filter_glob'))
 
-        # TODO: Locate corresponding .txt files automatically if this is a
-        # frame analysis dump, or save a .fmt file along with the buffers
         done = set()
         dirname = os.path.dirname(self.filepath)
         for filename in self.files:
