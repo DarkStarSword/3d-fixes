@@ -211,6 +211,140 @@ if 'bpy' in globals():
             decode_g1m(open(self.filepath, 'rb'))
             return {'FINISHED'}
 
+    class UpdateDOA6Soft(bpy.types.Operator):
+        """Update DOA6 soft body vertex positions"""
+        bl_idname = "mesh.update_doa6_soft_body"
+        bl_label = "Update DOA6 soft body vertex positions"
+        bl_options = {'UNDO'}
+
+        def find_targets(self, context):
+            grid = None
+            targets = []
+            for obj in context.selected_objects:
+                if obj.name.find('.SOFT[') != -1:
+                    while obj.parent and obj.parent.name.find('.SOFT['):
+                        obj = obj.parent
+                    if grid and grid != obj:
+                        raise Fatal('Multiple soft body grids selected')
+                    grid = obj
+                else:
+                    if set(['TEXCOORD%u.%s'%(x,y) for x in (8, 9) for y in ('xy', 'zw')]).difference(obj.data.uv_layers.keys()):
+                        raise Fatal('Selected object does not have expected TEXCOORD8+9 UV layers')
+                    if set(['%s.%s'%(x,y) for x in ('PSIZE', 'FOG') for y in 'xyzw']).difference(obj.data.vertex_layers_int.keys()):
+                        raise Fatal('Selected object does not have expected PSIZE & FOG integer vertex layers')
+                    if 'SAMPLE.x' not in obj.data.vertex_layers_float.keys():
+                        raise Fatal('Selected object does not have expected SAMPLE float vertex layer')
+                    targets.append(obj)
+            if not grid:
+                raise Fatal('No soft body grids selected')
+            if not targets:
+                raise Fatal('No target meshes selected')
+            return (grid, targets)
+
+        def update_soft_body_sim(self, grid_parent, target):
+            node_locations = numpy.array([ x.location for x in grid_parent.children ])
+            node_ids = [ int(x.name.rpartition('[')[2].rstrip(']')) for x in grid_parent.children ]
+            #print('Nodes', list(zip(node_ids, node_locations)))
+
+            uv_layer_names = ['TEXCOORD%u.%s'%(x,y) for x in (8, 9) for y in ('xy', 'zw')]
+            node_layer_names = ['%s.%s'%(x,y) for x in ('PSIZE', 'FOG') for y in 'xyzw']
+
+            flip_uv = {}
+            for layer in uv_layer_names:
+                layer_props = target['3DMigoto:' + layer]
+                if isinstance(layer_props, dict) and layer_props['flip_v']:
+                    flip_uv[layer] = lambda uv: (uv[0], 1.0 - uv[1])
+                else:
+                    flip_uv[layer] = lambda uv: uv
+
+            for l in target.data.loops:
+                vertex = target.data.vertices[l.vertex_index]
+                vectors = [vertex.co]*len(node_locations) - node_locations
+
+                # numpy.linalg.norm can calculate distance reportedly faster
+                # than scipy.spacial.distance.euclidean:
+                distances = numpy.linalg.norm(vectors, axis=1)
+                sorted_nodes = sorted(zip(node_ids, distances, node_locations, vectors), key=lambda x: x[1], reverse=True)
+
+                # We need to exclude any nodes in the same direction from this
+                # vertex as earlier nodes, so that vertices outside of the grid
+                # will only use the nearest four nodes and so that vertices
+                # near a node will use the nodes forming a cube around it and
+                # not leach over to a neighbouring cube that happens to have a
+                # closer node.
+                #
+                # For each node we are including form a plane intersecting the
+                # node with the normal pointing towards this vertex. Nodes that
+                # lie on the far side of the plane are excluded. Keep going
+                # until we have 8 nodes that should form a cube around the
+                # vertex, or have run out of nodes.
+                surrounding_nodes = []
+                while sorted_nodes:
+                    (node, distance, node_location, normal) = sorted_nodes.pop()
+                    surrounding_nodes.append((node, distance, node_location))
+                    if len(surrounding_nodes) == 8:
+                        break
+                    # To distinguish the two sides of a plane, calculate a
+                    # normal n to it at some point p. Then a point v is on the
+                    # side where the normal points at if (v−p)⋅n>0 and on the
+                    # other side if (v−p)⋅n<0.
+                    # - https://math.stackexchange.com/questions/214187/point-on-the-left-or-right-side-of-a-plane-in-3d-space#214194
+                    for i, (node1, distance1, node_location1, normal1) in reversed(list(enumerate(sorted_nodes))):
+                        if numpy.dot(node_location1 - node_location, normal) < 0:
+                            del sorted_nodes[i]
+
+                diag_dist = numpy.linalg.norm(surrounding_nodes[0][2] - surrounding_nodes[-1][2])
+                total_dist = sum([x[1] for x in surrounding_nodes])
+                closest = min([x[1] for x in surrounding_nodes])
+                furthest = max([x[1] for x in surrounding_nodes])
+
+                # Sort by Node ID (probably unecessary, but puts it in the same
+                # order as original for comparison)
+                surrounding_nodes = sorted(surrounding_nodes, key=lambda x: x[0])
+
+                # Calculate weights. I'm not positive how these are supposed to
+                # be calculated, so this is just an approximation. Both of
+                # these options give approximately the same result:
+                #weighted_nodes = [(x, closest+furthest-y) for (x,y,_) in surrounding_nodes]
+                weighted_nodes = [(x, diag_dist-y) for (x,y,_) in surrounding_nodes]
+                fudge = 3.3
+                weighted_total = sum([x[1]**fudge for x in weighted_nodes])
+                weighted_nodes = [(x, (y**fudge)/(weighted_total)) for (x,y) in weighted_nodes]
+
+                for i in range(4):
+                    target.data.uv_layers[uv_layer_names[i]].data[l.index].uv = (0, 0)
+                    try:
+                        target['3DMigoto:' + uv_layer_names[i]]['flip_v'] = False
+                    except:
+                        target['3DMigoto:' + uv_layer_names[i]] = {'flip_v': False}
+                for i, (node, weight) in enumerate(weighted_nodes):
+                    target.data.vertex_layers_int[node_layer_names[i]].data[vertex.index].value = node
+                    target.data.uv_layers[uv_layer_names[i//2]].data[l.index].uv[i%2] = weight
+
+                #if (vertex.index == 0 or vertex.index == 27):
+                #    print('Total', total_dist, 'Closest', closest, 'Furthest', furthest)
+                #    print('Distances', [(x,y) for (x,y,_) in surrounding_nodes])
+                #    print('Weighted', weighted_nodes)
+                #    orig_nodes = [target.data.vertex_layers_int[layer].data[vertex.index].value \
+                #            for layer in node_layer_names
+                #    ]
+                #    orig_weights = [flip_uv[layer](target.data.uv_layers[layer].data[l.index].uv)[z] \
+                #            for layer in uv_layer_names
+                #            for z in (0,1)
+                #    ]
+                #    print('Original', [(x,y) for (x,y) in zip(orig_nodes, orig_weights) if y])
+                #    #return
+
+        def execute(self, context):
+            try:
+                grid_parent, targets = self.find_targets(context)
+                for target in targets:
+                    self.update_soft_body_sim(grid_parent, target)
+            except Fatal as e:
+                self.report({'ERROR'}, str(e))
+
+            return {'FINISHED'}
+
     def menu_func_import_soft(self, context):
         self.layout.operator(ImportDOA6Soft.bl_idname, text="DOA6 Soft Body (.g1m)")
 

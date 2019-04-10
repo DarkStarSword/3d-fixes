@@ -866,7 +866,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             uvs = []
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
                 if uv_name in texcoords:
-                    uvs += texcoords[uv_name][blender_loop_vertex.index]
+                    uvs += list(texcoords[uv_name][blender_loop_vertex.index])
             vertex[elem.name] = uvs
         elif any([elem.name.startswith(x) for x in extra_layers]):
             data = []
@@ -921,7 +921,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     for uv_layer in mesh.uv_layers:
         texcoords = {}
 
-        flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]
+        flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]['flip_v']
         if flip_texcoord_v:
             flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
         else:
