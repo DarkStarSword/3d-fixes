@@ -761,7 +761,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
                 operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
         # FIXME: Group objects together
 
-def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0]):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
@@ -808,7 +808,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     context.scene.objects.active = obj
 
     if pose_path is not None:
-        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True, axis_forward=axis_forward, axis_up=axis_up)
+        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True, axis_forward=axis_forward, axis_up=axis_up, pose_cb_off=pose_cb_off)
         context.scene.objects.active = obj
 
     return obj
@@ -1020,6 +1020,14 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             name="Bone CB",
             description='Indicate a constant buffer slot (e.g. "vs-cb2") containing the bone matrices',
             default="",
+            )
+
+    pose_cb_off = bpy.props.IntVectorProperty(
+            name="Bone CB range",
+            description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
+            default=[0,0],
+            size=2,
+            min=0,
             )
 
     def get_vb_ib_paths(self):
@@ -1295,22 +1303,29 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 class ConstantBuffer(object):
-    def __init__(self, f):
+    def __init__(self, f, start_idx, end_idx):
         self.entries = []
         entry = []
+        i = 0
         for line in map(str.strip, f):
             if line.startswith('buf') or line.startswith('cb'):
                 entry.append(float(line.split()[1]))
                 if len(entry) == 4:
-                    self.entries.append(entry)
+                    if i >= start_idx:
+                        self.entries.append(entry)
+                    else:
+                        print('Skipping', entry)
                     entry = []
+                    i += 1
+                    if end_idx and i > end_idx:
+                        break
         assert(entry == [])
 
     def as_3x4_matrices(self):
         return [ Matrix(self.entries[i:i+3]) for i in range(0, len(self.entries), 3) ]
 
-def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y'):
-    pose_buffer = ConstantBuffer(open(filepath, 'r'))
+def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0]):
+    pose_buffer = ConstantBuffer(open(filepath, 'r'), *pose_cb_off)
 
     matrices = pose_buffer.as_3x4_matrices()
 
@@ -1334,7 +1349,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
     arm.select = True
     context.scene.objects.active = arm
     bpy.ops.object.mode_set(mode='EDIT')
-    for i in range(len(matrices)):
+    for i, matrix in enumerate(matrices):
         bone = arm_data.edit_bones.new(str(i))
         bone.tail = Vector((0.0, 0.10, 0.0))
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -1369,6 +1384,14 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
             name="Limit Bones to Vertex Groups",
             description="Limits the maximum number of bones imported to the number of vertex groups of the active object",
             default=True,
+            )
+
+    pose_cb_off = bpy.props.IntVectorProperty(
+            name="Bone CB range",
+            description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
+            default=[0,0],
+            size=2,
+            min=0,
             )
 
     def execute(self, context):
@@ -1436,20 +1459,22 @@ def merge_armatures(operator, context):
         # vertex groups first, and rename the source pose bones to match:
         orig_names = {}
         for vg in src_obj.vertex_groups:
-            new_name = '%s.%s' % (src_arm.name, vg.name)
-            orig_names[new_name] = vg.name
-            vg.name = new_name
+            orig_name = vg.name
+            vg.name = '%s.%s' % (src_arm.name, vg.name)
+            orig_names[vg.name] = orig_name
 
         # Reassign vertex groups to matching bones in target armature:
         for vg in src_obj.vertex_groups:
             orig_name = orig_names[vg.name]
-            bone = src_arm.pose.bones[orig_name]
             if orig_name in bone_map:
                 print('%s.%s -> %s' % (src_arm.name, orig_name, bone_map[orig_name]))
                 vg.name = bone_map[orig_name]
-            else: # FIXME: Make optional
+            elif orig_name in src_arm.pose.bones:
+                # FIXME: Make optional
                 print('%s.%s -> new %s' % (src_arm.name, orig_name, vg.name))
                 copy_bone_to_target_skeleton(context, target_arm, vg.name, src_arm.pose.bones[orig_name])
+            else:
+                print('Vertex group %s missing corresponding bone in %s' % (orig_name, src_arm.name))
 
         # Change existing armature modifier to target:
         for modifier in src_obj.modifiers:
