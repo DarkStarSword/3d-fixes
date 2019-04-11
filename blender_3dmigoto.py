@@ -1498,7 +1498,7 @@ class Merge3DMigotoPose(bpy.types.Operator):
 
 class DeleteNonNumericVertexGroups(bpy.types.Operator):
     """Remove vertex groups with non-numeric names"""
-    bl_idname = "armature.merge_pose"
+    bl_idname = "vertex_groups.delete_non_numeric"
     bl_label = "Remove non-numeric vertex groups"
     bl_options = {'UNDO'}
 
