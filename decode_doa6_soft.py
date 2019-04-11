@@ -9,7 +9,7 @@ bl_info = {
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
 
-import os, struct, sys, numpy, io, copy
+import os, struct, sys, numpy, io, copy, itertools, math, collections
 
 try:
     import bpy
@@ -17,6 +17,8 @@ except ImportError as e:
     print('Running standalone - decoding only, no Blender integration')
 else:
     import bpy_extras
+
+class Fatal(Exception): pass
 
 numpy.set_printoptions(suppress = True,
         formatter = {
@@ -217,6 +219,8 @@ if 'bpy' in globals():
         bl_label = "Update DOA6 soft body vertex positions"
         bl_options = {'UNDO'}
 
+        WeightedNode = collections.namedtuple('WeightedNode', ['pos', 'weights'])
+
         def find_targets(self, context):
             grid = None
             targets = []
@@ -241,6 +245,93 @@ if 'bpy' in globals():
                 raise Fatal('No target meshes selected')
             return (grid, targets)
 
+        def find_parallel_sides(self, nodes, n):
+            # We need to find sides pointing in the same direction. We don't
+            # necessarily know what order the nodes are in (though maybe with
+            # some analysis of how the nodes are typically layed out we could
+            # assume something?), so we will arbitrarily take a vector
+            # connecting the first two corners then scan through all
+            # permutations of pairs of the remaining corners to locate the
+            # three sides that most closely match that vector.
+            #
+            # Assumes all the sides we are looking for have approximately the
+            # same length and direction.
+            #
+            side1_vec = nodes[1].pos - nodes[0].pos
+            other_pairs = itertools.permutations(nodes[2:], 2)
+            other_vecs = [(numpy.linalg.norm(y.pos - x.pos - side1_vec), x,y) for x,y in other_pairs]
+            other_vecs = sorted(other_vecs, key=lambda x: x[0])[:n-1]
+            other_vecs = list(zip(*list(zip(*other_vecs))[1:]))
+            return [(nodes[0], nodes[1])] + other_vecs
+
+        @staticmethod
+        def angle_between(p1, corner, p2):
+            v0 = numpy.array(p1) - numpy.array(corner)
+            v1 = numpy.array(p2) - numpy.array(corner)
+            return math.atan2(numpy.linalg.norm(numpy.cross(v0, v1)), numpy.dot(v0, v1))
+
+        @classmethod
+        def ratio_along_line(cls, pos, line_pos_1, line_pos_2):
+            # Finds how far along a line a given point lies, returning 0.0 at
+            # line_pos_1, and 1.0 at line_pos_2, and whatever between them.
+            # This point does not need to lie on the line, but the closest
+            # point on the line will be considered.
+            angle = cls.angle_between(pos, line_pos_1, line_pos_2)
+            dist_p1_to_closest = numpy.linalg.norm(numpy.array(pos) - numpy.array(line_pos_1)) * math.cos(angle)
+            return dist_p1_to_closest / numpy.linalg.norm(line_pos_2 - line_pos_1)
+
+        @staticmethod
+        def interpolate_linear(n1, n2, ratio):
+            return (1.0-ratio)*n1 + ratio*n2
+
+        @classmethod
+        def interpolate_weighted_nodes(cls, n1, n2, ratio):
+            pos = cls.interpolate_linear(n1.pos, n2.pos, ratio)
+            weights = [cls.interpolate_linear(x,y,ratio) for (x,y) in zip(n1.weights, n2.weights)]
+            return cls.WeightedNode(pos, weights)
+
+        def interpolate_weights_linear(self, pos, nodes):
+            if len(nodes) != 2:
+                self.report({'WARNING'}, 'Vertex at %s surrounded by irregular number of %u nodes' % (pos, len(nodes)))
+                return None
+            r = self.ratio_along_line(pos, nodes[0].pos, nodes[1].pos)
+            interpolated = self.interpolate_weighted_nodes(nodes[0], nodes[1], r)
+            return interpolated.weights
+
+        def interpolate_weights_bilinear(self, pos, nodes):
+            if len(nodes) != 4:
+                return self.interpolate_weights_linear(pos, nodes)
+            sides = self.find_parallel_sides(nodes, 2)
+            interpolated_line = []
+            for n1,n2 in sides:
+                r = self.ratio_along_line(pos, n1.pos, n2.pos)
+                interpolated = self.interpolate_weighted_nodes(n1, n2, r)
+                interpolated_line.append(interpolated)
+            return self.interpolate_weights_linear(pos, interpolated_line)
+
+        def interpolate_weights_trilinear(self, pos, nodes):
+            if len(nodes) != 8:
+                return self.interpolate_weights_bilinear(pos, nodes)
+            # The nodes should form a cube or rectangular prism, and we want to
+            # interpolate on four sides pointing in one direction to form a
+            # square, then on two opposite sides of that square to form a line,
+            # then on that line to find a point that should match the vertex
+            # position. If we also interpolate weights between the corners,
+            # where each corner has its own weight set at 1.0 and all other
+            # weights set at 0.0 than then interpolated weights should be
+            # usable to reconstruct the vertex location given the corner
+            # positions.
+            sides = self.find_parallel_sides(nodes, 4)
+            interpolated_square = []
+            for n1,n2 in sides:
+                # Can probably get away with calculating r once and reusing it
+                # for the next three sides, but do it each time allowing for
+                # the nodes to not quite form a grid:
+                r = self.ratio_along_line(pos, n1.pos, n2.pos)
+                interpolated = self.interpolate_weighted_nodes(n1, n2, r)
+                interpolated_square.append(interpolated)
+            return self.interpolate_weights_bilinear(pos, interpolated_square)
+
         def update_soft_body_sim(self, grid_parent, target):
             node_locations = numpy.array([ x.location for x in grid_parent.children ])
             node_ids = [ int(x.name.rpartition('[')[2].rstrip(']')) for x in grid_parent.children ]
@@ -257,6 +348,9 @@ if 'bpy' in globals():
                 else:
                     flip_uv[layer] = lambda uv: uv
 
+            Nodes = collections.namedtuple('Node', ['id', 'dist', 'pos', 'vec'])
+
+            max_errors = [(0.0, None, None, [])]*9
             for l in target.data.loops:
                 vertex = target.data.vertices[l.vertex_index]
                 vectors = [vertex.co]*len(node_locations) - node_locations
@@ -264,7 +358,8 @@ if 'bpy' in globals():
                 # numpy.linalg.norm can calculate distance reportedly faster
                 # than scipy.spacial.distance.euclidean:
                 distances = numpy.linalg.norm(vectors, axis=1)
-                sorted_nodes = sorted(zip(node_ids, distances, node_locations, vectors), key=lambda x: x[1], reverse=True)
+                sorted_nodes = sorted([Nodes(*x) for x in zip(node_ids, distances, node_locations, vectors)],
+                        key=lambda x: x.dist, reverse=True)
 
                 # We need to exclude any nodes in the same direction from this
                 # vertex as earlier nodes, so that vertices outside of the grid
@@ -280,8 +375,8 @@ if 'bpy' in globals():
                 # vertex, or have run out of nodes.
                 surrounding_nodes = []
                 while sorted_nodes:
-                    (node, distance, node_location, normal) = sorted_nodes.pop()
-                    surrounding_nodes.append((node, distance, node_location))
+                    node = sorted_nodes.pop()
+                    surrounding_nodes.append(node)
                     if len(surrounding_nodes) == 8:
                         break
                     # To distinguish the two sides of a plane, calculate a
@@ -289,51 +384,46 @@ if 'bpy' in globals():
                     # side where the normal points at if (v−p)⋅n>0 and on the
                     # other side if (v−p)⋅n<0.
                     # - https://math.stackexchange.com/questions/214187/point-on-the-left-or-right-side-of-a-plane-in-3d-space#214194
-                    for i, (node1, distance1, node_location1, normal1) in reversed(list(enumerate(sorted_nodes))):
-                        if numpy.dot(node_location1 - node_location, normal) < 0:
+                    for i, node1 in reversed(list(enumerate(sorted_nodes))):
+                        if numpy.dot(node1.pos - node.pos, node.vec) < 0:
                             del sorted_nodes[i]
-
-                diag_dist = numpy.linalg.norm(surrounding_nodes[0][2] - surrounding_nodes[-1][2])
-                total_dist = sum([x[1] for x in surrounding_nodes])
-                closest = min([x[1] for x in surrounding_nodes])
-                furthest = max([x[1] for x in surrounding_nodes])
 
                 # Sort by Node ID (probably unecessary, but puts it in the same
                 # order as original for comparison)
-                surrounding_nodes = sorted(surrounding_nodes, key=lambda x: x[0])
+                surrounding_nodes = sorted(surrounding_nodes, key=lambda x: x.id)
 
-                # Calculate weights. I'm not positive how these are supposed to
-                # be calculated, so this is just an approximation. Both of
-                # these options give approximately the same result:
-                #weighted_nodes = [(x, closest+furthest-y) for (x,y,_) in surrounding_nodes]
-                weighted_nodes = [(x, diag_dist-y) for (x,y,_) in surrounding_nodes]
-                fudge = 3.3
-                weighted_total = sum([x[1]**fudge for x in weighted_nodes])
-                weighted_nodes = [(x, (y**fudge)/(weighted_total)) for (x,y) in weighted_nodes]
+                weighted_nodes = [self.WeightedNode(n.pos, [0.0]*i + [1.0] + [0.0]*(len(surrounding_nodes)-i-1)) \
+                        for i,n in enumerate(surrounding_nodes)]
+                weights = self.interpolate_weights_trilinear(vertex.co, weighted_nodes)
+                if weights is None:
+                    continue
 
+                # Check how accurate our result is - calculate the position
+                # based on the node weights and compare it to the vertex
+                # position, warning if any vertices are excessively inaccurate.
+                pos = numpy.array([0.0,0.0,0.0])
+                for i,n in enumerate(weighted_nodes):
+                    pos += n.pos * weights[i]
+                error = numpy.linalg.norm(pos - vertex.co)
+                if error > max_errors[len(weights)][0]:
+                    max_errors[len(weights)] = (error, vertex.co, pos, weights)
+
+                # Zero out weights and clear the flip_v flag:
                 for i in range(4):
                     target.data.uv_layers[uv_layer_names[i]].data[l.index].uv = (0, 0)
                     try:
                         target['3DMigoto:' + uv_layer_names[i]]['flip_v'] = False
                     except:
                         target['3DMigoto:' + uv_layer_names[i]] = {'flip_v': False}
-                for i, (node, weight) in enumerate(weighted_nodes):
-                    target.data.vertex_layers_int[node_layer_names[i]].data[vertex.index].value = node
-                    target.data.uv_layers[uv_layer_names[i//2]].data[l.index].uv[i%2] = weight
 
-                #if (vertex.index == 0 or vertex.index == 27):
-                #    print('Total', total_dist, 'Closest', closest, 'Furthest', furthest)
-                #    print('Distances', [(x,y) for (x,y,_) in surrounding_nodes])
-                #    print('Weighted', weighted_nodes)
-                #    orig_nodes = [target.data.vertex_layers_int[layer].data[vertex.index].value \
-                #            for layer in node_layer_names
-                #    ]
-                #    orig_weights = [flip_uv[layer](target.data.uv_layers[layer].data[l.index].uv)[z] \
-                #            for layer in uv_layer_names
-                #            for z in (0,1)
-                #    ]
-                #    print('Original', [(x,y) for (x,y) in zip(orig_nodes, orig_weights) if y])
-                #    #return
+                # Write new soft body node IDs and weights to the vertices:
+                for i,n in enumerate(surrounding_nodes):
+                    target.data.vertex_layers_int[node_layer_names[i]].data[vertex.index].value = n.id
+                    target.data.uv_layers[uv_layer_names[i//2]].data[l.index].uv[i%2] = weights[i]
+
+            for i,max_error in enumerate(max_errors):
+                if max_error[1] is not None:
+                    self.report({'INFO'}, "Maximum error for %i surrounding nodes: off by %f, vertex position %s, calculated position %s, weights %s" % ((i,) + max_error))
 
         def execute(self, context):
             try:
