@@ -1496,6 +1496,24 @@ class Merge3DMigotoPose(bpy.types.Operator):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+class DeleteNonNumericVertexGroups(bpy.types.Operator):
+    """Remove vertex groups with non-numeric names"""
+    bl_idname = "armature.merge_pose"
+    bl_label = "Remove non-numeric vertex groups"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        try:
+            for obj in context.selected_objects:
+                for vg in reversed(obj.vertex_groups):
+                    if vg.name.isdecimal():
+                        continue
+                    print('Removing vertex group', vg.name)
+                    obj.vertex_groups.remove(vg)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
 def menu_func_import_fa(self, context):
     self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
 
