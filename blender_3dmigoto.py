@@ -802,7 +802,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
                 operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
         # FIXME: Group objects together
 
-def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0]):
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
@@ -849,7 +849,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     context.scene.objects.active = obj
 
     if pose_path is not None:
-        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True, axis_forward=axis_forward, axis_up=axis_up, pose_cb_off=pose_cb_off)
+        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True,
+                axis_forward=axis_forward, axis_up=axis_up,
+                pose_cb_off=pose_cb_off, pose_cb_step=pose_cb_step)
         context.scene.objects.active = obj
 
     return obj
@@ -983,10 +985,13 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     for uv_layer in mesh.uv_layers:
         texcoords = {}
 
-        flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]['flip_v']
-        if flip_texcoord_v:
-            flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
-        else:
+        try:
+            flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]['flip_v']
+            if flip_texcoord_v:
+                flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
+            else:
+                flip_uv = lambda uv: uv
+        except KeyError:
             flip_uv = lambda uv: uv
 
         for l in mesh.loops:
@@ -1090,6 +1095,13 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=[0,0],
             size=2,
             min=0,
+            )
+
+    pose_cb_step = bpy.props.IntProperty(
+            name="Vertex group step",
+            description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
+            default=1,
+            min=1,
             )
 
     def get_vb_ib_paths(self):
@@ -1386,7 +1398,7 @@ class ConstantBuffer(object):
     def as_3x4_matrices(self):
         return [ Matrix(self.entries[i:i+3]) for i in range(0, len(self.entries), 3) ]
 
-def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0]):
+def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     pose_buffer = ConstantBuffer(open(filepath, 'r'), *pose_cb_off)
 
     matrices = pose_buffer.as_3x4_matrices()
@@ -1412,13 +1424,13 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
     context.scene.objects.active = arm
     bpy.ops.object.mode_set(mode='EDIT')
     for i, matrix in enumerate(matrices):
-        bone = arm_data.edit_bones.new(str(i))
+        bone = arm_data.edit_bones.new(str(i * pose_cb_step))
         bone.tail = Vector((0.0, 0.10, 0.0))
     bpy.ops.object.mode_set(mode='OBJECT')
 
     # Set pose:
     for i, matrix in enumerate(matrices):
-        bone = arm.pose.bones[str(i)]
+        bone = arm.pose.bones[str(i * pose_cb_step)]
         matrix.resize_4x4()
         bone.matrix_basis = conversion_matrix * matrix * conversion_matrix.inverted()
 
@@ -1454,6 +1466,13 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
             default=[0,0],
             size=2,
             min=0,
+            )
+
+    pose_cb_step = bpy.props.IntProperty(
+            name="Vertex group step",
+            description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
+            default=1,
+            min=1,
             )
 
     def execute(self, context):
