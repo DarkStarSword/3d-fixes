@@ -151,7 +151,7 @@ def print_unknown(name, buf):
 
     numpy.set_printoptions(**orig_opts)
 
-def dump_unknown_section(f):
+def dump_unknown_section(f, *args):
     print_unknown('Unknown section:', f.read())
 
 decode_soft_section = {
@@ -164,7 +164,8 @@ def io_range(f, len):
     b.name = f.name
     return b
 
-def decode_soft(f):
+def decode_soft(f, version):
+    assert(version == b'5100')
     num_sections, = struct.unpack('<I', f.read(4))
     for i in range(num_sections):
         section_type, section_len = struct.unpack('<2I', f.read(8))
@@ -172,8 +173,55 @@ def decode_soft(f):
 
     assert(not f.read())
 
+def decode_g1mg_bone_map(f):
+    num_maps, = struct.unpack('<I', f.read(4))
+    print('Num bone maps:', num_maps)
+    dtype = numpy.dtype([
+        ('from', numpy.uint32, 1),
+        ('zero', numpy.uint32, 1),
+        ('to', numpy.uint32, 1),
+    ])
+    orig_opts = numpy.get_printoptions()
+    opts = copy.deepcopy(orig_opts)
+    opts['formatter']['int'] = lambda x : '%3i' % x
+    opts['linewidth'] = math.inf
+    numpy.set_printoptions(**opts)
+    for i in range(num_maps):
+        num_maps, = struct.unpack('<I', f.read(4))
+        data = numpy.frombuffer(f.read(num_maps * 4 * 3), dtype)
+        pr_verbose('Map %i, len %i:' % (i, len(data)))
+        pr_verbose('group?', data['from']) # *3?
+        pr_verbose(' bone?', data['to'])
+        pr_verbose()
+        assert(all(data['zero'] == 0))
+    numpy.set_printoptions(**orig_opts)
+
+    assert(not f.read())
+
+decode_g1mg_section = {
+        # 0x10001: dump_unknown_section,
+        0x10006: decode_g1mg_bone_map,
+        # 0x10009: dump_unknown_section,
+}
+
+def decode_g1mg(f, version):
+    assert(version == b'4400')
+    header = struct.unpack('<4sI6fI', f.read(36))
+    pr_verbose(header)
+    (platform, unk_10, min_x, min_y, min_z, max_x, max_y, max_z, num_sections) = header
+    assert(platform == b'DX11')
+    for i in range(num_sections):
+        section_type, section_len = struct.unpack('<2I', f.read(8))
+        #pr_verbose(hex(section_type))
+        if section_type in decode_g1mg_section:
+            decode_g1mg_section[section_type](io_range(f, section_len - 8))
+        else:
+            f.seek(section_len - 8, 1)
+
 chunk_decoders = {
     b'SOFT': decode_soft,
+    #b'G1MS': dump_unknown_section,
+    b'G1MG': decode_g1mg,
 }
 
 def decode_g1m(f):
@@ -183,11 +231,11 @@ def decode_g1m(f):
 
     f.seek(header_size)
     for i in range(chunks):
-        eyecatcher, chunk_version, chunk_size = struct.unpack('<4s2I', f.read(12))
+        eyecatcher, chunk_version, chunk_size = struct.unpack('<4s4sI', f.read(12))
         eyecatcher = bytes(reversed(eyecatcher))
-        #pr_verbose(eyecatcher)
+        #pr_verbose(eyecatcher, chunk_version)
         if eyecatcher in chunk_decoders:
-            chunk_decoders[eyecatcher](io_range(f, chunk_size - 12))
+            chunk_decoders[eyecatcher](io_range(f, chunk_size - 12), chunk_version)
         else:
             f.seek(chunk_size - 12, 1)
 
