@@ -340,13 +340,11 @@ if 'bpy' in globals():
             uv_layer_names = ['TEXCOORD%u.%s'%(x,y) for x in (8, 9) for y in ('xy', 'zw')]
             node_layer_names = ['%s.%s'%(x,y) for x in ('PSIZE', 'FOG') for y in 'xyzw']
 
-            flip_uv = {}
             for layer in uv_layer_names:
-                layer_props = target['3DMigoto:' + layer]
-                if isinstance(layer_props, dict) and layer_props['flip_v']:
-                    flip_uv[layer] = lambda uv: (uv[0], 1.0 - uv[1])
-                else:
-                    flip_uv[layer] = lambda uv: uv
+                try:
+                    target['3DMigoto:' + layer]['flip_v'] = False
+                except:
+                    target['3DMigoto:' + layer] = {'flip_v': False}
 
             Nodes = collections.namedtuple('Node', ['id', 'dist', 'pos', 'vec'])
 
@@ -408,13 +406,9 @@ if 'bpy' in globals():
                 if error > max_errors[len(weights)][0]:
                     max_errors[len(weights)] = (error, vertex.co, pos, weights)
 
-                # Zero out weights and clear the flip_v flag:
+                # Zero out existing weights:
                 for i in range(4):
                     target.data.uv_layers[uv_layer_names[i]].data[l.index].uv = (0, 0)
-                    try:
-                        target['3DMigoto:' + uv_layer_names[i]]['flip_v'] = False
-                    except:
-                        target['3DMigoto:' + uv_layer_names[i]] = {'flip_v': False}
 
                 # Write new soft body node IDs and weights to the vertices:
                 for i,n in enumerate(surrounding_nodes):
