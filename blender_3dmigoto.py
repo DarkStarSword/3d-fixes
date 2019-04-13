@@ -9,15 +9,6 @@ bl_info = {
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
 
-# Add these to the mesh as vertex layers so that they will be retain their data
-# across import and export. TODO: Could probably do this for all unknown vertex
-# elements? FOG, PSIZE and SAMPLE are required for DOA6
-extra_layers = (
-        'FOG',
-        'PSIZE',
-        'SAMPLE',
-)
-
 # TODO:
 # - Option to reduce vertices on import to simplify mesh (can be noticeably lossy)
 # - Option to untesselate triangles on import?
@@ -69,6 +60,9 @@ unorm16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_UNORM''')
 unorm8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_UNORM''')
 snorm16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_SNORM''')
 snorm8_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]8)+_SNORM''')
+
+misc_float_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD][0-9]+)+_(?:FLOAT|UNORM|SNORM)''')
+misc_int_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD][0-9]+)+_[SU]INT''')
 
 def EncoderDecoder(fmt):
     if f32_pattern.match(fmt):
@@ -201,6 +195,12 @@ class InputLayoutElement(object):
 
     def size(self):
         return format_size(self.Format)
+
+    def is_float(self):
+        return misc_float_pattern.match(self.Format)
+
+    def is_int(self):
+        return misc_int_pattern.match(self.Format)
 
     def encode(self, data):
         # print(self.Format, data)
@@ -407,6 +407,22 @@ class VertexBuffer(object):
         self.vertex_count = max(self.vertex_count, other.vertex_count)
         assert(len(self.vertices) == self.vertex_count)
 
+    def wipe_semantic_for_testing(self, semantic, val=0):
+        print('WARNING: WIPING %s FOR TESTING PURPOSES!!!' % semantic)
+        semantic, _, components = semantic.partition('.')
+        if components:
+            components = [{'x':0, 'y':1, 'z':2, 'w':3}[c] for c in components]
+        else:
+            components = range(4)
+        for vertex in self.vertices:
+            for s in list(vertex):
+                if s == semantic:
+                    v = list(vertex[semantic])
+                    for component in components:
+                        if component < len(v):
+                            v[component] = val
+                    vertex[semantic] = v
+
 class IndexBuffer(object):
     def __init__(self, *args, load_indices=True):
         self.faces = []
@@ -532,6 +548,14 @@ def load_3dmigoto_mesh(operator, paths):
         tmp = VertexBuffer(open(vb_path, 'r'))
         vb.merge(tmp)
 
+    # For quickly testing how importent any unsupported semantics may be:
+    #vb.wipe_semantic_for_testing('POSITION.w', 1.0)
+    #vb.wipe_semantic_for_testing('TEXCOORD.w', 0.0)
+    #vb.wipe_semantic_for_testing('TEXCOORD5', 0)
+    #vb.wipe_semantic_for_testing('BINORMAL')
+    #vb.wipe_semantic_for_testing('TANGENT')
+    #vb.write(open(os.path.join(os.path.dirname(vb_paths[0]), 'TEST.vb'), 'wb'), operator=operator)
+
     ib = None
     if ib_paths:
         ib = IndexBuffer(open(ib_paths[0], 'r'))
@@ -646,7 +670,12 @@ def import_vertex_layers(mesh, obj, vertex_layers):
         dim = len(data[0])
         cmap = {0: 'x', 1: 'y', 2: 'z', 3: 'w'}
         for component in range(dim):
-            layer_name = '%s.%s' % (element_name, cmap[component])
+
+            if dim != 1 or element_name.find('.') == -1:
+                layer_name = '%s.%s' % (element_name, cmap[component])
+            else:
+                layer_name = element_name
+
             if type(data[0][0]) == int:
                 mesh.vertex_layers_int.new(layer_name)
                 layer = mesh.vertex_layers_int[layer_name]
@@ -707,10 +736,22 @@ def import_vertices(mesh, vb):
         data = tuple( x[elem.name] for x in vb.vertices )
         if elem.name == 'POSITION':
             # Ensure positions are 3-dimensional:
-            # XXX: Assertion triggers in DOA6
             if len(data[0]) == 4:
                 if ([x[3] for x in data] != [1.0]*len(data)):
+                    # XXX: Leaving this fatal error in for now, as the meshes
+                    # it triggers on in DOA6 (skirts) lie about almost every
+                    # semantic and we cannot import them with this version of
+                    # the script regardless. Comment it out if you want to try
+                    # importing anyway and preserving the W coordinate in a
+                    # vertex group. It might also be possible to project this
+                    # back into 3D if we assume the coordinates are homogeneous
+                    # (i.e. divide XYZ by W), but that might be assuming too
+                    # much for a generic script.
                     raise Fatal('Positions are 4D')
+                    # Occurs in some meshes in DOA6, such as skirts.
+                    # W coordinate must be preserved in these cases.
+                    print('Positions are 4D, storing W coordinate in POSITION.w vertex layer')
+                    vertex_layers['POSITION.w'] = [[x[3]] for x in data]
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name.startswith('COLOR'):
@@ -730,22 +771,22 @@ def import_vertices(mesh, vb):
         elif elem.name == 'NORMAL':
             use_normals = True
             import_normals_step1(mesh, data)
-        #elif elem.name.startswith('TANGENT'):
+        elif elem.name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
         #    for l in mesh.loops:
         #        assert(data[l.vertex_index][3] in (1.0, -1.0))
         #        l.tangent[:] = data[l.vertex_index][0:3]
+            print('NOTICE: Skipping import of %s in favour of recalculating on export' % elem.name)
         elif elem.name.startswith('BLENDINDICES'):
             blend_indices[elem.SemanticIndex] = data
         elif elem.name.startswith('BLENDWEIGHT'):
             blend_weights[elem.SemanticIndex] = data
-        elif elem.name.startswith('TEXCOORD'):
+        elif elem.name.startswith('TEXCOORD') and elem.is_float():
             texcoords[elem.SemanticIndex] = data
-        elif any([elem.name.startswith(x) for x in extra_layers]):
-            vertex_layers[elem.name] = data
         else:
-            print('NOTICE: Unhandled vertex element: %s' % elem.name)
+            print('NOTICE: Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
+            vertex_layers[elem.name] = data
 
     return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals)
 
@@ -840,8 +881,12 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         if elem.name == 'POSITION':
-            vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
-        if elem.name.startswith('COLOR'):
+            if 'POSITION.w' in mesh.vertex_layers_float:
+                vertex[elem.name] = list(blender_vertex.undeformed_co) + \
+                                        [mesh.vertex_layers_float['POSITION.w'].data[blender_loop_vertex.vertex_index].value]
+            else:
+                vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
+        elif elem.name.startswith('COLOR'):
             if elem.name in mesh.vertex_colors:
                 vertex[elem.name] = elem.clip(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color))
             else:
@@ -854,6 +899,20 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
+        elif elem.name.startswith('BINORMAL'):
+            # Some DOA6 meshes (skirts) use BINORMAL, but I'm not certain it is
+            # actually the binormal. These meshes are weird though, since they
+            # use 4 dimensional positions and normals, so they aren't something
+            # we can really deal with at all. Therefore, the below is untested,
+            # FIXME: So find a mesh where this is actually the binormal,
+            # uncomment the below code and test.
+            # normal = blender_loop_vertex.normal
+            # tangent = blender_loop_vertex.tangent
+            # binormal = numpy.cross(normal, tangent)
+            # XXX: Does the binormal need to be normalised to a unit vector?
+            # binormal = binormal / numpy.linalg.norm(binormal)
+            # vertex[elem.name] = elem.pad(list(binormal), 0.0)
+            pass
         elif elem.name.startswith('BLENDINDICES'):
             i = elem.SemanticIndex * 4
             vertex[elem.name] = elem.pad([ x.group for x in vertex_groups[i:i+4] ], 0)
@@ -861,14 +920,15 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
             vertex[elem.name] = elem.pad([ x.weight for x in vertex_groups[i:i+4] ], 0.0)
-        elif elem.name.startswith('TEXCOORD'):
+        elif elem.name.startswith('TEXCOORD') and elem.is_float():
             # FIXME: Handle texcoords of other dimensions
             uvs = []
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
                 if uv_name in texcoords:
                     uvs += list(texcoords[uv_name][blender_loop_vertex.index])
             vertex[elem.name] = uvs
-        elif any([elem.name.startswith(x) for x in extra_layers]):
+        else:
+            # Unhandled semantics are saved in vertex layers
             data = []
             for component in 'xyzw':
                 layer_name = '%s.%s' % (elem.name, component)
@@ -876,12 +936,14 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                     data.append(mesh.vertex_layers_int[layer_name].data[blender_loop_vertex.vertex_index].value)
                 elif layer_name in mesh.vertex_layers_float:
                     data.append(mesh.vertex_layers_float[layer_name].data[blender_loop_vertex.vertex_index].value)
-            vertex[elem.name] = data
+            if data:
+                #print('Retrieved unhandled semantic %s %s from vertex layer' % (elem.name, elem.Format), data)
+                vertex[elem.name] = data
+
         if elem.name not in vertex:
             print('NOTICE: Unhandled vertex element: %s' % elem.name)
-        else:
-            # print('%s: %s' % (elem.name, repr(vertex[elem.name])))
-            pass
+        #else:
+        #    print('%s: %s' % (elem.name, repr(vertex[elem.name])))
 
     return vertex
 
