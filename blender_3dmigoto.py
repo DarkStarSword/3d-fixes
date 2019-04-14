@@ -1033,10 +1033,13 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         path = vb_path
         if suffix:
             path = '%s-%s%s' % (base, suffix, ext)
+        vgmap_path = os.path.splitext(path)[0] + '.vgmap'
         print('Exporting %s...' % path)
         vb.remap_blendindices(obj, vgmap)
         vb.write(open(path, 'wb'), operator=operator)
         vb.revert_blendindices_remap()
+        sorted_vgmap = collections.OrderedDict(sorted(vgmap.items(), key=lambda x:x[1]))
+        json.dump(sorted_vgmap, open(vgmap_path, 'w'), indent=2)
 
     if ib is not None:
         ib.write(open(ib_path, 'wb'), operator=operator)
@@ -1183,9 +1186,11 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
-def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, **kwargs):
+def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, vgmap_path=None, **kwargs):
     paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
-    return import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
+    import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
+    if vgmap_path:
+        apply_vgmap(operator, context, targets=[context.active_object], filepath=vgmap_path, rename=True)
 
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import raw 3DMigoto vertex and index buffers"""
@@ -1215,13 +1220,16 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         vb_bin_path = os.path.splitext(filename)[0] + '.vb'
         ib_bin_path = os.path.splitext(filename)[0] + '.ib'
         fmt_path = os.path.splitext(filename)[0] + '.fmt'
+        vgmap_path = os.path.splitext(filename)[0] + '.vgmap'
         if not os.path.exists(vb_bin_path):
             raise Fatal('Unable to find matching .vb file for %s' % filename)
         if not os.path.exists(ib_bin_path):
             raise Fatal('Unable to find matching .ib file for %s' % filename)
         if not os.path.exists(fmt_path):
             fmt_path = None
-        return (vb_bin_path, ib_bin_path, fmt_path)
+        if not os.path.exists(vgmap_path):
+            vgmap_path = None
+        return (vb_bin_path, ib_bin_path, fmt_path, vgmap_path)
 
     def execute(self, context):
         # I'm not sure how to find the Import3DMigotoReferenceInputFormat
@@ -1235,13 +1243,13 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         dirname = os.path.dirname(self.filepath)
         for filename in self.files:
             try:
-                (vb_path, ib_path, fmt_path) = self.get_vb_ib_paths(os.path.join(dirname, filename.name))
+                (vb_path, ib_path, fmt_path, vgmap_path) = self.get_vb_ib_paths(os.path.join(dirname, filename.name))
                 if os.path.normcase(vb_path) in done:
                     continue
                 done.add(os.path.normcase(vb_path))
 
                 if fmt_path is not None:
-                    import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, **migoto_raw_import_options)
+                    import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, vgmap_path=vgmap_path, **migoto_raw_import_options)
                 else:
                     migoto_raw_import_options['vb_path'] = vb_path
                     migoto_raw_import_options['ib_path'] = ib_path
@@ -1315,8 +1323,11 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
-def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suffix='', rename=False):
-    if not context.selected_objects:
+def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reverse=False, suffix='', rename=False):
+    if not targets:
+        targets = context.selected_objects
+
+    if not targets:
         raise Fatal('No object selected')
 
     vgmap = json.load(open(filepath, 'r'))
@@ -1326,7 +1337,7 @@ def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suf
     else:
         vgmap = {k:int(v) for k,v in vgmap.items()}
 
-    for obj in context.selected_objects:
+    for obj in targets:
         if commit:
             raise Fatal('commit not yet implemented')
 
@@ -1335,6 +1346,8 @@ def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suf
 
         if rename:
             for k,v in vgmap.items():
+                if str(k) in obj.vertex_groups.keys():
+                    continue
                 if str(v) in obj.vertex_groups.keys():
                     obj.vertex_groups[str(v)].name = k
                 else:
