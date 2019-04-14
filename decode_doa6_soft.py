@@ -9,7 +9,7 @@ bl_info = {
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
 
-import os, struct, sys, numpy, io, copy, itertools, math, collections
+import os, struct, sys, numpy, io, copy, itertools, math, collections, json
 
 try:
     import bpy
@@ -164,7 +164,7 @@ def io_range(f, len):
     b.name = f.name
     return b
 
-def decode_soft(f, version):
+def decode_soft(f, version, g1m):
     assert(version == b'5100')
     num_sections, = struct.unpack('<I', f.read(4))
     for i in range(num_sections):
@@ -173,28 +173,41 @@ def decode_soft(f, version):
 
     assert(not f.read())
 
-def decode_g1mg_bone_map(f):
+def decode_g1mg_bone_map(f, g1m):
     num_maps, = struct.unpack('<I', f.read(4))
     print('Num bone maps:', num_maps)
     dtype = numpy.dtype([
-        ('from', numpy.uint32, 1),
+        ('id', numpy.uint32, 1), # I think this is a unique ID for the bone ->
+                                 # vg mapping. Each unique mapping in the file
+                                 # gets an index starting at 0 and
+                                 # incrementing by 1 each time. If a mapping
+                                 # is repeated from an earlier sub-mesh it
+                                 # will have the same ID.
         ('zero', numpy.uint32, 1),
-        ('to', numpy.uint32, 1),
+        ('bone', numpy.uint32, 1),
     ])
-    orig_opts = numpy.get_printoptions()
-    opts = copy.deepcopy(orig_opts)
-    opts['formatter']['int'] = lambda x : '%3i' % x
-    opts['linewidth'] = math.inf
-    numpy.set_printoptions(**opts)
     for i in range(num_maps):
         num_maps, = struct.unpack('<I', f.read(4))
         data = numpy.frombuffer(f.read(num_maps * 4 * 3), dtype)
         pr_verbose('Map %i, len %i:' % (i, len(data)))
-        pr_verbose('group?', data['from']) # *3?
-        pr_verbose(' bone?', data['to'])
+        vgmap = {}
+        for vg,d in enumerate(data):
+            try:
+                bone_name = g1m.oid_map[list(g1m.chunks[b'G1MS'].indices).index(d['bone'])]
+            except:
+                bone_name = 'UnnamedBone#%d' % d['bone']
+            pr_verbose(
+                    '  VG:', vg*3,
+                    'BoneID:', d['bone'], repr(bone_name),
+                    'MapID:', d['id']
+            )
+            vgmap[bone_name] = vg*3
         pr_verbose()
         assert(all(data['zero'] == 0))
-    numpy.set_printoptions(**orig_opts)
+        try:
+            json.dump(vgmap, open(os.path.join(os.path.splitext(f.name)[0], '%d.vgmap' % i), 'w'), indent=2)
+        except:
+            pr_verbose('Unable to dump vertex group mapping')
 
     assert(not f.read())
 
@@ -204,7 +217,40 @@ decode_g1mg_section = {
         # 0x10009: dump_unknown_section,
 }
 
-def decode_g1mg(f, version):
+class OIDMap(dict):
+    def __init__(self, f):
+        for l in f:
+            if l.startswith(';'):
+                continue
+            id, _, name = l.rstrip().partition(',')
+            if id and name:
+                self[int(id)] = name
+
+def align(file, alignment):
+    off = file.tell()
+    mod = off % alignment
+    if mod == 0:
+        return
+    file.seek(alignment - mod, 1)
+
+class G1MSChunk(object):
+    def __init__(self, f, version, g1m):
+        assert(version == b'2300')
+        header = struct.unpack('<2I4H', f.read(16))
+        pr_verbose(header)
+        (bones_offset, unk_10, num_bones, num_indices, num_parents, unk_1A) = header
+
+        self.indices = numpy.frombuffer(f.read(num_indices * 2), numpy.int16)
+        pr_verbose(self.indices)
+        self.parents = numpy.frombuffer(f.read(num_parents * 2), numpy.int16)
+        pr_verbose(self.parents)
+
+        align(f, 4)
+        assert(f.tell() == bones_offset-12)
+        self.bones_raw = f.read()
+        #print_unknown('Bones:', self.bones_raw)
+
+def decode_g1mg(f, version, g1m):
     assert(version == b'4400')
     header = struct.unpack('<4sI6fI', f.read(36))
     pr_verbose(header)
@@ -214,35 +260,50 @@ def decode_g1mg(f, version):
         section_type, section_len = struct.unpack('<2I', f.read(8))
         #pr_verbose(hex(section_type))
         if section_type in decode_g1mg_section:
-            decode_g1mg_section[section_type](io_range(f, section_len - 8))
+            decode_g1mg_section[section_type](io_range(f, section_len - 8), g1m)
         else:
             f.seek(section_len - 8, 1)
 
-chunk_decoders = {
-    b'SOFT': decode_soft,
-    #b'G1MS': dump_unknown_section,
-    b'G1MG': decode_g1mg,
-}
+class G1MFile(object):
+    chunk_decoders = {
+        b'SOFT': decode_soft,
+        b'G1MS': G1MSChunk,
+        b'G1MG': decode_g1mg,
+    }
 
-def decode_g1m(f):
-    (eyecatcher, version, file_size, header_size, u10, chunks) = struct.unpack('<4s4s4I', f.read(24))
-    assert(bytes(reversed(eyecatcher)) == b'G1M_')
-    assert(version == b'7300')
+    def __init__(self, f, decode_chunks):
+        (eyecatcher, version, file_size, header_size, u10, chunks) = struct.unpack('<4s4s4I', f.read(24))
+        assert(bytes(reversed(eyecatcher)) == b'G1M_')
+        assert(version == b'7300')
 
-    f.seek(header_size)
-    for i in range(chunks):
-        eyecatcher, chunk_version, chunk_size = struct.unpack('<4s4sI', f.read(12))
-        eyecatcher = bytes(reversed(eyecatcher))
-        #pr_verbose(eyecatcher, chunk_version)
-        if eyecatcher in chunk_decoders:
-            chunk_decoders[eyecatcher](io_range(f, chunk_size - 12), chunk_version)
-        else:
-            f.seek(chunk_size - 12, 1)
+        self.oid_map = None
+        if not decode_chunks:
+            try:
+                oidfilename = os.path.splitext(f.name)[0] + '.oid'
+                oidf = open(oidfilename, 'r')
+            except OSError as e:
+                print('Cannot open %s: %s' % (oidfilename, str(e)))
+            else:
+                self.oid_map = OIDMap(oidf)
+                print('Loaded Object ID map')
+                #pr_verbose(self.oid_map)
+
+        f.seek(header_size)
+        self.chunks = {}
+        for i in range(chunks):
+            eyecatcher, chunk_version, chunk_size = struct.unpack('<4s4sI', f.read(12))
+            eyecatcher = bytes(reversed(eyecatcher))
+            #pr_verbose(eyecatcher, chunk_version)
+            if eyecatcher in self.chunk_decoders and (not decode_chunks or eyecatcher in decode_chunks):
+                self.chunks[eyecatcher] = \
+                    self.chunk_decoders[eyecatcher](io_range(f, chunk_size - 12), chunk_version, self)
+            else:
+                f.seek(chunk_size - 12, 1)
 
 def main_standalone():
     for arg in sys.argv[1:]:
         print('Parsing %s...' % arg)
-        decode_g1m(open(arg, 'rb'))
+        G1MFile(open(arg, 'rb'), None)
 
 if 'bpy' in globals():
     class ImportDOA6Soft(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -258,7 +319,7 @@ if 'bpy' in globals():
                 )
 
         def execute(self, context):
-            decode_g1m(open(self.filepath, 'rb'))
+            G1MFile(open(self.filepath, 'rb'), {b'SOFT'})
             return {'FINISHED'}
 
     class UpdateDOA6Soft(bpy.types.Operator):

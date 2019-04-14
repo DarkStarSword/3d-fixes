@@ -41,7 +41,7 @@ from bpy_extras.image_utils import load_image
 from mathutils import Matrix, Vector
 
 def keys_to_ints(d):
-    return {int(k):v for k,v in d.items()}
+    return {k.isdecimal() and int(k) or k:v for k,v in d.items()}
 def keys_to_strings(d):
     return {str(k):v for k,v in d.items()}
 
@@ -1311,7 +1311,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
-def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suffix=''):
+def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suffix='', rename=False):
     if not context.selected_objects:
         raise Fatal('No object selected')
 
@@ -1320,7 +1320,7 @@ def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suf
     if reverse:
         vgmap = {int(v):int(k) for k,v in vgmap.items()}
     else:
-        vgmap = {int(k):int(v) for k,v in vgmap.items()}
+        vgmap = {k:int(v) for k,v in vgmap.items()}
 
     for obj in context.selected_objects:
         if commit:
@@ -1328,6 +1328,13 @@ def apply_vgmap(operator, context, filepath='', commit=False, reverse=False, suf
 
         prop_name = '3DMigoto:VGMap:' + suffix
         obj[prop_name] = keys_to_strings(vgmap)
+
+        if rename:
+            for k,v in vgmap.items():
+                if str(v) in obj.vertex_groups.keys():
+                    obj.vertex_groups[str(v)].name = k
+                else:
+                    obj.vertex_groups.new(str(v))
 
         if '3DMigoto:VBLayout' not in obj:
             operator.report({'WARNING'}, '%s is not a 3DMigoto mesh. Vertex Group Map custom property applied anyway' % obj.name)
@@ -1351,6 +1358,12 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
     #        description="Directly alters the vertex groups of the current mesh, rather than performing the mapping at export time",
     #        default=False,
     #        )
+
+    rename = BoolProperty(
+            name="Rename existing vertex groups",
+            description="Rename existing vertex groups to match the vgmap file",
+            default=True,
+            )
 
     reverse = BoolProperty(
             name="Swap from & to",
