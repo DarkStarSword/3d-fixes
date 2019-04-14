@@ -362,12 +362,16 @@ class VertexBuffer(object):
 
         return tuple(map(float, fields))
 
-    def remap_blendindices(self, mapping):
+    def remap_blendindices(self, obj, mapping):
+        def lookup_vgmap(x):
+            vgname = obj.vertex_groups[x].name
+            return mapping.get(vgname, mapping.get(x, x))
+
         for vertex in self.vertices:
-            for semantic in ('BLENDINDICES', 'BLENDINDICES1', 'BLENDINDICES2'):
-                if semantic in vertex:
+            for semantic in list(vertex):
+                if semantic.startswith('BLENDINDICES'):
                     vertex['~' + semantic] = vertex[semantic]
-                    vertex[semantic] = tuple(mapping.get(x, x) for x in vertex[semantic])
+                    vertex[semantic] = tuple(lookup_vgmap(x) for x in vertex[semantic])
 
     def revert_blendindices_remap(self):
         # Significantly faster than doing a deep copy
@@ -1030,7 +1034,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         if suffix:
             path = '%s-%s%s' % (base, suffix, ext)
         print('Exporting %s...' % path)
-        vb.remap_blendindices(vgmap)
+        vb.remap_blendindices(obj, vgmap)
         vb.write(open(path, 'wb'), operator=operator)
         vb.revert_blendindices_remap()
 
