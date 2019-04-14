@@ -1190,7 +1190,7 @@ def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_
     paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
     import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
     if vgmap_path:
-        apply_vgmap(operator, context, targets=[context.active_object], filepath=vgmap_path, rename=True)
+        apply_vgmap(operator, context, targets=[context.active_object], filepath=vgmap_path, rename=True, cleanup=True)
 
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import raw 3DMigoto vertex and index buffers"""
@@ -1323,7 +1323,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
-def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reverse=False, suffix='', rename=False):
+def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reverse=False, suffix='', rename=False, cleanup=False):
     if not targets:
         targets = context.selected_objects
 
@@ -1352,6 +1352,10 @@ def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reve
                     obj.vertex_groups[str(v)].name = k
                 else:
                     obj.vertex_groups.new(str(k))
+        if cleanup:
+            for vg in obj.vertex_groups:
+                if vg.name not in vgmap:
+                    obj.vertex_groups.remove(vg)
 
         if '3DMigoto:VBLayout' not in obj:
             operator.report({'WARNING'}, '%s is not a 3DMigoto mesh. Vertex Group Map custom property applied anyway' % obj.name)
@@ -1402,6 +1406,12 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
             default=True,
             )
 
+    cleanup = BoolProperty(
+            name="Remove non-listed vertex groups",
+            description="Remove any existing vertex groups that are not listed in the vgmap file",
+            default=False,
+            )
+
     reverse = BoolProperty(
             name="Swap from & to",
             description="Switch the order of the vertex group map - if this mesh is the 'to' and you want to use the bones in the 'from'",
@@ -1427,9 +1437,9 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 class UpdateVGMap(bpy.types.Operator):
-    """Update 3DMigoto vgmap with new named vertex groups"""
+    """Assign new 3DMigoto vertex groups"""
     bl_idname = "mesh.update_migoto_vertex_group_map"
-    bl_label = "Update 3DMigoto vgmap with new named vertex groups"
+    bl_label = "Assign new 3DMigoto vertex groups"
     bl_options = {'UNDO'}
 
     vg_step = bpy.props.IntProperty(
