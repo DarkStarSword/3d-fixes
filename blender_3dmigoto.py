@@ -1351,12 +1351,32 @@ def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reve
                 if str(v) in obj.vertex_groups.keys():
                     obj.vertex_groups[str(v)].name = k
                 else:
-                    obj.vertex_groups.new(str(v))
+                    obj.vertex_groups.new(str(k))
 
         if '3DMigoto:VBLayout' not in obj:
             operator.report({'WARNING'}, '%s is not a 3DMigoto mesh. Vertex Group Map custom property applied anyway' % obj.name)
         else:
             operator.report({'INFO'}, 'Applied vgmap to %s' % obj.name)
+
+def update_vgmap(operator, context, vg_step=1):
+    if not context.selected_objects:
+        raise Fatal('No object selected')
+
+    for obj in context.selected_objects:
+        vgmaps = {k:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
+        if not vgmaps:
+            raise Fatal('Selected object has no 3DMigoto vertex group maps')
+        for (suffix, vgmap) in vgmaps.items():
+            highest = max(vgmap.values())
+            for vg in obj.vertex_groups.keys():
+                if vg.isdecimal():
+                    continue
+                if vg in vgmap:
+                    continue
+                highest += vg_step
+                vgmap[vg] = highest
+                operator.report({'INFO'}, 'Assigned named vertex group %s = %i' % (vg, vgmap[vg]))
+            obj[suffix] = vgmap
 
 class ApplyVGMap(bpy.types.Operator, ImportHelper):
     """Apply vertex group map to the selected object"""
@@ -1402,6 +1422,31 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
         try:
             keywords = self.as_keywords(ignore=('filter_glob',))
             apply_vgmap(self, context, **keywords)
+        except Fatal as e:
+            self.report({'ERROR'}, str(e))
+        return {'FINISHED'}
+
+class UpdateVGMap(bpy.types.Operator):
+    """Update 3DMigoto vgmap with new named vertex groups"""
+    bl_idname = "mesh.update_migoto_vertex_group_map"
+    bl_label = "Update 3DMigoto vgmap with new named vertex groups"
+    bl_options = {'UNDO'}
+
+    vg_step = bpy.props.IntProperty(
+            name="Vertex group step",
+            description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
+            default=1,
+            min=1,
+            )
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        try:
+            keywords = self.as_keywords()
+            update_vgmap(self, context, **keywords)
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
