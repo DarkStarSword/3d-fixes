@@ -420,10 +420,12 @@ if 'bpy' in globals():
                 # until we have 8 nodes that should form a cube around the
                 # vertex, or have run out of nodes.
                 surrounding_nodes = []
+                non_adjacent_nodes = []
                 while sorted_nodes:
                     node = sorted_nodes.pop()
                     surrounding_nodes.append(node)
                     if len(surrounding_nodes) == 8:
+                        non_adjacent_nodes.extend(sorted_nodes)
                         break
                     # To distinguish the two sides of a plane, calculate a
                     # normal n to it at some point p. Then a point v is on the
@@ -432,9 +434,27 @@ if 'bpy' in globals():
                     # - https://math.stackexchange.com/questions/214187/point-on-the-left-or-right-side-of-a-plane-in-3d-space#214194
                     for i, node1 in reversed(list(enumerate(sorted_nodes))):
                         if numpy.dot(node1.pos - node.pos, node.vec) < 0:
-                            del sorted_nodes[i]
+                            non_adjacent_nodes.append(sorted_nodes.pop(i))
 
-                # Sort by Node ID (probably unecessary, but puts it in the same
+                num_surrounding_nodes = len(surrounding_nodes)
+
+                # If a vertex falls outside the grid we can try to handle it by
+                # finding the nearest cube of nodes and interpolating outside
+                # of that cube. For the moment we are only going to attempt
+                # this if we have found four surrounding nodes indicating this
+                # vertex is on the outside of one of the flat sides of the grid
+                # (and not diagonally out from a corner). Find the midpoint of
+                # the surrounding nodes and the next nearest four nodes to that
+                # point should (hopefully) be the next four points on the cube
+                # (if not we could do a cross product of a corner on the square
+                # to find the normal than restrict nodes we consider to those
+                # that are roughly lined up with one of the corners)
+                if num_surrounding_nodes == 4:
+                    midpoint = numpy.average([x.pos for x in surrounding_nodes], axis=0)
+                    sorted_nodes = sorted(non_adjacent_nodes, key=lambda x: numpy.linalg.norm(x.pos - midpoint))
+                    surrounding_nodes.extend(sorted_nodes[:8 - num_surrounding_nodes])
+
+                # Sort by Node ID (probably unnecessary, but puts it in the same
                 # order as original for comparison)
                 surrounding_nodes = sorted(surrounding_nodes, key=lambda x: x.id)
 
@@ -451,8 +471,8 @@ if 'bpy' in globals():
                 for i,n in enumerate(weighted_nodes):
                     pos += n.pos * weights[i]
                 error = numpy.linalg.norm(pos - vertex.co)
-                if error > max_errors[len(weights)][0]:
-                    max_errors[len(weights)] = (error, vertex.co, pos, weights)
+                if error > max_errors[num_surrounding_nodes][0]:
+                    max_errors[num_surrounding_nodes] = (vertex.index, error, vertex.co, pos, weights)
 
                 # Zero out existing weights:
                 for i in range(4):
@@ -465,7 +485,7 @@ if 'bpy' in globals():
 
             for i,max_error in enumerate(max_errors):
                 if max_error[1] is not None:
-                    self.report({'INFO'}, "Maximum error for %i surrounding nodes: off by %f, vertex position %s, calculated position %s, weights %s" % ((i,) + max_error))
+                    self.report({'INFO'}, "Maximum error for %i surrounding nodes: vertex %u off by %f, vertex position %s, calculated position %s, weights %s" % ((i,) + max_error))
 
         def execute(self, context):
             try:
