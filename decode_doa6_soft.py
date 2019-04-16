@@ -214,8 +214,7 @@ class G1MGBoneMap(object):
 class G1MGSurfaceMap(object):
     def __init__(self, f, g1m, g1mg):
         SurfaceMap = numpy.dtype([
-            ('u0', numpy.uint32, 1),
-            ('id', numpy.uint32, 1),
+            ('u0', numpy.uint32, 2),
             ('bone_map', numpy.uint32, 1),
             ('u1', numpy.uint32, 11),
         ])
@@ -224,7 +223,6 @@ class G1MGSurfaceMap(object):
 
         g1mg.surface_maps = numpy.frombuffer(f.read(SurfaceMap.itemsize * num_maps), SurfaceMap)
         pr_verbose('Surfaces:\n', g1mg.surface_maps)
-        assert(all(g1mg.surface_maps['id'] == range(len(g1mg.surface_maps))))
         pr_verbose()
 
         assert(not f.read())
@@ -326,13 +324,13 @@ class G1MFile(object):
             print('Loaded Object ID map')
             #pr_verbose(self.oid_map)
 
-    def export_vgmaps(self):
+    def export_vgmaps(self, print=print):
         G1MG = self.chunks[b'G1MG']
         dir = os.path.splitext(self.name)[0]
         print('Exporting %i vertex group maps' % len(G1MG.surface_maps))
-        for surface_map in G1MG.surface_maps:
+        for i, surface_map in enumerate(G1MG.surface_maps):
             vgmap = G1MG.bone_maps[surface_map['bone_map']]
-            path = os.path.join(dir, '%d.vgmap' % surface_map['id'])
+            path = os.path.join(dir, '%d.vgmap' % i)
             try:
                 json.dump(vgmap, open(path, 'w'), indent=2)
             except Exception as e:
@@ -624,6 +622,37 @@ if 'bpy' in globals():
                     self.update_soft_body_sim(grid_parent, target)
             except Fatal as e:
                 self.report({'ERROR'}, str(e))
+
+            return {'FINISHED'}
+
+    class ExtractDOA6VGMaps(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
+        """"Extract DOA6 vertex group maps"""
+        bl_idname = "misc.extract_doa6_vgmaps"
+        bl_label = "Extract DOA6 vertex group maps"
+        bl_options = {'UNDO'}
+
+        filename_ext = '.g1m'
+        filter_glob = bpy.props.StringProperty(
+                default='*.g1m',
+                options={'HIDDEN'},
+                )
+
+        files = bpy.props.CollectionProperty(
+                name="File Path",
+                type=bpy.types.OperatorFileListElement,
+                )
+
+        def execute(self, context):
+            def redirect_print(*args, **kwargs):
+                buf = io.StringIO()
+                print(*args, file=buf, end='', **kwargs)
+                self.report({'INFO'}, buf.getvalue())
+
+            dirname = os.path.dirname(self.filepath)
+            for filename in self.files:
+                redirect_print('Parsing %s...' % filename.name)
+                g1m = G1MFile(open(os.path.join(dirname, filename.name), 'rb'), {b'G1MS', b'G1MG'})
+                g1m.export_vgmaps(print=redirect_print)
 
             return {'FINISHED'}
 
