@@ -796,7 +796,7 @@ def import_vertices(mesh, vb):
 
 def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
     if merge_meshes:
-        import_3dmigoto_vb_ib(operator, context, paths, **kwargs)
+        return import_3dmigoto_vb_ib(operator, context, paths, **kwargs)
     else:
         obj = []
         for p in paths:
@@ -805,6 +805,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
             except Fatal as e:
                 operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
         # FIXME: Group objects together
+        return obj
 
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
@@ -1188,9 +1189,9 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
 
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, vgmap_path=None, **kwargs):
     paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
-    import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
-    if vgmap_path:
-        apply_vgmap(operator, context, targets=[context.active_object], filepath=vgmap_path, rename=True, cleanup=True)
+    obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
+    if obj and vgmap_path:
+        apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
 
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import raw 3DMigoto vertex and index buffers"""
