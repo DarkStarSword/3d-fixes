@@ -9,7 +9,7 @@ bl_info = {
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
 
-import os, struct, sys, numpy, io, copy, itertools, math, collections, json
+import os, struct, sys, numpy, io, copy, itertools, math, collections, json, argparse
 
 try:
     import bpy
@@ -48,7 +48,7 @@ node_fmt = numpy.dtype([
 
 verbosity = 0
 def pr_verbose(*args, **kwargs):
-    if verbosity:
+    if verbosity >= 1:
         print(*args, **kwargs)
 
 def decode_node(f, region_obj):
@@ -173,49 +173,61 @@ def decode_soft(f, version, g1m):
 
     assert(not f.read())
 
-def decode_g1mg_bone_map(f, g1m):
-    num_maps, = struct.unpack('<I', f.read(4))
-    print('Num bone maps:', num_maps)
-    dtype = numpy.dtype([
-        ('id', numpy.uint32, 1), # I think this is a unique ID for the bone ->
-                                 # vg mapping. Each unique mapping in the file
-                                 # gets an index starting at 0 and
-                                 # incrementing by 1 each time. If a mapping
-                                 # is repeated from an earlier sub-mesh it
-                                 # will have the same ID.
-        ('zero', numpy.uint32, 1),
-        ('bone', numpy.uint32, 1),
-    ])
-    for i in range(num_maps):
+class G1MGBoneMap(object):
+    def __init__(self, f, g1m, g1mg):
         num_maps, = struct.unpack('<I', f.read(4))
-        data = numpy.frombuffer(f.read(num_maps * 4 * 3), dtype)
-        pr_verbose('Map %i, len %i:' % (i, len(data)))
-        vgmap = {}
-        for vg,d in enumerate(data):
-            try:
-                bone_name = g1m.oid_map[list(g1m.chunks[b'G1MS'].indices).index(d['bone'])]
-            except:
-                bone_name = 'UnnamedBone#%d' % d['bone']
-            pr_verbose(
-                    '  VG:', vg*3,
-                    'BoneID:', d['bone'], repr(bone_name),
-                    'MapID:', d['id']
-            )
-            vgmap[bone_name] = vg*3
+        pr_verbose('Num bone maps:', num_maps)
+        dtype = numpy.dtype([
+            ('id', numpy.uint32, 1), # I think this is a unique ID for the bone ->
+                                     # vg mapping. Each unique mapping in the file
+                                     # gets an index starting at 0 and
+                                     # incrementing by 1 each time. If a mapping
+                                     # is repeated from an earlier sub-mesh it
+                                     # will have the same ID.
+            ('zero', numpy.uint32, 1),
+            ('bone', numpy.uint32, 1),
+        ])
+        g1mg.bone_maps = []
+        g1m.import_oid()
+        for i in range(num_maps):
+            num_maps, = struct.unpack('<I', f.read(4))
+            data = numpy.frombuffer(f.read(num_maps * 4 * 3), dtype)
+            pr_verbose('Map %i, len %i:' % (i, len(data)))
+            vgmap = collections.OrderedDict()
+            for vg,d in enumerate(data):
+                try:
+                    bone_name = g1m.oid_map[list(g1m.chunks[b'G1MS'].indices).index(d['bone'])]
+                except:
+                    bone_name = 'UnnamedBone#%d' % d['bone']
+                pr_verbose(
+                        '  VG:', vg*3,
+                        'BoneID:', d['bone'], repr(bone_name),
+                        'MapID:', d['id'],
+                        'Unknown:', d['zero'],
+                )
+                vgmap[bone_name] = vg*3
+            g1mg.bone_maps.append(vgmap)
+            pr_verbose()
+
+        assert(not f.read())
+
+class G1MGSurfaceMap(object):
+    def __init__(self, f, g1m, g1mg):
+        SurfaceMap = numpy.dtype([
+            ('u0', numpy.uint32, 1),
+            ('id', numpy.uint32, 1),
+            ('bone_map', numpy.uint32, 1),
+            ('u1', numpy.uint32, 11),
+        ])
+
+        num_maps, = struct.unpack('<I', f.read(4))
+
+        g1mg.surface_maps = numpy.frombuffer(f.read(SurfaceMap.itemsize * num_maps), SurfaceMap)
+        pr_verbose('Surfaces:\n', g1mg.surface_maps)
+        assert(all(g1mg.surface_maps['id'] == range(len(g1mg.surface_maps))))
         pr_verbose()
-        assert(all(data['zero'] == 0))
-        try:
-            json.dump(vgmap, open(os.path.join(os.path.splitext(f.name)[0], '%d.vgmap' % i), 'w'), indent=2)
-        except:
-            pr_verbose('Unable to dump vertex group mapping')
 
-    assert(not f.read())
-
-decode_g1mg_section = {
-        # 0x10001: dump_unknown_section,
-        0x10006: decode_g1mg_bone_map,
-        # 0x10009: dump_unknown_section,
-}
+        assert(not f.read())
 
 class OIDMap(dict):
     def __init__(self, f):
@@ -250,43 +262,43 @@ class G1MSChunk(object):
         self.bones_raw = f.read()
         #print_unknown('Bones:', self.bones_raw)
 
-def decode_g1mg(f, version, g1m):
-    assert(version == b'4400')
-    header = struct.unpack('<4sI6fI', f.read(36))
-    pr_verbose(header)
-    (platform, unk_10, min_x, min_y, min_z, max_x, max_y, max_z, num_sections) = header
-    assert(platform == b'DX11')
-    for i in range(num_sections):
-        section_type, section_len = struct.unpack('<2I', f.read(8))
-        #pr_verbose(hex(section_type))
-        if section_type in decode_g1mg_section:
-            decode_g1mg_section[section_type](io_range(f, section_len - 8), g1m)
-        else:
-            f.seek(section_len - 8, 1)
+class G1MGChunk(object):
+    decode_g1mg_section = {
+            # 0x10001: dump_unknown_section,
+            0x10006: G1MGBoneMap,
+            0x10008: G1MGSurfaceMap,
+            # 0x10009: dump_unknown_section,
+    }
+
+    def __init__(self, f, version, g1m):
+        assert(version == b'4400')
+        header = struct.unpack('<4sI6fI', f.read(36))
+        pr_verbose(header)
+        (platform, unk_10, min_x, min_y, min_z, max_x, max_y, max_z, num_sections) = header
+        assert(platform == b'DX11')
+        self.chunks = {}
+        for i in range(num_sections):
+            section_type, section_len = struct.unpack('<2I', f.read(8))
+            #pr_verbose(hex(section_type))
+            if section_type in self.decode_g1mg_section:
+                self.chunks[section_type] = \
+                    self.decode_g1mg_section[section_type](io_range(f, section_len - 8), g1m, self)
+            else:
+                f.seek(section_len - 8, 1)
 
 class G1MFile(object):
     chunk_decoders = {
         b'SOFT': decode_soft,
         b'G1MS': G1MSChunk,
-        b'G1MG': decode_g1mg,
+        b'G1MG': G1MGChunk,
     }
 
     def __init__(self, f, decode_chunks):
+        self.name = f.name
+        self.oid_map = None
         (eyecatcher, version, file_size, header_size, u10, chunks) = struct.unpack('<4s4s4I', f.read(24))
         assert(bytes(reversed(eyecatcher)) == b'G1M_')
         assert(version == b'7300')
-
-        self.oid_map = None
-        if not decode_chunks:
-            try:
-                oidfilename = os.path.splitext(f.name)[0] + '.oid'
-                oidf = open(oidfilename, 'r')
-            except OSError as e:
-                print('Cannot open %s: %s' % (oidfilename, str(e)))
-            else:
-                self.oid_map = OIDMap(oidf)
-                print('Loaded Object ID map')
-                #pr_verbose(self.oid_map)
 
         f.seek(header_size)
         self.chunks = {}
@@ -300,10 +312,67 @@ class G1MFile(object):
             else:
                 f.seek(chunk_size - 12, 1)
 
+    def import_oid(self):
+        if self.oid_map is not None:
+            return
+
+        try:
+            oidfilename = os.path.splitext(self.name)[0] + '.oid'
+            oidf = open(oidfilename, 'r')
+        except OSError as e:
+            print('Cannot open %s: %s' % (oidfilename, str(e)))
+        else:
+            self.oid_map = OIDMap(oidf)
+            print('Loaded Object ID map')
+            #pr_verbose(self.oid_map)
+
+    def export_vgmaps(self):
+        G1MG = self.chunks[b'G1MG']
+        dir = os.path.splitext(self.name)[0]
+        print('Exporting %i vertex group maps' % len(G1MG.surface_maps))
+        for surface_map in G1MG.surface_maps:
+            vgmap = G1MG.bone_maps[surface_map['bone_map']]
+            path = os.path.join(dir, '%d.vgmap' % surface_map['id'])
+            try:
+                json.dump(vgmap, open(path, 'w'), indent=2)
+            except Exception as e:
+                print('Unable to dump vertex group mapping:', str(e))
+            else:
+                print('Exported', path)
+
+def parse_args():
+    global verbosity
+
+    parser = argparse.ArgumentParser(description = 'DOA6 g1m Tool')
+    parser.add_argument('files', nargs='*',
+            help='List of g1m files to parse')
+    parser.add_argument('--export-vgmap', action='store_true',
+            help='Extract vertex group maps from g1m file')
+    #parser.add_argument('--import-vgmap', action='store_true',
+    #        help='Import vertex group maps to g1m file')
+    parser.add_argument('--test', action='store_true',
+            help='')
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+            help='Level of verbosity')
+    args = parser.parse_args()
+
+    sections = set()
+    if args.export_vgmap:
+        sections = sections.union({b'G1MS', b'G1MG'})
+    verbosity = args.verbose
+    if not verbosity and not sections:
+        verbosity = 1
+
+    return (args, sections)
+
 def main_standalone():
-    for arg in sys.argv[1:]:
+    args, sections=  parse_args()
+    for arg in args.files:
         print('Parsing %s...' % arg)
-        G1MFile(open(arg, 'rb'), None)
+        g1m = G1MFile(open(arg, 'rb'), sections)
+
+        if args.export_vgmap:
+            g1m.export_vgmaps()
 
 if 'bpy' in globals():
     class ImportDOA6Soft(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -573,5 +642,4 @@ if __name__ == '__main__':
     if 'bpy' in globals():
         register()
     else:
-        verbosity = 1
         main_standalone()
