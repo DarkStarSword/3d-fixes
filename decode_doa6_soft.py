@@ -9,7 +9,7 @@ bl_info = {
     "tracker_url": "https://github.com/DarkStarSword/3d-fixes/issues",
 }
 
-import os, struct, sys, numpy, io, copy, itertools, math, collections, json, argparse
+import os, struct, sys, numpy, io, copy, itertools, math, collections, json, argparse, glob
 
 try:
     import bpy
@@ -164,17 +164,43 @@ def io_range(f, len):
     b.name = f.name
     return b
 
-def decode_soft(f, version, g1m):
-    assert(version == b'5100')
-    num_sections, = struct.unpack('<I', f.read(4))
-    for i in range(num_sections):
-        section_type, section_len = struct.unpack('<2I', f.read(8))
-        decode_soft_section[section_type](io_range(f, section_len - 8))
+class G1MChunk(object):
+    def __init__(self, f, version, g1m):
+        self.orig_val = f.getvalue()
+        self.version = version
+        self.g1m = g1m
 
-    assert(not f.read())
+    def getvalue(self):
+        return self.orig_val
 
-class G1MGBoneMap(object):
+class DumpUnknownG1MChunk(G1MChunk):
+    def __init__(self, f, version, g1m):
+        G1MChunk.__init__(self, f, version, g1m)
+        print_unknown('Unknown section:', f.read())
+
+class SOFTChunk(G1MChunk):
+    def __init__(self, f, version, g1m):
+        assert(version == b'5100')
+        G1MChunk.__init__(self, f, version, g1m)
+        num_sections, = struct.unpack('<I', f.read(4))
+        for i in range(num_sections):
+            section_type, section_len = struct.unpack('<2I', f.read(8))
+            decode_soft_section[section_type](io_range(f, section_len - 8))
+
+        assert(not f.read())
+
+class G1MGSection(object):
     def __init__(self, f, g1m, g1mg):
+        self.orig_val = f.getvalue()
+        self.g1mg = g1mg
+        self.g1m = g1m
+
+    def getvalue(self):
+        return self.orig_val
+
+class G1MGBoneMap(G1MGSection):
+    def __init__(self, f, g1m, g1mg):
+        G1MGSection.__init__(self, f, g1m, g1mg)
         num_maps, = struct.unpack('<I', f.read(4))
         pr_verbose('Num bone maps:', num_maps)
         dtype = numpy.dtype([
@@ -187,7 +213,7 @@ class G1MGBoneMap(object):
             ('zero', numpy.uint32, 1),
             ('bone', numpy.uint32, 1),
         ])
-        g1mg.bone_maps = []
+        g1mg.bone_maps = collections.OrderedDict()
         g1m.import_oid()
         for i in range(num_maps):
             num_maps, = struct.unpack('<I', f.read(4))
@@ -206,13 +232,34 @@ class G1MGBoneMap(object):
                         'Unknown:', d['zero'],
                 )
                 vgmap[bone_name] = vg*3
-            g1mg.bone_maps.append(vgmap)
+            g1mg.bone_maps[i] = vgmap
             pr_verbose()
 
         assert(not f.read())
 
-class G1MGSurfaceMap(object):
+    def getvalue(self):
+        f = io.BytesIO()
+        f.write(struct.pack('<I', len(self.g1mg.bone_maps)))
+        self.g1m.import_oid()
+        reverse_oid_map = self.g1m.oid_map.reverse()
+        bone_map_ids = {}
+        for vgmap in self.g1mg.bone_maps.values():
+            f.write(struct.pack('<I', len(vgmap)))
+            for i, (bone_name, vg) in enumerate(vgmap.items()):
+                assert(i*3 == vg)
+                if bone_name.startswith('UnnamedBone#'):
+                    bone_id = int(bone_name.partition('#')[2])
+                else:
+                    bone_id = self.g1m.chunks[b'G1MS'].indices[reverse_oid_map[bone_name]]
+                map_id = bone_map_ids.setdefault(bone_id, len(bone_map_ids))
+                f.write(struct.pack('<3I', map_id, 0, bone_id))
+
+        return f.getvalue()
+
+class G1MGSurfaceMap(G1MGSection):
     def __init__(self, f, g1m, g1mg):
+        G1MGSection.__init__(self, f, g1m, g1mg)
+
         SurfaceMap = numpy.dtype([
             ('u0', numpy.uint32, 2),
             ('bone_map', numpy.uint32, 1),
@@ -227,6 +274,10 @@ class G1MGSurfaceMap(object):
 
         assert(not f.read())
 
+    def getvalue(self):
+        surface_maps = self.g1mg.surface_maps
+        return struct.pack('<I', len(surface_maps)) + surface_maps.tobytes()
+
 class OIDMap(dict):
     def __init__(self, f):
         for l in f:
@@ -236,6 +287,9 @@ class OIDMap(dict):
             if id and name:
                 self[int(id)] = name
 
+    def reverse(self):
+        return dict(map(reversed, self.items()))
+
 def align(file, alignment):
     off = file.tell()
     mod = off % alignment
@@ -243,9 +297,34 @@ def align(file, alignment):
         return
     file.seek(alignment - mod, 1)
 
-class G1MSChunk(object):
+class G1MFChunk(G1MChunk):
+    dtype = numpy.dtype([
+        ('u0', numpy.uint32, 13),
+        ('num_bone_maps', numpy.uint32, 1),
+        ('num_individual_bone_maps', numpy.uint32, 1),
+        ('u1', numpy.uint32, 58),
+    ])
+
+    def __init__(self, f, version, g1m):
+        assert(version == b'9200')
+        G1MChunk.__init__(self, f, version, g1m)
+        self.data, = numpy.frombuffer(f.read(self.dtype.itemsize), self.dtype)
+        pr_verbose(self.data)
+
+        assert(not f.read())
+
+    def getvalue(self):
+        f = io.BytesIO()
+        f.write(self.data['u0'].tobytes())
+        f.write(struct.pack('<I', len(self.g1m.chunks[b'G1MG'].bone_maps)))
+        f.write(struct.pack('<I', sum(map(len,self.g1m.chunks[b'G1MG'].bone_maps.values()))))
+        f.write(self.data['u1'].tobytes())
+        return f.getvalue()
+
+class G1MSChunk(G1MChunk):
     def __init__(self, f, version, g1m):
         assert(version == b'2300')
+        G1MChunk.__init__(self, f, version, g1m)
         header = struct.unpack('<2I4H', f.read(16))
         pr_verbose(header)
         (bones_offset, unk_10, num_bones, num_indices, num_parents, unk_1A) = header
@@ -260,7 +339,7 @@ class G1MSChunk(object):
         self.bones_raw = f.read()
         #print_unknown('Bones:', self.bones_raw)
 
-class G1MGChunk(object):
+class G1MGChunk(G1MChunk):
     decode_g1mg_section = {
             # 0x10001: dump_unknown_section,
             0x10006: G1MGBoneMap,
@@ -270,53 +349,92 @@ class G1MGChunk(object):
 
     def __init__(self, f, version, g1m):
         assert(version == b'4400')
-        header = struct.unpack('<4sI6fI', f.read(36))
-        pr_verbose(header)
-        (platform, unk_10, min_x, min_y, min_z, max_x, max_y, max_z, num_sections) = header
+        G1MChunk.__init__(self, f, version, g1m)
+        self.header = struct.unpack('<4sI6fI', f.read(36))
+        pr_verbose(self.header)
+        (platform, unk_10, min_x, min_y, min_z, max_x, max_y, max_z, num_sections) = self.header
         assert(platform == b'DX11')
-        self.chunks = {}
+        self.chunks = collections.OrderedDict()
         for i in range(num_sections):
             section_type, section_len = struct.unpack('<2I', f.read(8))
-            #pr_verbose(hex(section_type))
+            pr_verbose(hex(section_type))
+            buf = io_range(f, section_len - 8)
             if section_type in self.decode_g1mg_section:
                 self.chunks[section_type] = \
-                    self.decode_g1mg_section[section_type](io_range(f, section_len - 8), g1m, self)
+                    self.decode_g1mg_section[section_type](buf, g1m, self)
             else:
-                f.seek(section_len - 8, 1)
+                self.chunks[section_type] = G1MGSection(buf, g1m, self)
+
+    def getvalue(self):
+        f = io.BytesIO()
+        f.write(struct.pack('<4sI6fI', *self.header))
+        for section_id, chunk in self.chunks.items():
+            buf = chunk.getvalue()
+            f.write(struct.pack('<2I', section_id, len(buf) + 8))
+            f.write(buf)
+        return f.getvalue()
 
 class G1MFile(object):
     chunk_decoders = {
-        b'SOFT': decode_soft,
+        b'SOFT': SOFTChunk,
         b'G1MS': G1MSChunk,
         b'G1MG': G1MGChunk,
+        b'G1MF': G1MFChunk,
+        #b'G1MF': DumpUnknownG1MChunk,
     }
+
+    G1MHeader = numpy.dtype([
+        ('signature', numpy.character, 4),
+        ('version', numpy.character, 4),
+        ('file_size', numpy.uint32, 1),
+        ('header_size', numpy.uint32, 1),
+        ('u10', numpy.uint32, 1),
+        ('num_chunks', numpy.uint32, 1),
+    ])
 
     def __init__(self, f, decode_chunks):
         self.name = f.name
         self.oid_map = None
-        (eyecatcher, version, file_size, header_size, u10, chunks) = struct.unpack('<4s4s4I', f.read(24))
+        self.header, = numpy.frombuffer(f.read(24), self.G1MHeader)
+        pr_verbose(self.header)
+        (eyecatcher, version, file_size, header_size, u10, chunks) = self.header
         assert(bytes(reversed(eyecatcher)) == b'G1M_')
         assert(version == b'7300')
 
         f.seek(header_size)
-        self.chunks = {}
+        self.chunks = collections.OrderedDict()
         for i in range(chunks):
             eyecatcher, chunk_version, chunk_size = struct.unpack('<4s4sI', f.read(12))
             eyecatcher = bytes(reversed(eyecatcher))
-            #pr_verbose(eyecatcher, chunk_version)
+            pr_verbose(eyecatcher, chunk_version)
+            buf = io_range(f, chunk_size - 12)
             if eyecatcher in self.chunk_decoders and (not decode_chunks or eyecatcher in decode_chunks):
                 self.chunks[eyecatcher] = \
-                    self.chunk_decoders[eyecatcher](io_range(f, chunk_size - 12), chunk_version, self)
+                    self.chunk_decoders[eyecatcher](buf, chunk_version, self)
             else:
-                f.seek(chunk_size - 12, 1)
+                self.chunks[eyecatcher] = G1MChunk(buf, chunk_version, self)
+
+    def write(self, f):
+        f.write(self.header.tobytes())
+
+        for eyecatcher, chunk in self.chunks.items():
+            buf = chunk.getvalue()
+            f.write(struct.pack('<4s4sI', bytes(reversed(eyecatcher)), chunk.version, len(buf) + 12))
+            f.write(buf)
+
+        file_size = f.tell()
+        f.seek(8)
+        f.write(struct.pack('<I', file_size))
 
     def import_oid(self):
         if self.oid_map is not None:
             return
 
         try:
-            oidfilename = os.path.splitext(self.name)[0] + '.oid'
-            oidf = open(oidfilename, 'r')
+            oidfilename,ext = os.path.splitext(self.name)
+            while ext and ext.lower() != '.g1m':
+                oidfilename,ext = os.path.splitext(oidfilename)
+            oidf = open(oidfilename + '.oid', 'r')
         except OSError as e:
             print('Cannot open %s: %s' % (oidfilename, str(e)))
         else:
@@ -338,6 +456,28 @@ class G1MFile(object):
             else:
                 print('Exported', path)
 
+    def import_vgmaps(self, print=print):
+        G1MG = self.chunks[b'G1MG']
+        dir = os.path.splitext(self.name)[0]
+        # Remove write protection:
+        G1MG.surface_maps = G1MG.surface_maps.copy()
+        for filename in glob.glob(os.path.join(dir, '*.vgmap')):
+            basename, ext = os.path.splitext(os.path.basename(filename))
+            if not basename.isdecimal():
+                continue
+            surface = int(basename)
+            if surface >= len(G1MG.surface_maps):
+                print('%s is out of range' % filename)
+                continue
+            vgmap = json.load(open(filename, 'r'))
+
+            # Resulted in crashes:
+            bone_map_idx = surface
+
+            G1MG.surface_maps[surface]['bone_map'] = bone_map_idx
+            G1MG.bone_maps[bone_map_idx] = vgmap
+            print('Imported %s as bone map %i...' % (filename, bone_map_idx))
+
 def parse_args():
     global verbosity
 
@@ -346,10 +486,10 @@ def parse_args():
             help='List of g1m files to parse')
     parser.add_argument('--export-vgmap', action='store_true',
             help='Extract vertex group maps from g1m file')
-    #parser.add_argument('--import-vgmap', action='store_true',
-    #        help='Import vertex group maps to g1m file')
+    parser.add_argument('--import-vgmap', action='store_true',
+            help='Import vertex group maps to g1m file')
     parser.add_argument('--test', action='store_true',
-            help='')
+            help='Verify importing & exporting a g1m file')
     parser.add_argument('--verbose', '-v', action='count', default=0,
             help='Level of verbosity')
     args = parser.parse_args()
@@ -357,8 +497,10 @@ def parse_args():
     sections = set()
     if args.export_vgmap:
         sections = sections.union({b'G1MS', b'G1MG'})
+    if args.import_vgmap:
+        sections = sections.union({b'G1MS', b'G1MG', b'G1MF'})
     verbosity = args.verbose
-    if not verbosity and not sections:
+    if not verbosity and not sections and not args.test:
         verbosity = 1
 
     return (args, sections)
@@ -368,6 +510,32 @@ def main_standalone():
     for arg in args.files:
         print('Parsing %s...' % arg)
         g1m = G1MFile(open(arg, 'rb'), sections)
+
+        if args.test:
+            buf = io.BytesIO()
+            g1m.write(buf)
+            print('Writing %s...' % (arg + '.TEST'))
+            open(arg + '.TEST', 'wb').write(buf.getvalue())
+            assert(open(arg, 'rb').read() == buf.getvalue())
+            print('Test #1 succeeded')
+
+        if args.import_vgmap:
+            g1m.import_vgmaps()
+            if not os.path.exists(arg + '.bak'):
+                try:
+                    os.rename(arg, arg + '.bak')
+                except OSError:
+                    pass
+            print('Writing %s...' % arg)
+            g1m.write(open(arg, 'wb'))
+
+        if args.test:
+            buf = io.BytesIO()
+            g1m.write(buf)
+            buf.name = arg
+            buf.seek(0)
+            G1MFile(buf, None)
+            print('Test #2 succeeded')
 
         if args.export_vgmap:
             g1m.export_vgmaps()
