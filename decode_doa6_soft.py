@@ -471,9 +471,7 @@ class G1MFile(object):
                 continue
             vgmap = json.load(open(filename, 'r'))
 
-            # Resulted in crashes:
             bone_map_idx = surface
-
             G1MG.surface_maps[surface]['bone_map'] = bone_map_idx
             G1MG.bone_maps[bone_map_idx] = vgmap
             print('Imported %s as bone map %i...' % (filename, bone_map_idx))
