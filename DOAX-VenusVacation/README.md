@@ -6,12 +6,11 @@ This is not to be confused with the console exclusive game Dead or Alive Xtreme
 the volleyball gameplay or minigames of its console counterpart.
 
 There are two versions of this game - a Japanese version available through DMM,
-and a recently released English version currently in open beta on Steam. The
-Japanese version has been around for longer and has more content and features
-than the English version, and while the English version will likely get more
-content added over time (it is currently running events from over a year ago),
-some of the interactivity features have been censored and will likely never be
-added. Most mods will work fine on either version (with some exceptions).
+and a recently released English version currently on Steam. The Japanese
+version has been around for longer and has more content and features than the
+English version, but obviously the English version is easier to understand and
+is playing catch-up with old events from the Japanese version. Most mods will
+work fine on either version (with some exceptions).
 
 For help with installing the Japanese version refer to [this article][1] (the
 camera mode of the Google Translate Android app may also be helpful for any
@@ -20,8 +19,11 @@ guide][2] to understand the game itself and the [reddit][3] community for event
 guides.
 
 The English version is partially region locked and the store page is not
-visible from most Western countries, however this can be trivially bypassed by
-simply following [this link][4] to install the game.
+visible from most Western countries, however many people can trivially bypass
+this by simply following [this link][4] to install the game. If that doesn't
+work connect to a VPN endpoint in a South-East Asia country (e.g. Hong Kong or
+Singapore, but NOT Japan) to install the game. Once installed you do not need
+the VPN to play.
 
 [1]: https://www.dualshockers.com/dead-alive-xtreme-venus-vacation-guide/
 [2]: https://docs.google.com/spreadsheets/d/1rkWZB4DcKsKydZgpZzXrj7f1MGXRMJ3GDiqmEXeVQUw/edit#gid=1887486128
@@ -184,6 +186,10 @@ Update v2.1
 - 3DMigoto updated to 1.3.16
 - Fixed compatibility issue with new versions of ReShade
 - Automatically adjust depth of icons in pool hopping minigame (3D Vision)
+
+Update v2.2
+-----------
+- Updated costume mod for compatibility with DMM version 2019-04-25 update
 
 Known Issues (3D Vision Users Only)
 -----------------------------------
