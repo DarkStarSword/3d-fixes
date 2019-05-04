@@ -122,7 +122,10 @@ def recursive_mkdir(path):
 def get_url_last_modified(url):
     req = urllib.request.Request(url, method='HEAD')
     with urllib.request.urlopen(req) as f:
-        return http_date.parse_http_date(f.getheader('Last-Modified'))
+        header = f.getheader('Last-Modified')
+        # Dropbox URLs don't return a Last-Modified header
+        if header is not None:
+            return http_date.parse_http_date(header)
 
 def download_file(url):
     try:
@@ -140,9 +143,10 @@ def download_file(url):
         if time.time() - st.st_ctime < poll_updates:
             return dest
 
+        # Dropbox URLs don't return a Last-Modified header
         last_modified = get_url_last_modified(url)
 
-        if int(st.st_mtime) == last_modified:
+        if int(st.st_mtime) == last_modified or last_modified is None:
             # FIXME: Also check file size matches Content-Length
             # print('Skipping %s - up to date' % url)
 
@@ -167,7 +171,10 @@ def download_file(url):
             print('Downloading %s...' % url, end='')
             sys.stdout.flush()
             with urllib.request.urlopen(url) as download:
-                last_modified = http_date.parse_http_date(download.getheader('Last-Modified'))
+                last_modified = download.getheader('Last-Modified')
+                # Dropbox URLs don't return a Last-Modified header
+                if last_modified is not None:
+                    last_modified = http_date.parse_http_date(last_modified)
                 while True:
                     buf = download.read(64*1024)
                     if not buf:
@@ -184,7 +191,8 @@ def download_file(url):
             else:
                 print('\nRemoved partially downloaded %s' % dest)
             raise
-    os.utime(dest, (time.time(), last_modified))
+    if last_modified is not None:
+        os.utime(dest, (time.time(), last_modified))
     return dest
 
 def list_shaders(filename):
@@ -194,7 +202,7 @@ def list_shaders(filename):
     elif ext.lower() == '.rar':
         Handler = rarfile.RarFile
     elif ext.lower() == '.7z':
-        print('7z compression not supported - mirroring only: %s' % filename)
+        #print('7z compression not supported - mirroring only: %s' % filename)
         return []
     else:
         raise AssertionError('Unsupported archive format: %s' % ext)
@@ -224,7 +232,14 @@ def index_shaders(post, filename, link):
                 'author': post['author']['displayName'],
         }
 
+def fixup_dropbox_url(url):
+    parts = urllib.parse.urlparse(url)
+    if parts.netloc.lower() != 'www.dropbox.com' or parts.query != 'dl=0':
+        return url
+    return parts._replace(query='dl=1').geturl()
+
 def process_link(post, link):
+    link = fixup_dropbox_url(link)
     try:
         filename = download_file(link)
     except Exception as e:
