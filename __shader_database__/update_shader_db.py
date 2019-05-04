@@ -106,7 +106,7 @@ def filter_links(content):
             continue
         basename = posixpath.basename(parts.path)
         (root, ext) = posixpath.splitext(basename)
-        if not ext or ext.lower() not in ('.zip', '.rar'):
+        if not ext or ext.lower() not in ('.zip', '.rar', '.7z'):
             continue
         yield link
 
@@ -193,6 +193,9 @@ def list_shaders(filename):
         Handler = zipfile.ZipFile
     elif ext.lower() == '.rar':
         Handler = rarfile.RarFile
+    elif ext.lower() == '.7z':
+        print('7z compression not supported - mirroring only: %s' % filename)
+        return []
     else:
         raise AssertionError('Unsupported archive format: %s' % ext)
     with Handler(filename) as archive:
