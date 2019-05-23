@@ -28,8 +28,18 @@ update_ini()
 }
 
 if [ $EXTRACT -eq 1 ]; then
+	# Asset bundles are fairly rare, and unlike the .assets files don't
+	# appear to have a consistent naming scheme (e.g. LiSBtS had a bunch of
+	# *.bytes files under various directories including "DLC", some but not
+	# all of which turned out to be these), but this specific file has now
+	# been observed in at least two Unity games, including Angry Birds VR
+	# (and these games lacked the usual sharedassets files), so adding it
+	# on the hunch that it might be some sort of default:
+	unity_asset_bundle_extractor.py *_Data/data.unity3d
+
 	unity_asset_extractor.py *_Data/Resources/unity* *_Data/*.assets
 	cd extracted
+
 	extract_unity55_shaders.py */*.shader.raw --type=d3d11
 	cd ShaderFNVs
 elif [ -d extracted/ShaderFNVs ]; then
