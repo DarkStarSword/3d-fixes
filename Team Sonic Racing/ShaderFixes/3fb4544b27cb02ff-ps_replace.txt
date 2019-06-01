@@ -1,3 +1,4 @@
+// Fog - haunted level
 // ---- Created with 3Dmigoto v1.3.16 on Sun Jun 02 05:31:21 2019
 
 cbuffer cbViewProjection : register(b5)
@@ -89,6 +90,11 @@ void main(
   r0.x = r0.x * r0.y;
   r1.xy = v2.xy;
   r1.w = 1;
+
+// Correct fog while camera is vertical:
+float4 s = StereoParams.Load(0);
+r1.x -= s.x;
+
   r0.y = dot(gInverseViewProj._m10_m11_m12_m13, r1.xyzw);
   r0.z = dot(gInverseViewProj._m30_m31_m32_m33, r1.xyzw);
   r0.y = r0.y / r0.z;
