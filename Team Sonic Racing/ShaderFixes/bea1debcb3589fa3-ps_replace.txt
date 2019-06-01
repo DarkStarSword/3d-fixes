@@ -1,0 +1,93 @@
+// ---- Created with 3Dmigoto v1.3.16 on Sat Jun 01 16:53:29 2019
+
+cbuffer cbViewProjection : register(b5)
+{
+  row_major float3x4 gView : packoffset(c0);
+  row_major float4x4 gProjection : packoffset(c3);
+  row_major float4x4 gViewProjection : packoffset(c7);
+  row_major float3x4 gViewInverse : packoffset(c11);
+  float4 gCameraPositionTime : packoffset(c14);
+  float4 gITMGF : packoffset(c15);
+  float2 gfLinearZ : packoffset(c16);
+}
+
+cbuffer cbLightData : register(b6)
+{
+  float4 gFogParams : packoffset(c0);
+  float3 gFogColour : packoffset(c1);
+  float4 gLightAmbient : packoffset(c2);
+  float4 gIblTexMipLevels : packoffset(c3);
+
+  struct
+  {
+    float3 direction;
+    float3 position;
+    float4 colour;
+    float4 lightConst;
+    float4 spotConst;
+  } gLight[8] : packoffset(c4);
+
+}
+
+cbuffer c0 : register(b0)
+{
+  float4 gNearFarPlane : packoffset(c0);
+  row_major float4x4 gInverseViewProj : packoffset(c1);
+}
+
+SamplerState gDepth_smp_s : register(s0);
+SamplerState gMrt0_smp_s : register(s1);
+SamplerState gSrc_smp_s : register(s2);
+Texture2D<float4> gDepth_tex : register(t0);
+Texture2D<float4> gMrt0_tex : register(t1);
+Texture2D<float4> gSrc_tex : register(t2);
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : SV_Position0,
+  float2 v1 : TEXCOORD0,
+  float2 w1 : TEXCOORD1,
+  float2 v2 : TEXCOORD2,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = w1.xy;
+  r0.z = 1;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r1.z = gDepth_tex.Sample(gDepth_smp_s, v1.xy).x;
+  r0.w = -gNearFarPlane.x + r1.z;
+  r0.w = gNearFarPlane.y / r0.w;
+  r0.xyw = r0.xyz * r0.www;
+  r0.xyz = r0.xyw / -r0.zzz;
+  r0.x = dot(r0.xyz, r0.xyz);
+  r0.x = sqrt(r0.x);
+  r0.x = -gFogParams.x + r0.x;
+  r0.x = saturate(gFogParams.w * r0.x);
+  r0.y = gMrt0_tex.Sample(gMrt0_smp_s, v1.xy).w;
+  r0.y = gFogParams.z * r0.y;
+  r0.x = r0.x * r0.y;
+  r1.xy = v2.xy;
+  r1.w = 1;
+  r0.y = dot(gInverseViewProj._m10_m11_m12_m13, r1.xyzw);
+  r0.z = dot(gInverseViewProj._m30_m31_m32_m33, r1.xyzw);
+  r0.y = r0.y / r0.z;
+  r0.y = -gITMGF.y + r0.y;
+  r0.z = gITMGF.z + -gITMGF.y;
+  r0.y = saturate(r0.y / r0.z);
+  r0.y = gITMGF.w * r0.y;
+  r0.x = max(r0.x, r0.y);
+  r0.yzw = gSrc_tex.Sample(gSrc_smp_s, v1.xy).xyz;
+  r1.xyz = gFogColour.xyz + -r0.yzw;
+  o0.xyz = r0.xxx * r1.xyz + r0.yzw;
+  o0.w = 1;
+  return;
+}
