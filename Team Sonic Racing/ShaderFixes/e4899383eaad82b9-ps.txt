@@ -79,15 +79,10 @@ dcl_resource_texture2d (float,float,float,float) t4
 dcl_input_ps linear v1.xy
 dcl_input_ps linear v1.zw
 dcl_output o0.xyzw
-dcl_temps 11
-// Projection matrix derived from 1/gWorldView * gWorldViewProj:
-dcl_resource_buffer (float,float,float,float) t100
-
+dcl_temps 31
 // StereoParams:
 dcl_resource_texture2d (float,float,float,float) t125
-
 ld_indexable(texture2d)(float,float,float,float) r9.xyzw, l(0, 0, 0, 0), t125.xyzw
-ld_indexable(texture2d)(float,float,float,float) r10.x, l(0, 0, 0, 0), t100.xxxx
 
 mad r0.xy, v1.xyxx, cb0[7].xyxx, cb0[7].zwzz
 sample_indexable(texture2d)(float,float,float,float) r0.z, r0.xyxx, t0.yzxw, s0
@@ -101,10 +96,52 @@ mul r1.xyz, r0.wwww, r1.xyzx
 mul r1.xyw, r0.zzzz, r1.xyxz
 div r1.xyz, r1.xywx, -r1.zzzz
 
+// Derive P.I._m00 from WV and WVP like Unity:
+
+// 1. Calculate 1/determinant of the MV matrix, simplifying by assuming the
+//    4th column of the MV matrix is 0,0,0,1
+//
+// mathomatic simplified it to:
+// 1 / ((m12*((m20*m01) - (m21*m00))) + (m02*((m21*m10) - (m20*m11))) + (m22*((m00*m11) - (m01*m10))));
+//
+// Replace row numbers with register components (assumes column-major order):
+//   (mv2.x*((mv0.y*mv1.z) - (mv0.z*mv1.y)))
+// + (mv2.y*((mv0.z*mv1.x) - (mv0.x*mv1.z)))
+// + (mv2.z*((mv0.x*mv1.y) - (mv0.y*mv1.x)))
+
+// Do some multiplications in parallel with SIMD instructions:
+mul r20.xyz, cb0[4].yzxw, cb0[5].zxyw	// mv0.y*mv1.z, mv0.z*mv1.x, mv0.x*mv1.y
+mul r21.xyz, cb0[4].zxyw, cb0[5].yzxw	// mv0.z*mv1.y, mv0.x*mv1.z, mv0.y*mv1.x
+// Do the subtractions:
+add r20.xyz, r20.xyzw, -r21.xyzw	// mv0.y*mv1.z - mv0.z*mv1.y, mv0.z*mv1.x - mv0.x*mv1.z, mv0.x*mv1.y - mv0.y*mv1.x
+// Now the final three multiplications and the two additions:
+dp3 r22.w, r20.xyzw, cb0[6].xyzw
+// And finally get 1/determinant:
+rcp r22.w, r22.w
+
+// 2. Calculate the 1st row of the inverted MV matrix, simplifying by assuimg
+//    the 4th column of the MV matrix is 0,0,0,1
+//
+// m00 = (mv1.y*mv2.z - mv1.z*mv2.y) / determinant
+// m01 = (mv1.z*mv2.x - mv1.x*mv2.z) / determinant
+// m02 = (mv1.x*mv2.y - mv1.y*mv2.x) / determinant
+
+// Do some multiplications in parallel with SIMD instructions:
+mul r20.xyz, cb0[5].yzxw, cb0[6].zxyw	// mv1.y*mv2.z, mv1.z*mv2.x, mv1.x*mv2.y
+mul r21.xyz, cb0[5].zxyw, cb0[6].yzxw	// mv1.z*mv2.y, mv1.x*mv2.z, mv1.y*mv2.x
+// Do the subtractions:
+add r20.xyz, r20.xyzw, -r21.xyzw	// mv1.y*mv2.z - mv1.z*mv2.y, mv1.z*mv2.x - mv1.x*mv2.z, mv1.x*mv2.y - mv1.y*mv2.x
+// Multiply against 1/determinant:
+mul r20.xyz, r20.xyzw, r22.wwww
+
+// 3. Multiply the first row of the inverted MV matrix with the 1st column of
+//    the MVP matrix (MV.I[0,3] is 0, so only worry about the 1st three):
+dp3 r30.x, r20.xyzw, cb0[0].xyzw
+
 // View-space shadow stereo correction:
 add r9.w, -r1.z, -r9.y
 mul r9.w, r9.w, r9.x
-div r9.w, r9.w, r10.x
+div r9.w, r9.w, r30.x
 add r1.x, r1.x, -r9.w
 
 mul r0.xy, r0.xyxx, cb0[8].xyxx
