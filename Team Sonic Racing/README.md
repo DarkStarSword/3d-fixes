@@ -64,9 +64,7 @@ nvidia control panel to output checkerboard to remove the 720p limitation.
 Like my Work?
 -------------
 Fixing games takes a lot of time and effort, and I also do a lot of work on
-3DMigoto behind the scenes to make all of these mods possible - in particular,
-this release required writing an entirely new loader mechanism for 3DMigoto as
-well as solving a lot of hangs and crashes.
+3DMigoto behind the scenes to make all of these mods possible.
 
 If you are in a position where you are able to do so, please consider
 [supporting me with a monthly donation on Patreon][1], and thanks again to
