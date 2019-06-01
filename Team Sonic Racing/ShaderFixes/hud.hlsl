@@ -23,6 +23,11 @@ void adjust_hud(inout float4 pos)
 {
 	float4 s = StereoParams.Load(0);
 
+	// Avoid adjusting full screen shaders blitting the world to the screen,
+	// particularly problematic in the character select trying to zoom in:
+	if (any(pos.xy >= pos.w * 0.99))
+		return;
+
 	if (pos.w == 1.0 && hud_active) {
 		float y = pos.y / 2 + 0.5;
 		float depth = lerp(min_hud, max_hud, y);
