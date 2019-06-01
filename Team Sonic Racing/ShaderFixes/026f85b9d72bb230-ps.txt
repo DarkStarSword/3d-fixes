@@ -117,8 +117,9 @@ sample_indexable(texture2d)(float,float,float,float) r0.z, v1.xyxx, t3.yzxw, s3
 mov r5.xy, v1.zwzz
 
 // No depth buffer or light source depth in this shader, so assume source is
-// the sun and move specular reflections to infinity:
-add r5.x, r5.x, -r11.x
+// the sun and move specular reflections to infinity. The cb0[12].z multiply
+// matches the vertex shader.
+mad r5.x, -r11.x, cb0[12].z, r5.x
 
 mov r5.z, l(-1.000000)
 dp3 r0.w, r5.xyzx, r5.xyzx
