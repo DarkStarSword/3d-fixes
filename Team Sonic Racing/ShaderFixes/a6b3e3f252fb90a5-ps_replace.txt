@@ -1,0 +1,77 @@
+// ---- Created with 3Dmigoto v1.3.16 on Sat Jun 01 15:42:28 2019
+
+cbuffer c_nameless1 : register(b0)
+{
+  row_major float4x4 invViewProj : packoffset(c0);
+  row_major float4x4 invView : packoffset(c4);
+  float4 g_vGiVolAABBMin : packoffset(c8);
+  float4 g_vOOGiVolAABBDimensions : packoffset(c9);
+  float4 g_vOOHalfTexel : packoffset(c10);
+  float4 g_vEyePos : packoffset(c11);
+  float4 g_vGiDiffuseBlend : packoffset(c12);
+  float4 g_vGiSpecularBlend : packoffset(c13);
+}
+
+SamplerState gDepth_smp_s : register(s0);
+SamplerState gGILight0_smp_s : register(s1);
+SamplerState gGILight1_smp_s : register(s2);
+SamplerState gGILight2_smp_s : register(s3);
+SamplerState gMrt1_smp_s : register(s4);
+SamplerState gMrt2_smp_s : register(s5);
+Texture2D<float4> gDepth_tex : register(t0);
+Texture3D<float4> gGILight0_tex : register(t1);
+Texture3D<float4> gGILight1_tex : register(t2);
+Texture3D<float4> gGILight2_tex : register(t3);
+Texture2D<float4> gMrt1_tex : register(t4);
+Texture2D<float4> gMrt2_tex : register(t5);
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  float3 v2 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.z = gDepth_tex.Sample(gDepth_smp_s, v1.xy).x;
+  r0.xy = v2.xy;
+  r0.w = 1;
+  r1.x = dot(invViewProj._m00_m01_m02_m03, r0.xyzw);
+  r1.y = dot(invViewProj._m10_m11_m12_m13, r0.xyzw);
+  r1.z = dot(invViewProj._m20_m21_m22_m23, r0.xyzw);
+  r0.x = dot(invViewProj._m30_m31_m32_m33, r0.xyzw);
+  r0.xyz = r1.xyz / r0.xxx;
+  r0.xyz = -g_vGiVolAABBMin.xyz + r0.xyz;
+  r0.xyz = r0.xyz * g_vOOGiVolAABBDimensions.xyz + g_vOOHalfTexel.xyz;
+  r1.xyzw = gGILight0_tex.Sample(gGILight0_smp_s, r0.xyz).xyzw;
+  r2.x = r1.w;
+  r3.xyzw = gGILight1_tex.Sample(gGILight1_smp_s, r0.xyz).xyzw;
+  r0.xyzw = gGILight2_tex.Sample(gGILight2_smp_s, r0.xyz).xyzw;
+  r2.y = r3.w;
+  r2.z = r0.w;
+  r4.xyz = gMrt2_tex.Sample(gMrt2_smp_s, v1.xy).xyz;
+  r4.xyz = r4.yzx * float3(2,2,2) + float3(-1,-1,-1);
+  r0.w = dot(r4.xyz, r4.xyz);
+  r0.w = rsqrt(r0.w);
+  r4.xyz = r4.xyz * r0.www;
+  r1.xyz = r1.xyz * -r4.xxx + r2.xyz;
+  r1.xyz = r3.xyz * -r4.yyy + r1.xyz;
+  r0.xyz = r0.xyz * -r4.zzz + r1.xyz;
+  r0.xyz = g_vGiDiffuseBlend.xyz * r0.xyz;
+  r0.xyz = max(float3(0,0,0), r0.xyz);
+  r1.xyzw = gMrt1_tex.Sample(gMrt1_smp_s, v1.xy).xyzw;
+  r1.xyz = r1.xyz * r1.xyz;
+  r1.xyz = -r1.xyz * r1.www + r1.xyz;
+  r1.xyz = r1.xyz * r0.xyz;
+  r1.xyz = r1.xyz * float3(0.318309873,0.318309873,0.318309873) + -r0.xyz;
+  o0.xyz = g_vGiDiffuseBlend.www * r1.xyz + r0.xyz;
+  o0.w = 0;
+  return;
+}
