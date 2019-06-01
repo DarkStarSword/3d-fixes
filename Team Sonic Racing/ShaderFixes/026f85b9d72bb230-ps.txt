@@ -98,9 +98,13 @@ dcl_temps 12
 dcl_resource_texture2d (float,float,float,float) t125
 ld_indexable(texture2d)(float,float,float,float) r11.xyzw, l(0, 0, 0, 0), t125.xyzw
 
+// Emissive:
 sample_indexable(texture2d)(float,float,float,float) r0.xyzw, v1.xyxx, t0.wxyz, s0
+// Diffuse:
 sample_indexable(texture2d)(float,float,float,float) r1.xyzw, v1.xyxx, t1.xyzw, s1
+// Normal:
 sample_indexable(texture2d)(float,float,float,float) r2.xyzw, v1.xyxx, t2.xyzw, s2
+
 mul r3.xyz, r0.yzwy, l(0.500000, 0.500000, 0.500000, 0.000000)
 add r4.xyz, -r0.yzwy, l(1.000100, 1.000100, 1.000100, 0.000000)
 div r3.xyz, r3.xyzx, r4.xyzx
@@ -109,16 +113,17 @@ mad r4.xyz, -r4.xyzx, r1.wwww, r4.xyzx
 mul r4.xyz, r4.xyzx, l(0.318309873, 0.318309873, 0.318309873, 0.000000)
 mad r3.xyz, cb6[2].xyzx, r4.xyzx, r3.xyzx
 sample_indexable(texture2d)(float,float,float,float) r0.z, v1.xyxx, t3.yzxw, s3
+
 mov r5.xy, v1.zwzz
+
+// No depth buffer or light source depth in this shader, so assume source is
+// the sun and move specular reflections to infinity:
+add r5.x, r5.x, -r11.x
+
 mov r5.z, l(-1.000000)
 dp3 r0.w, r5.xyzx, r5.xyzx
 rsq r0.w, r0.w
 mul r5.xyz, r0.wwww, r5.xyzx
-
-// Half separaration adjustment here is a approximation / placeholder that will do for now:
-mad r5.x, r11.x, l(-0.5), r5.x
-
-// inverse view:
 dp3 r6.x, cb0[8].xyzx, r5.xyzx
 dp3 r6.y, cb0[9].xyzx, r5.xyzx
 dp3 r6.z, cb0[10].xyzx, r5.xyzx
