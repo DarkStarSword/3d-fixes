@@ -1,0 +1,346 @@
+// 3DMigoto: 7914b2b63b9a5d70 |    Unity headers extracted from Hidden_CandelaSSRRv2
+//    Shader "Hidden/CandelaSSRRv2" {
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZWrite Off
+//          Program "fp" {
+//            SubProgram "d3d11" {
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Hidden_CandelaSSRRv2:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 201609010 115 1 36
+//   undeciphered1a: 11
+//   undeciphered2: 1 6 2 6 0 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 384
+//   Float 32 [_fadePower]
+//   Float 36 [_maxDepthCull]
+//   Float 40 [_maxFineStep]
+//   Float 44 [_maxStep]
+//   Float 48 [_stepGlobalScale]
+//   Float 272 [_SSRRcomposeMode]
+//   Float 276 [_FlipReflectionsMSAA]
+//   Float 280 [_skyEnabled]
+//   Float 304 [_IsInForwardRender]
+//   Float 308 [_IsInLegacyDeffered]
+//   Float 312 [_FullDeferred]
+//   Matrix 64 [_ProjMatrix]
+//   Matrix 128 [_ProjectionInv]
+//   Matrix 192 [_ViewMatrix]
+//   Matrix 320 [_CameraMV]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 96 [_ScreenParams]
+//   Vector 112 [_ZBufferParams]
+//   SetTexture 0 [_MainTex] 2D 1
+//   SetTexture 1 [_depthTexCustom] 2D 0
+//   SetTexture 2 [_CameraDepthTexture] 2D 3
+//   SetTexture 3 [_CameraNormalsTexture] 2D 2
+//   SetTexture 4 [_CameraDepthNormalsTexture] 2D 4
+//   SetTexture 5 [_CameraGBufferTexture2] 2D 5
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//
+// Headers extracted with DarkStarSword's extract_unity55_shaders.py
+// https://github.com/DarkStarSword/3d-fixes
+
+// ---- Created with 3Dmigoto v1.3.16 on Mon Jul 15 00:09:15 2019
+Texture2D<float4> t5 : register(t5);
+
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s5_s : register(s5);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+
+// Unity constant buffers reconstructed with DarkStarSword's hlsltool.py:
+// hlsltool.py --reconstruct-unity-cbuffers --git --in-place 7914b2b63b9a5d70-ps_replace.txt
+
+cbuffer UnityPerCamera : register(b1) {
+  float4 _ScreenParams : packoffset(c6);
+  float4 _ZBufferParams : packoffset(c7);
+}
+
+cbuffer Globals : register(b0) {
+  float _fadePower : packoffset(c2);
+  float _maxDepthCull : packoffset(c2.y);
+  float _maxFineStep : packoffset(c2.z);
+  float _maxStep : packoffset(c2.w);
+  float _stepGlobalScale : packoffset(c3);
+  row_major matrix _ProjMatrix : packoffset(c4);
+  row_major matrix _ProjectionInv : packoffset(c8);
+  row_major matrix _ViewMatrix : packoffset(c12);
+  float _SSRRcomposeMode : packoffset(c17);
+  float _FlipReflectionsMSAA : packoffset(c17.y);
+  float _skyEnabled : packoffset(c17.z);
+  float _IsInForwardRender : packoffset(c19);
+  float _IsInLegacyDeffered : packoffset(c19.y);
+  float _FullDeferred : packoffset(c19.z);
+  row_major matrix _CameraMV : packoffset(c20);
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : SV_POSITION0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = t0.SampleLevel(s1_s, v1.xy, 0).xyzw;
+  r1.x = cmp(r0.w == 0.000000);
+  if (r1.x != 0) {
+    o0.xyzw = float4(0,0,0,0);
+  } else {
+    r1.x = cmp(0.5 < _skyEnabled);
+    r1.xy = r1.xx ? float2(-24,25) : _ZBufferParams.xy;
+    r1.z = cmp(0 < _IsInForwardRender);
+    if (r1.z != 0) {
+      r2.xyzw = t1.SampleLevel(s0_s, v1.xy, 0).xyzw;
+    } else {
+      r2.xyzw = t2.SampleLevel(s3_s, v1.xy, 0).xyzw;
+    }
+    r2.z = 1 + -r2.x;
+    r1.w = r1.x * r2.z + r1.y;
+    r1.w = 1 / r1.w;
+    r1.w = cmp(_maxDepthCull < r1.w);
+    if (r1.w != 0) {
+      o0.xyzw = float4(0,0,0,0);
+    } else {
+      r3.xy = v1.xy * float2(2,2) + float2(-1,-1);
+      r4.xyzw = _ProjectionInv[1].xyzw * r3.yyyy;
+      r3.xyzw = _ProjectionInv[0].xyzw * r3.xxxx + r4.xyzw;
+      r3.xyzw = _ProjectionInv[2].xyzw * r2.zzzz + r3.xyzw;
+      r3.xyzw = _ProjectionInv[3].xyzw + r3.xyzw;
+      r3.xyz = r3.xyz / r3.www;
+      if (r1.z != 0) {
+        r4.xyzw = t3.SampleLevel(s2_s, v1.xy, 0).xyzw;
+        r4.xyz = r4.xyz * float3(2,2,2) + float3(-1,-1,-1);
+      } else {
+        r1.w = cmp(0 < _IsInLegacyDeffered);
+        if (r1.w != 0) {
+          r5.xyzw = t4.SampleLevel(s4_s, v1.xy, 0).xyzw;
+          r5.xyz = r5.xyz * float3(3.55539989,3.55539989,0) + float3(-1.77769995,-1.77769995,1);
+          r1.w = dot(r5.xyz, r5.xyz);
+          r1.w = 2 / r1.w;
+          r5.xy = r1.ww * r5.xy;
+          r1.w = -1 + r1.w;
+          r5.yzw = _CameraMV[1].xyz * r5.yyy;
+          r5.xyz = _CameraMV[0].xyz * r5.xxx + r5.yzw;
+          r4.xyz = _CameraMV[2].xyz * r1.www + r5.xyz;
+        } else {
+          r1.w = cmp(0 < _FullDeferred);
+          if (r1.w != 0) {
+            r5.xyzw = t5.Sample(s5_s, v1.xy).xyzw;
+            r4.xyz = r5.xyz * float3(2,2,2) + float3(-1,-1,-1);
+          } else {
+            r4.xyz = float3(0,0,0);
+          }
+        }
+      }
+      r1.w = dot(r3.xyz, r3.xyz);
+      r1.w = rsqrt(r1.w);
+      r5.xyz = r3.xyz * r1.www;
+      r6.xyz = _ViewMatrix[1].xyz * r4.yyy;
+      r4.xyw = _ViewMatrix[0].xyz * r4.xxx + r6.xyz;
+      r4.xyz = _ViewMatrix[2].xyz * r4.zzz + r4.xyw;
+      r1.w = dot(r4.xyz, r4.xyz);
+      r1.w = rsqrt(r1.w);
+      r4.xyz = r4.xyz * r1.www;
+      r1.w = dot(r4.xyz, r5.xyz);
+      r4.xyz = r1.www * r4.xyz;
+      r4.xyz = -r4.xyz * float3(2,2,2) + r5.xyz;
+      r1.w = dot(r4.xyz, r4.xyz);
+      r1.w = rsqrt(r1.w);
+      r3.xyz = r4.xyz * r1.www + r3.xyz;
+      r4.xyzw = _ProjMatrix[1].xyzw * r3.yyyy;
+      r4.xyzw = _ProjMatrix[0].xyzw * r3.xxxx + r4.xyzw;
+      r3.xyzw = _ProjMatrix[2].xyzw * r3.zzzz + r4.xyzw;
+      r3.xyzw = _ProjMatrix[3].xyzw + r3.xyzw;
+      r3.xyz = r3.xyz / r3.www;
+      r2.xy = v1.xy * float2(2,2) + float2(-1,-1);
+      r3.xyz = r3.xyz + -r2.xyz;
+      r1.w = dot(r3.xyz, r3.xyz);
+      r1.w = rsqrt(r1.w);
+      r3.xyz = r3.xyz * r1.www;
+      r4.xy = float2(0.5,0.5) * r3.xy;
+      r1.w = 2 / _ScreenParams.x;
+      r2.w = dot(r4.xy, r4.xy);
+      r2.w = sqrt(r2.w);
+      r3.w = _stepGlobalScale * r1.w;
+      r3.w = r3.w / r2.w;
+      r3.xyz = float3(0.5,0.5,1) * r3.xyz;
+      r4.x = (int)_maxStep;
+      r2.xy = v1.xy;
+      r2.xyz = r3.xyz * r3.www + r2.xyz;
+      r4.y = 1 + _ZBufferParams.x;
+      r4.y = _ZBufferParams.w * r4.y;
+      r5.w = 1;
+      r6.xyzw = float4(0,0,0,0);
+      r5.xyz = r2.xyz;
+      r4.zw = float2(0,0);
+      r7.xy = float2(0,0);
+      while (true) {
+        r7.z = cmp((int)r7.y >= 120);
+        if (r7.z != 0) break;
+        r7.z = cmp((int)r7.x >= (int)r4.x);
+        if (r7.z != 0) {
+          break;
+        }
+        r8.xyzw = t1.SampleLevel(s0_s, r5.xy, 0).xyzw;
+        r9.xyzw = t2.SampleLevel(s3_s, r5.xy, 0).xyzw;
+        r7.z = r1.z ? r8.x : r9.x;
+        r7.z = 1 + -r7.z;
+        r7.z = r1.x * r7.z + r1.y;
+        r7.z = 1 / r7.z;
+        r7.w = r1.x * r5.z + r1.y;
+        r7.w = 1 / r7.w;
+        r8.x = -_ZBufferParams.z * r7.z + r4.y;
+        r8.x = 1 / r8.x;
+        r8.x = r8.x * r8.x;
+        r8.x = r8.x * r8.x;
+        r8.x = -r8.x * 0.200000003 + r7.w;
+        r8.x = cmp(r7.z >= r8.x);
+        r7.z = cmp(r7.w >= r7.z);
+        r7.z = r7.z ? r8.x : 0;
+        if (r7.z != 0) {
+          r6.xyzw = r5.xyzw;
+          r4.w = -1;
+          break;
+        }
+        r5.xyz = r3.xyz * r3.www + r5.xyz;
+        r4.z = 1 + r4.z;
+        r7.x = (int)r7.x + 1;
+        r7.y = (int)r7.y + 1;
+        r6.xyzw = float4(0,0,0,0);
+        r4.w = 0;
+      }
+      r5.w = 0;
+      r5.xyzw = r4.wwww ? r6.xyzw : r5.xyzw;
+      r2.x = -0.5 + r5.x;
+      r2.yz = cmp(float2(0,0) < _SSRRcomposeMode);
+      if (r2.y != 0) {
+        r4.xy = v1.xy * float2(1,-1) + float2(0,1);
+        r0.xyzw = t0.SampleLevel(s1_s, r4.xy, 0).xyzw;
+      }
+      r0.xyz = r2.zzz ? r0.xyz : 0;
+      r0.w = 0;
+      r2.x = cmp(0.5 < abs(r2.x));
+      if (r2.x != 0) {
+        o0.xyzw = r0.xyzw;
+      } else {
+        r2.x = -0.5 + r5.y;
+        r2.x = cmp(0.5 < abs(r2.x));
+        if (r2.x != 0) {
+          o0.xyzw = r0.xyzw;
+        } else {
+          r2.x = _ZBufferParams.x * r5.z + _ZBufferParams.y;
+          r2.x = 1 / r2.x;
+          r2.x = cmp(_maxDepthCull < r2.x);
+          r2.z = cmp(_skyEnabled < 0.5);
+          r2.x = r2.z ? r2.x : 0;
+          if (r2.x != 0) {
+            o0.xyzw = r0.xyzw;
+          } else {
+            r2.x = cmp(r5.z < 0.100000001);
+            if (r2.x != 0) {
+              o0.xyzw = r0.xyzw;
+            } else {
+              r2.x = cmp(r5.w == 1.000000);
+              if (r2.x != 0) {
+                r4.xyw = -r3.xyz * r3.www + r5.xyz;
+                r1.w = r1.w / r2.w;
+                r2.x = (int)_maxFineStep;
+                r4.xyw = r3.xyz * r1.www + r4.xyw;
+                r6.z = 1;
+                r7.xyz = float3(0,0,0);
+                r8.xyz = r4.xyw;
+                r2.zw = float2(0,0);
+                r3.w = 0;
+                while (true) {
+                  r5.w = cmp((int)r3.w >= 40);
+                  if (r5.w != 0) break;
+                  r5.w = cmp((int)r2.w >= (int)r2.x);
+                  if (r5.w != 0) {
+                    break;
+                  }
+                  r9.xyzw = t1.SampleLevel(s0_s, r8.xy, 0).xyzw;
+                  r10.xyzw = t2.SampleLevel(s3_s, r8.xy, 0).xyzw;
+                  r5.w = r1.z ? r9.x : r10.x;
+                  r5.w = 1 + -r5.w;
+                  r5.w = r1.x * r5.w + r1.y;
+                  r5.w = 1 / r5.w;
+                  r6.w = r1.x * r8.z + r1.y;
+                  r6.w = 1 / r6.w;
+                  r5.w = cmp(r5.w < r6.w);
+                  if (r5.w != 0) {
+                    r6.xy = r8.xy;
+                    r7.xyz = r6.xyz;
+                    r2.z = -1;
+                    break;
+                  } else {
+                    r8.xyz = r3.xyz * r1.www + r8.xyz;
+                  }
+                  r2.w = (int)r2.w + 1;
+                  r3.w = (int)r3.w + 1;
+                  r7.xyz = float3(0,0,0);
+                  r2.z = 0;
+                }
+                r8.z = 0;
+                r5.xyz = r2.zzz ? r7.xyz : r8.xyz;
+              } else {
+                r5.z = 0;
+              }
+              r1.x = cmp(r5.z < 0.00999999978);
+              if (r1.x != 0) {
+                o0.xyzw = r0.xyzw;
+              } else {
+                r0.x = 1 + -r5.y;
+                r5.y = r2.y ? r0.x : r5.y;
+                r0.xyzw = t0.SampleLevel(s1_s, r5.xy, 0).xyzw;
+                r0.w = trunc(_maxStep);
+                r0.w = r4.z / r0.w;
+                r0.w = 1 + -r0.w;
+                r0.w = log2(r0.w);
+                r0.w = _fadePower * r0.w;
+                o0.w = exp2(r0.w);
+                o0.xyz = r0.xyz;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return;
+}

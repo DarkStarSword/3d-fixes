@@ -1,0 +1,262 @@
+// 3DMigoto: dfbb5af26fbfa321 |    Unity headers extracted from Hidden_CandelaCompose
+//    Shader "Hidden/CandelaCompose" {
+//      SubShader 1/1 {
+//        Pass 1/1 {
+//          ZWrite Off
+//          Program "fp" {
+//            SubProgram "d3d11" {
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+// Unity 5.3 headers extracted from Hidden_CandelaCompose:
+//   API d3d11
+//   Shader model ps_4_0
+//   undeciphered1: 201609010 113 8 4
+//   undeciphered1a: 9
+//   undeciphered2: 1 8 2 8 0 0
+//   undeciphered3: 0 0
+//   ConstBuffer "$Globals" 256
+//   Vector 32 [_ScreenFadeControls]
+//   Float 48 [_UseEdgeTexture]
+//   Float 52 [_IsInForwardRender]
+//   Float 56 [_IsInLegacyDeffered]
+//   Float 60 [_SSRRcomposeMode]
+//   Float 64 [_reflectionMultiply]
+//   Float 68 [_FlipReflectionsMSAA]
+//   Float 76 [_fresfade]
+//   Float 80 [_fresrange]
+//   Matrix 112 [_ViewProjectInverse]
+//   Matrix 192 [_CameraMV]
+//   ConstBuffer "UnityPerCamera" 144
+//   Vector 64 [_WorldSpaceCameraPos] 3
+//   SetTexture 0 [_MainTex] 2D 0
+//   SetTexture 1 [_toksvigRT] 2D 7
+//   SetTexture 2 [_CameraDepthNormalsTexture] 2D 5
+//   SetTexture 3 [_CameraNormalsTexture] 2D 4
+//   SetTexture 4 [_CameraDepthTexture] 2D 3
+//   SetTexture 5 [_CameraGBufferTexture1] 2D 6
+//   SetTexture 6 [_EdgeFadeTexture] 2D 2
+//   SetTexture 7 [_SSRtexture] 2D 1
+//   BindCB "$Globals" 0
+//   BindCB "UnityPerCamera" 1
+//
+// Headers extracted with DarkStarSword's extract_unity55_shaders.py
+// https://github.com/DarkStarSword/3d-fixes
+
+// ---- Created with 3Dmigoto v1.3.16 on Mon Jul 15 00:22:58 2019
+Texture2D<float4> t7 : register(t7);
+
+Texture2D<float4> t6 : register(t6);
+
+Texture2D<float4> t5 : register(t5);
+
+Texture2D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
+
+Texture2D<float4> t2 : register(t2);
+
+Texture2D<float4> t1 : register(t1);
+
+Texture2D<float4> t0 : register(t0);
+
+SamplerState s7_s : register(s7);
+
+SamplerState s6_s : register(s6);
+
+SamplerState s5_s : register(s5);
+
+SamplerState s4_s : register(s4);
+
+SamplerState s3_s : register(s3);
+
+SamplerState s2_s : register(s2);
+
+SamplerState s1_s : register(s1);
+
+SamplerState s0_s : register(s0);
+
+
+// Unity constant buffers reconstructed with DarkStarSword's hlsltool.py:
+// hlsltool.py -I ../.. --reconstruct-unity-cbuffers --fxc /home/dss/fxc.exe -f dfbb5af26fbfa321-ps_replace.txt
+
+cbuffer UnityPerCamera : register(b1) {
+  float3 _WorldSpaceCameraPos : packoffset(c4);
+}
+
+cbuffer Globals : register(b0) {
+  float4 _ScreenFadeControls : packoffset(c2);
+  float _UseEdgeTexture : packoffset(c3);
+  float _IsInForwardRender : packoffset(c3.y);
+  float _IsInLegacyDeffered : packoffset(c3.z);
+  float _SSRRcomposeMode : packoffset(c3.w);
+  float _reflectionMultiply : packoffset(c4);
+  float _FlipReflectionsMSAA : packoffset(c4.y);
+  float _fresfade : packoffset(c4.w);
+  float _fresrange : packoffset(c5);
+  row_major matrix _ViewProjectInverse : packoffset(c7);
+  row_major matrix _CameraMV : packoffset(c12);
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : SV_Position0,
+  float2 v1 : TEXCOORD0,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = cmp(0 < _FlipReflectionsMSAA);
+  r0.y = 1 + -v1.y;
+  r0.y = r0.x ? r0.y : v1.y;
+  r1.xyzw = t0.Sample(s0_s, v1.xy).xyzw;
+  r2.xyzw = t1.Sample(s7_s, v1.xy).xyzw;
+  r0.x = v1.x;
+  r3.xyzw = t2.Sample(s5_s, r0.xy).xyzw;
+  r2.yzw = r3.xyz * float3(3.55539989,3.55539989,0) + float3(-1.77769995,-1.77769995,1);
+  r0.z = dot(r2.yzw, r2.yzw);
+  r0.z = 2 / r0.z;
+  r2.yz = r0.zz * r2.yz;
+  r0.z = -1 + r0.z;
+  r3.xyz = _CameraMV[1].xyz * r2.zzz;
+  r2.yzw = _CameraMV[0].xyz * r2.yyy + r3.xyz;
+  r2.yzw = _CameraMV[2].xyz * r0.zzz + r2.yzw;
+  r3.xyzw = t3.Sample(s4_s, r0.xy).xyzw;
+  r4.xyzw = r3.xyzw * float4(2,2,2,2) + float4(-1,-1,-1,-1);
+  r0.z = dot(r4.xyzw, r4.xyzw);
+  r0.z = rsqrt(r0.z);
+  r4.xyz = r4.xyz * r0.zzz;
+  r5.xyzw = t4.Sample(s3_s, v1.xy).xyzw;
+  r0.xy = r0.xy * float2(2,2) + float2(-1,-1);
+  r6.xyzw = _ViewProjectInverse[1].xyzw * r0.yyyy;
+  r0.xyzw = _ViewProjectInverse[0].xyzw * r0.xxxx + r6.xyzw;
+  r0.xyzw = _ViewProjectInverse[2].xyzw * r5.xxxx + r0.xyzw;
+  r0.xyzw = _ViewProjectInverse[3].xyzw + r0.xyzw;
+  r0.xyz = r0.xyz / r0.www;
+  r0.xyz = -_WorldSpaceCameraPos.xyz + r0.xyz;
+  r0.w = dot(r0.xyz, r0.xyz);
+  r0.w = rsqrt(r0.w);
+  r0.xyz = r0.xyz * r0.www;
+  r0.w = saturate(dot(r4.xyz, -r0.xyz));
+  r4.xyz = cmp(float3(0,0,0) < _UseEdgeTexture);
+  r0.x = saturate(dot(r2.yzw, -r0.xyz));
+  r0.x = r4.x ? r0.x : r0.w;
+  r5.xyzw = t5.Sample(s6_s, v1.xy).xyzw;
+  r0.y = cmp(0 != _IsInForwardRender);
+  r0.y = (int)r4.x | (int)r0.y;
+  r2.yzw = r0.yyy ? r3.www : r5.xyz;
+  r3.xyzw = r0.yyyy ? r3.xyzw : r5.xyzw;
+  r0.z = log2(r3.w);
+  r0.zw = float2(0.454545468,1.39999998) * r0.zz;
+  r0.zw = exp2(r0.zw);
+  if (r4.y != 0) {
+    r5.xyzw = t6.Sample(s2_s, v1.xy).xyzw;
+  } else {
+    r4.xy = v1.xy * float2(2,2) + float2(-1,-1);
+    r3.w = dot(r4.xy, r4.xy);
+    r3.w = sqrt(r3.w);
+    r3.w = log2(r3.w);
+    r3.w = _ScreenFadeControls.y * r3.w;
+    r3.w = exp2(r3.w);
+    r3.w = -_ScreenFadeControls.z + r3.w;
+    r3.w = saturate(_ScreenFadeControls.w * r3.w);
+    r3.w = log2(r3.w);
+    r3.w = 0.899999976 * r3.w;
+    r3.w = exp2(r3.w);
+    r5.x = 1 + -r3.w;
+  }
+  r3.w = log2(r5.x);
+  r3.w = 4.19999981 * r3.w;
+  r3.w = exp2(r3.w);
+  r5.xyzw = t7.Sample(s1_s, v1.xy).xyzw;
+  r0.z = r0.z * r2.x;
+  r0.z = max(0.0500000007, r0.z);
+  r6.xyzw = t7.SampleLevel(s1_s, v1.xy, 0).xyzw;
+  r4.xyw = r6.xyz * r2.xxx;
+  r2.x = 10 + -_fresfade;
+  r5.x = log2(r0.x);
+  r2.x = r5.x * r2.x;
+  r2.x = exp2(r2.x);
+  r2.x = 1 + -r2.x;
+  r5.x = 8 * _fresrange;
+  r5.y = -r0.z * 0.200000003 + 1;
+  r5.x = r5.x * r5.y;
+  r5.x = 1.44269502 * r5.x;
+  r5.x = exp2(r5.x);
+  r2.x = log2(r2.x);
+  r2.x = r5.x * r2.x;
+  r2.x = exp2(r2.x);
+  r5.x = r5.w * r5.w;
+  r5.x = saturate(r5.x * r5.w);
+  r2.x = r5.x * r2.x;
+  if (r4.z != 0) {
+    r5.xyz = float3(1,1,1) + -r2.yzw;
+    r4.z = r0.x * -5.55473089 + -6.98316193;
+    r4.z = r4.z * r0.x;
+    r5.w = -r0.z * 2 + 1;
+    r5.w = max(0, r5.w);
+    r4.z = r5.w * r4.z;
+    r4.z = exp2(r4.z);
+    r5.xyz = r5.xyz * r4.zzz + r2.yzw;
+    r5.xyz = r5.xyz * r4.xyw;
+    r5.w = 1;
+    r5.xyzw = r5.xyzw * r2.xxxx;
+    r6.xyzw = r5.xyzw * r0.wwww;
+    r4.z = _reflectionMultiply * r2.x;
+    r4.z = -r4.z * r0.w + 1;
+    r7.xyzw = r4.zzzz * r1.xyzw;
+    r6.xyzw = r6.xyzw * _reflectionMultiply + r7.xyzw;
+    r8.xyz = float3(0.0299999993,0.0299999993,0.0299999993) + r3.xyz;
+    r8.xyz = log2(r8.xyz);
+    r8.w = 0xff800000;
+    r8.xyzw = float4(0.161290318,0.161290318,0.161290318,0.161290318) * r8.xyzw;
+    r8.xyzw = exp2(r8.xyzw);
+    r8.xyzw = max(float4(0.5,0.5,0.5,0.5), r8.xyzw);
+    r8.xyzw = min(float4(1,1,1,1), r8.xyzw);
+    r5.xyzw = r8.xyzw * r5.xyzw;
+    r5.xyzw = r5.xyzw * r0.wwww;
+    r5.xyzw = r5.xyzw * _reflectionMultiply + r7.xyzw;
+    r5.xyzw = r0.yyyy ? r6.xyzw : r5.xyzw;
+  } else {
+    r6.xyz = float3(1,1,1) + -r2.yzw;
+    r4.z = r0.x * -5.55473089 + -6.98316193;
+    r0.x = r4.z * r0.x;
+    r0.z = -r0.z * 2 + 1;
+    r0.z = max(0, r0.z);
+    r0.x = r0.x * r0.z;
+    r0.x = exp2(r0.x);
+    r2.yzw = r6.xyz * r0.xxx + r2.yzw;
+    r4.xyz = r4.xyw * r2.yzw;
+    r4.w = 1;
+    r2.xyzw = r4.xyzw * r2.xxxx;
+    r4.xyzw = r2.xyzw * r0.wwww;
+    r4.xyzw = r4.xyzw * _reflectionMultiply + r1.xyzw;
+    r3.xyz = float3(0.0299999993,0.0299999993,0.0299999993) + r3.xyz;
+    r6.xyz = log2(r3.xyz);
+    r6.w = 0xff800000;
+    r6.xyzw = float4(0.161290318,0.161290318,0.161290318,0.161290318) * r6.xyzw;
+    r6.xyzw = exp2(r6.xyzw);
+    r6.xyzw = max(float4(0.5,0.5,0.5,0.5), r6.xyzw);
+    r6.xyzw = min(float4(1,1,1,1), r6.xyzw);
+    r2.xyzw = r6.xyzw * r2.xyzw;
+    r2.xyzw = r2.xyzw * r0.wwww;
+    r2.xyzw = r2.xyzw * _reflectionMultiply + r1.xyzw;
+    r5.xyzw = r0.yyyy ? r4.xyzw : r2.xyzw;
+  }
+  r0.x = cmp(0 < _ScreenFadeControls.x);
+  r0.xyzw = r0.xxxx ? r3.wwww : r5.xyzw;
+  r0.xyzw = r0.xyzw + -r1.xyzw;
+  o0.xyzw = r3.wwww * r0.xyzw + r1.xyzw;
+  return;
+}
