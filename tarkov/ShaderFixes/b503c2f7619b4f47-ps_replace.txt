@@ -1,3 +1,5 @@
+// Decals: A-typical halo pattern + view-space correction in 5f163d8e0205143f + FOV passed to pixel shader for 2nd view-space adjustment
+//
 // 3DMigoto: b503c2f7619b4f47 | Matched 2 variants of 1 shaders: Decal/DeferredDecalDiffuseNormalsDynamicEditor
 //
 //       Unity headers extracted from Decal_DeferredDecalDiffuseNormalsDynamicEditor
@@ -118,8 +120,8 @@ cbuffer Globals : register(b0) {
   float _AlphaMultiplier : packoffset(c8.w);
 }
 
-
-
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
 // 3Dmigoto declarations
 #define cmp -
@@ -135,6 +137,7 @@ void main(
   float4 v6 : TEXCOORD4,
   float4 v7 : TEXCOORD5,
   float4 v8 : TEXCOORD7,
+  float fov : TEXCOORD8, // New
   out float4 o0 : SV_Target0,
   out float4 o1 : SV_Target1,
   out float4 o2 : SV_Target2,
@@ -151,6 +154,10 @@ void main(
   r0.w = _ZBufferParams.x * r2.x + _ZBufferParams.y;
   r0.w = 1 / r0.w;
   r0.xyz = r0.xyz * r0.www;
+
+float4 s = StereoParams.Load(0);
+r0.x -= s.x * (r0.z - s.y) * fov;
+
   r2.xyz = unity_CameraToWorld[1].xyz * r0.yyy;
   r0.xyw = unity_CameraToWorld[0].xyz * r0.xxx + r2.xyz;
   r0.xyz = unity_CameraToWorld[2].xyz * r0.zzz + r0.xyw;

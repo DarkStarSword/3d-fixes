@@ -1,3 +1,5 @@
+// Decals. A-typical halo pattern + view space correction + FOV passed to pixel shader for 2nd view-space adjustment in 5f163d8e0205143f
+//
 // 3DMigoto: 5f163d8e0205143f | Matched 4 variants of 1 shaders: Decal/DeferredDecalDiffuseNormalsDynamicEditor
 //
 //       Unity headers extracted from Decal_DeferredDecalDiffuseNormalsDynamicEditor
@@ -56,7 +58,10 @@ cbuffer UnityPerCamera : register(b0) {
 }
 
 
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -75,7 +80,8 @@ void main(
   out float4 o5 : TEXCOORD6,
   out float4 o6 : TEXCOORD4,
   out float4 o7 : TEXCOORD5,
-  out float4 o8 : TEXCOORD7)
+  out float4 o8 : TEXCOORD7,
+  out float fov : TEXCOORD8) // New
 {
   float4 r0,r1,r2;
   uint4 bitmask, uiDest;
@@ -90,6 +96,11 @@ void main(
   r1.xyzw = unity_MatrixVP[2].xyzw * r0.zzzz + r1.xyzw;
   r1.xyzw = unity_MatrixVP[3].xyzw * r0.wwww + r1.xyzw;
   o0.xyzw = r1.xyww;
+
+float4 s = StereoParams.Load(0);
+float adj = s.x * (r1.w - s.y);
+r1.x += adj;
+
   r1.y = _ProjectionParams.x * r1.y;
   r2.xzw = float3(0.5,0.5,0.5) * r1.xwy;
   o1.zw = r1.zw * float2(-1,1) + float2(1,0);
@@ -98,6 +109,12 @@ void main(
   r1.xyz = unity_MatrixV[0].xyz * r0.xxx + r1.xyz;
   r0.xyz = unity_MatrixV[2].xyz * r0.zzz + r1.xyz;
   r0.xyz = unity_MatrixV[3].xyz * r0.www + r0.xyz;
+
+matrix iv = inverse(unity_MatrixV);
+matrix p = mul(iv, unity_MatrixVP);
+fov = 1 / p._m00;
+r0.x += adj * fov;
+
   o2.xyz = float3(-1,-1,1) * r0.xyz;
   o3.xy = v2.xy;
   o3.zw = v3.xy;
