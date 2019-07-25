@@ -1,3 +1,5 @@
+// Flares. Texture-space correction to fix visibility
+//
 // 3DMigoto: 71e3193b8f60d36b |    Unity headers extracted from Custom_multiFlare
 //    Shader "Custom/multiFlare" {
 //      Fallback "Diffuse"
@@ -72,7 +74,8 @@ cbuffer Globals : register(b0) {
 }
 
 
-
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
 // 3Dmigoto declarations
 #define cmp -
@@ -132,6 +135,14 @@ void main(
   r1.xyzw = unity_MatrixVP[0].xyzw * r0.xxxx + r1.xyzw;
   r1.xyzw = unity_MatrixVP[2].xyzw * r0.zzzz + r1.xyzw;
   r0.xyzw = unity_MatrixVP[3].xyzw * r0.wwww + r1.xyzw;
+
+// Adjustment at this point technically works to correct visibility if the
+// driver correction is later neutralised, but the flares look distorted:
+//float4 s = StereoParams.Load(0);
+//r0.x += s.x * (r0.w - s.y);
+
+float depth = r0.w;
+
   r0.z = r0.w + -r0.z;
   r1.xyz = r0.xyz / r0.www;
   r2.xy = r1.xy * float2(0.5,0.5) + float2(0.5,0.5);
@@ -146,6 +157,11 @@ void main(
     r2.w = cmp((int)r2.y >= 23);
     if (r2.w != 0) break;
     r4.xy = icb[r2.y+0].xy * r3.zw + r2.xz;
+
+// Texture-space adjustment to correct flare visibility without altering their location:
+float4 s = StereoParams.Load(0);
+r4.x += s.x * (depth - s.y) / depth / 2;
+
     r4.xyzw = t0.SampleLevel(s0_s, r4.xy, 0).xyzw;
     r2.w = 1 + -r4.x;
     r2.w = cmp(r1.z < r2.w);
@@ -202,5 +218,9 @@ void main(
   o1.xy = v2.xy;
   p1.y = 0;
   p1.x = r1.z;
+
+// Undo driver stereo correction:
+//o0.x -= s.x * (o0.w - s.y);
+
   return;
 }
