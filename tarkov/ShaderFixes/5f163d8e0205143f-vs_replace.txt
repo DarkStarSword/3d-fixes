@@ -1,0 +1,108 @@
+// 3DMigoto: 5f163d8e0205143f | Matched 4 variants of 1 shaders: Decal/DeferredDecalDiffuseNormalsDynamicEditor
+//
+//       Unity headers extracted from Decal_DeferredDecalDiffuseNormalsDynamicEditor
+//       Shader "Decal/DeferredDecalDiffuseNormalsDynamicEditor" {
+//         SubShader 1/1 {
+//           Pass 1/1 {
+//             ZWrite Off
+//             Program "vp" {
+//               SubProgram "d3d11" {
+//               }
+//             }
+//           }
+//         }
+//       }
+//
+//    Unity 5.3 headers extracted from Decal_DeferredDecalDiffuseNormalsDynamicEditor:
+//      API d3d11
+//      Shader model vs_4_0
+//      undeciphered1: 201609010 17 0 0
+//      undeciphered1a: 3
+// 4:   Keywords { "EnableEmmision" }
+// 8:   Keywords { "UNITY_HDR_ON" "EnableEmmision" }
+// 2:   Keywords { "UNITY_HDR_ON" }
+//      undeciphered2: 1 0 3 0 0 0
+//      undeciphered3: 153 4 0 0 7 8 3 4 4 5
+//      ConstBuffer "UnityPerCamera" 144
+//      Vector 80 [_ProjectionParams]
+//      ConstBuffer "UnityPerDraw" 160
+//      Matrix 0 [unity_ObjectToWorld]
+//      ConstBuffer "UnityPerFrame" 384
+//      Matrix 144 [unity_MatrixV]
+//      Matrix 272 [unity_MatrixVP]
+//      BindCB "UnityPerCamera" 0
+//      BindCB "UnityPerDraw" 1
+//      BindCB "UnityPerFrame" 2
+//
+// Headers extracted with DarkStarSword's extract_unity55_shaders.py
+// https://github.com/DarkStarSword/3d-fixes
+
+// ---- Created with 3Dmigoto v1.3.16 on Mon Jul 15 00:05:55 2019
+cbuffer cb2 : register(b2)
+{
+  float4 cb2[21];
+}
+
+cbuffer cb1 : register(b1)
+{
+  float4 cb1[4];
+}
+
+cbuffer cb0 : register(b0)
+{
+  float4 cb0[6];
+}
+
+
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : POSITION0,
+  float4 v1 : TANGENT0,
+  float4 v2 : TEXCOORD0,
+  float2 v3 : TEXCOORD1,
+  out float4 o0 : SV_POSITION0,
+  out float4 o1 : TEXCOORD2,
+  out float4 o2 : TEXCOORD3,
+  out float4 o3 : TEXCOORD0,
+  out float4 o4 : TEXCOORD1,
+  out float4 o5 : TEXCOORD6,
+  out float4 o6 : TEXCOORD4,
+  out float4 o7 : TEXCOORD5,
+  out float4 o8 : TEXCOORD7)
+{
+  float4 r0,r1,r2;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xyzw = cb1[1].xyzw * v0.yyyy;
+  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = cb1[3].xyzw + r0.xyzw;
+  r1.xyzw = cb2[18].xyzw * r0.yyyy;
+  r1.xyzw = cb2[17].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = cb2[19].xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = cb2[20].xyzw * r0.wwww + r1.xyzw;
+  o0.xyzw = r1.xyww;
+  r1.y = cb0[5].x * r1.y;
+  r2.xzw = float3(0.5,0.5,0.5) * r1.xwy;
+  o1.zw = r1.zw * float2(-1,1) + float2(1,0);
+  o1.xy = r2.xw + r2.zz;
+  r1.xyz = cb2[10].xyz * r0.yyy;
+  r1.xyz = cb2[9].xyz * r0.xxx + r1.xyz;
+  r0.xyz = cb2[11].xyz * r0.zzz + r1.xyz;
+  r0.xyz = cb2[12].xyz * r0.www + r0.xyz;
+  o2.xyz = float3(-1,-1,1) * r0.xyz;
+  o3.xy = v2.xy;
+  o3.zw = v3.xy;
+  o4.xyz = cb1[1].xyz;
+  o5.xyz = cb1[1].xyz;
+  o6.xyz = cb1[0].xyz;
+  o7.xyz = cb1[2].xyz;
+  o8.xyzw = v1.xyzw;
+  return;
+}
