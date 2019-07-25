@@ -38,19 +38,21 @@
 // https://github.com/DarkStarSword/3d-fixes
 
 // ---- Created with 3Dmigoto v1.3.16 on Mon Jul 15 00:05:55 2019
-cbuffer cb2 : register(b2)
-{
-  float4 cb2[21];
+
+// Unity constant buffers reconstructed with DarkStarSword's hlsltool.py:
+// hlsltool.py --reconstruct-unity-cbuffers --in-place 5f163d8e0205143f-vs_replace.txt
+
+cbuffer UnityPerFrame : register(b2) {
+  row_major matrix unity_MatrixV : packoffset(c9);
+  row_major matrix unity_MatrixVP : packoffset(c17);
 }
 
-cbuffer cb1 : register(b1)
-{
-  float4 cb1[4];
+cbuffer UnityPerDraw : register(b1) {
+  row_major matrix unity_ObjectToWorld : packoffset(c0);
 }
 
-cbuffer cb0 : register(b0)
-{
-  float4 cb0[6];
+cbuffer UnityPerCamera : register(b0) {
+  float4 _ProjectionParams : packoffset(c5);
 }
 
 
@@ -79,30 +81,30 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyzw = cb1[1].xyzw * v0.yyyy;
-  r0.xyzw = cb1[0].xyzw * v0.xxxx + r0.xyzw;
-  r0.xyzw = cb1[2].xyzw * v0.zzzz + r0.xyzw;
-  r0.xyzw = cb1[3].xyzw + r0.xyzw;
-  r1.xyzw = cb2[18].xyzw * r0.yyyy;
-  r1.xyzw = cb2[17].xyzw * r0.xxxx + r1.xyzw;
-  r1.xyzw = cb2[19].xyzw * r0.zzzz + r1.xyzw;
-  r1.xyzw = cb2[20].xyzw * r0.wwww + r1.xyzw;
+  r0.xyzw = unity_ObjectToWorld[1].xyzw * v0.yyyy;
+  r0.xyzw = unity_ObjectToWorld[0].xyzw * v0.xxxx + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[2].xyzw * v0.zzzz + r0.xyzw;
+  r0.xyzw = unity_ObjectToWorld[3].xyzw + r0.xyzw;
+  r1.xyzw = unity_MatrixVP[1].xyzw * r0.yyyy;
+  r1.xyzw = unity_MatrixVP[0].xyzw * r0.xxxx + r1.xyzw;
+  r1.xyzw = unity_MatrixVP[2].xyzw * r0.zzzz + r1.xyzw;
+  r1.xyzw = unity_MatrixVP[3].xyzw * r0.wwww + r1.xyzw;
   o0.xyzw = r1.xyww;
-  r1.y = cb0[5].x * r1.y;
+  r1.y = _ProjectionParams.x * r1.y;
   r2.xzw = float3(0.5,0.5,0.5) * r1.xwy;
   o1.zw = r1.zw * float2(-1,1) + float2(1,0);
   o1.xy = r2.xw + r2.zz;
-  r1.xyz = cb2[10].xyz * r0.yyy;
-  r1.xyz = cb2[9].xyz * r0.xxx + r1.xyz;
-  r0.xyz = cb2[11].xyz * r0.zzz + r1.xyz;
-  r0.xyz = cb2[12].xyz * r0.www + r0.xyz;
+  r1.xyz = unity_MatrixV[1].xyz * r0.yyy;
+  r1.xyz = unity_MatrixV[0].xyz * r0.xxx + r1.xyz;
+  r0.xyz = unity_MatrixV[2].xyz * r0.zzz + r1.xyz;
+  r0.xyz = unity_MatrixV[3].xyz * r0.www + r0.xyz;
   o2.xyz = float3(-1,-1,1) * r0.xyz;
   o3.xy = v2.xy;
   o3.zw = v3.xy;
-  o4.xyz = cb1[1].xyz;
-  o5.xyz = cb1[1].xyz;
-  o6.xyz = cb1[0].xyz;
-  o7.xyz = cb1[2].xyz;
+  o4.xyz = unity_ObjectToWorld[1].xyz;
+  o5.xyz = unity_ObjectToWorld[1].xyz;
+  o6.xyz = unity_ObjectToWorld[0].xyz;
+  o7.xyz = unity_ObjectToWorld[2].xyz;
   o8.xyzw = v1.xyzw;
   return;
 }

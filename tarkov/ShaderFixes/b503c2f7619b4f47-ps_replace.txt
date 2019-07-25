@@ -80,34 +80,42 @@ SamplerState s1_s : register(s1);
 
 SamplerState s0_s : register(s0);
 
-cbuffer cb5 : register(b5)
-{
-  float4 cb5[7];
+
+// Unity constant buffers reconstructed with DarkStarSword's hlsltool.py:
+// hlsltool.py --reconstruct-unity-cbuffers --in-place b503c2f7619b4f47-ps_replace.txt
+
+cbuffer UnityProbeVolume : register(b5) {
+  float4 unity_ProbeVolumeParams : packoffset(c0);
+  row_major matrix unity_ProbeVolumeWorldToObject : packoffset(c1);
+  float3 unity_ProbeVolumeSizeInv : packoffset(c5);
+  float3 unity_ProbeVolumeMin : packoffset(c6);
 }
 
-cbuffer cb4 : register(b4)
-{
-  float4 cb4[8];
+cbuffer UnityPerDraw : register(b4) {
+  row_major matrix unity_WorldToObject : packoffset(c4);
 }
 
-cbuffer cb3 : register(b3)
-{
-  float4 cb3[41];
+cbuffer UnityLighting : register(b3) {
+  float4 unity_SHAr : packoffset(c38);
+  float4 unity_SHAg : packoffset(c39);
+  float4 unity_SHAb : packoffset(c40);
 }
 
-cbuffer cb2 : register(b2)
-{
-  float4 cb2[22];
+cbuffer UnityPerCameraRare : register(b2) {
+  row_major matrix unity_CameraToWorld : packoffset(c18);
 }
 
-cbuffer cb1 : register(b1)
-{
-  float4 cb1[8];
+cbuffer UnityPerCamera : register(b1) {
+  float4 _ProjectionParams : packoffset(c5);
+  float4 _ZBufferParams : packoffset(c7);
 }
 
-cbuffer cb0 : register(b0)
-{
-  float4 cb0[9];
+cbuffer Globals : register(b0) {
+  float _NormalPower : packoffset(c4.y);
+  float4 _Color : packoffset(c5);
+  float4 _SpecularColor : packoffset(c6);
+  float4 _MainTex_ST : packoffset(c7);
+  float _AlphaMultiplier : packoffset(c8.w);
 }
 
 
@@ -136,21 +144,21 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.x = cb1[5].z / v2.z;
+  r0.x = _ProjectionParams.z / v2.z;
   r0.xyz = v2.xyz * r0.xxx;
   r1.xy = v1.xy / v1.ww;
   r2.xyzw = t0.Sample(s3_s, r1.xy).xyzw;
-  r0.w = cb1[7].x * r2.x + cb1[7].y;
+  r0.w = _ZBufferParams.x * r2.x + _ZBufferParams.y;
   r0.w = 1 / r0.w;
   r0.xyz = r0.xyz * r0.www;
-  r2.xyz = cb2[19].xyz * r0.yyy;
-  r0.xyw = cb2[18].xyz * r0.xxx + r2.xyz;
-  r0.xyz = cb2[20].xyz * r0.zzz + r0.xyw;
-  r0.xyz = cb2[21].xyz + r0.xyz;
-  r2.xyz = cb4[5].xyz * r0.yyy;
-  r2.xyz = cb4[4].xyz * r0.xxx + r2.xyz;
-  r2.xyz = cb4[6].xyz * r0.zzz + r2.xyz;
-  r2.xyz = cb4[7].xyz + r2.xyz;
+  r2.xyz = unity_CameraToWorld[1].xyz * r0.yyy;
+  r0.xyw = unity_CameraToWorld[0].xyz * r0.xxx + r2.xyz;
+  r0.xyz = unity_CameraToWorld[2].xyz * r0.zzz + r0.xyw;
+  r0.xyz = unity_CameraToWorld[3].xyz + r0.xyz;
+  r2.xyz = unity_WorldToObject[1].xyz * r0.yyy;
+  r2.xyz = unity_WorldToObject[0].xyz * r0.xxx + r2.xyz;
+  r2.xyz = unity_WorldToObject[2].xyz * r0.zzz + r2.xyz;
+  r2.xyz = unity_WorldToObject[3].xyz + r2.xyz;
   r3.xyz = float3(0.5,0.5,0.5) + -abs(r2.xyz);
   r4.xyz = cmp(r3.xyz < float3(0,0,0));
   r0.w = (int)r4.y | (int)r4.x;
@@ -173,9 +181,9 @@ void main(
   r2.xy = float2(0.5,0.5) * r2.xy;
   r2.zw = v8.zw + -v8.xy;
   r2.xy = r2.xy * r2.zw + v8.xy;
-  r2.xy = r2.xy * cb0[7].xy + cb0[7].zw;
+  r2.xy = r2.xy * _MainTex_ST.xy + _MainTex_ST.zw;
   r4.xyzw = t2.Sample(s1_s, r2.xy).xyzw;
-  r4.xyzw = cb0[5].xyzw * r4.xyzw;
+  r4.xyzw = _Color.xyzw * r4.xyzw;
   r2.z = r4.w * r0.w;
   r2.w = min(r3.x, r3.y);
   r2.w = min(r2.w, r3.z);
@@ -198,22 +206,22 @@ void main(
   r3.xyz = r2.xxx * v6.xyz + r3.xyz;
   r2.xyw = r2.www * v5.xyz + r3.xyz;
   o2.xyz = r2.xyw * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
-  o2.w = cb0[4].y * r2.z;
+  o2.w = _NormalPower * r2.z;
   r0.w = r2.z / r0.w;
-  o1.w = cb0[6].w * r0.w;
-  r0.w = cmp(cb5[0].x == 1.000000);
+  o1.w = _SpecularColor.w * r0.w;
+  r0.w = cmp(unity_ProbeVolumeParams.x == 1.000000);
   if (r0.w != 0) {
-    r0.w = cmp(cb5[0].y == 1.000000);
-    r2.xyw = cb5[2].xyz * r0.yyy;
-    r2.xyw = cb5[1].xyz * r0.xxx + r2.xyw;
-    r2.xyw = cb5[3].xyz * r0.zzz + r2.xyw;
-    r2.xyw = cb5[4].xyz + r2.xyw;
+    r0.w = cmp(unity_ProbeVolumeParams.y == 1.000000);
+    r2.xyw = unity_ProbeVolumeWorldToObject[1].xyz * r0.yyy;
+    r2.xyw = unity_ProbeVolumeWorldToObject[0].xyz * r0.xxx + r2.xyw;
+    r2.xyw = unity_ProbeVolumeWorldToObject[2].xyz * r0.zzz + r2.xyw;
+    r2.xyw = unity_ProbeVolumeWorldToObject[3].xyz + r2.xyw;
     r0.xyz = r0.www ? r2.xyw : r0.xyz;
-    r0.xyz = -cb5[6].xyz + r0.xyz;
-    r0.yzw = cb5[5].xyz * r0.xyz;
+    r0.xyz = -unity_ProbeVolumeMin.xyz + r0.xyz;
+    r0.yzw = unity_ProbeVolumeSizeInv.xyz * r0.xyz;
     r0.y = 0.25 * r0.y;
-    r2.x = 0.5 * cb5[0].z;
-    r2.y = -cb5[0].z * 0.5 + 0.25;
+    r2.x = 0.5 * unity_ProbeVolumeParams.z;
+    r2.y = -unity_ProbeVolumeParams.z * 0.5 + 0.25;
     r0.y = max(r2.x, r0.y);
     r0.x = min(r0.y, r2.y);
     r3.xyzw = t4.Sample(s0_s, r0.xzw).xyzw;
@@ -227,9 +235,9 @@ void main(
     r3.z = dot(r0.xyzw, r1.xyzw);
   } else {
     r1.w = 1;
-    r3.x = dot(cb3[38].xyzw, r1.xyzw);
-    r3.y = dot(cb3[39].xyzw, r1.xyzw);
-    r3.z = dot(cb3[40].xyzw, r1.xyzw);
+    r3.x = dot(unity_SHAr.xyzw, r1.xyzw);
+    r3.y = dot(unity_SHAg.xyzw, r1.xyzw);
+    r3.z = dot(unity_SHAb.xyzw, r1.xyzw);
   }
   r0.xyz = max(float3(0,0,0), r3.xyz);
   r0.xyz = log2(r0.xyz);
@@ -238,9 +246,9 @@ void main(
   r0.xyz = r0.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
   r0.xyz = max(float3(0,0,0), r0.xyz);
   o3.xyz = r4.xyz * r0.xyz;
-  o0.w = cb0[8].w * r2.z;
+  o0.w = _AlphaMultiplier * r2.z;
   o0.xyz = r4.xyz;
-  o1.xyz = cb0[6].xyz;
+  o1.xyz = _SpecularColor.xyz;
   o3.w = r2.z;
   return;
 }
