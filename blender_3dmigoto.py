@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
+# bl_info seems to be parsed as text outside of the normal module loading by
+# Blender, meaning we can't dynamically set the Blender version to indicate the
+# addon supports both Blender 2.79 and 2.80. It will still work on 2.79, just
+# with a warning.
 bl_info = {
     "name": "3DMigoto",
+    "blender": (2, 80, 0),
     "author": "Ian Munsie (darkstarsword@gmail.com)",
     "location": "File > Import-Export",
     "description": "Imports meshes dumped with 3DMigoto's frame analysis and exports meshes suitable for re-injection",
@@ -35,10 +40,74 @@ import copy
 import textwrap
 
 import bpy
-from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, orientation_helper_factory, axis_conversion
+from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, axis_conversion
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
 from mathutils import Matrix, Vector
+
+
+# In Blender 2.79 we use orientation_helper_factory / IOOBJOrientationHelper,
+# while in 2.80 we use orientation_helper. We implement both APIs in code and
+# provide dummy implementations for whichever is not available.
+try:
+    # Blender 2.80:
+    from bpy_extras.io_utils import orientation_helper
+    IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
+    import_menu = bpy.types.TOPBAR_MT_file_import
+    export_menu = bpy.types.TOPBAR_MT_file_export
+except ImportError:
+    # Blender 2.79:
+    from bpy_extras.io_utils import orientation_helper_factory
+    IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
+    class orientation_helper:
+        def __init__(self, **orientation_kwargs):
+            pass
+        def __call__(self, cls):
+            return cls
+    import_menu = bpy.types.INFO_MT_file_import
+    export_menu = bpy.types.INFO_MT_file_export
+
+# https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
+def make_annotations(cls):
+    """Converts class fields to annotations if running with Blender 2.8"""
+    if bpy.app.version < (2, 80):
+        return cls
+    bl_props = {k: v for k, v in cls.__dict__.items() if isinstance(v, tuple)}
+    if bl_props:
+        if '__annotations__' not in cls.__dict__:
+            setattr(cls, '__annotations__', {})
+        annotations = cls.__dict__['__annotations__']
+        for k, v in bl_props.items():
+            annotations[k] = v
+            delattr(cls, k)
+    return cls
+
+def select_get(object):
+    """Multi version compatibility for getting object selection"""
+    if hasattr(object, "select_get"):
+        return object.select_get()
+    else:
+        return object.select
+
+def select_set(object, state):
+    """Multi version compatibility for setting object selection"""
+    if hasattr(object, "select_set"):
+        object.select_set(state)
+    else:
+        object.select = state
+
+def set_active_object(context, obj):
+    """Get the active object in a 2.7 and 2.8 compatible way"""
+    if hasattr(context, "view_layer"):
+        context.view_layer.objects.active = obj # the 2.8 way
+    else:
+        context.scene.objects.active = obj # the 2.7 way
+    # note that `context.object` still works in 2.8 as a read-only way to get active objects
+
+############## End Blender 2.7 / 2.8 compatibility wrappers ##############
+
+
+
 
 def keys_to_ints(d):
     return {k.isdecimal() and int(k) or k:v for k,v in d.items()}
@@ -605,7 +674,9 @@ def import_normals_step2(mesh):
 
     mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
     mesh.use_auto_smooth = True # This has a double meaning, one of which is to use the custom normals
-    mesh.show_edge_sharp = True
+    # XXX CHECKME: show_edge_sharp moved in 2.80, but I can't actually
+    # recall what it does and have a feeling it was unimportant:
+    #mesh.show_edge_sharp = True
 
 def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
     assert(len(blend_indices) == len(blend_weights))
@@ -616,7 +687,7 @@ def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
         # data. Make sure the indices and names match:
         num_vertex_groups = max(itertools.chain(*itertools.chain(*blend_indices.values()))) + 1
         for i in range(num_vertex_groups):
-            obj.vertex_groups.new(str(i))
+            obj.vertex_groups.new(name=str(i))
         for vertex in mesh.vertices:
             for semantic_index in sorted(blend_indices.keys()):
                 for i, w in zip(blend_indices[semantic_index][vertex.index], blend_weights[semantic_index][vertex.index]):
@@ -640,7 +711,10 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
 
         for components in components_list:
             uv_name = 'TEXCOORD%s.%s' % (texcoord and texcoord or '', components)
-            mesh.uv_textures.new(uv_name)
+            if hasattr(mesh, 'uv_textures'): # 2.79
+                mesh.uv_textures.new(uv_name)
+            else: # 2.80
+                mesh.uv_layers.new(name=uv_name)
             blender_uvs = mesh.uv_layers[uv_name]
 
             # This will assign a texture to the UV layer, which works fine but
@@ -849,15 +923,18 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     else:
         mesh.calc_normals()
 
-    base = context.scene.objects.link(obj)
-    base.select = True
-    context.scene.objects.active = obj
+    if hasattr(context.scene, "collection"): # Blender 2.80
+        context.scene.collection.objects.link(obj)
+    else: # Blender 2.79
+        context.scene.objects.link(obj)
+    select_set(obj, True)
+    set_active_object(context, obj)
 
     if pose_path is not None:
         import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True,
                 axis_forward=axis_forward, axis_up=axis_up,
                 pose_cb_off=pose_cb_off, pose_cb_step=pose_cb_step)
-        context.scene.objects.active = obj
+        set_active_object(context, obj)
 
     return obj
 
@@ -1048,8 +1125,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # Write format reference file
     write_fmt_file(open(fmt_path, 'w'), vb, ib)
 
-IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
-
+@orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a mesh dumped with 3DMigoto's frame analysis"""
     bl_idname = "import_mesh.migoto_frame_analysis"
@@ -1193,6 +1269,7 @@ def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_
     if obj and vgmap_path:
         apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
 
+@orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import raw 3DMigoto vertex and index buffers"""
     bl_idname = "import_mesh.migoto_raw_buffers"
@@ -1352,7 +1429,7 @@ def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reve
                 if str(v) in obj.vertex_groups.keys():
                     obj.vertex_groups[str(v)].name = k
                 else:
-                    obj.vertex_groups.new(str(k))
+                    obj.vertex_groups.new(name=str(k))
         if cleanup:
             for vg in obj.vertex_groups:
                 if vg.name not in vgmap:
@@ -1506,8 +1583,8 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
 
     # Construct bones (FIXME: Position these better)
     # Must be in edit mode to add new bones
-    arm.select = True
-    context.scene.objects.active = arm
+    select_set(arm, True)
+    set_active_object(context, arm)
     bpy.ops.object.mode_set(mode='EDIT')
     for i, matrix in enumerate(matrices):
         bone = arm_data.edit_bones.new(str(i * pose_cb_step))
@@ -1528,6 +1605,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
         # Hide pose object if it was applied to another object:
         arm.hide = True
 
+@orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a pose from a 3DMigoto constant buffer dump"""
     bl_idname = "armature.migoto_pose"
@@ -1578,11 +1656,11 @@ def find_armature(obj):
 
 def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
     is_hidden = target_arm.hide
-    is_selected = target_arm.select
+    is_selected = select_get(target_arm)
     prev_active = context.scene.objects.active
     target_arm.hide = False
-    target_arm.select = True
-    context.scene.objects.active = target_arm
+    select_set(target_arm, True)
+    set_active_object(context, target_arm)
 
     bpy.ops.object.mode_set(mode='EDIT')
     bone = target_arm.data.edit_bones.new(new_name)
@@ -1592,8 +1670,8 @@ def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
     bone = target_arm.pose.bones[new_name]
     bone.matrix_basis = src_bone.matrix_basis
 
-    context.scene.objects.active = prev_active
-    target_arm.select = is_selected
+    set_active_object(context, prev_active)
+    select_set(target_arm, is_selected)
     target_arm.hide = is_hidden
 
 def merge_armatures(operator, context):
@@ -1696,23 +1774,38 @@ def menu_func_export(self, context):
 def menu_func_apply_vgmap(self, context):
     self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
 
-def register():
-    bpy.utils.register_module(__name__)
+register_classes = (
+    Import3DMigotoFrameAnalysis,
+    Import3DMigotoRaw,
+    Import3DMigotoReferenceInputFormat,
+    Export3DMigoto,
+    ApplyVGMap,
+    UpdateVGMap,
+    Import3DMigotoPose,
+    Merge3DMigotoPose,
+    DeleteNonNumericVertexGroups,
+)
 
-    bpy.types.INFO_MT_file_import.append(menu_func_import_fa)
-    bpy.types.INFO_MT_file_import.append(menu_func_import_raw)
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
-    bpy.types.INFO_MT_file_import.append(menu_func_apply_vgmap)
-    bpy.types.INFO_MT_file_import.append(menu_func_import_pose)
+def register():
+    for cls in register_classes:
+        make_annotations(cls)
+        bpy.utils.register_class(cls)
+
+    import_menu.append(menu_func_import_fa)
+    import_menu.append(menu_func_import_raw)
+    export_menu.append(menu_func_export)
+    import_menu.append(menu_func_apply_vgmap)
+    import_menu.append(menu_func_import_pose)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+    for cls in reversed(register_classes):
+        bpy.utils.unregister_class(cls)
 
-    bpy.types.INFO_MT_file_import.remove(menu_func_import_fa)
-    bpy.types.INFO_MT_file_import.remove(menu_func_import_raw)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
-    bpy.types.INFO_MT_file_import.remove(menu_func_apply_vgmap)
-    bpy.types.INFO_MT_file_import.remove(menu_func_import_pose)
+    import_menu.remove(menu_func_import_fa)
+    import_menu.remove(menu_func_import_raw)
+    export_menu.remove(menu_func_export)
+    import_menu.remove(menu_func_apply_vgmap)
+    import_menu.remove(menu_func_import_pose)
 
 if __name__ == "__main__":
     register()
