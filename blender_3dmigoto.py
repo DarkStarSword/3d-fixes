@@ -121,13 +121,25 @@ def set_active_object(context, obj):
         context.view_layer.objects.active = obj # the 2.8 way
     else:
         context.scene.objects.active = obj # the 2.7 way
-    # note that `context.object` still works in 2.8 as a read-only way to get active objects
+
+def get_active_object(context):
+    """Get the active object in a 2.7 and 2.8 compatible way"""
+    if hasattr(context, "view_layer"):
+        return context.view_layer.objects.active
+    else:
+        return context.scene.objects.active
 
 def link_object_to_scene(context, obj):
     if hasattr(context.scene, "collection"): # Blender 2.80
         context.scene.collection.objects.link(obj)
     else: # Blender 2.79
         context.scene.objects.link(obj)
+
+def unlink_object(context, obj):
+    if hasattr(context.scene, "collection"): # Blender 2.80
+        context.scene.collection.objects.unlink(obj)
+    else: # Blender 2.79
+        context.scene.objects.unlink(obj)
 
 import operator # to get function names for operators like @, +, -
 def matmul(a, b):
@@ -1079,7 +1091,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     stride = obj['3DMigoto:VBStride']
     layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
-    mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+    if hasattr(context, "evaluated_depsgraph_get"): # 2.80
+        mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
+    else: # 2.79
+        mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
     mesh_triangulate(mesh)
 
     indices = [ l.vertex_index for l in mesh.loops ]
@@ -1690,7 +1705,7 @@ def find_armature(obj):
 def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
     is_hidden = hide_get(target_arm)
     is_selected = select_get(target_arm)
-    prev_active = context.scene.objects.active
+    prev_active = get_active_object(context)
     hide_set(target_arm, False)
     select_set(target_arm, True)
     set_active_object(context, target_arm)
@@ -1759,7 +1774,7 @@ def merge_armatures(operator, context):
             if modifier.type == 'ARMATURE' and modifier.object == src_arm:
                 modifier.object = target_arm
         src_obj.parent = target_arm
-        context.scene.objects.unlink(src_arm)
+        unlink_object(context, src_arm)
 
 class Merge3DMigotoPose(bpy.types.Operator):
     """Merge identically posed bones of related armatures into one"""
