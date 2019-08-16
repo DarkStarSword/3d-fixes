@@ -53,8 +53,6 @@ try:
     # Blender 2.80:
     from bpy_extras.io_utils import orientation_helper
     IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
-    import_menu = bpy.types.TOPBAR_MT_file_import
-    export_menu = bpy.types.TOPBAR_MT_file_export
 except ImportError:
     # Blender 2.79:
     from bpy_extras.io_utils import orientation_helper_factory
@@ -64,8 +62,15 @@ except ImportError:
             pass
         def __call__(self, cls):
             return cls
+
+if bpy.app.version >= (2, 80):
+    import_menu = bpy.types.TOPBAR_MT_file_import
+    export_menu = bpy.types.TOPBAR_MT_file_export
+    vertex_color_layer_channels = 4
+else:
     import_menu = bpy.types.INFO_MT_file_import
     export_menu = bpy.types.INFO_MT_file_export
+    vertex_color_layer_channels = 3
 
 # https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
 def make_annotations(cls):
@@ -833,14 +838,17 @@ def import_vertices(mesh, vb):
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name.startswith('COLOR'):
-            if len(data[0]) <= 3:
-                mesh.vertex_colors.new(elem.name)
+            if len(data[0]) <= 3 or vertex_color_layer_channels == 4:
+                # Either a monochrome/RGB layer, or Blender 2.80 which uses 4
+                # channel layers
+                mesh.vertex_colors.new(name=elem.name)
                 color_layer = mesh.vertex_colors[elem.name].data
+                c = vertex_color_layer_channels
                 for l in mesh.loops:
-                    color_layer[l.index].color = data[l.vertex_index] + [0]*(3-len(data[l.vertex_index]))
+                    color_layer[l.index].color = list(data[l.vertex_index]) + [0]*(c-len(data[l.vertex_index]))
             else:
-                mesh.vertex_colors.new(elem.name + '.RGB')
-                mesh.vertex_colors.new(elem.name + '.A')
+                mesh.vertex_colors.new(name=elem.name + '.RGB')
+                mesh.vertex_colors.new(name=elem.name + '.A')
                 color_layer = mesh.vertex_colors[elem.name + '.RGB'].data
                 alpha_layer = mesh.vertex_colors[elem.name + '.A'].data
                 for l in mesh.loops:
@@ -974,7 +982,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             if elem.name in mesh.vertex_colors:
                 vertex[elem.name] = elem.clip(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color))
             else:
-                vertex[elem.name] = list(mesh.vertex_colors[elem.name+'.RGB'].data[blender_loop_vertex.index].color) + \
+                vertex[elem.name] = list(mesh.vertex_colors[elem.name+'.RGB'].data[blender_loop_vertex.index].color)[:3] + \
                                         [mesh.vertex_colors[elem.name+'.A'].data[blender_loop_vertex.index].color[0]]
         elif elem.name == 'NORMAL':
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
