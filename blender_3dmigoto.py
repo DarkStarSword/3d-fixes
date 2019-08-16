@@ -101,6 +101,20 @@ def select_set(object, state):
     else:
         object.select = state
 
+def hide_get(object):
+    """Multi version compatibility for getting object hidden state"""
+    if hasattr(object, "hide_get"):
+        return object.hide_get()
+    else:
+        return object.hide
+
+def hide_set(object, state):
+    """Multi version compatibility for setting object hidden state"""
+    if hasattr(object, "hide_set"):
+        object.hide_set(state)
+    else:
+        object.hide = state
+
 def set_active_object(context, obj):
     """Get the active object in a 2.7 and 2.8 compatible way"""
     if hasattr(context, "view_layer"):
@@ -108,6 +122,20 @@ def set_active_object(context, obj):
     else:
         context.scene.objects.active = obj # the 2.7 way
     # note that `context.object` still works in 2.8 as a read-only way to get active objects
+
+def link_object_to_scene(context, obj):
+    if hasattr(context.scene, "collection"): # Blender 2.80
+        context.scene.collection.objects.link(obj)
+    else: # Blender 2.79
+        context.scene.objects.link(obj)
+
+import operator # to get function names for operators like @, +, -
+def matmul(a, b):
+    """Perform matrix multiplication in a blender 2.7 and 2.8 safe way"""
+    if hasattr(bpy.app, "version") and bpy.app.version >= (2, 80):
+        return operator.matmul(a, b) # the same as writing a @ b
+    else:
+        return a * b
 
 ############## End Blender 2.7 / 2.8 compatibility wrappers ##############
 
@@ -931,10 +959,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     else:
         mesh.calc_normals()
 
-    if hasattr(context.scene, "collection"): # Blender 2.80
-        context.scene.collection.objects.link(obj)
-    else: # Blender 2.79
-        context.scene.objects.link(obj)
+    link_object_to_scene(context, obj)
     select_set(obj, True)
     set_active_object(context, obj)
 
@@ -1587,7 +1612,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
 
     conversion_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
 
-    context.scene.objects.link(arm)
+    link_object_to_scene(context, arm)
 
     # Construct bones (FIXME: Position these better)
     # Must be in edit mode to add new bones
@@ -1603,7 +1628,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
     for i, matrix in enumerate(matrices):
         bone = arm.pose.bones[str(i * pose_cb_step)]
         matrix.resize_4x4()
-        bone.matrix_basis = conversion_matrix * matrix * conversion_matrix.inverted()
+        bone.matrix_basis = matmul(matmul(conversion_matrix, matrix), conversion_matrix.inverted())
 
     # Apply pose to selected object, if any:
     if obj is not None:
@@ -1611,7 +1636,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
         mod.object = arm
         obj.parent = arm
         # Hide pose object if it was applied to another object:
-        arm.hide = True
+        hide_set(arm, True)
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
@@ -1663,10 +1688,10 @@ def find_armature(obj):
     return obj.find_armature()
 
 def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
-    is_hidden = target_arm.hide
+    is_hidden = hide_get(target_arm)
     is_selected = select_get(target_arm)
     prev_active = context.scene.objects.active
-    target_arm.hide = False
+    hide_set(target_arm, False)
     select_set(target_arm, True)
     set_active_object(context, target_arm)
 
@@ -1680,7 +1705,7 @@ def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
 
     set_active_object(context, prev_active)
     select_set(target_arm, is_selected)
-    target_arm.hide = is_hidden
+    hide_set(target_arm, is_hidden)
 
 def merge_armatures(operator, context):
     target_arm = find_armature(context.object)
