@@ -201,24 +201,40 @@ def decode_binds(file, date, headers):
         (bind_type, bind_slot) = struct.unpack('<2i', file.read(8))
 
         if bind_type == 0:
-            (texture_type, sampler_slot, zero) = struct.unpack('<2bh', file.read(4))
-            # Hmmm, could almost be a 3 byte integer, but that would be weird. Maybe just padding / stack garbage?
-            assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
+            if date >= 201802150: # 2018.3
+                # Format seems to have been rearranged in this version
+                (sampler_slot, texture_type) = struct.unpack('<2i', file.read(8))
+                texture_type = {
+                        # Looks like this has been shifted left one from the
+                        # previous version, with the low bit signifying MSAA
+                        # for 2D textures (FIXME: Check what text Unity uses
+                        # for MSAA and match output)
+                        4: '2D',
+                        5: '2D MSAA',
+                        6: '3D',
+                        8: 'CUBE',
+                        10: '2D_ARRAY', # FIXME: Check what text Unity uses and match
+                }[texture_type]
+                msaa = ''
+            else:
+                (texture_type, sampler_slot, zero) = struct.unpack('<2bh', file.read(4))
+                # Hmmm, could almost be a 3 byte integer, but that would be weird. Maybe just padding / stack garbage?
+                assert((sampler_slot >= 0 and zero == 0) or (sampler_slot == -1 and zero == -1))
 
-            msaa = ''
-            if date >= 201708220:
-                # New in 2017.3
-                msaa, = struct.unpack('<I', file.read(4))
-                assert(msaa in (0, 1)) # Is this a boolean, or an MSAA level?
-                if msaa:
-                    msaa = ' MSAA' # FIXME: Check what text Unity uses and match
+                msaa = ''
+                if date >= 201708220:
+                    # New in 2017.3
+                    msaa, = struct.unpack('<I', file.read(4))
+                    assert(msaa in (0, 1)) # Is this a boolean, or an MSAA level?
+                    if msaa:
+                        msaa = ' MSAA' # FIXME: Check what text Unity uses and match
 
-            texture_type = {
-                    2: '2D',
-                    3: '3D',
-                    4: 'CUBE',
-                    5: '2D_ARRAY', # FIXME: Check what text Unity uses and match
-            }[texture_type]
+                texture_type = {
+                        2: '2D',
+                        3: '3D',
+                        4: 'CUBE',
+                        5: '2D_ARRAY', # FIXME: Check what text Unity uses and match
+                }[texture_type]
             add_header(headers, 'SetTexture {} [{}] {} {}{}'.format(bind_slot, bind_name, texture_type, sampler_slot, msaa))
         elif bind_type == 1:
             assert(file.read(4) == b'\0\0\0\0')
@@ -476,7 +492,8 @@ def extract_shader_at(file, offset, size, filename, sub_programs, skip_classic_h
         # 201608170 = Unity 5.5
         # 201609010 = Unity 5.6, 2017.1 & 2017.2
         # 201708220 = Unity 2017.3
-        assert(date in (201509030, 201510240, 201608170, 201609010, 201708220))
+        # 201802150 = Unity 2018.3
+        assert(date in (201509030, 201510240, 201608170, 201609010, 201708220, 201802150))
         u6 = None
         if date >= 201608170: # Unity 5.5+
             (u6,) = struct.unpack('<i', file.read(4))
