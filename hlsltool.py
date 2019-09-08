@@ -1213,8 +1213,10 @@ def fix_unity_lighting_ps(shader):
     shader.add_shader_override_setting(r'%s-cb11 = Resource\ShaderFixes\unity.ini\_UnityPerDraw' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'if rt_width > rt_height')
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'endif')
 
     shader.autofixed = True
 
@@ -1248,7 +1250,7 @@ def possibly_copy_unity_matrices_common(shader):
         # tree.ini.append((None, None, 'Skipping possible matrix source - shader is a SHADOWCASTER'))
         raise
 
-def possibly_copy_unity_world_matrices(shader):
+def possibly_copy_unity_world_matrices(shader, rt_check=None):
     # Variant for pre-multiplied M and MVP matrices in UnityPerDraw
     try:
         possibly_copy_unity_matrices_common(shader)
@@ -1263,12 +1265,14 @@ def possibly_copy_unity_world_matrices(shader):
                 shader.find_unity_cb_entry(shadertool.unity_Object2World, 'matrix')
         assert(_Object2World0_offset == 192) # If this fails I need to handle the variations somehow
         assert(unity_glstate_matrix_mvp_cb == _Object2World0_cb) # If this fails I need to handle the variations somehow
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
+        if rt_check:
+            shader.add_shader_override_setting(rt_check)
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_UnityPerDraw = %s-cb%d' % (shader.shader_type, unity_glstate_matrix_mvp_cb));
         return True
     except KeyError:
         return False
 
-def possibly_copy_unity_view_matrices(shader):
+def possibly_copy_unity_view_matrices(shader, rt_check=None):
     # Unity 5.6 variant used in Subnautica - no pre-multiplied MVP matrices
     # in UnityPerDraw, instead find VP in UnityPerFrame
     # FIXME: We might need to try to blacklist post-processing effects, as this
@@ -1288,7 +1292,9 @@ def possibly_copy_unity_view_matrices(shader):
             # Has been at offset 144 in older Unity versions
             debug_verbose(0, 'FIXME: May need to adjust possibly_copy_unity_view_matrices to deal with VP matrix at different offset, if VP not otherwise available')
             return False
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerFrame = %s-cb%d' % (shader.shader_type, vp_cb));
+        if rt_check:
+            shader.add_shader_override_setting(rt_check)
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_UnityPerFrame = %s-cb%d' % (shader.shader_type, vp_cb));
         return True
     except KeyError:
         return False

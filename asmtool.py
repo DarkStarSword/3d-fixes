@@ -1113,8 +1113,10 @@ def fix_unity_lighting_ps(shader):
     shader.add_shader_override_setting(r'%s-cb10 = Resource\ShaderFixes\unity.ini\_Inverse_VP_CB' % (shader.shader_type));
 
     if has_unity_headers and _CameraDepthTexture is not None:
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
-        shader.add_shader_override_setting(r'Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'if rt_width > rt_height')
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_CameraDepthTexture = ps-%s' % _CameraDepthTexture);
+        shader.add_shader_override_setting(r'   Resource\ShaderFixes\unity.ini\_UnityPerCamera = ps-cb%d' % _ZBufferParams_cb);
+        shader.add_shader_override_setting(r'endif')
 
     shader.autofixed = True
 
@@ -1167,10 +1169,12 @@ def fix_unity_reflection(shader, fov_reg = None, _CameraToWorld = None):
             InvVPMatrix0 = 'cb10[0]',
         ))
 
-    if hlsltool.possibly_copy_unity_world_matrices(shader):
-        shader.add_shader_override_setting(r'run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_MVP')
-    if hlsltool.possibly_copy_unity_view_matrices(shader):
-        shader.add_shader_override_setting(r'run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_VP')
+    if hlsltool.possibly_copy_unity_world_matrices(shader, r'if rt_width > rt_height'):
+        shader.add_shader_override_setting(r'   run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_MVP')
+        shader.add_shader_override_setting(r'endif')
+    if hlsltool.possibly_copy_unity_view_matrices(shader, r'if rt_width > rt_height'):
+        shader.add_shader_override_setting(r'   run = CustomShader\ShaderFixes\unity.ini\_Inverse_Unity_VP')
+        shader.add_shader_override_setting(r'endif')
 
     shader.add_shader_override_setting(r'%s-cb10 = Resource\ShaderFixes\unity.ini\_Inverse_VP_CB' % (shader.shader_type));
 
