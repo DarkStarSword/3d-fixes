@@ -2,6 +2,9 @@
 
 import os, argparse, mmap, codecs, sys
 import dx11shaderanalyse, extract_unity_shaders
+import struct
+import io
+import zlib
 
 dx11shaderanalyse.verbosity = -1
 
@@ -104,8 +107,94 @@ def determine_shader_model(fp, off, header, chunk_offsets=None):
 
 processed = set()
 
-def search_file(path):
-    print('Searching %s' % path)
+def valid_dx9_target(type, major, minor):
+    if type not in ('ps', 'vs', 'fx'):
+        return False
+    if major < 1 or major > 3:
+        # XXX: Is fx_4_0 / fx_5_0 valid for DX9X?
+        return False
+    if minor > 1:
+        # XXX: Not sure what restrictions are actually in place for this
+        return False
+    return True
+
+def decode_possible_dx9_shader(fp, off):
+    fp.seek(off)
+
+    ret = io.BytesIO()
+    def remember(size):
+        buf = fp.read(size)
+        ret.write(buf)
+        return buf
+
+    minor, major, _shader_type = struct.unpack('<2BH', remember(4))
+    shader_type = {
+        0xffff: 'ps',
+        0xfffe: 'vs',
+        0x4658: 'fx',
+    }.get(_shader_type, None)
+    if not shader_type:
+        print('Invalid DX9 shader type 0x%x_%i_%i at offset 0x%x' % (_shader_type, major, minor, off))
+        return None, None
+    if not valid_dx9_target(shader_type, major, minor):
+        print('Invalid DX9 shader version %s_%i_%i at offset 0x%x' % (shader_type, major, minor, off))
+        return None, None
+    print('Possible DX9 %s_%i_%i shader at offset 0x%x' % (shader_type, major, minor, off))
+    while True:
+        opcode, data = struct.unpack('<2H', remember(4))
+        if opcode == 0xfffe: # Comment
+            ins_len = (data & 0x7fff) * 4
+            assert(not data & 0x8000) # Not sure why the high bit is masked off and want to find out
+            if dx11shaderanalyse.verbosity >= 1:
+                print("  0x%04x: %4s" % (fp.tell(), remember(4).decode('ascii')))
+                remember(ins_len - 4)
+            else:
+                remember(ins_len)
+        elif opcode == 0xffff: # End
+            assert(data in (0, 0xffff))
+            return shader_type, ret
+        else:
+            ins_len = (data & 0x000f) * 4
+            remember(ins_len)
+
+def search_file_dx9(path):
+    print('Searching %s for DX9 shaders...' % path)
+    with open(path, 'rb') as fp:
+        off = -1
+        while True:
+            # DX9 shaders lack magic bytes signifying their start. Instead we
+            # search for "CTAB" signifying the start of the embedded constant
+            # table. This may fail for shaders that have debug information
+            # (CTAB is preceeded by DBUG) or lack a constant table entirely.
+            off = stream_search(fp, b'CTAB', off + 1)
+            if off == -1:
+                return
+            try:
+                shader_type, bytecode = decode_possible_dx9_shader(fp, off-8)
+                if shader_type:
+                    bytecode = bytecode.getvalue()
+                    hash = zlib.crc32(bytecode)
+                    #print('  shader_type: %s, hash=%08x, size=%i' % (shader_type, hash, len(bytecode)))
+                    dir = os.path.join('ShaderOverride', {
+                        'vs': 'VertexShaders',
+                        'ps': 'PixelShaders',
+                        'fx': 'FXShaders', # Not supported by Helix Mod?
+                    }[shader_type])
+                    try: os.mkdir('ShaderOverride')
+                    except IOError: pass
+                    try: os.mkdir(dir)
+                    except IOError: pass
+                    path = os.path.join(dir, '%08x.bin' % hash)
+                    print('  Extracting %s...' % path)
+                    open(path, 'wb').write(bytecode)
+                    # TODO: Disassemble shader
+
+            except Exception as e:
+                print_parse_error(e, 'while parsing possible shader')
+                continue
+
+def search_file_dx11(path):
+    print('Searching %s for DX11 shaders...' % path)
     with open(path, 'rb') as fp:
         off = -1
         while True:
@@ -175,20 +264,32 @@ def search_file(path):
                 print_parse_error(e, 'while parsing possible shader')
                 continue
 
+def search_file(path):
+    if args.dx9:
+        return search_file_dx9(path)
+    search_file_dx11(path)
+
 args = None
 def parse_args():
     global args, crcmod
     parser = argparse.ArgumentParser(description = 'Generic Shader Extraction Tool')
     parser.add_argument('paths', nargs='*',
             help='List of files or directories to search for shader binaries')
-    parser.add_argument('--hash', choices=['embedded', '3dmigoto', 'bytecode'], required=True)
+    parser.add_argument('--hash', choices=['embedded', '3dmigoto', 'bytecode'])
     parser.add_argument('--blacklist', action='append', default=[],
             help='Skip these file or directory names')
     parser.add_argument('--only-bin', action='store_true',
             help='Do not disassemble or decompile extracted shaders')
     parser.add_argument('--skip-hash-check', action='store_true',
             help='Do not verify the embedded hash in each shader. Faster, but may extract some garbage')
+    parser.add_argument('--dx9', action='store_true',
+            help='Search for DX9 shaders instead of DX11 shaders (EXPERIMENTAL!!!)')
     args = parser.parse_args()
+
+    if args.dx9 and not args.hash:
+        args.hash = 'crc32'
+    if not args.hash:
+        parser.error('Error: Must specify hash type, e.g. --hash=3dmigoto')
 
     try:
         import crcmod
