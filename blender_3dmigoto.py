@@ -849,15 +849,24 @@ def import_vertices(mesh, vb):
         if elem.InputSlotClass != 'per-vertex':
             continue
 
+        # TODO: Allow poorly named semantics to map to other meanings to be
+        # properly interpreted. This still needs to be added to the GUI, and
+        # mapped back on export. Alternatively, you can alter the input
+        # assembler layout format in the vb*.txt / *.fmt files prior to import.
+        semantic_translations = {
+            #'ATTRIBUTE': 'POSITION', # UE4
+        }
+        translated_elem_name = semantic_translations.get(elem.name, elem.name)
+
         # Discard elements that reuse offsets in the vertex buffer, e.g. COLOR
         # and some TEXCOORDs may be aliases of POSITION:
         if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
-            assert(elem.name != 'POSITION')
+            assert(translated_elem_name != 'POSITION')
             continue
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         data = tuple( x[elem.name] for x in vb.vertices )
-        if elem.name == 'POSITION':
+        if translated_elem_name == 'POSITION':
             # Ensure positions are 3-dimensional:
             if len(data[0]) == 4:
                 if ([x[3] for x in data] != [1.0]*len(data)):
@@ -877,7 +886,7 @@ def import_vertices(mesh, vb):
                     vertex_layers['POSITION.w'] = [[x[3]] for x in data]
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
-        elif elem.name.startswith('COLOR'):
+        elif translated_elem_name.startswith('COLOR'):
             if len(data[0]) <= 3 or vertex_color_layer_channels == 4:
                 # Either a monochrome/RGB layer, or Blender 2.80 which uses 4
                 # channel layers
@@ -894,21 +903,21 @@ def import_vertices(mesh, vb):
                 for l in mesh.loops:
                     color_layer[l.index].color = data[l.vertex_index][:3]
                     alpha_layer[l.index].color = [data[l.vertex_index][3], 0, 0]
-        elif elem.name == 'NORMAL':
+        elif translated_elem_name == 'NORMAL':
             use_normals = True
             import_normals_step1(mesh, data)
-        elif elem.name in ('TANGENT', 'BINORMAL'):
+        elif translated_elem_name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
         #    for l in mesh.loops:
         #        assert(data[l.vertex_index][3] in (1.0, -1.0))
         #        l.tangent[:] = data[l.vertex_index][0:3]
             print('NOTICE: Skipping import of %s in favour of recalculating on export' % elem.name)
-        elif elem.name.startswith('BLENDINDICES'):
+        elif translated_elem_name.startswith('BLENDINDICES'):
             blend_indices[elem.SemanticIndex] = data
-        elif elem.name.startswith('BLENDWEIGHT'):
+        elif translated_elem_name.startswith('BLENDWEIGHT'):
             blend_weights[elem.SemanticIndex] = data
-        elif elem.name.startswith('TEXCOORD') and elem.is_float():
+        elif translated_elem_name.startswith('TEXCOORD') and elem.is_float():
             texcoords[elem.SemanticIndex] = data
         else:
             print('NOTICE: Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
