@@ -800,7 +800,7 @@ def import_vertex_layers(mesh, obj, vertex_layers):
                 layer_name = element_name
 
             if type(data[0][0]) == int:
-                mesh.vertex_layers_int.new(layer_name)
+                mesh.vertex_layers_int.new(name=layer_name)
                 layer = mesh.vertex_layers_int[layer_name]
                 for v in mesh.vertices:
                     val = data[v.index][component]
@@ -812,7 +812,7 @@ def import_vertex_layers(mesh, obj, vertex_layers):
                     else:
                         layer.data[v.index].value = struct.unpack('i', struct.pack('I', val))[0]
             elif type(data[0][0]) == float:
-                mesh.vertex_layers_float.new(layer_name)
+                mesh.vertex_layers_float.new(name=layer_name)
                 layer = mesh.vertex_layers_float[layer_name]
                 for v in mesh.vertices:
                     layer.data[v.index].value = data[v.index][component]
