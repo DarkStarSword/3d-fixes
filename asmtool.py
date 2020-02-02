@@ -2053,7 +2053,6 @@ def fix_wd2_lens_grit(shader, param):
 
         shader.autofixed = True
 
-
 def parse_args():
     global args
 
@@ -2073,6 +2072,8 @@ def parse_args():
             help='Save the shader to a file')
     parser.add_argument('--in-place', action='store_true',
             help='Overwrite the file in-place')
+    parser.add_argument('--original', action='store_true',
+            help="Look for the original shader from Dumps/AllDumps and work as though it had been specified instead")
 
     parser.add_argument('--auto-fix-vertex-halo', action='store_true',
             help="Attempt to automatically fix a vertex shader for common halo type issues")
@@ -2148,6 +2149,10 @@ def main():
     shadertool.expand_wildcards(args)
     success = False
     for file in args.files:
+        real_file = file
+        if args.original:
+            file = hlsltool.find_original_shader(file)
+
         debug_verbose(-2, 'parsing %s...' % file)
         shader = ASMShader(file)
 
@@ -2208,10 +2213,6 @@ def main():
                 traceback.print_exc()
                 continue
             raise
-
-        real_file = file
-        #if args.original:
-        #    file = find_original_shader(file)
 
         if not args.only_autofixed or shader.autofixed:
             if args.output:

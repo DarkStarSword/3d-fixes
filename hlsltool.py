@@ -1589,6 +1589,16 @@ def install_shader(shader, file, args):
 
     return install_shader_to(shader, file, args, gamedir)
 
+def find_original_shader(file):
+    import glob
+    game_dir = find_game_dir(file)
+    pattern = 'ShaderCache/%s' % file
+    pattern = os.path.join(game_dir, pattern)
+    files = glob.glob(pattern)
+    if not files:
+        raise OSError('Unable to find original shader for %s: %s not found' % (file, pattern))
+    return files[0]
+
 def parse_args():
     global args
 
@@ -1608,6 +1618,8 @@ def parse_args():
             help='Save the shader to a file')
     parser.add_argument('--in-place', action='store_true',
             help='Overwrite the file in-place')
+    parser.add_argument('--original', action='store_true',
+            help="Look for the original shader from Dumps/AllDumps and work as though it had been specified instead")
 
     parser.add_argument('--fxc',
             help='Path to fxc to validate that the shader compiles')
@@ -1655,6 +1667,10 @@ def main():
     parse_args()
     shadertool.expand_wildcards(args)
     for file in args.files:
+        real_file = file
+        if args.original:
+            file = find_original_shader(file)
+
         debug_verbose(-2, 'parsing %s...' % file)
         shader = HLSLShader(file)
 
@@ -1679,10 +1695,6 @@ def main():
                 traceback.print_exc()
                 continue
             raise
-
-        real_file = file
-        #if args.original:
-        #    file = find_original_shader(file)
 
         if not args.only_autofixed or shader.autofixed:
             if args.output:
