@@ -11,7 +11,7 @@ shader_type_mapping = {
      4: (None, "gles3",  "version 300 es"),
      5: (None, "gles",   "version 100"),
      6: (None, "glcore", "version 150"),
-     # 7: ???
+     7: (None, "glcore", "version 410"), # Seen in Battle Tech Hidden/QT-ImposterRender
      8: (None, "glcore", "version 420"), # Seen in Subnautica Hidden/Post FX/Eye Adaptation
 
      9: ("vp", "d3d9", "vs_2_0"),
