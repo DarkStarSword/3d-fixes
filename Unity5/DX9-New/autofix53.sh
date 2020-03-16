@@ -7,6 +7,7 @@ DIR="$(readlink -f "$(dirname $0)/../..")"
 # EXTRACT=0 ~/3d-fixes/Unity5/DX9-New/autofix53.sh
 [ -z "$EXTRACT" ]        && EXTRACT=1
 [ -z "$CLEANUP" ]        && CLEANUP=1
+[ -z "$COPY_TEMPLATE" ]  && COPY_TEMPLATE=1
 [ -z "$UPDATE_INI" ]     && UPDATE_INI=1
 
 [ -z "$FIX_LIGHTING" ]   && FIX_LIGHTING=1
@@ -28,6 +29,7 @@ update_ini()
 if [ $EXTRACT -eq 1 ]; then
 	unity_asset_extractor.py *_Data/Resources/* *_Data/*.assets
 	cd extracted
+
 	extract_unity53_shaders.py */*.shader.decompressed --type=d3d9
 	cd ShaderCRCs
 elif [ -d extracted/ShaderCRCs ]; then
@@ -36,6 +38,10 @@ fi
 
 if [ $CLEANUP -eq 1 ]; then
 	cleanup_unity_shaders.py ../..
+fi
+
+if [ $COPY_TEMPLATE -eq 1 ]; then
+	cp -vrT "$DIR/Unity5/DX9-New/ShaderOverride" ../../ShaderOverride
 fi
 
 if [ $FIX_LIGHTING -eq 1 ]; then

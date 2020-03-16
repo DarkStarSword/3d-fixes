@@ -13,7 +13,6 @@ DIR="$(readlink -f "$(dirname $0)/../..")"
 [ -z "$UPDATE_INI" ]     && UPDATE_INI=1
 
 [ -z "$FIX_LIGHTING" ]   && FIX_LIGHTING=1
-[ -z "$FIX_SUN_SHAFTS" ] && FIX_SUN_SHAFTS=1
 [ -z "$FIX_HALO" ]       && FIX_HALO=1
 [ -z "$FIX_REFLECTION" ] && FIX_REFLECTION=1
 
@@ -53,7 +52,7 @@ if [ $CLEANUP -eq 1 ]; then
 fi
 
 if [ $COPY_TEMPLATE -eq 1 ]; then
-	cp -vrT "$DIR/Unity5/DX9-New/ShaderOverride53" ../../ShaderOverride
+	cp -vrT "$DIR/Unity5/DX9-New/ShaderOverride" ../../ShaderOverride
 fi
 
 if [ $FIX_LIGHTING -eq 1 ]; then
