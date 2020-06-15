@@ -191,6 +191,27 @@ Update v2.2
 -----------
 - Updated costume mod for compatibility with DMM version 2019-04-25 update
 
+Update v2.3
+-----------
+Special thanks to KuroKaze78 for finding the updated shader hashes :)
+
+- Updated costume mod + 3D Vision compatibility for DMM 2020-06-11 update
+- Includes KuroKaze78's d3dx.ini updates:
+	- Includes additional shaders in the d3dx.ini so that fewer mods should
+	  require manual additions to this file
+	- Hair + fingernail mod support is now enabled out of the box
+	- Support for environment mods added
+	- desktop.ini files now ignored
+- \_id is now included for mods that depend on it
+- Includes support for dumping full size (1920x1080) decobromide images in the
+  frame analysis UI profile
+
+Note that because extra shaders are now included in the base d3dx.ini you may
+get some conflict warnings with certain mods. These warnings are mostly
+harmless, but can usually be resolved by updating the mods listed in the
+warning, or editing their ini files to remove the indicated ShaderOverride
+section.
+
 Known Issues (3D Vision Users Only)
 -----------------------------------
 The news and Gacha probabilities windows and certain text boxes are blank while
