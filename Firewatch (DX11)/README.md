@@ -60,23 +60,22 @@ nvidia control panel to output checkerboard to remove the 720p limitation.
 
 Like my Work?
 -------------
-Fixing games takes a lot of time and effort, and I am currently otherwise
-unemployed largely due to my ongoing [battle with mental health issues][1].
+Fixing games takes a lot of time and effort, and I also do a lot of work on
+3DMigoto behind the scenes to make all of these mods possible.
 
 If you are in a position where you are able to do so, please consider
-[supporting me with a monthly donation on Patreon][2], and thanks again to
+[supporting me with a monthly donation on Patreon][1], and thanks again to
 those that already do! While I prefer the more stable monthly support that
 Patreon offers, I can of course understand that some of you prefer to make
-one-off donations when you can, and for that you can use [my Paypal][3]. As a
+one-off donations when you can, and for that you can use [my Paypal][2]. As a
 reminder, these donations are to support me personally, and do not go to other
 modders on this site.
 
-[1]: https://forums.geforce.com/default/topic/1000942/3d-vision/where-has-darkstarsword-been-/
-[2]: https://www.patreon.com/DarkStarSword
-[3]: https://www.paypal.me/DarkStarSword
+[1]: https://www.patreon.com/DarkStarSword
+[2]: https://www.paypal.me/DarkStarSword
 
 _This mod is created with 3DMigoto (primarily written by myself, Bo3b and
-Chiri), and uses Flugan's Assembler. See [here][4] for a full list of
+Chiri), and uses Flugan's Assembler. See [here][3] for a full list of
 contributors to 3DMigoto_
 
-[4]: https://darkstarsword.net/3Dmigoto-stats/authors.html
+[3]: https://darkstarsword.net/3Dmigoto-stats/authors.html
