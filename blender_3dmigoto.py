@@ -687,10 +687,10 @@ def load_3dmigoto_mesh(operator, paths):
 def import_normals_step1(mesh, data):
     # Ensure normals are 3-dimensional:
     # XXX: Assertion triggers in DOA6
-    if len(data[0]) == 4:
-        if [x[3] for x in data] != [0.0]*len(data):
-            raise Fatal('Normals are 4D')
-    normals = [(x[0], x[1], x[2]) for x in data]
+    #if len(data[0]) == 4:
+     #   if [x[3] for x in data] != [0.0]*len(data):
+      #      raise Fatal('Normals are 4D')
+    normals = [(x[0], x[1], x[2], x[3]) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
     # or mesh.update() we need to set custom normals in the loops, not
