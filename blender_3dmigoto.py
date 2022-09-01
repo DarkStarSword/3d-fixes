@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-# bl_info seems to be parsed as text outside of the normal module loading by
-# Blender, meaning we can't dynamically set the Blender version to indicate the
-# addon supports both Blender 2.79 and 2.80. It will still work on 2.79, just
-# with a warning.
+# Updated to Blender 2.93
 bl_info = {
     "name": "3DMigoto",
-    "blender": (2, 80, 0),
+    "blender": (2, 93, 0),
     "author": "Ian Munsie (darkstarsword@gmail.com)",
     "location": "File > Import-Export",
     "description": "Imports meshes dumped with 3DMigoto's frame analysis and exports meshes suitable for re-injection",
@@ -45,38 +42,18 @@ from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
 from mathutils import Matrix, Vector
 
+############## Begin (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
 
-# In Blender 2.79 we use orientation_helper_factory / IOOBJOrientationHelper,
-# while in 2.80 we use orientation_helper. We implement both APIs in code and
-# provide dummy implementations for whichever is not available.
-try:
-    # Blender 2.80:
-    from bpy_extras.io_utils import orientation_helper
-    IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
-except ImportError:
-    # Blender 2.79:
-    from bpy_extras.io_utils import orientation_helper_factory
-    IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='-Z', axis_up='Y')
-    class orientation_helper:
-        def __init__(self, **orientation_kwargs):
-            pass
-        def __call__(self, cls):
-            return cls
+from bpy_extras.io_utils import orientation_helper
+IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
 
-if bpy.app.version >= (2, 80):
-    import_menu = bpy.types.TOPBAR_MT_file_import
-    export_menu = bpy.types.TOPBAR_MT_file_export
-    vertex_color_layer_channels = 4
-else:
-    import_menu = bpy.types.INFO_MT_file_import
-    export_menu = bpy.types.INFO_MT_file_export
-    vertex_color_layer_channels = 3
+import_menu = bpy.types.TOPBAR_MT_file_import
+export_menu = bpy.types.TOPBAR_MT_file_export
+vertex_color_layer_channels = 4
 
 # https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
 def make_annotations(cls):
-    """Converts class fields to annotations if running with Blender 2.8"""
-    if bpy.app.version < (2, 80):
-        return cls
+    """Converts class fields to annotations"""
     bl_props = {k: v for k, v in cls.__dict__.items() if isinstance(v, tuple)}
     if bl_props:
         if '__annotations__' not in cls.__dict__:
@@ -88,68 +65,34 @@ def make_annotations(cls):
     return cls
 
 def select_get(object):
-    """Multi version compatibility for getting object selection"""
-    if hasattr(object, "select_get"):
-        return object.select_get()
-    else:
-        return object.select
+    return object.select_get()
 
 def select_set(object, state):
-    """Multi version compatibility for setting object selection"""
-    if hasattr(object, "select_set"):
-        object.select_set(state)
-    else:
-        object.select = state
+    object.select_set(state)
 
 def hide_get(object):
-    """Multi version compatibility for getting object hidden state"""
-    if hasattr(object, "hide_get"):
-        return object.hide_get()
-    else:
-        return object.hide
+    return object.hide_get()
 
 def hide_set(object, state):
-    """Multi version compatibility for setting object hidden state"""
-    if hasattr(object, "hide_set"):
-        object.hide_set(state)
-    else:
-        object.hide = state
+    object.hide_set(state)
 
 def set_active_object(context, obj):
-    """Get the active object in a 2.7 and 2.8 compatible way"""
-    if hasattr(context, "view_layer"):
-        context.view_layer.objects.active = obj # the 2.8 way
-    else:
-        context.scene.objects.active = obj # the 2.7 way
+    context.view_layer.objects.active = obj # the 2.8 way
 
 def get_active_object(context):
-    """Get the active object in a 2.7 and 2.8 compatible way"""
-    if hasattr(context, "view_layer"):
-        return context.view_layer.objects.active
-    else:
-        return context.scene.objects.active
+    return context.view_layer.objects.active
 
 def link_object_to_scene(context, obj):
-    if hasattr(context.scene, "collection"): # Blender 2.80
-        context.scene.collection.objects.link(obj)
-    else: # Blender 2.79
-        context.scene.objects.link(obj)
+    context.scene.collection.objects.link(obj)
 
 def unlink_object(context, obj):
-    if hasattr(context.scene, "collection"): # Blender 2.80
-        context.scene.collection.objects.unlink(obj)
-    else: # Blender 2.79
-        context.scene.objects.unlink(obj)
+    context.scene.collection.objects.unlink(obj)
 
 import operator # to get function names for operators like @, +, -
 def matmul(a, b):
-    """Perform matrix multiplication in a blender 2.7 and 2.8 safe way"""
-    if hasattr(bpy.app, "version") and bpy.app.version >= (2, 80):
-        return operator.matmul(a, b) # the same as writing a @ b
-    else:
-        return a * b
+    return operator.matmul(a, b) # the same as writing a @ b
 
-############## End Blender 2.7 / 2.8 compatibility wrappers ##############
+############## End (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
 
 
 
@@ -1190,47 +1133,47 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.txt'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.txt',
             options={'HIDDEN'},
             )
 
-    files = CollectionProperty(
+    files: CollectionProperty(
             name="File Path",
             type=bpy.types.OperatorFileListElement,
             )
 
-    flip_texcoord_v = BoolProperty(
+    flip_texcoord_v: BoolProperty(
             name="Flip TEXCOORD V",
             description="Flip TEXCOORD V asix during importing",
             default=True,
             )
 
-    load_related = BoolProperty(
+    load_related: BoolProperty(
             name="Auto-load related meshes",
             description="Automatically load related meshes found in the frame analysis dump",
             default=True,
             )
 
-    load_buf = BoolProperty(
+    load_buf: BoolProperty(
             name="Load .buf files instead",
             description="Load the mesh from the binary .buf dumps instead of the .txt files\nThis will load the entire mesh as a single object instead of separate objects from each draw call",
             default=False,
             )
 
-    merge_meshes = BoolProperty(
+    merge_meshes: BoolProperty(
             name="Merge meshes together",
             description="Merge all selected meshes together into one object. Meshes must be related",
             default=False,
             )
 
-    pose_cb = StringProperty(
+    pose_cb: StringProperty(
             name="Bone CB",
             description='Indicate a constant buffer slot (e.g. "vs-cb2") containing the bone matrices',
             default="",
             )
 
-    pose_cb_off = bpy.props.IntVectorProperty(
+    pose_cb_off: bpy.props.IntVectorProperty(
             name="Bone CB range",
             description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
             default=[0,0],
@@ -1238,7 +1181,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             min=0,
             )
 
-    pose_cb_step = bpy.props.IntProperty(
+    pose_cb_step: bpy.props.IntProperty(
             name="Vertex group step",
             description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
             default=1,
@@ -1335,17 +1278,17 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
     bl_options = {'UNDO'}
 
     filename_ext = '.vb;.ib'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.vb;*.ib',
             options={'HIDDEN'},
             )
 
-    files = CollectionProperty(
+    files: CollectionProperty(
             name="File Path",
             type=bpy.types.OperatorFileListElement,
             )
 
-    flip_texcoord_v = BoolProperty(
+    flip_texcoord_v: BoolProperty(
             name="Flip TEXCOORD V",
             description="Flip TEXCOORD V asix during importing",
             default=True,
@@ -1399,7 +1342,7 @@ class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
     bl_options = {'UNDO', 'INTERNAL'}
 
     filename_ext = '.txt;.fmt'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.txt;*.fmt',
             options={'HIDDEN'},
             )
@@ -1440,7 +1383,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
 
     filename_ext = '.vb'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.vb',
             options={'HIDDEN'},
             )
@@ -1524,36 +1467,36 @@ class ApplyVGMap(bpy.types.Operator, ImportHelper):
     bl_options = {'UNDO'}
 
     filename_ext = '.vgmap'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.vgmap',
             options={'HIDDEN'},
             )
 
-    #commit = BoolProperty(
+    #commit: BoolProperty(
     #        name="Commit to current mesh",
     #        description="Directly alters the vertex groups of the current mesh, rather than performing the mapping at export time",
     #        default=False,
     #        )
 
-    rename = BoolProperty(
+    rename: BoolProperty(
             name="Rename existing vertex groups",
             description="Rename existing vertex groups to match the vgmap file",
             default=True,
             )
 
-    cleanup = BoolProperty(
+    cleanup: BoolProperty(
             name="Remove non-listed vertex groups",
             description="Remove any existing vertex groups that are not listed in the vgmap file",
             default=False,
             )
 
-    reverse = BoolProperty(
+    reverse: BoolProperty(
             name="Swap from & to",
             description="Switch the order of the vertex group map - if this mesh is the 'to' and you want to use the bones in the 'from'",
             default=False,
             )
 
-    suffix = StringProperty(
+    suffix: StringProperty(
             name="Suffix",
             description="Suffix to add to the vertex buffer filename when exporting, for bulk exports of a single mesh with multiple distinct vertex group maps",
             default='',
@@ -1577,7 +1520,7 @@ class UpdateVGMap(bpy.types.Operator):
     bl_label = "Assign new 3DMigoto vertex groups"
     bl_options = {'UNDO'}
 
-    vg_step = bpy.props.IntProperty(
+    vg_step: bpy.props.IntProperty(
             name="Vertex group step",
             description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
             default=1,
@@ -1670,18 +1613,18 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
     bl_options = {'UNDO'}
 
     filename_ext = '.txt'
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default='*.txt',
             options={'HIDDEN'},
             )
 
-    limit_bones_to_vertex_groups = BoolProperty(
+    limit_bones_to_vertex_groups: BoolProperty(
             name="Limit Bones to Vertex Groups",
             description="Limits the maximum number of bones imported to the number of vertex groups of the active object",
             default=True,
             )
 
-    pose_cb_off = bpy.props.IntVectorProperty(
+    pose_cb_off: bpy.props.IntVectorProperty(
             name="Bone CB range",
             description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
             default=[0,0],
@@ -1689,7 +1632,7 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
             min=0,
             )
 
-    pose_cb_step = bpy.props.IntProperty(
+    pose_cb_step: bpy.props.IntProperty(
             name="Vertex group step",
             description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
             default=1,
