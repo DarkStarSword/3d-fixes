@@ -303,13 +303,16 @@ class InputLayout(object):
     def __getitem__(self, semantic):
         return self.elems[semantic]
 
-    def encode(self, vertex, stride):
+    def encode(self, vertex, vbuf_idx, stride):
         buf = bytearray(stride)
 
         for semantic, data in vertex.items():
             if semantic.startswith('~'):
                 continue
             elem = self.elems[semantic]
+            if vbuf_idx.isnumeric() and elem.InputSlot != int(vbuf_idx):
+                # Belongs to a different vertex buffer
+                continue
             data = elem.encode(data)
             buf[elem.AlignedByteOffset:elem.AlignedByteOffset + len(data)] = data
 
@@ -364,6 +367,7 @@ class IndividualVertexBuffer(object):
             if line.startswith('vertex count:'):
                 self.vertex_count = int(line[14:])
             if line.startswith('stride:'):
+                # FIXME: multi vertex buffer strides
                 self.stride = int(line[7:])
             if line.startswith('element['):
                 self.layout.parse_element(f)
@@ -502,15 +506,17 @@ class VertexBufferGroup(object):
                 if semantic.startswith('BLENDINDICES'):
                     vertex[semantic] = (0, 0, 0, 0)
 
-    def write(self, output, operator=None):
-        for vertex in self.vertices:
-            output.write(self.layout.encode(vertex))
+    def write(self, output_prefix, strides, operator=None):
+        for vbuf_idx, stride in strides.items():
+            with open(output_prefix + vbuf_idx, 'wb') as output:
+                for vertex in self.vertices:
+                    output.write(self.layout.encode(vertex, vbuf_idx, stride))
 
-        msg = 'Wrote %i vertices to %s' % (len(self), output.name)
-        if operator:
-            operator.report({'INFO'}, msg)
-        else:
-            print(msg)
+                msg = 'Wrote %i vertices to %s' % (len(self), output.name)
+                if operator:
+                    operator.report({'INFO'}, msg)
+                else:
+                    print(msg)
 
     def __len__(self):
         return len(self.vertices)
@@ -1103,8 +1109,12 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
 
     return vertex
 
-def write_fmt_file(f, vb, ib):
-    f.write('stride: %i\n' % vb.layout.stride)
+def write_fmt_file(f, vb, ib, strides):
+    for vbuf_idx, stride in strides.items():
+        if vbuf_idx.isnumeric():
+            f.write('vb%s stride: %i\n' % (vbuf_idx, stride))
+        else:
+            f.write('stride: %i\n' % stride)
     f.write('topology: %s\n' % vb.topology)
     if ib is not None:
         f.write('format: %s\n' % ib.format)
@@ -1116,9 +1126,8 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     if obj is None:
         raise Fatal('No object selected')
 
-    # FIXME: Per-vertex buffer strides
-    stride = obj['3DMigoto:VBStride']
-    layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
+    strides = {x[11:-6]: obj[x] for x in obj.keys() if x.startswith('3DMigoto:VB') and x.endswith('Stride')}
+    layout = InputLayout(obj['3DMigoto:VBLayout'])
     if hasattr(context, "evaluated_depsgraph_get"): # 2.80
         mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
     else: # 2.79
@@ -1180,7 +1189,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
     if '' not in vgmaps:
-        vb.write(open(vb_path, 'wb'), operator=operator)
+        vb.write(vb_path, strides, operator=operator)
 
     base, ext = os.path.splitext(vb_path)
     for (suffix, vgmap) in vgmaps.items():
@@ -1190,7 +1199,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         vgmap_path = os.path.splitext(path)[0] + '.vgmap'
         print('Exporting %s...' % path)
         vb.remap_blendindices(obj, vgmap)
-        vb.write(open(path, 'wb'), operator=operator)
+        vb.write(path, strides, operator=operator)
         vb.revert_blendindices_remap()
         sorted_vgmap = collections.OrderedDict(sorted(vgmap.items(), key=lambda x:x[1]))
         json.dump(sorted_vgmap, open(vgmap_path, 'w'), indent=2)
@@ -1199,7 +1208,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         ib.write(open(ib_path, 'wb'), operator=operator)
 
     # Write format reference file
-    write_fmt_file(open(fmt_path, 'w'), vb, ib)
+    write_fmt_file(open(fmt_path, 'w'), vb, ib, strides)
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
