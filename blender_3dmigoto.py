@@ -319,9 +319,12 @@ class InputLayout(object):
         assert(len(buf) == stride)
         return buf
 
-    def decode(self, buf):
+    def decode(self, buf, vbuf_idx):
         vertex = {}
         for elem in self.elems.values():
+            if elem.InputSlot != vbuf_idx:
+                # Belongs to a different vertex buffer
+                continue
             data = buf[elem.AlignedByteOffset:elem.AlignedByteOffset + elem.size()]
             vertex[elem.name] = elem.decode(data)
         return vertex
@@ -358,6 +361,7 @@ class IndividualVertexBuffer(object):
             self.parse_vb_txt(f, load_vertices)
 
     def parse_vb_txt(self, f, load_vertices):
+        split_vb_stride = 'vb%i stride:' % self.idx
         for line in map(str.strip, f):
             # print(line)
             if line.startswith('byte offset:'):
@@ -367,8 +371,9 @@ class IndividualVertexBuffer(object):
             if line.startswith('vertex count:'):
                 self.vertex_count = int(line[14:])
             if line.startswith('stride:'):
-                # FIXME: multi vertex buffer strides
                 self.stride = int(line[7:])
+            if line.startswith(split_vb_stride):
+                self.stride = int(line[len(split_vb_stride):])
             if line.startswith('element['):
                 self.layout.parse_element(f)
             if line.startswith('topology:'):
@@ -388,13 +393,13 @@ class IndividualVertexBuffer(object):
     def parse_vb_bin(self, f):
         f.seek(self.offset)
         # XXX: Should we respect the first/base vertex?
-        # f.seek(self.first * self.layout.stride, whence=1)
+        # f.seek(self.first * self.stride, whence=1)
         self.first = 0
         while True:
-            vertex = f.read(self.layout.stride)
+            vertex = f.read(self.stride)
             if not vertex:
                 break
-            self.vertices.append(self.layout.decode(vertex))
+            self.vertices.append(self.layout.decode(vertex, self.idx))
         # We intentionally disregard the vertex count when loading from a
         # binary file, as we assume frame analysis might have only dumped a
         # partial buffer to the .txt files (e.g. if this was from a dump where
@@ -436,7 +441,7 @@ class VertexBufferGroup(object):
     All the per-vertex data, which may be loaded/saved from potentially
     multiple individual vertex buffers with different semantics in each.
     '''
-    vb_idx_pattern = re.compile(r'''-vb([0-9]+)''')
+    vb_idx_pattern = re.compile(r'''[-\.]vb([0-9]+)''')
 
     # Python gotcha - do not set layout=InputLayout() in the default function
     # parameters, as they would all share the *same* InputLayout since the
@@ -474,8 +479,24 @@ class VertexBufferGroup(object):
             assert(len(self.vertices) == self.vertex_count)
 
     def parse_vb_bin(self, files):
-        # FIXME TODO
-        pass
+        for (bin_f, fmt_f) in files:
+            match = self.vb_idx_pattern.search(bin_f)
+            if match is None:
+                raise Fatal('Cannot determine vertex buffer index from filename %s' % bin_f)
+            idx = int(match.group(1))
+            vb = IndividualVertexBuffer(idx, open(fmt_f, 'r'), self.layout, False)
+            vb.parse_vb_bin(open(bin_f, 'rb'))
+            if vb.vertices:
+                self.vbs.append(vb)
+                self.slots.add(idx)
+
+        # Non buffer specific info:
+        self.first = self.vbs[0].first
+        self.vertex_count = self.vbs[0].vertex_count
+        self.topology = self.vbs[0].topology
+
+        self.merge_vbs(self.vbs)
+        assert(len(self.vertices) == self.vertex_count)
 
     def append(self, vertex):
         self.vertices.append(vertex)
@@ -656,18 +677,17 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
 
     # Loading from binary files, but still need to use the .txt files as a
     # reference for the format:
-    vb_bin_path, vb_txt_path = vb_paths[0]
     ib_bin_path, ib_txt_path = ib_paths[0]
 
-    vb = VertexBufferGroup(vb_txt_path, load_vertices=False)
-    vb.parse_vb_bin(open(vb_bin_path, 'rb'))
+    vb = VertexBufferGroup()
+    vb.parse_vb_bin(vb_paths[0])
 
     ib = None
     if ib_paths:
         ib = IndexBuffer(open(ib_txt_path, 'r'), load_indices=False)
         ib.parse_ib_bin(open(ib_bin_path, 'rb'))
 
-    return vb, ib, os.path.basename(vb_bin_path), pose_path
+    return vb, ib, os.path.basename(vb_paths[0][0][0]), pose_path
 
 def load_3dmigoto_mesh(operator, paths):
     vb_paths, ib_paths, use_bin, pose_path = zip(*paths)
@@ -1349,7 +1369,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         return {'FINISHED'}
 
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, vgmap_path=None, **kwargs):
-    paths = ((((vb_path, vb_fmt_path),), (ib_path, ib_fmt_path), True, None),)
+    paths = ((list(zip(vb_path, [vb_fmt_path]*len(vb_path))), (ib_path, ib_fmt_path), True, None),)
     obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
     if obj and vgmap_path:
         apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
@@ -1364,7 +1384,7 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
 
     filename_ext = '.vb;.ib'
     filter_glob: StringProperty(
-            default='*.vb;*.ib',
+            default='*.vb*;*.ib',
             options={'HIDDEN'},
             )
 
@@ -1380,12 +1400,12 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
             )
 
     def get_vb_ib_paths(self, filename):
-        vb_bin_path = os.path.splitext(filename)[0] + '.vb'
+        vb_bin_path = glob(os.path.splitext(filename)[0] + '.vb*')
         ib_bin_path = os.path.splitext(filename)[0] + '.ib'
         fmt_path = os.path.splitext(filename)[0] + '.fmt'
         vgmap_path = os.path.splitext(filename)[0] + '.vgmap'
-        if not os.path.exists(vb_bin_path):
-            raise Fatal('Unable to find matching .vb file for %s' % filename)
+        if len(vb_bin_path) < 1:
+            raise Fatal('Unable to find matching .vb* file(s) for %s' % filename)
         if not os.path.exists(ib_bin_path):
             raise Fatal('Unable to find matching .ib file for %s' % filename)
         if not os.path.exists(fmt_path):
@@ -1407,9 +1427,9 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         for filename in self.files:
             try:
                 (vb_path, ib_path, fmt_path, vgmap_path) = self.get_vb_ib_paths(os.path.join(dirname, filename.name))
-                if os.path.normcase(vb_path) in done:
+                if os.path.normcase(ib_path) in done:
                     continue
-                done.add(os.path.normcase(vb_path))
+                done.add(os.path.normcase(ib_path))
 
                 if fmt_path is not None:
                     import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, vgmap_path=vgmap_path, **migoto_raw_import_options)
@@ -1467,15 +1487,15 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
     bl_idname = "export_mesh.migoto"
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
 
-    filename_ext = '.vb'
+    filename_ext = '.vb0'
     filter_glob: StringProperty(
-            default='*.vb',
+            default='*.vb*',
             options={'HIDDEN'},
             )
 
     def execute(self, context):
         try:
-            vb_path = self.filepath
+            vb_path = os.path.splitext(self.filepath)[0] + '.vb'
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
             fmt_path = os.path.splitext(vb_path)[0] + '.fmt'
 
