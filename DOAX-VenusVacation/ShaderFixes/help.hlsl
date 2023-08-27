@@ -15,6 +15,7 @@ StructuredBuffer<TextParameters> params : register(t114);
 static float2 cur_pos;
 // static float4 resolution;
 #define resolution IniParams[0].xy
+#define effective_dpi IniParams[0].z
 static float2 char_size;
 static int2 meta_pos_start;
 
@@ -42,6 +43,17 @@ struct cs2gs {
 	uint len;
 	float2 pos;
 };
+
+float dpi_scaling()
+{
+	// 96 is the "effective" DPI reported for 100% scaling (or to DPI unaware
+	// applications), but since Windows actually defaults to 125% scaling at
+	// 1080p I regard 96*1.25=120 as a better basis... and indeed on a 4K
+	// display using 120 as the basis the font size closely matches what it
+	// would have been on 1080p display without DPI scaling.
+	//return effective_dpi <= 96 ? 1.0 : effective_dpi / 96;
+	return effective_dpi <= 120 ? 1.0 : effective_dpi / 120;
+}
 
 float2 get_char_dimensions(uint c)
 {
@@ -79,7 +91,7 @@ RWStructuredBuffer<cs2gs> textpos : register(u0);
 void main()
 {
 	get_meta();
-	float2 char_dim = char_size.xy / resolution.xy * 2 * params[0].font_scale;
+	float2 char_dim = char_size.xy / resolution.xy * 2 * params[0].font_scale * dpi_scaling();
 	uint pos;
 	uint c;
 	uint gs = 1;
@@ -105,7 +117,7 @@ void main()
 			space_x = cur_pos.x;
 		}
 
-		cur_pos.x += get_char_dimensions(c).x / resolution.x * 2 * params[0].font_scale;
+		cur_pos.x += get_char_dimensions(c).x / resolution.x * 2 * params[0].font_scale * dpi_scaling();
 
 		// FIXME: Refactor
 
@@ -273,7 +285,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 
 	if (c >= ' ' && c < 0x7f) {
 		gs2ps output;
-		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * params[0].font_scale;
+		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * params[0].font_scale * dpi_scaling();
 		float texture_x_percent = cdim.x / char_size.x;
 
 		texcoord.x = (c % 16) * char_size.x;
@@ -296,7 +308,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	}
 
 	// Increment current position taking specific character width into account:
-	cur_pos.x += cdim.x / resolution.x * 2 * params[0].font_scale;
+	cur_pos.x += cdim.x / resolution.x * 2 * params[0].font_scale * dpi_scaling();
 }
 
 // Using a macro for this because a function requires us to know the size of the buffer
@@ -443,7 +455,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 	get_meta();
 	uint idx = input[0].idx;
-	float2 char_dim = char_size.xy / resolution.xy * 2 * params[0].font_scale;
+	float2 char_dim = char_size.xy / resolution.xy * 2 * params[0].font_scale * dpi_scaling();
 	float4 r = params[0].rect;
 
 	// Anchor the text & rectangle as requested. This will also resize the
