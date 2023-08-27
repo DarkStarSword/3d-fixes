@@ -24,7 +24,10 @@ static int2 meta_pos_start;
 #define TEXCOORD2_BIAS 4096 /* * font_scale */
 
 // dictated by 1024 / sizeof(gs2ps) / 4
-#define CHARS_PER_INVOCATION 64
+// XXX: Why does this need to be lower in geo-11?
+//      Test case: DOAXVV F1 full help text
+//#define CHARS_PER_INVOCATION 64 // 3DMigoto places no restriction
+#define CHARS_PER_INVOCATION 51 // geo-11 has to be lower... why?
 
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
