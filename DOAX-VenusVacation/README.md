@@ -230,7 +230,7 @@ the semicolon) the line that reads:
 
     run = CustomShader3DVision2SBS
 
-Then, in game press F11 to cycle output modes. If using 3D TV Play, set the
+Then, in game press F5 to cycle output modes. If using 3D TV Play, set the
 nvidia control panel to output checkerboard to remove the 720p limitation.
 
 Like my Work?
