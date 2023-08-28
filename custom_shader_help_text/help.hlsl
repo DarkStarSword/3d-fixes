@@ -15,6 +15,7 @@ StructuredBuffer<TextParameters> params : register(t114);
 static float2 cur_pos;
 // static float4 resolution;
 #define resolution IniParams[0].xy
+static float2 font_size;
 static float2 char_size;
 static int2 meta_pos_start;
 
@@ -28,6 +29,7 @@ static int2 meta_pos_start;
 #define CHARS_PER_INVOCATION 51 // geo-11 has to be lower... why?
 
 Texture2D<float> font : register(t100);
+SamplerState font_sampler : register(s0);
 Texture1D<float4> IniParams : register(t120);
 Texture2D<float4> StereoParams : register(t125);
 
@@ -224,6 +226,11 @@ void main()
 
 void pack_texcoord(inout gs2ps output, float2 texcoord)
 {
+	// Convert from Load() coorinate to Sample() coord. Half pixel avoids
+	// sampling a sliver from adjacent characters:
+	float2 half_pixel = float2(0, 0.5);
+	texcoord = (texcoord + half_pixel) / font_size;
+
 	// Packs one coordinate of the texcoord into the SV_Position Z to give
 	// us room for a few extra characters per geometry shader invocation.
 	// Requires 'depth_clip_enable = false' in the d3dx.ini
@@ -263,7 +270,8 @@ void get_meta()
 	//resolution = StereoParams.Load(int3(2, 0, 0));
 
 	font.GetDimensions(font_width, font_height);
-	char_size = float2(font_width, font_height) / float2(16, 6);
+	font_size = float2(font_width, font_height);
+	char_size = font_size / float2(16, 6);
 
 	meta_pos_start = float2(15 * char_size.x, 5 * char_size.y);
 }
@@ -493,7 +501,9 @@ void main(gs2ps input, out float4 o0 : SV_Target0)
 
 	if (texcoord.x == -1)
 		o0 = params[0].background;
-	else
-		o0.xyzw = font.Load(int3(texcoord, 0)) * params[0].colour;
+	else {
+		//o0.xyzw = font.Load(int3(texcoord, 0)) * params[0].colour;
+		o0.xyzw = font.Sample(font_sampler, texcoord) * params[0].colour;
+	}
 }
 #endif
