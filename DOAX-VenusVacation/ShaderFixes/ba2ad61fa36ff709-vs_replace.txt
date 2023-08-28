@@ -52,10 +52,34 @@ cbuffer skinning_matrix_block : register(b2)
 }
 
 
+// Injected
+cbuffer gGlobalParam : register(b13)
+{
+  float4 gHemisphereDir[2] : packoffset(c0);
+  float4 gHemisphereSkyColor[2] : packoffset(c2);
+  float4 gHemisphereGroundColor[2] : packoffset(c4);
+  float4 gDirectionalLightDir[6] : packoffset(c6);
+  float4 gDirectionalLightColor[6] : packoffset(c12);
+  row_major float4x4 gInvProjection : packoffset(c18);
+  row_major float4x4 gInvView : packoffset(c22);
+  row_major float4x4 gViewToShadow : packoffset(c26);
+  row_major float4x4 gViewToHairShadow : packoffset(c30);
+  float4 gScreen2proj : packoffset(c34);
+  float4 gScreenSize : packoffset(c35);
+  float4 gInvViewY : packoffset(c36);
+  float4 gShadowCsVectorAndHairTexSize : packoffset(c37);
+  float4 gShadowDensityFactor[2] : packoffset(c38);
+  float4 gShadowDotDensityFactor[2] : packoffset(c40);
+  uint4 gNumLight : packoffset(c42);
+}
+
 
 // 3Dmigoto declarations
 #define cmp -
+Texture1D<float4> IniParams : register(t120);
+Texture2D<float4> StereoParams : register(t125);
 
+#include "matrix.hlsl"
 
 void main(
   float4 v0 : POSITION0,
@@ -254,15 +278,47 @@ void main(
   r5.xyz = r2.zxy * r1.yzx;
   r5.xyz = r1.xyz * r2.xyz + -r5.xyz;
   r5.xyz = v6.www * r5.xyz;
-  r6.xyz = gViewMatrix._m10_m11_m12 * r2.zzz;
-  r2.yzw = r2.yyy * gViewMatrix._m00_m01_m02 + r6.xyz;
-  r3.xyz = r2.xxx * gViewMatrix._m20_m21_m22 + r2.yzw;
-  r2.xyz = gViewMatrix._m10_m11_m12 * r5.yyy;
-  r2.xyz = r5.xxx * gViewMatrix._m00_m01_m02 + r2.xyz;
-  r4.xyz = r5.zzz * gViewMatrix._m20_m21_m22 + r2.xyz;
-  r2.xyz = gViewMatrix._m10_m11_m12 * r1.xxx;
-  r2.xyz = r1.zzz * gViewMatrix._m00_m01_m02 + r2.xyz;
-  r0.xyz = r1.yyy * gViewMatrix._m20_m21_m22 + r2.xyz;
+
+float4 s = StereoParams.Load(0);
+float separation = s.x;
+float convergence = s.y;
+
+float4x4 p = inverse(gInvProjection);
+
+  //r6.xyz = gViewMatrix._m10_m11_m12 * r2.zzz;
+  //r2.yzw = r2.yyy * gViewMatrix._m00_m01_m02 + r6.xyz;
+  //r3.xyz = r2.xxx * gViewMatrix._m20_m21_m22 + r2.yzw;
+  r3.xyz = mul(r2.yzx, gViewMatrix);
+
+  float4 tmp;
+  tmp = mul(float4(r3.xyz, 1), p);
+  // Using 1 in place of depth may be a fudge factor
+  tmp.x += separation * (1 - convergence);// * IniParams[7].x;// * 100;
+  tmp = mul(tmp, gInvProjection);
+  r3.xyz = tmp.xyz / tmp.w;
+
+  //r2.xyz = gViewMatrix._m10_m11_m12 * r5.yyy;
+  //r2.xyz = r5.xxx * gViewMatrix._m00_m01_m02 + r2.xyz;
+  //r4.xyz = r5.zzz * gViewMatrix._m20_m21_m22 + r2.xyz;
+  r4 = mul(r5.xyz, gViewMatrix);
+
+  tmp = mul(float4(r4.xyz, 1), p);
+  // Using 1 in place of depth may be a fudge factor
+  tmp.x += separation * (1 - convergence);// * IniParams[7].x;// * 100;
+  tmp = mul(tmp, gInvProjection);
+  r4.xyz = tmp.xyz / tmp.w;
+
+  //r2.xyz = gViewMatrix._m10_m11_m12 * r1.xxx;
+  //r2.xyz = r1.zzz * gViewMatrix._m00_m01_m02 + r2.xyz;
+  //r0.xyz = r1.yyy * gViewMatrix._m20_m21_m22 + r2.xyz;
+  r0.xyz = mul(r1.zxy, gViewMatrix);
+
+  tmp = mul(float4(r0.xyz, 1), p);
+  // Using 1 in place of depth may be a fudge factor
+  tmp.x += separation * (1 - convergence);// * IniParams[7].x;// * 100;
+  tmp = mul(tmp, gInvProjection);
+  r0.xyz = tmp.xyz / tmp.w;
+
   r2.xyzw = gUVOffset0.xyzw + v2.xyzw;
   r5.xyzw = gUVOffset1.xyzw + v3.xyzw;
   r6.xyzw = gUVOffset2.xyzw + v4.xyzw;
@@ -272,9 +328,11 @@ void main(
   o2.xyz = gUseInputVertexColor ? v1.xyz : float3(1,1,1);
   o1.w = dot(r1.zxy, gShadowVector.xyz);
   o1.xyz = float3(0,0,0);
+
   o6.xyzw = r3.xyzw;
   o7.xyzw = r4.xyzw;
   o8.xyzw = r0.xyzw;
+
   return;
 }
 
