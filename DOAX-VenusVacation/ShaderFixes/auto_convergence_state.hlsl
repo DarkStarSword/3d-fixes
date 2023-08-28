@@ -13,6 +13,8 @@
 #define prev_auto_convergence_enabled IniParams[4].x
 #define auto_convergence_enabled IniParams[4].y
 #define no_z_buffer IniParams[4].z
+#define effective_dpi IniParams[4].w
+#define resolution IniParams[5].xy
 
 struct auto_convergence_state {
 	float4 last_convergence;

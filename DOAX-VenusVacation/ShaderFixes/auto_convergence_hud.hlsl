@@ -3,7 +3,7 @@ static const float3 colour = float3(0.25, 1, 0.25);
 
 static const float font_scale = 1.0;
 static float2 cur_pos;
-static float4 resolution;
+//static float4 resolution;
 static float2 char_size;
 static int2 meta_pos_start;
 
@@ -63,12 +63,23 @@ void get_meta()
 {
 	float font_width, font_height;
 
-	resolution = StereoParams.Load(int3(2, 0, 0));
+	//resolution = StereoParams.Load(int3(2, 0, 0));
 
 	font.GetDimensions(font_width, font_height);
 	char_size = float2(font_width, font_height) / float2(16, 6);
 
 	meta_pos_start = float2(15 * char_size.x, 5 * char_size.y);
+}
+
+float dpi_scaling()
+{
+	// 96 is the "effective" DPI reported for 100% scaling (or to DPI unaware
+	// applications), but since Windows actually defaults to 125% scaling at
+	// 1080p I regard 96*1.25=120 as a better basis... and indeed on a 4K
+	// display using 120 as the basis the font size closely matches what it
+	// would have been on 1080p display without DPI scaling.
+	//return effective_dpi <= 96 ? 1.0 : effective_dpi / 96;
+	return effective_dpi <= 120 ? 1.0 : effective_dpi / 120;
 }
 
 float2 get_char_dimensions(uint c)
@@ -93,7 +104,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 
 	if (c >= ' ' && c < 0x7f) {
 		gs2ps output;
-		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale;
+		float2 dim = float2(cdim.x, char_size.y) / resolution.xy * 2 * font_scale * dpi_scaling();
 		float texture_x_percent = cdim.x / char_size.x;
 
 		texcoord.x = (c % 16) * char_size.x;
@@ -116,7 +127,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	}
 
 	// Increment current position taking specific character width into account:
-	cur_pos.x += cdim.x / resolution.x * 2 * font_scale;
+	cur_pos.x += cdim.x / resolution.x * 2 * font_scale * dpi_scaling();
 }
 
 // Using a macro for this because a function requires us to know the size of the buffer
@@ -245,7 +256,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 {
 	get_meta();
 	uint idx = input[0].idx;
-	float char_height = char_size.y / resolution.y * 2 * font_scale;
+	float char_height = char_size.y / resolution.y * 2 * font_scale * dpi_scaling();
 
 	cur_pos = float2(-1, -1 + char_height);
 
