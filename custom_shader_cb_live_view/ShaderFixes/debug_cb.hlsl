@@ -12,10 +12,11 @@ static int2 meta_pos_start;
 
 Texture2D<float> font : register(t100);
 Texture1D<float4> IniParams : register(t120);
-Texture2D<float4> StereoParams : register(t121);
+Texture2D<float4> StereoParams : register(t125);
 
 #define rt_size IniParams[0].xy
 #define cb13_bound IniParams[0].z
+#define effective_dpi IniParams[0].w
 
 struct vs2gs {
 	uint idx : TEXCOORD0;
@@ -77,6 +78,17 @@ void get_meta()
 	meta_pos_start = float2(15 * char_size.x, 5 * char_size.y);
 }
 
+float dpi_scaling()
+{
+	// 96 is the "effective" DPI reported for 100% scaling (or to DPI unaware
+	// applications), but since Windows actually defaults to 125% scaling at
+	// 1080p I regard 96*1.25=120 as a better basis... and indeed on a 4K
+	// display using 120 as the basis the font size closely matches what it
+	// would have been on 1080p display without DPI scaling.
+	//return effective_dpi <= 96 ? 1.0 : effective_dpi / 96;
+	return effective_dpi <= 120 ? 1.0 : effective_dpi / 120;
+}
+
 float2 get_char_dimensions(uint c)
 {
 	float2 meta_pos;
@@ -101,7 +113,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	// background of the text you will need to change the > to a >= here
 	if (c > ' ' && c < 0x7f) {
 		gs2ps output;
-		float2 dim = float2(cdim.x, char_size.y) / rt_size.xy * 2 * font_scale;
+		float2 dim = float2(cdim.x, char_size.y) / rt_size.xy * 2 * font_scale * dpi_scaling();
 		float texture_x_percent = cdim.x / char_size.x;
 
 		texcoord.x = (c % 16) * char_size.x;
@@ -124,7 +136,7 @@ void emit_char(uint c, inout TriangleStream<gs2ps> ostream)
 	}
 
 	// Increment current position taking specific character width into account:
-	cur_pos.x += cdim.x / rt_size.x * 2 * font_scale;
+	cur_pos.x += cdim.x / rt_size.x * 2 * font_scale * dpi_scaling();
 }
 
 // Using a macro for this because a function requires us to know the size of the buffer
@@ -255,8 +267,8 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	uint idx = input[0].idx;
 	float4 cval = cb13[idx];
 	uint4 ival = asint(cb13[idx]);
-	float char_height = char_size.y / rt_size.y * 2 * font_scale;
-	int max_y = rt_size.y / char_size.y * font_scale;
+	float char_height = char_size.y / rt_size.y * 2 * font_scale * dpi_scaling();
+	int max_y = rt_size.y / char_size.y * font_scale * dpi_scaling();
 	uint t113len, t114len, t115len;
 	bool use_int = false;
 
