@@ -481,9 +481,11 @@ class VertexBufferGroup(object):
     def parse_vb_bin(self, files):
         for (bin_f, fmt_f) in files:
             match = self.vb_idx_pattern.search(bin_f)
-            if match is None:
-                raise Fatal('Cannot determine vertex buffer index from filename %s' % bin_f)
-            idx = int(match.group(1))
+            if match is not None:
+                idx = int(match.group(1))
+            else:
+                print('Cannot determine vertex buffer index from filename %s, assuming 0 for backwards compatibility' % bin_f)
+                idx = 0
             vb = IndividualVertexBuffer(idx, open(fmt_f, 'r'), self.layout, False)
             vb.parse_vb_bin(open(bin_f, 'rb'))
             if vb.vertices:
