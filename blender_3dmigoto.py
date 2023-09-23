@@ -15,11 +15,9 @@ bl_info = {
 # - Option to reduce vertices on import to simplify mesh (can be noticeably lossy)
 # - Option to untesselate triangles on import?
 # - Operator to generate vertex group map
-# - Operator to set current pose from a constant buffer dump
 # - Generate bones, using vertex groups to approximate position
 #   - And maybe orientation & magnitude, but I'll have to figure out some funky
 #     maths to have it follow the mesh like a cylinder
-# - Add support for games using multiple VBs per mesh, e.g. Witcher 3
 # - Test in a wider variety of games
 # - Handle TANGENT better on both import & export?
 
@@ -786,10 +784,14 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
         dim = len(data[0])
         if dim == 4:
             components_list = ('xy', 'zw')
+        elif dim == 3:
+            components_list = ('xy', 'z')
         elif dim == 2:
             components_list = ('xy',)
+        elif dim == 1:
+            components_list = ('x',)
         else:
-            raise Fatal('Unhandled TEXCOORD dimension: %i' % dim)
+            raise Fatal('Unhandled TEXCOORD%s dimension: %i' % (texcoord, dim))
         cmap = {'x': 0, 'y': 1, 'z': 2, 'w': 3}
 
         for components in components_list:
@@ -814,16 +816,19 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
 
             # Can't find an easy way to flip the display of V in Blender, so
             # add an option to flip it on import & export:
-            if flip_texcoord_v:
-                flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
+            if (len(components) % 2 == 1):
+                # 1D or 3D TEXCOORD, save in a UV layer with V=0
+                translate_uv = lambda u: (u[0], 0)
+            elif flip_texcoord_v:
+                translate_uv = lambda uv: (uv[0], 1.0 - uv[1])
                 # Record that V was flipped so we know to undo it when exporting:
                 obj['3DMigoto:' + uv_name] = {'flip_v': True}
             else:
-                flip_uv = lambda uv: uv
+                translate_uv = lambda uv: uv
 
             uvs = [[d[cmap[c]] for c in components] for d in data]
             for l in mesh.loops:
-                blender_uvs.data[l.index].uv = flip_uv(uvs[l.vertex_index])
+                blender_uvs.data[l.index].uv = translate_uv(uvs[l.vertex_index])
 
 # This loads unknown data from the vertex buffers as vertex layers
 def import_vertex_layers(mesh, obj, vertex_layers):
@@ -1110,6 +1115,12 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
                 if uv_name in texcoords:
                     uvs += list(texcoords[uv_name][blender_loop_vertex.index])
+            # Handle 1D + 3D TEXCOORDs. Order is important - 1D TEXCOORDs won't
+            # match anything in above loop so only .x below, 3D TEXCOORDS will
+            # have processed .xy part above, and .z part below
+            for uv_name in ('%s.x' % elem.name, '%s.z' % elem.name):
+                if uv_name in texcoords:
+                    uvs += [texcoords[uv_name][blender_loop_vertex.index].x]
             vertex[elem.name] = uvs
         else:
             # Unhandled semantics are saved in vertex layers
