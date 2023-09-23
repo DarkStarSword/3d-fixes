@@ -720,12 +720,14 @@ def load_3dmigoto_mesh(operator, paths):
 
     return vb, ib, os.path.basename(vb_paths[0][0]), pose_path
 
-def import_normals_step1(mesh, data):
+def import_normals_step1(mesh, data, vertex_layers, operator):
     # Ensure normals are 3-dimensional:
     # XXX: Assertion triggers in DOA6
     if len(data[0]) == 4:
         if [x[3] for x in data] != [0.0]*len(data):
-            raise Fatal('Normals are 4D')
+            #raise Fatal('Normals are 4D')
+            operator.report({'WARNING'}, 'Normals are 4D, storing W coordinate in NORMAL.w vertex layer. Beware that some types of edits on this mesh may be problematic.')
+            vertex_layers['NORMAL.w'] = [[x[3]] for x in data]
     normals = [(x[0], x[1], x[2]) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
@@ -878,7 +880,7 @@ def import_faces_from_vb(mesh, vb):
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
     mesh.polygons.foreach_set('loop_total', [3] * num_faces)
 
-def import_vertices(mesh, vb):
+def import_vertices(mesh, vb, operator):
     mesh.vertices.add(len(vb.vertices))
 
     seen_offsets = set()
@@ -920,19 +922,18 @@ def import_vertices(mesh, vb):
             # Ensure positions are 3-dimensional:
             if len(data[0]) == 4:
                 if ([x[3] for x in data] != [1.0]*len(data)):
-                    # XXX: Leaving this fatal error in for now, as the meshes
-                    # it triggers on in DOA6 (skirts) lie about almost every
-                    # semantic and we cannot import them with this version of
-                    # the script regardless. Comment it out if you want to try
-                    # importing anyway and preserving the W coordinate in a
-                    # vertex group. It might also be possible to project this
-                    # back into 3D if we assume the coordinates are homogeneous
-                    # (i.e. divide XYZ by W), but that might be assuming too
-                    # much for a generic script.
-                    raise Fatal('Positions are 4D')
-                    # Occurs in some meshes in DOA6, such as skirts.
-                    # W coordinate must be preserved in these cases.
-                    print('Positions are 4D, storing W coordinate in POSITION.w vertex layer')
+                    # XXX: There is a 4th dimension in the position, which may
+                    # be some artibrary custom data, or maybe something weird
+                    # is going on like using Homogeneous coordinates in a
+                    # vertex buffer. The meshes this triggers on in DOA6
+                    # (skirts) lie about almost every semantic and we cannot
+                    # import them with this version of the script regardless.
+                    # But perhaps in some cases it might still be useful to be
+                    # able to import as much as we can and just preserve this
+                    # unknown 4th dimension to export it later or have a game
+                    # specific script perform some operations on it - so we
+                    # store it in a vertex layer and warn the modder.
+                    operator.report({'WARNING'}, 'Positions are 4D, storing W coordinate in POSITION.w vertex layer. Beware that some types of edits on this mesh may be problematic.')
                     vertex_layers['POSITION.w'] = [[x[3]] for x in data]
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
@@ -955,14 +956,14 @@ def import_vertices(mesh, vb):
                     alpha_layer[l.index].color = [data[l.vertex_index][3], 0, 0]
         elif translated_elem_name == 'NORMAL':
             use_normals = True
-            import_normals_step1(mesh, data)
+            import_normals_step1(mesh, data, vertex_layers, operator)
         elif translated_elem_name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
         #    for l in mesh.loops:
         #        assert(data[l.vertex_index][3] in (1.0, -1.0))
         #        l.tangent[:] = data[l.vertex_index][0:3]
-            print('NOTICE: Skipping import of %s in favour of recalculating on export' % elem.name)
+            operator.report({'INFO'}, 'Skipping import of %s in favour of recalculating on export' % elem.name)
         elif translated_elem_name.startswith('BLENDINDICES'):
             blend_indices[elem.SemanticIndex] = data
         elif translated_elem_name.startswith('BLENDWEIGHT'):
@@ -970,7 +971,7 @@ def import_vertices(mesh, vb):
         elif translated_elem_name.startswith('TEXCOORD') and elem.is_float():
             texcoords[elem.SemanticIndex] = data
         else:
-            print('NOTICE: Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
+            operator.report({'INFO'}, 'Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
             vertex_layers[elem.name] = data
 
     return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals)
@@ -1012,7 +1013,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     else:
         import_faces_from_vb(mesh, vb)
 
-    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb)
+    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
 
@@ -1082,7 +1083,11 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                 vertex[elem.name] = list(mesh.vertex_colors[elem.name+'.RGB'].data[blender_loop_vertex.index].color)[:3] + \
                                         [mesh.vertex_colors[elem.name+'.A'].data[blender_loop_vertex.index].color[0]]
         elif elem.name == 'NORMAL':
-            vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
+            if 'NORMAL.w' in mesh.vertex_layers_float:
+                vertex[elem.name] = list(blender_loop_vertex.normal) + \
+                                        [mesh.vertex_layers_float['NORMAL.w'].data[blender_loop_vertex.vertex_index].value]
+            else:
+                vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
         elif elem.name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
