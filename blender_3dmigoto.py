@@ -1016,6 +1016,8 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
+    if not texcoords:
+        operator.report({'WARNING'}, '{}: No TEXCOORDs / UV layers imported. This may cause issues with normals/tangents/lighting on export.'.format(mesh.name))
 
     import_vertex_layers(mesh, obj, vertex_layers)
 
@@ -1183,7 +1185,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     # Calculates tangents and makes loop normals valid (still with our
     # custom normal data from import time):
-    mesh.calc_tangents()
+    try:
+        mesh.calc_tangents()
+    except RuntimeError as e:
+        operator.report({'WARNING'}, 'Tangent calculation failed, the exported mesh may have bad normals/tangents/lighting. Original {}'.format(str(e)))
 
     texcoord_layers = {}
     for uv_layer in mesh.uv_layers:
