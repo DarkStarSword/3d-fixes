@@ -683,7 +683,7 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     vb.parse_vb_bin(vb_paths[0])
 
     ib = None
-    if ib_paths:
+    if ib_bin_path:
         ib = IndexBuffer(open(ib_txt_path, 'r'), load_indices=False)
         ib.parse_ib_bin(open(ib_bin_path, 'rb'))
 
@@ -711,7 +711,7 @@ def load_3dmigoto_mesh(operator, paths):
     #vb.write(open(os.path.join(os.path.dirname(vb_paths[0]), 'TEST.vb'), 'wb'), operator=operator)
 
     ib = None
-    if ib_paths:
+    if ib_paths and ib_paths != (None,):
         ib = IndexBuffer(open(ib_paths[0], 'r'))
         # Merge additional vertex buffers for meshes split over multiple draw calls:
         for ib_path in ib_paths[1:]:
@@ -1178,7 +1178,6 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         ib_format = obj['3DMigoto:IBFormat']
     except KeyError:
         ib = None
-        raise Fatal('FIXME: Add capability to export without an index buffer')
     else:
         ib = IndexBuffer(ib_format)
 
@@ -1212,17 +1211,21 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # via the index buffer. There might be a convenience function in
     # Blender to do this, but it's easy enough to do this ourselves
     indexed_vertices = collections.OrderedDict()
+    vb = VertexBufferGroup(layout=layout)
     for poly in mesh.polygons:
         face = []
         for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
-            face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
+            if ib is not None:
+                face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
+            else:
+                vb.append(vertex)
         if ib is not None:
             ib.append(face)
 
-    vb = VertexBufferGroup(layout=layout)
-    for vertex in indexed_vertices:
-        vb.append(vertex)
+    if ib is not None:
+        for vertex in indexed_vertices:
+            vb.append(vertex)
 
     vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
@@ -1363,8 +1366,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 except IndexError:
                     pass
 
-            if len(ib_paths) != 1:
+            if len(ib_paths) > 1:
                 raise Fatal('Error: excess index buffers in dump?')
+            elif len(ib_paths) == 0:
+                name = os.path.basename(vb_paths[0])
+                self.report({'WARNING'}, '{}: No index buffer present, support for this case is highly experimental'.format(name))
+                ib_paths = [None]
             ret.add((tuple(vb_paths), ib_paths[0], use_bin, pose_path))
         return ret
 
@@ -1425,7 +1432,7 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         if len(vb_bin_path) < 1:
             raise Fatal('Unable to find matching .vb* file(s) for %s' % filename)
         if not os.path.exists(ib_bin_path):
-            raise Fatal('Unable to find matching .ib file for %s' % filename)
+            ib_bin_path = None
         if not os.path.exists(fmt_path):
             fmt_path = None
         if not os.path.exists(vgmap_path):
@@ -1445,9 +1452,10 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         for filename in self.files:
             try:
                 (vb_path, ib_path, fmt_path, vgmap_path) = self.get_vb_ib_paths(os.path.join(dirname, filename.name))
-                if os.path.normcase(ib_path) in done:
+                vb_path_norm = set(map(os.path.normcase, vb_path))
+                if vb_path_norm.intersection(done) != set():
                     continue
-                done.add(os.path.normcase(ib_path))
+                done.update(vb_path_norm)
 
                 if fmt_path is not None:
                     import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path, ib_path=ib_path, vgmap_path=vgmap_path, **migoto_raw_import_options)
