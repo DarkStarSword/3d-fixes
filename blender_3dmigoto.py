@@ -586,6 +586,7 @@ class IndexBuffer(object):
         self.format = 'DXGI_FORMAT_UNKNOWN'
         self.offset = 0
         self.topology = 'trianglelist'
+        self.indices_per_face = 3
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
@@ -609,7 +610,11 @@ class IndexBuffer(object):
                 self.index_count = int(line[13:])
             elif line.startswith('topology:'):
                 self.topology = line[10:]
-                if line != 'topology: trianglelist':
+                if self.topology == 'trianglelist':
+                    self.indices_per_face = 3
+                elif self.topology == 'pointlist':
+                    self.indices_per_face = 1
+                else:
                     raise Fatal('"%s" is not yet supported' % line)
             elif line.startswith('format:'):
                 self.format = line[8:]
@@ -617,7 +622,7 @@ class IndexBuffer(object):
                 if not load_indices:
                     return
                 self.parse_index_data(f)
-        assert(len(self.faces) * 3 == self.index_count)
+        assert(len(self.faces) * self.indices_per_face == self.index_count)
 
     def parse_ib_bin(self, f):
         f.seek(self.offset)
@@ -632,7 +637,7 @@ class IndexBuffer(object):
             if not index:
                 break
             face.append(*self.decoder(index))
-            if len(face) == 3:
+            if len(face) == self.indices_per_face:
                 self.faces.append(tuple(face))
                 face = []
         assert(len(face) == 0)
@@ -643,12 +648,12 @@ class IndexBuffer(object):
         # the draw call index count was overridden it may be cut short, or
         # where the .txt files contain only sub-meshes from each draw call and
         # we are loading the .buf file because it contains the entire mesh):
-        self.index_count = len(self.faces) * 3
+        self.index_count = len(self.faces) * self.indices_per_face
 
     def parse_index_data(self, f):
         for line in map(str.strip, f):
             face = tuple(map(int, line.split()))
-            assert(len(face) == 3)
+            assert(len(face) == self.indices_per_face)
             self.faces.append(face)
 
     def merge(self, other):
@@ -669,7 +674,7 @@ class IndexBuffer(object):
             print(msg)
 
     def __len__(self):
-        return len(self.faces) * 3
+        return len(self.faces) * self.indices_per_face
 
 def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     if len(vb_paths) != 1 or len(ib_paths) > 1:
@@ -989,6 +994,17 @@ def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
         # FIXME: Group objects together
         return obj
 
+def assert_pointlist_ib_is_pointless(ib, vb):
+    # Index Buffers are kind of pointless with point list topologies, because
+    # the advantages they offer for triangle list topologies don't really
+    # apply and there is little point in them being used at all... But, there
+    # is nothing technically stopping an engine from using them regardless, and
+    # we do see this in One Piece Burning Blood. For now, just verify that the
+    # index buffers are the trivial case that lists every vertex in order, and
+    # just ignore them since we already loaded the vertex buffer in that order.
+    assert(len(vb) == len(ib)) # FIXME: Properly implement point list index buffers
+    assert(all([(i,) == j for i,j in enumerate(ib.faces)])) # FIXME: Properly implement point list index buffers
+
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
@@ -1007,14 +1023,21 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     obj['3DMigoto:FirstVertex'] = vb.first
 
     if ib is not None:
-        import_faces_from_ib(mesh, ib)
+        if ib.topology == 'trianglelist':
+            import_faces_from_ib(mesh, ib)
+        elif ib.topology == 'pointlist':
+            assert_pointlist_ib_is_pointless(ib, vb)
+        else:
+            raise Fatal('Unsupported topology (IB): {}'.format(ib.topology))
         # Attach the index buffer layout to the object for later exporting.
         obj['3DMigoto:IBFormat'] = ib.format
         obj['3DMigoto:FirstIndex'] = ib.first
     elif vb.topology == 'trianglelist':
         import_faces_from_vb(mesh, vb)
+    elif vb.topology != 'pointlist':
+        raise Fatal('Unsupported topology (VB): {}'.format(vb.topology))
     if vb.topology == 'pointlist':
-        operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting.'.format(mesh.name))
+        operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting. This may not be the mesh you are looking for.'.format(mesh.name))
 
     (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator)
 
@@ -1251,10 +1274,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             for vertex in indexed_vertices:
                 vb.append(vertex)
     elif vb.topology == 'pointlist':
-        if ib is not None:
-            raise Fatal('exporting point lists with index buffers not supported') # and doesn't really make a whole lot of sense... but I guess might be possible
-        for blender_vertex in mesh.vertices:
+        for index, blender_vertex in enumerate(mesh.vertices):
             vb.append(blender_vertex_to_3dmigoto_vertex(mesh, obj, None, layout, texcoord_layers, blender_vertex))
+            if ib is not None:
+                ib.append((index,))
     else:
         raise Fatal('topology "%s" is not supported for export' % vb.topology)
 
