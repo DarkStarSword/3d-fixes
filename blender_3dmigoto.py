@@ -376,7 +376,7 @@ class IndividualVertexBuffer(object):
                 self.layout.parse_element(f)
             if line.startswith('topology:'):
                 self.topology = line[10:]
-                if line != 'topology: trianglelist':
+                if self.topology not in ('trianglelist', 'pointlist'):
                     raise Fatal('"%s" is not yet supported' % line)
             if line.startswith('vertex-data:'):
                 if not load_vertices:
@@ -444,12 +444,12 @@ class VertexBufferGroup(object):
     # Python gotcha - do not set layout=InputLayout() in the default function
     # parameters, as they would all share the *same* InputLayout since the
     # default values are only evaluated once on file load
-    def __init__(self, files=None, layout=None, load_vertices=True):
+    def __init__(self, files=None, layout=None, load_vertices=True, topology=None):
         self.vertices = []
         self.layout = layout and layout or InputLayout()
         self.first = 0
         self.vertex_count = 0
-        self.topology = 'trianglelist'
+        self.topology = topology or 'trianglelist'
         self.vbs = []
         self.slots = set()
 
@@ -1001,6 +1001,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     # Attach the vertex buffer layout to the object for later exporting. Can't
     # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
     obj['3DMigoto:VBLayout'] = vb.layout.serialise()
+    obj['3DMigoto:Topology'] = vb.topology
     for raw_vb in vb.vbs:
         obj['3DMigoto:VB%iStride' % raw_vb.idx] = raw_vb.stride
     obj['3DMigoto:FirstVertex'] = vb.first
@@ -1010,8 +1011,10 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
         # Attach the index buffer layout to the object for later exporting.
         obj['3DMigoto:IBFormat'] = ib.format
         obj['3DMigoto:FirstIndex'] = ib.first
-    else:
+    elif vb.topology == 'trianglelist':
         import_faces_from_vb(mesh, vb)
+    if vb.topology == 'pointlist':
+        operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting.'.format(mesh.name))
 
     (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator)
 
@@ -1055,8 +1058,9 @@ def mesh_triangulate(me):
     bm.to_mesh(me)
     bm.free()
 
-def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords):
-    blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
+def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords, blender_vertex=None):
+    if blender_loop_vertex is not None:
+        blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
     vertex = {}
     seen_offsets = set()
 
@@ -1088,13 +1092,26 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             if 'NORMAL.w' in mesh.vertex_layers_float:
                 vertex[elem.name] = list(blender_loop_vertex.normal) + \
                                         [mesh.vertex_layers_float['NORMAL.w'].data[blender_loop_vertex.vertex_index].value]
-            else:
+                # FIXME: Use blender_vertex.normal for pointlist
+            elif blender_loop_vertex:
                 vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
+            else:
+                # XXX: point list topology, these normals are probably going to be pretty poor, but at least it's something to export
+                vertex[elem.name] = elem.pad(list(blender_vertex.normal), 0.0)
         elif elem.name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
-            vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
+            if blender_loop_vertex:
+                vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
+            else:
+                # XXX Blender doesn't save tangents outside of loops, so unless
+                # we save these somewhere custom when importing they are
+                # effectively lost. We could potentially calculate a tangent
+                # from blender_vertex.normal, but there is probably little
+                # point given that normal will also likely be garbage since it
+                # wasn't imported from the mesh.
+                pass
         elif elem.name.startswith('BINORMAL'):
             # Some DOA6 meshes (skirts) use BINORMAL, but I'm not certain it is
             # actually the binormal. These meshes are weird though, since they
@@ -1168,14 +1185,15 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     strides = {x[11:-6]: obj[x] for x in obj.keys() if x.startswith('3DMigoto:VB') and x.endswith('Stride')}
     layout = InputLayout(obj['3DMigoto:VBLayout'])
+    topology = 'trianglelist'
+    if '3DMigoto:Topology' in obj:
+        topology = obj['3DMigoto:Topology']
     if hasattr(context, "evaluated_depsgraph_get"): # 2.80
         mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
     else: # 2.79
         mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
     mesh_triangulate(mesh)
 
-    indices = [ l.vertex_index for l in mesh.loops ]
-    faces = [ indices[i:i+3] for i in range(0, len(indices), 3) ]
     try:
         ib_format = obj['3DMigoto:IBFormat']
     except KeyError:
@@ -1216,21 +1234,29 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # via the index buffer. There might be a convenience function in
     # Blender to do this, but it's easy enough to do this ourselves
     indexed_vertices = collections.OrderedDict()
-    vb = VertexBufferGroup(layout=layout)
-    for poly in mesh.polygons:
-        face = []
-        for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
-            vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+    vb = VertexBufferGroup(layout=layout, topology=topology)
+    if vb.topology == 'trianglelist':
+        for poly in mesh.polygons:
+            face = []
+            for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
+                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+                if ib is not None:
+                    face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
+                else:
+                    vb.append(vertex)
             if ib is not None:
-                face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
-            else:
-                vb.append(vertex)
-        if ib is not None:
-            ib.append(face)
+                ib.append(face)
 
-    if ib is not None:
-        for vertex in indexed_vertices:
-            vb.append(vertex)
+        if ib is not None:
+            for vertex in indexed_vertices:
+                vb.append(vertex)
+    elif vb.topology == 'pointlist':
+        if ib is not None:
+            raise Fatal('exporting point lists with index buffers not supported') # and doesn't really make a whole lot of sense... but I guess might be possible
+        for blender_vertex in mesh.vertices:
+            vb.append(blender_vertex_to_3dmigoto_vertex(mesh, obj, None, layout, texcoord_layers, blender_vertex))
+    else:
+        raise Fatal('topology "%s" is not supported for export' % vb.topology)
 
     vgmaps = {k[15:]:keys_to_ints(v) for k,v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
