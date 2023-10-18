@@ -390,10 +390,14 @@ class IndividualVertexBuffer(object):
 
     def parse_vb_bin(self, f):
         f.seek(self.offset)
-        # XXX: Should we respect the first/base vertex?
-        # f.seek(self.first * self.stride, whence=1)
-        self.first = 0
-        while True:
+        use_drawcall_range = False # TODO: Add option to frame analysis import dialog, be sure not to enable this when importing non-frame analysis files
+        if use_drawcall_range:
+            f.seek(self.first * self.stride, 1)
+        else:
+            self.first = 0
+        for i in itertools.count():
+            if use_drawcall_range and i == self.vertex_count:
+                break
             vertex = f.read(self.stride)
             if not vertex:
                 break
@@ -622,12 +626,16 @@ class IndexBuffer(object):
     def parse_ib_bin(self, f):
         f.seek(self.offset)
         stride = format_size(self.format)
-        # XXX: Should we respect the first index?
-        # f.seek(self.first * stride, whence=1)
-        self.first = 0
+        use_drawcall_range = False # TODO: Add option to frame analysis import dialog, be sure not to enable this when importing non-frame analysis files
+        if use_drawcall_range:
+            f.seek(self.first * stride, 1)
+        else:
+            self.first = 0
 
         face = []
-        while True:
+        for i in itertools.count():
+            if use_drawcall_range and i == self.index_count:
+                break
             index = f.read(stride)
             if not index:
                 break
@@ -636,14 +644,18 @@ class IndexBuffer(object):
                 self.faces.append(tuple(face))
                 face = []
         assert(len(face) == 0)
+        self.expand_strips()
 
-        # We intentionally disregard the index count when loading from a
-        # binary file, as we assume frame analysis might have only dumped a
-        # partial buffer to the .txt files (e.g. if this was from a dump where
-        # the draw call index count was overridden it may be cut short, or
-        # where the .txt files contain only sub-meshes from each draw call and
-        # we are loading the .buf file because it contains the entire mesh):
-        self.index_count = len(self.faces) * self.indices_per_face
+        if use_drawcall_range:
+            assert(len(self.faces) * self.indices_per_face + self.extra_indices == self.index_count)
+        else:
+            # We intentionally disregard the index count when loading from a
+            # binary file, as we assume frame analysis might have only dumped a
+            # partial buffer to the .txt files (e.g. if this was from a dump where
+            # the draw call index count was overridden it may be cut short, or
+            # where the .txt files contain only sub-meshes from each draw call and
+            # we are loading the .buf file because it contains the entire mesh):
+            self.index_count = len(self.faces) * self.indices_per_face + self.extra_indices
 
     def parse_index_data(self, f):
         for line in map(str.strip, f):
