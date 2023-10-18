@@ -93,7 +93,7 @@ def matmul(a, b):
 ############## End (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
 
 
-
+supported_topologies = ('trianglelist', 'pointlist', 'trianglestrip')
 
 def keys_to_ints(d):
     return {k.isdecimal() and int(k) or k:v for k,v in d.items()}
@@ -376,7 +376,7 @@ class IndividualVertexBuffer(object):
                 self.layout.parse_element(f)
             if line.startswith('topology:'):
                 self.topology = line[10:]
-                if self.topology not in ('trianglelist', 'pointlist'):
+                if self.topology not in supported_topologies:
                     raise Fatal('"%s" is not yet supported' % line)
             if line.startswith('vertex-data:'):
                 if not load_vertices:
@@ -586,7 +586,6 @@ class IndexBuffer(object):
         self.format = 'DXGI_FORMAT_UNKNOWN'
         self.offset = 0
         self.topology = 'trianglelist'
-        self.indices_per_face = 3
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
@@ -610,11 +609,7 @@ class IndexBuffer(object):
                 self.index_count = int(line[13:])
             elif line.startswith('topology:'):
                 self.topology = line[10:]
-                if self.topology == 'trianglelist':
-                    self.indices_per_face = 3
-                elif self.topology == 'pointlist':
-                    self.indices_per_face = 1
-                else:
+                if self.topology not in supported_topologies:
                     raise Fatal('"%s" is not yet supported' % line)
             elif line.startswith('format:'):
                 self.format = line[8:]
@@ -622,7 +617,7 @@ class IndexBuffer(object):
                 if not load_indices:
                     return
                 self.parse_index_data(f)
-        assert(len(self.faces) * self.indices_per_face == self.index_count)
+        assert(len(self.faces) * self.indices_per_face + self.extra_indices == self.index_count)
 
     def parse_ib_bin(self, f):
         f.seek(self.offset)
@@ -655,6 +650,20 @@ class IndexBuffer(object):
             face = tuple(map(int, line.split()))
             assert(len(face) == self.indices_per_face)
             self.faces.append(face)
+        self.expand_strips()
+
+    def expand_strips(self):
+        if self.topology == 'trianglestrip':
+            # Every 2nd face has the vertices out of order to keep all faces in the same orientation:
+            # https://learn.microsoft.com/en-us/windows/win32/direct3d9/triangle-strips
+            self.faces = [(self.faces    [i-2][0],
+                self.faces[i%2 and i   or i-1][0],
+                self.faces[i%2 and i-1 or i  ][0],
+            ) for i in range(2, len(self.faces)) ]
+        elif self.topology == 'linestrip':
+            raise Fatal('linestrip topology conversion is untested')
+            self.faces = [(self.faces[i-1][0], self.faces[i][0])
+                    for i in range(1, len(self.faces)) ]
 
     def merge(self, other):
         if self.format != other.format:
@@ -673,8 +682,27 @@ class IndexBuffer(object):
         else:
             print(msg)
 
+    @property
+    def indices_per_face(self):
+        return {
+            'trianglelist': 3,
+            'pointlist': 1,
+            'trianglestrip': 1, # + self.extra_indices for 1st tri
+            'linelist': 2,
+            'linestrip': 1, # + self.extra_indices for 1st line
+        }[self.topology]
+
+    @property
+    def extra_indices(self):
+        if len(self.faces) >= 1:
+            if self.topology == 'trianglestrip':
+                return 2
+            if self.topology == 'linestrip':
+                return 1
+        return 0
+
     def __len__(self):
-        return len(self.faces) * self.indices_per_face
+        return len(self.faces) * self.indices_per_face + self.extra_indices
 
 def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     if len(vb_paths) != 1 or len(ib_paths) > 1:
@@ -1025,7 +1053,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     obj['3DMigoto:FirstVertex'] = vb.first
 
     if ib is not None:
-        if ib.topology == 'trianglelist':
+        if ib.topology in ('trianglelist', 'trianglestrip'):
             import_faces_from_ib(mesh, ib)
         elif ib.topology == 'pointlist':
             assert_pointlist_ib_is_pointless(ib, vb)
@@ -1216,6 +1244,9 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     topology = 'trianglelist'
     if '3DMigoto:Topology' in obj:
         topology = obj['3DMigoto:Topology']
+        if topology == 'trianglestrip':
+            operator.report({'WARNING'}, 'trianglestrip topology not supported for export, and has been converted to trianglelist. Override draw call topology using a [CustomShader] section with topology=triangle_list')
+            topology = 'trianglelist'
     if hasattr(context, "evaluated_depsgraph_get"): # 2.80
         mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
     else: # 2.79
