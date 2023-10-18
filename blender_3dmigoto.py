@@ -1512,9 +1512,13 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             if len(ib_paths) > 1:
                 raise Fatal('Error: excess index buffers in dump?')
             elif len(ib_paths) == 0:
-                name = os.path.basename(vb_paths[0])
+                if use_bin:
+                    name = os.path.basename(vb_paths[0][0])
+                    ib_paths = [(None, None)]
+                else:
+                    name = os.path.basename(vb_paths[0])
+                    ib_paths = [None]
                 self.report({'WARNING'}, '{}: No index buffer present, support for this case is highly experimental'.format(name))
-                ib_paths = [None]
             ret.add((tuple(vb_paths), ib_paths[0], use_bin, pose_path))
         return ret
 
