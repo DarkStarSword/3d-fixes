@@ -914,6 +914,8 @@ def import_vertices(mesh, vb, operator):
             #'ATTRIBUTE': 'POSITION', # UE4
         }
         translated_elem_name = semantic_translations.get(elem.name, elem.name)
+        # Some games don't follow the official DirectX UPPERCASE semantic naming convention:
+        translated_elem_name = translated_elem_name.upper()
 
         # Discard elements that reuse offsets in the vertex buffer, e.g. COLOR
         # and some TEXCOORDs may be aliases of POSITION:
@@ -1099,19 +1101,22 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             continue
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
-        if elem.name == 'POSITION':
+        # Some games don't follow the official DirectX UPPERCASE semantic naming convention:
+        translated_elem_name = elem.name.upper()
+
+        if translated_elem_name == 'POSITION':
             if 'POSITION.w' in mesh.vertex_layers_float:
                 vertex[elem.name] = list(blender_vertex.undeformed_co) + \
                                         [mesh.vertex_layers_float['POSITION.w'].data[blender_loop_vertex.vertex_index].value]
             else:
                 vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
-        elif elem.name.startswith('COLOR'):
+        elif translated_elem_name.startswith('COLOR'):
             if elem.name in mesh.vertex_colors:
                 vertex[elem.name] = elem.clip(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color))
             else:
                 vertex[elem.name] = list(mesh.vertex_colors[elem.name+'.RGB'].data[blender_loop_vertex.index].color)[:3] + \
                                         [mesh.vertex_colors[elem.name+'.A'].data[blender_loop_vertex.index].color[0]]
-        elif elem.name == 'NORMAL':
+        elif translated_elem_name == 'NORMAL':
             if 'NORMAL.w' in mesh.vertex_layers_float:
                 vertex[elem.name] = list(blender_loop_vertex.normal) + \
                                         [mesh.vertex_layers_float['NORMAL.w'].data[blender_loop_vertex.vertex_index].value]
@@ -1121,7 +1126,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             else:
                 # XXX: point list topology, these normals are probably going to be pretty poor, but at least it's something to export
                 vertex[elem.name] = elem.pad(list(blender_vertex.normal), 0.0)
-        elif elem.name.startswith('TANGENT'):
+        elif translated_elem_name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
@@ -1135,7 +1140,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                 # point given that normal will also likely be garbage since it
                 # wasn't imported from the mesh.
                 pass
-        elif elem.name.startswith('BINORMAL'):
+        elif translated_elem_name.startswith('BINORMAL'):
             # Some DOA6 meshes (skirts) use BINORMAL, but I'm not certain it is
             # actually the binormal. These meshes are weird though, since they
             # use 4 dimensional positions and normals, so they aren't something
@@ -1149,14 +1154,14 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # binormal = binormal / numpy.linalg.norm(binormal)
             # vertex[elem.name] = elem.pad(list(binormal), 0.0)
             pass
-        elif elem.name.startswith('BLENDINDICES'):
+        elif translated_elem_name.startswith('BLENDINDICES'):
             i = elem.SemanticIndex * 4
             vertex[elem.name] = elem.pad([ x.group for x in vertex_groups[i:i+4] ], 0)
-        elif elem.name.startswith('BLENDWEIGHT'):
+        elif translated_elem_name.startswith('BLENDWEIGHT'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
             i = elem.SemanticIndex * 4
             vertex[elem.name] = elem.pad([ x.weight for x in vertex_groups[i:i+4] ], 0.0)
-        elif elem.name.startswith('TEXCOORD') and elem.is_float():
+        elif translated_elem_name.startswith('TEXCOORD') and elem.is_float():
             # FIXME: Handle texcoords of other dimensions
             uvs = []
             for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
