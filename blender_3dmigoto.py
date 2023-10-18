@@ -590,6 +590,7 @@ class IndexBuffer(object):
         self.format = 'DXGI_FORMAT_UNKNOWN'
         self.offset = 0
         self.topology = 'trianglelist'
+        self.used_in_drawcall = None
 
         if isinstance(args[0], io.IOBase):
             assert(len(args) == 1)
@@ -607,10 +608,21 @@ class IndexBuffer(object):
         for line in map(str.strip, f):
             if line.startswith('byte offset:'):
                 self.offset = int(line[13:])
+                # If we see this line we are looking at a 3DMigoto frame
+                # analysis dump, not a .fmt file exported by this script.
+                # If it was an indexed draw call it will be followed by "first
+                # index" and "index count", while if it was not an indexed draw
+                # call they will be absent. So by the end of parsing:
+                # used_in_drawcall = None signifies loading a .fmt file from a previous export
+                # used_in_drawcall = False signifies draw call did not use the bound IB
+                # used_in_drawcall = True signifies an indexed draw call
+                self.used_in_drawcall = False
             if line.startswith('first index:'):
                 self.first = int(line[13:])
+                self.used_in_drawcall = True
             elif line.startswith('index count:'):
                 self.index_count = int(line[13:])
+                self.used_in_drawcall = True
             elif line.startswith('topology:'):
                 self.topology = line[10:]
                 if self.topology not in supported_topologies:
@@ -621,7 +633,8 @@ class IndexBuffer(object):
                 if not load_indices:
                     return
                 self.parse_index_data(f)
-        assert(len(self.faces) * self.indices_per_face + self.extra_indices == self.index_count)
+        if self.used_in_drawcall != False:
+            assert(len(self.faces) * self.indices_per_face + self.extra_indices == self.index_count)
 
     def parse_ib_bin(self, f):
         f.seek(self.offset)
@@ -730,7 +743,11 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     ib = None
     if ib_bin_path:
         ib = IndexBuffer(open(ib_txt_path, 'r'), load_indices=False)
-        ib.parse_ib_bin(open(ib_bin_path, 'rb'))
+        if ib.used_in_drawcall == False:
+            operator.report({'WARNING'}, '{}: Discarding index buffer not used in draw call'.format(os.path.basename(ib_bin_path)))
+            ib = None
+        else:
+            ib.parse_ib_bin(open(ib_bin_path, 'rb'))
 
     return vb, ib, os.path.basename(vb_paths[0][0][0]), pose_path
 
@@ -762,6 +779,9 @@ def load_3dmigoto_mesh(operator, paths):
         for ib_path in ib_paths[1:]:
             tmp = IndexBuffer(open(ib_path, 'r'))
             ib.merge(tmp)
+        if ib.used_in_drawcall == False:
+            operator.report({'WARNING'}, '{}: Discarding index buffer not used in draw call'.format(os.path.basename(ib_paths[0])))
+            ib = None
 
     return vb, ib, os.path.basename(vb_paths[0][0]), pose_path
 
