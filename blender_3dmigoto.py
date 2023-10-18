@@ -936,12 +936,31 @@ def import_faces_from_ib(mesh, ib):
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(len(ib.faces))])
     mesh.polygons.foreach_set('loop_total', [3] * len(ib.faces))
 
-def import_faces_from_vb(mesh, vb):
+def import_faces_from_vb_trianglelist(mesh, vb):
     # Only lightly tested
     num_faces = len(vb.vertices) // 3
     mesh.loops.add(num_faces * 3)
     mesh.polygons.add(num_faces)
     mesh.loops.foreach_set('vertex_index', [x for x in range(num_faces * 3)])
+    mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
+    mesh.polygons.foreach_set('loop_total', [3] * num_faces)
+
+def import_faces_from_vb_trianglestrip(mesh, vb):
+    # Only lightly tested
+    num_faces = len(vb.vertices) - 2
+    if num_faces <= 0:
+        raise Fatal('Insufficient vertices in trianglestrip')
+    mesh.loops.add(num_faces * 3)
+    mesh.polygons.add(num_faces)
+
+    # Every 2nd face has the vertices out of order to keep all faces in the same orientation:
+    # https://learn.microsoft.com/en-us/windows/win32/direct3d9/triangle-strips
+    tristripindex = [( i,
+        i%2 and i+2 or i+1,
+        i%2 and i+1 or i+2,
+    ) for i in range(num_faces) ]
+
+    mesh.loops.foreach_set('vertex_index', unpack_list(tristripindex))
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
     mesh.polygons.foreach_set('loop_total', [3] * num_faces)
 
@@ -1095,7 +1114,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
         obj['3DMigoto:IBFormat'] = ib.format
         obj['3DMigoto:FirstIndex'] = ib.first
     elif vb.topology == 'trianglelist':
-        import_faces_from_vb(mesh, vb)
+        import_faces_from_vb_trianglelist(mesh, vb)
+    elif vb.topology == 'trianglestrip':
+        import_faces_from_vb_trianglestrip(mesh, vb)
     elif vb.topology != 'pointlist':
         raise Fatal('Unsupported topology (VB): {}'.format(vb.topology))
     if vb.topology == 'pointlist':
