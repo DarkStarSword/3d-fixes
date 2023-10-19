@@ -430,13 +430,26 @@ class IndividualVertexBuffer(object):
         if vertex:
             self.vertices.append(vertex)
 
+    @staticmethod
+    def ms_float(val):
+        x = val.split('.#')
+        s = float(x[0])
+        if len(x) == 1:
+            return s
+        if x[1].startswith('INF'):
+            return s * numpy.inf # Will preserve sign
+        # TODO: Differentiate between SNAN / QNAN / IND
+        if s == -1: # Multiplying -1 * nan doesn't preserve sign
+            return -numpy.nan # so must use unary - operator
+        return numpy.nan
+
     def parse_vertex_element(self, match):
         fields = match.group('data').split(',')
 
         if self.layout[match.group('semantic')].Format.endswith('INT'):
             return tuple(map(int, fields))
 
-        return tuple(map(float, fields))
+        return tuple(map(self.ms_float, fields))
 
 class VertexBufferGroup(object):
     '''
