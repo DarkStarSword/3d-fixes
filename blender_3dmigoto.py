@@ -1561,6 +1561,83 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+    def draw(self, context):
+        # Overriding the draw method to disable automatically adding operator
+        # properties to options panel, so we can define sub-panels to group
+        # options and disable grey out mutually exclusive options.
+        pass
+
+class MigotoImportOptionsPanelBase(object):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_parent_id = "FILE_PT_operator"
+
+    @classmethod
+    def poll(cls, context):
+        operator = context.space_data.active_operator
+        return operator.bl_idname == "IMPORT_MESH_OT_migoto_frame_analysis"
+
+    def draw(self, context):
+        self.layout.use_property_split = True
+        self.layout.use_property_decorate = False
+
+class MIGOTO_PT_ImportFrameAnalysisMainPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = ""
+    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+        self.layout.prop(operator, "flip_texcoord_v")
+
+class MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = ""
+    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+        self.layout.enabled = not operator.load_buf
+        self.layout.prop(operator, "load_related")
+        self.layout.prop(operator, "merge_meshes")
+
+class MIGOTO_PT_ImportFrameAnalysisBufFilesPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = "Load .buf files instead"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        operator = context.space_data.active_operator
+        self.layout.prop(operator, "load_buf", text="")
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+        self.layout.enabled = operator.load_buf
+        self.layout.prop(operator, "load_buf_limit_range")
+
+class MIGOTO_PT_ImportFrameAnalysisBonePanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = ""
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        operator = context.space_data.active_operator
+        self.layout.prop(operator, "pose_cb")
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+        self.layout.prop(operator, "pose_cb_off")
+        self.layout.prop(operator, "pose_cb_step")
+
+class MIGOTO_PT_ImportFrameAnalysisManualOrientation(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = "Orientation"
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+        self.layout.prop(operator, "axis_forward")
+        self.layout.prop(operator, "axis_up")
+
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, vgmap_path=None, **kwargs):
     paths = ((list(zip(vb_path, [vb_fmt_path]*len(vb_path))), (ib_path, ib_fmt_path), True, None),)
     obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
@@ -2075,6 +2152,11 @@ def menu_func_apply_vgmap(self, context):
 
 register_classes = (
     Import3DMigotoFrameAnalysis,
+    MIGOTO_PT_ImportFrameAnalysisMainPanel,
+    MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel,
+    MIGOTO_PT_ImportFrameAnalysisBufFilesPanel,
+    MIGOTO_PT_ImportFrameAnalysisBonePanel,
+    MIGOTO_PT_ImportFrameAnalysisManualOrientation,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
     Export3DMigoto,
