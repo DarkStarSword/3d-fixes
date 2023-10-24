@@ -388,9 +388,8 @@ class IndividualVertexBuffer(object):
         if self.vertices:
             assert(len(self.vertices) == self.vertex_count)
 
-    def parse_vb_bin(self, f):
+    def parse_vb_bin(self, f, use_drawcall_range=False):
         f.seek(self.offset)
-        use_drawcall_range = False # TODO: Add option to frame analysis import dialog, be sure not to enable this when importing non-frame analysis files
         if use_drawcall_range:
             f.seek(self.first * self.stride, 1)
         else:
@@ -493,7 +492,7 @@ class VertexBufferGroup(object):
             self.merge_vbs(self.vbs)
             assert(len(self.vertices) == self.vertex_count)
 
-    def parse_vb_bin(self, files):
+    def parse_vb_bin(self, files, use_drawcall_range=False):
         for (bin_f, fmt_f) in files:
             match = self.vb_idx_pattern.search(bin_f)
             if match is not None:
@@ -502,7 +501,7 @@ class VertexBufferGroup(object):
                 print('Cannot determine vertex buffer index from filename %s, assuming 0 for backwards compatibility' % bin_f)
                 idx = 0
             vb = IndividualVertexBuffer(idx, open(fmt_f, 'r'), self.layout, False)
-            vb.parse_vb_bin(open(bin_f, 'rb'))
+            vb.parse_vb_bin(open(bin_f, 'rb'), use_drawcall_range)
             if vb.vertices:
                 self.vbs.append(vb)
                 self.slots.add(idx)
@@ -649,10 +648,9 @@ class IndexBuffer(object):
         if self.used_in_drawcall != False:
             assert(len(self.faces) * self.indices_per_face + self.extra_indices == self.index_count)
 
-    def parse_ib_bin(self, f):
+    def parse_ib_bin(self, f, use_drawcall_range=False):
         f.seek(self.offset)
         stride = format_size(self.format)
-        use_drawcall_range = False # TODO: Add option to frame analysis import dialog, be sure not to enable this when importing non-frame analysis files
         if use_drawcall_range:
             f.seek(self.first * stride, 1)
         else:
@@ -750,8 +748,12 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
     # reference for the format:
     ib_bin_path, ib_txt_path = ib_paths[0]
 
+    use_drawcall_range = False
+    if hasattr(operator, 'load_buf_limit_range'): # Frame analysis import only
+        use_drawcall_range = operator.load_buf_limit_range
+
     vb = VertexBufferGroup()
-    vb.parse_vb_bin(vb_paths[0])
+    vb.parse_vb_bin(vb_paths[0], use_drawcall_range)
 
     ib = None
     if ib_bin_path:
@@ -760,7 +762,7 @@ def load_3dmigoto_mesh_bin(operator, vb_paths, ib_paths, pose_path):
             operator.report({'WARNING'}, '{}: Discarding index buffer not used in draw call'.format(os.path.basename(ib_bin_path)))
             ib = None
         else:
-            ib.parse_ib_bin(open(ib_bin_path, 'rb'))
+            ib.parse_ib_bin(open(ib_bin_path, 'rb'), use_drawcall_range)
 
     return vb, ib, os.path.basename(vb_paths[0][0][0]), pose_path
 
@@ -1443,6 +1445,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=False,
             )
 
+    load_buf_limit_range: BoolProperty(
+            name="Limit to draw range",
+            description="Load just the vertices/indices used in the draw call (equivalent to loading the .txt files) instead of the complete buffer",
+            default=False,
+            )
+
     merge_meshes: BoolProperty(
             name="Merge meshes together",
             description="Merge all selected meshes together into one object. Meshes must be related",
@@ -1545,7 +1553,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             self.load_related = False
 
         try:
-            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb'))
+            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb', 'load_buf_limit_range'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
