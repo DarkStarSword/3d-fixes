@@ -38,6 +38,7 @@ import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, axis_conversion
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
+from bl_ui.generic_ui_list import draw_ui_list
 from mathutils import Matrix, Vector
 
 ############## Begin (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
@@ -170,6 +171,8 @@ def format_size(fmt):
 
 class InputLayoutElement(object):
     def __init__(self, arg):
+        self.RemappedSemanticName = None
+        self.RemappedSemanticIndex = None
         if isinstance(arg, io.IOBase):
             self.from_file(arg)
         else:
@@ -180,7 +183,10 @@ class InputLayoutElement(object):
     def from_file(self, f):
         self.SemanticName = self.next_validate(f, 'SemanticName')
         self.SemanticIndex = int(self.next_validate(f, 'SemanticIndex'))
-        self.Format = self.next_validate(f, 'Format')
+        (self.RemappedSemanticName, line) = self.next_optional(f, 'RemappedSemanticName')
+        if line is None:
+            self.RemappedSemanticIndex = int(self.next_validate(f, 'RemappedSemanticIndex'))
+        self.Format = self.next_validate(f, 'Format', line)
         self.InputSlot = int(self.next_validate(f, 'InputSlot'))
         self.AlignedByteOffset = self.next_validate(f, 'AlignedByteOffset')
         if self.AlignedByteOffset == 'append':
@@ -193,6 +199,9 @@ class InputLayoutElement(object):
         d = {}
         d['SemanticName'] = self.SemanticName
         d['SemanticIndex'] = self.SemanticIndex
+        if self.RemappedSemanticName is not None:
+            d['RemappedSemanticName'] = self.RemappedSemanticName
+            d['RemappedSemanticIndex'] = self.RemappedSemanticIndex
         d['Format'] = self.Format
         d['InputSlot'] = self.InputSlot
         d['AlignedByteOffset'] = self.AlignedByteOffset
@@ -201,27 +210,43 @@ class InputLayoutElement(object):
         return d
 
     def to_string(self, indent=2):
-        return textwrap.indent(textwrap.dedent('''
+        ret = textwrap.dedent('''
             SemanticName: %s
             SemanticIndex: %i
+        ''').lstrip() % (
+            self.SemanticName,
+            self.SemanticIndex,
+        )
+        if self.RemappedSemanticName is not None:
+            ret += textwrap.dedent('''
+                RemappedSemanticName: %s
+                RemappedSemanticIndex: %i
+            ''').lstrip() % (
+                self.RemappedSemanticName,
+                self.RemappedSemanticIndex,
+            )
+        ret += textwrap.dedent('''
             Format: %s
             InputSlot: %i
             AlignedByteOffset: %i
             InputSlotClass: %s
             InstanceDataStepRate: %i
         ''').lstrip() % (
-            self.SemanticName,
-            self.SemanticIndex,
             self.Format,
             self.InputSlot,
             self.AlignedByteOffset,
             self.InputSlotClass,
             self.InstanceDataStepRate,
-        ), ' '*indent)
+        )
+        return textwrap.indent(ret, ' '*indent)
 
     def from_dict(self, d):
         self.SemanticName = d['SemanticName']
         self.SemanticIndex = d['SemanticIndex']
+        try:
+            self.RemappedSemanticName = d['RemappedSemanticName']
+            self.RemappedSemanticIndex = d['RemappedSemanticIndex']
+        except KeyError: pass
         self.Format = d['Format']
         self.InputSlot = d['InputSlot']
         self.AlignedByteOffset = d['AlignedByteOffset']
@@ -229,16 +254,33 @@ class InputLayoutElement(object):
         self.InstanceDataStepRate = d['InstanceDataStepRate']
 
     @staticmethod
-    def next_validate(f, field):
-        line = next(f).strip()
+    def next_validate(f, field, line=None):
+        if line is None:
+            line = next(f).strip()
         assert(line.startswith(field + ': '))
         return line[len(field) + 2:]
+
+    @staticmethod
+    def next_optional(f, field, line=None):
+        if line is None:
+            line = next(f).strip()
+        if line.startswith(field + ': '):
+            return (line[len(field) + 2:], None)
+        return (None, line)
 
     @property
     def name(self):
         if self.SemanticIndex:
             return '%s%i' % (self.SemanticName, self.SemanticIndex)
         return self.SemanticName
+
+    @property
+    def remapped_name(self):
+        if self.RemappedSemanticName is None:
+            return self.name
+        if self.RemappedSemanticIndex:
+            return '%s%i' % (self.RemappedSemanticName, self.RemappedSemanticIndex)
+        return self.RemappedSemanticName
 
     def pad(self, data, val):
         padding = format_components(self.Format) - len(data)
@@ -329,6 +371,47 @@ class InputLayout(object):
 
     def __eq__(self, other):
         return self.elems == other.elems
+
+    def apply_semantic_remap(self, operator):
+        semantic_translations = {}
+        semantic_highest_indices = {}
+
+        for elem in self.elems.values():
+            semantic_highest_indices[elem.SemanticName.upper()] = max(semantic_highest_indices.get(elem.SemanticName.upper(), 0), elem.SemanticIndex)
+
+        def find_free_elem_index(semantic):
+            idx = semantic_highest_indices.get(semantic, -1) + 1
+            semantic_highest_indices[semantic] = idx
+            return idx
+
+        for remap in operator.properties.semantic_remap:
+            if remap.semantic_to == 'None':
+                continue
+            if remap.semantic_from in semantic_translations:
+                operator.report({'ERROR'}, 'semantic remap for {} specified multiple times, only the first will be used'.format(remap.semantic_from))
+                continue
+            if remap.semantic_from not in self.elems:
+                operator.report({'WARNING'}, 'semantic "{}" not found in imported file, double check your semantic remaps'.format(remap.semantic_from))
+                continue
+
+            remapped_semantic_idx = find_free_elem_index(remap.semantic_to)
+
+            operator.report({'INFO'}, 'Remapping semantic {} -> {}{}'.format(remap.semantic_from, remap.semantic_to,
+                remapped_semantic_idx or ''))
+
+            self.elems[remap.semantic_from].RemappedSemanticName = remap.semantic_to
+            self.elems[remap.semantic_from].RemappedSemanticIndex = remapped_semantic_idx
+            semantic_translations[remap.semantic_from] = (remap.semantic_to, remapped_semantic_idx)
+
+        return semantic_translations
+
+    def get_semantic_remap(self):
+        semantic_translations = {}
+        for elem in self.elems.values():
+            if elem.RemappedSemanticName is not None:
+                semantic_translations[elem.name] = \
+                    (elem.RemappedSemanticName, elem.RemappedSemanticIndex)
+        return semantic_translations
 
 class HashableVertex(dict):
     def __hash__(self):
@@ -979,7 +1062,7 @@ def import_faces_from_vb_trianglestrip(mesh, vb):
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
     mesh.polygons.foreach_set('loop_total', [3] * num_faces)
 
-def import_vertices(mesh, vb, operator):
+def import_vertices(mesh, vb, operator, semantic_translations={}):
     mesh.vertices.add(len(vb.vertices))
 
     seen_offsets = set()
@@ -1000,14 +1083,9 @@ def import_vertices(mesh, vb, operator):
             print('NOTICE: Vertex semantic %s unavailable due to missing vb%i' % (elem.name, elem.InputSlot))
             continue
 
-        # TODO: Allow poorly named semantics to map to other meanings to be
-        # properly interpreted. This still needs to be added to the GUI, and
-        # mapped back on export. Alternatively, you can alter the input
-        # assembler layout format in the vb*.txt / *.fmt files prior to import.
-        semantic_translations = {
-            #'ATTRIBUTE': 'POSITION', # UE4
-        }
-        translated_elem_name = semantic_translations.get(elem.name, elem.name)
+        translated_elem_name, translated_elem_index = \
+                semantic_translations.get(elem.name, (elem.name, elem.SemanticIndex))
+
         # Some games don't follow the official DirectX UPPERCASE semantic naming convention:
         translated_elem_name = translated_elem_name.upper()
 
@@ -1066,11 +1144,11 @@ def import_vertices(mesh, vb, operator):
         #        l.tangent[:] = data[l.vertex_index][0:3]
             operator.report({'INFO'}, 'Skipping import of %s in favour of recalculating on export' % elem.name)
         elif translated_elem_name.startswith('BLENDINDICES'):
-            blend_indices[elem.SemanticIndex] = data
+            blend_indices[translated_elem_index] = data
         elif translated_elem_name.startswith('BLENDWEIGHT'):
-            blend_weights[elem.SemanticIndex] = data
+            blend_weights[translated_elem_index] = data
         elif translated_elem_name.startswith('TEXCOORD') and elem.is_float():
-            texcoords[elem.SemanticIndex] = data
+            texcoords[translated_elem_index] = data
         else:
             operator.report({'INFO'}, 'Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
             vertex_layers[elem.name] = data
@@ -1110,6 +1188,11 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     global_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
     obj.matrix_world = global_matrix
 
+    if hasattr(operator.properties, 'semantic_remap'):
+        semantic_translations = vb.layout.apply_semantic_remap(operator)
+    else:
+        semantic_translations = vb.layout.get_semantic_remap()
+
     # Attach the vertex buffer layout to the object for later exporting. Can't
     # seem to retrieve this if attached to the mesh - to_mesh() doesn't copy it:
     obj['3DMigoto:VBLayout'] = vb.layout.serialise()
@@ -1137,7 +1220,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     if vb.topology == 'pointlist':
         operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting. This may not be the mesh you are looking for.'.format(mesh.name))
 
-    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator)
+    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator, semantic_translations)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
     if not texcoords:
@@ -1197,8 +1280,12 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             continue
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
+        semantic_translations = layout.get_semantic_remap()
+        translated_elem_name, translated_elem_index = \
+                semantic_translations.get(elem.name, (elem.name, elem.SemanticIndex))
+
         # Some games don't follow the official DirectX UPPERCASE semantic naming convention:
-        translated_elem_name = elem.name.upper()
+        translated_elem_name = translated_elem_name.upper()
 
         if translated_elem_name == 'POSITION':
             if 'POSITION.w' in mesh.vertex_layers_float:
@@ -1251,22 +1338,22 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # vertex[elem.name] = elem.pad(list(binormal), 0.0)
             pass
         elif translated_elem_name.startswith('BLENDINDICES'):
-            i = elem.SemanticIndex * 4
+            i = translated_elem_index * 4
             vertex[elem.name] = elem.pad([ x.group for x in vertex_groups[i:i+4] ], 0)
         elif translated_elem_name.startswith('BLENDWEIGHT'):
             # TODO: Warn if vertex is in too many vertex groups for this layout
-            i = elem.SemanticIndex * 4
+            i = translated_elem_index * 4
             vertex[elem.name] = elem.pad([ x.weight for x in vertex_groups[i:i+4] ], 0.0)
         elif translated_elem_name.startswith('TEXCOORD') and elem.is_float():
             # FIXME: Handle texcoords of other dimensions
             uvs = []
-            for uv_name in ('%s.xy' % elem.name, '%s.zw' % elem.name):
+            for uv_name in ('%s.xy' % elem.remapped_name, '%s.zw' % elem.remapped_name):
                 if uv_name in texcoords:
                     uvs += list(texcoords[uv_name][blender_loop_vertex.index])
             # Handle 1D + 3D TEXCOORDs. Order is important - 1D TEXCOORDs won't
             # match anything in above loop so only .x below, 3D TEXCOORDS will
             # have processed .xy part above, and .z part below
-            for uv_name in ('%s.x' % elem.name, '%s.z' % elem.name):
+            for uv_name in ('%s.x' % elem.remapped_name, '%s.z' % elem.remapped_name):
                 if uv_name in texcoords:
                     uvs += [texcoords[uv_name][blender_loop_vertex.index].x]
             vertex[elem.name] = uvs
@@ -1409,6 +1496,35 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # Write format reference file
     write_fmt_file(open(fmt_path, 'w'), vb, ib, strides)
 
+semantic_remap_enum = [
+        ('None', 'No change', 'Do not remap this semantic. If the semantic name is recognised the script will try to interpret it, otherwise it will preserve the existing data in a vertex layer'),
+        ('POSITION', 'POSITION', 'This data will be used as the vertex positions. There should generally be exactly one POSITION semantic for hopefully obvious reasons'),
+        ('NORMAL', 'NORMAL', 'This data will be used as split (custom) normals in Blender.'),
+        ('TANGENT', 'TANGENT (CAUTION: Discards data!)', 'Data in the TANGENT semantics are discarded on import, and recalculated on export'),
+        #('BINORMAL', 'BINORMAL', "Don't encourage anyone to choose this since the data will be entirely discarded"),
+        ('BLENDINDICES', 'BLENDINDICES', 'This semantic holds the vertex group indices, and should be paired with a BLENDWEIGHT semantic that has the corresponding weights for these groups'),
+        ('BLENDWEIGHT', 'BLENDWEIGHT', 'This semantic holds the vertex group weights, and should be paired with a BLENDINDICES semantic that has the corresponding vertex group indices that these weights apply to'),
+        ('TEXCOORD', 'TEXCOORD', 'Typically holds UV coordinates, though can also be custom data. Choosing this will import the data as a UV layer (or two) in Blender'),
+        ('COLOR', 'COLOR', 'Typically used for vertex colors, though can also be custom data. Choosing this option will import the data as a vertex color layer in Blender'),
+        ('Preserve', 'Unknown / Preserve', "Don't try to interpret the data. Choosing this option will simply store the data in a vertex layer in Blender so that it can later be exported unmodified"),
+    ]
+
+class SemanticRemapItem(bpy.types.PropertyGroup):
+    semantic_from: bpy.props.StringProperty(name="From", default="ATTRIBUTE")
+    semantic_to:   bpy.props.EnumProperty(items=semantic_remap_enum, name="Change semantic interpretation")
+
+class MIGOTO_UL_semantic_remap_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.prop(item, "semantic_from", text="", emboss=False, icon_value=icon)
+            layout.prop(item, "semantic_to", text="", emboss=False, icon_value=icon)
+        elif self.layout_type == 'GRID':
+            # Doco says we must implement this layout type, but I don't see
+            # that it would be particularly useful, and not sure if we actually
+            # expect the list to render with this type in practice. Untested.
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a mesh dumped with 3DMigoto's frame analysis"""
@@ -1477,6 +1593,11 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=1,
             min=1,
             )
+
+    semantic_remap: bpy.props.CollectionProperty(type=SemanticRemapItem)
+    semantic_remap_idx: bpy.props.IntProperty(
+            name='Semantic Remap',
+            description='Enter the SemanticName and SemanticIndex the game is using on the left (e.g. TEXCOORD3), and what type of semantic the script should treat it as on the right') # Needed for template_list
 
     def get_vb_ib_paths(self):
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
@@ -1553,7 +1674,10 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             self.load_related = False
 
         try:
-            keywords = self.as_keywords(ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb', 'load_buf_limit_range'))
+            keywords = self.as_keywords(ignore=('filepath', 'files',
+                'filter_glob', 'load_related', 'load_buf', 'pose_cb',
+                'load_buf_limit_range', 'semantic_remap',
+                'semantic_remap_idx'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
@@ -1628,6 +1752,23 @@ class MIGOTO_PT_ImportFrameAnalysisBonePanel(MigotoImportOptionsPanelBase, bpy.t
         operator = context.space_data.active_operator
         self.layout.prop(operator, "pose_cb_off")
         self.layout.prop(operator, "pose_cb_step")
+
+class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
+    bl_label = "Semantic Remap"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        MigotoImportOptionsPanelBase.draw(self, context)
+        operator = context.space_data.active_operator
+
+        # TODO: Add layout.operator() to read selected file and fill in semantics
+
+        draw_ui_list(self.layout, context,
+                class_name='MIGOTO_UL_semantic_remap_list',
+                list_path='active_operator.properties.semantic_remap',
+                active_index_path='active_operator.properties.semantic_remap_idx',
+                unique_id='migoto_import_semantic_remap_list',
+                )
 
 class MIGOTO_PT_ImportFrameAnalysisManualOrientation(MigotoImportOptionsPanelBase, bpy.types.Panel):
     bl_label = "Orientation"
@@ -2151,11 +2292,14 @@ def menu_func_apply_vgmap(self, context):
     self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
 
 register_classes = (
+    SemanticRemapItem,
+    MIGOTO_UL_semantic_remap_list,
     Import3DMigotoFrameAnalysis,
     MIGOTO_PT_ImportFrameAnalysisMainPanel,
     MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel,
     MIGOTO_PT_ImportFrameAnalysisBufFilesPanel,
     MIGOTO_PT_ImportFrameAnalysisBonePanel,
+    MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel,
     MIGOTO_PT_ImportFrameAnalysisManualOrientation,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
