@@ -38,8 +38,12 @@ import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, axis_conversion
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy_extras.image_utils import load_image
-from bl_ui.generic_ui_list import draw_ui_list
 from mathutils import Matrix, Vector
+try:
+    from bl_ui.generic_ui_list import draw_ui_list
+except ImportError:
+    # Blender older than 3.5. Just disable the semantic remap feature
+    draw_ui_list = None
 
 ############## Begin (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
 
@@ -1876,6 +1880,9 @@ class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelB
         if context.path_resolve is None:
             # Avoid exceptions in console - seems like draw() is called several
             # times (not sure why) and sometimes path_resolve isn't available.
+            return
+        if draw_ui_list is None:
+            self.layout.label(text='Please update Blender to use this feature')
             return
         draw_ui_list(self.layout, context,
                 class_name='MIGOTO_UL_semantic_remap_list',
