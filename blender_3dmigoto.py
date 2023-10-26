@@ -1723,6 +1723,8 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 files.extend([os.path.basename(x) for x in paths])
         if not files:
             files = [x.name for x in self.files]
+            if files == ['']:
+                raise Fatal('No files selected')
 
         for filename in files:
             match = buffer_pattern.search(filename)
