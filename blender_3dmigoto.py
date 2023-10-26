@@ -550,7 +550,7 @@ class VertexBufferGroup(object):
         self.vertex_count = 0
         self.topology = topology or 'trianglelist'
         self.vbs = []
-        self.slots = set()
+        self.slots = {}
 
         if files is not None:
             self.parse_vb_txt(files, load_vertices)
@@ -564,7 +564,7 @@ class VertexBufferGroup(object):
             vb = IndividualVertexBuffer(idx, open(f, 'r'), self.layout, load_vertices)
             if vb.vertices:
                 self.vbs.append(vb)
-                self.slots.add(idx)
+                self.slots[idx] = vb
 
         # Non buffer specific info:
         self.first = self.vbs[0].first
@@ -587,7 +587,7 @@ class VertexBufferGroup(object):
             vb.parse_vb_bin(open(bin_f, 'rb'), use_drawcall_range)
             if vb.vertices:
                 self.vbs.append(vb)
-                self.slots.add(idx)
+                self.slots[idx] = vb
 
         # Non buffer specific info:
         self.first = self.vbs[0].first
@@ -676,6 +676,41 @@ class VertexBufferGroup(object):
                         if component < len(v):
                             v[component] = val
                     vertex[semantic] = v
+
+    def get_valid_semantics(self):
+        # This matches the logic in import_vertices() - Any semantics that
+        # re-use the same offset of an earlier semantic is considered invalid
+        # and will be ignored when importing the vertices.  These are usually a
+        # quirk of how certain engines handle unused semantics and at best will
+        # be repeating data we already imported in another semantic and at
+        # worst may be misinterpreting the data as a completely different type.
+        #
+        # Is is theoretically possible for the earlier semantic to be the
+        # invalid one - if we ever encounter that we might want to allow the
+        # user to choose which of the semantics sharing the same offset should
+        # be considerd the valid one.
+        #
+        # This also makes sure the corresponding vertex buffer is present and
+        # can fit the semantic.
+        seen_offsets = set()
+        valid_semantics = set()
+        for elem in self.layout:
+            if elem.InputSlotClass != 'per-vertex':
+                continue
+            if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
+                continue
+            seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
+
+            try:
+                stride = self.slots[elem.InputSlot].stride
+            except KeyError:
+                continue
+
+            if elem.AlignedByteOffset + format_size(elem.Format) > stride:
+                continue
+
+            valid_semantics.add(elem.name)
+        return valid_semantics
 
 class IndexBuffer(object):
     def __init__(self, *args, load_indices=True):
@@ -1517,20 +1552,29 @@ class SemanticRemapItem(bpy.types.PropertyGroup):
     InputSlot:         bpy.props.IntProperty(name="Vertex Buffer")
     InputSlotClass:    bpy.props.StringProperty(name="Input Slot Class")
     AlignedByteOffset: bpy.props.IntProperty(name="Aligned Byte Offset")
+    valid:             bpy.props.BoolProperty(default=True)
     tooltip:           bpy.props.StringProperty(default="This is a manually added entry. It's recommended to pre-fill semantics from selected files via the menu to the right to avoid typos")
     def update_tooltip(self):
         if not self.Format:
             return
+        self.tooltip = 'vb{}+{} {}'.format(self.InputSlot, self.AlignedByteOffset, self.Format)
         if self.InputSlotClass == 'per-instance':
-            self.tooltip = 'per-instance data which will not be used by the script'
-        else:
-            self.tooltip = 'vb{}+{} {}'.format(self.InputSlot, self.AlignedByteOffset, self.Format)
+            self.tooltip = '. This semantic holds per-instance data (such as per-object transformation matrices) which will not be used by the script'
+        elif self.valid == False:
+            self.tooltip += ". This semantic is invalid - it may share the same location as another semantic or the vertex buffer it belongs to may be missing / too small"
 
 class MIGOTO_UL_semantic_remap_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             layout.prop(item, "semantic_from", text="", emboss=False, icon_value=icon)
-            layout.prop(item, "semantic_to", text="", emboss=False, icon_value=icon)
+            if item.InputSlotClass == 'per-instance':
+                layout.label(text="Instanced Data")
+                layout.enabled = False
+            elif item.valid == False:
+                layout.label(text="INVALID")
+                layout.enabled = False
+            else:
+                layout.prop(item, "semantic_to", text="", emboss=False, icon_value=icon)
         elif self.layout_type == 'GRID':
             # Doco says we must implement this layout type, but I don't see
             # that it would be particularly useful, and not sure if we actually
@@ -1571,6 +1615,7 @@ class PrefillSemanticRemapList(bpy.types.Operator):
 
         for p in paths:
             vb, ib, name, pose_path = load_3dmigoto_mesh(operator, [p])
+            valid_semantics = vb.get_valid_semantics()
             for semantic in vb.layout:
                 if semantic.name not in semantics_in_list:
                     remap = semantic_remap_list.add()
@@ -1580,6 +1625,7 @@ class PrefillSemanticRemapList(bpy.types.Operator):
                     remap.InputSlot = semantic.InputSlot
                     remap.InputSlotClass = semantic.InputSlotClass
                     remap.AlignedByteOffset = semantic.AlignedByteOffset
+                    remap.valid = semantic.name in valid_semantics
                     remap.update_tooltip()
                     semantics_in_list.add(semantic.name)
 
