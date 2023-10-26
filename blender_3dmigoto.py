@@ -1525,6 +1525,47 @@ class MIGOTO_UL_semantic_remap_list(bpy.types.UIList):
             layout.alignment = 'CENTER'
             layout.label(text="", icon_value=icon)
 
+class MIGOTO_MT_semantic_remap_menu(bpy.types.Menu):
+    bl_label = "Semantic Remap Options"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator(ClearSemanticRemapList.bl_idname)
+        layout.operator(PrefillSemanticRemapList.bl_idname)
+
+class ClearSemanticRemapList(bpy.types.Operator):
+    """Clear the semantic remap list"""
+    bl_idname = "import_mesh.migoto_semantic_remap_clear"
+    bl_label = "Clear list"
+
+    def execute(self, context):
+        import_operator = context.space_data.active_operator
+        import_operator.properties.semantic_remap.clear()
+        return {'FINISHED'}
+
+class PrefillSemanticRemapList(bpy.types.Operator):
+    """Add semantics from the selected files to the semantic remap list"""
+    bl_idname = "import_mesh.migoto_semantic_remap_prefill"
+    bl_label = "Prefill from selected files"
+
+    def execute(self, context):
+        import_operator = context.space_data.active_operator
+        semantic_remap_list = import_operator.properties.semantic_remap
+        semantics_in_list = { x.semantic_from for x in semantic_remap_list }
+
+        paths = import_operator.get_vb_ib_paths(load_related=False)
+
+        for p in paths:
+            vb, ib, name, pose_path = load_3dmigoto_mesh(operator, [p])
+            for semantic in vb.layout:
+                if semantic.name not in semantics_in_list:
+                    remap = semantic_remap_list.add()
+                    remap.semantic_from = semantic.name
+                    semantics_in_list.add(semantic.name)
+
+        return {'FINISHED'}
+
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a mesh dumped with 3DMigoto's frame analysis"""
@@ -1599,14 +1640,16 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             name='Semantic Remap',
             description='Enter the SemanticName and SemanticIndex the game is using on the left (e.g. TEXCOORD3), and what type of semantic the script should treat it as on the right') # Needed for template_list
 
-    def get_vb_ib_paths(self):
+    def get_vb_ib_paths(self, load_related=None):
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
 
         dirname = os.path.dirname(self.filepath)
         ret = set()
+        if load_related is None:
+            load_related = self.load_related
 
         files = []
-        if self.load_related:
+        if load_related:
             for filename in self.files:
                 match = buffer_pattern.search(filename.name)
                 if match is None or not match.group('hash'):
@@ -1755,7 +1798,7 @@ class MIGOTO_PT_ImportFrameAnalysisBonePanel(MigotoImportOptionsPanelBase, bpy.t
 
 class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
     bl_label = "Semantic Remap"
-    bl_options = {'DEFAULT_CLOSED'}
+    #bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         MigotoImportOptionsPanelBase.draw(self, context)
@@ -1765,6 +1808,7 @@ class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelB
 
         draw_ui_list(self.layout, context,
                 class_name='MIGOTO_UL_semantic_remap_list',
+                menu_class_name='MIGOTO_MT_semantic_remap_menu',
                 list_path='active_operator.properties.semantic_remap',
                 active_index_path='active_operator.properties.semantic_remap_idx',
                 unique_id='migoto_import_semantic_remap_list',
@@ -2294,6 +2338,9 @@ def menu_func_apply_vgmap(self, context):
 register_classes = (
     SemanticRemapItem,
     MIGOTO_UL_semantic_remap_list,
+    MIGOTO_MT_semantic_remap_menu,
+    ClearSemanticRemapList,
+    PrefillSemanticRemapList,
     Import3DMigotoFrameAnalysis,
     MIGOTO_PT_ImportFrameAnalysisMainPanel,
     MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel,
