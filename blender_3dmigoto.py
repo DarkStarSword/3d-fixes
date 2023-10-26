@@ -1512,6 +1512,19 @@ semantic_remap_enum = [
 class SemanticRemapItem(bpy.types.PropertyGroup):
     semantic_from: bpy.props.StringProperty(name="From", default="ATTRIBUTE")
     semantic_to:   bpy.props.EnumProperty(items=semantic_remap_enum, name="Change semantic interpretation")
+    # Extra information when this is filled out automatically that might help guess the correct semantic:
+    Format:            bpy.props.StringProperty(name="DXGI Format")
+    InputSlot:         bpy.props.IntProperty(name="Vertex Buffer")
+    InputSlotClass:    bpy.props.StringProperty(name="Input Slot Class")
+    AlignedByteOffset: bpy.props.IntProperty(name="Aligned Byte Offset")
+    tooltip:           bpy.props.StringProperty(default="This is a manually added entry. It's recommended to pre-fill semantics from selected files via the menu to the right to avoid typos")
+    def update_tooltip(self):
+        if not self.Format:
+            return
+        if self.InputSlotClass == 'per-instance':
+            self.tooltip = 'per-instance data which will not be used by the script'
+        else:
+            self.tooltip = 'vb{}+{} {}'.format(self.InputSlot, self.AlignedByteOffset, self.Format)
 
 class MIGOTO_UL_semantic_remap_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
@@ -1562,6 +1575,12 @@ class PrefillSemanticRemapList(bpy.types.Operator):
                 if semantic.name not in semantics_in_list:
                     remap = semantic_remap_list.add()
                     remap.semantic_from = semantic.name
+                    # Store some extra information that can be helpful to guess the likely semantic:
+                    remap.Format = semantic.Format
+                    remap.InputSlot = semantic.InputSlot
+                    remap.InputSlotClass = semantic.InputSlotClass
+                    remap.AlignedByteOffset = semantic.AlignedByteOffset
+                    remap.update_tooltip()
                     semantics_in_list.add(semantic.name)
 
         return {'FINISHED'}
@@ -1816,6 +1835,7 @@ class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelB
                 list_path='active_operator.properties.semantic_remap',
                 active_index_path='active_operator.properties.semantic_remap_idx',
                 unique_id='migoto_import_semantic_remap_list',
+                item_dyntip_propname='tooltip',
                 )
 
 class MIGOTO_PT_ImportFrameAnalysisManualOrientation(MigotoImportOptionsPanelBase, bpy.types.Panel):
