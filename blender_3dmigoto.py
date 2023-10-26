@@ -1806,6 +1806,10 @@ class MIGOTO_PT_ImportFrameAnalysisRemapSemanticsPanel(MigotoImportOptionsPanelB
 
         # TODO: Add layout.operator() to read selected file and fill in semantics
 
+        if context.path_resolve is None:
+            # Avoid exceptions in console - seems like draw() is called several
+            # times (not sure why) and sometimes path_resolve isn't available.
+            return
         draw_ui_list(self.layout, context,
                 class_name='MIGOTO_UL_semantic_remap_list',
                 menu_class_name='MIGOTO_MT_semantic_remap_menu',
