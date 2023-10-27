@@ -1427,7 +1427,103 @@ def write_fmt_file(f, vb, ib, strides):
         f.write('format: %s\n' % ib.format)
     f.write(vb.layout.to_string())
 
-def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
+def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology):
+    backup = True
+    #topology='trianglestrip' # Testing
+    bind_section = ''
+    backup_section = ''
+    restore_section = ''
+    resource_section = ''
+    resource_bak_section = ''
+
+    draw_section = 'handling = skip\n'
+    if ib is not None:
+        draw_section += 'drawindexed = auto\n'
+    else:
+        draw_section += 'draw = auto\n'
+
+    if ib is not None:
+        bind_section += 'ib = ResourceIB\n'
+        resource_section += textwrap.dedent('''
+            [ResourceIB]
+            type = buffer
+            format = {}
+            filename = {}
+            ''').format(ib.format, os.path.basename(ib_path))
+        if backup:
+            resource_bak_section += '[ResourceBakIB]\n'
+            backup_section += 'ResourceBakIB = ref ib\n'
+            restore_section += 'ib = ResourceBakIB\n'
+
+    for vbuf_idx, stride in strides.items():
+        bind_section += 'vb{0} = ResourceVB{0}\n'.format(vbuf_idx or 0)
+        resource_section += textwrap.dedent('''
+            [ResourceVB{}]
+            type = buffer
+            stride = {}
+            filename = {}
+            ''').format(vbuf_idx, stride, os.path.basename(vb_path + vbuf_idx))
+        if backup:
+            resource_bak_section += '[ResourceBakVB{0}]\n'.format(vbuf_idx or 0)
+            backup_section += 'ResourceBakVB{0} = ref vb{0}\n'.format(vbuf_idx or 0)
+            restore_section += 'vb{0} = ResourceBakVB{0}\n'.format(vbuf_idx or 0)
+
+    # FIXME: Maybe split this into several ini files that the user may or may
+    # not choose to generate? One that just lists resources, a second that
+    # lists the TextureOverrides to replace draw calls, and a third with the
+    # ShaderOverride sections (or a ShaderRegex for foolproof replacements)...?
+    f.write(textwrap.dedent('''
+            ; Automatically generated file, be careful not to overwrite if you
+            ; make any manual changes
+
+            ; Please note - it is not recommended to place the [ShaderOverride]
+            ; here, as you only want checktextureoverride executed once per
+            ; draw call, so it's better to have all the shaders listed in a
+            ; common file instead to avoid doubling up and to allow common code
+            ; to enable/disable the mods, backup/restore buffers, etc. Plus you
+            ; may need to locate additional shaders to take care of shadows or
+            ; other render passes. But if you understand what you are doing and
+            ; need a quick 'n' dirty way to enable the reinjection, fill this in
+            ; and uncomment it:
+            ;[ShaderOverride{suffix}]
+            ;hash = FILL ME IN...
+            ;checktextureoverride = vb0
+
+            [TextureOverride{suffix}]
+            ;hash = FILL ME IN...
+            ''').lstrip().format(
+                suffix='',
+            ))
+    if ib is not None and '3DMigoto:FirstIndex' in obj:
+        f.write('match_first_index = {}\n'.format(obj['3DMigoto:FirstIndex']))
+    elif ib is None and '3DMigoto:FirstVertex' in obj:
+        f.write('match_first_vertex = {}\n'.format(obj['3DMigoto:FirstVertex']))
+
+    if backup:
+        f.write(backup_section)
+
+    f.write(bind_section)
+
+    if topology == 'trianglestrip':
+        f.write('run = CustomShaderOverrideTopology\n')
+    else:
+        f.write(draw_section)
+
+    if backup:
+        f.write(restore_section)
+
+    if topology == 'trianglestrip':
+        f.write(textwrap.dedent('''
+            [CustomShaderOverrideTopology]
+            topology = triangle_list
+            ''') + draw_section)
+
+    if backup:
+        f.write('\n' + resource_bak_section)
+
+    f.write(resource_section)
+
+def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
     obj = context.object
 
     if obj is None:
@@ -1435,7 +1531,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     strides = {x[11:-6]: obj[x] for x in obj.keys() if x.startswith('3DMigoto:VB') and x.endswith('Stride')}
     layout = InputLayout(obj['3DMigoto:VBLayout'])
-    topology = 'trianglelist'
+    orig_topology = topology = 'trianglelist'
     if '3DMigoto:Topology' in obj:
         topology = obj['3DMigoto:Topology']
         if topology == 'trianglestrip':
@@ -1518,13 +1614,13 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     base, ext = os.path.splitext(vb_path)
     for (suffix, vgmap) in vgmaps.items():
-        path = vb_path
+        ib_path = vb_path
         if suffix:
-            path = '%s-%s%s' % (base, suffix, ext)
-        vgmap_path = os.path.splitext(path)[0] + '.vgmap'
-        print('Exporting %s...' % path)
+            ib_path = '%s-%s%s' % (base, suffix, ext)
+        vgmap_path = os.path.splitext(ib_path)[0] + '.vgmap'
+        print('Exporting %s...' % ib_path)
         vb.remap_blendindices(obj, vgmap)
-        vb.write(path, strides, operator=operator)
+        vb.write(ib_path, strides, operator=operator)
         vb.revert_blendindices_remap()
         sorted_vgmap = collections.OrderedDict(sorted(vgmap.items(), key=lambda x:x[1]))
         json.dump(sorted_vgmap, open(vgmap_path, 'w'), indent=2)
@@ -1534,6 +1630,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     # Write format reference file
     write_fmt_file(open(fmt_path, 'w'), vb, ib, strides)
+
+    # Not ready yet
+    #if ini_path:
+    #    write_ini_file(open(ini_path, 'w'), vb, vb_path, ib, ib_path, strides, obj, orig_topology)
 
 semantic_remap_enum = [
         ('None', 'No change', 'Do not remap this semantic. If the semantic name is recognised the script will try to interpret it, otherwise it will preserve the existing data in a vertex layer'),
@@ -2033,10 +2133,11 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             vb_path = os.path.splitext(self.filepath)[0] + '.vb'
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
             fmt_path = os.path.splitext(vb_path)[0] + '.fmt'
+            ini_path = os.path.splitext(vb_path)[0] + '_generated.ini'
 
             # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
-            export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
+            export_3dmigoto(self, context, vb_path, ib_path, fmt_path, ini_path)
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
