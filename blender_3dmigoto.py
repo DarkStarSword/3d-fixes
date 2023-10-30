@@ -1836,7 +1836,19 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 continue
             match = buffer_pattern.search(filename)
             if match is None:
-                raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
+                if filename.lower().startswith('log') or filename.lower() == 'shaderusage.txt':
+                    # User probably just selected all files including the log
+                    continue
+                # TODO: Perhaps don't warn about extra files that may have been
+                # dumped out that we aren't specifically importing (such as
+                # constant buffers dumped with dump_cb or any buffer dumped
+                # with dump=), maybe provided we are loading other files from
+                # that draw call. Note that this is only applicable if 'load
+                # related' is disabled, as that option effectively filters
+                # these out above. For now just changed this to an error report
+                # rather than a Fatal so other files will still get loaded.
+                self.report({'ERROR'}, 'Unable to find corresponding buffers from "{}" - filename did not match vertex/index buffer pattern'.format(filename))
+                continue
 
             use_bin = self.load_buf
             if not match.group('hash') and not use_bin:
