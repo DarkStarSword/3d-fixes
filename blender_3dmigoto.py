@@ -1830,7 +1830,10 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             if files == ['']:
                 raise Fatal('No files selected')
 
+        done = set()
         for filename in files:
+            if filename in done:
+                continue
             match = buffer_pattern.search(filename)
             if match is None:
                 raise Fatal('Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
@@ -1844,6 +1847,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             vb_pattern = filename[:match.start()] + '-vb*' + filename[match.end():]
             ib_paths = glob(os.path.join(dirname, ib_pattern))
             vb_paths = glob(os.path.join(dirname, vb_pattern))
+            done.update(map(os.path.basename, itertools.chain(vb_paths, ib_paths)))
 
             if vb_paths and use_bin:
                 vb_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in vb_paths ]
