@@ -1817,14 +1817,14 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         if load_related is None:
             load_related = self.load_related
 
-        files = []
+        files = set()
         if load_related:
             for filename in self.files:
                 match = buffer_pattern.search(filename.name)
                 if match is None or not match.group('hash'):
                     continue
                 paths = glob(os.path.join(dirname, '*%s*.txt' % filename.name[match.start():match.end()]))
-                files.extend([os.path.basename(x) for x in paths])
+                files.update([os.path.basename(x) for x in paths])
         if not files:
             files = [x.name for x in self.files]
             if files == ['']:
