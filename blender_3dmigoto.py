@@ -1277,7 +1277,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     # Must be done after validate step:
     if use_normals:
         import_normals_step2(mesh)
-    else:
+    elif hasattr(mesh, 'calc_normals'): # Dropped in Blender 4.0
         mesh.calc_normals()
 
     link_object_to_scene(context, obj)
