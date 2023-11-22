@@ -107,6 +107,8 @@ def keys_to_strings(d):
 
 class Fatal(Exception): pass
 
+ImportPaths = collections.namedtuple('ImportPaths', ('vb_paths', 'ib_paths', 'use_bin', 'pose_path'))
+
 # TODO: Support more DXGI formats:
 f32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_FLOAT''')
 f16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_FLOAT''')
@@ -1927,7 +1929,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                     name = os.path.basename(vb_paths[0])
                     ib_paths = [None]
                 self.report({'WARNING'}, '{}: No index buffer present, support for this case is highly experimental'.format(name))
-            ret.add((tuple(vb_paths), ib_paths[0], use_bin, pose_path))
+            ret.add(ImportPaths(tuple(vb_paths), ib_paths[0], use_bin, pose_path))
         return ret
 
     def execute(self, context):
@@ -2055,7 +2057,7 @@ class MIGOTO_PT_ImportFrameAnalysisManualOrientation(MigotoImportOptionsPanelBas
         self.layout.prop(operator, "axis_up")
 
 def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_path=None, ib_path=None, vgmap_path=None, **kwargs):
-    paths = ((list(zip(vb_path, [vb_fmt_path]*len(vb_path))), (ib_path, ib_fmt_path), True, None),)
+    paths = (ImportPaths(vb_paths=list(zip(vb_path, [vb_fmt_path]*len(vb_path))), ib_paths=(ib_path, ib_fmt_path), use_bin=True, pose_path=None),)
     obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
     if obj and vgmap_path:
         apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
