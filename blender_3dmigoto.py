@@ -1366,7 +1366,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         if translated_elem_name == 'POSITION':
             if 'POSITION.w' in custom_attributes_float(mesh):
                 vertex[elem.name] = list(blender_vertex.undeformed_co) + \
-                                        [custom_attributes_float(mesh)['POSITION.w'].data[blender_loop_vertex.vertex_index].value]
+                                        [custom_attributes_float(mesh)['POSITION.w'].data[blender_vertex.index].value]
             else:
                 vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
         elif translated_elem_name.startswith('COLOR'):
@@ -1378,7 +1378,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         elif translated_elem_name == 'NORMAL':
             if 'NORMAL.w' in custom_attributes_float(mesh):
                 vertex[elem.name] = list(blender_loop_vertex.normal) + \
-                                        [custom_attributes_float(mesh)['NORMAL.w'].data[blender_loop_vertex.vertex_index].value]
+                                        [custom_attributes_float(mesh)['NORMAL.w'].data[blender_vertex.index].value]
                 # FIXME: Use blender_vertex.normal for pointlist
             elif blender_loop_vertex:
                 vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
@@ -1438,9 +1438,9 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             for component in 'xyzw':
                 layer_name = '%s.%s' % (elem.name, component)
                 if layer_name in custom_attributes_int(mesh):
-                    data.append(custom_attributes_int(mesh)[layer_name].data[blender_loop_vertex.vertex_index].value)
+                    data.append(custom_attributes_int(mesh)[layer_name].data[blender_vertex.index].value)
                 elif layer_name in custom_attributes_float(mesh):
-                    data.append(custom_attributes_float(mesh)[layer_name].data[blender_loop_vertex.vertex_index].value)
+                    data.append(custom_attributes_float(mesh)[layer_name].data[blender_vertex.index].value)
             if data:
                 #print('Retrieved unhandled semantic %s %s from vertex layer' % (elem.name, elem.Format), data)
                 vertex[elem.name] = data
