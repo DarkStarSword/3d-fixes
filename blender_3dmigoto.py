@@ -1919,8 +1919,8 @@ class FALogFile(object):
                     ret.add(FALogFile.ResourceUse(draw_call, bound.slot_type, bound.slot))
         return ret
 
+VBSOMapEntry = collections.namedtuple('VBSOMapEntry', ['draw_call', 'slot'])
 def find_stream_output_vertex_buffers(log):
-    #log = FALogFile(open('log.txt', 'r'))
     vb_so_map = {}
     for so_draw_call, bindings in log.slot_class['so'].items():
         for so_slot, so in bindings.items():
@@ -1931,9 +1931,18 @@ def find_stream_output_vertex_buffers(log):
                 # directly help determine which VB inputs we need from this
                 # draw call (all of them, or just some?), but we might want
                 # this slot if we write out an ini file for reinjection
-                vb_so_map[(vb_draw_call, vb_slot)] = (so_draw_call, so_slot)
+                vb_so_map[VBSOMapEntry(vb_draw_call, vb_slot)] = VBSOMapEntry(so_draw_call, so_slot)
     #print(sorted(vb_so_map.items()))
     return vb_so_map
+
+def open_frame_analysis_log_file(dirname):
+    basename = os.path.basename(dirname)
+    if basename.lower().startswith('ctx-0x'):
+        context = basename[6:]
+        path = os.path.join(dirname, '..', f'log-0x{context}.txt')
+    else:
+        path = os.path.join(dirname, 'log.txt')
+    return FALogFile(open(path, 'r'))
 
 class SemanticRemapItem(bpy.types.PropertyGroup):
     semantic_from: bpy.props.StringProperty(name="From", default="ATTRIBUTE")
@@ -2052,6 +2061,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=True,
             )
 
+    load_related_so_vb: BoolProperty(
+            name="Load pre-SO buffers (EXPERIMENTAL)",
+            description="Scans the frame analysis log file to find GPU pre-skinning Stream Output techniques in prior draw calls, and loads the unposed vertex buffers from those calls that are suitable for editing. Recommended for Unity games to load neutral poses",
+            default=False,
+            )
+
     load_buf: BoolProperty(
             name="Load .buf files instead",
             description="Load the mesh from the binary .buf dumps instead of the .txt files\nThis will load the entire mesh as a single object instead of separate objects from each draw call",
@@ -2098,11 +2113,21 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
 
     def get_vb_ib_paths(self, load_related=None):
         buffer_pattern = re.compile(r'''-(?:ib|vb[0-9]+)(?P<hash>=[0-9a-f]+)?(?=[^0-9a-f=])''')
+        vb_regex = re.compile(r'''^(?P<draw_call>[0-9]+)-vb(?P<slot>[0-9]+)=''') # TODO: Combine with above? (careful not to break hold type frame analysis)
 
         dirname = os.path.dirname(self.filepath)
         ret = set()
         if load_related is None:
             load_related = self.load_related
+
+        vb_so_map = {}
+        if self.load_related_so_vb:
+            try:
+                fa_log = open_frame_analysis_log_file(dirname)
+            except FileNotFoundError:
+                self.report({'WARNING'}, 'Frame Analysis Log File not found, loading unposed meshes from GPU Stream Output pre-skinning passes will be unavailable')
+            else:
+                vb_so_map = find_stream_output_vertex_buffers(fa_log)
 
         files = set()
         if load_related:
@@ -2148,6 +2173,28 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             vb_paths = glob(os.path.join(dirname, vb_pattern))
             done.update(map(os.path.basename, itertools.chain(vb_paths, ib_paths)))
 
+            if vb_so_map:
+                vb_so_paths = set()
+                for vb_path in vb_paths:
+                    vb_match = vb_regex.match(os.path.basename(vb_path))
+                    if vb_match:
+                        draw_call, slot = map(int, vb_match.group('draw_call', 'slot'))
+                        so = vb_so_map.get(VBSOMapEntry(draw_call, slot))
+                        if so:
+                            # No particularly good way to determine which input
+                            # vertex buffers we need from the stream-output
+                            # pass, so for now add them all:
+                            vb_so_pattern = f'{so.draw_call:06}-vb*.txt'
+                            glob_result = glob(os.path.join(dirname, vb_so_pattern))
+                            if not glob_result:
+                                self.report({'WARNING'}, f'{vb_so_pattern} not found, loading unposed meshes from GPU Stream Output pre-skinning passes will be unavailable')
+                            vb_so_paths.update(glob_result)
+                # FIXME: Not sure yet whether the extra vertex buffers from the
+                # stream output pre-skinning passes are best lumped in with the
+                # existing vb_paths or added as a separate set of paths. Advantages
+                # + disadvantages to each, and either way will need work.
+                vb_paths.extend(sorted(vb_so_paths))
+
             if vb_paths and use_bin:
                 vb_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in vb_paths ]
                 ib_bin_paths = [ os.path.splitext(x)[0] + '.buf' for x in ib_paths ]
@@ -2192,9 +2239,9 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
 
         try:
             keywords = self.as_keywords(ignore=('filepath', 'files',
-                'filter_glob', 'load_related', 'load_buf', 'pose_cb',
-                'load_buf_limit_range', 'semantic_remap',
-                'semantic_remap_idx'))
+                'filter_glob', 'load_related', 'load_related_so_vb',
+                'load_buf', 'pose_cb', 'load_buf_limit_range',
+                'semantic_remap', 'semantic_remap_idx'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
@@ -2240,6 +2287,7 @@ class MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel(MigotoImportOptionsPanelBas
         operator = context.space_data.active_operator
         self.layout.enabled = not operator.load_buf
         self.layout.prop(operator, "load_related")
+        #self.layout.prop(operator, "load_related_so_vb")
         self.layout.prop(operator, "merge_meshes")
 
 class MIGOTO_PT_ImportFrameAnalysisBufFilesPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
