@@ -91,8 +91,8 @@ def link_object_to_scene(context, obj):
 def unlink_object(context, obj):
     context.scene.collection.objects.unlink(obj)
 
-import operator # to get function names for operators like @, +, -
 def matmul(a, b):
+    import operator # to get function names for operators like @, +, -
     return operator.matmul(a, b) # the same as writing a @ b
 
 ############## End (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
@@ -2014,7 +2014,7 @@ class PrefillSemanticRemapList(bpy.types.Operator):
         paths = import_operator.get_vb_ib_paths(load_related=False)
 
         for p in paths:
-            vb, ib, name, pose_path = load_3dmigoto_mesh(operator, [p])
+            vb, ib, name, pose_path = load_3dmigoto_mesh(import_operator, [p])
             valid_semantics = vb.get_valid_semantics()
             for semantic in vb.layout:
                 if semantic.name not in semantics_in_list:
