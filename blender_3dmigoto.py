@@ -572,6 +572,8 @@ class VertexBufferGroup(object):
                 self.vbs.append(vb)
                 self.slots[idx] = vb
 
+        self.flag_invalid_semantics()
+
         # Non buffer specific info:
         self.first = self.vbs[0].first
         self.vertex_count = self.vbs[0].vertex_count
@@ -594,6 +596,8 @@ class VertexBufferGroup(object):
             if vb.vertices:
                 self.vbs.append(vb)
                 self.slots[idx] = vb
+
+        self.flag_invalid_semantics()
 
         # Non buffer specific info:
         self.first = self.vbs[0].first
@@ -683,13 +687,14 @@ class VertexBufferGroup(object):
                             v[component] = val
                     vertex[semantic] = v
 
-    def get_valid_semantics(self):
-        # This matches the logic in import_vertices() - Any semantics that
-        # re-use the same offset of an earlier semantic is considered invalid
-        # and will be ignored when importing the vertices.  These are usually a
-        # quirk of how certain engines handle unused semantics and at best will
-        # be repeating data we already imported in another semantic and at
-        # worst may be misinterpreting the data as a completely different type.
+    def flag_invalid_semantics(self):
+        # This refactors some of the logic that used to be in import_vertices()
+        # and get_valid_semantics() - Any semantics that re-use the same offset
+        # of an earlier semantic is considered invalid and will be ignored when
+        # importing the vertices. These are usually a quirk of how certain
+        # engines handle unused semantics and at best will be repeating data we
+        # already imported in another semantic and at worst may be
+        # misinterpreting the data as a completely different type.
         #
         # Is is theoretically possible for the earlier semantic to be the
         # invalid one - if we ever encounter that we might want to allow the
@@ -699,24 +704,38 @@ class VertexBufferGroup(object):
         # This also makes sure the corresponding vertex buffer is present and
         # can fit the semantic.
         seen_offsets = set()
-        valid_semantics = set()
         for elem in self.layout:
             if elem.InputSlotClass != 'per-vertex':
+                # Instance data isn't invalid, we just don't import it yet
                 continue
             if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
+                # Setting two flags to avoid changing behaviour in the refactor
+                # - might be able to simplify this to one flag, but want to
+                # test semantics that [partially] overflow the stride first,
+                # and make sure that export flow (stride won't be set) works.
+                elem.reused_offset = True
+                elem.invalid_semantic = True
                 continue
             seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
+            elem.reused_offset = False
 
             try:
                 stride = self.slots[elem.InputSlot].stride
             except KeyError:
+                # UE4 claiming it uses vertex buffers that it doesn't bind.
+                elem.invalid_semantic = True
                 continue
 
             if elem.AlignedByteOffset + format_size(elem.Format) > stride:
+                elem.invalid_semantic = True
                 continue
 
-            valid_semantics.add(elem.name)
-        return valid_semantics
+            elem.invalid_semantic = False
+
+    def get_valid_semantics(self):
+        self.flag_invalid_semantics()
+        return set([elem.name for elem in self.layout
+            if elem.InputSlotClass == 'per-vertex' and not elem.invalid_semantic])
 
 class IndexBuffer(object):
     def __init__(self, *args, load_indices=True):
@@ -1143,7 +1162,6 @@ def import_faces_from_vb_trianglestrip(mesh, vb):
 def import_vertices(mesh, vb, operator, semantic_translations={}):
     mesh.vertices.add(len(vb.vertices))
 
-    seen_offsets = set()
     blend_indices = {}
     blend_weights = {}
     texcoords = {}
@@ -1151,7 +1169,7 @@ def import_vertices(mesh, vb, operator, semantic_translations={}):
     use_normals = False
 
     for elem in vb.layout:
-        if elem.InputSlotClass != 'per-vertex':
+        if elem.InputSlotClass != 'per-vertex' or elem.reused_offset:
             continue
 
         if elem.InputSlot not in vb.slots:
@@ -1166,13 +1184,6 @@ def import_vertices(mesh, vb, operator, semantic_translations={}):
 
         # Some games don't follow the official DirectX UPPERCASE semantic naming convention:
         translated_elem_name = translated_elem_name.upper()
-
-        # Discard elements that reuse offsets in the vertex buffer, e.g. COLOR
-        # and some TEXCOORDs may be aliases of POSITION:
-        if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
-            assert(translated_elem_name != 'POSITION')
-            continue
-        seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         data = tuple( x[elem.name] for x in vb.vertices )
         if translated_elem_name == 'POSITION':
@@ -1344,19 +1355,14 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
     if blender_loop_vertex is not None:
         blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
     vertex = {}
-    seen_offsets = set()
 
     # TODO: Warn if vertex is in too many vertex groups for this layout,
     # ignoring groups with weight=0.0
     vertex_groups = sorted(blender_vertex.groups, key=lambda x: x.weight, reverse=True)
 
     for elem in layout:
-        if elem.InputSlotClass != 'per-vertex':
+        if elem.InputSlotClass != 'per-vertex' or elem.reused_offset:
             continue
-
-        if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
-            continue
-        seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         semantic_translations = layout.get_semantic_remap()
         translated_elem_name, translated_elem_index = \
@@ -1622,6 +1628,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
     # Blender to do this, but it's easy enough to do this ourselves
     indexed_vertices = collections.OrderedDict()
     vb = VertexBufferGroup(layout=layout, topology=topology)
+    vb.flag_invalid_semantics()
     if vb.topology == 'trianglelist':
         for poly in mesh.polygons:
             face = []
