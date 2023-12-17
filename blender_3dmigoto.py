@@ -324,6 +324,7 @@ class InputLayoutElement(object):
 
 class InputLayout(object):
     def __init__(self, custom_prop=[]):
+        self.semantic_translations_cache = None
         self.elems = collections.OrderedDict()
         for item in custom_prop:
             elem = InputLayoutElement(item)
@@ -348,6 +349,12 @@ class InputLayout(object):
 
     def __getitem__(self, semantic):
         return self.elems[semantic]
+
+    def untranslate_semantic(self, translated_semantic_name, translated_semantic_index=0):
+        semantic_translations = self.get_semantic_remap()
+        reverse_semantic_translations = {v: k for k,v in semantic_translations.items()}
+        semantic = reverse_semantic_translations[(translated_semantic_name, translated_semantic_index)]
+        return self[semantic]
 
     def encode(self, vertex, vbuf_idx, stride):
         buf = bytearray(stride)
@@ -409,14 +416,18 @@ class InputLayout(object):
             self.elems[remap.semantic_from].RemappedSemanticIndex = remapped_semantic_idx
             semantic_translations[remap.semantic_from] = (remap.semantic_to, remapped_semantic_idx)
 
+        self.semantic_translations_cache = semantic_translations
         return semantic_translations
 
     def get_semantic_remap(self):
+        if self.semantic_translations_cache:
+            return self.semantic_translations_cache
         semantic_translations = {}
         for elem in self.elems.values():
             if elem.RemappedSemanticName is not None:
                 semantic_translations[elem.name] = \
                     (elem.RemappedSemanticName, elem.RemappedSemanticIndex)
+        self.semantic_translations_cache = semantic_translations
         return semantic_translations
 
 class HashableVertex(dict):
@@ -943,7 +954,36 @@ def load_3dmigoto_mesh(operator, paths):
 
     return vb, ib, os.path.basename(vb_paths[0][0]), pose_path
 
-def import_normals_step1(mesh, data, vertex_layers, operator):
+def normal_import_translation(elem, flip):
+    unorm = elem.Format.endswith('_UNORM')
+    if unorm:
+        # Scale UNORM range 0:+1 to normal range -1:+1
+        if flip:
+            return lambda x: -(x*2.0 - 1.0)
+        else:
+            return lambda x: x*2.0 - 1.0
+    if flip:
+        return lambda x: -x
+    else:
+        return lambda x: x
+
+def normal_export_translation(layout, semantic, flip):
+    try:
+        unorm = layout.untranslate_semantic(semantic).Format.endswith('_UNORM')
+    except KeyError:
+        unorm = False
+    if unorm:
+        # Scale normal range -1:+1 to UNORM range 0:+1
+        if flip:
+            return lambda x: -x/2.0 + 0.5
+        else:
+            return lambda x: x/2.0 + 0.5
+    if flip:
+        return lambda x: -x
+    else:
+        return lambda x: x
+
+def import_normals_step1(mesh, data, vertex_layers, operator, translate_normal):
     # Ensure normals are 3-dimensional:
     # XXX: Assertion triggers in DOA6
     if len(data[0]) == 4:
@@ -951,7 +991,7 @@ def import_normals_step1(mesh, data, vertex_layers, operator):
             #raise Fatal('Normals are 4D')
             operator.report({'WARNING'}, 'Normals are 4D, storing W coordinate in NORMAL.w vertex layer. Beware that some types of edits on this mesh may be problematic.')
             vertex_layers['NORMAL.w'] = [[x[3]] for x in data]
-    normals = [(x[0], x[1], x[2]) for x in data]
+    normals = [tuple(map(translate_normal, (x[0], x[1], x[2]))) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
     # or mesh.update() we need to set custom normals in the loops, not
@@ -1159,7 +1199,7 @@ def import_faces_from_vb_trianglestrip(mesh, vb):
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
     mesh.polygons.foreach_set('loop_total', [3] * num_faces)
 
-def import_vertices(mesh, vb, operator, semantic_translations={}):
+def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_normal=False):
     mesh.vertices.add(len(vb.vertices))
 
     blend_indices = {}
@@ -1224,11 +1264,15 @@ def import_vertices(mesh, vb, operator, semantic_translations={}):
                     alpha_layer[l.index].color = [data[l.vertex_index][3], 0, 0]
         elif translated_elem_name == 'NORMAL':
             use_normals = True
-            import_normals_step1(mesh, data, vertex_layers, operator)
+            translate_normal = normal_import_translation(elem, flip_normal)
+            import_normals_step1(mesh, data, vertex_layers, operator, translate_normal)
+            # Record that normal was flipped so we know to undo it when exporting:
+            obj['3DMigoto:FlipNormal'] = flip_normal
         elif translated_elem_name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
         #    for l in mesh.loops:
+        #        FIXME: rescale range if elem.Format.endswith('_UNORM')
         #        assert(data[l.vertex_index][3] in (1.0, -1.0))
         #        l.tangent[:] = data[l.vertex_index][0:3]
             operator.report({'INFO'}, 'Skipping import of %s in favour of recalculating on export' % elem.name)
@@ -1268,7 +1312,7 @@ def assert_pointlist_ib_is_pointless(ib, vb):
     assert(len(vb) == len(ib)) # FIXME: Properly implement point list index buffers
     assert(all([(i,) == j for i,j in enumerate(ib.faces)])) # FIXME: Properly implement point list index buffers
 
-def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_normal=False, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
@@ -1309,7 +1353,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     if vb.topology == 'pointlist':
         operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting. This may not be the mesh you are looking for.'.format(mesh.name))
 
-    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, vb, operator, semantic_translations)
+    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, obj, vb, operator, semantic_translations, flip_normal)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
     if not texcoords:
@@ -1351,7 +1395,7 @@ def mesh_triangulate(me):
     bm.to_mesh(me)
     bm.free()
 
-def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords, blender_vertex=None):
+def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords, blender_vertex, translate_normal, translate_tangent):
     if blender_loop_vertex is not None:
         blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
     vertex = {}
@@ -1385,20 +1429,19 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                                         [mesh.vertex_colors[elem.name+'.A'].data[blender_loop_vertex.index].color[0]]
         elif translated_elem_name == 'NORMAL':
             if 'NORMAL.w' in custom_attributes_float(mesh):
-                vertex[elem.name] = list(blender_loop_vertex.normal) + \
+                vertex[elem.name] = list(map(translate_normal, blender_loop_vertex.normal)) + \
                                         [custom_attributes_float(mesh)['NORMAL.w'].data[blender_vertex.index].value]
-                # FIXME: Use blender_vertex.normal for pointlist
             elif blender_loop_vertex:
-                vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
+                vertex[elem.name] = elem.pad(list(map(translate_normal, blender_loop_vertex.normal)), 0.0)
             else:
                 # XXX: point list topology, these normals are probably going to be pretty poor, but at least it's something to export
-                vertex[elem.name] = elem.pad(list(blender_vertex.normal), 0.0)
+                vertex[elem.name] = elem.pad(list(map(translate_normal, blender_vertex.normal)), 0.0)
         elif translated_elem_name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
             if blender_loop_vertex:
-                vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
+                vertex[elem.name] = elem.pad(list(map(translate_tangent, blender_loop_vertex.tangent)), blender_loop_vertex.bitangent_sign)
             else:
                 # XXX Blender doesn't save tangents outside of loops, so unless
                 # we save these somewhere custom when importing they are
@@ -1419,7 +1462,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # binormal = numpy.cross(normal, tangent)
             # XXX: Does the binormal need to be normalised to a unit vector?
             # binormal = binormal / numpy.linalg.norm(binormal)
-            # vertex[elem.name] = elem.pad(list(binormal), 0.0)
+            # vertex[elem.name] = elem.pad(list(map(translate_binormal, binormal)), 0.0)
             pass
         elif translated_elem_name.startswith('BLENDINDICES'):
             i = translated_elem_index * 4
@@ -1619,6 +1662,9 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
             texcoords[l.index] = uv
         texcoord_layers[uv_layer.name] = texcoords
 
+    translate_normal = normal_export_translation(layout, 'NORMAL', operator.flip_normal)
+    translate_tangent = normal_export_translation(layout, 'TANGENT', operator.flip_tangent)
+
     # Blender's vertices have unique positions, but may have multiple
     # normals, tangents, UV coordinates, etc - these are stored in the
     # loops. To export back to DX we need these combined together such that
@@ -1633,7 +1679,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
         for poly in mesh.polygons:
             face = []
             for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
-                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers, None, translate_normal, translate_tangent)
                 if ib is not None:
                     face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
                 else:
@@ -1646,7 +1692,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
                 vb.append(vertex)
     elif vb.topology == 'pointlist':
         for index, blender_vertex in enumerate(mesh.vertices):
-            vb.append(blender_vertex_to_3dmigoto_vertex(mesh, obj, None, layout, texcoord_layers, blender_vertex))
+            vb.append(blender_vertex_to_3dmigoto_vertex(mesh, obj, None, layout, texcoord_layers, blender_vertex, translate_normal, translate_tangent))
             if ib is not None:
                 ib.append((index,))
     else:
@@ -2062,6 +2108,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=True,
             )
 
+    flip_normal: BoolProperty(
+            name="Flip Normal",
+            description="Flip Normals during importing (Try if the model doesn't seem to be shading as expected in Blender. Not quite the same as flipping normals within Blender as this won't reverse the winding order. Required for Unreal Engine)",
+            default=False,
+            )
+
     load_related: BoolProperty(
             name="Auto-load related meshes",
             description="Automatically load related meshes found in the frame analysis dump",
@@ -2284,6 +2336,7 @@ class MIGOTO_PT_ImportFrameAnalysisMainPanel(MigotoImportOptionsPanelBase, bpy.t
         MigotoImportOptionsPanelBase.draw(self, context)
         operator = context.space_data.active_operator
         self.layout.prop(operator, "flip_texcoord_v")
+        self.layout.prop(operator, "flip_normal")
 
 class MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
     bl_label = ""
@@ -2387,8 +2440,14 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
 
     flip_texcoord_v: BoolProperty(
             name="Flip TEXCOORD V",
-            description="Flip TEXCOORD V asix during importing",
+            description="Flip TEXCOORD V axis during importing",
             default=True,
+            )
+
+    flip_normal: BoolProperty(
+            name="Flip Normal",
+            description="Flip Normals during importing (Try if the model doesn't seem to be shading as expected in Blender. Not quite the same as flipping normals within Blender as this won't reverse the winding order. Required for Unreal Engine)",
+            default=False,
             )
 
     def get_vb_ib_paths(self, filename):
@@ -2485,6 +2544,23 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             default='*.vb*',
             options={'HIDDEN'},
             )
+
+    flip_normal: BoolProperty(
+            name="Flip Normal",
+            description="Flip Normals during export (automatically set to match the import option)",
+            default=False,
+            )
+
+    flip_tangent: BoolProperty(
+            name="Flip Tangent",
+            description="Flip Tangents during export (automatically set to match the flip normals option)",
+            default=False,
+            )
+
+    def invoke(self, context, event):
+        obj = context.object
+        self.flip_tangent = self.flip_normal = obj.get('3DMigoto:FlipNormal', False)
+        return ExportHelper.invoke(self, context, event)
 
     def execute(self, context):
         try:
