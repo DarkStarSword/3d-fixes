@@ -1164,24 +1164,33 @@ def import_vertex_layers(mesh, obj, vertex_layers):
             else:
                 raise Fatal('BUG: Bad layer type %s' % type(data[0][0]))
 
-def import_faces_from_ib(mesh, ib):
+def import_faces_from_ib(mesh, ib, flip_winding):
     mesh.loops.add(len(ib.faces) * 3)
     mesh.polygons.add(len(ib.faces))
-    mesh.loops.foreach_set('vertex_index', unpack_list(ib.faces))
+    if flip_winding:
+        mesh.loops.foreach_set('vertex_index', unpack_list(map(reversed, ib.faces)))
+    else:
+        mesh.loops.foreach_set('vertex_index', unpack_list(ib.faces))
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(len(ib.faces))])
     mesh.polygons.foreach_set('loop_total', [3] * len(ib.faces))
 
-def import_faces_from_vb_trianglelist(mesh, vb):
+def import_faces_from_vb_trianglelist(mesh, vb, flip_winding):
     # Only lightly tested
     num_faces = len(vb.vertices) // 3
     mesh.loops.add(num_faces * 3)
     mesh.polygons.add(num_faces)
-    mesh.loops.foreach_set('vertex_index', [x for x in range(num_faces * 3)])
+    if flip_winding:
+        raise Fatal('Flipping winding order untested without index buffer') # export in particular needs support
+        mesh.loops.foreach_set('vertex_index', [x for x in reversed(range(num_faces * 3))])
+    else:
+        mesh.loops.foreach_set('vertex_index', [x for x in range(num_faces * 3)])
     mesh.polygons.foreach_set('loop_start', [x*3 for x in range(num_faces)])
     mesh.polygons.foreach_set('loop_total', [3] * num_faces)
 
-def import_faces_from_vb_trianglestrip(mesh, vb):
+def import_faces_from_vb_trianglestrip(mesh, vb, flip_winding):
     # Only lightly tested
+    if flip_winding:
+        raise Fatal('Flipping winding order with triangle strip topology is not implemented')
     num_faces = len(vb.vertices) - 2
     if num_faces <= 0:
         raise Fatal('Insufficient vertices in trianglestrip')
@@ -1266,8 +1275,6 @@ def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_norm
             use_normals = True
             translate_normal = normal_import_translation(elem, flip_normal)
             import_normals_step1(mesh, data, vertex_layers, operator, translate_normal)
-            # Record that normal was flipped so we know to undo it when exporting:
-            obj['3DMigoto:FlipNormal'] = flip_normal
         elif translated_elem_name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
@@ -1312,7 +1319,7 @@ def assert_pointlist_ib_is_pointless(ib, vb):
     assert(len(vb) == len(ib)) # FIXME: Properly implement point list index buffers
     assert(all([(i,) == j for i,j in enumerate(ib.faces)])) # FIXME: Properly implement point list index buffers
 
-def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_normal=False, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
+def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_winding=False, flip_normal=False, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
@@ -1333,10 +1340,15 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_n
     for raw_vb in vb.vbs:
         obj['3DMigoto:VB%iStride' % raw_vb.idx] = raw_vb.stride
     obj['3DMigoto:FirstVertex'] = vb.first
+    # Record these import options so the exporter can set them to match by
+    # default. Might also consider adding them to the .fmt file so reimporting
+    # a previously exported file can also set them by default?
+    obj['3DMigoto:FlipWinding'] = flip_winding
+    obj['3DMigoto:FlipNormal'] = flip_normal
 
     if ib is not None:
         if ib.topology in ('trianglelist', 'trianglestrip'):
-            import_faces_from_ib(mesh, ib)
+            import_faces_from_ib(mesh, ib, flip_winding)
         elif ib.topology == 'pointlist':
             assert_pointlist_ib_is_pointless(ib, vb)
         else:
@@ -1345,9 +1357,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_n
         obj['3DMigoto:IBFormat'] = ib.format
         obj['3DMigoto:FirstIndex'] = ib.first
     elif vb.topology == 'trianglelist':
-        import_faces_from_vb_trianglelist(mesh, vb)
+        import_faces_from_vb_trianglelist(mesh, vb, flip_winding)
     elif vb.topology == 'trianglestrip':
-        import_faces_from_vb_trianglestrip(mesh, vb)
+        import_faces_from_vb_trianglestrip(mesh, vb, flip_winding)
     elif vb.topology != 'pointlist':
         raise Fatal('Unsupported topology (VB): {}'.format(vb.topology))
     if vb.topology == 'pointlist':
@@ -1683,8 +1695,12 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
                 if ib is not None:
                     face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
                 else:
+                    if operator.flip_winding:
+                        raise Fatal('Flipping winding order without index buffer not implemented')
                     vb.append(vertex)
             if ib is not None:
+                if operator.flip_winding:
+                    face.reverse()
                 ib.append(face)
 
         if ib is not None:
@@ -2108,9 +2124,15 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             default=True,
             )
 
+    flip_winding: BoolProperty(
+            name="Flip Winding Order",
+            description="Flip winding order (face orientation) during importing. Try if the model doesn't seem to be shading as expected in Blender and enabling the 'Face Orientation' overlay shows **RED** (if it shows BLUE, try 'Flip Normal' instead). Not quite the same as flipping normals within Blender as this only reverses the winding order without flipping the normals. Recommended for Unreal Engine",
+            default=False,
+            )
+
     flip_normal: BoolProperty(
             name="Flip Normal",
-            description="Flip Normals during importing (Try if the model doesn't seem to be shading as expected in Blender. Not quite the same as flipping normals within Blender as this won't reverse the winding order. Required for Unreal Engine)",
+            description="Flip Normals during importing. Try if the model doesn't seem to be shading as expected in Blender and enabling 'Face Orientation' overlay shows **BLUE** (if it shows RED, try 'Flip Winding Order' instead). Not quite the same as flipping normals within Blender as this won't reverse the winding order",
             default=False,
             )
 
@@ -2336,6 +2358,7 @@ class MIGOTO_PT_ImportFrameAnalysisMainPanel(MigotoImportOptionsPanelBase, bpy.t
         MigotoImportOptionsPanelBase.draw(self, context)
         operator = context.space_data.active_operator
         self.layout.prop(operator, "flip_texcoord_v")
+        self.layout.prop(operator, "flip_winding")
         self.layout.prop(operator, "flip_normal")
 
 class MIGOTO_PT_ImportFrameAnalysisRelatedFilesPanel(MigotoImportOptionsPanelBase, bpy.types.Panel):
@@ -2444,9 +2467,15 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
             default=True,
             )
 
+    flip_winding: BoolProperty(
+            name="Flip Winding Order",
+            description="Flip winding order (face orientation) during importing. Try if the model doesn't seem to be shading as expected in Blender and enabling the 'Face Orientation' overlay shows **RED** (if it shows BLUE, try 'Flip Normal' instead). Not quite the same as flipping normals within Blender as this only reverses the winding order without flipping the normals. Recommended for Unreal Engine",
+            default=False,
+            )
+
     flip_normal: BoolProperty(
             name="Flip Normal",
-            description="Flip Normals during importing (Try if the model doesn't seem to be shading as expected in Blender. Not quite the same as flipping normals within Blender as this won't reverse the winding order. Required for Unreal Engine)",
+            description="Flip Normals during importing. Try if the model doesn't seem to be shading as expected in Blender and enabling 'Face Orientation' overlay shows **BLUE** (if it shows RED, try 'Flip Winding Order' instead). Not quite the same as flipping normals within Blender as this won't reverse the winding order",
             default=False,
             )
 
@@ -2545,6 +2574,12 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             options={'HIDDEN'},
             )
 
+    flip_winding: BoolProperty(
+            name="Flip Winding Order",
+            description="Flip winding order during export (automatically set to match the import option)",
+            default=False,
+            )
+
     flip_normal: BoolProperty(
             name="Flip Normal",
             description="Flip Normals during export (automatically set to match the import option)",
@@ -2559,6 +2594,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
 
     def invoke(self, context, event):
         obj = context.object
+        self.flip_winding = obj.get('3DMigoto:FlipWinding', False)
         self.flip_tangent = self.flip_normal = obj.get('3DMigoto:FlipNormal', False)
         return ExportHelper.invoke(self, context, event)
 
