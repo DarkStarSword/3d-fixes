@@ -1325,6 +1325,12 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(mesh.name, mesh)
 
+    # Store hashes for .ini mod generation when exporting
+    obj['3DMigoto:VBHash'] = name[11:19]
+    obj['3DMigoto:VBHashJoin'] = ""
+    obj['3DMigoto:VSHash'] = name[23:39]
+    obj['3DMigoto:PSHash'] = name[43:59]   
+    
     global_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
     obj.matrix_world = global_matrix
 
@@ -2612,6 +2618,166 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
 
+def mod_namefix(name):
+    name = '_'.join(name.split())
+    name = re.sub(r'\W+', '', name)
+    return name
+        
+class Export3DMigotoMod(bpy.types.Operator, ExportHelper):
+    """Export meshes and textures, and generate an .ini"""
+    bl_idname = "export_mesh.migoto_mod"
+    bl_label = "Export 3DMigoto Mod"
+    filename_ext = ".ini"
+    
+    mod_name: StringProperty(
+            name="Mod name",
+            description="A unique name used in the .ini to avoid conflicts",
+            default="NewMod",
+            )
+            
+    flip_winding: BoolProperty(
+            name="Flip Winding Order",
+            description="Flip winding order during export (automatically set to match the import option)",
+            default=False,
+            )
+
+    flip_normal: BoolProperty(
+            name="Flip Normal",
+            description="Flip Normals during export (automatically set to match the import option)",
+            default=False,
+            )
+
+    flip_tangent: BoolProperty(
+            name="Flip Tangent",
+            description="Flip Tangents during export (automatically set to match the flip normals option)",
+            default=False,
+            )
+
+    def invoke(self, context, event):
+        obj = context.object
+        self.flip_winding = obj.get('3DMigoto:FlipWinding', False)
+        self.flip_tangent = self.flip_normal = obj.get('3DMigoto:FlipNormal', False)
+        return ExportHelper.invoke(self, context, event)
+    
+    def execute(self, context):
+
+        if len(context.selected_objects) < 1:
+            raise Fatal('No objects selected')
+        
+        meshes_dir = os.path.join(os.path.dirname(self.filepath), 'meshes')
+        
+        # Write meshes
+        
+        if not os.path.exists(meshes_dir):
+            os.mkdir(meshes_dir)
+
+        for selected_object in context.selected_objects:
+            mesh_name = mod_namefix(selected_object.name)
+            vb_path = os.path.join(meshes_dir, mesh_name + '.vb')
+            ib_path = os.path.join(meshes_dir, mesh_name + '.ib')
+            fmt_path = os.path.join(meshes_dir, mesh_name + '.fmt')
+            ini_path = os.path.join(meshes_dir, mesh_name + '_generated.ini')
+            export_3dmigoto(self, context, vb_path, ib_path, fmt_path, ini_path)
+            
+        # Write ini
+        
+        ini_shader_overrides = {}
+        ini_texture_overrides = {}
+        ini_vb_resources = {}
+        ini_ib_resources = {}
+        ini_texture_resources = {}
+
+        mod_name = mod_namefix(self.mod_name)
+        ini_name = mod_namefix(os.path.splitext(os.path.basename(self.filepath))[0])
+
+        ps_hashes = list(set(obj['3DMigoto:PSHash'] for obj in context.selected_objects))
+        
+        for index, ps_hash in enumerate(ps_hashes):
+            ini_shader_overrides[ps_hash] = [
+                f"[ShaderOverride_{mod_name}_{ini_name}_{index}]",
+                f"hash = {ps_hash}",
+                "run = CommandListMod",
+                "allow_duplicate_hash = overrule"
+            ]
+
+        # make this part less redundant and confusing
+        selected_objects_list = context.selected_objects
+        objects_waiting_to_join = []
+        for selected_object in selected_objects_list:
+            mesh_name = mod_namefix(selected_object.name)
+            vb_resource_name = f"Resource_VB_{mod_name}_{ini_name}_{mesh_name}"
+            ib_resource_name = f"Resource_IB_{mod_name}_{ini_name}_{mesh_name}"
+
+            if selected_object in objects_waiting_to_join:
+                if selected_object['3DMigoto:VBHashJoin'] not in ini_texture_overrides:
+                    raise Fatal(f"Object \"{selected_object.name}\" failed joining, hash \"{selected_object['3DMigoto:VBHashJoin']}\" not found in selected objects")
+            else:
+                ini_vb_resources[vb_resource_name] = [
+                    f"[{vb_resource_name}]",
+                    f"type = Buffer",
+                    f"stride = {selected_object['3DMigoto:VB0Stride']}",
+                    f"filename = {os.path.join('meshes', mesh_name + '.vb0')}"
+                ]
+
+                ini_ib_resources[ib_resource_name] = [
+                    f"[{ib_resource_name}]",
+                    f"type = Buffer",
+                    f"format = {selected_object['3DMigoto:IBFormat']}",
+                    f"filename = {os.path.join('meshes', mesh_name + '.ib')}"
+                ]
+
+            vbhash = selected_object['3DMigoto:VBHash']
+            vbhashjoin = selected_object['3DMigoto:VBHashJoin']
+
+            if vbhashjoin != "":
+                if vbhashjoin not in ini_texture_overrides:
+                    objects_waiting_to_join.append(selected_object)
+                    selected_objects_list.append(selected_object)
+                    continue
+                else:
+                    vbhash = vbhashjoin
+
+            if vbhash not in ini_texture_overrides:
+                ini_texture_overrides[vbhash] = [
+                    f"[TextureOverride_{mod_name}_{ini_name}_{mesh_name}]",
+                    f"hash = {vbhash}",
+                    "handling = skip",
+                    f"match_first_index = {selected_object['3DMigoto:FirstIndex']}",
+                    f"vb0 = {vb_resource_name}",
+                    f"ib = {ib_resource_name}",
+                    "drawindexed = auto"
+                ]
+                
+                ini_texture_resources[vbhash] = [
+                    f";[TextureOverrideSwap_{mod_name}_{ini_name}_{mesh_name}]",
+                    f";hash = {vbhash}",
+                    f";ps-t0 = Resource_TextureSwap_{mod_name}_{ini_name}_{mesh_name}",
+                    f";[Resource_TextureSwap_{mod_name}_{ini_name}_{mesh_name}]",
+                    f";filename = textures/myTextureMod_{mesh_name}.dds"
+                ]
+
+        ini_text = "; Shader overrides\n"
+        ini_text += "\n".join(text for so in ini_shader_overrides.values() for text in so) + "\n"
+
+        ini_text += "\n; Texture overrides\n"
+        ini_text += "\n".join(text for to in ini_texture_overrides.values() for text in to) + "\n"
+
+        ini_text += "\n; Vertex buffer resources\n"
+        ini_text += "\n".join(text for vbr in ini_vb_resources.values() for text in vbr) + "\n"
+
+        ini_text += "\n; Index buffer resources\n"
+        ini_text += "\n".join(text for ibr in ini_ib_resources.values() for text in ibr) + "\n"
+
+        ini_text += "\n; Texture resources\n"
+        ini_text += "\n".join(text for tr in ini_texture_resources.values() for text in tr) + "\n"
+
+        with open(self.filepath, 'w') as file:
+            file.write(ini_text)
+
+        self.report({'INFO'}, "Exported successfully")
+
+        return {'FINISHED'}
+
 def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reverse=False, suffix='', rename=False, cleanup=False):
     if not targets:
         targets = context.selected_objects
@@ -2981,6 +3147,9 @@ def menu_func_import_pose(self, context):
 
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+    
+def menu_func_exportmod(self, context):
+    self.layout.operator(Export3DMigotoMod.bl_idname, text="3DMigoto Mod")
 
 def menu_func_apply_vgmap(self, context):
     self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
@@ -3001,6 +3170,7 @@ register_classes = (
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
     Export3DMigoto,
+    Export3DMigotoMod,
     ApplyVGMap,
     UpdateVGMap,
     Import3DMigotoPose,
@@ -3016,6 +3186,7 @@ def register():
     import_menu.append(menu_func_import_fa)
     import_menu.append(menu_func_import_raw)
     export_menu.append(menu_func_export)
+    export_menu.append(menu_func_exportmod)
     import_menu.append(menu_func_apply_vgmap)
     import_menu.append(menu_func_import_pose)
 
@@ -3026,6 +3197,7 @@ def unregister():
     import_menu.remove(menu_func_import_fa)
     import_menu.remove(menu_func_import_raw)
     export_menu.remove(menu_func_export)
+    export_menu.remove(menu_func_exportmod)
     import_menu.remove(menu_func_apply_vgmap)
     import_menu.remove(menu_func_import_pose)
 
