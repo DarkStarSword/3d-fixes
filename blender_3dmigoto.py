@@ -1346,9 +1346,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     obj['3DMigoto:FlipWinding'] = flip_winding
     obj['3DMigoto:FlipNormal'] = flip_normal
     # Store hashes for .ini mod generation when exporting
-    obj['3DMigoto:VBHash'] = re.search(r'(?<=-vb[0-9]=).*?(?=-)', name)
-    obj['3DMigoto:VSHash'] = re.search(r'(?<=-vs=).*?(?=-)', name)
-    obj['3DMigoto:PSHash'] = re.search(r'(?<=-ps=).*?(?=$|\.)', name)
+    obj['3DMigoto:VBHash'] = re.search(r'(?<=-vb[0-9]=).*?(?=-)', name).group() if re.search(r'(?<=-vb[0-9]=).*?(?=-)', name) else None
+    obj['3DMigoto:VSHash'] = re.search(r'(?<=-vs=).*?(?=-)', name).group() if re.search(r'(?<=-vs=).*?(?=-)', name) else None
+    obj['3DMigoto:PSHash'] = re.search(r'(?<=-ps=).*?(?=$|\.)', name).group() if re.search(r'(?<=-ps=).*?(?=$|\.)', name) else None
     
     if ib is not None:
         if ib.topology in ('trianglelist', 'trianglestrip'):
