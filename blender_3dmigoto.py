@@ -1598,15 +1598,18 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology, override
     f.write(textwrap.dedent('''
         ;Automatically generated file.
         ;This export had the following shader hashes:
-        ;Pixel Shader = {}
-        ;Vertex Shader = {}
+        ;Pixel Shader = {ps}
+        ;Vertex Shader = {vs}
         ;One of them has been automatically saved inside Mods/_ShaderOverrides.
         ;It is required for your mod to work.
 
         ;------Mesh swaps section------
-        [TextureOverride_{}]
-        hash = {}
-        ''').lstrip().format(obj['3DMigoto:PSHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:VBHash'], obj['3DMigoto:VBHash']))
+        [TextureOverride_{vb}]
+        hash = {vb}
+        ''').lstrip().format(
+            ps=obj['3DMigoto:PSHash'],
+            vs=obj['3DMigoto:VSHash'],
+            vb=obj['3DMigoto:VBHash']))
 
     if ib is not None and '3DMigoto:FirstIndex' in obj:
         f.write('match_first_index = {}\n'.format(obj['3DMigoto:FirstIndex']))
