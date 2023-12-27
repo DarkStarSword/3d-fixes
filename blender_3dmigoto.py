@@ -1549,6 +1549,13 @@ def write_fmt_file(f, vb, ib, strides):
     f.write(vb.layout.to_string())
 
 def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology, override_vertex_shader, texture_override_range):
+    # FIXME: backup is something that needs to be decided in tandem with what
+    # we finalise writing in the ShaderOverride sections. The safe option is
+    # to always turn it on, and if the only thing we write to the
+    # ShaderOverride is checktextureoverride=vb0 we absolutely should enable
+    # it, but if we instead have the ShaderOverride call a command list in the
+    # base mod that has been properly set up with a command list that already
+    # does the backup + restore already this will be redundant.
     backup = False
     #topology='trianglestrip' # Testing
     bind_section = ''
@@ -1602,16 +1609,56 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology, override
 
     shader_overrides_file = shader_overrides_path + '\\' + shader_hash_to_write + '.ini'
 
-    with open(shader_overrides_file, 'w') as f_overrides:
-        f_overrides.write(textwrap.dedent('''
-            [ShaderOverride]
-            hash = {}
-            checktextureoverride = vb0
-            ''').format(shader_hash_to_write))
-        for n in range(texture_override_range + 1):
-            f_overrides.write('checktextureoverride = ps-t{}\n'.format(n))
+    # FIXME: THIS NEEDS MAJOR REWORK!
+    # - This should not be installing to some arbitrary parent directory. At
+    #   worst this should be selected by the user, at best we would find a way to
+    #   make this work without the need to write to some central folder at all.
+    # - This risks creating hidden conflicts between mods, e.g. What happens if
+    #   modder 1 selects 4 textures, then modder 2 selects 1 texture? Now we
+    #   have a conflict and the user might break mod 1 by installing mod 2.
+    # - The modder will have to remember to package up files from a different
+    #   directory to the one they are working in
+    # - The users will have to extract the mods to the correct directories, or
+    #   they will end up asking why they are getting mod conflict warnings from
+    #   3DMigoto. We have tried to minimise the need for users to get this right
+    # - Depending on how the game's base mod has been set up this may need (and
+    #   is highly recommended to) run a command list that decides what to do
+    #   (e.g. add support for toggle keys, frame analysis, texture slot
+    #   overrides, etc) instead of directly calling checktextureoverride
+    # - My preferred solution is to allow each mod to add their hashes to an
+    #   existing set, but that will require an update to 3DMigoto.
+    # - TODO: Can we do this without 3DMigoto updates? The central directory
+    #   would achive that, but I don't think it's a significant improvement
+    #   over the current central d3dx.ini and brings it's own problems that
+    #   make it pretty questionable as something we want to support long term,
+    #   but may be useful as a stop-gap measure.
+    #
+    #   TODO: Investigate how existing 3DMigoto code would handle files with
+    #   duplicated namespace overrides (i.e. instead of a central directory,
+    #   can we use a common namespace?) and a duplicate ShaderOverride in that
+    #   namespace. Also, handling=abort works much like a return statement and
+    #   could potentially be useful to prevent additional ShaderOverrides with
+    #   the same hash from running (though that also brings risks of mod
+    #   conflicts if it prevents something important running in another mod).
+    #
+    #   Again, my STRONGLY preferred solution is simply to add support to
+    #   3DMigoto instead of trying to work around its current limitations.
+    #     -DarkStarSword
+    #
+    #with open(shader_overrides_file, 'w') as f_overrides:
+    #    f_overrides.write(textwrap.dedent('''
+    #        [ShaderOverride]
+    #        hash = {}
+    #        checktextureoverride = vb0
+    #        ''').format(shader_hash_to_write))
+    #    for n in range(texture_override_range + 1):
+    #        f_overrides.write('checktextureoverride = ps-t{}\n'.format(n))
 
     #Write Mod files
+    # FIXME: Test if no pixel shader hash present (think this is broken elsewhere)
+    # FIXME: Vertex should be listed before Pixel - stick to pipeline order!
+    # FIXME: Hull, Domain, Geometry...
+    # FIXME: Finalise ShaderOverride location and adjust message
     f.write(textwrap.dedent('''
         ;Automatically generated file.
         ;This export had the following shader hashes:
@@ -1785,6 +1832,8 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
 
     # Write ini file
     if operator.generate_ini_file:
+        # FIXME: Still want to write out the ini file without a pixel shader
+        # hash. It's only the ShaderOverride that is affected by that
         if obj['3DMigoto:PSHash']:
             write_ini_file(open(ini_path, 'w'), vb, vb_path, ib, ib_path, strides, obj, orig_topology, operator.override_vertex_shader, operator.texture_override_range)
         else:
@@ -2640,18 +2689,42 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             default=False,
             )
 
+    # FIXME: Order of these options doesn't currently make sense, but we will
+    # probably want to switch to the separate panels like the FA import dialog
+    # so we can group them... let's worry about that later when the options are
+    # a bit more finalised.
     override_vertex_shader: BoolProperty(
             name="Override VertexShader Instead",
             description="If the mod did not work by overriding the pixel shader, override the vertex shader instead",
             default=False,
             )
 
+    # FIXME: Should be piecemeal options
+    # - Generate resource sections. Would we ever NOT want this? I'm somewhat
+    #   inclined to always enable this, but if we do that the filename needs to
+    #   not be something the modder might have already created to avoid
+    #   overwriting their work (we may want to do that anyway - I don't want an
+    #   modder losing work if they wondered what this new checkbox does)
+    # - Trivial override draw call (i.e. TextureOverride, description should
+    #   mention situations where this is not suitable to include, like
+    #   transparency overrides, exporting a body after swapping vertex groups
+    #   from another mod, etc)
+    # - ShaderOverride section (controversial, discussed elsewhere)
+    #   - Path to central ShaderOverrides folder (if we end up going down that path)
+    #   - What to write to the ShaderOverride section?
+    #     - checktextureoverride=vb0 "just works", but is not recommended
+    #     - run=CommandList... is strongly preferred, but requires base mod to be set up correctly
     generate_ini_file: BoolProperty(
             name="Generate Mod .ini",
             description="Your mod must be exported into a folder MyMod inside your Mods folder",
             default=False,
             )
 
+    # FIXME: Too much risk of introducing subtle mod conflicts
+    # FIXME: Belongs in the base mod command lists, not here
+    # FIXME: Should allow no slots to be selected when they are unwanted (0 will enable ps-t0, not none)
+    # FIXME: Technically should be a sparse list (but probably not a big deal)
+    # FIXME: Description is unclear
     texture_override_range: bpy.props.IntProperty(
             name="Texture Range",
             description="Number [0-128] of ps-t textures to mod. Game-specific limit.",
@@ -2672,6 +2745,10 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             vb_path = os.path.splitext(self.filepath)[0] + '.vb'
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
             fmt_path = os.path.splitext(vb_path)[0] + '.fmt'
+            # FIXME (or at least needs final decision): I don't think it's a
+            # good idea to write an ini file with this name - there is just too
+            # much risk that it will end up overwriting a modders work - too
+            # many cases already exist in the wild using this filename.
             ini_path = os.path.splitext(vb_path)[0] + '.ini'
 
             # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
