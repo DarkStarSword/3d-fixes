@@ -1364,7 +1364,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     # Store hashes for .ini mod generation when exporting
     hash_match = fa_filename_hash_pattern.search(name)
     if hash_match:
-        obj['3DMigoto:VBHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:PSHash'] = hash_match.group('VBHash', 'VSHash', 'PSHash')
+        for group,value in hash_match.groupdict().items():
+            if value:
+                obj['3DMigoto:'+group] = value
 
     if ib is not None:
         if ib.topology in ('trianglelist', 'trianglestrip'):
