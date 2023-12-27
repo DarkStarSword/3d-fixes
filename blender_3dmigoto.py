@@ -1319,6 +1319,22 @@ def assert_pointlist_ib_is_pointless(ib, vb):
     assert(len(vb) == len(ib)) # FIXME: Properly implement point list index buffers
     assert(all([(i,) == j for i,j in enumerate(ib.faces)])) # FIXME: Properly implement point list index buffers
 
+# NOTE: The group names in this regex will get added as custom data on the
+# blender object if they match, like "3DMigoto:VBHash"
+# FIXME: test hash contamination warnings or other settings (e.g. filename_reg,
+# hold) that can affect filename to make sure this regex is ok. XXX: If there
+# is a hash contamination warning present, reinjection will be unreliable - we
+# should maybe warn about that
+fa_filename_hash_pattern = re.compile(r'''
+        (?:-vb[0-9]+(?P<VBHashContamination>=![MUCS]+!)?=(?P<VBHash>[0-9a-f]+))?
+        (?:-vs=(?P<VSHash>[0-9a-f]+))?
+        (?:-hs=(?P<HSHash>[0-9a-f]+))?
+        (?:-ds=(?P<DSHash>[0-9a-f]+))?
+        (?:-gs=(?P<GSHash>[0-9a-f]+))?
+        (?:-ps=(?P<PSHash>[0-9a-f]+))?
+        (?:\.|$)
+        ''', re.VERBOSE | re.IGNORECASE)
+
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_winding=False, flip_normal=False, axis_forward='-Z', axis_up='Y', pose_cb_off=[0,0], pose_cb_step=1):
     vb, ib, name, pose_path = load_3dmigoto_mesh(operator, paths)
 
@@ -1346,8 +1362,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     obj['3DMigoto:FlipWinding'] = flip_winding
     obj['3DMigoto:FlipNormal'] = flip_normal
     # Store hashes for .ini mod generation when exporting
-    hash_pattern = re.compile(r'-vb[0-9]=(?P<VBHash>.*?)-vs=(?P<VSHash>.*?)-ps=(?P<PSHash>.*?)(?:\.|$)')
-    hash_match = hash_pattern.search(name)
+    hash_match = fa_filename_hash_pattern.search(name)
     if hash_match:
         obj['3DMigoto:VBHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:PSHash'] = hash_match.group('VBHash', 'VSHash', 'PSHash')
 
