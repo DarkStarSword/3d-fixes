@@ -1345,6 +1345,11 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     # a previously exported file can also set them by default?
     obj['3DMigoto:FlipWinding'] = flip_winding
     obj['3DMigoto:FlipNormal'] = flip_normal
+    # Store hashes for .ini mod generation when exporting
+    hash_pattern = re.compile(r'-vb[0-9]=(?P<VBHash>.*?)-vs=(?P<VSHash>.*?)-ps=(?P<PSHash>.*?)(?:\.|$)')
+    hash_match = hash_pattern.search(name)
+    if hash_match:
+        obj['3DMigoto:VBHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:PSHash'] = hash_match.group('VBHash', 'VSHash', 'PSHash')
 
     if ib is not None:
         if ib.topology in ('trianglelist', 'trianglestrip'):
@@ -1526,8 +1531,8 @@ def write_fmt_file(f, vb, ib, strides):
         f.write('format: %s\n' % ib.format)
     f.write(vb.layout.to_string())
 
-def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology):
-    backup = True
+def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology, override_vertex_shader, texture_override_range):
+    backup = False
     #topology='trianglestrip' # Testing
     bind_section = ''
     backup_section = ''
@@ -1535,6 +1540,7 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology):
     resource_section = ''
     resource_bak_section = ''
 
+    #Prepare sections
     draw_section = 'handling = skip\n'
     if ib is not None:
         draw_section += 'drawindexed = auto\n'
@@ -1567,32 +1573,39 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology):
             backup_section += 'ResourceBakVB{0} = ref vb{0}\n'.format(vbuf_idx or 0)
             restore_section += 'vb{0} = ResourceBakVB{0}\n'.format(vbuf_idx or 0)
 
-    # FIXME: Maybe split this into several ini files that the user may or may
-    # not choose to generate? One that just lists resources, a second that
-    # lists the TextureOverrides to replace draw calls, and a third with the
-    # ShaderOverride sections (or a ShaderRegex for foolproof replacements)...?
-    f.write(textwrap.dedent('''
-            ; Automatically generated file, be careful not to overwrite if you
-            ; make any manual changes
+    #Write ShaderOverrides file
+    shader_overrides_path = os.path.dirname(os.path.dirname(f.name)) + r'\_ShaderOverrides'
+    if not os.path.exists(shader_overrides_path):
+        os.makedirs(shader_overrides_path)
 
-            ; Please note - it is not recommended to place the [ShaderOverride]
-            ; here, as you only want checktextureoverride executed once per
-            ; draw call, so it's better to have all the shaders listed in a
-            ; common file instead to avoid doubling up and to allow common code
-            ; to enable/disable the mods, backup/restore buffers, etc. Plus you
-            ; may need to locate additional shaders to take care of shadows or
-            ; other render passes. But if you understand what you are doing and
-            ; need a quick 'n' dirty way to enable the reinjection, fill this in
-            ; and uncomment it:
-            ;[ShaderOverride{suffix}]
-            ;hash = FILL ME IN...
-            ;checktextureoverride = vb0
+    if override_vertex_shader:
+        shader_hash_to_write = obj['3DMigoto:VSHash']
+    else:
+        shader_hash_to_write = obj['3DMigoto:PSHash']
 
-            [TextureOverride{suffix}]
-            ;hash = FILL ME IN...
-            ''').lstrip().format(
-                suffix='',
-            ))
+    shader_overrides_file = shader_overrides_path + '\\' + shader_hash_to_write + '.ini'
+
+    with open(shader_overrides_file, 'w') as f_overrides:
+        f_overrides.write('''[ShaderOverride]
+hash = {}
+checktextureoverride = vb0
+'''.format(shader_hash_to_write))
+        for n in range(texture_override_range + 1):
+            f_overrides.write('checktextureoverride = ps-t{}\n'.format(n))
+
+    #Write Mod files
+    f.write(''';Automatically generated file.
+;This export had the following shader hashes:
+;Pixel Shader = {}
+;Vertex Shader = {}
+;One of them has been automatically saved inside Mods/_ShaderOverrides.
+;It is required for your mod to work.
+
+;------Mesh swaps section------
+[TextureOverride_{}]
+hash = {}
+'''.format(obj['3DMigoto:PSHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:VBHash'], obj['3DMigoto:VBHash']))
+
     if ib is not None and '3DMigoto:FirstIndex' in obj:
         f.write('match_first_index = {}\n'.format(obj['3DMigoto:FirstIndex']))
     elif ib is None and '3DMigoto:FirstVertex' in obj:
@@ -1621,6 +1634,9 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology):
         f.write('\n' + resource_bak_section)
 
     f.write(resource_section)
+
+    #Sample texture_mods_section
+    f.write('\n;------Texture swaps section------\n;[TextureOverride_SwapSample]\n;hash =   \n;ps-t0 = Resource_SwapSample\n;[Resource_SwapSample]\n;filename = mytexture.png')
 
 def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
     obj = context.object
@@ -1738,9 +1754,12 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
     # Write format reference file
     write_fmt_file(open(fmt_path, 'w'), vb, ib, strides)
 
-    # Not ready yet
-    #if ini_path:
-    #    write_ini_file(open(ini_path, 'w'), vb, vb_path, ib, ib_path, strides, obj, orig_topology)
+    # Write ini file
+    if operator.generate_ini_file:
+        if obj['3DMigoto:PSHash']:
+            write_ini_file(open(ini_path, 'w'), vb, vb_path, ib, ib_path, strides, obj, orig_topology, operator.override_vertex_shader, operator.texture_override_range)
+        else:
+            operator.report({'WARNING'}, 'ini file will NOT be generated. The hashes were not found on the currently selected object name.')
 
 semantic_remap_enum = [
         ('None', 'No change', 'Do not remap this semantic. If the semantic name is recognised the script will try to interpret it, otherwise it will preserve the existing data in a vertex layer'),
@@ -2567,12 +2586,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
     """Export a mesh for re-injection into a game with 3DMigoto"""
     bl_idname = "export_mesh.migoto"
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
-
     filename_ext = '.vb0'
-    filter_glob: StringProperty(
-            default='*.vb*',
-            options={'HIDDEN'},
-            )
 
     flip_winding: BoolProperty(
             name="Flip Winding Order",
@@ -2592,6 +2606,26 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
             default=False,
             )
 
+    override_vertex_shader: BoolProperty(
+            name="Override VertexShader Instead",
+            description="If the mod did not work by overriding the pixel shader, override the vertex shader instead",
+            default=False,
+            )
+
+    generate_ini_file: BoolProperty(
+            name="Generate Mod .ini",
+            description="Your mod must be exported into a folder MyMod inside your Mods folder",
+            default=False,
+            )
+
+    texture_override_range: bpy.props.IntProperty(
+            name="Texture Range",
+            description="Number [0-128] of ps-t textures to mod. Game-specific limit.",
+            default=4,
+            min=0,
+            max=128
+            )
+
     def invoke(self, context, event):
         obj = context.object
         self.flip_winding = obj.get('3DMigoto:FlipWinding', False)
@@ -2600,10 +2634,16 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         try:
+            #Check if the new mod folder is inside "Mods"
+            if self.generate_ini_file and os.path.basename(os.path.dirname(os.path.dirname(self.filepath))).lower() != "mods":
+                self.report({'ERROR'}, "You must export into a folder created inside the Mods folder.")
+                return self.invoke(context, None)
+
+            #Set paths
             vb_path = os.path.splitext(self.filepath)[0] + '.vb'
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
             fmt_path = os.path.splitext(vb_path)[0] + '.fmt'
-            ini_path = os.path.splitext(vb_path)[0] + '_generated.ini'
+            ini_path = os.path.splitext(vb_path)[0] + '.ini'
 
             # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
