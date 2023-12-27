@@ -1586,25 +1586,27 @@ def write_ini_file(f, vb, vb_path, ib, ib_path, strides, obj, topology, override
     shader_overrides_file = shader_overrides_path + '\\' + shader_hash_to_write + '.ini'
 
     with open(shader_overrides_file, 'w') as f_overrides:
-        f_overrides.write('''[ShaderOverride]
-hash = {}
-checktextureoverride = vb0
-'''.format(shader_hash_to_write))
+        f_overrides.write(textwrap.dedent('''
+            [ShaderOverride]
+            hash = {}
+            checktextureoverride = vb0
+            ''').format(shader_hash_to_write))
         for n in range(texture_override_range + 1):
             f_overrides.write('checktextureoverride = ps-t{}\n'.format(n))
 
     #Write Mod files
-    f.write(''';Automatically generated file.
-;This export had the following shader hashes:
-;Pixel Shader = {}
-;Vertex Shader = {}
-;One of them has been automatically saved inside Mods/_ShaderOverrides.
-;It is required for your mod to work.
+    f.write(textwrap.dedent('''
+        ;Automatically generated file.
+        ;This export had the following shader hashes:
+        ;Pixel Shader = {}
+        ;Vertex Shader = {}
+        ;One of them has been automatically saved inside Mods/_ShaderOverrides.
+        ;It is required for your mod to work.
 
-;------Mesh swaps section------
-[TextureOverride_{}]
-hash = {}
-'''.format(obj['3DMigoto:PSHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:VBHash'], obj['3DMigoto:VBHash']))
+        ;------Mesh swaps section------
+        [TextureOverride_{}]
+        hash = {}
+        ''').lstrip().format(obj['3DMigoto:PSHash'], obj['3DMigoto:VSHash'], obj['3DMigoto:VBHash'], obj['3DMigoto:VBHash']))
 
     if ib is not None and '3DMigoto:FirstIndex' in obj:
         f.write('match_first_index = {}\n'.format(obj['3DMigoto:FirstIndex']))
@@ -1636,7 +1638,14 @@ hash = {}
     f.write(resource_section)
 
     #Sample texture_mods_section
-    f.write('\n;------Texture swaps section------\n;[TextureOverride_SwapSample]\n;hash =   \n;ps-t0 = Resource_SwapSample\n;[Resource_SwapSample]\n;filename = mytexture.png')
+    f.write(textwrap.dedent('''
+    ;------Texture swaps section------
+    ;[TextureOverride_SwapSample]
+    ;hash =
+    ;ps-t0 = Resource_SwapSample
+    ;[Resource_SwapSample]
+    ;filename = mytexture.png
+    '''))
 
 def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
     obj = context.object
