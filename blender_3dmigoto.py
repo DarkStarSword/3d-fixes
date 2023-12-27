@@ -2598,7 +2598,12 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
     """Export a mesh for re-injection into a game with 3DMigoto"""
     bl_idname = "export_mesh.migoto"
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
+
     filename_ext = '.vb0'
+    filter_glob: StringProperty(
+            default='*.vb*',
+            options={'HIDDEN'},
+            )
 
     flip_winding: BoolProperty(
             name="Flip Winding Order",
