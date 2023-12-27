@@ -2668,11 +2668,6 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         try:
-            #Check if the new mod folder is inside "Mods"
-            if self.generate_ini_file and os.path.basename(os.path.dirname(os.path.dirname(self.filepath))).lower() != "mods":
-                self.report({'ERROR'}, "You must export into a folder created inside the Mods folder.")
-                return self.invoke(context, None)
-
             #Set paths
             vb_path = os.path.splitext(self.filepath)[0] + '.vb'
             ib_path = os.path.splitext(vb_path)[0] + '.ib'
