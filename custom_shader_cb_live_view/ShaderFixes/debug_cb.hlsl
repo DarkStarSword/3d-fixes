@@ -268,7 +268,7 @@ void main(point vs2gs input[1], inout TriangleStream<gs2ps> ostream)
 	float4 cval = cb13[idx];
 	uint4 ival = asint(cb13[idx]);
 	float char_height = char_size.y / rt_size.y * 2 * font_scale * dpi_scaling();
-	int max_y = rt_size.y / char_size.y * font_scale * dpi_scaling();
+	int max_y = rt_size.y / (char_size.y * font_scale * dpi_scaling());
 	uint t113len, t114len, t115len;
 	bool use_int = false;
 
