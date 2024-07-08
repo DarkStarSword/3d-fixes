@@ -200,6 +200,7 @@ class InputLayoutElement(object):
         self.AlignedByteOffset = int(self.AlignedByteOffset)
         self.InputSlotClass = self.next_validate(f, 'InputSlotClass')
         self.InstanceDataStepRate = int(self.next_validate(f, 'InstanceDataStepRate'))
+        self.format_len = format_components(self.Format)
 
     def to_dict(self):
         d = {}
@@ -258,6 +259,7 @@ class InputLayoutElement(object):
         self.AlignedByteOffset = d['AlignedByteOffset']
         self.InputSlotClass = d['InputSlotClass']
         self.InstanceDataStepRate = d['InstanceDataStepRate']
+        self.format_len = format_components(self.Format)
 
     @staticmethod
     def next_validate(f, field, line=None):
@@ -289,9 +291,10 @@ class InputLayoutElement(object):
         return self.RemappedSemanticName
 
     def pad(self, data, val):
-        padding = format_components(self.Format) - len(data)
+        padding = self.format_len - len(data)
         assert(padding >= 0)
-        return data + [val]*padding
+        data.extend([val]*padding)
+        return data
 
     def clip(self, data):
         return data[:format_components(self.Format)]
