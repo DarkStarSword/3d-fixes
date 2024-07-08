@@ -1013,7 +1013,7 @@ def import_normals_step1(mesh, data, vertex_layers, operator, translate_normal):
     mesh.create_normals_split()
     for l in mesh.loops:
         l.normal[:] = normals[l.vertex_index]
-        return []
+    return []
 
 def import_normals_step2(mesh):
     # Taken from import_obj/import_fbx
