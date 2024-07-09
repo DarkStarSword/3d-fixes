@@ -200,6 +200,7 @@ class InputLayoutElement(object):
         self.AlignedByteOffset = int(self.AlignedByteOffset)
         self.InputSlotClass = self.next_validate(f, 'InputSlotClass')
         self.InstanceDataStepRate = int(self.next_validate(f, 'InstanceDataStepRate'))
+        self.format_len = format_components(self.Format)
 
     def to_dict(self):
         d = {}
@@ -258,6 +259,7 @@ class InputLayoutElement(object):
         self.AlignedByteOffset = d['AlignedByteOffset']
         self.InputSlotClass = d['InputSlotClass']
         self.InstanceDataStepRate = d['InstanceDataStepRate']
+        self.format_len = format_components(self.Format)
 
     @staticmethod
     def next_validate(f, field, line=None):
@@ -289,9 +291,10 @@ class InputLayoutElement(object):
         return self.RemappedSemanticName
 
     def pad(self, data, val):
-        padding = format_components(self.Format) - len(data)
+        padding = self.format_len - len(data)
         assert(padding >= 0)
-        return data + [val]*padding
+        data.extend([val]*padding)
+        return data
 
     def clip(self, data):
         return data[:format_components(self.Format)]
@@ -1005,9 +1008,12 @@ def import_normals_step1(mesh, data, vertex_layers, operator, translate_normal):
     # Comment from other import scripts:
     # Note: we store 'temp' normals in loops, since validate() may alter final mesh,
     #       we can only set custom lnors *after* calling it.
+    if bpy.app.version >= (4, 1):
+        return normals
     mesh.create_normals_split()
     for l in mesh.loops:
         l.normal[:] = normals[l.vertex_index]
+    return []
 
 def import_normals_step2(mesh):
     # Taken from import_obj/import_fbx
@@ -1216,6 +1222,7 @@ def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_norm
     texcoords = {}
     vertex_layers = {}
     use_normals = False
+    normals = []
 
     for elem in vb.layout:
         if elem.InputSlotClass != 'per-vertex' or elem.reused_offset:
@@ -1274,7 +1281,7 @@ def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_norm
         elif translated_elem_name == 'NORMAL':
             use_normals = True
             translate_normal = normal_import_translation(elem, flip_normal)
-            import_normals_step1(mesh, data, vertex_layers, operator, translate_normal)
+            normals = import_normals_step1(mesh, data, vertex_layers, operator, translate_normal)
         elif translated_elem_name in ('TANGENT', 'BINORMAL'):
         #    # XXX: loops.tangent is read only. Not positive how to handle
         #    # this, or if we should just calculate it when re-exporting.
@@ -1293,7 +1300,7 @@ def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_norm
             operator.report({'INFO'}, 'Storing unhandled semantic %s %s as vertex layer' % (elem.name, elem.Format))
             vertex_layers[elem.name] = data
 
-    return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals)
+    return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals, normals)
 
 def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
     if merge_meshes:
@@ -1365,7 +1372,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
     if vb.topology == 'pointlist':
         operator.report({'WARNING'}, '{}: uses point list topology, which is highly experimental and may have issues with normals/tangents/lighting. This may not be the mesh you are looking for.'.format(mesh.name))
 
-    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals) = import_vertices(mesh, obj, vb, operator, semantic_translations, flip_normal)
+    (blend_indices, blend_weights, texcoords, vertex_layers, use_normals, normals) = import_vertices(mesh, obj, vb, operator, semantic_translations, flip_normal)
 
     import_uv_layers(mesh, obj, texcoords, flip_texcoord_v)
     if not texcoords:
@@ -1382,7 +1389,10 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, flip_w
 
     # Must be done after validate step:
     if use_normals:
-        import_normals_step2(mesh)
+        if bpy.app.version >= (4, 1):
+            mesh.normals_split_custom_set_from_vertices(normals)
+        else:
+            import_normals_step2(mesh)
     elif hasattr(mesh, 'calc_normals'): # Dropped in Blender 4.0
         mesh.calc_normals()
 
