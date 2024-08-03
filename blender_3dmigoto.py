@@ -2502,6 +2502,9 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
             fmt_path = None
         if not os.path.exists(vgmap_path):
             vgmap_path = None
+        # https://github.com/DarkStarSword/3d-fixes/issues/28:
+        if any([x.lower().endswith('.vb0') for x in vb_bin_path]):
+            vb_bin_path = [x for x in vb_bin_path if not x.lower().endswith('.vb')]
         return (vb_bin_path, ib_bin_path, fmt_path, vgmap_path)
 
     def execute(self, context):
