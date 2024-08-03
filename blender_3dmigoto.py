@@ -1731,13 +1731,13 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path, ini_path):
 
     base, ext = os.path.splitext(vb_path)
     for (suffix, vgmap) in vgmaps.items():
-        ib_path = vb_path
+        path = vb_path
         if suffix:
-            ib_path = '%s-%s%s' % (base, suffix, ext)
-        vgmap_path = os.path.splitext(ib_path)[0] + '.vgmap'
-        print('Exporting %s...' % ib_path)
+            path = '%s-%s%s' % (base, suffix, ext)
+        vgmap_path = os.path.splitext(path)[0] + '.vgmap'
+        print('Exporting %s...' % path)
         vb.remap_blendindices(obj, vgmap)
-        vb.write(ib_path, strides, operator=operator)
+        vb.write(path, strides, operator=operator)
         vb.revert_blendindices_remap()
         sorted_vgmap = collections.OrderedDict(sorted(vgmap.items(), key=lambda x:x[1]))
         json.dump(sorted_vgmap, open(vgmap_path, 'w'), indent=2)
