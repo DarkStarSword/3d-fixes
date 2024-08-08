@@ -651,6 +651,8 @@ class VertexBufferGroup(object):
                     vertex[semantic] = (0, 0, 0, 0)
 
     def write(self, output_prefix, strides, operator=None):
+        if os.path.exists(output_prefix):
+            os.remove(output_prefix) # Remove old .vb if it exists before writing segmented .vb_ files
         for vbuf_idx, stride in strides.items():
             with open(output_prefix + vbuf_idx, 'wb') as output:
                 for vertex in self.vertices:
