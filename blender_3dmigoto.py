@@ -33,6 +33,7 @@ from glob import glob
 import json
 import copy
 import textwrap
+import math
 
 import bpy
 from bpy_extras.io_utils import unpack_list, ImportHelper, ExportHelper, axis_conversion
@@ -1242,6 +1243,55 @@ def import_vertices(mesh, obj, vb, operator, semantic_translations={}, flip_norm
         translated_elem_name = translated_elem_name.upper()
 
         data = tuple( x[elem.name] for x in vb.vertices )
+        if translated_elem_name == 'PACKEDVERTEXDATAA': # HACK: ELITE DANGEROUS
+            translated_elem_name = 'POSITION'
+            new_data = []
+            for vert in data:
+                # ubfe r0.xyzw, l(7, 8, 8, 8), l(24, 8, 16, 8), v1.zwwz
+                r0x = (vert[2] >> 24) & 0x7f
+                # ieq r1.x, r0.x, l(64)
+                # if_nz r1.x
+                if r0x == 64:
+                    #   and r1.xy, v1.xyxx, l(0x0000ffff, 0x0000ffff, 0, 0)
+                    #   ushr r1.zw, v1.xxxy, l(0, 0, 16, 16)
+                    #   utof r2.xyzw, r1.xyzw
+                    #   mul r1.x, r2.w, l(0.000244144350)
+                    #   exp r1.x, r1.x
+                    #   add r1.x, r1.x, l(-1.000000)
+                    #   mad r1.yzw, r2.xxzy, l(0.000000, 0.0000305180438, 0.0000305180438, 0.0000305180438), l(0.000000, -1.000000, -1.000000, -1.000000)
+                    #   mul r1.xyz, r1.xxxx, r1.yzwy
+                    assert(False) # UNTESTED
+                    x,y = vert[0] & 0xffff, vert[0] >> 16
+                    z,w = vert[1] & 0xffff, vert[1] >> 16
+                    w = math.exp(w*0.000244144350) - 1.0
+                    new_data.append([ (c*0.0000305180438 - 1.0) * w for c in [x,y,z] ])
+                else:
+                    #   ushr r2.xy, v1.zxzz, l(24, 21, 0, 0)
+                    r2x = vert[2] >> 24
+                    r2y = vert[0] >> 21
+                    #   iadd r0.x, -r0.x, l(20)
+                    #   ishl r0.x, l(1), r0.x
+                    #   iadd r0.x, r0.x, l(-1)
+                    #   itof r0.x, r0.x
+                    #   rcp r0.x, r0.x
+                    r0x = 1.0 / float((1 << (20 - r0x)) - 1)
+                    #   ishl r2.x, l(1), r2.x
+                    #   itof r2.x, r2.x
+                    r2x = float(1 << r2x)
+                    #   and r2.z, v1.x, l(0x001fffff)
+                    r2z = vert[0] & 0x1fffff
+                    #   bfi r2.w, l(10), l(11), v1.y, l(0)
+                    bitmask = (((1 << 10)-1) << 11) & 0xffffffff
+                    r2w = (vert[1] << 11) & bitmask # | (0 & ~bitmask)
+                    #   iadd r2.y, r2.w, r2.y
+                    r2y = r2w + r2y
+                    #   ubfe r2.w, l(21), l(10), v1.y
+                    r2w = (vert[1] >> 10) & 0x1fffff
+                    #   utof r3.xyz, r2.zywz
+                    #   mad r1.xyz, r3.xyzx, r0.xxxx, -r2.xxxx
+                    coord = [ float(c) * r0x - r2x for c in [r2z, r2y, r2w] ]
+                    new_data.append(coord)
+            data = new_data
         if translated_elem_name == 'POSITION':
             # Ensure positions are 3-dimensional:
             if len(data[0]) == 4:
